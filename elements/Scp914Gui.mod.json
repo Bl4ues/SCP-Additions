@@ -1,0 +1,92 @@
+{
+  "_fv": 33,
+  "_type": "gui",
+  "definition": {
+    "type": 0,
+    "width": 0,
+    "height": 0,
+    "inventoryOffsetX": 0,
+    "inventoryOffsetY": 0,
+    "renderBgLayer": false,
+    "doesPauseGame": false,
+    "components": [
+      {
+        "type": "button",
+        "data": {
+          "text": "Rough",
+          "onClick": {
+            "name": "Scp914toRough"
+          },
+          "width": 51,
+          "height": 20,
+          "name": "Rough",
+          "x": 123,
+          "y": 116
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "Fine",
+          "onClick": {
+            "name": "Scp914toFine"
+          },
+          "width": 46,
+          "height": 20,
+          "name": "Fine",
+          "x": 231,
+          "y": 80
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "Coarse",
+          "onClick": {
+            "name": "Scp914toCoarse"
+          },
+          "width": 46,
+          "height": 20,
+          "name": "Coarse",
+          "x": 150,
+          "y": 80
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "Very Fine",
+          "onClick": {
+            "name": "Scp914toVeryFine"
+          },
+          "width": 51,
+          "height": 20,
+          "name": "Very Fine",
+          "x": 249,
+          "y": 116
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "1:1",
+          "onClick": {
+            "name": "Scp914to1to1"
+          },
+          "width": 40,
+          "height": 20,
+          "name": "1:1",
+          "x": 193,
+          "y": 46
+        }
+      }
+    ],
+    "gridSettings": {
+      "sx": 18,
+      "sy": 18,
+      "ox": 11,
+      "oy": 15,
+      "snapOnGrid": false
+    }
+  }
+}

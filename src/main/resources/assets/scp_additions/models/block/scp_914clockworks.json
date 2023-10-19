@@ -1,0 +1,8 @@
+{
+  "parent": "scp_additions:custom/scp914clockworks",
+  "textures": {
+    "all": "scp_additions:blocks/scp914clockworks",
+    "particle": "scp_additions:blocks/scp914clockworks",
+    "0": "scp_additions:blocks/scp914clockworks"
+  }
+}

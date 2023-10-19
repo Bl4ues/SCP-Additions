@@ -1,0 +1,8 @@
+{
+  "parent": "scp_additions:custom/scp914output",
+  "textures": {
+    "all": "scp_additions:blocks/scp914intakenoutput",
+    "particle": "scp_additions:blocks/scp914intakenoutput",
+    "0": "scp_additions:blocks/scp914intakenoutput"
+  }
+}

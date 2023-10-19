@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "01",
+    "23"
+  ],
+  "key": {
+    "0": {
+      "item": "scp_additions:scp_1176honey"
+    },
+    "1": {
+      "item": "scp_additions:scp_1176honey"
+    },
+    "2": {
+      "item": "scp_additions:scp_1176honey"
+    },
+    "3": {
+      "item": "scp_additions:scp_1176honey"
+    }
+  },
+  "result": {
+    "item": "minecraft:honey_block",
+    "count": 1
+  }
+}

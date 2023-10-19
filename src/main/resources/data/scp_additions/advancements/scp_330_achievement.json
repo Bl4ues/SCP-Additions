@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_additions:scp_330"
+    },
+    "title": {
+      "translate": "advancements.scp_330_achievement.title"
+    },
+    "description": {
+      "translate": "advancements.scp_330_achievement.descr"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "scp_330_achievement": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_additions:scp_additions_ach"
+}

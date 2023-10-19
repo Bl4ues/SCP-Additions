@@ -1,0 +1,9 @@
+{
+  "parent": "scp_additions:custom/teslagateactive3",
+  "textures": {
+    "all": "scp_additions:blocks/tesla",
+    "particle": "scp_additions:blocks/tesla",
+    "1": "scp_additions:blocks/shock3",
+    "4": "scp_additions:blocks/teslagate2"
+  }
+}

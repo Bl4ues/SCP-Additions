@@ -1,0 +1,9 @@
+{
+  "parent": "scp_additions:custom/teslagateinactive",
+  "textures": {
+    "all": "scp_additions:blocks/tesla",
+    "particle": "scp_additions:blocks/tesla",
+    "3": "scp_additions:blocks/warning",
+    "4": "scp_additions:blocks/teslagate"
+  }
+}

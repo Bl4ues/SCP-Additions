@@ -1,0 +1,8 @@
+{
+  "parent": "scp_additions:custom/scp914keywind",
+  "textures": {
+    "all": "scp_additions:blocks/scp914dial",
+    "particle": "scp_additions:blocks/scp914dial",
+    "0": "scp_additions:blocks/scp914dial"
+  }
+}

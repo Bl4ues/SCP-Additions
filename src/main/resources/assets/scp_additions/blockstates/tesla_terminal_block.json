@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_additions:block/tesla_terminal_block"
+    },
+    "facing=east": {
+      "model": "scp_additions:block/tesla_terminal_block",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_additions:block/tesla_terminal_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_additions:block/tesla_terminal_block",
+      "y": 270
+    }
+  }
+}

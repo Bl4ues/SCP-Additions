@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_additions:scp_902_closed"
+    },
+    "title": {
+      "translate": "advancements.scp_902_achievement.title"
+    },
+    "description": {
+      "translate": "advancements.scp_902_achievement.descr"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "scp_902_achievement": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_additions:scp_additions_ach"
+}

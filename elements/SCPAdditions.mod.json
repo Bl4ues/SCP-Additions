@@ -1,0 +1,11 @@
+{
+  "_fv": 33,
+  "_type": "tab",
+  "definition": {
+    "name": "SCP Additions",
+    "icon": {
+      "value": "CUSTOM:TeslaGate"
+    },
+    "showSearch": true
+  }
+}

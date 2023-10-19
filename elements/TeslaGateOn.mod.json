@@ -1,0 +1,12 @@
+{
+  "_fv": 33,
+  "_type": "gamerule",
+  "definition": {
+    "type": "Logic",
+    "displayName": "If Tesla Gates are on",
+    "description": "If true, then the Tesla Gates are functional, can be swapped through the Tesla Gate Terminal",
+    "category": "MISC",
+    "defaultValueLogic": true,
+    "defaultValueNumber": 0
+  }
+}

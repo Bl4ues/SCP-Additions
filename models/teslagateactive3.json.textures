@@ -1,0 +1,11 @@
+{
+  "mappings": {
+    "default": {
+      "map": {
+        "1": "shock3",
+        "4": "teslagate2"
+      },
+      "name": "default"
+    }
+  }
+}

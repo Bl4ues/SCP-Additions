@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "0"
+  ],
+  "key": {
+    "0": {
+      "item": "scp_additions:button_loff"
+    }
+  },
+  "result": {
+    "item": "scp_additions:button_roff",
+    "count": 1
+  }
+}

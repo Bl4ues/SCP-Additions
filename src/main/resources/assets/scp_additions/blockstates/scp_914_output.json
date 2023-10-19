@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_additions:block/scp_914_output"
+    },
+    "facing=east": {
+      "model": "scp_additions:block/scp_914_output",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_additions:block/scp_914_output",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_additions:block/scp_914_output",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "_fv": 33,
+  "_type": "gui",
+  "definition": {
+    "type": 0,
+    "width": 135,
+    "height": 85,
+    "inventoryOffsetX": 0,
+    "inventoryOffsetY": 0,
+    "renderBgLayer": true,
+    "doesPauseGame": false,
+    "components": [
+      {
+        "type": "button",
+        "data": {
+          "text": "Tesla Gate On",
+          "onClick": {
+            "name": "TerminalOn"
+          },
+          "width": 92,
+          "height": 20,
+          "name": "Tesla Gate On",
+          "x": 168,
+          "y": 98
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "Tesla Gate Off",
+          "onClick": {
+            "name": "TerminalOff"
+          },
+          "width": 98,
+          "height": 20,
+          "name": "Tesla Gate Off",
+          "x": 165,
+          "y": 119
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "text": "Tesla Gate Terminal",
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "name": "Tesla Gate Terminal",
+          "x": 164,
+          "y": 84
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "Log out",
+          "onClick": {
+            "name": "TeslaTerminalOffP"
+          },
+          "width": 61,
+          "height": 20,
+          "name": "Log out",
+          "x": 184,
+          "y": 140
+        }
+      }
+    ],
+    "gridSettings": {
+      "sx": 18,
+      "sy": 18,
+      "ox": 11,
+      "oy": 15,
+      "snapOnGrid": false
+    }
+  }
+}

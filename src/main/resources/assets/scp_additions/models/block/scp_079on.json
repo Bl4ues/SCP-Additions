@@ -1,0 +1,9 @@
+{
+  "parent": "scp_additions:custom/scp079on",
+  "textures": {
+    "all": "scp_additions:blocks/079body",
+    "particle": "scp_additions:blocks/079body",
+    "0": "scp_additions:blocks/079body",
+    "1": "scp_additions:blocks/079face"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_additions:block/tesla_gate"
+    },
+    "facing=east": {
+      "model": "scp_additions:block/tesla_gate",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_additions:block/tesla_gate",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_additions:block/tesla_gate",
+      "y": 270
+    }
+  }
+}

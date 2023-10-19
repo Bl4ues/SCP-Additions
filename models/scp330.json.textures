@@ -1,0 +1,12 @@
+{
+  "mappings": {
+    "default": {
+      "map": {
+        "0": "330",
+        "1": "paper",
+        "2": "candies"
+      },
+      "name": "default"
+    }
+  }
+}

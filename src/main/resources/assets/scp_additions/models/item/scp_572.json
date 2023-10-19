@@ -1,0 +1,7 @@
+{
+  "parent": "scp_additions:custom/scp572",
+  "textures": {
+    "0": "scp_additions:blocks/572",
+    "particle": "scp_additions:items/572"
+  }
+}

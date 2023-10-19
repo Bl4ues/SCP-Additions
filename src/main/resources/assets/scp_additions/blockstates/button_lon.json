@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_additions:block/button_lon"
+    },
+    "facing=east": {
+      "model": "scp_additions:block/button_lon",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_additions:block/button_lon",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_additions:block/button_lon",
+      "y": 270
+    }
+  }
+}

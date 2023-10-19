@@ -1,0 +1,212 @@
+{
+  "teslaactivate": {
+    "category": "hostile",
+    "subtitle": "subtitles.teslaactivate",
+    "sounds": [
+      {
+        "name": "scp_additions:teslaactivate",
+        "stream": false
+      }
+    ]
+  },
+  "teslaready": {
+    "category": "hostile",
+    "subtitle": "subtitles.teslaready",
+    "sounds": [
+      {
+        "name": "scp_additions:teslaready",
+        "stream": false
+      }
+    ]
+  },
+  "teslarecharge": {
+    "category": "hostile",
+    "subtitle": "subtitles.teslarecharge",
+    "sounds": [
+      {
+        "name": "scp_additions:teslarecharge",
+        "stream": false
+      }
+    ]
+  },
+  "click": {
+    "category": "neutral",
+    "subtitle": "subtitles.click",
+    "sounds": [
+      {
+        "name": "scp_additions:click",
+        "stream": false
+      }
+    ]
+  },
+  "terminalon": {
+    "category": "neutral",
+    "subtitle": "subtitles.terminalon",
+    "sounds": [
+      {
+        "name": "scp_additions:terminalon",
+        "stream": false
+      }
+    ]
+  },
+  "terminaloff": {
+    "category": "neutral",
+    "subtitle": "subtitles.terminaloff",
+    "sounds": [
+      {
+        "name": "scp_additions:terminaloff",
+        "stream": false
+      }
+    ]
+  },
+  "scp079_1": {
+    "category": "hostile",
+    "subtitle": "subtitles.scp079_1",
+    "sounds": [
+      {
+        "name": "scp_additions:079_1",
+        "stream": false
+      }
+    ]
+  },
+  "candyeat": {
+    "category": "hostile",
+    "subtitle": "subtitles.candyeat",
+    "sounds": [
+      {
+        "name": "scp_additions:candyeat",
+        "stream": false
+      }
+    ]
+  },
+  "candy": {
+    "category": "hostile",
+    "subtitle": "subtitles.candy",
+    "sounds": [
+      {
+        "name": "scp_additions:candy",
+        "stream": false
+      }
+    ]
+  },
+  "scp330death": {
+    "category": "hostile",
+    "subtitle": "subtitles.scp330death",
+    "sounds": [
+      {
+        "name": "scp_additions:330death",
+        "stream": false
+      }
+    ]
+  },
+  "scp1176": {
+    "category": "music",
+    "subtitle": "subtitles.scp1176",
+    "sounds": [
+      {
+        "name": "scp_additions:scp1176",
+        "stream": true
+      }
+    ]
+  },
+  "scp902": {
+    "category": "hostile",
+    "subtitle": "subtitles.scp902",
+    "sounds": [
+      {
+        "name": "scp_additions:scp902",
+        "stream": false
+      }
+    ]
+  },
+  "scp902closing": {
+    "category": "hostile",
+    "subtitle": "subtitles.scp902closing",
+    "sounds": [
+      {
+        "name": "scp_additions:scp902closing",
+        "stream": false
+      }
+    ]
+  },
+  "scp902opening": {
+    "category": "hostile",
+    "subtitle": "subtitles.scp902opening",
+    "sounds": [
+      {
+        "name": "scp_additions:scp902opening",
+        "stream": false
+      }
+    ]
+  },
+  "scp079_2": {
+    "category": "hostile",
+    "subtitle": "subtitles.scp079_2",
+    "sounds": [
+      {
+        "name": "scp_additions:079_2",
+        "stream": false
+      }
+    ]
+  },
+  "button": {
+    "category": "neutral",
+    "subtitle": "subtitles.button",
+    "sounds": [
+      {
+        "name": "scp_additions:button",
+        "stream": false
+      }
+    ]
+  },
+  "scp914doorclose": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914doorclose",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914doorclose",
+        "stream": false
+      }
+    ]
+  },
+  "scp914dooropen": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914dooropen",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914dooropen",
+        "stream": false
+      }
+    ]
+  },
+  "scp914key": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914key",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914key",
+        "stream": false
+      }
+    ]
+  },
+  "scp914refining": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914refining",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914refining",
+        "stream": false
+      }
+    ]
+  },
+  "scp914dial": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914dial",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914dial",
+        "stream": false
+      }
+    ]
+  }
+}

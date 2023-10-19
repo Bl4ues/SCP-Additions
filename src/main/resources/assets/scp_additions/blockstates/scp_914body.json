@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_additions:block/scp_914body"
+    },
+    "facing=east": {
+      "model": "scp_additions:block/scp_914body",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_additions:block/scp_914body",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_additions:block/scp_914body",
+      "y": 270
+    }
+  }
+}

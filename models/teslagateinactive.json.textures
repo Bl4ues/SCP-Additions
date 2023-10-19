@@ -1,0 +1,11 @@
+{
+  "mappings": {
+    "default": {
+      "map": {
+        "3": "warning",
+        "4": "teslagate"
+      },
+      "name": "default"
+    }
+  }
+}

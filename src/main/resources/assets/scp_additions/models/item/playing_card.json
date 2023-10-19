@@ -1,0 +1,7 @@
+{
+  "parent": "scp_additions:custom/playingcard",
+  "textures": {
+    "1": "scp_additions:blocks/playingcards",
+    "particle": "scp_additions:items/playingcards"
+  }
+}

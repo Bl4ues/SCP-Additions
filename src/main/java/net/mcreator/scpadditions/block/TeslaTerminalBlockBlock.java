@@ -64,7 +64,7 @@ public class TeslaTerminalBlockBlock extends ScpAdditionsModElements.ModElement 
 	public static final Block block = null;
 
 	public TeslaTerminalBlockBlock(ScpAdditionsModElements instance) {
-		super(instance, 44);
+		super(instance, 47);
 	}
 
 	@Override

@@ -51,7 +51,7 @@ public class Scp914IntakeDoorBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914IntakeDoorBlock(ScpAdditionsModElements instance) {
-		super(instance, 21);
+		super(instance, 22);
 	}
 
 	@Override

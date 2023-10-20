@@ -29,7 +29,7 @@ public class Scp1176honeyItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public Scp1176honeyItem(ScpAdditionsModElements instance) {
-		super(instance, 27);
+		super(instance, 28);
 	}
 
 	@Override

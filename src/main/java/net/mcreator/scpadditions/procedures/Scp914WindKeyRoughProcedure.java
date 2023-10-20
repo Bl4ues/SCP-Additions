@@ -18,6 +18,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.DamageSource;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.LivingEntity;
@@ -32,6 +33,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import java.util.function.Function;
 import java.util.Map;
 import java.util.Comparator;
+import java.util.Collections;
 
 public class Scp914WindKeyRoughProcedure {
 
@@ -17086,11 +17088,46 @@ public class Scp914WindKeyRoughProcedure {
 					}
 
 					private void run() {
+						{
+							Entity _ent = entity;
+							_ent.setPositionAndUpdate((x + 4), (entity.getPosY()), (entity.getPosZ()));
+							if (_ent instanceof ServerPlayerEntity) {
+								((ServerPlayerEntity) _ent).connection.setPlayerLocation((x + 4), (entity.getPosY()), (entity.getPosZ()),
+										_ent.rotationYaw, _ent.rotationPitch, Collections.emptySet());
+							}
+						}
 						if (entity instanceof LivingEntity) {
-							((LivingEntity) entity).attackEntityFrom(new DamageSource("scp914rough").setDamageBypassesArmor(), (float) 50);
+							((LivingEntity) entity).attackEntityFrom(new DamageSource("scp914rough").setDamageBypassesArmor(), (float) 18);
 						}
 						ScpAdditionsModVariables.MapVariables.get(world).Scp914refining = (false);
 						ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
+						new Object() {
+							private int ticks = 0;
+							private float waitTicks;
+							private IWorld world;
+
+							public void start(IWorld world, int waitTicks) {
+								this.waitTicks = waitTicks;
+								MinecraftForge.EVENT_BUS.register(this);
+								this.world = world;
+							}
+
+							@SubscribeEvent
+							public void tick(TickEvent.ServerTickEvent event) {
+								if (event.phase == TickEvent.Phase.END) {
+									this.ticks += 1;
+									if (this.ticks >= this.waitTicks)
+										run();
+								}
+							}
+
+							private void run() {
+								if (entity instanceof LivingEntity) {
+									((LivingEntity) entity).attackEntityFrom(new DamageSource("scp914rough").setDamageBypassesArmor(), (float) 50);
+								}
+								MinecraftForge.EVENT_BUS.unregister(this);
+							}
+						}.start(world, (int) 20);
 						MinecraftForge.EVENT_BUS.unregister(this);
 					}
 				}.start(world, (int) 160);

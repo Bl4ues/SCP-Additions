@@ -42,7 +42,7 @@ public class Scp914OutputBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914OutputBlock(ScpAdditionsModElements instance) {
-		super(instance, 20);
+		super(instance, 21);
 	}
 
 	@Override

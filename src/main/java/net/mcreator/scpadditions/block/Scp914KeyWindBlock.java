@@ -52,7 +52,7 @@ public class Scp914KeyWindBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914KeyWindBlock(ScpAdditionsModElements instance) {
-		super(instance, 18);
+		super(instance, 19);
 	}
 
 	@Override

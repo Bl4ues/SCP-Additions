@@ -316,7 +316,7 @@ public class Scp914WindKeyVeryFineProcedure {
 								((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.JUMP_BOOST, (int) 300, (int) 1, (false), (false)));
 							if (entity instanceof LivingEntity)
 								((LivingEntity) entity)
-										.addPotionEffect(new EffectInstance(Effects.HEALTH_BOOST, (int) 300, (int) 5, (false), (false)));
+										.addPotionEffect(new EffectInstance(Effects.HEALTH_BOOST, (int) 300, (int) 7, (false), (false)));
 							new Object() {
 								private int ticks = 0;
 								private float waitTicks;
@@ -340,7 +340,7 @@ public class Scp914WindKeyVeryFineProcedure {
 								private void run() {
 									if (entity instanceof LivingEntity) {
 										((LivingEntity) entity).attackEntityFrom(new DamageSource("scp914veryfine").setDamageBypassesArmor(),
-												(float) 50);
+												(float) 80);
 									}
 									MinecraftForge.EVENT_BUS.unregister(this);
 								}

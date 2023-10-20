@@ -15,6 +15,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -23,12 +24,15 @@ import net.minecraft.entity.Entity;
 import net.minecraft.command.ICommandSource;
 import net.minecraft.command.CommandSource;
 import net.minecraft.block.Blocks;
+import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.advancements.Advancement;
 
 import net.mcreator.scpadditions.ScpAdditionsModVariables;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.function.Function;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.Comparator;
 import java.util.Collections;
 
@@ -377,6 +381,18 @@ public class Scp914WindKey1to1Procedure {
 						}
 						ScpAdditionsModVariables.MapVariables.get(world).Scp914refining = (false);
 						ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
+						if (entity instanceof ServerPlayerEntity) {
+							Advancement _adv = ((MinecraftServer) ((ServerPlayerEntity) entity).server).getAdvancementManager()
+									.getAdvancement(new ResourceLocation("scp_additions:scp_914_metamorphosis"));
+							AdvancementProgress _ap = ((ServerPlayerEntity) entity).getAdvancements().getProgress(_adv);
+							if (!_ap.isDone()) {
+								Iterator _iterator = _ap.getRemaningCriteria().iterator();
+								while (_iterator.hasNext()) {
+									String _criterion = (String) _iterator.next();
+									((ServerPlayerEntity) entity).getAdvancements().grantCriterion(_adv, _criterion);
+								}
+							}
+						}
 						if (Math.random() < 0.25) {
 							{
 								boolean _setval = (true);

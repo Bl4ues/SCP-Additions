@@ -11,7 +11,7 @@
     {
       "name": "SCPAdditions",
       "type": "tab",
-      "sortid": 28,
+      "sortid": 31,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions"
@@ -19,7 +19,7 @@
     {
       "name": "TeslaActive",
       "type": "block",
-      "sortid": 29,
+      "sortid": 32,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active"
@@ -27,7 +27,7 @@
     {
       "name": "TeslaActiveProcedure",
       "type": "procedure",
-      "sortid": 30,
+      "sortid": 33,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_procedure",
@@ -55,7 +55,7 @@
     {
       "name": "TeslaGateUpdateTick",
       "type": "procedure",
-      "sortid": 31,
+      "sortid": 34,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_gate_update_tick",
@@ -83,7 +83,7 @@
     {
       "name": "TeslaTerminal",
       "type": "gui",
-      "sortid": 32,
+      "sortid": 35,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal"
@@ -91,7 +91,7 @@
     {
       "name": "TeslaRecharge",
       "type": "block",
-      "sortid": 33,
+      "sortid": 36,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge"
@@ -99,7 +99,7 @@
     {
       "name": "TeslaRechargeBlockAdded",
       "type": "procedure",
-      "sortid": 34,
+      "sortid": 37,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge_block_added",
@@ -127,7 +127,7 @@
     {
       "name": "TeslaRechargeUpdateTick",
       "type": "procedure",
-      "sortid": 35,
+      "sortid": 38,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge_update_tick",
@@ -155,7 +155,7 @@
     {
       "name": "TeslaActive2",
       "type": "block",
-      "sortid": 36,
+      "sortid": 39,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_2"
@@ -163,7 +163,7 @@
     {
       "name": "TeslaActive3",
       "type": "block",
-      "sortid": 37,
+      "sortid": 40,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_3"
@@ -171,7 +171,7 @@
     {
       "name": "TeslaActive4",
       "type": "block",
-      "sortid": 38,
+      "sortid": 41,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_4"
@@ -179,7 +179,7 @@
     {
       "name": "TeslaActive2BlockAdded",
       "type": "procedure",
-      "sortid": 39,
+      "sortid": 42,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_2_block_added",
@@ -207,7 +207,7 @@
     {
       "name": "TeslaActive3B",
       "type": "procedure",
-      "sortid": 40,
+      "sortid": 43,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_3_b",
@@ -235,7 +235,7 @@
     {
       "name": "TeslaActive4B",
       "type": "procedure",
-      "sortid": 41,
+      "sortid": 44,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_4_b",
@@ -263,7 +263,7 @@
     {
       "name": "TeslaGateRecipe",
       "type": "recipe",
-      "sortid": 42,
+      "sortid": 45,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_gate_recipe"
@@ -279,7 +279,7 @@
     {
       "name": "SecurityCred",
       "type": "recipe",
-      "sortid": 43,
+      "sortid": 46,
       "compiles": true,
       "locked_code": false,
       "registry_name": "security_cred"
@@ -287,7 +287,7 @@
     {
       "name": "TeslaTerminalBlock",
       "type": "block",
-      "sortid": 44,
+      "sortid": 47,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_block"
@@ -295,7 +295,7 @@
     {
       "name": "TeslaTerminalRec",
       "type": "recipe",
-      "sortid": 45,
+      "sortid": 48,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_rec"
@@ -303,7 +303,7 @@
     {
       "name": "TerminalTesla",
       "type": "procedure",
-      "sortid": 46,
+      "sortid": 49,
       "compiles": true,
       "locked_code": false,
       "registry_name": "terminal_tesla",
@@ -343,7 +343,7 @@
     {
       "name": "TeslaTerminalOffP",
       "type": "procedure",
-      "sortid": 47,
+      "sortid": 50,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_off_p",
@@ -375,7 +375,7 @@
     {
       "name": "TerminalOn",
       "type": "procedure",
-      "sortid": 48,
+      "sortid": 51,
       "compiles": true,
       "locked_code": false,
       "registry_name": "terminal_on",
@@ -403,7 +403,7 @@
     {
       "name": "TerminalOff",
       "type": "procedure",
-      "sortid": 49,
+      "sortid": 52,
       "compiles": true,
       "locked_code": false,
       "registry_name": "terminal_off",
@@ -431,7 +431,7 @@
     {
       "name": "TeslaGateOn",
       "type": "gamerule",
-      "sortid": 50,
+      "sortid": 53,
       "compiles": true,
       "locked_code": false,
       "registry_name": "teslaGateOn",
@@ -442,7 +442,7 @@
     {
       "name": "Scp079on",
       "type": "block",
-      "sortid": 6,
+      "sortid": 7,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079on"
@@ -450,7 +450,7 @@
     {
       "name": "Scp079off",
       "type": "block",
-      "sortid": 51,
+      "sortid": 54,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079off"
@@ -458,7 +458,7 @@
     {
       "name": "Scp079onP",
       "type": "procedure",
-      "sortid": 52,
+      "sortid": 55,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079on_p",
@@ -486,7 +486,7 @@
     {
       "name": "Scp079offP",
       "type": "procedure",
-      "sortid": 53,
+      "sortid": 56,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079off_p",
@@ -514,7 +514,7 @@
     {
       "name": "Scp079control",
       "type": "block",
-      "sortid": 54,
+      "sortid": 57,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079control"
@@ -530,7 +530,7 @@
     {
       "name": "Scp079controlOn",
       "type": "gamerule",
-      "sortid": 55,
+      "sortid": 58,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp079controlOn",
@@ -549,7 +549,7 @@
     {
       "name": "SCP079SystemControlP",
       "type": "procedure",
-      "sortid": 56,
+      "sortid": 59,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079_system_control_p",
@@ -565,7 +565,7 @@
     {
       "name": "SCP079SystemControlOff",
       "type": "procedure",
-      "sortid": 57,
+      "sortid": 60,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079_system_control_off",
@@ -581,7 +581,7 @@
     {
       "name": "Scp079controloffUpdateTick",
       "type": "procedure",
-      "sortid": 58,
+      "sortid": 61,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controloff_update_tick",
@@ -609,7 +609,7 @@
     {
       "name": "Scp079controlsystemon",
       "type": "procedure",
-      "sortid": 59,
+      "sortid": 62,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controlsystemon",
@@ -625,7 +625,7 @@
     {
       "name": "Scp079controlonUpdateTick",
       "type": "procedure",
-      "sortid": 60,
+      "sortid": 63,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controlon_update_tick",
@@ -653,7 +653,7 @@
     {
       "name": "Scp330",
       "type": "block",
-      "sortid": 7,
+      "sortid": 8,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330"
@@ -661,7 +661,7 @@
     {
       "name": "Scp330RedCandy",
       "type": "item",
-      "sortid": 23,
+      "sortid": 24,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_red_candy"
@@ -669,7 +669,7 @@
     {
       "name": "Scp330GreenCandy",
       "type": "item",
-      "sortid": 24,
+      "sortid": 25,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_green_candy"
@@ -677,7 +677,7 @@
     {
       "name": "Scp330YellowCandy",
       "type": "item",
-      "sortid": 25,
+      "sortid": 26,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_yellow_candy"
@@ -685,7 +685,7 @@
     {
       "name": "Scp330BlueCandy",
       "type": "item",
-      "sortid": 26,
+      "sortid": 27,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_blue_candy"
@@ -693,7 +693,7 @@
     {
       "name": "RedCandy",
       "type": "procedure",
-      "sortid": 61,
+      "sortid": 64,
       "compiles": true,
       "locked_code": false,
       "registry_name": "red_candy",
@@ -725,7 +725,7 @@
     {
       "name": "GreenCandy",
       "type": "procedure",
-      "sortid": 62,
+      "sortid": 65,
       "compiles": true,
       "locked_code": false,
       "registry_name": "green_candy",
@@ -757,7 +757,7 @@
     {
       "name": "YellowCandy",
       "type": "procedure",
-      "sortid": 63,
+      "sortid": 66,
       "compiles": true,
       "locked_code": false,
       "registry_name": "yellow_candy",
@@ -789,7 +789,7 @@
     {
       "name": "BlueCandy",
       "type": "procedure",
-      "sortid": 64,
+      "sortid": 67,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blue_candy",
@@ -821,7 +821,7 @@
     {
       "name": "Scp330CandyDrop",
       "type": "procedure",
-      "sortid": 65,
+      "sortid": 68,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_drop",
@@ -853,7 +853,7 @@
     {
       "name": "Scp330CandyClear",
       "type": "procedure",
-      "sortid": 66,
+      "sortid": 69,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_clear",
@@ -869,7 +869,7 @@
     {
       "name": "Scp330CandyGive",
       "type": "procedure",
-      "sortid": 67,
+      "sortid": 70,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_give",
@@ -885,7 +885,7 @@
     {
       "name": "Scp330CandyClear2",
       "type": "procedure",
-      "sortid": 68,
+      "sortid": 71,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_clear_2",
@@ -901,7 +901,7 @@
     {
       "name": "Scp330Achievement",
       "type": "achievement",
-      "sortid": 69,
+      "sortid": 72,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_achievement"
@@ -909,7 +909,7 @@
     {
       "name": "Tesla",
       "type": "achievement",
-      "sortid": 70,
+      "sortid": 73,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla"
@@ -917,7 +917,7 @@
     {
       "name": "Scp079",
       "type": "achievement",
-      "sortid": 71,
+      "sortid": 74,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079"
@@ -925,7 +925,7 @@
     {
       "name": "Scp426",
       "type": "block",
-      "sortid": 8,
+      "sortid": 9,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426"
@@ -933,7 +933,7 @@
     {
       "name": "Scp426OnBlockRightClicked",
       "type": "procedure",
-      "sortid": 72,
+      "sortid": 75,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426_on_block_right_clicked",
@@ -949,7 +949,7 @@
     {
       "name": "Scp426Achievement",
       "type": "achievement",
-      "sortid": 73,
+      "sortid": 76,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426_achievement"
@@ -957,7 +957,7 @@
     {
       "name": "SCP572",
       "type": "item",
-      "sortid": 9,
+      "sortid": 10,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572"
@@ -965,7 +965,7 @@
     {
       "name": "SCP572LivingEntityIsHitWithItem",
       "type": "procedure",
-      "sortid": 74,
+      "sortid": 77,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_living_entity_is_hit_with_item",
@@ -981,7 +981,7 @@
     {
       "name": "Scp572AAchievement",
       "type": "achievement",
-      "sortid": 75,
+      "sortid": 78,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_a_achievement"
@@ -989,7 +989,7 @@
     {
       "name": "SCP572ItemInInventoryTick",
       "type": "procedure",
-      "sortid": 76,
+      "sortid": 79,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_item_in_inventory_tick",
@@ -1005,7 +1005,7 @@
     {
       "name": "Scp1176",
       "type": "block",
-      "sortid": 11,
+      "sortid": 12,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176"
@@ -1013,7 +1013,7 @@
     {
       "name": "Scp1176honey",
       "type": "item",
-      "sortid": 27,
+      "sortid": 28,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176honey"
@@ -1021,7 +1021,7 @@
     {
       "name": "Scp1176Achievement",
       "type": "achievement",
-      "sortid": 77,
+      "sortid": 80,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_achievement"
@@ -1029,7 +1029,7 @@
     {
       "name": "Scp1176UpdateTick",
       "type": "procedure",
-      "sortid": 78,
+      "sortid": 81,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_update_tick",
@@ -1057,7 +1057,7 @@
     {
       "name": "SCPAdditionsAch",
       "type": "achievement",
-      "sortid": 79,
+      "sortid": 82,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions_ach"
@@ -1065,7 +1065,7 @@
     {
       "name": "BloodType1",
       "type": "procedure",
-      "sortid": 80,
+      "sortid": 83,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_type_1",
@@ -1081,7 +1081,7 @@
     {
       "name": "BloodTypeOverlay",
       "type": "overlay",
-      "sortid": 81,
+      "sortid": 84,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_type_overlay"
@@ -1089,7 +1089,7 @@
     {
       "name": "BloodTypeOverlayDisplayOverlayIngame",
       "type": "procedure",
-      "sortid": 82,
+      "sortid": 85,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_type_overlay_display_overlay_ingame",
@@ -1106,7 +1106,7 @@
     {
       "name": "OverlayOpos",
       "type": "procedure",
-      "sortid": 83,
+      "sortid": 86,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_opos",
@@ -1123,7 +1123,7 @@
     {
       "name": "OverlayApos",
       "type": "procedure",
-      "sortid": 84,
+      "sortid": 87,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_apos",
@@ -1140,7 +1140,7 @@
     {
       "name": "OverlayAneg",
       "type": "procedure",
-      "sortid": 85,
+      "sortid": 88,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_aneg",
@@ -1157,7 +1157,7 @@
     {
       "name": "OverlayBpos",
       "type": "procedure",
-      "sortid": 86,
+      "sortid": 89,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_bpos",
@@ -1174,7 +1174,7 @@
     {
       "name": "OverlayBneg",
       "type": "procedure",
-      "sortid": 87,
+      "sortid": 90,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_bneg",
@@ -1191,7 +1191,7 @@
     {
       "name": "OverlayABpos",
       "type": "procedure",
-      "sortid": 88,
+      "sortid": 91,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_a_bpos",
@@ -1208,7 +1208,7 @@
     {
       "name": "OverlayABneg",
       "type": "procedure",
-      "sortid": 89,
+      "sortid": 92,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_a_bneg",
@@ -1225,7 +1225,7 @@
     {
       "name": "BloodOverlayOpos",
       "type": "overlay",
-      "sortid": 90,
+      "sortid": 93,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_opos"
@@ -1233,7 +1233,7 @@
     {
       "name": "BloodOverlayApos",
       "type": "overlay",
-      "sortid": 91,
+      "sortid": 94,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_apos"
@@ -1241,7 +1241,7 @@
     {
       "name": "BloodOverlayAneg",
       "type": "overlay",
-      "sortid": 92,
+      "sortid": 95,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_aneg"
@@ -1249,7 +1249,7 @@
     {
       "name": "BloodOverlayBpos",
       "type": "overlay",
-      "sortid": 93,
+      "sortid": 96,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_bpos"
@@ -1257,7 +1257,7 @@
     {
       "name": "BloodOverlayBneg",
       "type": "overlay",
-      "sortid": 94,
+      "sortid": 97,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_bneg"
@@ -1265,7 +1265,7 @@
     {
       "name": "BloodOverlayABpos",
       "type": "overlay",
-      "sortid": 95,
+      "sortid": 98,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_a_bpos"
@@ -1273,7 +1273,7 @@
     {
       "name": "BloodOverlayABneg",
       "type": "overlay",
-      "sortid": 96,
+      "sortid": 99,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_a_bneg"
@@ -1281,7 +1281,7 @@
     {
       "name": "Scp1176honeyPlayerFinishesUsingItem",
       "type": "procedure",
-      "sortid": 97,
+      "sortid": 100,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176honey_player_finishes_using_item",
@@ -1313,7 +1313,7 @@
     {
       "name": "Scp1176OnBlockRightClicked",
       "type": "procedure",
-      "sortid": 98,
+      "sortid": 101,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_on_block_right_clicked",
@@ -1345,7 +1345,7 @@
     {
       "name": "Sugar",
       "type": "recipe",
-      "sortid": 99,
+      "sortid": 102,
       "compiles": true,
       "locked_code": false,
       "registry_name": "sugar"
@@ -1353,7 +1353,7 @@
     {
       "name": "HoneyBlock",
       "type": "recipe",
-      "sortid": 100,
+      "sortid": 103,
       "compiles": true,
       "locked_code": false,
       "registry_name": "honey_block"
@@ -1361,7 +1361,7 @@
     {
       "name": "Scp902Closed",
       "type": "block",
-      "sortid": 10,
+      "sortid": 11,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed"
@@ -1369,7 +1369,7 @@
     {
       "name": "Scp902Open",
       "type": "block",
-      "sortid": 101,
+      "sortid": 104,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_open"
@@ -1377,7 +1377,7 @@
     {
       "name": "Scp902ClosedUpdateTick",
       "type": "procedure",
-      "sortid": 102,
+      "sortid": 105,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed_update_tick",
@@ -1405,7 +1405,7 @@
     {
       "name": "Scp902ClosedOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 103,
+      "sortid": 106,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed_on_block_right_clicked",
@@ -1437,7 +1437,7 @@
     {
       "name": "Scp902OpenOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 104,
+      "sortid": 107,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_open_on_block_right_clicked",
@@ -1465,7 +1465,7 @@
     {
       "name": "Scp902Achievement",
       "type": "achievement",
-      "sortid": 105,
+      "sortid": 108,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_achievement"
@@ -1473,7 +1473,7 @@
     {
       "name": "SCPAdditionsAchievement",
       "type": "procedure",
-      "sortid": 106,
+      "sortid": 109,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions_achievement",
@@ -1489,7 +1489,7 @@
     {
       "name": "ButtonRoff",
       "type": "block",
-      "sortid": 12,
+      "sortid": 13,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_roff"
@@ -1497,7 +1497,7 @@
     {
       "name": "ButtonLoff",
       "type": "block",
-      "sortid": 13,
+      "sortid": 14,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_loff"
@@ -1505,7 +1505,7 @@
     {
       "name": "ButtonRon",
       "type": "block",
-      "sortid": 107,
+      "sortid": 110,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_ron"
@@ -1513,7 +1513,7 @@
     {
       "name": "ButtonLon",
       "type": "block",
-      "sortid": 108,
+      "sortid": 111,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_lon"
@@ -1521,7 +1521,7 @@
     {
       "name": "ButtonRoffOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 109,
+      "sortid": 112,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_roff_on_block_right_clicked",
@@ -1549,7 +1549,7 @@
     {
       "name": "ButtonLoffOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 110,
+      "sortid": 113,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_loff_on_block_right_clicked",
@@ -1577,7 +1577,7 @@
     {
       "name": "ButtonRonBlockAdded",
       "type": "procedure",
-      "sortid": 111,
+      "sortid": 114,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_ron_block_added",
@@ -1605,7 +1605,7 @@
     {
       "name": "ButtonLonBlockAdded",
       "type": "procedure",
-      "sortid": 112,
+      "sortid": 115,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_lon_block_added",
@@ -1633,7 +1633,7 @@
     {
       "name": "ButtonRight",
       "type": "recipe",
-      "sortid": 113,
+      "sortid": 116,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_right"
@@ -1641,7 +1641,7 @@
     {
       "name": "ButtonLeft",
       "type": "recipe",
-      "sortid": 114,
+      "sortid": 117,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_left"
@@ -1649,7 +1649,7 @@
     {
       "name": "ButtonRightSwap",
       "type": "recipe",
-      "sortid": 115,
+      "sortid": 118,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_right_swap"
@@ -1657,7 +1657,7 @@
     {
       "name": "ButtonLeftSwap",
       "type": "recipe",
-      "sortid": 116,
+      "sortid": 119,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_left_swap"
@@ -1665,7 +1665,7 @@
     {
       "name": "Scp914block",
       "type": "block",
-      "sortid": 14,
+      "sortid": 15,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914block"
@@ -1673,7 +1673,7 @@
     {
       "name": "Scp914body",
       "type": "block",
-      "sortid": 16,
+      "sortid": 17,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914body"
@@ -1681,7 +1681,7 @@
     {
       "name": "Scp914dial1to1",
       "type": "block",
-      "sortid": 17,
+      "sortid": 18,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_1to_1"
@@ -1689,7 +1689,7 @@
     {
       "name": "Scp914dialRough",
       "type": "block",
-      "sortid": 117,
+      "sortid": 120,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_rough"
@@ -1697,7 +1697,7 @@
     {
       "name": "Scp914dialCoarse",
       "type": "block",
-      "sortid": 118,
+      "sortid": 121,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_coarse"
@@ -1705,7 +1705,7 @@
     {
       "name": "Scp914dialFine",
       "type": "block",
-      "sortid": 119,
+      "sortid": 122,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_fine"
@@ -1713,7 +1713,7 @@
     {
       "name": "Scp914dialVeryFine",
       "type": "block",
-      "sortid": 120,
+      "sortid": 123,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_very_fine"
@@ -1721,7 +1721,7 @@
     {
       "name": "Scp914Gui",
       "type": "gui",
-      "sortid": 121,
+      "sortid": 124,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_gui"
@@ -1729,7 +1729,7 @@
     {
       "name": "Scp914to1to1",
       "type": "procedure",
-      "sortid": 122,
+      "sortid": 125,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_1to_1",
@@ -1757,7 +1757,7 @@
     {
       "name": "Scp914toRough",
       "type": "procedure",
-      "sortid": 123,
+      "sortid": 126,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_rough",
@@ -1785,7 +1785,7 @@
     {
       "name": "Scp914toCoarse",
       "type": "procedure",
-      "sortid": 124,
+      "sortid": 127,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_coarse",
@@ -1813,7 +1813,7 @@
     {
       "name": "Scp914toFine",
       "type": "procedure",
-      "sortid": 125,
+      "sortid": 128,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_fine",
@@ -1841,7 +1841,7 @@
     {
       "name": "Scp914toVeryFine",
       "type": "procedure",
-      "sortid": 126,
+      "sortid": 129,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_very_fine",
@@ -1869,7 +1869,7 @@
     {
       "name": "Scp914dialRoughBlockDestroyedByPlayer",
       "type": "procedure",
-      "sortid": 127,
+      "sortid": 130,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_rough_block_destroyed_by_player",
@@ -1885,7 +1885,7 @@
     {
       "name": "Scp914clockworks",
       "type": "block",
-      "sortid": 15,
+      "sortid": 16,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks"
@@ -1893,7 +1893,7 @@
     {
       "name": "Scp914clockworks2",
       "type": "block",
-      "sortid": 128,
+      "sortid": 131,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_2"
@@ -1901,7 +1901,7 @@
     {
       "name": "Scp914clockworksUpdateTick",
       "type": "procedure",
-      "sortid": 129,
+      "sortid": 132,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_update_tick",
@@ -1929,7 +1929,7 @@
     {
       "name": "Scp914WindKey",
       "type": "procedure",
-      "sortid": 130,
+      "sortid": 133,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key",
@@ -1961,7 +1961,7 @@
     {
       "name": "Scp914Achievement",
       "type": "achievement",
-      "sortid": 131,
+      "sortid": 134,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_achievement"
@@ -1969,7 +1969,7 @@
     {
       "name": "PlayerSkinChangeScp914",
       "type": "procedure",
-      "sortid": 132,
+      "sortid": 135,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_change_scp_914",
@@ -1985,7 +1985,7 @@
     {
       "name": "Scp9141to1PlayerReset",
       "type": "procedure",
-      "sortid": 133,
+      "sortid": 136,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_9141to_1_player_reset",
@@ -2001,7 +2001,7 @@
     {
       "name": "Scp9141to1PlayerReset2",
       "type": "procedure",
-      "sortid": 134,
+      "sortid": 137,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_9141to_1_player_reset_2",
@@ -2017,7 +2017,7 @@
     {
       "name": "PlayerSkin2",
       "type": "procedure",
-      "sortid": 135,
+      "sortid": 138,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_2",
@@ -2033,7 +2033,7 @@
     {
       "name": "PlayerSkin3",
       "type": "procedure",
-      "sortid": 136,
+      "sortid": 139,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_3",
@@ -2049,7 +2049,7 @@
     {
       "name": "PlayerSkin4",
       "type": "procedure",
-      "sortid": 137,
+      "sortid": 140,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_4",
@@ -2065,7 +2065,7 @@
     {
       "name": "PlayerSkin5",
       "type": "procedure",
-      "sortid": 138,
+      "sortid": 141,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_5",
@@ -2081,7 +2081,7 @@
     {
       "name": "PlayerSkin6",
       "type": "procedure",
-      "sortid": 139,
+      "sortid": 142,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_6",
@@ -2097,7 +2097,7 @@
     {
       "name": "PlayerSkin7",
       "type": "procedure",
-      "sortid": 140,
+      "sortid": 143,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_7",
@@ -2113,7 +2113,7 @@
     {
       "name": "PlayerSkin8",
       "type": "procedure",
-      "sortid": 141,
+      "sortid": 144,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_8",
@@ -2129,7 +2129,7 @@
     {
       "name": "PlayerSkin9",
       "type": "procedure",
-      "sortid": 142,
+      "sortid": 145,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_9",
@@ -2145,7 +2145,7 @@
     {
       "name": "PlayerSkin10",
       "type": "procedure",
-      "sortid": 143,
+      "sortid": 146,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_10",
@@ -2161,7 +2161,7 @@
     {
       "name": "PlayerSkin11",
       "type": "procedure",
-      "sortid": 144,
+      "sortid": 147,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_11",
@@ -2177,7 +2177,7 @@
     {
       "name": "Scp914Intake",
       "type": "block",
-      "sortid": 19,
+      "sortid": 20,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake"
@@ -2185,7 +2185,7 @@
     {
       "name": "Scp914Output",
       "type": "block",
-      "sortid": 20,
+      "sortid": 21,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output"
@@ -2193,7 +2193,7 @@
     {
       "name": "Scp914clockworks2BlockAdded",
       "type": "procedure",
-      "sortid": 145,
+      "sortid": 148,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_2_block_added",
@@ -2221,7 +2221,7 @@
     {
       "name": "Scp914clockworksBlockAdded",
       "type": "procedure",
-      "sortid": 146,
+      "sortid": 149,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_block_added",
@@ -2249,7 +2249,7 @@
     {
       "name": "Scp914OutputDoor",
       "type": "block",
-      "sortid": 22,
+      "sortid": 23,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door"
@@ -2257,7 +2257,7 @@
     {
       "name": "Scp914OutputDoorClosed",
       "type": "block",
-      "sortid": 147,
+      "sortid": 150,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_closed"
@@ -2265,7 +2265,7 @@
     {
       "name": "Scp914IntakeDoor",
       "type": "block",
-      "sortid": 21,
+      "sortid": 22,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door"
@@ -2273,7 +2273,7 @@
     {
       "name": "Scp914IntakeDoorClosed",
       "type": "block",
-      "sortid": 148,
+      "sortid": 151,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_closed"
@@ -2281,7 +2281,7 @@
     {
       "name": "Scp914OutputDoorUpdateTick",
       "type": "procedure",
-      "sortid": 149,
+      "sortid": 152,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_update_tick",
@@ -2309,7 +2309,7 @@
     {
       "name": "Scp914IntakeDoorUpdateTick",
       "type": "procedure",
-      "sortid": 150,
+      "sortid": 153,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_update_tick",
@@ -2337,7 +2337,7 @@
     {
       "name": "Scp914OutputDoorClosedBlockAdded",
       "type": "procedure",
-      "sortid": 151,
+      "sortid": 154,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_closed_block_added",
@@ -2365,7 +2365,7 @@
     {
       "name": "Scp914IntakeDoorClosedBlockAdded",
       "type": "procedure",
-      "sortid": 152,
+      "sortid": 155,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_closed_block_added",
@@ -2393,7 +2393,7 @@
     {
       "name": "Scp914WindKeyRough",
       "type": "procedure",
-      "sortid": 155,
+      "sortid": 156,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_rough",
@@ -2425,7 +2425,7 @@
     {
       "name": "Scp914WindKeyCoarse",
       "type": "procedure",
-      "sortid": 156,
+      "sortid": 157,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_coarse",
@@ -2457,7 +2457,7 @@
     {
       "name": "Scp914WindKey1to1",
       "type": "procedure",
-      "sortid": 157,
+      "sortid": 158,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_1to_1",
@@ -2489,7 +2489,7 @@
     {
       "name": "Scp914WindKeyFine",
       "type": "procedure",
-      "sortid": 158,
+      "sortid": 159,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_fine",
@@ -2521,7 +2521,7 @@
     {
       "name": "Scp914WindKeyVeryFine",
       "type": "procedure",
-      "sortid": 159,
+      "sortid": 160,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_very_fine",
@@ -2553,7 +2553,7 @@
     {
       "name": "Scp914KeyWind",
       "type": "block",
-      "sortid": 18,
+      "sortid": 19,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_key_wind"
@@ -2561,7 +2561,7 @@
     {
       "name": "Scp914werehouse",
       "type": "structure",
-      "sortid": 160,
+      "sortid": 161,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914werehouse"
@@ -2569,7 +2569,7 @@
     {
       "name": "Scp330house",
       "type": "structure",
-      "sortid": 161,
+      "sortid": 162,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330house"
@@ -2577,7 +2577,7 @@
     {
       "name": "PlayingCard",
       "type": "item",
-      "sortid": 162,
+      "sortid": 29,
       "compiles": true,
       "locked_code": false,
       "registry_name": "playing_card"
@@ -2585,10 +2585,134 @@
     {
       "name": "CreditCard",
       "type": "item",
-      "sortid": 163,
+      "sortid": 30,
       "compiles": true,
       "locked_code": false,
       "registry_name": "credit_card"
+    },
+    {
+      "name": "Scp059",
+      "type": "block",
+      "sortid": 6,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_059"
+    },
+    {
+      "name": "DeltaRadiation",
+      "type": "potioneffect",
+      "sortid": 163,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "delta_radiation"
+    },
+    {
+      "name": "Scp059Adv",
+      "type": "achievement",
+      "sortid": 164,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_059_adv"
+    },
+    {
+      "name": "Scp059UpdateTick",
+      "type": "procedure",
+      "sortid": 164,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_059_update_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeltaRadiationOnEffectActiveTick",
+      "type": "procedure",
+      "sortid": 165,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "delta_radiation_on_effect_active_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Scp059inhand",
+      "type": "procedure",
+      "sortid": 166,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_059inhand",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Scp059Achievement2",
+      "type": "achievement",
+      "sortid": 167,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_059_achievement_2"
+    },
+    {
+      "name": "Scp914Metamorphosis",
+      "type": "achievement",
+      "sortid": 168,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_914_metamorphosis"
+    },
+    {
+      "name": "Scp059Rebirth",
+      "type": "achievement",
+      "sortid": 169,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_059_rebirth"
     }
   ],
   "variable_elements": [
@@ -2920,10 +3044,13 @@
       "block.scp_additions.tesla_active_2": "Tesla Gate AC2",
       "subtitles.terminalon": "Tesla Terminal On",
       "block.scp_additions.tesla_active_4": "Tesla Gate AC4",
+      "effect.delta_radiation": "Delta Radiation",
       "subtitles.teslaready": "Tesla Gate preparing",
       "block.scp_additions.scp_914body": "SCP-914 body",
       "item.scp_additions.credit_card": "Credit Card",
+      "advancements.scp_059_rebirth.title": "In the blue light of heaven",
       "block.scp_additions.scp_914_output": "SCP-914 Output",
+      "advancements.scp_914_metamorphosis.descr": "Got \"refined\" by SCP-914 on the \"1:1\" setting.",
       "subtitles.scp079_1": "SCP-079 noise",
       "block.scp_additions.scp_079control": "Scp-079 Control (ON)",
       "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
@@ -2932,6 +3059,7 @@
       "advancements.scp_426_achievement.title": "Identity Crisis",
       "advancements.scp_1176_achievement.title": "Cursed Honey",
       "death.attack.teslagate": "%s was electrocuted by the Tesla Gate at [REDACTED].",
+      "advancements.scp_059_adv.descr": "You got Delta Radiation Poisoning from SCP-059",
       "block.scp_additions.scp_914_output_door_closed": "SCP-914 Output Door Closed",
       "item.scp_additions.scp_330_yellow_candy": "Yellow Candy from SCP-330",
       "gamerule.scp079controlOn.description": "If SCP-079 has control over the facility",
@@ -2960,6 +3088,7 @@
       "subtitles.terminaloff": "Tesla Terminal Off",
       "advancements.scp_902_achievement.descr": "Opened SCP-902.",
       "subtitles.scp914dooropen": "SCP-914 door opening",
+      "advancements.scp_059_achievement_2.descr": "You took SCP-059 in your hands.",
       "subtitles.scp914dial": "SCP-914 dial",
       "advancements.scp_1176_achievement.descr": "Found SCP-1176.",
       "subtitles.scp902closing": "SCP-902 closing",
@@ -2972,11 +3101,13 @@
       "gamerule.teslaGateOn": "If Tesla Gates are on",
       "block.scp_additions.button_roff": "Button (Right)",
       "block.scp_additions.scp_914_intake_door": "SCP-914 Intake Door",
+      "advancements.scp_059_rebirth.descr": "Got infected with SCP-059-1.",
       "death.attack.scp914fine": "%s died to heart attack after being \"refined\" by SCP-914 on the \"Fine\" setting.",
       "block.scp_additions.tesla_active": "Tesla Gate AC1",
       "block.scp_additions.scp_079off": "SCP-079",
       "advancements.scp_902_achievement.title": "What\u0027s Inside the Box?",
       "advancements.scp_426_achievement.descr": "Found SCP-426.",
+      "advancements.scp_059_adv.title": "Delta Decay",
       "block.scp_additions.tesla_terminal_block": "Tesla Terminal (On)",
       "block.scp_additions.scp_079_system_control": "SCP-079 System Control",
       "subtitles.teslarecharge": "Tesla Gate recharging",
@@ -2989,11 +3120,13 @@
       "subtitles.scp914doorclose": "SCP-914 door closing",
       "block.scp_additions.scp_914dial_very_fine": "SCP-914 dial",
       "subtitles.scp330death": "SCP-330 blood loss",
+      "advancements.scp_059_achievement_2.title": "Reckless Contamination",
       "block.scp_additions.tesla_gate": "Tesla Gate",
       "advancements.scp_572_a_achievement.descr": "Congratulations! You\u0027re the chosen one...",
       "item.scp_additions.scp_1176honey": "Honey Bottle",
       "block.scp_additions.button_lon": "Button (Left) ON",
       "subtitles.click": "Teslta Terminal Click",
+      "death.attack.scp059delta": "%s died of Delta radiation poisoning from SCP-059.",
       "item.scp_additions.scp_330_green_candy": "Green Candy from SCP-330",
       "advancements.scp_additions_ach.descr": "Unravel the secrets of the SCP Foundation.",
       "advancements.scp_additions_ach.title": "SCP Additions",
@@ -3004,9 +3137,11 @@
       "block.scp_additions.scp_914block": "SCP-914 Block",
       "subtitles.scp914refining": "SCP-914 refining",
       "death.attack.scp914coarse": "%s died of blood loss after being \"refined\" by SCP-914 on the \"Coarse\" setting.",
+      "block.scp_additions.scp_059": "SCP-059",
       "item.scp_additions.scp_572": "SCP-572",
       "block.scp_additions.scp_330": "SCP-330",
       "block.scp_additions.scp_914clockworks": "SCP-914 Clockworks",
+      "advancements.scp_914_metamorphosis.title": "Metamorphosis",
       "block.scp_additions.scp_079controloff": "Scp-079 Control",
       "advancements.scp_330_achievement.descr": "Took more than two candies from SCP-330. Need a hand?",
       "advancements.scp_572_a_achievement.title": "Blade of Delusions",

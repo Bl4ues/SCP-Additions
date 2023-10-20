@@ -1,0 +1,20 @@
+{
+  "_fv": 33,
+  "_type": "potioneffect",
+  "definition": {
+    "effectName": "Delta Radiation",
+    "icon": "scp059text.png",
+    "color": {
+      "value": -16750849,
+      "falpha": 0.0
+    },
+    "isInstant": true,
+    "isBad": true,
+    "isBenefitical": false,
+    "renderStatusInInventory": true,
+    "renderStatusInHUD": true,
+    "onActiveTick": {
+      "name": "DeltaRadiationOnEffectActiveTick"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "variants": {
+    "face=floor,facing=north": {
+      "model": "scp_additions:block/scp_059"
+    },
+    "face=floor,facing=east": {
+      "model": "scp_additions:block/scp_059",
+      "y": 90
+    },
+    "face=floor,facing=south": {
+      "model": "scp_additions:block/scp_059",
+      "y": 180
+    },
+    "face=floor,facing=west": {
+      "model": "scp_additions:block/scp_059",
+      "y": 270
+    },
+    "face=wall,facing=north": {
+      "model": "scp_additions:block/scp_059",
+      "x": 90
+    },
+    "face=wall,facing=east": {
+      "model": "scp_additions:block/scp_059",
+      "x": 90,
+      "y": 90
+    },
+    "face=wall,facing=south": {
+      "model": "scp_additions:block/scp_059",
+      "x": 90,
+      "y": 180
+    },
+    "face=wall,facing=west": {
+      "model": "scp_additions:block/scp_059",
+      "x": 90,
+      "y": 270
+    },
+    "face=ceiling,facing=north": {
+      "model": "scp_additions:block/scp_059",
+      "x": 180,
+      "y": 180
+    },
+    "face=ceiling,facing=east": {
+      "model": "scp_additions:block/scp_059",
+      "x": 180,
+      "y": 270
+    },
+    "face=ceiling,facing=south": {
+      "model": "scp_additions:block/scp_059",
+      "x": 180
+    },
+    "face=ceiling,facing=west": {
+      "model": "scp_additions:block/scp_059",
+      "x": 180,
+      "y": 90
+    }
+  }
+}

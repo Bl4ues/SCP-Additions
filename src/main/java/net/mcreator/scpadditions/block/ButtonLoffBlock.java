@@ -59,7 +59,7 @@ public class ButtonLoffBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public ButtonLoffBlock(ScpAdditionsModElements instance) {
-		super(instance, 13);
+		super(instance, 14);
 	}
 
 	@Override

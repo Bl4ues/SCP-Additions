@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_additions:scp_059"
+    },
+    "title": {
+      "translate": "advancements.scp_059_achievement_2.title"
+    },
+    "description": {
+      "translate": "advancements.scp_059_achievement_2.descr"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "scp_059_achievement_2": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_additions:scp_059_adv"
+}

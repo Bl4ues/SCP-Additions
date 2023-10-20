@@ -13,7 +13,7 @@ public class TeslaGateOnGameRule extends ScpAdditionsModElements.ModElement {
 	public static final GameRules.RuleKey<GameRules.BooleanValue> gamerule = GameRules.register("teslaGateOn", GameRules.Category.MISC, create(true));
 
 	public TeslaGateOnGameRule(ScpAdditionsModElements instance) {
-		super(instance, 50);
+		super(instance, 53);
 	}
 
 	public static GameRules.RuleType<GameRules.BooleanValue> create(boolean defaultValue) {

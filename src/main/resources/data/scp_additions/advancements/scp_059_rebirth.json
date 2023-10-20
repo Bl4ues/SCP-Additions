@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_additions:scp_059"
+    },
+    "title": {
+      "translate": "advancements.scp_059_rebirth.title"
+    },
+    "description": {
+      "translate": "advancements.scp_059_rebirth.descr"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "scp_059_rebirth": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "scp_additions:scp_059_adv"
+}

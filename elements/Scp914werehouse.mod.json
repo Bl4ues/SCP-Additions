@@ -5,7 +5,7 @@
     "structure": "scp914werehouse",
     "randomlyRotateStructure": false,
     "surfaceDetectionType": "First motion blocking block",
-    "spawnProbability": 100,
+    "spawnProbability": 1,
     "minCountPerChunk": 1,
     "maxCountPerChunk": 1,
     "spawnLocation": "Ground",

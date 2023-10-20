@@ -61,7 +61,7 @@ public class Scp426Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp426Block(ScpAdditionsModElements instance) {
-		super(instance, 8);
+		super(instance, 9);
 	}
 
 	@Override

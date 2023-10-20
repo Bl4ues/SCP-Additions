@@ -65,7 +65,7 @@ public class Scp914dialVeryFineBlock extends ScpAdditionsModElements.ModElement 
 	public static final Block block = null;
 
 	public Scp914dialVeryFineBlock(ScpAdditionsModElements instance) {
-		super(instance, 120);
+		super(instance, 123);
 	}
 
 	@Override

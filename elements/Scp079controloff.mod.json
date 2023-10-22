@@ -37,7 +37,7 @@
     "specialInfo": [
       "Place it directly at redstone activated blocks like doors to make it possible for SCP-079 to control it."
     ],
-    "hardness": 1.0,
+    "hardness": 30.0,
     "resistance": 10.0,
     "hasGravity": false,
     "isWaterloggable": true,

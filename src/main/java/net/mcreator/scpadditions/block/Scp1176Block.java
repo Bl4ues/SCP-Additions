@@ -60,7 +60,7 @@ public class Scp1176Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp1176Block(ScpAdditionsModElements instance) {
-		super(instance, 12);
+		super(instance, 16);
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class Scp1176Block extends ScpAdditionsModElements.ModElement {
 		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.ROCK).sound(SoundType.STONE).hardnessAndResistance(10f, 10f).setLightLevel(s -> 0).harvestLevel(1)
+			super(Block.Properties.create(Material.ROCK).sound(SoundType.STONE).hardnessAndResistance(30f, 10f).setLightLevel(s -> 0).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
 			setRegistryName("scp_1176");

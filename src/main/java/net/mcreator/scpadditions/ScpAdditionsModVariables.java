@@ -114,6 +114,9 @@ public class ScpAdditionsModVariables {
 		public boolean Scp914Fine = false;
 		public boolean Scp914VeryFine = false;
 		public boolean Scp914refining = false;
+		public double RandomX = 0;
+		public double RandomY = 0;
+		public double RandomZ = 0;
 
 		public MapVariables() {
 			super(DATA_NAME);
@@ -131,6 +134,9 @@ public class ScpAdditionsModVariables {
 			Scp914Fine = nbt.getBoolean("Scp914Fine");
 			Scp914VeryFine = nbt.getBoolean("Scp914VeryFine");
 			Scp914refining = nbt.getBoolean("Scp914refining");
+			RandomX = nbt.getDouble("RandomX");
+			RandomY = nbt.getDouble("RandomY");
+			RandomZ = nbt.getDouble("RandomZ");
 		}
 
 		@Override
@@ -141,6 +147,9 @@ public class ScpAdditionsModVariables {
 			nbt.putBoolean("Scp914Fine", Scp914Fine);
 			nbt.putBoolean("Scp914VeryFine", Scp914VeryFine);
 			nbt.putBoolean("Scp914refining", Scp914refining);
+			nbt.putDouble("RandomX", RandomX);
+			nbt.putDouble("RandomY", RandomY);
+			nbt.putDouble("RandomZ", RandomZ);
 			return nbt;
 		}
 

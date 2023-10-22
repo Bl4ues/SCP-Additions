@@ -65,7 +65,7 @@ public class Scp914dialRoughBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914dialRoughBlock(ScpAdditionsModElements instance) {
-		super(instance, 120);
+		super(instance, 124);
 	}
 
 	@Override
@@ -84,7 +84,7 @@ public class Scp914dialRoughBlock extends ScpAdditionsModElements.ModElement {
 		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(20f, 35f).setLightLevel(s -> 0).harvestLevel(1)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 35f).setLightLevel(s -> 0).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
 			setRegistryName("scp_914dial_rough");

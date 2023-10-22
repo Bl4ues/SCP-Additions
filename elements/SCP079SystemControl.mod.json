@@ -37,7 +37,7 @@
     "specialInfo": [
       "Activate it with redstone to give control to SCP-079."
     ],
-    "hardness": 1.0,
+    "hardness": 30.0,
     "resistance": 10.0,
     "hasGravity": false,
     "isWaterloggable": true,

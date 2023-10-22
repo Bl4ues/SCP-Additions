@@ -52,7 +52,7 @@ public class Scp914KeyWindBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914KeyWindBlock(ScpAdditionsModElements instance) {
-		super(instance, 19);
+		super(instance, 23);
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class Scp914KeyWindBlock extends ScpAdditionsModElements.ModElement {
 		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(20f, 10f).setLightLevel(s -> 0)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 30f).setLightLevel(s -> 0)
 					.doesNotBlockMovement().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
 			setRegistryName("scp_914_key_wind");

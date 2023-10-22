@@ -1,0 +1,10 @@
+{
+  "mappings": {
+    "default": {
+      "map": {
+        "0": "scp059_1"
+      },
+      "name": "default"
+    }
+  }
+}

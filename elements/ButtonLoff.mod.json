@@ -35,7 +35,7 @@
     ],
     "name": "Button (Left)",
     "specialInfo": [],
-    "hardness": 10.0,
+    "hardness": 30.0,
     "resistance": 20.0,
     "hasGravity": false,
     "isWaterloggable": true,

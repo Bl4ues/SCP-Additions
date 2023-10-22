@@ -61,7 +61,7 @@ public class Scp330Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp330Block(ScpAdditionsModElements instance) {
-		super(instance, 8);
+		super(instance, 12);
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public class Scp330Block extends ScpAdditionsModElements.ModElement {
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(1f, 10f).setLightLevel(s -> 0).notSolid()
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 10f).setLightLevel(s -> 0).notSolid()
 					.setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
 			setRegistryName("scp_330");

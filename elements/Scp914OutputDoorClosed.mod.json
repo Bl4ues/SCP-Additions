@@ -35,7 +35,7 @@
     ],
     "name": "SCP-914 Output Door Closed",
     "specialInfo": [],
-    "hardness": 20.0,
+    "hardness": 30.0,
     "resistance": 30.0,
     "hasGravity": false,
     "isWaterloggable": false,

@@ -51,7 +51,7 @@ public class Scp914OutputDoorBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914OutputDoorBlock(ScpAdditionsModElements instance) {
-		super(instance, 23);
+		super(instance, 27);
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class Scp914OutputDoorBlock extends ScpAdditionsModElements.ModElement {
 		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(20f, 30f).setLightLevel(s -> 0).harvestLevel(1)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 30f).setLightLevel(s -> 0).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
 			setRegistryName("scp_914_output_door");

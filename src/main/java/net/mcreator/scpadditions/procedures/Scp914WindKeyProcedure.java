@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.AbstractMap;
 
 public class Scp914WindKeyProcedure {
@@ -83,31 +84,15 @@ public class Scp914WindKeyProcedure {
 					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 		} else {
 			if (ScpAdditionsModVariables.MapVariables.get(world).Scp914Coarse) {
-				Scp914WindKeyCoarseProcedure.executeProcedure(Stream
-						.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x),
-								new AbstractMap.SimpleEntry<>("y", y), new AbstractMap.SimpleEntry<>("z", z),
-								new AbstractMap.SimpleEntry<>("entity", entity))
-						.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
+				Scp914WindKeyCoarseProcedure.executeProcedure(Collections.emptyMap());
 			} else {
 				if (ScpAdditionsModVariables.MapVariables.get(world).Scp914OneToOne) {
-					Scp914WindKey1to1Procedure.executeProcedure(Stream
-							.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x),
-									new AbstractMap.SimpleEntry<>("y", y), new AbstractMap.SimpleEntry<>("z", z),
-									new AbstractMap.SimpleEntry<>("entity", entity))
-							.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
+					Scp914WindKey1to1Procedure.executeProcedure(Collections.emptyMap());
 				} else {
 					if (ScpAdditionsModVariables.MapVariables.get(world).Scp914Fine) {
-						Scp914WindKeyFineProcedure.executeProcedure(Stream
-								.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x),
-										new AbstractMap.SimpleEntry<>("y", y), new AbstractMap.SimpleEntry<>("z", z),
-										new AbstractMap.SimpleEntry<>("entity", entity))
-								.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
+						Scp914WindKeyFineProcedure.executeProcedure(Collections.emptyMap());
 					} else {
-						Scp914WindKeyVeryFineProcedure.executeProcedure(Stream
-								.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x),
-										new AbstractMap.SimpleEntry<>("y", y), new AbstractMap.SimpleEntry<>("z", z),
-										new AbstractMap.SimpleEntry<>("entity", entity))
-								.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
+						Scp914WindKeyVeryFineProcedure.executeProcedure(Collections.emptyMap());
 					}
 				}
 			}

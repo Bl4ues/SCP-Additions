@@ -98,7 +98,7 @@
     ],
     "name": "Tesla Gate AC2",
     "specialInfo": [],
-    "hardness": 20.0,
+    "hardness": 30.0,
     "resistance": 100.0,
     "hasGravity": false,
     "isWaterloggable": true,

@@ -44,7 +44,7 @@
     ],
     "name": "SCP-914 body",
     "specialInfo": [],
-    "hardness": 20.0,
+    "hardness": 30.0,
     "resistance": 30.0,
     "hasGravity": false,
     "isWaterloggable": true,

@@ -87,6 +87,18 @@ public class ScpAdditionsModElements {
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp914refining")));
 		sounds.put(new ResourceLocation("scp_additions", "scp914dial"),
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp914dial")));
+		sounds.put(new ResourceLocation("scp_additions", "scp914inside"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp914inside")));
+		sounds.put(new ResourceLocation("scp_additions", "scp914death"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp914death")));
+		sounds.put(new ResourceLocation("scp_additions", "scp059box"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp059box")));
+		sounds.put(new ResourceLocation("scp_additions", "geiger2"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "geiger2")));
+		sounds.put(new ResourceLocation("scp_additions", "geiger3"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "geiger3")));
+		sounds.put(new ResourceLocation("scp_additions", "geiger1"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "geiger1")));
 		try {
 			ModFileScanData modFileInfo = ModList.get().getModFileById("scp_additions").getFile().getScanResult();
 			Set<ModFileScanData.AnnotationData> annotations = modFileInfo.getAnnotations();

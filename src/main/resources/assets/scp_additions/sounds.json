@@ -208,5 +208,65 @@
         "stream": false
       }
     ]
+  },
+  "scp914inside": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914inside",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914inside",
+        "stream": false
+      }
+    ]
+  },
+  "scp914death": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp914death",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914death",
+        "stream": false
+      }
+    ]
+  },
+  "scp059box": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp059box",
+    "sounds": [
+      {
+        "name": "scp_additions:scp059box",
+        "stream": false
+      }
+    ]
+  },
+  "geiger2": {
+    "category": "neutral",
+    "subtitle": "subtitles.geiger2",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger2",
+        "stream": false
+      }
+    ]
+  },
+  "geiger3": {
+    "category": "neutral",
+    "subtitle": "subtitles.geiger3",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger3",
+        "stream": false
+      }
+    ]
+  },
+  "geiger1": {
+    "category": "neutral",
+    "subtitle": "subtitles.geiger1",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger1",
+        "stream": false
+      }
+    ]
   }
 }

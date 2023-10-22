@@ -41,7 +41,7 @@ public class Scp914GuiGui extends ScpAdditionsModElements.ModElement {
 	private static ContainerType<GuiContainerMod> containerType = null;
 
 	public Scp914GuiGui(ScpAdditionsModElements instance) {
-		super(instance, 124);
+		super(instance, 128);
 		elements.addNetworkMessage(ButtonPressedMessage.class, ButtonPressedMessage::buffer, ButtonPressedMessage::new,
 				ButtonPressedMessage::handler);
 		elements.addNetworkMessage(GUISlotChangedMessage.class, GUISlotChangedMessage::buffer, GUISlotChangedMessage::new,

@@ -59,7 +59,7 @@ public class ButtonLoffBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public ButtonLoffBlock(ScpAdditionsModElements instance) {
-		super(instance, 14);
+		super(instance, 18);
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class ButtonLoffBlock extends ScpAdditionsModElements.ModElement {
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(10f, 20f).setLightLevel(s -> 0).harvestLevel(1)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 20f).setLightLevel(s -> 0).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).setRequiresTool().doesNotBlockMovement().notSolid().setNeedsPostProcessing((bs, br, bp) -> true)
 					.setEmmisiveRendering((bs, br, bp) -> true).setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));

@@ -32,7 +32,7 @@ public class Scp914blockBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914blockBlock(ScpAdditionsModElements instance) {
-		super(instance, 15);
+		super(instance, 19);
 	}
 
 	@Override
@@ -50,7 +50,7 @@ public class Scp914blockBlock extends ScpAdditionsModElements.ModElement {
 
 	public static class CustomBlock extends Block {
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(20f, 30f).setLightLevel(s -> 0).harvestLevel(1)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 30f).setLightLevel(s -> 0).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
 			setRegistryName("scp_914block");
 		}

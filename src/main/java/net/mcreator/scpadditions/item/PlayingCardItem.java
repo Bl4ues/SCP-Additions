@@ -17,7 +17,7 @@ public class PlayingCardItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public PlayingCardItem(ScpAdditionsModElements instance) {
-		super(instance, 29);
+		super(instance, 33);
 	}
 
 	@Override

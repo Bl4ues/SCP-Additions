@@ -64,7 +64,7 @@ public class Scp902ClosedBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp902ClosedBlock(ScpAdditionsModElements instance) {
-		super(instance, 11);
+		super(instance, 15);
 	}
 
 	@Override
@@ -85,7 +85,7 @@ public class Scp902ClosedBlock extends ScpAdditionsModElements.ModElement {
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.WOOD).sound(SoundType.WOOD).hardnessAndResistance(1f, 10f).setLightLevel(s -> 0).notSolid()
+			super(Block.Properties.create(Material.WOOD).sound(SoundType.WOOD).hardnessAndResistance(30f, 10f).setLightLevel(s -> 0).notSolid()
 					.setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
 			setRegistryName("scp_902_closed");

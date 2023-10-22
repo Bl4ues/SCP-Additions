@@ -42,7 +42,7 @@ public class Scp914IntakeBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914IntakeBlock(ScpAdditionsModElements instance) {
-		super(instance, 20);
+		super(instance, 24);
 	}
 
 	@Override
@@ -62,7 +62,7 @@ public class Scp914IntakeBlock extends ScpAdditionsModElements.ModElement {
 		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(20f, 30f).setLightLevel(s -> 0)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 30f).setLightLevel(s -> 0)
 					.doesNotBlockMovement().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
 			setRegistryName("scp_914_intake");

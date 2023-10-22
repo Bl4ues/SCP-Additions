@@ -49,7 +49,7 @@ public class Scp914bodyBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914bodyBlock(ScpAdditionsModElements instance) {
-		super(instance, 17);
+		super(instance, 21);
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public class Scp914bodyBlock extends ScpAdditionsModElements.ModElement {
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(20f, 30f).setLightLevel(s -> 0).harvestLevel(1)
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 30f).setLightLevel(s -> 0).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
 			setRegistryName("scp_914body");

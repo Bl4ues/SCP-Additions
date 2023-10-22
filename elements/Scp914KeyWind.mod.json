@@ -35,8 +35,8 @@
     ],
     "name": "SCP-914 Key",
     "specialInfo": [],
-    "hardness": 20.0,
-    "resistance": 10.0,
+    "hardness": 30.0,
+    "resistance": 30.0,
     "hasGravity": false,
     "isWaterloggable": false,
     "creativeTab": {

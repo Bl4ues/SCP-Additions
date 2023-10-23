@@ -268,5 +268,15 @@
         "stream": false
       }
     ]
+  },
+  "scp059_1": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp059_1",
+    "sounds": [
+      {
+        "name": "scp_additions:scp059_1",
+        "stream": false
+      }
+    ]
   }
 }

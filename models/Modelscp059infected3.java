@@ -173,22 +173,22 @@ public static class Modelscp059infected3 extends EntityModel<Entity> {
 		RightLeg.setTextureOffset(0, 16).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, 0.0F, false);
 
 		cube_r19 = new ModelRenderer(this);
-		cube_r19.setRotationPoint(0.6F, 19.7F, 0.5F);
+		cube_r19.setRotationPoint(1.9F, 12.0F, 0.0F);
 		RightLeg.addChild(cube_r19);
 		setRotationAngle(cube_r19, 0.0173F, 0.0038F, 0.0436F);
-		cube_r19.setTextureOffset(0, 0).addBox(-4.3F, -13.5F, -2.55F, 2.0F, 6.0F, 1.0F, 0.0F, false);
+		cube_r19.setTextureOffset(0, 0).addBox(-4.6F, -5.8F, -2.05F, 2.0F, 6.0F, 1.0F, 0.0F, false);
 
 		cube_r20 = new ModelRenderer(this);
-		cube_r20.setRotationPoint(0.6F, 19.7F, 0.5F);
+		cube_r20.setRotationPoint(1.9F, 12.0F, 0.0F);
 		RightLeg.addChild(cube_r20);
 		setRotationAngle(cube_r20, 0.0163F, 0.007F, -0.1483F);
-		cube_r20.setTextureOffset(-1, -1).addBox(0.1F, -12.1F, -2.55F, 3.0F, 4.0F, 2.0F, 0.0F, false);
+		cube_r20.setTextureOffset(-1, -1).addBox(-2.2F, -4.0F, -2.05F, 3.0F, 4.0F, 2.0F, 0.0F, false);
 
 		cube_r21 = new ModelRenderer(this);
-		cube_r21.setRotationPoint(0.6F, 19.7F, 0.5F);
+		cube_r21.setRotationPoint(1.9F, 12.0F, 0.0F);
 		RightLeg.addChild(cube_r21);
 		setRotationAngle(cube_r21, 0.0176F, 0.0023F, 0.1309F);
-		cube_r21.setTextureOffset(-1, -1).addBox(-4.4F, -17.7F, -2.55F, 3.0F, 4.0F, 2.0F, 0.0F, false);
+		cube_r21.setTextureOffset(-1, -1).addBox(-5.7F, -10.0F, -2.05F, 3.0F, 4.0F, 2.0F, 0.0F, false);
 
 		LeftLeg = new ModelRenderer(this);
 		LeftLeg.setRotationPoint(1.9F, 12.0F, 0.0F);

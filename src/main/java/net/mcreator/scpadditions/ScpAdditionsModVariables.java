@@ -258,6 +258,8 @@ public class ScpAdditionsModVariables {
 			nbt.putBoolean("PlayerOn1to1_9", instance.PlayerOn1to1_9);
 			nbt.putBoolean("PlayerOn1to1_10", instance.PlayerOn1to1_10);
 			nbt.putBoolean("PlayerOn1to1_11", instance.PlayerOn1to1_11);
+			nbt.putBoolean("scp059infected1", instance.scp059infected1);
+			nbt.putBoolean("scp059infected0", instance.scp059infected0);
 			return nbt;
 		}
 
@@ -283,6 +285,8 @@ public class ScpAdditionsModVariables {
 			instance.PlayerOn1to1_9 = nbt.getBoolean("PlayerOn1to1_9");
 			instance.PlayerOn1to1_10 = nbt.getBoolean("PlayerOn1to1_10");
 			instance.PlayerOn1to1_11 = nbt.getBoolean("PlayerOn1to1_11");
+			instance.scp059infected1 = nbt.getBoolean("scp059infected1");
+			instance.scp059infected0 = nbt.getBoolean("scp059infected0");
 		}
 	}
 
@@ -306,6 +310,8 @@ public class ScpAdditionsModVariables {
 		public boolean PlayerOn1to1_9 = false;
 		public boolean PlayerOn1to1_10 = false;
 		public boolean PlayerOn1to1_11 = false;
+		public boolean scp059infected1 = false;
+		public boolean scp059infected0 = false;
 
 		public void syncPlayerVariables(Entity entity) {
 			if (entity instanceof ServerPlayerEntity)
@@ -360,6 +366,8 @@ public class ScpAdditionsModVariables {
 			clone.PlayerOn1to1_9 = original.PlayerOn1to1_9;
 			clone.PlayerOn1to1_10 = original.PlayerOn1to1_10;
 			clone.PlayerOn1to1_11 = original.PlayerOn1to1_11;
+			clone.scp059infected1 = original.scp059infected1;
+			clone.scp059infected0 = original.scp059infected0;
 		}
 	}
 
@@ -404,6 +412,8 @@ public class ScpAdditionsModVariables {
 					variables.PlayerOn1to1_9 = message.data.PlayerOn1to1_9;
 					variables.PlayerOn1to1_10 = message.data.PlayerOn1to1_10;
 					variables.PlayerOn1to1_11 = message.data.PlayerOn1to1_11;
+					variables.scp059infected1 = message.data.scp059infected1;
+					variables.scp059infected0 = message.data.scp059infected0;
 				}
 			});
 			context.setPacketHandled(true);

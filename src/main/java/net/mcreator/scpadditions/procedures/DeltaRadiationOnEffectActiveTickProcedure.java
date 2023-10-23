@@ -4,6 +4,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.Entity;
 
+import net.mcreator.scpadditions.ScpAdditionsModVariables;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Map;
@@ -17,7 +18,10 @@ public class DeltaRadiationOnEffectActiveTickProcedure {
 			return;
 		}
 		Entity entity = (Entity) dependencies.get("entity");
-		if (entity.isAlive()) {
+		if (entity.isAlive() && !((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
+				.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected0
+				|| (entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
+						.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected1)) {
 			if (entity instanceof LivingEntity) {
 				((LivingEntity) entity).attackEntityFrom(new DamageSource("scp059delta").setDamageBypassesArmor(), (float) 1);
 			}

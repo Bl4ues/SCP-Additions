@@ -54,6 +54,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.block.material.Material;
@@ -67,6 +68,7 @@ import net.minecraft.block.Block;
 
 import net.mcreator.scpadditions.procedures.Scp059UpdateTickProcedure;
 import net.mcreator.scpadditions.procedures.Scp059OnBlockRightClickedProcedure;
+import net.mcreator.scpadditions.procedures.Scp0591EntityCollidesInTheBlockProcedure;
 import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
@@ -263,6 +265,19 @@ public class Scp059Block extends ScpAdditionsModElements.ModElement {
 							new AbstractMap.SimpleEntry<>("z", z))
 					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 			world.getPendingBlockTicks().scheduleTick(pos, this, 20);
+		}
+
+		@Override
+		public void onEntityCollision(BlockState blockstate, World world, BlockPos pos, Entity entity) {
+			super.onEntityCollision(blockstate, world, pos, entity);
+			int x = pos.getX();
+			int y = pos.getY();
+			int z = pos.getZ();
+
+			Scp0591EntityCollidesInTheBlockProcedure.executeProcedure(Stream
+					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
+							new AbstractMap.SimpleEntry<>("z", z), new AbstractMap.SimpleEntry<>("entity", entity))
+					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 		}
 
 		@Override

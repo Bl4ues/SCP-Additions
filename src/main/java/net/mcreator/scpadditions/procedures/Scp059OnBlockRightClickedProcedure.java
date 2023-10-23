@@ -18,7 +18,10 @@ import net.mcreator.scpadditions.item.HazmatSuitItem;
 import net.mcreator.scpadditions.block.Scp059ContainedBlock;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
+import java.util.stream.Stream;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.AbstractMap;
 
 public class Scp059OnBlockRightClickedProcedure {
 
@@ -88,6 +91,11 @@ public class Scp059OnBlockRightClickedProcedure {
 						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp059box")),
 						SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
 			}
+		} else {
+			Scp0591EntityCollidesInTheBlockProcedure.executeProcedure(Stream
+					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
+							new AbstractMap.SimpleEntry<>("z", z), new AbstractMap.SimpleEntry<>("entity", entity))
+					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 		}
 	}
 }

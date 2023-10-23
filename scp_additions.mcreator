@@ -3333,14 +3333,6 @@
       "subtitle": "Medium radioactivity"
     },
     {
-      "name": "geiger3",
-      "files": [
-        "geiger3"
-      ],
-      "category": "neutral",
-      "subtitle": "High radioactivity"
-    },
-    {
       "name": "geiger1",
       "files": [
         "geiger1"
@@ -3355,6 +3347,14 @@
       ],
       "category": "neutral",
       "subtitle": "SCP-059-1 grows"
+    },
+    {
+      "name": "geiger3",
+      "files": [
+        "geiger3"
+      ],
+      "category": "neutral",
+      "subtitle": "High radioactivity"
     }
   ],
   "language_map": {
@@ -3362,16 +3362,16 @@
       "death.attack.scp914veryfine": "%s turned into [REDACTED] and died later after being \"refined\" by SCP-914 on the \"Very Fine\" setting.",
       "block.scp_additions.tesla_active_3": "Tesla Gate AC3",
       "block.scp_additions.tesla_active_2": "Tesla Gate AC2",
-      "subtitles.terminalon": "Tesla Terminal On",
       "item.scp_additions.scp_0591infected_3_spawn_egg": "infectedthree Spawn Egg",
-      "block.scp_additions.tesla_active_4": "Tesla Gate AC4",
+      "subtitles.terminalon": "Tesla Terminal On",
       "effect.delta_radiation": "Delta Radiation",
-      "subtitles.teslaready": "Tesla Gate preparing",
+      "block.scp_additions.tesla_active_4": "Tesla Gate AC4",
       "block.scp_additions.scp_914body": "SCP-914 body",
+      "subtitles.teslaready": "Tesla Gate preparing",
       "item.scp_additions.credit_card": "Credit Card",
       "advancements.scp_059_rebirth.title": "In the blue light of heaven",
-      "block.scp_additions.scp_914_output": "SCP-914 Output",
       "advancements.scp_914_metamorphosis.descr": "Got \"refined\" by SCP-914 on the \"1:1\" setting.",
+      "block.scp_additions.scp_914_output": "SCP-914 Output",
       "subtitles.scp079_1": "SCP-079 noise",
       "item.scp_additions.hazmat_suit_leggings": "Hazmat Suit Leggings",
       "block.scp_additions.scp_079control": "Scp-079 Control (ON)",

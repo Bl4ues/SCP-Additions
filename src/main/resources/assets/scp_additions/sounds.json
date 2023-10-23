@@ -249,16 +249,6 @@
       }
     ]
   },
-  "geiger3": {
-    "category": "neutral",
-    "subtitle": "subtitles.geiger3",
-    "sounds": [
-      {
-        "name": "scp_additions:geiger3",
-        "stream": false
-      }
-    ]
-  },
   "geiger1": {
     "category": "neutral",
     "subtitle": "subtitles.geiger1",
@@ -275,6 +265,16 @@
     "sounds": [
       {
         "name": "scp_additions:scp059_1",
+        "stream": false
+      }
+    ]
+  },
+  "geiger3": {
+    "category": "neutral",
+    "subtitle": "subtitles.geiger3",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger3",
         "stream": false
       }
     ]

@@ -11,12 +11,14 @@ import net.minecraft.loot.LootContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.BlockItem;
+import net.minecraft.entity.Entity;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Block;
 
 import net.mcreator.scpadditions.procedures.Scp0591UpdateTickProcedure;
+import net.mcreator.scpadditions.procedures.Scp0591EntityCollidesInTheBlockProcedure;
 import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
@@ -95,6 +97,17 @@ public class Scp0591Block extends ScpAdditionsModElements.ModElement {
 							new AbstractMap.SimpleEntry<>("z", z))
 					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 			world.getPendingBlockTicks().scheduleTick(pos, this, 20);
+		}
+
+		@Override
+		public void onEntityCollision(BlockState blockstate, World world, BlockPos pos, Entity entity) {
+			super.onEntityCollision(blockstate, world, pos, entity);
+			int x = pos.getX();
+			int y = pos.getY();
+			int z = pos.getZ();
+
+			Scp0591EntityCollidesInTheBlockProcedure.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("entity", entity)).collect(HashMap::new,
+					(_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 		}
 	}
 }

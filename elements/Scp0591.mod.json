@@ -129,6 +129,9 @@
     "onTickUpdate": {
       "name": "Scp0591UpdateTick"
     },
+    "onEntityCollides": {
+      "name": "Scp0591EntityCollidesInTheBlock"
+    },
     "spawnWorldTypes": [],
     "restrictionBiomes": [],
     "blocksToReplace": [

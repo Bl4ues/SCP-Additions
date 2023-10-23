@@ -6,21 +6,15 @@ import net.minecraftforge.event.TickEvent;
 
 import net.minecraft.world.World;
 import net.minecraft.world.IWorld;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.advancements.Advancement;
 
 import net.mcreator.scpadditions.block.Scp059Block;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.stream.Stream;
 import java.util.Map;
-import java.util.Iterator;
 import java.util.HashMap;
 import java.util.AbstractMap;
 
@@ -79,18 +73,6 @@ public class Scp059inhandProcedure {
 		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
 		Entity entity = (Entity) dependencies.get("entity");
 		if ((entity instanceof PlayerEntity) ? ((PlayerEntity) entity).inventory.hasItemStack(new ItemStack(Scp059Block.block)) : false) {
-			if (entity instanceof ServerPlayerEntity) {
-				Advancement _adv = ((MinecraftServer) ((ServerPlayerEntity) entity).server).getAdvancementManager()
-						.getAdvancement(new ResourceLocation("scp_additions:scp_059_achievement_2"));
-				AdvancementProgress _ap = ((ServerPlayerEntity) entity).getAdvancements().getProgress(_adv);
-				if (!_ap.isDone()) {
-					Iterator _iterator = _ap.getRemaningCriteria().iterator();
-					while (_iterator.hasNext()) {
-						String _criterion = (String) _iterator.next();
-						((ServerPlayerEntity) entity).getAdvancements().grantCriterion(_adv, _criterion);
-					}
-				}
-			}
 			Scp059UpdateTickProcedure.executeProcedure(Stream
 					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
 							new AbstractMap.SimpleEntry<>("z", z))

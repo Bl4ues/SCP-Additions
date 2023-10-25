@@ -189,9 +189,6 @@
     "onBlockAdded": {
       "name": "TeslaRechargeBlockAdded"
     },
-    "onEntityCollides": {
-      "name": "TeslaRechargeUpdateTick"
-    },
     "spawnWorldTypes": [],
     "restrictionBiomes": [],
     "blocksToReplace": [

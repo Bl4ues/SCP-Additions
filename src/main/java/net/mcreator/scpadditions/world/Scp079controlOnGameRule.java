@@ -14,7 +14,7 @@ public class Scp079controlOnGameRule extends ScpAdditionsModElements.ModElement 
 			create(false));
 
 	public Scp079controlOnGameRule(ScpAdditionsModElements instance) {
-		super(instance, 62);
+		super(instance, 63);
 	}
 
 	public static GameRules.RuleType<GameRules.BooleanValue> create(boolean defaultValue) {

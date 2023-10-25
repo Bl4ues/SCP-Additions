@@ -278,5 +278,15 @@
         "stream": false
       }
     ]
+  },
+  "spray": {
+    "category": "neutral",
+    "subtitle": "subtitles.spray",
+    "sounds": [
+      {
+        "name": "scp_additions:spray",
+        "stream": false
+      }
+    ]
   }
 }

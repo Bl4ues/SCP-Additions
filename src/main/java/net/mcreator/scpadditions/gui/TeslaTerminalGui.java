@@ -39,7 +39,7 @@ public class TeslaTerminalGui extends ScpAdditionsModElements.ModElement {
 	private static ContainerType<GuiContainerMod> containerType = null;
 
 	public TeslaTerminalGui(ScpAdditionsModElements instance) {
-		super(instance, 39);
+		super(instance, 40);
 		elements.addNetworkMessage(ButtonPressedMessage.class, ButtonPressedMessage::buffer, ButtonPressedMessage::new,
 				ButtonPressedMessage::handler);
 		elements.addNetworkMessage(GUISlotChangedMessage.class, GUISlotChangedMessage::buffer, GUISlotChangedMessage::new,

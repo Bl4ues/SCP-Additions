@@ -47,7 +47,7 @@ public class Scp059ContainedBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp059ContainedBlock(ScpAdditionsModElements instance) {
-		super(instance, 9);
+		super(instance, 10);
 	}
 
 	@Override
@@ -65,7 +65,7 @@ public class Scp059ContainedBlock extends ScpAdditionsModElements.ModElement {
 
 	public static class CustomBlock extends Block {
 		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 40f).setLightLevel(s -> 1).notSolid()
+			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(2f, 40f).setLightLevel(s -> 1).notSolid()
 					.setNeedsPostProcessing((bs, br, bp) -> true).setEmmisiveRendering((bs, br, bp) -> true).setOpaque((bs, br, bp) -> false));
 			setRegistryName("scp_059_contained");
 		}

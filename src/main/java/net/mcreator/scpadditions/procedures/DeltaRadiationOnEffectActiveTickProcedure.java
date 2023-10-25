@@ -21,7 +21,7 @@ public class DeltaRadiationOnEffectActiveTickProcedure {
 			return;
 		}
 		Entity entity = (Entity) dependencies.get("entity");
-		if (entity.isAlive() && (!(HazmatSuitItem.helmet == ((entity instanceof LivingEntity)
+		if (!(HazmatSuitItem.helmet == ((entity instanceof LivingEntity)
 				? ((LivingEntity) entity).getItemStackFromSlot(EquipmentSlotType.HEAD)
 				: ItemStack.EMPTY).getItem()
 				&& HazmatSuitItem.body == ((entity instanceof LivingEntity)
@@ -32,11 +32,11 @@ public class DeltaRadiationOnEffectActiveTickProcedure {
 						: ItemStack.EMPTY).getItem()
 				&& HazmatSuitItem.boots == ((entity instanceof LivingEntity)
 						? ((LivingEntity) entity).getItemStackFromSlot(EquipmentSlotType.FEET)
-						: ItemStack.EMPTY).getItem())
-				|| !((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
+						: ItemStack.EMPTY).getItem()
+				|| (entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
 						.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected0
-						|| (entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
-								.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected1))) {
+				|| (entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
+						.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected1)) {
 			if (entity instanceof LivingEntity) {
 				((LivingEntity) entity).attackEntityFrom(new DamageSource("scp059delta").setDamageBypassesArmor(), (float) 1);
 			}

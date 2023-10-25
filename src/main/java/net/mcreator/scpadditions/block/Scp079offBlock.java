@@ -59,7 +59,7 @@ public class Scp079offBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp079offBlock(ScpAdditionsModElements instance) {
-		super(instance, 58);
+		super(instance, 59);
 	}
 
 	@Override
@@ -80,8 +80,7 @@ public class Scp079offBlock extends ScpAdditionsModElements.ModElement {
 
 		public CustomBlock() {
 			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 10f).setLightLevel(s -> 0).harvestLevel(1)
-					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setNeedsPostProcessing((bs, br, bp) -> true)
-					.setEmmisiveRendering((bs, br, bp) -> true).setOpaque((bs, br, bp) -> false));
+					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
 			setRegistryName("scp_079off");
 		}

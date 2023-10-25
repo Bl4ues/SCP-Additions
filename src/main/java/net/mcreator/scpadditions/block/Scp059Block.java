@@ -86,7 +86,7 @@ public class Scp059Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp059Block(ScpAdditionsModElements instance) {
-		super(instance, 8);
+		super(instance, 9);
 		MinecraftForge.EVENT_BUS.register(this);
 		FMLJavaModLoadingContext.get().getModEventBus().register(new FeatureRegisterHandler());
 	}
@@ -110,7 +110,7 @@ public class Scp059Block extends ScpAdditionsModElements.ModElement {
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
 		public CustomBlock() {
-			super(Block.Properties.create(Material.ROCK).sound(SoundType.STONE).hardnessAndResistance(1f, 10f).setLightLevel(s -> 1).harvestLevel(1)
+			super(Block.Properties.create(Material.ROCK).sound(SoundType.STONE).hardnessAndResistance(2f, 10f).setLightLevel(s -> 1).harvestLevel(1)
 					.harvestTool(ToolType.PICKAXE).notSolid().setNeedsPostProcessing((bs, br, bp) -> true).setEmmisiveRendering((bs, br, bp) -> true)
 					.setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(

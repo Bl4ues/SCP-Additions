@@ -59,7 +59,7 @@ public class ButtonLoffBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public ButtonLoffBlock(ScpAdditionsModElements instance) {
-		super(instance, 18);
+		super(instance, 19);
 	}
 
 	@Override
@@ -81,8 +81,7 @@ public class ButtonLoffBlock extends ScpAdditionsModElements.ModElement {
 
 		public CustomBlock() {
 			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 20f).setLightLevel(s -> 0).harvestLevel(1)
-					.harvestTool(ToolType.PICKAXE).setRequiresTool().doesNotBlockMovement().notSolid().setNeedsPostProcessing((bs, br, bp) -> true)
-					.setEmmisiveRendering((bs, br, bp) -> true).setOpaque((bs, br, bp) -> false));
+					.harvestTool(ToolType.PICKAXE).setRequiresTool().doesNotBlockMovement().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
 			setRegistryName("button_loff");
 		}

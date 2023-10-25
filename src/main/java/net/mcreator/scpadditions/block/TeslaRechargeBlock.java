@@ -29,7 +29,6 @@ import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.BlockItem;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.entity.Entity;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.block.material.PushReaction;
@@ -40,7 +39,6 @@ import net.minecraft.block.HorizontalBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Block;
 
-import net.mcreator.scpadditions.procedures.TeslaRechargeUpdateTickProcedure;
 import net.mcreator.scpadditions.procedures.TeslaRechargeBlockAddedProcedure;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
@@ -57,7 +55,7 @@ public class TeslaRechargeBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public TeslaRechargeBlock(ScpAdditionsModElements instance) {
-		super(instance, 40);
+		super(instance, 41);
 	}
 
 	@Override
@@ -184,19 +182,6 @@ public class TeslaRechargeBlock extends ScpAdditionsModElements.ModElement {
 			int z = pos.getZ();
 
 			TeslaRechargeBlockAddedProcedure.executeProcedure(Stream
-					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
-							new AbstractMap.SimpleEntry<>("z", z))
-					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-		}
-
-		@Override
-		public void onEntityCollision(BlockState blockstate, World world, BlockPos pos, Entity entity) {
-			super.onEntityCollision(blockstate, world, pos, entity);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-
-			TeslaRechargeUpdateTickProcedure.executeProcedure(Stream
 					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
 							new AbstractMap.SimpleEntry<>("z", z))
 					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));

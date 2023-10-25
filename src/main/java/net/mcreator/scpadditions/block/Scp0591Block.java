@@ -41,7 +41,7 @@ public class Scp0591Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp0591Block(ScpAdditionsModElements instance) {
-		super(instance, 10);
+		super(instance, 11);
 	}
 
 	@Override
@@ -53,7 +53,7 @@ public class Scp0591Block extends ScpAdditionsModElements.ModElement {
 
 	public static class CustomBlock extends Block {
 		public CustomBlock() {
-			super(Block.Properties.create(Material.LEAVES).sound(SoundType.VINE).hardnessAndResistance(1f, 10f).setLightLevel(s -> 1)
+			super(Block.Properties.create(Material.LEAVES).sound(SoundType.VINE).hardnessAndResistance(26f, 10f).setLightLevel(s -> 1)
 					.setNeedsPostProcessing((bs, br, bp) -> true).setEmmisiveRendering((bs, br, bp) -> true));
 			setRegistryName("scp_059_1");
 		}

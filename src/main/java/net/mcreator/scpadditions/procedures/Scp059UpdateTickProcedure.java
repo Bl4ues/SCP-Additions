@@ -90,11 +90,11 @@ public class Scp059UpdateTickProcedure {
 								: ItemStack.EMPTY).getItem()
 						&& HazmatSuitItem.helmet == ((entityiterator instanceof LivingEntity)
 								? ((LivingEntity) entityiterator).getItemStackFromSlot(EquipmentSlotType.HEAD)
-								: ItemStack.EMPTY).getItem())
-						|| !((entityiterator.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
+								: ItemStack.EMPTY).getItem()
+						|| (entityiterator.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
 								.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected0
-								|| (entityiterator.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
-										.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected1)) {
+						|| (entityiterator.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
+								.orElse(new ScpAdditionsModVariables.PlayerVariables())).scp059infected1)) {
 					if (entityiterator instanceof LivingEntity)
 						((LivingEntity) entityiterator)
 								.addPotionEffect(new EffectInstance(DeltaRadiationPotionEffect.potion, (int) 1200, (int) 1, (false), (false)));

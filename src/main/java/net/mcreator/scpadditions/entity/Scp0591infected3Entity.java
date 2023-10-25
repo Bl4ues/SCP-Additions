@@ -33,7 +33,7 @@ public class Scp0591infected3Entity extends ScpAdditionsModElements.ModElement {
 			.size(0.6f, 1.8f)).build("scp_0591infected_3").setRegistryName("scp_0591infected_3");
 
 	public Scp0591infected3Entity(ScpAdditionsModElements instance) {
-		super(instance, 193);
+		super(instance, 190);
 		FMLJavaModLoadingContext.get().getModEventBus().register(new Scp0591infected3Renderer.ModelRegisterHandler());
 		FMLJavaModLoadingContext.get().getModEventBus().register(new EntityAttributesRegisterHandler());
 	}

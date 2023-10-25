@@ -35,7 +35,7 @@
     ],
     "name": "SCP-059 Contained",
     "specialInfo": [],
-    "hardness": 30.0,
+    "hardness": 2.0,
     "resistance": 40.0,
     "hasGravity": false,
     "isWaterloggable": false,

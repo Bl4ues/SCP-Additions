@@ -38,7 +38,7 @@ public class HazmatSuitItem extends ScpAdditionsModElements.ModElement {
 	public static final Item boots = null;
 
 	public HazmatSuitItem(ScpAdditionsModElements instance) {
-		super(instance, 6);
+		super(instance, 7);
 	}
 
 	@Override

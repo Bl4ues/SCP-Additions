@@ -1,0 +1,11 @@
+{
+  "mappings": {
+    "default": {
+      "map": {
+        "0": "decontamination",
+        "1": "doors"
+      },
+      "name": "default"
+    }
+  }
+}

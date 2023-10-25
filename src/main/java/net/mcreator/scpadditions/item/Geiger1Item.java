@@ -23,7 +23,7 @@ public class Geiger1Item extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public Geiger1Item(ScpAdditionsModElements instance) {
-		super(instance, 7);
+		super(instance, 8);
 	}
 
 	@Override

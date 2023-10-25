@@ -34,7 +34,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Block;
 
 import net.mcreator.scpadditions.procedures.Scp914IntakeDoorUpdateTickProcedure;
-import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
+import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
 import java.util.stream.Stream;
@@ -58,7 +58,7 @@ public class Scp914IntakeDoorBlock extends ScpAdditionsModElements.ModElement {
 	public void initElements() {
 		elements.blocks.add(() -> new CustomBlock());
 		elements.items
-				.add(() -> new BlockItem(block, new Item.Properties().group(SCPAdditionsItemGroup.tab)).setRegistryName(block.getRegistryName()));
+				.add(() -> new BlockItem(block, new Item.Properties().group(SCPadditionsSCPsItemGroup.tab)).setRegistryName(block.getRegistryName()));
 	}
 
 	@Override

@@ -50,7 +50,7 @@ public class Scp079controloffBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp079controloffBlock(ScpAdditionsModElements instance) {
-		super(instance, 5);
+		super(instance, 11);
 	}
 
 	@Override

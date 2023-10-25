@@ -288,5 +288,35 @@
         "stream": false
       }
     ]
+  },
+  "decontamination": {
+    "category": "neutral",
+    "subtitle": "subtitles.decontamination",
+    "sounds": [
+      {
+        "name": "scp_additions:decontamination",
+        "stream": false
+      }
+    ]
+  },
+  "dooropen": {
+    "category": "neutral",
+    "subtitle": "subtitles.dooropen",
+    "sounds": [
+      {
+        "name": "scp_additions:dooropen",
+        "stream": false
+      }
+    ]
+  },
+  "doorclosing": {
+    "category": "neutral",
+    "subtitle": "subtitles.doorclosing",
+    "sounds": [
+      {
+        "name": "scp_additions:doorclose",
+        "stream": false
+      }
+    ]
   }
 }

@@ -24,7 +24,7 @@ import net.minecraft.block.Block;
 
 import net.mcreator.scpadditions.procedures.Scp914clockworksUpdateTickProcedure;
 import net.mcreator.scpadditions.procedures.Scp914clockworksBlockAddedProcedure;
-import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
+import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
 import java.util.stream.Stream;
@@ -48,7 +48,7 @@ public class Scp914clockworksBlock extends ScpAdditionsModElements.ModElement {
 	public void initElements() {
 		elements.blocks.add(() -> new CustomBlock());
 		elements.items
-				.add(() -> new BlockItem(block, new Item.Properties().group(SCPAdditionsItemGroup.tab)).setRegistryName(block.getRegistryName()));
+				.add(() -> new BlockItem(block, new Item.Properties().group(SCPadditionsSCPsItemGroup.tab)).setRegistryName(block.getRegistryName()));
 	}
 
 	@Override

@@ -1,0 +1,9 @@
+{
+  "parent": "scp_additions:custom/deconopen",
+  "textures": {
+    "all": "scp_additions:blocks/decontamination",
+    "particle": "scp_additions:blocks/decontamination",
+    "0": "scp_additions:blocks/decontamination",
+    "1": "scp_additions:blocks/doors"
+  }
+}

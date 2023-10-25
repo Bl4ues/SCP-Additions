@@ -44,7 +44,7 @@ import net.minecraft.block.HorizontalBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Block;
 
-import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
+import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
 import net.mcreator.scpadditions.gui.Scp914GuiGui;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
@@ -66,7 +66,7 @@ public class Scp914dial1to1Block extends ScpAdditionsModElements.ModElement {
 	public void initElements() {
 		elements.blocks.add(() -> new CustomBlock());
 		elements.items
-				.add(() -> new BlockItem(block, new Item.Properties().group(SCPAdditionsItemGroup.tab)).setRegistryName(block.getRegistryName()));
+				.add(() -> new BlockItem(block, new Item.Properties().group(SCPadditionsSCPsItemGroup.tab)).setRegistryName(block.getRegistryName()));
 	}
 
 	@Override

@@ -35,7 +35,7 @@ public class SprayItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public SprayItem(ScpAdditionsModElements instance) {
-		super(instance, 8);
+		super(instance, 9);
 	}
 
 	@Override

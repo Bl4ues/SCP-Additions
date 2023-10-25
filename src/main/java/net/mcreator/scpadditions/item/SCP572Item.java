@@ -20,7 +20,7 @@ import net.minecraft.block.BlockState;
 
 import net.mcreator.scpadditions.procedures.SCP572LivingEntityIsHitWithItemProcedure;
 import net.mcreator.scpadditions.procedures.SCP572ItemInInventoryTickProcedure;
-import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
+import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
 import java.util.stream.Stream;
@@ -38,7 +38,7 @@ public class SCP572Item extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public SCP572Item(ScpAdditionsModElements instance) {
-		super(instance, 15);
+		super(instance, 18);
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class SCP572Item extends ScpAdditionsModElements.ModElement {
 
 	public static class ItemCustom extends Item {
 		public ItemCustom() {
-			super(new Item.Properties().group(SCPAdditionsItemGroup.tab).maxStackSize(64).rarity(Rarity.COMMON));
+			super(new Item.Properties().group(SCPadditionsSCPsItemGroup.tab).maxStackSize(64).rarity(Rarity.COMMON));
 			setRegistryName("scp_572");
 		}
 

@@ -59,7 +59,7 @@ public class TeslaTerminalOffBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public TeslaTerminalOffBlock(ScpAdditionsModElements instance) {
-		super(instance, 2);
+		super(instance, 4);
 	}
 
 	@Override

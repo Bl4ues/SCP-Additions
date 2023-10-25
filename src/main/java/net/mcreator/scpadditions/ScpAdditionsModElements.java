@@ -102,6 +102,12 @@ public class ScpAdditionsModElements {
 		sounds.put(new ResourceLocation("scp_additions", "geiger3"),
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "geiger3")));
 		sounds.put(new ResourceLocation("scp_additions", "spray"), new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "spray")));
+		sounds.put(new ResourceLocation("scp_additions", "decontamination"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "decontamination")));
+		sounds.put(new ResourceLocation("scp_additions", "dooropen"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "dooropen")));
+		sounds.put(new ResourceLocation("scp_additions", "doorclosing"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "doorclosing")));
 		try {
 			ModFileScanData modFileInfo = ModList.get().getModFileById("scp_additions").getFile().getScanResult();
 			Set<ModFileScanData.AnnotationData> annotations = modFileInfo.getAnnotations();

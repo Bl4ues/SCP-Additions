@@ -1,0 +1,11 @@
+{
+  "_fv": 33,
+  "_type": "tab",
+  "definition": {
+    "name": "SCP Additions SCPs",
+    "icon": {
+      "value": "CUSTOM:Scp1176"
+    },
+    "showSearch": true
+  }
+}

@@ -43,7 +43,7 @@ import net.minecraft.block.Block;
 
 import net.mcreator.scpadditions.procedures.Scp1176UpdateTickProcedure;
 import net.mcreator.scpadditions.procedures.Scp1176OnBlockRightClickedProcedure;
-import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
+import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
 import java.util.stream.Stream;
@@ -60,14 +60,14 @@ public class Scp1176Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp1176Block(ScpAdditionsModElements instance) {
-		super(instance, 17);
+		super(instance, 29);
 	}
 
 	@Override
 	public void initElements() {
 		elements.blocks.add(() -> new CustomBlock());
 		elements.items
-				.add(() -> new BlockItem(block, new Item.Properties().group(SCPAdditionsItemGroup.tab)).setRegistryName(block.getRegistryName()));
+				.add(() -> new BlockItem(block, new Item.Properties().group(SCPadditionsSCPsItemGroup.tab)).setRegistryName(block.getRegistryName()));
 	}
 
 	@Override

@@ -56,7 +56,7 @@ public class ButtonLonBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public ButtonLonBlock(ScpAdditionsModElements instance) {
-		super(instance, 116);
+		super(instance, 117);
 	}
 
 	@Override

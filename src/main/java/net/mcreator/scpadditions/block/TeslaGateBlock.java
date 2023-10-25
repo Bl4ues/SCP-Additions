@@ -58,7 +58,7 @@ public class TeslaGateBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public TeslaGateBlock(ScpAdditionsModElements instance) {
-		super(instance, 1);
+		super(instance, 3);
 	}
 
 	@Override

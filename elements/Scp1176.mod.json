@@ -42,7 +42,7 @@
     "hasGravity": false,
     "isWaterloggable": false,
     "creativeTab": {
-      "value": "CUSTOM:SCPAdditions"
+      "value": "CUSTOM:SCPadditionsSCPs"
     },
     "destroyTool": "pickaxe",
     "customDrop": {

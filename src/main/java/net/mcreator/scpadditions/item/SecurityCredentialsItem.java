@@ -23,7 +23,7 @@ public class SecurityCredentialsItem extends ScpAdditionsModElements.ModElement 
 	public static final Item block = null;
 
 	public SecurityCredentialsItem(ScpAdditionsModElements instance) {
-		super(instance, 3);
+		super(instance, 5);
 	}
 
 	@Override

@@ -50,7 +50,7 @@ public class SCP079SystemControlBlock extends ScpAdditionsModElements.ModElement
 	public static final Block block = null;
 
 	public SCP079SystemControlBlock(ScpAdditionsModElements instance) {
-		super(instance, 4);
+		super(instance, 10);
 	}
 
 	@Override

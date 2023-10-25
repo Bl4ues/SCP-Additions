@@ -17,7 +17,7 @@ public class CreditCardItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public CreditCardItem(ScpAdditionsModElements instance) {
-		super(instance, 35);
+		super(instance, 36);
 	}
 
 	@Override

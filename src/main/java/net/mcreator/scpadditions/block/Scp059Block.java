@@ -69,7 +69,7 @@ import net.minecraft.block.Block;
 import net.mcreator.scpadditions.procedures.Scp059UpdateTickProcedure;
 import net.mcreator.scpadditions.procedures.Scp059OnBlockRightClickedProcedure;
 import net.mcreator.scpadditions.procedures.Scp0591EntityCollidesInTheBlockProcedure;
-import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
+import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
 import java.util.stream.Stream;
@@ -86,7 +86,7 @@ public class Scp059Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp059Block(ScpAdditionsModElements instance) {
-		super(instance, 9);
+		super(instance, 12);
 		MinecraftForge.EVENT_BUS.register(this);
 		FMLJavaModLoadingContext.get().getModEventBus().register(new FeatureRegisterHandler());
 	}
@@ -95,7 +95,7 @@ public class Scp059Block extends ScpAdditionsModElements.ModElement {
 	public void initElements() {
 		elements.blocks.add(() -> new CustomBlock());
 		elements.items
-				.add(() -> new BlockItem(block, new Item.Properties().group(SCPAdditionsItemGroup.tab)).setRegistryName(block.getRegistryName()));
+				.add(() -> new BlockItem(block, new Item.Properties().group(SCPadditionsSCPsItemGroup.tab)).setRegistryName(block.getRegistryName()));
 	}
 
 	@Override

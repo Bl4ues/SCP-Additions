@@ -420,11 +420,13 @@ public class RoughAliveProcedure {
 				}
 
 				private void run() {
-					if (world instanceof World && !world.isRemote()) {
-						ItemEntity entityToSpawn = new ItemEntity((World) world, (x + 4), y, (z - 3), new ItemStack(Items.STICK));
-						entityToSpawn.setPickupDelay((int) 10);
-						entityToSpawn.setNoDespawn();
-						world.addEntity(entityToSpawn);
+					for (int index0 = 0; index0 < (int) (3); index0++) {
+						if (world instanceof World && !world.isRemote()) {
+							ItemEntity entityToSpawn = new ItemEntity((World) world, (x + 4), y, (z - 3), new ItemStack(Items.STICK));
+							entityToSpawn.setPickupDelay((int) 10);
+							entityToSpawn.setNoDespawn();
+							world.addEntity(entityToSpawn);
+						}
 					}
 					ScpAdditionsModVariables.MapVariables.get(world).Scp914refining = (false);
 					ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
@@ -3369,7 +3371,7 @@ public class RoughAliveProcedure {
 
 				private void run() {
 					if (world instanceof World && !world.isRemote()) {
-						ItemEntity entityToSpawn = new ItemEntity((World) world, (x + 4), y, (z - 3), new ItemStack(Items.BONE));
+						ItemEntity entityToSpawn = new ItemEntity((World) world, (x + 4), y, (z - 3), new ItemStack(Items.BONE_MEAL));
 						entityToSpawn.setPickupDelay((int) 10);
 						entityToSpawn.setNoDespawn();
 						world.addEntity(entityToSpawn);

@@ -6,7 +6,8 @@
       "sortid": 3,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_gate"
+      "registry_name": "tesla_gate",
+      "path": "~/Misc"
     },
     {
       "name": "SCPAdditions",
@@ -22,7 +23,8 @@
       "sortid": 38,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_active"
+      "registry_name": "tesla_active",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaActiveProcedure",
@@ -94,7 +96,8 @@
       "sortid": 42,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_recharge"
+      "registry_name": "tesla_recharge",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaRechargeBlockAdded",
@@ -158,7 +161,8 @@
       "sortid": 45,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_active_2"
+      "registry_name": "tesla_active_2",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaActive3",
@@ -166,7 +170,8 @@
       "sortid": 46,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_active_3"
+      "registry_name": "tesla_active_3",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaActive4",
@@ -174,7 +179,8 @@
       "sortid": 47,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_active_4"
+      "registry_name": "tesla_active_4",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaActive2BlockAdded",
@@ -266,7 +272,8 @@
       "sortid": 51,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_gate_recipe"
+      "registry_name": "tesla_gate_recipe",
+      "path": "~/Recipes"
     },
     {
       "name": "SecurityCredentials",
@@ -274,7 +281,8 @@
       "sortid": 5,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "security_credentials"
+      "registry_name": "security_credentials",
+      "path": "~/Misc"
     },
     {
       "name": "SecurityCred",
@@ -282,7 +290,8 @@
       "sortid": 52,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "security_cred"
+      "registry_name": "security_cred",
+      "path": "~/Recipes"
     },
     {
       "name": "TeslaTerminalBlock",
@@ -290,7 +299,8 @@
       "sortid": 53,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_terminal_block"
+      "registry_name": "tesla_terminal_block",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaTerminalRec",
@@ -298,7 +308,8 @@
       "sortid": 54,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_terminal_rec"
+      "registry_name": "tesla_terminal_rec",
+      "path": "~/Recipes"
     },
     {
       "name": "TerminalTesla",
@@ -338,7 +349,8 @@
       "sortid": 4,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_terminal_off"
+      "registry_name": "tesla_terminal_off",
+      "path": "~/Misc"
     },
     {
       "name": "TeslaTerminalOffP",
@@ -445,7 +457,8 @@
       "sortid": 15,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_079on"
+      "registry_name": "scp_079on",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp079off",
@@ -453,7 +466,8 @@
       "sortid": 60,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_079off"
+      "registry_name": "scp_079off",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp079onP",
@@ -517,7 +531,8 @@
       "sortid": 63,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_079control"
+      "registry_name": "scp_079control",
+      "path": "~/Misc"
     },
     {
       "name": "Scp079controloff",
@@ -525,7 +540,8 @@
       "sortid": 11,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_079controloff"
+      "registry_name": "scp_079controloff",
+      "path": "~/Misc"
     },
     {
       "name": "Scp079controlOn",
@@ -544,7 +560,8 @@
       "sortid": 10,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_079_system_control"
+      "registry_name": "scp_079_system_control",
+      "path": "~/Misc"
     },
     {
       "name": "SCP079SystemControlP",
@@ -656,7 +673,8 @@
       "sortid": 16,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_330"
+      "registry_name": "scp_330",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp330RedCandy",
@@ -664,7 +682,8 @@
       "sortid": 30,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_330_red_candy"
+      "registry_name": "scp_330_red_candy",
+      "path": "~/Misc"
     },
     {
       "name": "Scp330GreenCandy",
@@ -672,7 +691,8 @@
       "sortid": 31,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_330_green_candy"
+      "registry_name": "scp_330_green_candy",
+      "path": "~/Misc"
     },
     {
       "name": "Scp330YellowCandy",
@@ -680,7 +700,8 @@
       "sortid": 32,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_330_yellow_candy"
+      "registry_name": "scp_330_yellow_candy",
+      "path": "~/Misc"
     },
     {
       "name": "Scp330BlueCandy",
@@ -688,7 +709,8 @@
       "sortid": 33,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_330_blue_candy"
+      "registry_name": "scp_330_blue_candy",
+      "path": "~/Misc"
     },
     {
       "name": "RedCandy",
@@ -904,7 +926,8 @@
       "sortid": 78,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_330_achievement"
+      "registry_name": "scp_330_achievement",
+      "path": "~/Achivements"
     },
     {
       "name": "Tesla",
@@ -912,7 +935,8 @@
       "sortid": 79,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla"
+      "registry_name": "tesla",
+      "path": "~/Achivements"
     },
     {
       "name": "Scp079",
@@ -920,7 +944,8 @@
       "sortid": 80,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_079"
+      "registry_name": "scp_079",
+      "path": "~/Achivements"
     },
     {
       "name": "Scp426",
@@ -928,7 +953,8 @@
       "sortid": 17,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_426"
+      "registry_name": "scp_426",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp426OnBlockRightClicked",
@@ -952,7 +978,8 @@
       "sortid": 82,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_426_achievement"
+      "registry_name": "scp_426_achievement",
+      "path": "~/Achivements"
     },
     {
       "name": "SCP572",
@@ -960,7 +987,8 @@
       "sortid": 18,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_572"
+      "registry_name": "scp_572",
+      "path": "~/SCPs"
     },
     {
       "name": "SCP572LivingEntityIsHitWithItem",
@@ -984,7 +1012,8 @@
       "sortid": 84,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_572_a_achievement"
+      "registry_name": "scp_572_a_achievement",
+      "path": "~/Achivements"
     },
     {
       "name": "SCP572ItemInInventoryTick",
@@ -1008,7 +1037,8 @@
       "sortid": 29,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_1176"
+      "registry_name": "scp_1176",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp1176honey",
@@ -1016,7 +1046,8 @@
       "sortid": 34,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_1176honey"
+      "registry_name": "scp_1176honey",
+      "path": "~/Misc"
     },
     {
       "name": "Scp1176Achievement",
@@ -1024,7 +1055,8 @@
       "sortid": 86,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_1176_achievement"
+      "registry_name": "scp_1176_achievement",
+      "path": "~/Achivements"
     },
     {
       "name": "Scp1176UpdateTick",
@@ -1060,7 +1092,8 @@
       "sortid": 88,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_additions_ach"
+      "registry_name": "scp_additions_ach",
+      "path": "~/Achivements"
     },
     {
       "name": "BloodType1",
@@ -1348,7 +1381,8 @@
       "sortid": 108,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "sugar"
+      "registry_name": "sugar",
+      "path": "~/Recipes"
     },
     {
       "name": "HoneyBlock",
@@ -1356,7 +1390,8 @@
       "sortid": 109,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "honey_block"
+      "registry_name": "honey_block",
+      "path": "~/Recipes"
     },
     {
       "name": "Scp902Closed",
@@ -1364,7 +1399,8 @@
       "sortid": 19,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_902_closed"
+      "registry_name": "scp_902_closed",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp902Open",
@@ -1372,7 +1408,8 @@
       "sortid": 110,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_902_open"
+      "registry_name": "scp_902_open",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp902ClosedUpdateTick",
@@ -1468,7 +1505,8 @@
       "sortid": 114,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_902_achievement"
+      "registry_name": "scp_902_achievement",
+      "path": "~/Achivements"
     },
     {
       "name": "SCPAdditionsAchievement",
@@ -1492,7 +1530,8 @@
       "sortid": 1,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_roff"
+      "registry_name": "button_roff",
+      "path": "~/Misc"
     },
     {
       "name": "ButtonLoff",
@@ -1500,7 +1539,8 @@
       "sortid": 2,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_loff"
+      "registry_name": "button_loff",
+      "path": "~/Misc"
     },
     {
       "name": "ButtonRon",
@@ -1508,7 +1548,8 @@
       "sortid": 116,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_ron"
+      "registry_name": "button_ron",
+      "path": "~/Misc"
     },
     {
       "name": "ButtonLon",
@@ -1516,7 +1557,8 @@
       "sortid": 117,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_lon"
+      "registry_name": "button_lon",
+      "path": "~/Misc"
     },
     {
       "name": "ButtonRoffOnBlockRightClicked",
@@ -1636,7 +1678,8 @@
       "sortid": 122,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_right"
+      "registry_name": "button_right",
+      "path": "~/Recipes"
     },
     {
       "name": "ButtonLeft",
@@ -1644,7 +1687,8 @@
       "sortid": 123,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_left"
+      "registry_name": "button_left",
+      "path": "~/Recipes"
     },
     {
       "name": "ButtonRightSwap",
@@ -1652,7 +1696,8 @@
       "sortid": 124,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_right_swap"
+      "registry_name": "button_right_swap",
+      "path": "~/Recipes"
     },
     {
       "name": "ButtonLeftSwap",
@@ -1660,7 +1705,8 @@
       "sortid": 125,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "button_left_swap"
+      "registry_name": "button_left_swap",
+      "path": "~/Recipes"
     },
     {
       "name": "Scp914block",
@@ -1668,7 +1714,8 @@
       "sortid": 20,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914block"
+      "registry_name": "scp_914block",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914body",
@@ -1676,7 +1723,8 @@
       "sortid": 22,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914body"
+      "registry_name": "scp_914body",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914dial1to1",
@@ -1684,7 +1732,8 @@
       "sortid": 23,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914dial_1to_1"
+      "registry_name": "scp_914dial_1to_1",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914dialRough",
@@ -1692,7 +1741,8 @@
       "sortid": 126,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914dial_rough"
+      "registry_name": "scp_914dial_rough",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914dialCoarse",
@@ -1700,7 +1750,8 @@
       "sortid": 127,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914dial_coarse"
+      "registry_name": "scp_914dial_coarse",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914dialFine",
@@ -1708,7 +1759,8 @@
       "sortid": 128,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914dial_fine"
+      "registry_name": "scp_914dial_fine",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914dialVeryFine",
@@ -1716,7 +1768,8 @@
       "sortid": 129,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914dial_very_fine"
+      "registry_name": "scp_914dial_very_fine",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914Gui",
@@ -1724,7 +1777,8 @@
       "sortid": 130,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_gui"
+      "registry_name": "scp_914_gui",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914to1to1",
@@ -1752,7 +1806,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914toRough",
@@ -1780,7 +1835,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914toCoarse",
@@ -1808,7 +1864,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914toFine",
@@ -1836,7 +1893,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914toVeryFine",
@@ -1864,7 +1922,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914dialRoughBlockDestroyedByPlayer",
@@ -1880,7 +1939,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914clockworks",
@@ -1888,7 +1948,8 @@
       "sortid": 21,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914clockworks"
+      "registry_name": "scp_914clockworks",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914clockworks2",
@@ -1896,7 +1957,8 @@
       "sortid": 137,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914clockworks_2"
+      "registry_name": "scp_914clockworks_2",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914clockworksUpdateTick",
@@ -1924,7 +1986,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914WindKey",
@@ -1956,7 +2019,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914Achievement",
@@ -1964,7 +2028,8 @@
       "sortid": 140,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_achievement"
+      "registry_name": "scp_914_achievement",
+      "path": "~/Achivements"
     },
     {
       "name": "PlayerSkinChangeScp914",
@@ -1980,7 +2045,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp9141to1PlayerReset",
@@ -1996,7 +2062,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp9141to1PlayerReset2",
@@ -2012,7 +2079,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "PlayerSkin2",
@@ -2028,7 +2096,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin3",
@@ -2044,7 +2113,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin4",
@@ -2060,7 +2130,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin5",
@@ -2076,7 +2147,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin6",
@@ -2092,7 +2164,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin7",
@@ -2108,7 +2181,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin8",
@@ -2124,7 +2198,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin9",
@@ -2140,7 +2215,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin10",
@@ -2156,7 +2232,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "PlayerSkin11",
@@ -2172,7 +2249,8 @@
             "type": "entity"
           }
         ]
-      }
+      },
+      "path": "~/Scp914/PlayerSkinChange"
     },
     {
       "name": "Scp914Intake",
@@ -2180,7 +2258,8 @@
       "sortid": 25,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_intake"
+      "registry_name": "scp_914_intake",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914Output",
@@ -2188,7 +2267,8 @@
       "sortid": 26,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_output"
+      "registry_name": "scp_914_output",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914clockworks2BlockAdded",
@@ -2216,7 +2296,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914clockworksBlockAdded",
@@ -2244,7 +2325,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914OutputDoor",
@@ -2252,7 +2334,8 @@
       "sortid": 28,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_output_door"
+      "registry_name": "scp_914_output_door",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914OutputDoorClosed",
@@ -2260,7 +2343,8 @@
       "sortid": 156,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_output_door_closed"
+      "registry_name": "scp_914_output_door_closed",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914IntakeDoor",
@@ -2268,7 +2352,8 @@
       "sortid": 27,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_intake_door"
+      "registry_name": "scp_914_intake_door",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914IntakeDoorClosed",
@@ -2276,7 +2361,8 @@
       "sortid": 157,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_intake_door_closed"
+      "registry_name": "scp_914_intake_door_closed",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914OutputDoorUpdateTick",
@@ -2304,7 +2390,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914IntakeDoorUpdateTick",
@@ -2332,7 +2419,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914OutputDoorClosedBlockAdded",
@@ -2360,7 +2448,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914IntakeDoorClosedBlockAdded",
@@ -2388,15 +2477,16 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
-      "name": "Scp914WindKeyRough",
+      "name": "Scp914WindKeyCoarse",
       "type": "procedure",
-      "sortid": 162,
+      "sortid": 163,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_wind_key_rough",
+      "registry_name": "scp_914_wind_key_coarse",
       "metadata": {
         "dependencies": [
           {
@@ -2420,18 +2510,8 @@
             "type": "world"
           }
         ]
-      }
-    },
-    {
-      "name": "Scp914WindKeyCoarse",
-      "type": "procedure",
-      "sortid": 163,
-      "compiles": true,
-      "locked_code": false,
-      "registry_name": "scp_914_wind_key_coarse",
-      "metadata": {
-        "dependencies": []
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914WindKey1to1",
@@ -2441,8 +2521,30 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_1to_1",
       "metadata": {
-        "dependencies": []
-      }
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914WindKeyFine",
@@ -2452,8 +2554,30 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_fine",
       "metadata": {
-        "dependencies": []
-      }
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914WindKeyVeryFine",
@@ -2463,8 +2587,30 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_very_fine",
       "metadata": {
-        "dependencies": []
-      }
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914KeyWind",
@@ -2472,7 +2618,8 @@
       "sortid": 24,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_key_wind"
+      "registry_name": "scp_914_key_wind",
+      "path": "~/Scp914"
     },
     {
       "name": "Scp914werehouse",
@@ -2496,7 +2643,8 @@
       "sortid": 35,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "playing_card"
+      "registry_name": "playing_card",
+      "path": "~/Misc"
     },
     {
       "name": "CreditCard",
@@ -2504,7 +2652,8 @@
       "sortid": 36,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "credit_card"
+      "registry_name": "credit_card",
+      "path": "~/Misc"
     },
     {
       "name": "Scp059",
@@ -2512,7 +2661,8 @@
       "sortid": 12,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_059"
+      "registry_name": "scp_059",
+      "path": "~/SCPs"
     },
     {
       "name": "DeltaRadiation",
@@ -2528,7 +2678,8 @@
       "sortid": 170,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_059_adv"
+      "registry_name": "scp_059_adv",
+      "path": "~/Achivements"
     },
     {
       "name": "Scp059UpdateTick",
@@ -2612,7 +2763,8 @@
       "sortid": 174,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_914_metamorphosis"
+      "registry_name": "scp_914_metamorphosis",
+      "path": "~/Achivements"
     },
     {
       "name": "Scp059Rebirth",
@@ -2620,7 +2772,8 @@
       "sortid": 175,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_059_rebirth"
+      "registry_name": "scp_059_rebirth",
+      "path": "~/Achivements"
     },
     {
       "name": "HazmatSuit",
@@ -2634,7 +2787,8 @@
         "el": true,
         "eb": true,
         "ec": true
-      }
+      },
+      "path": "~/Misc"
     },
     {
       "name": "HazmatSuitP",
@@ -2666,7 +2820,8 @@
             "type": "world"
           }
         ]
-      }
+      },
+      "path": "~/Scp914"
     },
     {
       "name": "Scp0591",
@@ -2674,7 +2829,8 @@
       "sortid": 14,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_059_1"
+      "registry_name": "scp_059_1",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp0591UpdateTick",
@@ -2738,7 +2894,8 @@
       "sortid": 13,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_059_contained"
+      "registry_name": "scp_059_contained",
+      "path": "~/SCPs"
     },
     {
       "name": "Scp059OnBlockRightClicked",
@@ -2810,7 +2967,8 @@
       "sortid": 8,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "geiger_1"
+      "registry_name": "geiger_1",
+      "path": "~/Misc"
     },
     {
       "name": "Geiger2",
@@ -2818,7 +2976,8 @@
       "sortid": 182,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "geiger_2"
+      "registry_name": "geiger_2",
+      "path": "~/Misc"
     },
     {
       "name": "Geiger3",
@@ -2826,7 +2985,8 @@
       "sortid": 183,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "geiger_3"
+      "registry_name": "geiger_3",
+      "path": "~/Misc"
     },
     {
       "name": "Scp0591EntityCollidesInTheBlock",
@@ -2866,7 +3026,8 @@
       "sortid": 185,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "geiger_counter"
+      "registry_name": "geiger_counter",
+      "path": "~/Recipes"
     },
     {
       "name": "HazmatHelmet",
@@ -2874,7 +3035,8 @@
       "sortid": 186,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "hazmat_helmet"
+      "registry_name": "hazmat_helmet",
+      "path": "~/Recipes"
     },
     {
       "name": "HazmatChest",
@@ -2882,7 +3044,8 @@
       "sortid": 187,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "hazmat_chest"
+      "registry_name": "hazmat_chest",
+      "path": "~/Recipes"
     },
     {
       "name": "HazmatLegs",
@@ -2890,7 +3053,8 @@
       "sortid": 188,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "hazmat_legs"
+      "registry_name": "hazmat_legs",
+      "path": "~/Recipes"
     },
     {
       "name": "HazmatBoots",
@@ -2898,7 +3062,8 @@
       "sortid": 189,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "hazmat_boots"
+      "registry_name": "hazmat_boots",
+      "path": "~/Recipes"
     },
     {
       "name": "HazmatAchi",
@@ -2906,7 +3071,8 @@
       "sortid": 190,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "hazmat_achi"
+      "registry_name": "hazmat_achi",
+      "path": "~/Achivements"
     },
     {
       "name": "Scp0591infected3",
@@ -2914,7 +3080,8 @@
       "sortid": 191,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_0591infected_3"
+      "registry_name": "scp_0591infected_3",
+      "path": "~/Misc"
     },
     {
       "name": "Scp059infectedP",
@@ -2982,7 +3149,8 @@
       "sortid": 9,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "spray"
+      "registry_name": "spray",
+      "path": "~/Misc"
     },
     {
       "name": "SprayRecipe",
@@ -2990,7 +3158,8 @@
       "sortid": 195,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "spray_recipe"
+      "registry_name": "spray_recipe",
+      "path": "~/Recipes"
     },
     {
       "name": "DeconOpen",
@@ -2998,7 +3167,8 @@
       "sortid": 6,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "decon_open"
+      "registry_name": "decon_open",
+      "path": "~/Misc"
     },
     {
       "name": "DeconClosed",
@@ -3006,7 +3176,8 @@
       "sortid": 196,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "decon_closed"
+      "registry_name": "decon_closed",
+      "path": "~/Misc"
     },
     {
       "name": "DeconOpenUpdateTick",
@@ -3070,7 +3241,8 @@
       "sortid": 199,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "decon_open_reload"
+      "registry_name": "decon_open_reload",
+      "path": "~/Misc"
     },
     {
       "name": "DeconOpenReloadBlockAdded",
@@ -3125,7 +3297,351 @@
       "sortid": 203,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "decon_achievement"
+      "registry_name": "decon_achievement",
+      "path": "~/Achivements"
+    },
+    {
+      "name": "RoughAlive",
+      "type": "procedure",
+      "sortid": 204,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "rough_alive",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "Scp914WindKeyRough",
+      "type": "procedure",
+      "sortid": 205,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_914_wind_key_rough",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914"
+    },
+    {
+      "name": "RoughItems",
+      "type": "procedure",
+      "sortid": 206,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "rough_items",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "CoarseAlive",
+      "type": "procedure",
+      "sortid": 207,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "coarse_alive",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "CoarseItems",
+      "type": "procedure",
+      "sortid": 208,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "coarse_items",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "OnetoOneAlive",
+      "type": "procedure",
+      "sortid": 209,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "oneto_one_alive",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "FineAlive",
+      "type": "procedure",
+      "sortid": 210,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fine_alive",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "VeryFineAlive",
+      "type": "procedure",
+      "sortid": 211,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "very_fine_alive",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "OneToOneItems",
+      "type": "procedure",
+      "sortid": 212,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "one_to_one_items",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "FineItems",
+      "type": "procedure",
+      "sortid": 213,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fine_items",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "VeryFineItems",
+      "type": "procedure",
+      "sortid": 214,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "very_fine_items",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
     }
   ],
   "variable_elements": [
@@ -3715,7 +4231,37 @@
   },
   "foldersRoot": {
     "name": "~",
-    "children": []
+    "children": [
+      {
+        "name": "Achivements",
+        "children": []
+      },
+      {
+        "name": "Misc",
+        "children": []
+      },
+      {
+        "name": "SCPs",
+        "children": []
+      },
+      {
+        "name": "Scp914",
+        "children": [
+          {
+            "name": "SCP914Settings",
+            "children": []
+          },
+          {
+            "name": "PlayerSkinChange",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Recipes",
+        "children": []
+      }
+    ]
   },
   "workspaceSettings": {
     "modid": "scp_additions",

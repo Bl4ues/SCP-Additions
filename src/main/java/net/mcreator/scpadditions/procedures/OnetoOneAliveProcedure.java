@@ -61,7 +61,7 @@ public class OnetoOneAliveProcedure {
 		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
 		Entity entity = (Entity) dependencies.get("entity");
 		if (((Entity) world.getEntitiesWithinAABB(PlayerEntity.class,
-				new AxisAlignedBB((x - 4) - (3 / 2d), y - (3 / 2d), (z - 3) - (3 / 2d), (x - 4) + (3 / 2d), y + (3 / 2d), (z - 3) + (3 / 2d)), null)
+				new AxisAlignedBB((x - 4) - (4 / 2d), y - (4 / 2d), (z - 3) - (4 / 2d), (x - 4) + (4 / 2d), y + (4 / 2d), (z - 3) + (4 / 2d)), null)
 				.stream().sorted(new Object() {
 					Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
 						return Comparator.comparing((Function<Entity, Double>) (_entcnd -> _entcnd.getDistanceSq(_x, _y, _z)));

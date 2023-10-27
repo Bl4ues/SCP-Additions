@@ -90,7 +90,7 @@ public class Scp914WindKeyVeryFineProcedure {
 
 			private void run() {
 				if (((Entity) world.getEntitiesWithinAABB(ItemEntity.class,
-						new AxisAlignedBB((x - 4) - (3 / 2d), y - (3 / 2d), (z - 3) - (3 / 2d), (x - 4) + (3 / 2d), y + (3 / 2d), (z - 3) + (3 / 2d)),
+						new AxisAlignedBB((x - 4) - (4 / 2d), y - (4 / 2d), (z - 3) - (4 / 2d), (x - 4) + (4 / 2d), y + (4 / 2d), (z - 3) + (4 / 2d)),
 						null).stream().sorted(new Object() {
 							Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
 								return Comparator.comparing((Function<Entity, Double>) (_entcnd -> _entcnd.getDistanceSq(_x, _y, _z)));
@@ -107,6 +107,32 @@ public class Scp914WindKeyVeryFineProcedure {
 									new AbstractMap.SimpleEntry<>("entity", entity))
 							.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 				}
+				new Object() {
+					private int ticks = 0;
+					private float waitTicks;
+					private IWorld world;
+
+					public void start(IWorld world, int waitTicks) {
+						this.waitTicks = waitTicks;
+						MinecraftForge.EVENT_BUS.register(this);
+						this.world = world;
+					}
+
+					@SubscribeEvent
+					public void tick(TickEvent.ServerTickEvent event) {
+						if (event.phase == TickEvent.Phase.END) {
+							this.ticks += 1;
+							if (this.ticks >= this.waitTicks)
+								run();
+						}
+					}
+
+					private void run() {
+						ScpAdditionsModVariables.MapVariables.get(world).Scp914refining = (false);
+						ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
+						MinecraftForge.EVENT_BUS.unregister(this);
+					}
+				}.start(world, (int) 160);
 				MinecraftForge.EVENT_BUS.unregister(this);
 			}
 		}.start(world, (int) 30);

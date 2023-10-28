@@ -85,8 +85,13 @@ public class Scp079controloffBlock extends ScpAdditionsModElements.ModElement {
 		}
 
 		@Override
+		public boolean propagatesSkylightDown(BlockState state, IBlockReader reader, BlockPos pos) {
+			return state.getFluidState().isEmpty();
+		}
+
+		@Override
 		public int getOpacity(BlockState state, IBlockReader worldIn, BlockPos pos) {
-			return 15;
+			return 0;
 		}
 
 		@Override

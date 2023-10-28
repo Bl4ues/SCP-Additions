@@ -108,6 +108,10 @@ public class ScpAdditionsModElements {
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "dooropen")));
 		sounds.put(new ResourceLocation("scp_additions", "doorclosing"),
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "doorclosing")));
+		sounds.put(new ResourceLocation("scp_additions", "accessgranted"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "accessgranted")));
+		sounds.put(new ResourceLocation("scp_additions", "accessdenied"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "accessdenied")));
 		try {
 			ModFileScanData modFileInfo = ModList.get().getModFileById("scp_additions").getFile().getScanResult();
 			Set<ModFileScanData.AnnotationData> annotations = modFileInfo.getAnnotations();

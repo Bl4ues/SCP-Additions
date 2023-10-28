@@ -1,0 +1,10 @@
+{
+  "mappings": {
+    "default": {
+      "map": {
+        "5": "tx1"
+      },
+      "name": "default"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "scp_additions:custom/scp_keycard_reader",
+  "textures": {
+    "all": "scp_additions:blocks/0",
+    "particle": "scp_additions:blocks/0",
+    "0": "scp_additions:blocks/0",
+    "1": "scp_additions:blocks/1",
+    "2": "scp_additions:blocks/2",
+    "3": "scp_additions:blocks/3",
+    "4": "scp_additions:blocks/4"
+  }
+}

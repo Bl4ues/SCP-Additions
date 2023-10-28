@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_additions:block/lv_6_left_reader_wrong"
+    },
+    "facing=east": {
+      "model": "scp_additions:block/lv_6_left_reader_wrong",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_additions:block/lv_6_left_reader_wrong",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_additions:block/lv_6_left_reader_wrong",
+      "y": 270
+    }
+  }
+}

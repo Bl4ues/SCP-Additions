@@ -16,9 +16,17 @@ import net.minecraft.network.IPacket;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.item.Item;
 import net.minecraft.entity.monster.MonsterEntity;
+import net.minecraft.entity.ai.goal.SwimGoal;
+import net.minecraft.entity.ai.goal.ReturnToVillageGoal;
+import net.minecraft.entity.ai.goal.RandomWalkingGoal;
+import net.minecraft.entity.ai.goal.OpenDoorGoal;
+import net.minecraft.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.entity.ai.goal.LookRandomlyGoal;
+import net.minecraft.entity.ai.goal.HurtByTargetGoal;
 import net.minecraft.entity.ai.attributes.Attributes;
 import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.MobEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.CreatureAttribute;
@@ -69,13 +77,31 @@ public class Scp0591infected3Entity extends ScpAdditionsModElements.ModElement {
 		public CustomEntity(EntityType<CustomEntity> type, World world) {
 			super(type, world);
 			experienceValue = 0;
-			setNoAI(true);
+			setNoAI(false);
 			enablePersistence();
 		}
 
 		@Override
 		public IPacket<?> createSpawnPacket() {
 			return NetworkHooks.getEntitySpawningPacket(this);
+		}
+
+		@Override
+		protected void registerGoals() {
+			super.registerGoals();
+			this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2, false) {
+				@Override
+				protected double getAttackReachSqr(LivingEntity entity) {
+					return (double) (4.0 + entity.getWidth() * entity.getWidth());
+				}
+			});
+			this.goalSelector.addGoal(2, new RandomWalkingGoal(this, 1));
+			this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
+			this.goalSelector.addGoal(4, new LookRandomlyGoal(this));
+			this.goalSelector.addGoal(5, new SwimGoal(this));
+			this.goalSelector.addGoal(6, new OpenDoorGoal(this, true));
+			this.goalSelector.addGoal(7, new OpenDoorGoal(this, false));
+			this.goalSelector.addGoal(8, new ReturnToVillageGoal(this, 0.6, false));
 		}
 
 		@Override

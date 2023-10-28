@@ -318,5 +318,25 @@
         "stream": false
       }
     ]
+  },
+  "accessgranted": {
+    "category": "neutral",
+    "subtitle": "subtitles.accessgranted",
+    "sounds": [
+      {
+        "name": "scp_additions:accessgranted",
+        "stream": false
+      }
+    ]
+  },
+  "accessdenied": {
+    "category": "neutral",
+    "subtitle": "subtitles.accessdenied",
+    "sounds": [
+      {
+        "name": "scp_additions:accessdenied",
+        "stream": false
+      }
+    ]
   }
 }

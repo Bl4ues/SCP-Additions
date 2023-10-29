@@ -56,7 +56,7 @@ public class DeconClosedBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public DeconClosedBlock(ScpAdditionsModElements instance) {
-		super(instance, 196);
+		super(instance, 215);
 	}
 
 	@Override

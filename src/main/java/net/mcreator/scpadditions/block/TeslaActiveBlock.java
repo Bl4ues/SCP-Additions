@@ -59,7 +59,7 @@ public class TeslaActiveBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public TeslaActiveBlock(ScpAdditionsModElements instance) {
-		super(instance, 38);
+		super(instance, 58);
 	}
 
 	@Override

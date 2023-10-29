@@ -65,7 +65,7 @@ public class Scp914dialRoughBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914dialRoughBlock(ScpAdditionsModElements instance) {
-		super(instance, 126);
+		super(instance, 146);
 	}
 
 	@Override

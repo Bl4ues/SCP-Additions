@@ -13,7 +13,7 @@ import net.mcreator.scpadditions.ScpAdditionsModElements;
 @ScpAdditionsModElements.ModElement.Tag
 public class SCPadditionsSCPsItemGroup extends ScpAdditionsModElements.ModElement {
 	public SCPadditionsSCPsItemGroup(ScpAdditionsModElements instance) {
-		super(instance, 201);
+		super(instance, 220);
 	}
 
 	@Override

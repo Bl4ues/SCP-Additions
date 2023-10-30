@@ -91,6 +91,6 @@ public class TeslaRechargeBlockAddedProcedure {
 				}
 				MinecraftForge.EVENT_BUS.unregister(this);
 			}
-		}.start(world, (int) 40);
+		}.start(world, (int) 30);
 	}
 }

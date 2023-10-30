@@ -12,7 +12,7 @@
     "customModelName": "teslaterminaloff:default",
     "rotationMode": 1,
     "enablePitch": false,
-    "emissiveRendering": true,
+    "emissiveRendering": false,
     "displayFluidOverlay": false,
     "itemTexture": "terminalitem",
     "particleTexture": "",

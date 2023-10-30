@@ -55,7 +55,7 @@ public class PlayerSkin8Procedure {
 				.orElse(new ScpAdditionsModVariables.PlayerVariables())).PlayerOn1to1_8) {
 			if (_evt.getRenderer() instanceof PlayerRenderer) {
 				if (_evt instanceof RenderLivingEvent.Pre) {
-					//  _evt.setCanceled(true); 
+					_evt.setCanceled(true);
 				}
 				new com.kleiders.kleidersplayerrenderer.ClassicPlayerRenderer(_evt.getRenderer().getRenderManager(),
 						new ResourceLocation("scp_additions:textures/entities/skin8.png")).render((AbstractClientPlayerEntity) _evt.getEntity(),

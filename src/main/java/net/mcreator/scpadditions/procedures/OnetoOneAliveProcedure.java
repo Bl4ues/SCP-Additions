@@ -197,7 +197,7 @@ public class OnetoOneAliveProcedure {
 							}
 						}
 					}
-					if (Math.random() < 0.25) {
+					if (Math.random() < 0.15) {
 						{
 							boolean _setval = (true);
 							entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
@@ -276,7 +276,7 @@ public class OnetoOneAliveProcedure {
 							});
 						}
 					} else {
-						if (Math.random() < 0.25) {
+						if (Math.random() < 0.15) {
 							{
 								boolean _setval = (false);
 								entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
@@ -355,7 +355,7 @@ public class OnetoOneAliveProcedure {
 								});
 							}
 						} else {
-							if (Math.random() < 0.25) {
+							if (Math.random() < 0.15) {
 								{
 									boolean _setval = (false);
 									entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
@@ -434,7 +434,7 @@ public class OnetoOneAliveProcedure {
 									});
 								}
 							} else {
-								if (Math.random() < 0.25) {
+								if (Math.random() < 0.15) {
 									{
 										boolean _setval = (false);
 										entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
@@ -513,7 +513,7 @@ public class OnetoOneAliveProcedure {
 										});
 									}
 								} else {
-									if (Math.random() < 0.25) {
+									if (Math.random() < 0.15) {
 										{
 											boolean _setval = (false);
 											entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
@@ -592,7 +592,7 @@ public class OnetoOneAliveProcedure {
 											});
 										}
 									} else {
-										if (Math.random() < 0.25) {
+										if (Math.random() < 0.15) {
 											{
 												boolean _setval = (false);
 												entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
@@ -682,7 +682,7 @@ public class OnetoOneAliveProcedure {
 														});
 											}
 										} else {
-											if (Math.random() < 0.25) {
+											if (Math.random() < 0.15) {
 												{
 													boolean _setval = (false);
 													entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
@@ -772,7 +772,7 @@ public class OnetoOneAliveProcedure {
 															});
 												}
 											} else {
-												if (Math.random() < 0.25) {
+												if (Math.random() < 0.15) {
 													{
 														boolean _setval = (false);
 														entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
@@ -952,7 +952,7 @@ public class OnetoOneAliveProcedure {
 																	});
 														}
 													} else {
-														if (Math.random() < 0.25) {
+														if (Math.random() < 0.15) {
 															{
 																boolean _setval = (false);
 																entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)

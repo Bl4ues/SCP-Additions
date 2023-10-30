@@ -112,13 +112,9 @@ public class TeslaGateUpdateTickProcedure {
 							}
 							MinecraftForge.EVENT_BUS.unregister(this);
 						}
-					}.start(world, (int) 8);
+					}.start(world, (int) 5);
 				}
 			}
-		}
-		if (world.getWorldInfo().getGameRulesInstance().getBoolean(TeslaGateOnGameRule.gamerule) == false) {
-			if (world instanceof World)
-				((World) world).notifyNeighborsOfStateChange(new BlockPos(x, y, z), ((World) world).getBlockState(new BlockPos(x, y, z)).getBlock());
 		}
 	}
 }

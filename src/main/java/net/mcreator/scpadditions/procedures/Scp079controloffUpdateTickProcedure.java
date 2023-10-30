@@ -8,7 +8,6 @@ import net.minecraft.block.BlockState;
 
 import net.mcreator.scpadditions.world.TeslaGateOnGameRule;
 import net.mcreator.scpadditions.world.Scp079controlOnGameRule;
-import net.mcreator.scpadditions.block.Scp079controloffBlock;
 import net.mcreator.scpadditions.block.Scp079controlBlock;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
@@ -58,25 +57,6 @@ public class Scp079controloffUpdateTickProcedure {
 			}
 			if (world instanceof World) {
 				((World) world).getGameRules().get(TeslaGateOnGameRule.gamerule).set((true), ((World) world).getServer());
-			}
-		}
-		if (world.getWorldInfo().getGameRulesInstance().getBoolean(Scp079controlOnGameRule.gamerule) == false) {
-			{
-				BlockPos _bp = new BlockPos(x, y, z);
-				BlockState _bs = Scp079controloffBlock.block.getDefaultState();
-				BlockState _bso = world.getBlockState(_bp);
-				for (Map.Entry<Property<?>, Comparable<?>> entry : _bso.getValues().entrySet()) {
-					Property _property = _bs.getBlock().getStateContainer().getProperty(entry.getKey().getName());
-					if (_property != null && _bs.get(_property) != null)
-						try {
-							_bs = _bs.with(_property, (Comparable) entry.getValue());
-						} catch (Exception e) {
-						}
-				}
-				world.setBlockState(_bp, _bs, 3);
-			}
-			if (world instanceof World) {
-				((World) world).getGameRules().get(TeslaGateOnGameRule.gamerule).set((false), ((World) world).getServer());
 			}
 		}
 	}

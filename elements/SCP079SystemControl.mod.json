@@ -126,7 +126,7 @@
     "fluidCapacity": 8000,
     "fluidRestrictions": [],
     "onRedstoneOn": {
-      "name": "Scp079controlsystemon"
+      "name": "SCP079SystemControlP"
     },
     "onRedstoneOff": {
       "name": "SCP079SystemControlOff"

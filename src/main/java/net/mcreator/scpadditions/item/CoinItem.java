@@ -17,7 +17,7 @@ public class CoinItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public CoinItem(ScpAdditionsModElements instance) {
-		super(instance, 38);
+		super(instance, 39);
 	}
 
 	@Override

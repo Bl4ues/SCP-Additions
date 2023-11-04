@@ -42,7 +42,7 @@ public class Scp914IntakeBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914IntakeBlock(ScpAdditionsModElements instance) {
-		super(instance, 25);
+		super(instance, 26);
 	}
 
 	@Override

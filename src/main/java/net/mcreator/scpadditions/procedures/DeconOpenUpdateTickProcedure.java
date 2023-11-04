@@ -119,7 +119,7 @@ public class DeconOpenUpdateTickProcedure {
 						}
 						MinecraftForge.EVENT_BUS.unregister(this);
 					}
-				}.start(world, (int) 5);
+				}.start(world, (int) 3);
 			}
 		}
 	}

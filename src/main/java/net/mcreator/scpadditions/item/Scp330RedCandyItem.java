@@ -26,7 +26,7 @@ public class Scp330RedCandyItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public Scp330RedCandyItem(ScpAdditionsModElements instance) {
-		super(instance, 30);
+		super(instance, 31);
 	}
 
 	@Override

@@ -112,6 +112,18 @@ public class ScpAdditionsModElements {
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "accessgranted")));
 		sounds.put(new ResourceLocation("scp_additions", "accessdenied"),
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "accessdenied")));
+		sounds.put(new ResourceLocation("scp_additions", "scp294enter"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294enter")));
+		sounds.put(new ResourceLocation("scp_additions", "scp294pouring"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294pouring")));
+		sounds.put(new ResourceLocation("scp_additions", "scp294emptycup"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294emptycup")));
+		sounds.put(new ResourceLocation("scp_additions", "scp294outofrange"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294outofrange")));
+		sounds.put(new ResourceLocation("scp_additions", "scp294on"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294on")));
+		sounds.put(new ResourceLocation("scp_additions", "scp294off"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294off")));
 		try {
 			ModFileScanData modFileInfo = ModList.get().getModFileById("scp_additions").getFile().getScanResult();
 			Set<ModFileScanData.AnnotationData> annotations = modFileInfo.getAnnotations();

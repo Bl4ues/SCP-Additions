@@ -17,7 +17,7 @@ public class PiecesOfPaperItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public PiecesOfPaperItem(ScpAdditionsModElements instance) {
-		super(instance, 37);
+		super(instance, 38);
 	}
 
 	@Override

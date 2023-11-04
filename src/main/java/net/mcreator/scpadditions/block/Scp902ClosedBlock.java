@@ -64,7 +64,7 @@ public class Scp902ClosedBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp902ClosedBlock(ScpAdditionsModElements instance) {
-		super(instance, 19);
+		super(instance, 20);
 	}
 
 	@Override

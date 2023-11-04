@@ -1,0 +1,25 @@
+{
+  "_fv": 33,
+  "_type": "achievement",
+  "definition": {
+    "achievementName": "Unleashing the AI",
+    "achievementDescription": "Gave remote access for the system controls to SCP-079.",
+    "achievementIcon": {
+      "value": "CUSTOM:Scp079on"
+    },
+    "background": "Default",
+    "disableDisplay": false,
+    "showPopup": true,
+    "announceToChat": true,
+    "hideIfNotCompleted": false,
+    "rewardLoot": [],
+    "rewardRecipes": [],
+    "rewardFunction": "No function",
+    "rewardXP": 10,
+    "achievementType": "task",
+    "parent": {
+      "value": "CUSTOM:Scp079"
+    },
+    "triggerxml": "<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"custom_trigger\" x=\"32\" y=\"40\"><next><block type=\"advancement_trigger\" deletable=\"false\"></block></next></block></xml>"
+  }
+}

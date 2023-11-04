@@ -58,7 +58,7 @@ public class DeconOpenReloadBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public DeconOpenReloadBlock(ScpAdditionsModElements instance) {
-		super(instance, 218);
+		super(instance, 219);
 	}
 
 	@Override

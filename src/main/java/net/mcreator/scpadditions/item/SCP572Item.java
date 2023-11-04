@@ -38,7 +38,7 @@ public class SCP572Item extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public SCP572Item(ScpAdditionsModElements instance) {
-		super(instance, 18);
+		super(instance, 19);
 	}
 
 	@Override

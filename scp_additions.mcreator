@@ -12,7 +12,7 @@
     {
       "name": "SCPAdditions",
       "type": "tab",
-      "sortid": 57,
+      "sortid": 58,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions"
@@ -20,7 +20,7 @@
     {
       "name": "TeslaActive",
       "type": "block",
-      "sortid": 58,
+      "sortid": 59,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active",
@@ -29,7 +29,7 @@
     {
       "name": "TeslaActiveProcedure",
       "type": "procedure",
-      "sortid": 59,
+      "sortid": 60,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_procedure",
@@ -57,7 +57,7 @@
     {
       "name": "TeslaGateUpdateTick",
       "type": "procedure",
-      "sortid": 60,
+      "sortid": 61,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_gate_update_tick",
@@ -85,7 +85,7 @@
     {
       "name": "TeslaTerminal",
       "type": "gui",
-      "sortid": 61,
+      "sortid": 62,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal"
@@ -93,7 +93,7 @@
     {
       "name": "TeslaRecharge",
       "type": "block",
-      "sortid": 62,
+      "sortid": 63,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge",
@@ -102,7 +102,7 @@
     {
       "name": "TeslaRechargeBlockAdded",
       "type": "procedure",
-      "sortid": 63,
+      "sortid": 64,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge_block_added",
@@ -130,7 +130,7 @@
     {
       "name": "TeslaRechargeUpdateTick",
       "type": "procedure",
-      "sortid": 64,
+      "sortid": 65,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge_update_tick",
@@ -158,7 +158,7 @@
     {
       "name": "TeslaActive2",
       "type": "block",
-      "sortid": 65,
+      "sortid": 66,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_2",
@@ -167,7 +167,7 @@
     {
       "name": "TeslaActive3",
       "type": "block",
-      "sortid": 66,
+      "sortid": 67,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_3",
@@ -176,7 +176,7 @@
     {
       "name": "TeslaActive4",
       "type": "block",
-      "sortid": 67,
+      "sortid": 68,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_4",
@@ -185,7 +185,7 @@
     {
       "name": "TeslaActive2BlockAdded",
       "type": "procedure",
-      "sortid": 68,
+      "sortid": 69,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_2_block_added",
@@ -213,7 +213,7 @@
     {
       "name": "TeslaActive3B",
       "type": "procedure",
-      "sortid": 69,
+      "sortid": 70,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_3_b",
@@ -241,7 +241,7 @@
     {
       "name": "TeslaActive4B",
       "type": "procedure",
-      "sortid": 70,
+      "sortid": 71,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_4_b",
@@ -269,7 +269,7 @@
     {
       "name": "TeslaGateRecipe",
       "type": "recipe",
-      "sortid": 71,
+      "sortid": 72,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_gate_recipe",
@@ -287,7 +287,7 @@
     {
       "name": "SecurityCred",
       "type": "recipe",
-      "sortid": 72,
+      "sortid": 73,
       "compiles": true,
       "locked_code": false,
       "registry_name": "security_cred",
@@ -296,7 +296,7 @@
     {
       "name": "TeslaTerminalBlock",
       "type": "block",
-      "sortid": 73,
+      "sortid": 74,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_block",
@@ -305,7 +305,7 @@
     {
       "name": "TeslaTerminalRec",
       "type": "recipe",
-      "sortid": 74,
+      "sortid": 75,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_rec",
@@ -314,7 +314,7 @@
     {
       "name": "TerminalTesla",
       "type": "procedure",
-      "sortid": 75,
+      "sortid": 76,
       "compiles": true,
       "locked_code": false,
       "registry_name": "terminal_tesla",
@@ -355,7 +355,7 @@
     {
       "name": "TeslaTerminalOffP",
       "type": "procedure",
-      "sortid": 76,
+      "sortid": 77,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_off_p",
@@ -387,7 +387,7 @@
     {
       "name": "TerminalOn",
       "type": "procedure",
-      "sortid": 77,
+      "sortid": 78,
       "compiles": true,
       "locked_code": false,
       "registry_name": "terminal_on",
@@ -415,7 +415,7 @@
     {
       "name": "TerminalOff",
       "type": "procedure",
-      "sortid": 78,
+      "sortid": 79,
       "compiles": true,
       "locked_code": false,
       "registry_name": "terminal_off",
@@ -443,7 +443,7 @@
     {
       "name": "TeslaGateOn",
       "type": "gamerule",
-      "sortid": 79,
+      "sortid": 80,
       "compiles": true,
       "locked_code": false,
       "registry_name": "teslaGateOn",
@@ -463,7 +463,7 @@
     {
       "name": "Scp079off",
       "type": "block",
-      "sortid": 80,
+      "sortid": 81,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079off",
@@ -472,7 +472,7 @@
     {
       "name": "Scp079onP",
       "type": "procedure",
-      "sortid": 81,
+      "sortid": 82,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079on_p",
@@ -500,7 +500,7 @@
     {
       "name": "Scp079offP",
       "type": "procedure",
-      "sortid": 82,
+      "sortid": 83,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079off_p",
@@ -528,7 +528,7 @@
     {
       "name": "Scp079control",
       "type": "block",
-      "sortid": 83,
+      "sortid": 84,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079control",
@@ -546,7 +546,7 @@
     {
       "name": "Scp079controlOn",
       "type": "gamerule",
-      "sortid": 84,
+      "sortid": 85,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp079controlOn",
@@ -566,12 +566,24 @@
     {
       "name": "SCP079SystemControlP",
       "type": "procedure",
-      "sortid": 85,
+      "sortid": 86,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079_system_control_p",
       "metadata": {
         "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
           {
             "name": "world",
             "type": "world"
@@ -582,7 +594,7 @@
     {
       "name": "SCP079SystemControlOff",
       "type": "procedure",
-      "sortid": 86,
+      "sortid": 87,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079_system_control_off",
@@ -598,7 +610,7 @@
     {
       "name": "Scp079controloffUpdateTick",
       "type": "procedure",
-      "sortid": 87,
+      "sortid": 88,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controloff_update_tick",
@@ -626,7 +638,7 @@
     {
       "name": "Scp079controlsystemon",
       "type": "procedure",
-      "sortid": 88,
+      "sortid": 89,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controlsystemon",
@@ -642,7 +654,7 @@
     {
       "name": "Scp079controlonUpdateTick",
       "type": "procedure",
-      "sortid": 89,
+      "sortid": 90,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controlon_update_tick",
@@ -670,7 +682,7 @@
     {
       "name": "Scp330",
       "type": "block",
-      "sortid": 16,
+      "sortid": 17,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330",
@@ -679,7 +691,7 @@
     {
       "name": "Scp330RedCandy",
       "type": "item",
-      "sortid": 30,
+      "sortid": 31,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_red_candy",
@@ -688,7 +700,7 @@
     {
       "name": "Scp330GreenCandy",
       "type": "item",
-      "sortid": 31,
+      "sortid": 32,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_green_candy",
@@ -697,7 +709,7 @@
     {
       "name": "Scp330YellowCandy",
       "type": "item",
-      "sortid": 32,
+      "sortid": 33,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_yellow_candy",
@@ -706,7 +718,7 @@
     {
       "name": "Scp330BlueCandy",
       "type": "item",
-      "sortid": 33,
+      "sortid": 34,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_blue_candy",
@@ -715,7 +727,7 @@
     {
       "name": "RedCandy",
       "type": "procedure",
-      "sortid": 90,
+      "sortid": 91,
       "compiles": true,
       "locked_code": false,
       "registry_name": "red_candy",
@@ -747,7 +759,7 @@
     {
       "name": "GreenCandy",
       "type": "procedure",
-      "sortid": 91,
+      "sortid": 92,
       "compiles": true,
       "locked_code": false,
       "registry_name": "green_candy",
@@ -779,7 +791,7 @@
     {
       "name": "YellowCandy",
       "type": "procedure",
-      "sortid": 92,
+      "sortid": 93,
       "compiles": true,
       "locked_code": false,
       "registry_name": "yellow_candy",
@@ -811,7 +823,7 @@
     {
       "name": "BlueCandy",
       "type": "procedure",
-      "sortid": 93,
+      "sortid": 94,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blue_candy",
@@ -843,7 +855,7 @@
     {
       "name": "Scp330CandyDrop",
       "type": "procedure",
-      "sortid": 94,
+      "sortid": 95,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_drop",
@@ -875,7 +887,7 @@
     {
       "name": "Scp330CandyClear",
       "type": "procedure",
-      "sortid": 95,
+      "sortid": 96,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_clear",
@@ -891,7 +903,7 @@
     {
       "name": "Scp330CandyGive",
       "type": "procedure",
-      "sortid": 96,
+      "sortid": 97,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_give",
@@ -907,7 +919,7 @@
     {
       "name": "Scp330CandyClear2",
       "type": "procedure",
-      "sortid": 97,
+      "sortid": 98,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_candy_clear_2",
@@ -923,7 +935,7 @@
     {
       "name": "Scp330Achievement",
       "type": "achievement",
-      "sortid": 98,
+      "sortid": 99,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_achievement",
@@ -932,7 +944,7 @@
     {
       "name": "Tesla",
       "type": "achievement",
-      "sortid": 99,
+      "sortid": 100,
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla",
@@ -941,7 +953,7 @@
     {
       "name": "Scp079",
       "type": "achievement",
-      "sortid": 100,
+      "sortid": 101,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079",
@@ -950,7 +962,7 @@
     {
       "name": "Scp426",
       "type": "block",
-      "sortid": 17,
+      "sortid": 18,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426",
@@ -959,7 +971,7 @@
     {
       "name": "Scp426OnBlockRightClicked",
       "type": "procedure",
-      "sortid": 101,
+      "sortid": 102,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426_on_block_right_clicked",
@@ -975,7 +987,7 @@
     {
       "name": "Scp426Achievement",
       "type": "achievement",
-      "sortid": 102,
+      "sortid": 103,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426_achievement",
@@ -984,7 +996,7 @@
     {
       "name": "SCP572",
       "type": "item",
-      "sortid": 18,
+      "sortid": 19,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572",
@@ -993,7 +1005,7 @@
     {
       "name": "SCP572LivingEntityIsHitWithItem",
       "type": "procedure",
-      "sortid": 103,
+      "sortid": 104,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_living_entity_is_hit_with_item",
@@ -1009,7 +1021,7 @@
     {
       "name": "Scp572AAchievement",
       "type": "achievement",
-      "sortid": 104,
+      "sortid": 105,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_a_achievement",
@@ -1018,7 +1030,7 @@
     {
       "name": "SCP572ItemInInventoryTick",
       "type": "procedure",
-      "sortid": 105,
+      "sortid": 106,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_item_in_inventory_tick",
@@ -1034,7 +1046,7 @@
     {
       "name": "Scp1176",
       "type": "block",
-      "sortid": 29,
+      "sortid": 30,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176",
@@ -1043,7 +1055,7 @@
     {
       "name": "Scp1176honey",
       "type": "item",
-      "sortid": 34,
+      "sortid": 35,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176honey",
@@ -1052,7 +1064,7 @@
     {
       "name": "Scp1176Achievement",
       "type": "achievement",
-      "sortid": 106,
+      "sortid": 107,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_achievement",
@@ -1061,7 +1073,7 @@
     {
       "name": "Scp1176UpdateTick",
       "type": "procedure",
-      "sortid": 107,
+      "sortid": 108,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_update_tick",
@@ -1089,7 +1101,7 @@
     {
       "name": "SCPAdditionsAch",
       "type": "achievement",
-      "sortid": 108,
+      "sortid": 109,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions_ach",
@@ -1098,7 +1110,7 @@
     {
       "name": "BloodType1",
       "type": "procedure",
-      "sortid": 109,
+      "sortid": 110,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_type_1",
@@ -1114,7 +1126,7 @@
     {
       "name": "BloodTypeOverlay",
       "type": "overlay",
-      "sortid": 110,
+      "sortid": 111,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_type_overlay"
@@ -1122,7 +1134,7 @@
     {
       "name": "BloodTypeOverlayDisplayOverlayIngame",
       "type": "procedure",
-      "sortid": 111,
+      "sortid": 112,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_type_overlay_display_overlay_ingame",
@@ -1139,7 +1151,7 @@
     {
       "name": "OverlayOpos",
       "type": "procedure",
-      "sortid": 112,
+      "sortid": 113,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_opos",
@@ -1156,7 +1168,7 @@
     {
       "name": "OverlayApos",
       "type": "procedure",
-      "sortid": 113,
+      "sortid": 114,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_apos",
@@ -1173,7 +1185,7 @@
     {
       "name": "OverlayAneg",
       "type": "procedure",
-      "sortid": 114,
+      "sortid": 115,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_aneg",
@@ -1190,7 +1202,7 @@
     {
       "name": "OverlayBpos",
       "type": "procedure",
-      "sortid": 115,
+      "sortid": 116,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_bpos",
@@ -1207,7 +1219,7 @@
     {
       "name": "OverlayBneg",
       "type": "procedure",
-      "sortid": 116,
+      "sortid": 117,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_bneg",
@@ -1224,7 +1236,7 @@
     {
       "name": "OverlayABpos",
       "type": "procedure",
-      "sortid": 117,
+      "sortid": 118,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_a_bpos",
@@ -1241,7 +1253,7 @@
     {
       "name": "OverlayABneg",
       "type": "procedure",
-      "sortid": 118,
+      "sortid": 119,
       "compiles": true,
       "locked_code": false,
       "registry_name": "overlay_a_bneg",
@@ -1258,7 +1270,7 @@
     {
       "name": "BloodOverlayOpos",
       "type": "overlay",
-      "sortid": 119,
+      "sortid": 120,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_opos"
@@ -1266,7 +1278,7 @@
     {
       "name": "BloodOverlayApos",
       "type": "overlay",
-      "sortid": 120,
+      "sortid": 121,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_apos"
@@ -1274,7 +1286,7 @@
     {
       "name": "BloodOverlayAneg",
       "type": "overlay",
-      "sortid": 121,
+      "sortid": 122,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_aneg"
@@ -1282,7 +1294,7 @@
     {
       "name": "BloodOverlayBpos",
       "type": "overlay",
-      "sortid": 122,
+      "sortid": 123,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_bpos"
@@ -1290,7 +1302,7 @@
     {
       "name": "BloodOverlayBneg",
       "type": "overlay",
-      "sortid": 123,
+      "sortid": 124,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_bneg"
@@ -1298,7 +1310,7 @@
     {
       "name": "BloodOverlayABpos",
       "type": "overlay",
-      "sortid": 124,
+      "sortid": 125,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_a_bpos"
@@ -1306,7 +1318,7 @@
     {
       "name": "BloodOverlayABneg",
       "type": "overlay",
-      "sortid": 125,
+      "sortid": 126,
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_overlay_a_bneg"
@@ -1314,7 +1326,7 @@
     {
       "name": "Scp1176honeyPlayerFinishesUsingItem",
       "type": "procedure",
-      "sortid": 126,
+      "sortid": 127,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176honey_player_finishes_using_item",
@@ -1346,7 +1358,7 @@
     {
       "name": "Scp1176OnBlockRightClicked",
       "type": "procedure",
-      "sortid": 127,
+      "sortid": 128,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_on_block_right_clicked",
@@ -1378,7 +1390,7 @@
     {
       "name": "Sugar",
       "type": "recipe",
-      "sortid": 128,
+      "sortid": 129,
       "compiles": true,
       "locked_code": false,
       "registry_name": "sugar",
@@ -1387,7 +1399,7 @@
     {
       "name": "HoneyBlock",
       "type": "recipe",
-      "sortid": 129,
+      "sortid": 130,
       "compiles": true,
       "locked_code": false,
       "registry_name": "honey_block",
@@ -1396,7 +1408,7 @@
     {
       "name": "Scp902Closed",
       "type": "block",
-      "sortid": 19,
+      "sortid": 20,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed",
@@ -1405,7 +1417,7 @@
     {
       "name": "Scp902Open",
       "type": "block",
-      "sortid": 130,
+      "sortid": 131,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_open",
@@ -1414,7 +1426,7 @@
     {
       "name": "Scp902ClosedUpdateTick",
       "type": "procedure",
-      "sortid": 131,
+      "sortid": 132,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed_update_tick",
@@ -1442,7 +1454,7 @@
     {
       "name": "Scp902ClosedOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 132,
+      "sortid": 133,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed_on_block_right_clicked",
@@ -1474,7 +1486,7 @@
     {
       "name": "Scp902OpenOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 133,
+      "sortid": 134,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_open_on_block_right_clicked",
@@ -1502,7 +1514,7 @@
     {
       "name": "Scp902Achievement",
       "type": "achievement",
-      "sortid": 134,
+      "sortid": 135,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_achievement",
@@ -1511,7 +1523,7 @@
     {
       "name": "SCPAdditionsAchievement",
       "type": "procedure",
-      "sortid": 135,
+      "sortid": 136,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions_achievement",
@@ -1545,7 +1557,7 @@
     {
       "name": "ButtonRon",
       "type": "block",
-      "sortid": 136,
+      "sortid": 137,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_ron",
@@ -1554,7 +1566,7 @@
     {
       "name": "ButtonLon",
       "type": "block",
-      "sortid": 137,
+      "sortid": 138,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_lon",
@@ -1563,7 +1575,7 @@
     {
       "name": "ButtonRoffOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 138,
+      "sortid": 139,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_roff_on_block_right_clicked",
@@ -1591,7 +1603,7 @@
     {
       "name": "ButtonLoffOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 139,
+      "sortid": 140,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_loff_on_block_right_clicked",
@@ -1619,7 +1631,7 @@
     {
       "name": "ButtonRonBlockAdded",
       "type": "procedure",
-      "sortid": 140,
+      "sortid": 141,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_ron_block_added",
@@ -1647,7 +1659,7 @@
     {
       "name": "ButtonLonBlockAdded",
       "type": "procedure",
-      "sortid": 141,
+      "sortid": 142,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_lon_block_added",
@@ -1675,7 +1687,7 @@
     {
       "name": "ButtonRight",
       "type": "recipe",
-      "sortid": 142,
+      "sortid": 143,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_right",
@@ -1684,7 +1696,7 @@
     {
       "name": "ButtonLeft",
       "type": "recipe",
-      "sortid": 143,
+      "sortid": 144,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_left",
@@ -1693,7 +1705,7 @@
     {
       "name": "ButtonRightSwap",
       "type": "recipe",
-      "sortid": 144,
+      "sortid": 145,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_right_swap",
@@ -1702,7 +1714,7 @@
     {
       "name": "ButtonLeftSwap",
       "type": "recipe",
-      "sortid": 145,
+      "sortid": 146,
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_left_swap",
@@ -1711,7 +1723,7 @@
     {
       "name": "Scp914block",
       "type": "block",
-      "sortid": 20,
+      "sortid": 21,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914block",
@@ -1720,7 +1732,7 @@
     {
       "name": "Scp914body",
       "type": "block",
-      "sortid": 22,
+      "sortid": 23,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914body",
@@ -1729,7 +1741,7 @@
     {
       "name": "Scp914dial1to1",
       "type": "block",
-      "sortid": 23,
+      "sortid": 24,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_1to_1",
@@ -1738,7 +1750,7 @@
     {
       "name": "Scp914dialRough",
       "type": "block",
-      "sortid": 146,
+      "sortid": 147,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_rough",
@@ -1747,7 +1759,7 @@
     {
       "name": "Scp914dialCoarse",
       "type": "block",
-      "sortid": 147,
+      "sortid": 148,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_coarse",
@@ -1756,7 +1768,7 @@
     {
       "name": "Scp914dialFine",
       "type": "block",
-      "sortid": 148,
+      "sortid": 149,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_fine",
@@ -1765,7 +1777,7 @@
     {
       "name": "Scp914dialVeryFine",
       "type": "block",
-      "sortid": 149,
+      "sortid": 150,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_very_fine",
@@ -1774,7 +1786,7 @@
     {
       "name": "Scp914Gui",
       "type": "gui",
-      "sortid": 150,
+      "sortid": 151,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_gui",
@@ -1783,7 +1795,7 @@
     {
       "name": "Scp914to1to1",
       "type": "procedure",
-      "sortid": 151,
+      "sortid": 152,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_1to_1",
@@ -1812,7 +1824,7 @@
     {
       "name": "Scp914toRough",
       "type": "procedure",
-      "sortid": 152,
+      "sortid": 153,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_rough",
@@ -1841,7 +1853,7 @@
     {
       "name": "Scp914toCoarse",
       "type": "procedure",
-      "sortid": 153,
+      "sortid": 154,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_coarse",
@@ -1870,7 +1882,7 @@
     {
       "name": "Scp914toFine",
       "type": "procedure",
-      "sortid": 154,
+      "sortid": 155,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_fine",
@@ -1899,7 +1911,7 @@
     {
       "name": "Scp914toVeryFine",
       "type": "procedure",
-      "sortid": 155,
+      "sortid": 156,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914to_very_fine",
@@ -1928,7 +1940,7 @@
     {
       "name": "Scp914dialRoughBlockDestroyedByPlayer",
       "type": "procedure",
-      "sortid": 156,
+      "sortid": 157,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_rough_block_destroyed_by_player",
@@ -1945,7 +1957,7 @@
     {
       "name": "Scp914clockworks",
       "type": "block",
-      "sortid": 21,
+      "sortid": 22,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks",
@@ -1954,7 +1966,7 @@
     {
       "name": "Scp914clockworks2",
       "type": "block",
-      "sortid": 157,
+      "sortid": 158,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_2",
@@ -1963,7 +1975,7 @@
     {
       "name": "Scp914clockworksUpdateTick",
       "type": "procedure",
-      "sortid": 158,
+      "sortid": 159,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_update_tick",
@@ -1992,7 +2004,7 @@
     {
       "name": "Scp914WindKey",
       "type": "procedure",
-      "sortid": 159,
+      "sortid": 160,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key",
@@ -2025,7 +2037,7 @@
     {
       "name": "Scp914Achievement",
       "type": "achievement",
-      "sortid": 160,
+      "sortid": 161,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_achievement",
@@ -2034,7 +2046,7 @@
     {
       "name": "PlayerSkinChangeScp914",
       "type": "procedure",
-      "sortid": 161,
+      "sortid": 162,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_change_scp_914",
@@ -2051,7 +2063,7 @@
     {
       "name": "Scp9141to1PlayerReset",
       "type": "procedure",
-      "sortid": 162,
+      "sortid": 163,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_9141to_1_player_reset",
@@ -2068,7 +2080,7 @@
     {
       "name": "Scp9141to1PlayerReset2",
       "type": "procedure",
-      "sortid": 163,
+      "sortid": 164,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_9141to_1_player_reset_2",
@@ -2085,7 +2097,7 @@
     {
       "name": "PlayerSkin2",
       "type": "procedure",
-      "sortid": 164,
+      "sortid": 165,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_2",
@@ -2102,7 +2114,7 @@
     {
       "name": "PlayerSkin3",
       "type": "procedure",
-      "sortid": 165,
+      "sortid": 166,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_3",
@@ -2119,7 +2131,7 @@
     {
       "name": "PlayerSkin4",
       "type": "procedure",
-      "sortid": 166,
+      "sortid": 167,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_4",
@@ -2136,7 +2148,7 @@
     {
       "name": "PlayerSkin5",
       "type": "procedure",
-      "sortid": 167,
+      "sortid": 168,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_5",
@@ -2153,7 +2165,7 @@
     {
       "name": "PlayerSkin6",
       "type": "procedure",
-      "sortid": 168,
+      "sortid": 169,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_6",
@@ -2170,7 +2182,7 @@
     {
       "name": "PlayerSkin7",
       "type": "procedure",
-      "sortid": 169,
+      "sortid": 170,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_7",
@@ -2187,7 +2199,7 @@
     {
       "name": "PlayerSkin8",
       "type": "procedure",
-      "sortid": 170,
+      "sortid": 171,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_8",
@@ -2204,7 +2216,7 @@
     {
       "name": "PlayerSkin9",
       "type": "procedure",
-      "sortid": 171,
+      "sortid": 172,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_9",
@@ -2221,7 +2233,7 @@
     {
       "name": "PlayerSkin10",
       "type": "procedure",
-      "sortid": 172,
+      "sortid": 173,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_10",
@@ -2238,7 +2250,7 @@
     {
       "name": "PlayerSkin11",
       "type": "procedure",
-      "sortid": 173,
+      "sortid": 174,
       "compiles": true,
       "locked_code": false,
       "registry_name": "player_skin_11",
@@ -2255,7 +2267,7 @@
     {
       "name": "Scp914Intake",
       "type": "block",
-      "sortid": 25,
+      "sortid": 26,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake",
@@ -2264,7 +2276,7 @@
     {
       "name": "Scp914Output",
       "type": "block",
-      "sortid": 26,
+      "sortid": 27,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output",
@@ -2273,7 +2285,7 @@
     {
       "name": "Scp914clockworks2BlockAdded",
       "type": "procedure",
-      "sortid": 174,
+      "sortid": 175,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_2_block_added",
@@ -2302,7 +2314,7 @@
     {
       "name": "Scp914clockworksBlockAdded",
       "type": "procedure",
-      "sortid": 175,
+      "sortid": 176,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_block_added",
@@ -2331,7 +2343,7 @@
     {
       "name": "Scp914OutputDoor",
       "type": "block",
-      "sortid": 28,
+      "sortid": 29,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door",
@@ -2340,7 +2352,7 @@
     {
       "name": "Scp914OutputDoorClosed",
       "type": "block",
-      "sortid": 176,
+      "sortid": 177,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_closed",
@@ -2349,7 +2361,7 @@
     {
       "name": "Scp914IntakeDoor",
       "type": "block",
-      "sortid": 27,
+      "sortid": 28,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door",
@@ -2358,7 +2370,7 @@
     {
       "name": "Scp914IntakeDoorClosed",
       "type": "block",
-      "sortid": 177,
+      "sortid": 178,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_closed",
@@ -2367,7 +2379,7 @@
     {
       "name": "Scp914OutputDoorUpdateTick",
       "type": "procedure",
-      "sortid": 178,
+      "sortid": 179,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_update_tick",
@@ -2396,7 +2408,7 @@
     {
       "name": "Scp914IntakeDoorUpdateTick",
       "type": "procedure",
-      "sortid": 179,
+      "sortid": 180,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_update_tick",
@@ -2425,7 +2437,7 @@
     {
       "name": "Scp914OutputDoorClosedBlockAdded",
       "type": "procedure",
-      "sortid": 180,
+      "sortid": 181,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_closed_block_added",
@@ -2454,7 +2466,7 @@
     {
       "name": "Scp914IntakeDoorClosedBlockAdded",
       "type": "procedure",
-      "sortid": 181,
+      "sortid": 182,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_closed_block_added",
@@ -2483,7 +2495,7 @@
     {
       "name": "Scp914WindKeyCoarse",
       "type": "procedure",
-      "sortid": 182,
+      "sortid": 183,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_coarse",
@@ -2516,7 +2528,7 @@
     {
       "name": "Scp914WindKey1to1",
       "type": "procedure",
-      "sortid": 183,
+      "sortid": 184,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_1to_1",
@@ -2549,7 +2561,7 @@
     {
       "name": "Scp914WindKeyFine",
       "type": "procedure",
-      "sortid": 184,
+      "sortid": 185,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_fine",
@@ -2582,7 +2594,7 @@
     {
       "name": "Scp914WindKeyVeryFine",
       "type": "procedure",
-      "sortid": 185,
+      "sortid": 186,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_very_fine",
@@ -2615,7 +2627,7 @@
     {
       "name": "Scp914KeyWind",
       "type": "block",
-      "sortid": 24,
+      "sortid": 25,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_key_wind",
@@ -2624,7 +2636,7 @@
     {
       "name": "Scp914werehouse",
       "type": "structure",
-      "sortid": 186,
+      "sortid": 187,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914werehouse"
@@ -2632,7 +2644,7 @@
     {
       "name": "Scp330house",
       "type": "structure",
-      "sortid": 187,
+      "sortid": 188,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330house"
@@ -2640,7 +2652,7 @@
     {
       "name": "PlayingCard",
       "type": "item",
-      "sortid": 35,
+      "sortid": 36,
       "compiles": true,
       "locked_code": false,
       "registry_name": "playing_card",
@@ -2649,7 +2661,7 @@
     {
       "name": "CreditCard",
       "type": "item",
-      "sortid": 36,
+      "sortid": 37,
       "compiles": true,
       "locked_code": false,
       "registry_name": "credit_card",
@@ -2667,7 +2679,7 @@
     {
       "name": "DeltaRadiation",
       "type": "potioneffect",
-      "sortid": 188,
+      "sortid": 189,
       "compiles": true,
       "locked_code": false,
       "registry_name": "delta_radiation"
@@ -2675,7 +2687,7 @@
     {
       "name": "Scp059Adv",
       "type": "achievement",
-      "sortid": 189,
+      "sortid": 190,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_adv",
@@ -2684,7 +2696,7 @@
     {
       "name": "Scp059UpdateTick",
       "type": "procedure",
-      "sortid": 190,
+      "sortid": 191,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_update_tick",
@@ -2712,7 +2724,7 @@
     {
       "name": "DeltaRadiationOnEffectActiveTick",
       "type": "procedure",
-      "sortid": 191,
+      "sortid": 192,
       "compiles": true,
       "locked_code": false,
       "registry_name": "delta_radiation_on_effect_active_tick",
@@ -2728,7 +2740,7 @@
     {
       "name": "Scp059inhand",
       "type": "procedure",
-      "sortid": 192,
+      "sortid": 193,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059inhand",
@@ -2760,7 +2772,7 @@
     {
       "name": "Scp914Metamorphosis",
       "type": "achievement",
-      "sortid": 193,
+      "sortid": 194,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_metamorphosis",
@@ -2769,7 +2781,7 @@
     {
       "name": "Scp059Rebirth",
       "type": "achievement",
-      "sortid": 194,
+      "sortid": 195,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_rebirth",
@@ -2793,7 +2805,7 @@
     {
       "name": "HazmatSuitP",
       "type": "procedure",
-      "sortid": 195,
+      "sortid": 196,
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_suit_p",
@@ -2809,7 +2821,7 @@
     {
       "name": "Scp914Refining",
       "type": "procedure",
-      "sortid": 196,
+      "sortid": 197,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_refining",
@@ -2835,7 +2847,7 @@
     {
       "name": "Scp0591UpdateTick",
       "type": "procedure",
-      "sortid": 197,
+      "sortid": 198,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_0591_update_tick",
@@ -2863,7 +2875,7 @@
     {
       "name": "Scp059ContainedUpdateTick",
       "type": "procedure",
-      "sortid": 198,
+      "sortid": 199,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_contained_update_tick",
@@ -2900,7 +2912,7 @@
     {
       "name": "Scp059OnBlockRightClicked",
       "type": "procedure",
-      "sortid": 199,
+      "sortid": 200,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_on_block_right_clicked",
@@ -2932,7 +2944,7 @@
     {
       "name": "Scp059ContainedOnBlockRightClicked",
       "type": "procedure",
-      "sortid": 200,
+      "sortid": 201,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_contained_on_block_right_clicked",
@@ -2973,7 +2985,7 @@
     {
       "name": "Geiger2",
       "type": "item",
-      "sortid": 201,
+      "sortid": 202,
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_2",
@@ -2982,7 +2994,7 @@
     {
       "name": "Geiger3",
       "type": "item",
-      "sortid": 202,
+      "sortid": 203,
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_3",
@@ -2991,7 +3003,7 @@
     {
       "name": "Scp0591EntityCollidesInTheBlock",
       "type": "procedure",
-      "sortid": 203,
+      "sortid": 204,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_0591_entity_collides_in_the_block",
@@ -3023,7 +3035,7 @@
     {
       "name": "GeigerCounter",
       "type": "recipe",
-      "sortid": 204,
+      "sortid": 205,
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_counter",
@@ -3032,7 +3044,7 @@
     {
       "name": "HazmatHelmet",
       "type": "recipe",
-      "sortid": 205,
+      "sortid": 206,
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_helmet",
@@ -3041,7 +3053,7 @@
     {
       "name": "HazmatChest",
       "type": "recipe",
-      "sortid": 206,
+      "sortid": 207,
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_chest",
@@ -3050,7 +3062,7 @@
     {
       "name": "HazmatLegs",
       "type": "recipe",
-      "sortid": 207,
+      "sortid": 208,
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_legs",
@@ -3059,7 +3071,7 @@
     {
       "name": "HazmatBoots",
       "type": "recipe",
-      "sortid": 208,
+      "sortid": 209,
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_boots",
@@ -3068,7 +3080,7 @@
     {
       "name": "HazmatAchi",
       "type": "achievement",
-      "sortid": 209,
+      "sortid": 210,
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_achi",
@@ -3077,7 +3089,7 @@
     {
       "name": "Scp0591infected3",
       "type": "livingentity",
-      "sortid": 210,
+      "sortid": 211,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_0591infected_3",
@@ -3086,7 +3098,7 @@
     {
       "name": "Scp059infectedP",
       "type": "procedure",
-      "sortid": 211,
+      "sortid": 212,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059infected_p",
@@ -3102,7 +3114,7 @@
     {
       "name": "Scp059infected",
       "type": "procedure",
-      "sortid": 212,
+      "sortid": 213,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059infected",
@@ -3118,7 +3130,7 @@
     {
       "name": "SprayRightclicked",
       "type": "procedure",
-      "sortid": 213,
+      "sortid": 214,
       "compiles": true,
       "locked_code": false,
       "registry_name": "spray_rightclicked",
@@ -3155,7 +3167,7 @@
     {
       "name": "SprayRecipe",
       "type": "recipe",
-      "sortid": 214,
+      "sortid": 215,
       "compiles": true,
       "locked_code": false,
       "registry_name": "spray_recipe",
@@ -3173,7 +3185,7 @@
     {
       "name": "DeconClosed",
       "type": "block",
-      "sortid": 215,
+      "sortid": 216,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_closed",
@@ -3182,7 +3194,7 @@
     {
       "name": "DeconOpenUpdateTick",
       "type": "procedure",
-      "sortid": 216,
+      "sortid": 217,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_open_update_tick",
@@ -3210,7 +3222,7 @@
     {
       "name": "DeconClosedBlockAdded",
       "type": "procedure",
-      "sortid": 217,
+      "sortid": 218,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_closed_block_added",
@@ -3238,7 +3250,7 @@
     {
       "name": "DeconOpenReload",
       "type": "block",
-      "sortid": 218,
+      "sortid": 219,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_open_reload",
@@ -3247,7 +3259,7 @@
     {
       "name": "DeconOpenReloadBlockAdded",
       "type": "procedure",
-      "sortid": 219,
+      "sortid": 220,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_open_reload_block_added",
@@ -3275,7 +3287,7 @@
     {
       "name": "SCPadditionsSCPs",
       "type": "tab",
-      "sortid": 220,
+      "sortid": 221,
       "compiles": true,
       "locked_code": false,
       "registry_name": "sc_padditions_sc_ps"
@@ -3283,7 +3295,7 @@
     {
       "name": "DeconCheckpoint",
       "type": "gamerule",
-      "sortid": 221,
+      "sortid": 222,
       "compiles": true,
       "locked_code": false,
       "registry_name": "deconCheckpoint",
@@ -3294,7 +3306,7 @@
     {
       "name": "DeconAchievement",
       "type": "achievement",
-      "sortid": 222,
+      "sortid": 223,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_achievement",
@@ -3303,7 +3315,7 @@
     {
       "name": "RoughAlive",
       "type": "procedure",
-      "sortid": 223,
+      "sortid": 224,
       "compiles": true,
       "locked_code": false,
       "registry_name": "rough_alive",
@@ -3336,7 +3348,7 @@
     {
       "name": "Scp914WindKeyRough",
       "type": "procedure",
-      "sortid": 224,
+      "sortid": 225,
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_wind_key_rough",
@@ -3369,7 +3381,7 @@
     {
       "name": "RoughItems",
       "type": "procedure",
-      "sortid": 225,
+      "sortid": 226,
       "compiles": true,
       "locked_code": false,
       "registry_name": "rough_items",
@@ -3398,7 +3410,7 @@
     {
       "name": "CoarseAlive",
       "type": "procedure",
-      "sortid": 226,
+      "sortid": 227,
       "compiles": true,
       "locked_code": false,
       "registry_name": "coarse_alive",
@@ -3431,7 +3443,7 @@
     {
       "name": "CoarseItems",
       "type": "procedure",
-      "sortid": 227,
+      "sortid": 228,
       "compiles": true,
       "locked_code": false,
       "registry_name": "coarse_items",
@@ -3460,7 +3472,7 @@
     {
       "name": "OnetoOneAlive",
       "type": "procedure",
-      "sortid": 228,
+      "sortid": 229,
       "compiles": true,
       "locked_code": false,
       "registry_name": "oneto_one_alive",
@@ -3493,7 +3505,7 @@
     {
       "name": "FineAlive",
       "type": "procedure",
-      "sortid": 229,
+      "sortid": 230,
       "compiles": true,
       "locked_code": false,
       "registry_name": "fine_alive",
@@ -3526,7 +3538,7 @@
     {
       "name": "VeryFineAlive",
       "type": "procedure",
-      "sortid": 230,
+      "sortid": 231,
       "compiles": true,
       "locked_code": false,
       "registry_name": "very_fine_alive",
@@ -3559,7 +3571,7 @@
     {
       "name": "OneToOneItems",
       "type": "procedure",
-      "sortid": 231,
+      "sortid": 232,
       "compiles": true,
       "locked_code": false,
       "registry_name": "one_to_one_items",
@@ -3588,7 +3600,7 @@
     {
       "name": "FineItems",
       "type": "procedure",
-      "sortid": 232,
+      "sortid": 233,
       "compiles": true,
       "locked_code": false,
       "registry_name": "fine_items",
@@ -3617,7 +3629,7 @@
     {
       "name": "VeryFineItems",
       "type": "procedure",
-      "sortid": 233,
+      "sortid": 234,
       "compiles": true,
       "locked_code": false,
       "registry_name": "very_fine_items",
@@ -3646,7 +3658,7 @@
     {
       "name": "DecontaminationCheckpoint",
       "type": "recipe",
-      "sortid": 234,
+      "sortid": 235,
       "compiles": true,
       "locked_code": false,
       "registry_name": "decontamination_checkpoint",
@@ -3655,7 +3667,7 @@
     {
       "name": "Level1Keycard",
       "type": "item",
-      "sortid": 39,
+      "sortid": 40,
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_1_keycard",
@@ -3664,7 +3676,7 @@
     {
       "name": "Level2Keycard",
       "type": "item",
-      "sortid": 40,
+      "sortid": 41,
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_2_keycard",
@@ -3673,7 +3685,7 @@
     {
       "name": "Level3Keycard",
       "type": "item",
-      "sortid": 41,
+      "sortid": 42,
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_3_keycard",
@@ -3682,7 +3694,7 @@
     {
       "name": "Level4Keycard",
       "type": "item",
-      "sortid": 42,
+      "sortid": 43,
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_4_keycard",
@@ -3691,7 +3703,7 @@
     {
       "name": "Level5Keycard",
       "type": "item",
-      "sortid": 43,
+      "sortid": 44,
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_5_keycard",
@@ -3700,7 +3712,7 @@
     {
       "name": "Level6Keycard",
       "type": "item",
-      "sortid": 44,
+      "sortid": 45,
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_6_keycard",
@@ -3709,7 +3721,7 @@
     {
       "name": "RightReader",
       "type": "block",
-      "sortid": 45,
+      "sortid": 46,
       "compiles": true,
       "locked_code": false,
       "registry_name": "right_reader",
@@ -3718,7 +3730,7 @@
     {
       "name": "RightReaderWrong",
       "type": "block",
-      "sortid": 235,
+      "sortid": 236,
       "compiles": true,
       "locked_code": false,
       "registry_name": "right_reader_wrong",
@@ -3727,7 +3739,7 @@
     {
       "name": "RightReaderAccept",
       "type": "block",
-      "sortid": 236,
+      "sortid": 237,
       "compiles": true,
       "locked_code": false,
       "registry_name": "right_reader_accept",
@@ -3736,7 +3748,7 @@
     {
       "name": "LeftReader",
       "type": "block",
-      "sortid": 46,
+      "sortid": 47,
       "compiles": true,
       "locked_code": false,
       "registry_name": "left_reader",
@@ -3745,7 +3757,7 @@
     {
       "name": "LeftReaderWrong",
       "type": "block",
-      "sortid": 237,
+      "sortid": 238,
       "compiles": true,
       "locked_code": false,
       "registry_name": "left_reader_wrong",
@@ -3754,7 +3766,7 @@
     {
       "name": "LeftReaderAccept",
       "type": "block",
-      "sortid": 238,
+      "sortid": 239,
       "compiles": true,
       "locked_code": false,
       "registry_name": "left_reader_accept",
@@ -3763,7 +3775,7 @@
     {
       "name": "Lv2RightReader",
       "type": "block",
-      "sortid": 47,
+      "sortid": 48,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_reader",
@@ -3772,7 +3784,7 @@
     {
       "name": "Lv2RightReaderWrong",
       "type": "block",
-      "sortid": 239,
+      "sortid": 240,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_reader_wrong",
@@ -3781,7 +3793,7 @@
     {
       "name": "Lv2RightReaderAccept",
       "type": "block",
-      "sortid": 240,
+      "sortid": 241,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_reader_accept",
@@ -3790,7 +3802,7 @@
     {
       "name": "Lv2LeftReader",
       "type": "block",
-      "sortid": 48,
+      "sortid": 49,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_reader",
@@ -3799,7 +3811,7 @@
     {
       "name": "Lv2LeftReaderWrong",
       "type": "block",
-      "sortid": 241,
+      "sortid": 242,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_reader_wrong",
@@ -3808,7 +3820,7 @@
     {
       "name": "Lv2LeftReaderAccept",
       "type": "block",
-      "sortid": 242,
+      "sortid": 243,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_reader_accept",
@@ -3817,7 +3829,7 @@
     {
       "name": "Lv3RightReader",
       "type": "block",
-      "sortid": 49,
+      "sortid": 50,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_reader",
@@ -3826,7 +3838,7 @@
     {
       "name": "Lv3RightReaderWrong",
       "type": "block",
-      "sortid": 243,
+      "sortid": 244,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_reader_wrong",
@@ -3835,7 +3847,7 @@
     {
       "name": "Lv3RightReaderAccept",
       "type": "block",
-      "sortid": 244,
+      "sortid": 245,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_reader_accept",
@@ -3844,7 +3856,7 @@
     {
       "name": "Lv3LeftReader",
       "type": "block",
-      "sortid": 50,
+      "sortid": 51,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_reader",
@@ -3853,7 +3865,7 @@
     {
       "name": "Lv3LeftReaderWrong",
       "type": "block",
-      "sortid": 245,
+      "sortid": 246,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_reader_wrong",
@@ -3862,7 +3874,7 @@
     {
       "name": "Lv3LeftReaderAccept",
       "type": "block",
-      "sortid": 246,
+      "sortid": 247,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_reader_accept",
@@ -3871,7 +3883,7 @@
     {
       "name": "Lv4RightReader",
       "type": "block",
-      "sortid": 51,
+      "sortid": 52,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_reader",
@@ -3880,7 +3892,7 @@
     {
       "name": "Lv4RightReaderWrong",
       "type": "block",
-      "sortid": 247,
+      "sortid": 248,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_reader_wrong",
@@ -3889,7 +3901,7 @@
     {
       "name": "Lv4RightReaderAccept",
       "type": "block",
-      "sortid": 248,
+      "sortid": 249,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_reader_accept",
@@ -3898,7 +3910,7 @@
     {
       "name": "Lv4LeftReader",
       "type": "block",
-      "sortid": 52,
+      "sortid": 53,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_reader",
@@ -3907,7 +3919,7 @@
     {
       "name": "Lv4LeftReaderWrong",
       "type": "block",
-      "sortid": 249,
+      "sortid": 250,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_reader_wrong",
@@ -3916,7 +3928,7 @@
     {
       "name": "Lv4LeftReaderAccept",
       "type": "block",
-      "sortid": 250,
+      "sortid": 251,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_reader_accept",
@@ -3925,7 +3937,7 @@
     {
       "name": "Lv5RightReader",
       "type": "block",
-      "sortid": 53,
+      "sortid": 54,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_reader",
@@ -3934,7 +3946,7 @@
     {
       "name": "Lv5RightReaderWrong",
       "type": "block",
-      "sortid": 251,
+      "sortid": 252,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_reader_wrong",
@@ -3943,7 +3955,7 @@
     {
       "name": "Lv5RightReaderAccept",
       "type": "block",
-      "sortid": 252,
+      "sortid": 253,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_reader_accept",
@@ -3952,7 +3964,7 @@
     {
       "name": "Lv5LeftReader",
       "type": "block",
-      "sortid": 54,
+      "sortid": 55,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_reader",
@@ -3961,7 +3973,7 @@
     {
       "name": "Lv5LeftReaderWrong",
       "type": "block",
-      "sortid": 253,
+      "sortid": 254,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_reader_wrong",
@@ -3970,7 +3982,7 @@
     {
       "name": "Lv5LeftReaderAccept",
       "type": "block",
-      "sortid": 254,
+      "sortid": 255,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_reader_accept",
@@ -3979,7 +3991,7 @@
     {
       "name": "Lv6RightReader",
       "type": "block",
-      "sortid": 55,
+      "sortid": 56,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_reader",
@@ -3988,7 +4000,7 @@
     {
       "name": "Lv6RightReaderWrong",
       "type": "block",
-      "sortid": 255,
+      "sortid": 256,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_reader_wrong",
@@ -3997,7 +4009,7 @@
     {
       "name": "Lv6RightReaderAccept",
       "type": "block",
-      "sortid": 256,
+      "sortid": 257,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_reader_accept",
@@ -4006,7 +4018,7 @@
     {
       "name": "Lv6LeftReader",
       "type": "block",
-      "sortid": 56,
+      "sortid": 57,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_reader",
@@ -4015,7 +4027,7 @@
     {
       "name": "Lv6LeftReaderWrong",
       "type": "block",
-      "sortid": 257,
+      "sortid": 258,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_reader_wrong",
@@ -4024,7 +4036,7 @@
     {
       "name": "Lv6LeftReaderAccept",
       "type": "block",
-      "sortid": 258,
+      "sortid": 259,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_reader_accept",
@@ -4033,7 +4045,7 @@
     {
       "name": "SCPadditionsKeycards",
       "type": "tab",
-      "sortid": 259,
+      "sortid": 260,
       "compiles": true,
       "locked_code": false,
       "registry_name": "sc_padditions_keycards"
@@ -4041,7 +4053,7 @@
     {
       "name": "Lv1RightWrong",
       "type": "procedure",
-      "sortid": 260,
+      "sortid": 261,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_right_wrong",
@@ -4070,7 +4082,7 @@
     {
       "name": "LvLeftWrong",
       "type": "procedure",
-      "sortid": 261,
+      "sortid": 262,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_left_wrong",
@@ -4099,7 +4111,7 @@
     {
       "name": "Lv2RightWrong",
       "type": "procedure",
-      "sortid": 262,
+      "sortid": 263,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_wrong",
@@ -4128,7 +4140,7 @@
     {
       "name": "Lv2LeftWrong",
       "type": "procedure",
-      "sortid": 263,
+      "sortid": 264,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_wrong",
@@ -4157,7 +4169,7 @@
     {
       "name": "Lv3RightWrong",
       "type": "procedure",
-      "sortid": 264,
+      "sortid": 265,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_wrong",
@@ -4186,7 +4198,7 @@
     {
       "name": "Lv3LeftWrong",
       "type": "procedure",
-      "sortid": 265,
+      "sortid": 266,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_wrong",
@@ -4215,7 +4227,7 @@
     {
       "name": "Lv4RightWrong",
       "type": "procedure",
-      "sortid": 266,
+      "sortid": 267,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_wrong",
@@ -4244,7 +4256,7 @@
     {
       "name": "Lv4LeftWrong",
       "type": "procedure",
-      "sortid": 267,
+      "sortid": 268,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_wrong",
@@ -4273,7 +4285,7 @@
     {
       "name": "Lv5RightWrong",
       "type": "procedure",
-      "sortid": 268,
+      "sortid": 269,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_wrong",
@@ -4302,7 +4314,7 @@
     {
       "name": "Lv5LeftWrong",
       "type": "procedure",
-      "sortid": 269,
+      "sortid": 270,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_wrong",
@@ -4331,7 +4343,7 @@
     {
       "name": "Lv6RightWrong",
       "type": "procedure",
-      "sortid": 270,
+      "sortid": 271,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_wrong",
@@ -4360,7 +4372,7 @@
     {
       "name": "Lv6LeftWrong",
       "type": "procedure",
-      "sortid": 271,
+      "sortid": 272,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_wrong",
@@ -4389,7 +4401,7 @@
     {
       "name": "Lv1RightWrongTick",
       "type": "procedure",
-      "sortid": 272,
+      "sortid": 273,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_right_wrong_tick",
@@ -4418,7 +4430,7 @@
     {
       "name": "Lv1LeftWrongTick",
       "type": "procedure",
-      "sortid": 273,
+      "sortid": 274,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_left_wrong_tick",
@@ -4447,7 +4459,7 @@
     {
       "name": "Lv2RightWrongTick",
       "type": "procedure",
-      "sortid": 274,
+      "sortid": 275,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_wrong_tick",
@@ -4476,7 +4488,7 @@
     {
       "name": "Lv2LeftWrongTick",
       "type": "procedure",
-      "sortid": 275,
+      "sortid": 276,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_wrong_tick",
@@ -4505,7 +4517,7 @@
     {
       "name": "Lv3RightWrongTick",
       "type": "procedure",
-      "sortid": 276,
+      "sortid": 277,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_wrong_tick",
@@ -4534,7 +4546,7 @@
     {
       "name": "Lv3LeftWrongTick",
       "type": "procedure",
-      "sortid": 277,
+      "sortid": 278,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_wrong_tick",
@@ -4563,7 +4575,7 @@
     {
       "name": "Lv4RightWrongTick",
       "type": "procedure",
-      "sortid": 278,
+      "sortid": 279,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_wrong_tick",
@@ -4592,7 +4604,7 @@
     {
       "name": "Lv4LeftWrongTick",
       "type": "procedure",
-      "sortid": 279,
+      "sortid": 280,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_wrong_tick",
@@ -4621,7 +4633,7 @@
     {
       "name": "Lv5RightWrongTick",
       "type": "procedure",
-      "sortid": 280,
+      "sortid": 281,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_wrong_tick",
@@ -4650,7 +4662,7 @@
     {
       "name": "Lv5LeftWrongTick",
       "type": "procedure",
-      "sortid": 281,
+      "sortid": 282,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_wrong_tick",
@@ -4679,7 +4691,7 @@
     {
       "name": "Lv6RightWrongTick",
       "type": "procedure",
-      "sortid": 282,
+      "sortid": 283,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_wrong_tick",
@@ -4708,7 +4720,7 @@
     {
       "name": "Lv6LeftWrongTick",
       "type": "procedure",
-      "sortid": 283,
+      "sortid": 284,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_wrong_tick",
@@ -4737,7 +4749,7 @@
     {
       "name": "Lv1RightAccept",
       "type": "procedure",
-      "sortid": 284,
+      "sortid": 285,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_right_accept",
@@ -4766,7 +4778,7 @@
     {
       "name": "Lv1LeftAccept",
       "type": "procedure",
-      "sortid": 285,
+      "sortid": 286,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_left_accept",
@@ -4795,7 +4807,7 @@
     {
       "name": "Lv2RightAccept",
       "type": "procedure",
-      "sortid": 286,
+      "sortid": 287,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_accept",
@@ -4824,7 +4836,7 @@
     {
       "name": "Lv2LeftAccept",
       "type": "procedure",
-      "sortid": 287,
+      "sortid": 288,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_accept",
@@ -4853,7 +4865,7 @@
     {
       "name": "Lv3RightAccept",
       "type": "procedure",
-      "sortid": 288,
+      "sortid": 289,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_accept",
@@ -4882,7 +4894,7 @@
     {
       "name": "Lv3LeftAccept",
       "type": "procedure",
-      "sortid": 289,
+      "sortid": 290,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_accept",
@@ -4911,7 +4923,7 @@
     {
       "name": "Lv4RightAccept",
       "type": "procedure",
-      "sortid": 290,
+      "sortid": 291,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_accept",
@@ -4940,7 +4952,7 @@
     {
       "name": "Lv4LeftAccept",
       "type": "procedure",
-      "sortid": 291,
+      "sortid": 292,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_accept",
@@ -4969,7 +4981,7 @@
     {
       "name": "Lv5RightAccept",
       "type": "procedure",
-      "sortid": 292,
+      "sortid": 293,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_accept",
@@ -4998,7 +5010,7 @@
     {
       "name": "Lv5LeftAccept",
       "type": "procedure",
-      "sortid": 293,
+      "sortid": 294,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_accept",
@@ -5027,7 +5039,7 @@
     {
       "name": "Lv6RightAccept",
       "type": "procedure",
-      "sortid": 294,
+      "sortid": 295,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_accept",
@@ -5056,7 +5068,7 @@
     {
       "name": "Lv6LeftAccept",
       "type": "procedure",
-      "sortid": 295,
+      "sortid": 296,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_accept",
@@ -5085,7 +5097,7 @@
     {
       "name": "Lv1Right",
       "type": "procedure",
-      "sortid": 296,
+      "sortid": 297,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_right",
@@ -5118,7 +5130,7 @@
     {
       "name": "Lv1Left",
       "type": "procedure",
-      "sortid": 297,
+      "sortid": 298,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_left",
@@ -5151,7 +5163,7 @@
     {
       "name": "Lv2Right",
       "type": "procedure",
-      "sortid": 298,
+      "sortid": 299,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right",
@@ -5184,7 +5196,7 @@
     {
       "name": "Lv2Left",
       "type": "procedure",
-      "sortid": 299,
+      "sortid": 300,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left",
@@ -5217,7 +5229,7 @@
     {
       "name": "Lv3Right",
       "type": "procedure",
-      "sortid": 300,
+      "sortid": 301,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right",
@@ -5250,7 +5262,7 @@
     {
       "name": "Lv3Left",
       "type": "procedure",
-      "sortid": 301,
+      "sortid": 302,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left",
@@ -5283,7 +5295,7 @@
     {
       "name": "Lv4Right",
       "type": "procedure",
-      "sortid": 302,
+      "sortid": 303,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right",
@@ -5316,7 +5328,7 @@
     {
       "name": "Lv4Left",
       "type": "procedure",
-      "sortid": 303,
+      "sortid": 304,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left",
@@ -5349,7 +5361,7 @@
     {
       "name": "Lv5Right",
       "type": "procedure",
-      "sortid": 304,
+      "sortid": 305,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right",
@@ -5382,7 +5394,7 @@
     {
       "name": "Lv5Left",
       "type": "procedure",
-      "sortid": 305,
+      "sortid": 306,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left",
@@ -5415,7 +5427,7 @@
     {
       "name": "Lv6Right",
       "type": "procedure",
-      "sortid": 306,
+      "sortid": 307,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right",
@@ -5448,7 +5460,7 @@
     {
       "name": "Lv6Left",
       "type": "procedure",
-      "sortid": 307,
+      "sortid": 308,
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left",
@@ -5481,7 +5493,7 @@
     {
       "name": "PiecesOfPaper",
       "type": "item",
-      "sortid": 37,
+      "sortid": 38,
       "compiles": true,
       "locked_code": false,
       "registry_name": "pieces_of_paper",
@@ -5490,11 +5502,629 @@
     {
       "name": "Coin",
       "type": "item",
-      "sortid": 38,
+      "sortid": 39,
       "compiles": true,
       "locked_code": false,
       "registry_name": "coin",
       "path": "~/Misc"
+    },
+    {
+      "name": "Scp079controlAchi",
+      "type": "achievement",
+      "sortid": 309,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_079control_achi",
+      "path": "~/Achivements"
+    },
+    {
+      "name": "VeryFineItems2",
+      "type": "procedure",
+      "sortid": 310,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "very_fine_items_2",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp914/SCP914Settings"
+    },
+    {
+      "name": "Scp294",
+      "type": "block",
+      "sortid": 16,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294",
+      "path": "~/SCPs"
+    },
+    {
+      "name": "Scp294OutOfRange",
+      "type": "block",
+      "sortid": 311,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_out_of_range",
+      "path": "~/SCPs"
+    },
+    {
+      "name": "Scp294Stocking",
+      "type": "block",
+      "sortid": 312,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_stocking",
+      "path": "~/SCPs"
+    },
+    {
+      "name": "Scp294Gui",
+      "type": "gui",
+      "sortid": 313,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_gui",
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Scp294drinkGive",
+      "type": "procedure",
+      "sortid": 315,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294drink_give",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "guistate",
+            "type": "map"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "EmptyCup",
+      "type": "item",
+      "sortid": 316,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "empty_cup",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Coffee",
+      "type": "item",
+      "sortid": 317,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cup_of_coffee",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CoffeePlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 318,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "coffee_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Scp294OutOfRangeProcedure",
+      "type": "procedure",
+      "sortid": 319,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_out_of_range_procedure",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Scp294restock",
+      "type": "procedure",
+      "sortid": 320,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294restock",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Scp294restock2",
+      "type": "procedure",
+      "sortid": 321,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294restock_2",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Scp294BlockAdded",
+      "type": "procedure",
+      "sortid": 322,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_block_added",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Drink1",
+      "type": "item",
+      "sortid": 323,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cup_of_alcohol",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Drink1PlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 324,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "drink_1_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Ethanol",
+      "type": "item",
+      "sortid": 325,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ethanol",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Spirit",
+      "type": "item",
+      "sortid": 326,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "spirit",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Vodka",
+      "type": "item",
+      "sortid": 327,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "vodka",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Aloe",
+      "type": "item",
+      "sortid": 328,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "aloe",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "AloePlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 329,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "aloe_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Cactus",
+      "type": "item",
+      "sortid": 330,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cactus",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Amnesia",
+      "type": "item",
+      "sortid": 331,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "amnesia",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "AmnesiaPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 332,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "amnesia_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "AntiEnergy",
+      "type": "item",
+      "sortid": 333,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "anti_energy",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "AntiEnergyPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 334,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "anti_energy_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "AquaRegia",
+      "type": "item",
+      "sortid": 335,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "aqua_regia",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "AquaRegiaRightclicked",
+      "type": "procedure",
+      "sortid": 336,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "aqua_regia_rightclicked",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Beer",
+      "type": "item",
+      "sortid": 337,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "beer",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "BeerPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 338,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "beer_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Lager",
+      "type": "item",
+      "sortid": 339,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lager",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "LagerPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 340,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lager_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CorrosiveBlack",
+      "type": "item",
+      "sortid": 341,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "corrosive_black",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CorrosiveBlackPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 342,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "corrosive_black_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Bleach",
+      "type": "item",
+      "sortid": 343,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "bleach",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "BleachPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 344,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "bleach_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Blood",
+      "type": "item",
+      "sortid": 345,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "blood",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "BloodPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 346,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "blood_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "BloodOfChrist",
+      "type": "item",
+      "sortid": 347,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "blood_of_christ",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "BloodOfChristPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 348,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "blood_of_christ_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GrimaceShake",
+      "type": "item",
+      "sortid": 349,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "grimace_shake",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GrimaceShakePlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 350,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "grimace_shake_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
     }
   ],
   "variable_elements": [
@@ -5677,6 +6307,12 @@
       "type": "logic",
       "scope": "player_lifetime",
       "value": "false"
+    },
+    {
+      "name": "Scp294stock",
+      "type": "number",
+      "scope": "global",
+      "value": "0"
     }
   ],
   "sound_elements": [
@@ -5951,198 +6587,279 @@
       ],
       "category": "neutral",
       "subtitle": "Access Denied"
+    },
+    {
+      "name": "scp294enter",
+      "files": [
+        "scp294enter"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 enter key"
+    },
+    {
+      "name": "scp294pouring",
+      "files": [
+        "scp294pouring"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 pouring liquid"
+    },
+    {
+      "name": "scp294emptycup",
+      "files": [
+        "scp294emptycup"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 empty cup dispensed"
+    },
+    {
+      "name": "scp294outofrange",
+      "files": [
+        "scp294outofrange"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 out of range"
+    },
+    {
+      "name": "scp294on",
+      "files": [
+        "scp294on"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 on"
+    },
+    {
+      "name": "scp294off",
+      "files": [
+        "scp294off"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 off"
     }
   ],
   "language_map": {
     "en_us": {
+      "item.scp_additions.empty_cup": "Paper Cup",
       "death.attack.scp914veryfine": "%s turned into [REDACTED] and died later after being \"refined\" by SCP-914 on the \"Very Fine\" setting.",
-      "block.scp_additions.tesla_active_3": "Tesla Gate AC3",
-      "block.scp_additions.tesla_active_2": "Tesla Gate AC2",
-      "subtitles.terminalon": "Tesla Terminal On",
       "item.scp_additions.scp_0591infected_3_spawn_egg": "infectedthree Spawn Egg",
-      "block.scp_additions.tesla_active_4": "Tesla Gate AC4",
-      "effect.delta_radiation": "Delta Radiation",
-      "subtitles.teslaready": "Tesla Gate preparing",
       "block.scp_additions.scp_914body": "SCP-914 body",
-      "item.scp_additions.credit_card": "Credit Card",
       "advancements.scp_059_rebirth.title": "In the blue light of heaven",
-      "block.scp_additions.scp_914_output": "SCP-914 Output",
-      "advancements.scp_914_metamorphosis.descr": "Got \"refined\" by SCP-914 on the \"1:1\" setting.",
       "subtitles.scp079_1": "SCP-079 noise",
-      "block.scp_additions.lv_6_right_reader_wrong": "Level 6 Keycard Reader (Right) Denied",
       "block.scp_additions.lv_6_left_reader_accept": "Level 6 Keycard Reader (Left) Accepted",
-      "item.scp_additions.hazmat_suit_leggings": "Hazmat Suit Leggings",
-      "block.scp_additions.scp_079control": "Scp-079 Control (ON)",
       "block.scp_additions.right_reader": "Level 1 Keycard Reader (Right)",
+      "item.scp_additions.aloe": "Cup of Aloe Vera",
+      "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
       "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
       "death.attack.scp572": "%s fell victim to their confidence in SCP-572.",
-      "block.scp_additions.decon_closed": "DeconClosed",
-      "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
       "gamerule.deconCheckpoint.description": "If enabled, Decontamination Checkpoints will save your spawnpoint when you walk through them.",
       "subtitles.scp079_2": "SCP-079 noise",
-      "advancements.scp_1176_achievement.title": "Cursed Honey",
       "advancements.scp_426_achievement.title": "Identity Crisis",
       "death.attack.teslagate": "%s was electrocuted by the Tesla Gate at [REDACTED].",
       "item.scp_additions.level_4_keycard": "Level 4 Keycard",
       "subtitles.decontamination": "Decontamination",
+      "item.scp_additions.vodka": "Cup of vodka",
       "advancements.scp_059_adv.descr": "You got Delta Radiation Poisoning from SCP-059",
       "block.scp_additions.lv_2_left_reader": "Level 2 Keycard Reader (Left)",
       "block.scp_additions.scp_914_output_door_closed": "SCP-914 Output Door Closed",
       "block.scp_additions.lv_3_left_reader": "Level 3 Keycard Reader (Left)",
       "item.scp_additions.scp_330_yellow_candy": "Yellow Candy from SCP-330",
-      "gamerule.scp079controlOn.description": "If SCP-079 has control over the facility",
-      "advancements.tesla.descr": "Electrifying exit! You\u0027ve earned a shocking send-off.",
       "death.attack.scp1176": "%s fell for the curse from SCP-1176.",
       "block.scp_additions.scp_914_intake": "SCP-914 Intake",
-      "block.scp_additions.tesla_terminal_off": "Tesla Terminal",
       "block.scp_additions.scp_914_intake_door_closed": "SCP-914 Intake Door Closed",
-      "advancements.scp_330_achievement.title": "Sweet Tooth",
-      "block.scp_additions.lv_6_left_reader_wrong": "Level 6 Keycard Reader (Left) Denied",
-      "advancements.scp_079.title": "Digital Menace",
+      "item.scp_additions.blood": "Cup of blood",
       "item.scp_additions.scp_330_red_candy": "Red Candy from SCP-330",
       "gamerule.scp079controlOn": "SCP-079 remote control",
       "item.scp_additions.security_credentials": "Security Credentials",
       "advancements.scp_914_achievement.descr": "Used SCP-914",
+      "block.scp_additions.tesla_recharge": "Tesla Gate",
+      "block.scp_additions.right_reader_accept": "Level 1 Keycard Reader (Right) Accepted",
+      "advancements.tesla.title": "Fried and Gone",
+      "block.scp_additions.button_loff": "Button (Left)",
+      "block.scp_additions.lv_3_right_reader_accept": "Level 3 Keycard Reader (Right) Accepted",
+      "item.scp_additions.anti_energy": "Cup of Anti-Energy",
+      "item.scp_additions.blood_of_christ": "Cup of blood of Christ",
+      "block.scp_additions.button_ron": "Button (Right) ON",
+      "block.scp_additions.lv_5_left_reader": "Level 5 Keycard Reader (Left)",
+      "subtitles.doorclosing": "Door closing",
+      "advancements.scp_079control_achi.title": "Unleashing the AI",
+      "block.scp_additions.scp_294_stocking": "SCP-294",
+      "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
+      "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
+      "block.scp_additions.scp_902_closed": "SCP-902",
+      "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
+      "subtitles.scp059box": "SCP-059 Containment Box",
+      "block.scp_additions.lv_2_right_reader": "Level 2 Keycard Reader (Right)",
+      "death.attack.nuclear": "%s died from SCP-294\u0027s nuclear explosion.",
+      "advancements.decon_achievement.descr": "Pass through a Decontamination Checkpoint.",
+      "block.scp_additions.left_reader_accept": "Level 1 Keycard Reader (Left) Accepted",
+      "subtitles.scp902closing": "SCP-902 closing",
+      "subtitles.scp1176": "SCP-1176 curse",
+      "subtitles.scp294pouring": "SCP-294 pouring liquid",
+      "item.scp_additions.amnesia": "Cup of Amnesia",
+      "block.scp_additions.scp_914clockworks_2": "SCP-914 Clockworks",
+      "block.scp_additions.lv_4_right_reader": "Level 4 Keycard Reader (Right)",
+      "gamerule.teslaGateOn": "If Tesla Gates are on",
+      "block.scp_additions.lv_3_left_reader_wrong": "Level 3 Keycard Reader (Left) Denied",
+      "death.attack.scp914fine": "%s died to heart attack after being \"refined\" by SCP-914 on the \"Fine\" setting.",
+      "block.scp_additions.left_reader": "Level 1 Keycard Reader (Left)",
+      "subtitles.spray": "Spray",
+      "subtitles.scp914inside": "Inside SCP-914",
+      "block.scp_additions.scp_079off": "SCP-079",
+      "item.scp_additions.pieces_of_paper": "Pieces of paper",
+      "item.scp_additions.spray": "Methyl isothiocyanate spray bottle",
+      "block.scp_additions.lv_5_right_reader_accept": "Level 5 Keycard Reader (Right) Accepted",
+      "advancements.scp_059_adv.title": "Delta Decay",
+      "block.scp_additions.tesla_terminal_block": "Tesla Terminal (On)",
+      "item.scp_additions.cup_of_alcohol": "Cup of alcohol",
+      "subtitles.teslarecharge": "Tesla Gate recharging",
+      "block.scp_additions.scp_914_output_door": "SCP-914 Output Door",
+      "death.attack.scp914rough": "%s was \"refined\" by SCP-914 on the \"Rough\" setting.",
+      "item.scp_additions.level_2_keycard": "Level 2 Keycard",
+      "subtitles.scp294outofrange": "SCP-294 out of range",
+      "block.scp_additions.scp_079on": "SCP-079",
+      "subtitles.scp914key": "Winding SCP-914\u0027s key",
+      "block.scp_additions.lv_4_right_reader_accept": "Level 4 Keycard Reader (Right) Accepted",
+      "advancements.decon_achievement.title": "Decontaminated",
+      "block.scp_additions.scp_914dial_very_fine": "SCP-914 dial",
+      "subtitles.scp914death": "SCP-914 death",
+      "advancements.scp_572_a_achievement.descr": "Congratulations! You\u0027re the chosen one...",
+      "block.scp_additions.button_lon": "Button (Left) ON",
+      "subtitles.click": "Tesla Terminal Click",
+      "death.attack.scp059delta": "%s died of Delta radiation poisoning from SCP-059.",
+      "advancements.hazmat_achi.descr": "Suited up in the hazmat gear.",
+      "advancements.scp_additions_ach.descr": "Unravel the secrets of the SCP Foundation.",
+      "death.attack.bleach": "%s died from bleach poisoning.",
+      "block.scp_additions.scp_1176": "SCP-1176",
+      "block.scp_additions.scp_914block": "SCP-914 Block",
+      "subtitles.scp914refining": "SCP-914 refining",
+      "item.scp_additions.level_5_keycard": "Level 5 Keycard",
+      "item.scp_additions.grimace_shake": "Cup of Grimace Shake",
+      "block.scp_additions.lv_5_right_reader": "Level 5 Keycard Reader (Right)",
+      "block.scp_additions.lv_4_left_reader_wrong": "Level 4 Keycard Reader (Left) Denied",
+      "item.scp_additions.bleach": "Cup of bleach",
+      "block.scp_additions.scp_330": "SCP-330",
+      "block.scp_additions.left_reader_wrong": "Level 1 Keycard Reader (Left) Denied",
+      "item.scp_additions.cactus": "Cup of Cactus",
+      "subtitles.accessdenied": "Access Denied",
+      "item.scp_additions.geiger_1": "Geiger Counter",
+      "item.scp_additions.geiger_2": "Geiger Counter",
+      "item.scp_additions.geiger_3": "Geiger Counter",
+      "subtitles.scp294emptycup": "SCP-294 empty cup dispensed",
+      "block.scp_additions.lv_6_right_reader_accept": "Level 6 Keycard Reader (Right) Accepted",
+      "advancements.scp_330_achievement.descr": "Took more than two candies from SCP-330. Need a hand?",
+      "subtitles.teslaactivate": "Tesla Gate activating",
+      "item.scp_additions.spirit": "Cup of spirit",
+      "subtitles.candyeat": "Eating candy",
+      "entity.scp_additions.scp_0591infected_3": "infectedthree",
+      "block.scp_additions.tesla_active_3": "Tesla Gate AC3",
+      "block.scp_additions.tesla_active_2": "Tesla Gate AC2",
+      "subtitles.terminalon": "Tesla Terminal On",
+      "block.scp_additions.tesla_active_4": "Tesla Gate AC4",
+      "effect.delta_radiation": "Delta Radiation",
+      "subtitles.teslaready": "Tesla Gate preparing",
+      "item.scp_additions.lager": "Cup of lager",
+      "item.scp_additions.credit_card": "Credit Card",
+      "item.scp_additions.beer": "Cup of beer",
+      "block.scp_additions.scp_914_output": "SCP-914 Output",
+      "advancements.scp_914_metamorphosis.descr": "Got \"refined\" by SCP-914 on the \"1:1\" setting.",
+      "block.scp_additions.lv_6_right_reader_wrong": "Level 6 Keycard Reader (Right) Denied",
+      "item.scp_additions.cup_of_coffee": "Cup of coffee",
+      "item.scp_additions.hazmat_suit_leggings": "Hazmat Suit Leggings",
+      "block.scp_additions.scp_079control": "Scp-079 Control (ON)",
+      "subtitles.scp294on": "SCP-294 on",
+      "block.scp_additions.decon_closed": "DeconClosed",
+      "advancements.scp_1176_achievement.title": "Cursed Honey",
+      "gamerule.scp079controlOn.description": "If SCP-079 has control over the facility",
+      "advancements.tesla.descr": "Electrifying exit! You\u0027ve earned a shocking send-off.",
+      "block.scp_additions.tesla_terminal_off": "Tesla Terminal",
+      "advancements.scp_330_achievement.title": "Sweet Tooth",
+      "block.scp_additions.lv_6_left_reader_wrong": "Level 6 Keycard Reader (Left) Denied",
+      "advancements.scp_079.title": "Digital Menace",
       "subtitles.scp902": "SCP-902 clicking",
       "block.scp_additions.right_reader_wrong": "Level 1 Keycard Reader (Right) Denied",
       "block.scp_additions.scp_426": "SCP-426",
-      "block.scp_additions.tesla_recharge": "Tesla Gate",
       "block.scp_additions.scp_914dial_1to_1": "SCP-914 dial",
-      "block.scp_additions.right_reader_accept": "Level 1 Keycard Reader (Right) Accepted",
-      "advancements.tesla.title": "Fried and Gone",
       "itemGroup.tabscp_additions": "SCP Additions Misc",
-      "block.scp_additions.button_loff": "Button (Left)",
       "block.scp_additions.scp_059_contained": "SCP-059 Contained",
-      "block.scp_additions.lv_3_right_reader_accept": "Level 3 Keycard Reader (Right) Accepted",
       "itemGroup.tabsc_padditions_sc_ps": "SCP Additions SCPs",
       "advancements.hazmat_achi.title": "Quarantined",
       "block.scp_additions.lv_5_left_reader_wrong": "Level 5 Keycard Reader (Left) Denied",
-      "block.scp_additions.button_ron": "Button (Right) ON",
       "item.scp_additions.hazmat_suit_chestplate": "Hazmat Suit Body",
-      "block.scp_additions.lv_5_left_reader": "Level 5 Keycard Reader (Left)",
-      "subtitles.doorclosing": "Door closing",
-      "block.scp_additions.scp_914dial_rough": "SCP-914 dial",
-      "block.scp_additions.scp_914dial_coarse": "SCP-914 dial",
       "block.scp_additions.lv_2_right_reader_accept": "Level 2 Keycard Reader (Right) Accepted",
-      "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
-      "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
-      "block.scp_additions.scp_902_closed": "SCP-902",
-      "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
+      "block.scp_additions.scp_914dial_coarse": "SCP-914 dial",
+      "block.scp_additions.scp_914dial_rough": "SCP-914 dial",
+      "death.attack.void": "%s died from SCP-294\u0027s explosion.",
+      "subtitles.scp294enter": "SCP-294 enter key",
       "block.scp_additions.lv_3_right_reader_wrong": "Level 3 Keycard Reader (Right) Denied",
-      "subtitles.scp059box": "SCP-059 Containment Box",
       "subtitles.terminaloff": "Tesla Terminal Off",
+      "death.attack.grimace": "%s died from Grimace Shake poisoning.",
       "advancements.scp_902_achievement.descr": "Opened SCP-902.",
-      "block.scp_additions.lv_2_right_reader": "Level 2 Keycard Reader (Right)",
       "block.scp_additions.lv_6_right_reader": "Level 6 Keycard Reader (Right)",
-      "advancements.decon_achievement.descr": "Pass through a Decontamination Checkpoint.",
       "subtitles.scp914dooropen": "SCP-914 door opening",
-      "block.scp_additions.left_reader_accept": "Level 1 Keycard Reader (Left) Accepted",
+      "item.scp_additions.aqua_regia": "Cup of Aqua Regia",
+      "item.scp_additions.ethanol": "Cup of ethanol",
       "item.scp_additions.level_3_keycard": "Level 3 Keycard",
       "item.scp_additions.coin": "Coin",
       "subtitles.scp914dial": "SCP-914 dial",
       "item.scp_additions.hazmat_suit_boots": "Hazmat Suit Boots",
       "advancements.scp_1176_achievement.descr": "Found SCP-1176.",
-      "subtitles.scp902closing": "SCP-902 closing",
       "block.scp_additions.scp_914dial_fine": "SCP-914 dial",
-      "subtitles.scp1176": "SCP-1176 curse",
       "block.scp_additions.scp_902_open": "SCP-902",
       "advancements.scp_914_achievement.title": "Anomalous Refinery",
       "gamerule.teslaGateOn.description": "If true, then the Tesla Gates are functional, can be swapped through the Tesla Gate Terminal",
-      "block.scp_additions.scp_914clockworks_2": "SCP-914 Clockworks",
-      "block.scp_additions.lv_4_right_reader": "Level 4 Keycard Reader (Right)",
-      "gamerule.teslaGateOn": "If Tesla Gates are on",
       "block.scp_additions.button_roff": "Button (Right)",
       "block.scp_additions.scp_914_intake_door": "SCP-914 Intake Door",
       "advancements.scp_059_rebirth.descr": "Got infected with SCP-059-1.",
-      "block.scp_additions.lv_3_left_reader_wrong": "Level 3 Keycard Reader (Left) Denied",
-      "death.attack.scp914fine": "%s died to heart attack after being \"refined\" by SCP-914 on the \"Fine\" setting.",
-      "block.scp_additions.left_reader": "Level 1 Keycard Reader (Left)",
-      "block.scp_additions.tesla_active": "Tesla Gate AC1",
+      "block.scp_additions.scp_294_out_of_range": "SCP-294",
       "block.scp_additions.scp_059_1": "SCP-059-1",
-      "subtitles.spray": "Spray",
-      "subtitles.scp914inside": "Inside SCP-914",
-      "block.scp_additions.scp_079off": "SCP-079",
+      "block.scp_additions.tesla_active": "Tesla Gate AC1",
       "advancements.scp_902_achievement.title": "What\u0027s Inside the Box?",
-      "item.scp_additions.spray": "Methyl isothiocyanate spray bottle",
       "block.scp_additions.decon_open": "Decontamination Checkpoint",
-      "item.scp_additions.pieces_of_paper": "Pieces of paper",
       "advancements.scp_426_achievement.descr": "Found SCP-426.",
-      "advancements.scp_059_adv.title": "Delta Decay",
-      "block.scp_additions.lv_5_right_reader_accept": "Level 5 Keycard Reader (Right) Accepted",
-      "block.scp_additions.tesla_terminal_block": "Tesla Terminal (On)",
       "item.scp_additions.hazmat_suit_helmet": "Hazmat Suit Helmet",
       "block.scp_additions.scp_079_system_control": "SCP-079 System Control",
       "block.scp_additions.lv_4_right_reader_wrong": "Level 4 Keycard Reader (Right) Denied",
       "item.scp_additions.level_6_keycard": "Level 6 Keycard",
-      "subtitles.teslarecharge": "Tesla Gate recharging",
-      "block.scp_additions.scp_914_output_door": "SCP-914 Output Door",
-      "death.attack.scp914rough": "%s was \"refined\" by SCP-914 on the \"Rough\" setting.",
-      "item.scp_additions.level_2_keycard": "Level 2 Keycard",
-      "block.scp_additions.scp_079on": "SCP-079",
       "item.scp_additions.scp_330_blue_candy": "Blue Candy from SCP-330",
       "subtitles.scp902opening": "SCP-902 opening",
-      "subtitles.scp914key": "Winding SCP-914\u0027s key",
-      "block.scp_additions.lv_4_right_reader_accept": "Level 4 Keycard Reader (Right) Accepted",
       "subtitles.scp914doorclose": "SCP-914 door closing",
-      "advancements.decon_achievement.title": "Decontaminated",
-      "block.scp_additions.scp_914dial_very_fine": "SCP-914 dial",
       "subtitles.scp330death": "SCP-330 blood loss",
-      "subtitles.scp914death": "SCP-914 death",
       "itemGroup.tabsc_padditions_keycards": "SCP Additions Keycards",
       "block.scp_additions.tesla_gate": "Tesla Gate",
       "gamerule.deconCheckpoint": "Decontamination Checkpoints save",
-      "advancements.scp_572_a_achievement.descr": "Congratulations! You\u0027re the chosen one...",
       "item.scp_additions.scp_1176honey": "Honey Bottle",
       "subtitles.accessgranted": "Access Granted",
-      "block.scp_additions.button_lon": "Button (Left) ON",
+      "advancements.scp_079control_achi.descr": "Gave remote access for the system controls to SCP-079.",
       "subtitles.dooropen": "Door opening",
-      "subtitles.click": "Teslta Terminal Click",
       "subtitles.geiger1": "Low radioactivity",
       "block.scp_additions.decon_open_reload": "DeconReload",
       "subtitles.geiger2": "Medium radioactivity",
-      "death.attack.scp059delta": "%s died of Delta radiation poisoning from SCP-059.",
       "subtitles.geiger3": "High radioactivity",
-      "advancements.hazmat_achi.descr": "Suited up in the hazmat gear.",
       "item.scp_additions.scp_330_green_candy": "Green Candy from SCP-330",
-      "advancements.scp_additions_ach.descr": "Unravel the secrets of the SCP Foundation.",
       "advancements.scp_additions_ach.title": "SCP Additions",
       "subtitles.button": "Button",
       "block.scp_additions.scp_914_key_wind": "SCP-914 Key",
-      "block.scp_additions.scp_1176": "SCP-1176",
       "item.scp_additions.playing_card": "Playing Card",
-      "block.scp_additions.scp_914block": "SCP-914 Block",
-      "subtitles.scp914refining": "SCP-914 refining",
-      "item.scp_additions.level_5_keycard": "Level 5 Keycard",
       "death.attack.scp914coarse": "%s died of blood loss after being \"refined\" by SCP-914 on the \"Coarse\" setting.",
       "subtitles.scp059_1": "SCP-059-1 grows",
       "block.scp_additions.scp_059": "SCP-059",
-      "block.scp_additions.lv_5_right_reader": "Level 5 Keycard Reader (Right)",
-      "item.scp_additions.scp_572": "SCP-572",
       "block.scp_additions.lv_3_right_reader": "Level 3 Keycard Reader (Right)",
-      "block.scp_additions.lv_4_left_reader_wrong": "Level 4 Keycard Reader (Left) Denied",
+      "item.scp_additions.scp_572": "SCP-572",
       "item.scp_additions.level_1_keycard": "Level 1 Keycard",
-      "block.scp_additions.scp_330": "SCP-330",
       "block.scp_additions.scp_914clockworks": "SCP-914 Clockworks",
-      "block.scp_additions.left_reader_wrong": "Level 1 Keycard Reader (Left) Denied",
       "block.scp_additions.lv_4_left_reader_accept": "Level 4 Keycard Reader (Left) Accepted",
-      "subtitles.accessdenied": "Access Denied",
+      "block.scp_additions.scp_294": "SCP-294",
       "block.scp_additions.lv_5_left_reader_accept": "Level 5 Keycard Reader (Left) Accepted",
-      "item.scp_additions.geiger_1": "Geiger Counter",
-      "item.scp_additions.geiger_2": "Geiger Counter",
       "block.scp_additions.lv_3_left_reader_accept": "Level 3 Keycard Reader (Left) Accepted",
-      "item.scp_additions.geiger_3": "Geiger Counter",
       "block.scp_additions.lv_2_left_reader_accept": "Level 2 Keycard Reader (Left) Accepted",
+      "item.scp_additions.corrosive_black": "Cup of black corrosive liquid",
       "advancements.scp_914_metamorphosis.title": "Metamorphosis",
-      "block.scp_additions.lv_6_right_reader_accept": "Level 6 Keycard Reader (Right) Accepted",
       "block.scp_additions.lv_2_left_reader_wrong": "Level 2 Keycard Reader (Left) Denied",
       "block.scp_additions.scp_079controloff": "Scp-079 Control",
-      "advancements.scp_330_achievement.descr": "Took more than two candies from SCP-330. Need a hand?",
+      "subtitles.scp294off": "SCP-294 off",
       "advancements.scp_572_a_achievement.title": "Blade of Delusions",
-      "subtitles.teslaactivate": "Tesla Gate activating",
       "subtitles.candy": "Taking candy from SCP-330",
-      "advancements.scp_079.descr": "Found SCP-079.",
-      "subtitles.candyeat": "Eating candy",
-      "entity.scp_additions.scp_0591infected_3": "infectedthree"
+      "advancements.scp_079.descr": "Found SCP-079."
     }
   },
   "foldersRoot": {
@@ -6211,13 +6928,22 @@
             ]
           }
         ]
+      },
+      {
+        "name": "Scp294Procedures",
+        "children": [
+          {
+            "name": "Drinks",
+            "children": []
+          }
+        ]
       }
     ]
   },
   "workspaceSettings": {
     "modid": "scp_additions",
     "modName": "SCP Additions",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "author": "Bl4ues, MCreator",
     "websiteURL": "https://mcreator.net",
     "license": "Creative Commons Sharealike 3.0",

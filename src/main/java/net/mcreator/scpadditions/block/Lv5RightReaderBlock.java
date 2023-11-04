@@ -59,7 +59,7 @@ public class Lv5RightReaderBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Lv5RightReaderBlock(ScpAdditionsModElements instance) {
-		super(instance, 53);
+		super(instance, 54);
 	}
 
 	@Override

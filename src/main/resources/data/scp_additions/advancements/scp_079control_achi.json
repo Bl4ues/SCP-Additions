@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_additions:scp_079on"
+    },
+    "title": {
+      "translate": "advancements.scp_079control_achi.title"
+    },
+    "description": {
+      "translate": "advancements.scp_079control_achi.descr"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "scp_079control_achi": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_additions:scp_079"
+}

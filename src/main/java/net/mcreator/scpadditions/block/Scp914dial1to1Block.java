@@ -59,7 +59,7 @@ public class Scp914dial1to1Block extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914dial1to1Block(ScpAdditionsModElements instance) {
-		super(instance, 23);
+		super(instance, 24);
 	}
 
 	@Override

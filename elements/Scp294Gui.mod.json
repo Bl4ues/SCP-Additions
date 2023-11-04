@@ -1,0 +1,87 @@
+{
+  "_fv": 33,
+  "_type": "gui",
+  "definition": {
+    "type": 1,
+    "width": 176,
+    "height": 166,
+    "inventoryOffsetX": 0,
+    "inventoryOffsetY": 0,
+    "renderBgLayer": true,
+    "doesPauseGame": false,
+    "components": [
+      {
+        "type": "textfield",
+        "data": {
+          "placeholder": "",
+          "width": 120,
+          "height": 20,
+          "name": "scp294input",
+          "x": 151,
+          "y": 61
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "text": "SCP-294",
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "name": "SCP-294",
+          "x": 194,
+          "y": 45
+        }
+      },
+      {
+        "type": "button",
+        "data": {
+          "text": "Enter",
+          "onClick": {
+            "name": "Scp294drinkGive"
+          },
+          "width": 51,
+          "height": 20,
+          "name": "Enter",
+          "x": 220,
+          "y": 85
+        }
+      },
+      {
+        "type": "inputslot",
+        "data": {
+          "inputLimit": {
+            "value": "CUSTOM:Coin"
+          },
+          "id": 0,
+          "disableStackInteraction": false,
+          "dropItemsWhenNotBound": true,
+          "name": "Slot #0",
+          "x": 190,
+          "y": 86
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "text": "Coin",
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "name": "Coin",
+          "x": 188,
+          "y": 105
+        }
+      }
+    ],
+    "gridSettings": {
+      "sx": 18,
+      "sy": 18,
+      "ox": 11,
+      "oy": 15,
+      "snapOnGrid": false
+    }
+  }
+}

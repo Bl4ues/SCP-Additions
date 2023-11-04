@@ -41,7 +41,7 @@ public class Scp914clockworksBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914clockworksBlock(ScpAdditionsModElements instance) {
-		super(instance, 21);
+		super(instance, 22);
 	}
 
 	@Override

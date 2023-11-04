@@ -338,5 +338,65 @@
         "stream": false
       }
     ]
+  },
+  "scp294enter": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294enter",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294enter",
+        "stream": false
+      }
+    ]
+  },
+  "scp294pouring": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294pouring",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294pouring",
+        "stream": false
+      }
+    ]
+  },
+  "scp294emptycup": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294emptycup",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294emptycup",
+        "stream": false
+      }
+    ]
+  },
+  "scp294outofrange": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294outofrange",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294outofrange",
+        "stream": false
+      }
+    ]
+  },
+  "scp294on": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294on",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294on",
+        "stream": false
+      }
+    ]
+  },
+  "scp294off": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294off",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294off",
+        "stream": false
+      }
+    ]
   }
 }

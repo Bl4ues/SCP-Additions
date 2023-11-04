@@ -13,7 +13,7 @@ import net.mcreator.scpadditions.ScpAdditionsModElements;
 @ScpAdditionsModElements.ModElement.Tag
 public class SCPadditionsKeycardsItemGroup extends ScpAdditionsModElements.ModElement {
 	public SCPadditionsKeycardsItemGroup(ScpAdditionsModElements instance) {
-		super(instance, 259);
+		super(instance, 260);
 	}
 
 	@Override

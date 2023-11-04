@@ -14,7 +14,7 @@ public class DeconCheckpointGameRule extends ScpAdditionsModElements.ModElement 
 			create(false));
 
 	public DeconCheckpointGameRule(ScpAdditionsModElements instance) {
-		super(instance, 221);
+		super(instance, 222);
 	}
 
 	public static GameRules.RuleType<GameRules.BooleanValue> create(boolean defaultValue) {

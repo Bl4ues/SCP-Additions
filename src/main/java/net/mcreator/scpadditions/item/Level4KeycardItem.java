@@ -23,7 +23,7 @@ public class Level4KeycardItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public Level4KeycardItem(ScpAdditionsModElements instance) {
-		super(instance, 42);
+		super(instance, 43);
 	}
 
 	@Override

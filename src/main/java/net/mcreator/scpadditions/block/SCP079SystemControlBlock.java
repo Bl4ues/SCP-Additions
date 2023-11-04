@@ -32,7 +32,7 @@ import net.minecraft.block.IWaterLoggable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Block;
 
-import net.mcreator.scpadditions.procedures.Scp079controlsystemonProcedure;
+import net.mcreator.scpadditions.procedures.SCP079SystemControlPProcedure;
 import net.mcreator.scpadditions.procedures.SCP079SystemControlOffProcedure;
 import net.mcreator.scpadditions.itemgroup.SCPAdditionsItemGroup;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
@@ -134,8 +134,10 @@ public class SCP079SystemControlBlock extends ScpAdditionsModElements.ModElement
 			int z = pos.getZ();
 			if (world.getRedstonePowerFromNeighbors(new BlockPos(x, y, z)) > 0) {
 
-				Scp079controlsystemonProcedure.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("world", world)).collect(HashMap::new,
-						(_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
+				SCP079SystemControlPProcedure.executeProcedure(Stream
+						.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x),
+								new AbstractMap.SimpleEntry<>("y", y), new AbstractMap.SimpleEntry<>("z", z))
+						.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 			} else {
 
 				SCP079SystemControlOffProcedure.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("world", world)).collect(HashMap::new,

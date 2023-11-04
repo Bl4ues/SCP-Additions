@@ -44,6 +44,8 @@ public class ScpAdditionsModVariables {
 		CapabilityManager.INSTANCE.register(PlayerVariables.class, new PlayerVariablesStorage(), PlayerVariables::new);
 	}
 
+	public static double Scp294stock = 0;
+
 	@SubscribeEvent
 	public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
 		if (!event.getPlayer().world.isRemote()) {

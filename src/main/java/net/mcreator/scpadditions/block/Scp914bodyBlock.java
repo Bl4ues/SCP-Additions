@@ -49,7 +49,7 @@ public class Scp914bodyBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914bodyBlock(ScpAdditionsModElements instance) {
-		super(instance, 22);
+		super(instance, 23);
 	}
 
 	@Override

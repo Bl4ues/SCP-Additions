@@ -1,15 +1,11 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.common.MinecraftForge;
 
-import net.minecraft.world.World;
 import net.minecraft.world.IWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.state.Property;
 import net.minecraft.nbt.CompoundNBT;
@@ -47,15 +43,6 @@ public class Scp294OutOfRangeProcedureProcedure {
 		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
 		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
 		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
-		if (world instanceof World && !world.isRemote()) {
-			((World) world).playSound(null, new BlockPos(x, y, z),
-					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294outofrange")),
-					SoundCategory.NEUTRAL, (float) 1, (float) 1);
-		} else {
-			((World) world).playSound(x, y, z,
-					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294outofrange")),
-					SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-		}
 		new Object() {
 			private int ticks = 0;
 			private float waitTicks;
@@ -108,6 +95,6 @@ public class Scp294OutOfRangeProcedureProcedure {
 				}
 				MinecraftForge.EVENT_BUS.unregister(this);
 			}
-		}.start(world, (int) 30);
+		}.start(world, (int) 20);
 	}
 }

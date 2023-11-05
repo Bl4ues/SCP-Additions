@@ -13,12 +13,12 @@
       {
         "type": "textfield",
         "data": {
-          "placeholder": "",
+          "placeholder": "Enter your order",
           "width": 120,
           "height": 20,
           "name": "scp294input",
-          "x": 151,
-          "y": 61
+          "x": 141,
+          "y": 62
         }
       },
       {
@@ -44,7 +44,7 @@
           "width": 51,
           "height": 20,
           "name": "Enter",
-          "x": 220,
+          "x": 234,
           "y": 85
         }
       },
@@ -57,9 +57,18 @@
           "id": 0,
           "disableStackInteraction": false,
           "dropItemsWhenNotBound": false,
+          "onSlotChanged": {
+            "name": "Scp294CoinSlot2"
+          },
+          "onTakenFromSlot": {
+            "name": "Scp294CoinSlot2"
+          },
+          "onStackTransfer": {
+            "name": "Scp294CoinSlot2"
+          },
           "name": "Slot #0",
-          "x": 190,
-          "y": 86
+          "x": 267,
+          "y": 63
         }
       },
       {
@@ -71,11 +80,20 @@
             "falpha": 0.0
           },
           "name": "Coin",
-          "x": 188,
-          "y": 105
+          "x": 265,
+          "y": 49
         }
       }
     ],
+    "onOpen": {
+      "name": "Scp294CoinSlot2"
+    },
+    "onTick": {
+      "name": "Scp294CoinSlot"
+    },
+    "onClosed": {
+      "name": "Scp294CoinSlot2"
+    },
     "gridSettings": {
       "sx": 18,
       "sy": 18,

@@ -108,9 +108,5 @@ public class Scp294restockProcedure {
 			ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = 0;
 			ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 		}
-		if (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock > 51) {
-			ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = 0;
-			ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
-		}
 	}
 }

@@ -83,7 +83,7 @@ public class Scp294GuiGuiWindow extends ContainerScreen<Scp294GuiGui.GuiContaine
 	@Override
 	protected void drawGuiContainerForegroundLayer(MatrixStack ms, int mouseX, int mouseY) {
 		this.font.drawString(ms, "SCP-294", 68, 8, -12829636);
-		this.font.drawString(ms, "Coin", 62, 68, -12829636);
+		this.font.drawString(ms, "Coin", 139, 12, -12829636);
 	}
 
 	@Override
@@ -96,11 +96,33 @@ public class Scp294GuiGuiWindow extends ContainerScreen<Scp294GuiGui.GuiContaine
 	public void init(Minecraft minecraft, int width, int height) {
 		super.init(minecraft, width, height);
 		minecraft.keyboardListener.enableRepeatEvents(true);
-		scp294input = new TextFieldWidget(this.font, this.guiLeft + 25, this.guiTop + 24, 120, 20, new StringTextComponent(""));
+		scp294input = new TextFieldWidget(this.font, this.guiLeft + 15, this.guiTop + 25, 120, 20, new StringTextComponent("Enter your order")) {
+			{
+				setSuggestion("Enter your order");
+			}
+
+			@Override
+			public void writeText(String text) {
+				super.writeText(text);
+				if (getText().isEmpty())
+					setSuggestion("Enter your order");
+				else
+					setSuggestion(null);
+			}
+
+			@Override
+			public void setCursorPosition(int pos) {
+				super.setCursorPosition(pos);
+				if (getText().isEmpty())
+					setSuggestion("Enter your order");
+				else
+					setSuggestion(null);
+			}
+		};
 		guistate.put("text:scp294input", scp294input);
 		scp294input.setMaxStringLength(32767);
 		this.children.add(this.scp294input);
-		this.addButton(new Button(this.guiLeft + 94, this.guiTop + 48, 51, 20, new StringTextComponent("Enter"), e -> {
+		this.addButton(new Button(this.guiLeft + 108, this.guiTop + 48, 51, 20, new StringTextComponent("Enter"), e -> {
 			if (true) {
 				ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp294GuiGui.ButtonPressedMessage(0, x, y, z));
 				Scp294GuiGui.handleButtonAction(entity, 0, x, y, z);

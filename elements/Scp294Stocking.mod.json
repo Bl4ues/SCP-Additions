@@ -125,9 +125,6 @@
     "isFluidTank": false,
     "fluidCapacity": 8000,
     "fluidRestrictions": [],
-    "onBlockAdded": {
-      "name": "Scp294restock2"
-    },
     "onTickUpdate": {
       "name": "Scp294restock2"
     },

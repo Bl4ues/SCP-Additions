@@ -6125,6 +6125,56 @@
         ]
       },
       "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Scp294CoinSlot",
+      "type": "procedure",
+      "sortid": 350,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_coin_slot",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Scp294CoinSlot2",
+      "type": "procedure",
+      "sortid": 351,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294_coin_slot_2",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
     }
   ],
   "variable_elements": [
@@ -6310,6 +6360,12 @@
     },
     {
       "name": "Scp294stock",
+      "type": "number",
+      "scope": "world",
+      "value": "0"
+    },
+    {
+      "name": "coinslot",
       "type": "number",
       "scope": "world",
       "value": "0"
@@ -6635,6 +6691,14 @@
       ],
       "category": "neutral",
       "subtitle": "SCP-294 off"
+    },
+    {
+      "name": "scp294coinslot",
+      "files": [
+        "scp294coinslot"
+      ],
+      "category": "neutral",
+      "subtitle": "SCP-294 coin slot"
     }
   ],
   "language_map": {
@@ -6648,9 +6712,9 @@
       "block.scp_additions.lv_6_left_reader_accept": "Level 6 Keycard Reader (Left) Accepted",
       "block.scp_additions.right_reader": "Level 1 Keycard Reader (Right)",
       "item.scp_additions.aloe": "Cup of Aloe Vera",
-      "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
-      "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
       "death.attack.scp572": "%s fell victim to their confidence in SCP-572.",
+      "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
+      "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
       "gamerule.deconCheckpoint.description": "If enabled, Decontamination Checkpoints will save your spawnpoint when you walk through them.",
       "subtitles.scp079_2": "SCP-079 noise",
       "advancements.scp_426_achievement.title": "Identity Crisis",
@@ -6683,8 +6747,8 @@
       "subtitles.doorclosing": "Door closing",
       "advancements.scp_079control_achi.title": "Unleashing the AI",
       "block.scp_additions.scp_294_stocking": "SCP-294",
-      "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
       "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
+      "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
       "block.scp_additions.scp_902_closed": "SCP-902",
       "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
       "subtitles.scp059box": "SCP-059 Containment Box",
@@ -6705,10 +6769,10 @@
       "subtitles.spray": "Spray",
       "subtitles.scp914inside": "Inside SCP-914",
       "block.scp_additions.scp_079off": "SCP-079",
-      "item.scp_additions.pieces_of_paper": "Pieces of paper",
       "item.scp_additions.spray": "Methyl isothiocyanate spray bottle",
-      "block.scp_additions.lv_5_right_reader_accept": "Level 5 Keycard Reader (Right) Accepted",
+      "item.scp_additions.pieces_of_paper": "Pieces of paper",
       "advancements.scp_059_adv.title": "Delta Decay",
+      "block.scp_additions.lv_5_right_reader_accept": "Level 5 Keycard Reader (Right) Accepted",
       "block.scp_additions.tesla_terminal_block": "Tesla Terminal (On)",
       "item.scp_additions.cup_of_alcohol": "Cup of alcohol",
       "subtitles.teslarecharge": "Tesla Gate recharging",
@@ -6744,6 +6808,7 @@
       "item.scp_additions.geiger_1": "Geiger Counter",
       "item.scp_additions.geiger_2": "Geiger Counter",
       "item.scp_additions.geiger_3": "Geiger Counter",
+      "subtitles.scp294coinslot": "SCP-294 coin slot",
       "subtitles.scp294emptycup": "SCP-294 empty cup dispensed",
       "block.scp_additions.lv_6_right_reader_accept": "Level 6 Keycard Reader (Right) Accepted",
       "advancements.scp_330_achievement.descr": "Took more than two candies from SCP-330. Need a hand?",

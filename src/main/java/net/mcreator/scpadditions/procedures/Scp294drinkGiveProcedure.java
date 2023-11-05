@@ -2079,6 +2079,20 @@ public class Scp294drinkGiveProcedure {
 																							}
 																							if (entity instanceof PlayerEntity)
 																								((PlayerEntity) entity).closeScreen();
+																							if (world instanceof World && !world.isRemote()) {
+																								((World) world).playSound(null, new BlockPos(x, y, z),
+																										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																												.getValue(new ResourceLocation(
+																														"scp_additions:scp294outofrange")),
+																										SoundCategory.NEUTRAL, (float) 1, (float) 1);
+																							} else {
+																								((World) world).playSound(x, y, z,
+																										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																												.getValue(new ResourceLocation(
+																														"scp_additions:scp294outofrange")),
+																										SoundCategory.NEUTRAL, (float) 1, (float) 1,
+																										false);
+																							}
 																						}
 																					}
 																				}

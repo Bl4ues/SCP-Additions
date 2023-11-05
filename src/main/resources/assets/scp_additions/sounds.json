@@ -398,5 +398,15 @@
         "stream": false
       }
     ]
+  },
+  "scp294coinslot": {
+    "category": "neutral",
+    "subtitle": "subtitles.scp294coinslot",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294coinslot",
+        "stream": false
+      }
+    ]
   }
 }

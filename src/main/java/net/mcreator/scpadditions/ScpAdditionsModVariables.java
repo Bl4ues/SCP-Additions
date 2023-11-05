@@ -71,6 +71,7 @@ public class ScpAdditionsModVariables {
 	public static class WorldVariables extends WorldSavedData {
 		public static final String DATA_NAME = "scp_additions_worldvars";
 		public double Scp294stock = 0;
+		public double coinslot = 0;
 
 		public WorldVariables() {
 			super(DATA_NAME);
@@ -83,11 +84,13 @@ public class ScpAdditionsModVariables {
 		@Override
 		public void read(CompoundNBT nbt) {
 			Scp294stock = nbt.getDouble("Scp294stock");
+			coinslot = nbt.getDouble("coinslot");
 		}
 
 		@Override
 		public CompoundNBT write(CompoundNBT nbt) {
 			nbt.putDouble("Scp294stock", Scp294stock);
+			nbt.putDouble("coinslot", coinslot);
 			return nbt;
 		}
 

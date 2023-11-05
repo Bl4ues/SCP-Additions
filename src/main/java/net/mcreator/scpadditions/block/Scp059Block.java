@@ -25,6 +25,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.ISeedReader;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.registry.WorldGenRegistries;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.math.vector.Vector3d;
@@ -55,6 +57,7 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.block.material.Material;
@@ -116,6 +119,13 @@ public class Scp059Block extends ScpAdditionsModElements.ModElement {
 			this.setDefaultState(
 					this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(FACE, AttachFace.WALL).with(WATERLOGGED, false));
 			setRegistryName("scp_059");
+		}
+
+		@Override
+		@OnlyIn(Dist.CLIENT)
+		public void addInformation(ItemStack itemstack, IBlockReader world, List<ITextComponent> list, ITooltipFlag flag) {
+			super.addInformation(itemstack, world, list, flag);
+			list.add(new StringTextComponent("Radioactive Mineral"));
 		}
 
 		@Override

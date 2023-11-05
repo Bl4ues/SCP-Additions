@@ -59,7 +59,7 @@ public class Lv3LeftReaderWrongBlock extends ScpAdditionsModElements.ModElement 
 	public static final Block block = null;
 
 	public Lv3LeftReaderWrongBlock(ScpAdditionsModElements instance) {
-		super(instance, 246);
+		super(instance, 247);
 	}
 
 	@Override

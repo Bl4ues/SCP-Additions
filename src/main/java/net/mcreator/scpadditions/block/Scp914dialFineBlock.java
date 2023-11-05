@@ -38,6 +38,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.block.material.Material;
@@ -65,7 +66,7 @@ public class Scp914dialFineBlock extends ScpAdditionsModElements.ModElement {
 	public static final Block block = null;
 
 	public Scp914dialFineBlock(ScpAdditionsModElements instance) {
-		super(instance, 149);
+		super(instance, 150);
 	}
 
 	@Override
@@ -88,6 +89,13 @@ public class Scp914dialFineBlock extends ScpAdditionsModElements.ModElement {
 					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
 			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
 			setRegistryName("scp_914dial_fine");
+		}
+
+		@Override
+		@OnlyIn(Dist.CLIENT)
+		public void addInformation(ItemStack itemstack, IBlockReader world, List<ITextComponent> list, ITooltipFlag flag) {
+			super.addInformation(itemstack, world, list, flag);
+			list.add(new StringTextComponent("The Clockworks"));
 		}
 
 		@Override

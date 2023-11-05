@@ -34,7 +34,9 @@
       }
     ],
     "name": "SCP-059",
-    "specialInfo": [],
+    "specialInfo": [
+      "Radioactive Mineral"
+    ],
     "hardness": 2.0,
     "resistance": 10.0,
     "hasGravity": false,

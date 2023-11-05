@@ -27,7 +27,7 @@ public class Drink1Item extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public Drink1Item(ScpAdditionsModElements instance) {
-		super(instance, 323);
+		super(instance, 322);
 	}
 
 	@Override

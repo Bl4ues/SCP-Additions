@@ -17,7 +17,7 @@ public class EmptyCupItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public EmptyCupItem(ScpAdditionsModElements instance) {
-		super(instance, 316);
+		super(instance, 40);
 	}
 
 	@Override

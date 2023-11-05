@@ -14,7 +14,7 @@
     "enablePitch": false,
     "emissiveRendering": false,
     "displayFluidOverlay": false,
-    "itemTexture": "",
+    "itemTexture": "scp294text",
     "particleTexture": "",
     "tintType": "No tint",
     "isItemTinted": false,
@@ -34,7 +34,9 @@
       }
     ],
     "name": "SCP-294",
-    "specialInfo": [],
+    "specialInfo": [
+      "The Coffee Machine"
+    ],
     "hardness": 40.0,
     "resistance": 40.0,
     "hasGravity": false,
@@ -109,8 +111,8 @@
     "hasInventory": true,
     "guiBoundTo": "Scp294Gui",
     "openGUIOnRightClick": true,
-    "inventorySize": 9,
-    "inventoryStackSize": 64,
+    "inventorySize": 1,
+    "inventoryStackSize": 1,
     "inventoryDropWhenDestroyed": true,
     "inventoryComparatorPower": true,
     "inventoryOutSlotIDs": [],

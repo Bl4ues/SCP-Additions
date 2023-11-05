@@ -34,7 +34,9 @@
       }
     ],
     "name": "SCP-914 Output Door Closed",
-    "specialInfo": [],
+    "specialInfo": [
+      "The Clockworks"
+    ],
     "hardness": 30.0,
     "resistance": 30.0,
     "hasGravity": false,

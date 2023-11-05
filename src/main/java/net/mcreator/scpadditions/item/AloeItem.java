@@ -27,7 +27,7 @@ public class AloeItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public AloeItem(ScpAdditionsModElements instance) {
-		super(instance, 328);
+		super(instance, 327);
 	}
 
 	@Override

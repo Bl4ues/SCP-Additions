@@ -27,7 +27,7 @@ public class AntiEnergyItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public AntiEnergyItem(ScpAdditionsModElements instance) {
-		super(instance, 333);
+		super(instance, 332);
 	}
 
 	@Override

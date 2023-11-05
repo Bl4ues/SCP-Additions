@@ -27,7 +27,7 @@ public class CactusItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public CactusItem(ScpAdditionsModElements instance) {
-		super(instance, 330);
+		super(instance, 329);
 	}
 
 	@Override

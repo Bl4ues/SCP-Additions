@@ -265,7 +265,8 @@ public class Scp294drinkGiveProcedure {
 					_setstack.setCount((int) 1);
 					ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
 				}
-				ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+				ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+				ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 			} else {
 				if ((new Object() {
 					public String getText() {
@@ -354,7 +355,9 @@ public class Scp294drinkGiveProcedure {
 							MinecraftForge.EVENT_BUS.unregister(this);
 						}
 					}.start(world, (int) 40);
-					ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+					ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock
+							+ 1);
+					ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 				} else {
 					if ((new Object() {
 						public String getText() {
@@ -426,7 +429,9 @@ public class Scp294drinkGiveProcedure {
 								MinecraftForge.EVENT_BUS.unregister(this);
 							}
 						}.start(world, (int) 40);
-						ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+						ScpAdditionsModVariables.WorldVariables
+								.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+						ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 					} else {
 						if ((new Object() {
 							public String getText() {
@@ -514,7 +519,9 @@ public class Scp294drinkGiveProcedure {
 									MinecraftForge.EVENT_BUS.unregister(this);
 								}
 							}.start(world, (int) 40);
-							ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+							ScpAdditionsModVariables.WorldVariables
+									.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+							ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 						} else {
 							if ((new Object() {
 								public String getText() {
@@ -586,7 +593,9 @@ public class Scp294drinkGiveProcedure {
 										MinecraftForge.EVENT_BUS.unregister(this);
 									}
 								}.start(world, (int) 40);
-								ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+								ScpAdditionsModVariables.WorldVariables
+										.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+								ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 							} else {
 								if ((new Object() {
 									public String getText() {
@@ -658,7 +667,9 @@ public class Scp294drinkGiveProcedure {
 											MinecraftForge.EVENT_BUS.unregister(this);
 										}
 									}.start(world, (int) 40);
-									ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+									ScpAdditionsModVariables.WorldVariables
+											.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+									ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 								} else {
 									if ((new Object() {
 										public String getText() {
@@ -730,7 +741,9 @@ public class Scp294drinkGiveProcedure {
 												MinecraftForge.EVENT_BUS.unregister(this);
 											}
 										}.start(world, (int) 40);
-										ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+										ScpAdditionsModVariables.WorldVariables
+												.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+										ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 									} else {
 										if ((new Object() {
 											public String getText() {
@@ -802,7 +815,9 @@ public class Scp294drinkGiveProcedure {
 													MinecraftForge.EVENT_BUS.unregister(this);
 												}
 											}.start(world, (int) 40);
-											ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+											ScpAdditionsModVariables.WorldVariables
+													.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+											ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 										} else {
 											if ((new Object() {
 												public String getText() {
@@ -874,7 +889,9 @@ public class Scp294drinkGiveProcedure {
 														MinecraftForge.EVENT_BUS.unregister(this);
 													}
 												}.start(world, (int) 40);
-												ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+												ScpAdditionsModVariables.WorldVariables.get(
+														world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+												ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 											} else {
 												if ((new Object() {
 													public String getText() {
@@ -962,7 +979,9 @@ public class Scp294drinkGiveProcedure {
 															MinecraftForge.EVENT_BUS.unregister(this);
 														}
 													}.start(world, (int) 40);
-													ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+													ScpAdditionsModVariables.WorldVariables.get(
+															world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+													ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 												} else {
 													if ((new Object() {
 														public String getText() {
@@ -1085,7 +1104,10 @@ public class Scp294drinkGiveProcedure {
 																MinecraftForge.EVENT_BUS.unregister(this);
 															}
 														}.start(world, (int) 30);
-														ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+														ScpAdditionsModVariables.WorldVariables.get(
+																world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock
+																		+ 1);
+														ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 													} else {
 														if ((new Object() {
 															public String getText() {
@@ -1157,7 +1179,10 @@ public class Scp294drinkGiveProcedure {
 																	MinecraftForge.EVENT_BUS.unregister(this);
 																}
 															}.start(world, (int) 40);
-															ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+															ScpAdditionsModVariables.WorldVariables
+																	.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																			.get(world).Scp294stock + 1);
+															ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 														} else {
 															if ((new Object() {
 																public String getText() {
@@ -1312,7 +1337,10 @@ public class Scp294drinkGiveProcedure {
 																		MinecraftForge.EVENT_BUS.unregister(this);
 																	}
 																}.start(world, (int) 30);
-																ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+																ScpAdditionsModVariables.WorldVariables
+																		.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																				.get(world).Scp294stock + 1);
+																ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 															} else {
 																if ((new Object() {
 																	public String getText() {
@@ -1385,7 +1413,10 @@ public class Scp294drinkGiveProcedure {
 																			MinecraftForge.EVENT_BUS.unregister(this);
 																		}
 																	}.start(world, (int) 40);
-																	ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock + 1);
+																	ScpAdditionsModVariables.WorldVariables
+																			.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																					.get(world).Scp294stock + 1);
+																	ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																} else {
 																	if ((new Object() {
 																		public String getText() {
@@ -1461,8 +1492,10 @@ public class Scp294drinkGiveProcedure {
 																				MinecraftForge.EVENT_BUS.unregister(this);
 																			}
 																		}.start(world, (int) 40);
-																		ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock
-																				+ 1);
+																		ScpAdditionsModVariables.WorldVariables
+																				.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																						.get(world).Scp294stock + 1);
+																		ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																	} else {
 																		if ((new Object() {
 																			public String getText() {
@@ -1603,8 +1636,10 @@ public class Scp294drinkGiveProcedure {
 																					MinecraftForge.EVENT_BUS.unregister(this);
 																				}
 																			}.start(world, (int) 40);
-																			ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock
-																					+ 1);
+																			ScpAdditionsModVariables.WorldVariables
+																					.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																							.get(world).Scp294stock + 1);
+																			ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																		} else {
 																			if ((new Object() {
 																				public String getText() {
@@ -1682,8 +1717,10 @@ public class Scp294drinkGiveProcedure {
 																						MinecraftForge.EVENT_BUS.unregister(this);
 																					}
 																				}.start(world, (int) 40);
-																				ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock
-																						+ 1);
+																				ScpAdditionsModVariables.WorldVariables.get(
+																						world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																								.get(world).Scp294stock + 1);
+																				ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																			} else {
 																				if ((new Object() {
 																					public String getText() {
@@ -1761,8 +1798,11 @@ public class Scp294drinkGiveProcedure {
 																							MinecraftForge.EVENT_BUS.unregister(this);
 																						}
 																					}.start(world, (int) 40);
-																					ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock
-																							+ 1);
+																					ScpAdditionsModVariables.WorldVariables.get(
+																							world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																									.get(world).Scp294stock + 1);
+																					ScpAdditionsModVariables.WorldVariables.get(world)
+																							.syncData(world);
 																				} else {
 																					if ((new Object() {
 																						public String getText() {
@@ -1885,8 +1925,11 @@ public class Scp294drinkGiveProcedure {
 																								MinecraftForge.EVENT_BUS.unregister(this);
 																							}
 																						}.start(world, (int) 40);
-																						ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock
-																								+ 1);
+																						ScpAdditionsModVariables.WorldVariables.get(
+																								world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																										.get(world).Scp294stock + 1);
+																						ScpAdditionsModVariables.WorldVariables.get(world)
+																								.syncData(world);
 																					} else {
 																						if ((new Object() {
 																							public String getText() {
@@ -1993,8 +2036,11 @@ public class Scp294drinkGiveProcedure {
 																									MinecraftForge.EVENT_BUS.unregister(this);
 																								}
 																							}.start(world, (int) 40);
-																							ScpAdditionsModVariables.Scp294stock = (ScpAdditionsModVariables.Scp294stock
-																									+ 1);
+																							ScpAdditionsModVariables.WorldVariables.get(
+																									world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																											.get(world).Scp294stock + 1);
+																							ScpAdditionsModVariables.WorldVariables.get(world)
+																									.syncData(world);
 																						} else {
 																							{
 																								BlockPos _bp = new BlockPos(x, y, z);

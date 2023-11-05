@@ -27,7 +27,7 @@ public class LagerItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public LagerItem(ScpAdditionsModElements instance) {
-		super(instance, 339);
+		super(instance, 338);
 	}
 
 	@Override

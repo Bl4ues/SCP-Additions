@@ -27,7 +27,7 @@ public class BloodItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public BloodItem(ScpAdditionsModElements instance) {
-		super(instance, 345);
+		super(instance, 344);
 	}
 
 	@Override

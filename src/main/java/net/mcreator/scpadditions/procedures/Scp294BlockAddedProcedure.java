@@ -8,6 +8,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.ResourceLocation;
 
+import net.mcreator.scpadditions.ScpAdditionsModVariables;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Map;
@@ -47,6 +48,10 @@ public class Scp294BlockAddedProcedure {
 			((World) world).playSound(x, y, z,
 					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294on")),
 					SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
+		}
+		if (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock > 51) {
+			ScpAdditionsModVariables.MapVariables.get(world).RandomX = 0;
+			ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
 		}
 	}
 }

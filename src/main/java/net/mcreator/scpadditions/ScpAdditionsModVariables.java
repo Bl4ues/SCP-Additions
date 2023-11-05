@@ -44,8 +44,6 @@ public class ScpAdditionsModVariables {
 		CapabilityManager.INSTANCE.register(PlayerVariables.class, new PlayerVariablesStorage(), PlayerVariables::new);
 	}
 
-	public static double Scp294stock = 0;
-
 	@SubscribeEvent
 	public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
 		if (!event.getPlayer().world.isRemote()) {
@@ -72,6 +70,7 @@ public class ScpAdditionsModVariables {
 
 	public static class WorldVariables extends WorldSavedData {
 		public static final String DATA_NAME = "scp_additions_worldvars";
+		public double Scp294stock = 0;
 
 		public WorldVariables() {
 			super(DATA_NAME);
@@ -83,10 +82,12 @@ public class ScpAdditionsModVariables {
 
 		@Override
 		public void read(CompoundNBT nbt) {
+			Scp294stock = nbt.getDouble("Scp294stock");
 		}
 
 		@Override
 		public CompoundNBT write(CompoundNBT nbt) {
+			nbt.putDouble("Scp294stock", Scp294stock);
 			return nbt;
 		}
 

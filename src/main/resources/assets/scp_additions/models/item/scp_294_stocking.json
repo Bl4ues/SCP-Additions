@@ -1,22 +1,6 @@
 {
-  "parent": "scp_additions:block/scp_294_stocking",
-  "display": {
-    "thirdperson": {
-      "rotation": [
-        10,
-        -45,
-        170
-      ],
-      "translation": [
-        0,
-        1.5,
-        -2.75
-      ],
-      "scale": [
-        0.375,
-        0.375,
-        0.375
-      ]
-    }
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "scp_additions:items/scp294text"
   }
 }

@@ -52,7 +52,7 @@ public class Scp294restockProcedure {
 		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
 		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
 		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
-		if (ScpAdditionsModVariables.Scp294stock == 50) {
+		if (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock == 50) {
 			if (world instanceof World && !world.isRemote()) {
 				((World) world).playSound(null, new BlockPos(x, y, z),
 						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294off")),
@@ -105,6 +105,12 @@ public class Scp294restockProcedure {
 						((PlayerEntity) entityiterator).closeScreen();
 				}
 			}
+			ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = 0;
+			ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
+		}
+		if (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock > 51) {
+			ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = 0;
+			ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 		}
 	}
 }

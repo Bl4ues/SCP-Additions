@@ -27,7 +27,7 @@ public class CorrosiveBlackItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public CorrosiveBlackItem(ScpAdditionsModElements instance) {
-		super(instance, 341);
+		super(instance, 340);
 	}
 
 	@Override

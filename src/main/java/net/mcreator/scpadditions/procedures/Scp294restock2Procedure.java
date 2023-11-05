@@ -118,9 +118,10 @@ public class Scp294restock2Procedure {
 			}
 
 			private void run() {
-				ScpAdditionsModVariables.Scp294stock = 0;
+				ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = 0;
+				ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 				MinecraftForge.EVENT_BUS.unregister(this);
 			}
-		}.start(world, (int) 20);
+		}.start(world, (int) 1799);
 	}
 }

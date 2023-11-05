@@ -27,7 +27,7 @@ public class GrimaceShakeItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public GrimaceShakeItem(ScpAdditionsModElements instance) {
-		super(instance, 349);
+		super(instance, 348);
 	}
 
 	@Override

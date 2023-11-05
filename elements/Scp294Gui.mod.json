@@ -56,7 +56,7 @@
           },
           "id": 0,
           "disableStackInteraction": false,
-          "dropItemsWhenNotBound": true,
+          "dropItemsWhenNotBound": false,
           "name": "Slot #0",
           "x": 190,
           "y": 86

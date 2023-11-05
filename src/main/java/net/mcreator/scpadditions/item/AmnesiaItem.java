@@ -27,7 +27,7 @@ public class AmnesiaItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public AmnesiaItem(ScpAdditionsModElements instance) {
-		super(instance, 331);
+		super(instance, 330);
 	}
 
 	@Override

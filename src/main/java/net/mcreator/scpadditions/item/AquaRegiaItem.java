@@ -30,7 +30,7 @@ public class AquaRegiaItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public AquaRegiaItem(ScpAdditionsModElements instance) {
-		super(instance, 335);
+		super(instance, 334);
 	}
 
 	@Override

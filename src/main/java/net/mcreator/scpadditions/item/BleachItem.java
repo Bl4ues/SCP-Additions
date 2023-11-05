@@ -27,7 +27,7 @@ public class BleachItem extends ScpAdditionsModElements.ModElement {
 	public static final Item block = null;
 
 	public BleachItem(ScpAdditionsModElements instance) {
-		super(instance, 343);
+		super(instance, 342);
 	}
 
 	@Override

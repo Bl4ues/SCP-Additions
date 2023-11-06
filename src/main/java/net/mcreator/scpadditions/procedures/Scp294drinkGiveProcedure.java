@@ -30,6 +30,8 @@ import net.minecraft.block.BlockState;
 
 import net.mcreator.scpadditions.item.VodkaItem;
 import net.mcreator.scpadditions.item.SpiritItem;
+import net.mcreator.scpadditions.item.QuantumItem;
+import net.mcreator.scpadditions.item.PearCiderItem;
 import net.mcreator.scpadditions.item.LagerItem;
 import net.mcreator.scpadditions.item.GrimaceShakeItem;
 import net.mcreator.scpadditions.item.EthanolItem;
@@ -38,12 +40,20 @@ import net.mcreator.scpadditions.item.Drink1Item;
 import net.mcreator.scpadditions.item.CorrosiveBlackItem;
 import net.mcreator.scpadditions.item.CoinItem;
 import net.mcreator.scpadditions.item.CoffeeItem;
+import net.mcreator.scpadditions.item.CiderItem;
+import net.mcreator.scpadditions.item.ChocolateItem;
+import net.mcreator.scpadditions.item.ChimItem;
+import net.mcreator.scpadditions.item.ChampagneItem;
+import net.mcreator.scpadditions.item.CassisFantaItem;
+import net.mcreator.scpadditions.item.CarrotItem;
+import net.mcreator.scpadditions.item.CarbonItem;
 import net.mcreator.scpadditions.item.CactusItem;
 import net.mcreator.scpadditions.item.BloodOfChristItem;
 import net.mcreator.scpadditions.item.BloodItem;
 import net.mcreator.scpadditions.item.BleachItem;
 import net.mcreator.scpadditions.item.BeerItem;
 import net.mcreator.scpadditions.item.AquaRegiaItem;
+import net.mcreator.scpadditions.item.AppleCiderItem;
 import net.mcreator.scpadditions.item.AntiEnergyItem;
 import net.mcreator.scpadditions.item.AmnesiaItem;
 import net.mcreator.scpadditions.item.AloeItem;
@@ -2042,56 +2052,1315 @@ public class Scp294drinkGiveProcedure {
 																							ScpAdditionsModVariables.WorldVariables.get(world)
 																									.syncData(world);
 																						} else {
-																							{
-																								BlockPos _bp = new BlockPos(x, y, z);
-																								BlockState _bs = Scp294OutOfRangeBlock.block
-																										.getDefaultState();
-																								BlockState _bso = world.getBlockState(_bp);
-																								for (Map.Entry<Property<?>, Comparable<?>> entry : _bso
-																										.getValues().entrySet()) {
-																									Property _property = _bs.getBlock()
-																											.getStateContainer()
-																											.getProperty(entry.getKey().getName());
-																									if (_property != null
-																											&& _bs.get(_property) != null)
-																										try {
-																											_bs = _bs.with(_property,
-																													(Comparable) entry.getValue());
-																										} catch (Exception e) {
+																							if ((new Object() {
+																								public String getText() {
+																									TextFieldWidget _tf = (TextFieldWidget) guistate
+																											.get("text:scp294input");
+																									if (_tf != null) {
+																										return _tf.getText();
+																									}
+																									return "";
+																								}
+																							}.getText()).equals("bose-einstein condensate")
+																									|| (new Object() {
+																										public String getText() {
+																											TextFieldWidget _tf = (TextFieldWidget) guistate
+																													.get("text:scp294input");
+																											if (_tf != null) {
+																												return _tf.getText();
+																											}
+																											return "";
 																										}
+																									}.getText()).equals("Bose-Einstein Condensate")
+																									|| (new Object() {
+																										public String getText() {
+																											TextFieldWidget _tf = (TextFieldWidget) guistate
+																													.get("text:scp294input");
+																											if (_tf != null) {
+																												return _tf.getText();
+																											}
+																											return "";
+																										}
+																									}.getText()).equals("bose einstein condensate")
+																									|| (new Object() {
+																										public String getText() {
+																											TextFieldWidget _tf = (TextFieldWidget) guistate
+																													.get("text:scp294input");
+																											if (_tf != null) {
+																												return _tf.getText();
+																											}
+																											return "";
+																										}
+																									}.getText()).equals("Bose Einstein Condensate")
+																									|| (new Object() {
+																										public String getText() {
+																											TextFieldWidget _tf = (TextFieldWidget) guistate
+																													.get("text:scp294input");
+																											if (_tf != null) {
+																												return _tf.getText();
+																											}
+																											return "";
+																										}
+																									}.getText()).equals("quantum gas")
+																									|| (new Object() {
+																										public String getText() {
+																											TextFieldWidget _tf = (TextFieldWidget) guistate
+																													.get("text:scp294input");
+																											if (_tf != null) {
+																												return _tf.getText();
+																											}
+																											return "";
+																										}
+																									}.getText()).equals("Quantum Gas")) {
+																								if (world instanceof World && !world.isRemote()) {
+																									((World) world).playSound(null,
+																											new BlockPos(x, y, z),
+																											(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																													.getValue(new ResourceLocation(
+																															"scp_additions:scp294pouring")),
+																											SoundCategory.NEUTRAL, (float) 1,
+																											(float) 1);
+																								} else {
+																									((World) world).playSound(x, y, z,
+																											(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																													.getValue(new ResourceLocation(
+																															"scp_additions:scp294pouring")),
+																											SoundCategory.NEUTRAL, (float) 1,
+																											(float) 1, false);
 																								}
-																								TileEntity _te = world.getTileEntity(_bp);
-																								CompoundNBT _bnbt = null;
-																								if (_te != null) {
-																									_bnbt = _te.write(new CompoundNBT());
-																									_te.remove();
-																								}
-																								world.setBlockState(_bp, _bs, 3);
-																								if (_bnbt != null) {
-																									_te = world.getTileEntity(_bp);
-																									if (_te != null) {
-																										try {
-																											_te.read(_bso, _bnbt);
-																										} catch (Exception ignored) {
+																								{
+																									Entity _ent = entity;
+																									if (_ent instanceof ServerPlayerEntity) {
+																										Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																										if (_current instanceof Supplier) {
+																											Object invobj = ((Supplier) _current)
+																													.get();
+																											if (invobj instanceof Map) {
+																												((Slot) ((Map) invobj).get((int) (0)))
+																														.decrStackSize((int) (1));
+																												_current.detectAndSendChanges();
+																											}
 																										}
 																									}
 																								}
-																							}
-																							if (entity instanceof PlayerEntity)
-																								((PlayerEntity) entity).closeScreen();
-																							if (world instanceof World && !world.isRemote()) {
-																								((World) world).playSound(null, new BlockPos(x, y, z),
-																										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																												.getValue(new ResourceLocation(
-																														"scp_additions:scp294outofrange")),
-																										SoundCategory.NEUTRAL, (float) 1, (float) 1);
+																								new Object() {
+																									private int ticks = 0;
+																									private float waitTicks;
+																									private IWorld world;
+
+																									public void start(IWorld world, int waitTicks) {
+																										this.waitTicks = waitTicks;
+																										MinecraftForge.EVENT_BUS.register(this);
+																										this.world = world;
+																									}
+
+																									@SubscribeEvent
+																									public void tick(
+																											TickEvent.ServerTickEvent event) {
+																										if (event.phase == TickEvent.Phase.END) {
+																											this.ticks += 1;
+																											if (this.ticks >= this.waitTicks)
+																												run();
+																										}
+																									}
+
+																									private void run() {
+																										if (entity instanceof PlayerEntity) {
+																											ItemStack _setstack = new ItemStack(
+																													QuantumItem.block);
+																											_setstack.setCount((int) 1);
+																											ItemHandlerHelper.giveItemToPlayer(
+																													((PlayerEntity) entity),
+																													_setstack);
+																										}
+																										MinecraftForge.EVENT_BUS.unregister(this);
+																									}
+																								}.start(world, (int) 40);
+																								ScpAdditionsModVariables.WorldVariables.get(
+																										world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																												.get(world).Scp294stock + 1);
+																								ScpAdditionsModVariables.WorldVariables.get(world)
+																										.syncData(world);
 																							} else {
-																								((World) world).playSound(x, y, z,
-																										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																												.getValue(new ResourceLocation(
-																														"scp_additions:scp294outofrange")),
-																										SoundCategory.NEUTRAL, (float) 1, (float) 1,
-																										false);
+																								if ((new Object() {
+																									public String getText() {
+																										TextFieldWidget _tf = (TextFieldWidget) guistate
+																												.get("text:scp294input");
+																										if (_tf != null) {
+																											return _tf.getText();
+																										}
+																										return "";
+																									}
+																								}.getText()).equals("carbon") || (new Object() {
+																									public String getText() {
+																										TextFieldWidget _tf = (TextFieldWidget) guistate
+																												.get("text:scp294input");
+																										if (_tf != null) {
+																											return _tf.getText();
+																										}
+																										return "";
+																									}
+																								}.getText()).equals("Carbon")) {
+																									if (world instanceof World && !world.isRemote()) {
+																										((World) world).playSound(null,
+																												new BlockPos(x, y, z),
+																												(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																														.getValue(
+																																new ResourceLocation(
+																																		"scp_additions:scp294pouring")),
+																												SoundCategory.NEUTRAL, (float) 1,
+																												(float) 1);
+																									} else {
+																										((World) world).playSound(x, y, z,
+																												(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																														.getValue(
+																																new ResourceLocation(
+																																		"scp_additions:scp294pouring")),
+																												SoundCategory.NEUTRAL, (float) 1,
+																												(float) 1, false);
+																									}
+																									{
+																										Entity _ent = entity;
+																										if (_ent instanceof ServerPlayerEntity) {
+																											Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																											if (_current instanceof Supplier) {
+																												Object invobj = ((Supplier) _current)
+																														.get();
+																												if (invobj instanceof Map) {
+																													((Slot) ((Map) invobj)
+																															.get((int) (0)))
+																															.decrStackSize((int) (1));
+																													_current.detectAndSendChanges();
+																												}
+																											}
+																										}
+																									}
+																									new Object() {
+																										private int ticks = 0;
+																										private float waitTicks;
+																										private IWorld world;
+
+																										public void start(IWorld world,
+																												int waitTicks) {
+																											this.waitTicks = waitTicks;
+																											MinecraftForge.EVENT_BUS.register(this);
+																											this.world = world;
+																										}
+
+																										@SubscribeEvent
+																										public void tick(
+																												TickEvent.ServerTickEvent event) {
+																											if (event.phase == TickEvent.Phase.END) {
+																												this.ticks += 1;
+																												if (this.ticks >= this.waitTicks)
+																													run();
+																											}
+																										}
+
+																										private void run() {
+																											if (entity instanceof PlayerEntity) {
+																												ItemStack _setstack = new ItemStack(
+																														CarbonItem.block);
+																												_setstack.setCount((int) 1);
+																												ItemHandlerHelper.giveItemToPlayer(
+																														((PlayerEntity) entity),
+																														_setstack);
+																											}
+																											MinecraftForge.EVENT_BUS.unregister(this);
+																										}
+																									}.start(world, (int) 40);
+																									ScpAdditionsModVariables.WorldVariables.get(
+																											world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																													.get(world).Scp294stock + 1);
+																									ScpAdditionsModVariables.WorldVariables.get(world)
+																											.syncData(world);
+																								} else {
+																									if ((new Object() {
+																										public String getText() {
+																											TextFieldWidget _tf = (TextFieldWidget) guistate
+																													.get("text:scp294input");
+																											if (_tf != null) {
+																												return _tf.getText();
+																											}
+																											return "";
+																										}
+																									}.getText()).equals("cassis fanta")
+																											|| (new Object() {
+																												public String getText() {
+																													TextFieldWidget _tf = (TextFieldWidget) guistate
+																															.get("text:scp294input");
+																													if (_tf != null) {
+																														return _tf.getText();
+																													}
+																													return "";
+																												}
+																											}.getText()).equals("Cassis Fanta")) {
+																										if (world instanceof World
+																												&& !world.isRemote()) {
+																											((World) world).playSound(null,
+																													new BlockPos(x, y, z),
+																													(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																															.getValue(
+																																	new ResourceLocation(
+																																			"scp_additions:scp294pouring")),
+																													SoundCategory.NEUTRAL, (float) 1,
+																													(float) 1);
+																										} else {
+																											((World) world).playSound(x, y, z,
+																													(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																															.getValue(
+																																	new ResourceLocation(
+																																			"scp_additions:scp294pouring")),
+																													SoundCategory.NEUTRAL, (float) 1,
+																													(float) 1, false);
+																										}
+																										{
+																											Entity _ent = entity;
+																											if (_ent instanceof ServerPlayerEntity) {
+																												Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																												if (_current instanceof Supplier) {
+																													Object invobj = ((Supplier) _current)
+																															.get();
+																													if (invobj instanceof Map) {
+																														((Slot) ((Map) invobj)
+																																.get((int) (0)))
+																																.decrStackSize(
+																																		(int) (1));
+																														_current.detectAndSendChanges();
+																													}
+																												}
+																											}
+																										}
+																										new Object() {
+																											private int ticks = 0;
+																											private float waitTicks;
+																											private IWorld world;
+
+																											public void start(IWorld world,
+																													int waitTicks) {
+																												this.waitTicks = waitTicks;
+																												MinecraftForge.EVENT_BUS
+																														.register(this);
+																												this.world = world;
+																											}
+
+																											@SubscribeEvent
+																											public void tick(
+																													TickEvent.ServerTickEvent event) {
+																												if (event.phase == TickEvent.Phase.END) {
+																													this.ticks += 1;
+																													if (this.ticks >= this.waitTicks)
+																														run();
+																												}
+																											}
+
+																											private void run() {
+																												if (entity instanceof PlayerEntity) {
+																													ItemStack _setstack = new ItemStack(
+																															CassisFantaItem.block);
+																													_setstack.setCount((int) 1);
+																													ItemHandlerHelper
+																															.giveItemToPlayer(
+																																	((PlayerEntity) entity),
+																																	_setstack);
+																												}
+																												MinecraftForge.EVENT_BUS
+																														.unregister(this);
+																											}
+																										}.start(world, (int) 40);
+																										ScpAdditionsModVariables.WorldVariables.get(
+																												world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																														.get(world).Scp294stock + 1);
+																										ScpAdditionsModVariables.WorldVariables
+																												.get(world).syncData(world);
+																									} else {
+																										if ((new Object() {
+																											public String getText() {
+																												TextFieldWidget _tf = (TextFieldWidget) guistate
+																														.get("text:scp294input");
+																												if (_tf != null) {
+																													return _tf.getText();
+																												}
+																												return "";
+																											}
+																										}.getText()).equals("carrot juice")
+																												|| (new Object() {
+																													public String getText() {
+																														TextFieldWidget _tf = (TextFieldWidget) guistate
+																																.get("text:scp294input");
+																														if (_tf != null) {
+																															return _tf.getText();
+																														}
+																														return "";
+																													}
+																												}.getText()).equals("Carrot juice")
+																												|| (new Object() {
+																													public String getText() {
+																														TextFieldWidget _tf = (TextFieldWidget) guistate
+																																.get("text:scp294input");
+																														if (_tf != null) {
+																															return _tf.getText();
+																														}
+																														return "";
+																													}
+																												}.getText()).equals("carrot")
+																												|| (new Object() {
+																													public String getText() {
+																														TextFieldWidget _tf = (TextFieldWidget) guistate
+																																.get("text:scp294input");
+																														if (_tf != null) {
+																															return _tf.getText();
+																														}
+																														return "";
+																													}
+																												}.getText()).equals("Carrot")) {
+																											if (world instanceof World
+																													&& !world.isRemote()) {
+																												((World) world).playSound(null,
+																														new BlockPos(x, y, z),
+																														(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																.getValue(
+																																		new ResourceLocation(
+																																				"scp_additions:scp294pouring")),
+																														SoundCategory.NEUTRAL,
+																														(float) 1, (float) 1);
+																											} else {
+																												((World) world).playSound(x, y, z,
+																														(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																.getValue(
+																																		new ResourceLocation(
+																																				"scp_additions:scp294pouring")),
+																														SoundCategory.NEUTRAL,
+																														(float) 1, (float) 1, false);
+																											}
+																											{
+																												Entity _ent = entity;
+																												if (_ent instanceof ServerPlayerEntity) {
+																													Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																													if (_current instanceof Supplier) {
+																														Object invobj = ((Supplier) _current)
+																																.get();
+																														if (invobj instanceof Map) {
+																															((Slot) ((Map) invobj)
+																																	.get((int) (0)))
+																																	.decrStackSize(
+																																			(int) (1));
+																															_current.detectAndSendChanges();
+																														}
+																													}
+																												}
+																											}
+																											new Object() {
+																												private int ticks = 0;
+																												private float waitTicks;
+																												private IWorld world;
+
+																												public void start(IWorld world,
+																														int waitTicks) {
+																													this.waitTicks = waitTicks;
+																													MinecraftForge.EVENT_BUS
+																															.register(this);
+																													this.world = world;
+																												}
+
+																												@SubscribeEvent
+																												public void tick(
+																														TickEvent.ServerTickEvent event) {
+																													if (event.phase == TickEvent.Phase.END) {
+																														this.ticks += 1;
+																														if (this.ticks >= this.waitTicks)
+																															run();
+																													}
+																												}
+
+																												private void run() {
+																													if (entity instanceof PlayerEntity) {
+																														ItemStack _setstack = new ItemStack(
+																																CarrotItem.block);
+																														_setstack.setCount((int) 1);
+																														ItemHandlerHelper
+																																.giveItemToPlayer(
+																																		((PlayerEntity) entity),
+																																		_setstack);
+																													}
+																													MinecraftForge.EVENT_BUS
+																															.unregister(this);
+																												}
+																											}.start(world, (int) 40);
+																											ScpAdditionsModVariables.WorldVariables
+																													.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																															.get(world).Scp294stock
+																															+ 1);
+																											ScpAdditionsModVariables.WorldVariables
+																													.get(world).syncData(world);
+																										} else {
+																											if ((new Object() {
+																												public String getText() {
+																													TextFieldWidget _tf = (TextFieldWidget) guistate
+																															.get("text:scp294input");
+																													if (_tf != null) {
+																														return _tf.getText();
+																													}
+																													return "";
+																												}
+																											}.getText()).equals("champagne")
+																													|| (new Object() {
+																														public String getText() {
+																															TextFieldWidget _tf = (TextFieldWidget) guistate
+																																	.get("text:scp294input");
+																															if (_tf != null) {
+																																return _tf.getText();
+																															}
+																															return "";
+																														}
+																													}.getText())
+																															.equals("Champagne")) {
+																												if (world instanceof World
+																														&& !world.isRemote()) {
+																													((World) world).playSound(null,
+																															new BlockPos(x, y, z),
+																															(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																	.getValue(
+																																			new ResourceLocation(
+																																					"scp_additions:scp294pouring")),
+																															SoundCategory.NEUTRAL,
+																															(float) 1, (float) 1);
+																												} else {
+																													((World) world).playSound(x, y, z,
+																															(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																	.getValue(
+																																			new ResourceLocation(
+																																					"scp_additions:scp294pouring")),
+																															SoundCategory.NEUTRAL,
+																															(float) 1, (float) 1,
+																															false);
+																												}
+																												{
+																													Entity _ent = entity;
+																													if (_ent instanceof ServerPlayerEntity) {
+																														Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																														if (_current instanceof Supplier) {
+																															Object invobj = ((Supplier) _current)
+																																	.get();
+																															if (invobj instanceof Map) {
+																																((Slot) ((Map) invobj)
+																																		.get((int) (0)))
+																																		.decrStackSize(
+																																				(int) (1));
+																																_current.detectAndSendChanges();
+																															}
+																														}
+																													}
+																												}
+																												new Object() {
+																													private int ticks = 0;
+																													private float waitTicks;
+																													private IWorld world;
+
+																													public void start(IWorld world,
+																															int waitTicks) {
+																														this.waitTicks = waitTicks;
+																														MinecraftForge.EVENT_BUS
+																																.register(this);
+																														this.world = world;
+																													}
+
+																													@SubscribeEvent
+																													public void tick(
+																															TickEvent.ServerTickEvent event) {
+																														if (event.phase == TickEvent.Phase.END) {
+																															this.ticks += 1;
+																															if (this.ticks >= this.waitTicks)
+																																run();
+																														}
+																													}
+
+																													private void run() {
+																														if (entity instanceof PlayerEntity) {
+																															ItemStack _setstack = new ItemStack(
+																																	ChampagneItem.block);
+																															_setstack.setCount(
+																																	(int) 1);
+																															ItemHandlerHelper
+																																	.giveItemToPlayer(
+																																			((PlayerEntity) entity),
+																																			_setstack);
+																														}
+																														MinecraftForge.EVENT_BUS
+																																.unregister(this);
+																													}
+																												}.start(world, (int) 40);
+																												ScpAdditionsModVariables.WorldVariables
+																														.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																.get(world).Scp294stock
+																																+ 1);
+																												ScpAdditionsModVariables.WorldVariables
+																														.get(world).syncData(world);
+																											} else {
+																												if ((new Object() {
+																													public String getText() {
+																														TextFieldWidget _tf = (TextFieldWidget) guistate
+																																.get("text:scp294input");
+																														if (_tf != null) {
+																															return _tf.getText();
+																														}
+																														return "";
+																													}
+																												}.getText()).equals("chim")
+																														|| (new Object() {
+																															public String getText() {
+																																TextFieldWidget _tf = (TextFieldWidget) guistate
+																																		.get("text:scp294input");
+																																if (_tf != null) {
+																																	return _tf
+																																			.getText();
+																																}
+																																return "";
+																															}
+																														}.getText()).equals("Chim")) {
+																													if (world instanceof World
+																															&& !world.isRemote()) {
+																														((World) world).playSound(
+																																null,
+																																new BlockPos(x, y, z),
+																																(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																		.getValue(
+																																				new ResourceLocation(
+																																						"scp_additions:scp294pouring")),
+																																SoundCategory.NEUTRAL,
+																																(float) 1, (float) 1);
+																													} else {
+																														((World) world).playSound(x,
+																																y, z,
+																																(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																		.getValue(
+																																				new ResourceLocation(
+																																						"scp_additions:scp294pouring")),
+																																SoundCategory.NEUTRAL,
+																																(float) 1, (float) 1,
+																																false);
+																													}
+																													{
+																														Entity _ent = entity;
+																														if (_ent instanceof ServerPlayerEntity) {
+																															Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																															if (_current instanceof Supplier) {
+																																Object invobj = ((Supplier) _current)
+																																		.get();
+																																if (invobj instanceof Map) {
+																																	((Slot) ((Map) invobj)
+																																			.get((int) (0)))
+																																			.decrStackSize(
+																																					(int) (1));
+																																	_current.detectAndSendChanges();
+																																}
+																															}
+																														}
+																													}
+																													new Object() {
+																														private int ticks = 0;
+																														private float waitTicks;
+																														private IWorld world;
+
+																														public void start(
+																																IWorld world,
+																																int waitTicks) {
+																															this.waitTicks = waitTicks;
+																															MinecraftForge.EVENT_BUS
+																																	.register(this);
+																															this.world = world;
+																														}
+
+																														@SubscribeEvent
+																														public void tick(
+																																TickEvent.ServerTickEvent event) {
+																															if (event.phase == TickEvent.Phase.END) {
+																																this.ticks += 1;
+																																if (this.ticks >= this.waitTicks)
+																																	run();
+																															}
+																														}
+
+																														private void run() {
+																															if (entity instanceof PlayerEntity) {
+																																ItemStack _setstack = new ItemStack(
+																																		ChimItem.block);
+																																_setstack.setCount(
+																																		(int) 1);
+																																ItemHandlerHelper
+																																		.giveItemToPlayer(
+																																				((PlayerEntity) entity),
+																																				_setstack);
+																															}
+																															MinecraftForge.EVENT_BUS
+																																	.unregister(this);
+																														}
+																													}.start(world, (int) 40);
+																													ScpAdditionsModVariables.WorldVariables
+																															.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																	.get(world).Scp294stock
+																																	+ 1);
+																													ScpAdditionsModVariables.WorldVariables
+																															.get(world)
+																															.syncData(world);
+																												} else {
+																													if ((new Object() {
+																														public String getText() {
+																															TextFieldWidget _tf = (TextFieldWidget) guistate
+																																	.get("text:scp294input");
+																															if (_tf != null) {
+																																return _tf.getText();
+																															}
+																															return "";
+																														}
+																													}.getText()).equals("cider")
+																															|| (new Object() {
+																																public String getText() {
+																																	TextFieldWidget _tf = (TextFieldWidget) guistate
+																																			.get("text:scp294input");
+																																	if (_tf != null) {
+																																		return _tf
+																																				.getText();
+																																	}
+																																	return "";
+																																}
+																															}.getText()).equals(
+																																	"Cider")) {
+																														if (world instanceof World
+																																&& !world
+																																		.isRemote()) {
+																															((World) world).playSound(
+																																	null,
+																																	new BlockPos(x, y,
+																																			z),
+																																	(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																			.getValue(
+																																					new ResourceLocation(
+																																							"scp_additions:scp294pouring")),
+																																	SoundCategory.NEUTRAL,
+																																	(float) 1,
+																																	(float) 1);
+																														} else {
+																															((World) world).playSound(
+																																	x, y, z,
+																																	(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																			.getValue(
+																																					new ResourceLocation(
+																																							"scp_additions:scp294pouring")),
+																																	SoundCategory.NEUTRAL,
+																																	(float) 1,
+																																	(float) 1, false);
+																														}
+																														{
+																															Entity _ent = entity;
+																															if (_ent instanceof ServerPlayerEntity) {
+																																Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																																if (_current instanceof Supplier) {
+																																	Object invobj = ((Supplier) _current)
+																																			.get();
+																																	if (invobj instanceof Map) {
+																																		((Slot) ((Map) invobj)
+																																				.get((int) (0)))
+																																				.decrStackSize(
+																																						(int) (1));
+																																		_current.detectAndSendChanges();
+																																	}
+																																}
+																															}
+																														}
+																														new Object() {
+																															private int ticks = 0;
+																															private float waitTicks;
+																															private IWorld world;
+
+																															public void start(
+																																	IWorld world,
+																																	int waitTicks) {
+																																this.waitTicks = waitTicks;
+																																MinecraftForge.EVENT_BUS
+																																		.register(
+																																				this);
+																																this.world = world;
+																															}
+
+																															@SubscribeEvent
+																															public void tick(
+																																	TickEvent.ServerTickEvent event) {
+																																if (event.phase == TickEvent.Phase.END) {
+																																	this.ticks += 1;
+																																	if (this.ticks >= this.waitTicks)
+																																		run();
+																																}
+																															}
+
+																															private void run() {
+																																if (entity instanceof PlayerEntity) {
+																																	ItemStack _setstack = new ItemStack(
+																																			CiderItem.block);
+																																	_setstack
+																																			.setCount(
+																																					(int) 1);
+																																	ItemHandlerHelper
+																																			.giveItemToPlayer(
+																																					((PlayerEntity) entity),
+																																					_setstack);
+																																}
+																																MinecraftForge.EVENT_BUS
+																																		.unregister(
+																																				this);
+																															}
+																														}.start(world, (int) 40);
+																														ScpAdditionsModVariables.WorldVariables
+																																.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																		.get(world).Scp294stock
+																																		+ 1);
+																														ScpAdditionsModVariables.WorldVariables
+																																.get(world)
+																																.syncData(world);
+																													} else {
+																														if ((new Object() {
+																															public String getText() {
+																																TextFieldWidget _tf = (TextFieldWidget) guistate
+																																		.get("text:scp294input");
+																																if (_tf != null) {
+																																	return _tf
+																																			.getText();
+																																}
+																																return "";
+																															}
+																														}.getText())
+																																.equals("apple cider")
+																																|| (new Object() {
+																																	public String getText() {
+																																		TextFieldWidget _tf = (TextFieldWidget) guistate
+																																				.get("text:scp294input");
+																																		if (_tf != null) {
+																																			return _tf
+																																					.getText();
+																																		}
+																																		return "";
+																																	}
+																																}.getText()).equals(
+																																		"Apple Cider")) {
+																															if (world instanceof World
+																																	&& !world
+																																			.isRemote()) {
+																																((World) world)
+																																		.playSound(
+																																				null,
+																																				new BlockPos(
+																																						x,
+																																						y,
+																																						z),
+																																				(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																						.getValue(
+																																								new ResourceLocation(
+																																										"scp_additions:scp294pouring")),
+																																				SoundCategory.NEUTRAL,
+																																				(float) 1,
+																																				(float) 1);
+																															} else {
+																																((World) world)
+																																		.playSound(x,
+																																				y, z,
+																																				(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																						.getValue(
+																																								new ResourceLocation(
+																																										"scp_additions:scp294pouring")),
+																																				SoundCategory.NEUTRAL,
+																																				(float) 1,
+																																				(float) 1,
+																																				false);
+																															}
+																															{
+																																Entity _ent = entity;
+																																if (_ent instanceof ServerPlayerEntity) {
+																																	Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																																	if (_current instanceof Supplier) {
+																																		Object invobj = ((Supplier) _current)
+																																				.get();
+																																		if (invobj instanceof Map) {
+																																			((Slot) ((Map) invobj)
+																																					.get((int) (0)))
+																																					.decrStackSize(
+																																							(int) (1));
+																																			_current.detectAndSendChanges();
+																																		}
+																																	}
+																																}
+																															}
+																															new Object() {
+																																private int ticks = 0;
+																																private float waitTicks;
+																																private IWorld world;
+
+																																public void start(
+																																		IWorld world,
+																																		int waitTicks) {
+																																	this.waitTicks = waitTicks;
+																																	MinecraftForge.EVENT_BUS
+																																			.register(
+																																					this);
+																																	this.world = world;
+																																}
+
+																																@SubscribeEvent
+																																public void tick(
+																																		TickEvent.ServerTickEvent event) {
+																																	if (event.phase == TickEvent.Phase.END) {
+																																		this.ticks += 1;
+																																		if (this.ticks >= this.waitTicks)
+																																			run();
+																																	}
+																																}
+
+																																private void run() {
+																																	if (entity instanceof PlayerEntity) {
+																																		ItemStack _setstack = new ItemStack(
+																																				AppleCiderItem.block);
+																																		_setstack
+																																				.setCount(
+																																						(int) 1);
+																																		ItemHandlerHelper
+																																				.giveItemToPlayer(
+																																						((PlayerEntity) entity),
+																																						_setstack);
+																																	}
+																																	MinecraftForge.EVENT_BUS
+																																			.unregister(
+																																					this);
+																																}
+																															}.start(world, (int) 40);
+																															ScpAdditionsModVariables.WorldVariables
+																																	.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																			.get(world).Scp294stock
+																																			+ 1);
+																															ScpAdditionsModVariables.WorldVariables
+																																	.get(world)
+																																	.syncData(world);
+																														} else {
+																															if ((new Object() {
+																																public String getText() {
+																																	TextFieldWidget _tf = (TextFieldWidget) guistate
+																																			.get("text:scp294input");
+																																	if (_tf != null) {
+																																		return _tf
+																																				.getText();
+																																	}
+																																	return "";
+																																}
+																															}.getText()).equals(
+																																	"pear cider")
+																																	|| (new Object() {
+																																		public String getText() {
+																																			TextFieldWidget _tf = (TextFieldWidget) guistate
+																																					.get("text:scp294input");
+																																			if (_tf != null) {
+																																				return _tf
+																																						.getText();
+																																			}
+																																			return "";
+																																		}
+																																	}.getText())
+																																			.equals("Pear Cider")) {
+																																if (world instanceof World
+																																		&& !world
+																																				.isRemote()) {
+																																	((World) world)
+																																			.playSound(
+																																					null,
+																																					new BlockPos(
+																																							x,
+																																							y,
+																																							z),
+																																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																							.getValue(
+																																									new ResourceLocation(
+																																											"scp_additions:scp294pouring")),
+																																					SoundCategory.NEUTRAL,
+																																					(float) 1,
+																																					(float) 1);
+																																} else {
+																																	((World) world)
+																																			.playSound(
+																																					x,
+																																					y,
+																																					z,
+																																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																							.getValue(
+																																									new ResourceLocation(
+																																											"scp_additions:scp294pouring")),
+																																					SoundCategory.NEUTRAL,
+																																					(float) 1,
+																																					(float) 1,
+																																					false);
+																																}
+																																{
+																																	Entity _ent = entity;
+																																	if (_ent instanceof ServerPlayerEntity) {
+																																		Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																																		if (_current instanceof Supplier) {
+																																			Object invobj = ((Supplier) _current)
+																																					.get();
+																																			if (invobj instanceof Map) {
+																																				((Slot) ((Map) invobj)
+																																						.get((int) (0)))
+																																						.decrStackSize(
+																																								(int) (1));
+																																				_current.detectAndSendChanges();
+																																			}
+																																		}
+																																	}
+																																}
+																																new Object() {
+																																	private int ticks = 0;
+																																	private float waitTicks;
+																																	private IWorld world;
+
+																																	public void start(
+																																			IWorld world,
+																																			int waitTicks) {
+																																		this.waitTicks = waitTicks;
+																																		MinecraftForge.EVENT_BUS
+																																				.register(
+																																						this);
+																																		this.world = world;
+																																	}
+
+																																	@SubscribeEvent
+																																	public void tick(
+																																			TickEvent.ServerTickEvent event) {
+																																		if (event.phase == TickEvent.Phase.END) {
+																																			this.ticks += 1;
+																																			if (this.ticks >= this.waitTicks)
+																																				run();
+																																		}
+																																	}
+
+																																	private void run() {
+																																		if (entity instanceof PlayerEntity) {
+																																			ItemStack _setstack = new ItemStack(
+																																					PearCiderItem.block);
+																																			_setstack
+																																					.setCount(
+																																							(int) 1);
+																																			ItemHandlerHelper
+																																					.giveItemToPlayer(
+																																							((PlayerEntity) entity),
+																																							_setstack);
+																																		}
+																																		MinecraftForge.EVENT_BUS
+																																				.unregister(
+																																						this);
+																																	}
+																																}.start(world,
+																																		(int) 40);
+																																ScpAdditionsModVariables.WorldVariables
+																																		.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																				.get(world).Scp294stock
+																																				+ 1);
+																																ScpAdditionsModVariables.WorldVariables
+																																		.get(world)
+																																		.syncData(
+																																				world);
+																															} else {
+																																if ((new Object() {
+																																	public String getText() {
+																																		TextFieldWidget _tf = (TextFieldWidget) guistate
+																																				.get("text:scp294input");
+																																		if (_tf != null) {
+																																			return _tf
+																																					.getText();
+																																		}
+																																		return "";
+																																	}
+																																}.getText()).equals(
+																																		"chocolate")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("Chocolate")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("cocoa")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("Cocoa")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("hot chocolate")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("Hot chocolate")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("hot cocoa")
+																																		|| (new Object() {
+																																			public String getText() {
+																																				TextFieldWidget _tf = (TextFieldWidget) guistate
+																																						.get("text:scp294input");
+																																				if (_tf != null) {
+																																					return _tf
+																																							.getText();
+																																				}
+																																				return "";
+																																			}
+																																		}.getText())
+																																				.equals("Hot cocoa")) {
+																																	if (world instanceof World
+																																			&& !world
+																																					.isRemote()) {
+																																		((World) world)
+																																				.playSound(
+																																						null,
+																																						new BlockPos(
+																																								x,
+																																								y,
+																																								z),
+																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																								.getValue(
+																																										new ResourceLocation(
+																																												"scp_additions:scp294pouring")),
+																																						SoundCategory.NEUTRAL,
+																																						(float) 1,
+																																						(float) 1);
+																																	} else {
+																																		((World) world)
+																																				.playSound(
+																																						x,
+																																						y,
+																																						z,
+																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																								.getValue(
+																																										new ResourceLocation(
+																																												"scp_additions:scp294pouring")),
+																																						SoundCategory.NEUTRAL,
+																																						(float) 1,
+																																						(float) 1,
+																																						false);
+																																	}
+																																	{
+																																		Entity _ent = entity;
+																																		if (_ent instanceof ServerPlayerEntity) {
+																																			Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																																			if (_current instanceof Supplier) {
+																																				Object invobj = ((Supplier) _current)
+																																						.get();
+																																				if (invobj instanceof Map) {
+																																					((Slot) ((Map) invobj)
+																																							.get((int) (0)))
+																																							.decrStackSize(
+																																									(int) (1));
+																																					_current.detectAndSendChanges();
+																																				}
+																																			}
+																																		}
+																																	}
+																																	new Object() {
+																																		private int ticks = 0;
+																																		private float waitTicks;
+																																		private IWorld world;
+
+																																		public void start(
+																																				IWorld world,
+																																				int waitTicks) {
+																																			this.waitTicks = waitTicks;
+																																			MinecraftForge.EVENT_BUS
+																																					.register(
+																																							this);
+																																			this.world = world;
+																																		}
+
+																																		@SubscribeEvent
+																																		public void tick(
+																																				TickEvent.ServerTickEvent event) {
+																																			if (event.phase == TickEvent.Phase.END) {
+																																				this.ticks += 1;
+																																				if (this.ticks >= this.waitTicks)
+																																					run();
+																																			}
+																																		}
+
+																																		private void run() {
+																																			if (entity instanceof PlayerEntity) {
+																																				ItemStack _setstack = new ItemStack(
+																																						ChocolateItem.block);
+																																				_setstack
+																																						.setCount(
+																																								(int) 1);
+																																				ItemHandlerHelper
+																																						.giveItemToPlayer(
+																																								((PlayerEntity) entity),
+																																								_setstack);
+																																			}
+																																			MinecraftForge.EVENT_BUS
+																																					.unregister(
+																																							this);
+																																		}
+																																	}.start(world,
+																																			(int) 40);
+																																	ScpAdditionsModVariables.WorldVariables
+																																			.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																					.get(world).Scp294stock
+																																					+ 1);
+																																	ScpAdditionsModVariables.WorldVariables
+																																			.get(world)
+																																			.syncData(
+																																					world);
+																																} else {
+																																	{
+																																		BlockPos _bp = new BlockPos(
+																																				x, y,
+																																				z);
+																																		BlockState _bs = Scp294OutOfRangeBlock.block
+																																				.getDefaultState();
+																																		BlockState _bso = world
+																																				.getBlockState(
+																																						_bp);
+																																		for (Map.Entry<Property<?>, Comparable<?>> entry : _bso
+																																				.getValues()
+																																				.entrySet()) {
+																																			Property _property = _bs
+																																					.getBlock()
+																																					.getStateContainer()
+																																					.getProperty(
+																																							entry.getKey()
+																																									.getName());
+																																			if (_property != null
+																																					&& _bs.get(
+																																							_property) != null)
+																																				try {
+																																					_bs = _bs
+																																							.with(_property,
+																																									(Comparable) entry
+																																											.getValue());
+																																				} catch (Exception e) {
+																																				}
+																																		}
+																																		TileEntity _te = world
+																																				.getTileEntity(
+																																						_bp);
+																																		CompoundNBT _bnbt = null;
+																																		if (_te != null) {
+																																			_bnbt = _te
+																																					.write(new CompoundNBT());
+																																			_te.remove();
+																																		}
+																																		world.setBlockState(
+																																				_bp,
+																																				_bs,
+																																				3);
+																																		if (_bnbt != null) {
+																																			_te = world
+																																					.getTileEntity(
+																																							_bp);
+																																			if (_te != null) {
+																																				try {
+																																					_te.read(
+																																							_bso,
+																																							_bnbt);
+																																				} catch (Exception ignored) {
+																																				}
+																																			}
+																																		}
+																																	}
+																																	if (entity instanceof PlayerEntity)
+																																		((PlayerEntity) entity)
+																																				.closeScreen();
+																																	if (world instanceof World
+																																			&& !world
+																																					.isRemote()) {
+																																		((World) world)
+																																				.playSound(
+																																						null,
+																																						new BlockPos(
+																																								x,
+																																								y,
+																																								z),
+																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																								.getValue(
+																																										new ResourceLocation(
+																																												"scp_additions:scp294outofrange")),
+																																						SoundCategory.NEUTRAL,
+																																						(float) 1,
+																																						(float) 1);
+																																	} else {
+																																		((World) world)
+																																				.playSound(
+																																						x,
+																																						y,
+																																						z,
+																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																								.getValue(
+																																										new ResourceLocation(
+																																												"scp_additions:scp294outofrange")),
+																																						SoundCategory.NEUTRAL,
+																																						(float) 1,
+																																						(float) 1,
+																																						false);
+																																	}
+																																}
+																															}
+																														}
+																													}
+																												}
+																											}
+																										}
+																									}
+																								}
 																							}
 																						}
 																					}

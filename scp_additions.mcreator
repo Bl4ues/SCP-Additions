@@ -6692,6 +6692,351 @@
         ]
       },
       "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Neutronium",
+      "type": "item",
+      "sortid": 389,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "neutronium",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "NeutroniumPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 390,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "neutronium_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "EnergyDrink",
+      "type": "item",
+      "sortid": 391,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "energy_drink",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "EnergyDrinkPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 392,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "energy_drink_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Espresso",
+      "type": "item",
+      "sortid": 393,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "espresso",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "EspressoPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 394,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "espresso_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Estus",
+      "type": "item",
+      "sortid": 395,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "estus",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "EstusPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 396,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "estus_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Champion",
+      "type": "item",
+      "sortid": 397,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "champion",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "ChampionPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 398,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "champion_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Fear",
+      "type": "item",
+      "sortid": 399,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fear",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "FearPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 400,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fear_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Feces",
+      "type": "item",
+      "sortid": 401,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "feces",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "FecesPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 402,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "feces_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "FecesAndBlood",
+      "type": "item",
+      "sortid": 403,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "feces_and_blood",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "FecesAndBloodRightclicked",
+      "type": "procedure",
+      "sortid": 404,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "feces_and_blood_rightclicked",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Gin",
+      "type": "item",
+      "sortid": 405,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "gin",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GinPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 406,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "gin_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Glass",
+      "type": "item",
+      "sortid": 407,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "glass",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GlassPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 408,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "glass_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GlassC",
+      "type": "recipe",
+      "sortid": 409,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "glass_c",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GoldC",
+      "type": "item",
+      "sortid": 410,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "gold_c",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GoldCPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 411,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "gold_c_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "GoldCc",
+      "type": "recipe",
+      "sortid": 412,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "gold_cc",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Grog",
+      "type": "item",
+      "sortid": 413,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "grog",
+      "path": "~/Scp294Procedures/Drinks"
     }
   ],
   "variable_elements": [
@@ -7225,16 +7570,18 @@
       "item.scp_additions.scp_0591infected_3_spawn_egg": "infectedthree Spawn Egg",
       "block.scp_additions.scp_914body": "SCP-914 body",
       "advancements.scp_059_rebirth.title": "In the blue light of heaven",
+      "item.scp_additions.fear": "Cup of Fear",
       "subtitles.scp079_1": "SCP-079 noise",
       "block.scp_additions.lv_6_left_reader_accept": "Level 6 Keycard Reader (Left) Accepted",
       "block.scp_additions.right_reader": "Level 1 Keycard Reader (Right)",
       "item.scp_additions.aloe": "Cup of Aloe Vera",
       "death.attack.quantum": "The throat and internal organs of %s froze and exploded.",
-      "death.attack.scp572": "%s fell victim to their confidence in SCP-572.",
-      "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
       "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
+      "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
+      "death.attack.scp572": "%s fell victim to their confidence in SCP-572.",
       "gamerule.deconCheckpoint.description": "If enabled, Decontamination Checkpoints will save your spawnpoint when you walk through them.",
       "subtitles.scp079_2": "SCP-079 noise",
+      "item.scp_additions.gold_c": "Cup of Gold",
       "advancements.scp_426_achievement.title": "Identity Crisis",
       "death.attack.teslagate": "%s was electrocuted by the Tesla Gate at [REDACTED].",
       "item.scp_additions.level_4_keycard": "Level 4 Keycard",
@@ -7259,23 +7606,26 @@
       "item.scp_additions.curry": "Cup of Curry sauce",
       "advancements.tesla.title": "Fried and Gone",
       "block.scp_additions.button_loff": "Button (Left)",
-      "block.scp_additions.lv_3_right_reader_accept": "Level 3 Keycard Reader (Right) Accepted",
       "item.scp_additions.anti_energy": "Cup of Anti-Energy",
+      "block.scp_additions.lv_3_right_reader_accept": "Level 3 Keycard Reader (Right) Accepted",
       "item.scp_additions.blood_of_christ": "Cup of blood of Christ",
+      "item.scp_additions.energy_drink": "Cup of energy drink",
       "block.scp_additions.button_ron": "Button (Right) ON",
       "block.scp_additions.lv_5_left_reader": "Level 5 Keycard Reader (Left)",
       "subtitles.doorclosing": "Door closing",
       "advancements.scp_079control_achi.title": "Unleashing the AI",
       "block.scp_additions.scp_294_stocking": "SCP-294",
-      "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
       "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
+      "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
       "block.scp_additions.scp_902_closed": "SCP-902",
       "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
       "item.scp_additions.death": "Cup of Death",
+      "item.scp_additions.estus": "Cup of Estus",
       "subtitles.scp059box": "SCP-059 Containment Box",
       "block.scp_additions.lv_2_right_reader": "Level 2 Keycard Reader (Right)",
       "death.attack.nuclear": "%s died from SCP-294\u0027s nuclear explosion.",
       "advancements.decon_achievement.descr": "Pass through a Decontamination Checkpoint.",
+      "item.scp_additions.espresso": "Cup of Espresso",
       "block.scp_additions.left_reader_accept": "Level 1 Keycard Reader (Left) Accepted",
       "subtitles.scp902closing": "SCP-902 closing",
       "death.attack.death": "%s died after drinking a cup of death from SCP-294, for some reason...",
@@ -7310,9 +7660,11 @@
       "block.scp_additions.scp_914dial_very_fine": "SCP-914 dial",
       "subtitles.scp914death": "SCP-914 death",
       "item.scp_additions.cold": "Cup of Cold",
+      "death.attack.glass": "%s died after drinking melted glass.",
       "advancements.scp_572_a_achievement.descr": "Congratulations! You\u0027re the chosen one...",
       "item.scp_additions.cola": "Cup of Soda",
       "block.scp_additions.button_lon": "Button (Left) ON",
+      "item.scp_additions.gin": "Cup of Gin and Tonic",
       "subtitles.click": "Tesla Terminal Click",
       "death.attack.scp059delta": "%s died of Delta radiation poisoning from SCP-059.",
       "advancements.hazmat_achi.descr": "Suited up in the hazmat gear.",
@@ -7323,6 +7675,7 @@
       "block.scp_additions.scp_1176": "SCP-1176",
       "item.scp_additions.champagne": "Cup of Champagne",
       "block.scp_additions.scp_914block": "SCP-914 Block",
+      "death.attack.fear": "%s died of heart attack out of extreme fear.",
       "subtitles.scp914refining": "SCP-914 refining",
       "item.scp_additions.level_5_keycard": "Level 5 Keycard",
       "item.scp_additions.grimace_shake": "Cup of Grimace Shake",
@@ -7356,6 +7709,7 @@
       "item.scp_additions.beer": "Cup of beer",
       "block.scp_additions.scp_914_output": "SCP-914 Output",
       "advancements.scp_914_metamorphosis.descr": "Got \"refined\" by SCP-914 on the \"1:1\" setting.",
+      "item.scp_additions.glass": "Cup of Glass",
       "block.scp_additions.lv_6_right_reader_wrong": "Level 6 Keycard Reader (Right) Denied",
       "item.scp_additions.cup_of_coffee": "Cup of coffee",
       "item.scp_additions.hazmat_suit_leggings": "Hazmat Suit Leggings",
@@ -7367,6 +7721,7 @@
       "gamerule.scp079controlOn.description": "If SCP-079 has control over the facility",
       "advancements.tesla.descr": "Electrifying exit! You\u0027ve earned a shocking send-off.",
       "block.scp_additions.tesla_terminal_off": "Tesla Terminal",
+      "item.scp_additions.feces": "Cup of feces",
       "advancements.scp_330_achievement.title": "Sweet Tooth",
       "block.scp_additions.lv_6_left_reader_wrong": "Level 6 Keycard Reader (Left) Denied",
       "advancements.scp_079.title": "Digital Menace",
@@ -7389,9 +7744,11 @@
       "death.attack.void": "%s died from SCP-294\u0027s explosion.",
       "subtitles.scp294enter": "SCP-294 enter key",
       "block.scp_additions.lv_3_right_reader_wrong": "Level 3 Keycard Reader (Right) Denied",
+      "item.scp_additions.champion": "Cup of Eternal Champion",
       "subtitles.terminaloff": "Tesla Terminal Off",
       "death.attack.grimace": "%s died from Grimace Shake poisoning.",
       "advancements.scp_902_achievement.descr": "Opened SCP-902.",
+      "item.scp_additions.feces_and_blood": "Cup of feces and blood",
       "block.scp_additions.lv_6_right_reader": "Level 6 Keycard Reader (Right)",
       "item.scp_additions.pear_cider": "Cup of Pear Cider",
       "subtitles.scp914dooropen": "SCP-914 door opening",
@@ -7408,8 +7765,11 @@
       "advancements.scp_914_achievement.title": "Anomalous Refinery",
       "gamerule.teslaGateOn.description": "If true, then the Tesla Gates are functional, can be swapped through the Tesla Gate Terminal",
       "block.scp_additions.button_roff": "Button (Right)",
+      "death.attack.gravitons": "%s collapsed into a singularity and ceased to exist.",
       "block.scp_additions.scp_914_intake_door": "SCP-914 Intake Door",
       "advancements.scp_059_rebirth.descr": "Got infected with SCP-059-1.",
+      "item.scp_additions.neutronium": "Cup of Neutronium",
+      "death.attack.gold": "%s died after drinking melted gold.",
       "block.scp_additions.scp_294_out_of_range": "SCP-294",
       "block.scp_additions.scp_059_1": "SCP-059-1",
       "block.scp_additions.tesla_active": "Tesla Gate AC1",
@@ -7430,6 +7790,7 @@
       "block.scp_additions.tesla_gate": "Tesla Gate",
       "gamerule.deconCheckpoint": "Decontamination Checkpoints save",
       "item.scp_additions.scp_1176honey": "Honey Bottle",
+      "death.attack.neutronium": "%s thought that Biotic Powers were real.",
       "subtitles.accessgranted": "Access Granted",
       "advancements.scp_079control_achi.descr": "Gave remote access for the system controls to SCP-079.",
       "subtitles.dooropen": "Door opening",
@@ -7443,6 +7804,7 @@
       "subtitles.button": "Button",
       "block.scp_additions.scp_914_key_wind": "SCP-914 Key",
       "item.scp_additions.playing_card": "Playing Card",
+      "item.scp_additions.grog": "Cup of grog",
       "death.attack.scp914coarse": "%s died of blood loss after being \"refined\" by SCP-914 on the \"Coarse\" setting.",
       "subtitles.scp059_1": "SCP-059-1 grows",
       "block.scp_additions.scp_059": "SCP-059",

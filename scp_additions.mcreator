@@ -6421,6 +6421,277 @@
         ]
       },
       "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Cocaine",
+      "type": "item",
+      "sortid": 370,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cocaine",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CocainePlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 371,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cocaine_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Scp294drinkGive2",
+      "type": "procedure",
+      "sortid": 372,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294drink_give_2",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "guistate",
+            "type": "map"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Coconut",
+      "type": "item",
+      "sortid": 373,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "coconut",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CoconutPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 374,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "coconut_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Cola",
+      "type": "item",
+      "sortid": 375,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cola",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "ColaPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 376,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cola_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Cold",
+      "type": "item",
+      "sortid": 377,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cold",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "ColdPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 378,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cold_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Cosmopolitan",
+      "type": "item",
+      "sortid": 379,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cosmopolitan",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CosmopolitanPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 380,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cosmopolitan_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Courage",
+      "type": "item",
+      "sortid": 381,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "courage",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CouragePlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 382,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "courage_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Curry",
+      "type": "item",
+      "sortid": 383,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "curry",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "CurryPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 384,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "curry_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Death",
+      "type": "item",
+      "sortid": 385,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "death",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "DeathPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 386,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "death_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Eggs",
+      "type": "item",
+      "sortid": 387,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "eggs",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "EggsPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 388,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "eggs_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
     }
   ],
   "variable_elements": [
@@ -6977,6 +7248,7 @@
       "death.attack.scp1176": "%s fell for the curse from SCP-1176.",
       "block.scp_additions.scp_914_intake": "SCP-914 Intake",
       "block.scp_additions.scp_914_intake_door_closed": "SCP-914 Intake Door Closed",
+      "item.scp_additions.cosmopolitan": "Cup of Cosmopolitan Cocktail",
       "item.scp_additions.blood": "Cup of blood",
       "item.scp_additions.scp_330_red_candy": "Red Candy from SCP-330",
       "gamerule.scp079controlOn": "SCP-079 remote control",
@@ -6984,6 +7256,7 @@
       "advancements.scp_914_achievement.descr": "Used SCP-914",
       "block.scp_additions.tesla_recharge": "Tesla Gate",
       "block.scp_additions.right_reader_accept": "Level 1 Keycard Reader (Right) Accepted",
+      "item.scp_additions.curry": "Cup of Curry sauce",
       "advancements.tesla.title": "Fried and Gone",
       "block.scp_additions.button_loff": "Button (Left)",
       "block.scp_additions.lv_3_right_reader_accept": "Level 3 Keycard Reader (Right) Accepted",
@@ -6998,12 +7271,14 @@
       "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
       "block.scp_additions.scp_902_closed": "SCP-902",
       "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
+      "item.scp_additions.death": "Cup of Death",
       "subtitles.scp059box": "SCP-059 Containment Box",
       "block.scp_additions.lv_2_right_reader": "Level 2 Keycard Reader (Right)",
       "death.attack.nuclear": "%s died from SCP-294\u0027s nuclear explosion.",
       "advancements.decon_achievement.descr": "Pass through a Decontamination Checkpoint.",
       "block.scp_additions.left_reader_accept": "Level 1 Keycard Reader (Left) Accepted",
       "subtitles.scp902closing": "SCP-902 closing",
+      "death.attack.death": "%s died after drinking a cup of death from SCP-294, for some reason...",
       "subtitles.scp1176": "SCP-1176 curse",
       "subtitles.scp294pouring": "SCP-294 pouring liquid",
       "item.scp_additions.amnesia": "Cup of Amnesia",
@@ -7034,13 +7309,17 @@
       "advancements.decon_achievement.title": "Decontaminated",
       "block.scp_additions.scp_914dial_very_fine": "SCP-914 dial",
       "subtitles.scp914death": "SCP-914 death",
+      "item.scp_additions.cold": "Cup of Cold",
       "advancements.scp_572_a_achievement.descr": "Congratulations! You\u0027re the chosen one...",
+      "item.scp_additions.cola": "Cup of Soda",
       "block.scp_additions.button_lon": "Button (Left) ON",
       "subtitles.click": "Tesla Terminal Click",
       "death.attack.scp059delta": "%s died of Delta radiation poisoning from SCP-059.",
       "advancements.hazmat_achi.descr": "Suited up in the hazmat gear.",
       "advancements.scp_additions_ach.descr": "Unravel the secrets of the SCP Foundation.",
+      "item.scp_additions.coconut": "Cup of Coconut milk",
       "death.attack.bleach": "%s died from bleach poisoning.",
+      "item.scp_additions.eggs": "Cup of eggs",
       "block.scp_additions.scp_1176": "SCP-1176",
       "item.scp_additions.champagne": "Cup of Champagne",
       "block.scp_additions.scp_914block": "SCP-914 Block",
@@ -7118,6 +7397,7 @@
       "subtitles.scp914dooropen": "SCP-914 door opening",
       "item.scp_additions.aqua_regia": "Cup of Aqua Regia",
       "item.scp_additions.ethanol": "Cup of ethanol",
+      "item.scp_additions.courage": "Cup of Courage",
       "item.scp_additions.level_3_keycard": "Level 3 Keycard",
       "item.scp_additions.coin": "Coin",
       "subtitles.scp914dial": "SCP-914 dial",
@@ -7170,6 +7450,7 @@
       "item.scp_additions.scp_572": "SCP-572",
       "item.scp_additions.level_1_keycard": "Level 1 Keycard",
       "block.scp_additions.scp_914clockworks": "SCP-914 Clockworks",
+      "item.scp_additions.cocaine": "Cup of Cocaine Energy Drink",
       "block.scp_additions.lv_4_left_reader_accept": "Level 4 Keycard Reader (Left) Accepted",
       "block.scp_additions.scp_294": "SCP-294",
       "block.scp_additions.lv_5_left_reader_accept": "Level 5 Keycard Reader (Left) Accepted",

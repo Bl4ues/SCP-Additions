@@ -15,9 +15,6 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.DamageSource;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.state.Property;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.item.ItemStack;
 import net.minecraft.inventory.container.Slot;
 import net.minecraft.inventory.container.Container;
@@ -26,7 +23,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.block.BlockState;
 
 import net.mcreator.scpadditions.item.VodkaItem;
 import net.mcreator.scpadditions.item.SpiritItem;
@@ -40,6 +36,7 @@ import net.mcreator.scpadditions.item.Drink1Item;
 import net.mcreator.scpadditions.item.CorrosiveBlackItem;
 import net.mcreator.scpadditions.item.CoinItem;
 import net.mcreator.scpadditions.item.CoffeeItem;
+import net.mcreator.scpadditions.item.CocaineItem;
 import net.mcreator.scpadditions.item.CiderItem;
 import net.mcreator.scpadditions.item.ChocolateItem;
 import net.mcreator.scpadditions.item.ChimItem;
@@ -57,10 +54,10 @@ import net.mcreator.scpadditions.item.AppleCiderItem;
 import net.mcreator.scpadditions.item.AntiEnergyItem;
 import net.mcreator.scpadditions.item.AmnesiaItem;
 import net.mcreator.scpadditions.item.AloeItem;
-import net.mcreator.scpadditions.block.Scp294OutOfRangeBlock;
 import net.mcreator.scpadditions.ScpAdditionsModVariables;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -68,6 +65,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Comparator;
+import java.util.AbstractMap;
 
 public class Scp294drinkGiveProcedure {
 
@@ -3261,96 +3259,206 @@ public class Scp294drinkGiveProcedure {
 																																			.syncData(
 																																					world);
 																																} else {
-																																	{
-																																		BlockPos _bp = new BlockPos(
-																																				x, y,
-																																				z);
-																																		BlockState _bs = Scp294OutOfRangeBlock.block
-																																				.getDefaultState();
-																																		BlockState _bso = world
-																																				.getBlockState(
-																																						_bp);
-																																		for (Map.Entry<Property<?>, Comparable<?>> entry : _bso
-																																				.getValues()
-																																				.entrySet()) {
-																																			Property _property = _bs
-																																					.getBlock()
-																																					.getStateContainer()
-																																					.getProperty(
-																																							entry.getKey()
-																																									.getName());
-																																			if (_property != null
-																																					&& _bs.get(
-																																							_property) != null)
-																																				try {
-																																					_bs = _bs
-																																							.with(_property,
-																																									(Comparable) entry
-																																											.getValue());
-																																				} catch (Exception e) {
+																																	if ((new Object() {
+																																		public String getText() {
+																																			TextFieldWidget _tf = (TextFieldWidget) guistate
+																																					.get("text:scp294input");
+																																			if (_tf != null) {
+																																				return _tf
+																																						.getText();
+																																			}
+																																			return "";
+																																		}
+																																	}.getText())
+																																			.equals("cocaine")
+																																			|| (new Object() {
+																																				public String getText() {
+																																					TextFieldWidget _tf = (TextFieldWidget) guistate
+																																							.get("text:scp294input");
+																																					if (_tf != null) {
+																																						return _tf
+																																								.getText();
+																																					}
+																																					return "";
 																																				}
+																																			}.getText())
+																																					.equals("Cocaine")
+																																			|| (new Object() {
+																																				public String getText() {
+																																					TextFieldWidget _tf = (TextFieldWidget) guistate
+																																							.get("text:scp294input");
+																																					if (_tf != null) {
+																																						return _tf
+																																								.getText();
+																																					}
+																																					return "";
+																																				}
+																																			}.getText())
+																																					.equals("cocaine drink")
+																																			|| (new Object() {
+																																				public String getText() {
+																																					TextFieldWidget _tf = (TextFieldWidget) guistate
+																																							.get("text:scp294input");
+																																					if (_tf != null) {
+																																						return _tf
+																																								.getText();
+																																					}
+																																					return "";
+																																				}
+																																			}.getText())
+																																					.equals("Cocaine Drink")
+																																			|| (new Object() {
+																																				public String getText() {
+																																					TextFieldWidget _tf = (TextFieldWidget) guistate
+																																							.get("text:scp294input");
+																																					if (_tf != null) {
+																																						return _tf
+																																								.getText();
+																																					}
+																																					return "";
+																																				}
+																																			}.getText())
+																																					.equals("cocaine energy drink")
+																																			|| (new Object() {
+																																				public String getText() {
+																																					TextFieldWidget _tf = (TextFieldWidget) guistate
+																																							.get("text:scp294input");
+																																					if (_tf != null) {
+																																						return _tf
+																																								.getText();
+																																					}
+																																					return "";
+																																				}
+																																			}.getText())
+																																					.equals("Cocaine Energy Drink")) {
+																																		if (world instanceof World
+																																				&& !world
+																																						.isRemote()) {
+																																			((World) world)
+																																					.playSound(
+																																							null,
+																																							new BlockPos(
+																																									x,
+																																									y,
+																																									z),
+																																							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																									.getValue(
+																																											new ResourceLocation(
+																																													"scp_additions:scp294pouring")),
+																																							SoundCategory.NEUTRAL,
+																																							(float) 1,
+																																							(float) 1);
+																																		} else {
+																																			((World) world)
+																																					.playSound(
+																																							x,
+																																							y,
+																																							z,
+																																							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																																									.getValue(
+																																											new ResourceLocation(
+																																													"scp_additions:scp294pouring")),
+																																							SoundCategory.NEUTRAL,
+																																							(float) 1,
+																																							(float) 1,
+																																							false);
 																																		}
-																																		TileEntity _te = world
-																																				.getTileEntity(
-																																						_bp);
-																																		CompoundNBT _bnbt = null;
-																																		if (_te != null) {
-																																			_bnbt = _te
-																																					.write(new CompoundNBT());
-																																			_te.remove();
-																																		}
-																																		world.setBlockState(
-																																				_bp,
-																																				_bs,
-																																				3);
-																																		if (_bnbt != null) {
-																																			_te = world
-																																					.getTileEntity(
-																																							_bp);
-																																			if (_te != null) {
-																																				try {
-																																					_te.read(
-																																							_bso,
-																																							_bnbt);
-																																				} catch (Exception ignored) {
+																																		{
+																																			Entity _ent = entity;
+																																			if (_ent instanceof ServerPlayerEntity) {
+																																				Container _current = ((ServerPlayerEntity) _ent).openContainer;
+																																				if (_current instanceof Supplier) {
+																																					Object invobj = ((Supplier) _current)
+																																							.get();
+																																					if (invobj instanceof Map) {
+																																						((Slot) ((Map) invobj)
+																																								.get((int) (0)))
+																																								.decrStackSize(
+																																										(int) (1));
+																																						_current.detectAndSendChanges();
+																																					}
 																																				}
 																																			}
 																																		}
-																																	}
-																																	if (entity instanceof PlayerEntity)
-																																		((PlayerEntity) entity)
-																																				.closeScreen();
-																																	if (world instanceof World
-																																			&& !world
-																																					.isRemote()) {
-																																		((World) world)
-																																				.playSound(
-																																						null,
-																																						new BlockPos(
-																																								x,
-																																								y,
-																																								z),
-																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																								.getValue(
-																																										new ResourceLocation(
-																																												"scp_additions:scp294outofrange")),
-																																						SoundCategory.NEUTRAL,
-																																						(float) 1,
-																																						(float) 1);
+																																		new Object() {
+																																			private int ticks = 0;
+																																			private float waitTicks;
+																																			private IWorld world;
+
+																																			public void start(
+																																					IWorld world,
+																																					int waitTicks) {
+																																				this.waitTicks = waitTicks;
+																																				MinecraftForge.EVENT_BUS
+																																						.register(
+																																								this);
+																																				this.world = world;
+																																			}
+
+																																			@SubscribeEvent
+																																			public void tick(
+																																					TickEvent.ServerTickEvent event) {
+																																				if (event.phase == TickEvent.Phase.END) {
+																																					this.ticks += 1;
+																																					if (this.ticks >= this.waitTicks)
+																																						run();
+																																				}
+																																			}
+
+																																			private void run() {
+																																				if (entity instanceof PlayerEntity) {
+																																					ItemStack _setstack = new ItemStack(
+																																							CocaineItem.block);
+																																					_setstack
+																																							.setCount(
+																																									(int) 1);
+																																					ItemHandlerHelper
+																																							.giveItemToPlayer(
+																																									((PlayerEntity) entity),
+																																									_setstack);
+																																				}
+																																				MinecraftForge.EVENT_BUS
+																																						.unregister(
+																																								this);
+																																			}
+																																		}.start(world,
+																																				(int) 40);
+																																		ScpAdditionsModVariables.WorldVariables
+																																				.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
+																																						.get(world).Scp294stock
+																																						+ 1);
+																																		ScpAdditionsModVariables.WorldVariables
+																																				.get(world)
+																																				.syncData(
+																																						world);
 																																	} else {
-																																		((World) world)
-																																				.playSound(
-																																						x,
-																																						y,
-																																						z,
-																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																								.getValue(
-																																										new ResourceLocation(
-																																												"scp_additions:scp294outofrange")),
-																																						SoundCategory.NEUTRAL,
-																																						(float) 1,
-																																						(float) 1,
-																																						false);
+																																		Scp294drinkGive2Procedure
+																																				.executeProcedure(
+																																						Stream.of(
+																																								new AbstractMap.SimpleEntry<>(
+																																										"world",
+																																										world),
+																																								new AbstractMap.SimpleEntry<>(
+																																										"x",
+																																										x),
+																																								new AbstractMap.SimpleEntry<>(
+																																										"y",
+																																										y),
+																																								new AbstractMap.SimpleEntry<>(
+																																										"z",
+																																										z),
+																																								new AbstractMap.SimpleEntry<>(
+																																										"entity",
+																																										entity),
+																																								new AbstractMap.SimpleEntry<>(
+																																										"guistate",
+																																										guistate))
+																																								.collect(
+																																										HashMap::new,
+																																										(_m, _e) -> _m
+																																												.put(_e.getKey(),
+																																														_e.getValue()),
+																																										Map::putAll));
 																																	}
 																																}
 																															}

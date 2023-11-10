@@ -408,5 +408,15 @@
         "stream": false
       }
     ]
+  },
+  "heartbeat": {
+    "category": "neutral",
+    "subtitle": "subtitles.heartbeat",
+    "sounds": [
+      {
+        "name": "scp_additions:heartbeat",
+        "stream": false
+      }
+    ]
   }
 }

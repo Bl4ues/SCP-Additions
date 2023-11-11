@@ -1218,7 +1218,7 @@ public class VeryFineAliveProcedure {
 
 						private void run() {
 							if (world instanceof ServerWorld) {
-								Entity entityToSpawn = new ElderGuardianEntity(EntityType.ELDER_GUARDIAN, (World) world);
+								Entity entityToSpawn = new EndermanEntity(EntityType.ENDERMAN, (World) world);
 								entityToSpawn.setLocationAndAngles((x + 4), y, (z - 3), (float) 0, (float) 0);
 								entityToSpawn.setRenderYawOffset((float) 0);
 								entityToSpawn.setRotationYawHead((float) 0);

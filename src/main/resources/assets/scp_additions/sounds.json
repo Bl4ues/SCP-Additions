@@ -418,5 +418,35 @@
         "stream": false
       }
     ]
+  },
+  "nuclear": {
+    "category": "neutral",
+    "subtitle": "subtitles.nuclear",
+    "sounds": [
+      {
+        "name": "scp_additions:nuclear",
+        "stream": false
+      }
+    ]
+  },
+  "gravitons": {
+    "category": "neutral",
+    "subtitle": "subtitles.gravitons",
+    "sounds": [
+      {
+        "name": "scp_additions:gravitons",
+        "stream": false
+      }
+    ]
+  },
+  "stomach": {
+    "category": "neutral",
+    "subtitle": "subtitles.stomach",
+    "sounds": [
+      {
+        "name": "scp_additions:stomach",
+        "stream": false
+      }
+    ]
   }
 }

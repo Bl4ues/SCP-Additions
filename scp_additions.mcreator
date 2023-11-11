@@ -6009,6 +6009,10 @@
           {
             "name": "entity",
             "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
           }
         ]
       },
@@ -6854,18 +6858,6 @@
             "type": "entity"
           },
           {
-            "name": "x",
-            "type": "number"
-          },
-          {
-            "name": "y",
-            "type": "number"
-          },
-          {
-            "name": "z",
-            "type": "number"
-          },
-          {
             "name": "world",
             "type": "world"
           }
@@ -7061,18 +7053,6 @@
             "type": "entity"
           },
           {
-            "name": "x",
-            "type": "number"
-          },
-          {
-            "name": "y",
-            "type": "number"
-          },
-          {
-            "name": "z",
-            "type": "number"
-          },
-          {
             "name": "world",
             "type": "world"
           }
@@ -7239,6 +7219,202 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "ice_cream_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Nuclear",
+      "type": "overlay",
+      "sortid": 429,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "nuclear",
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "NuclearDisplayOverlayIngame",
+      "type": "procedure",
+      "sortid": 430,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "nuclear_display_overlay_ingame",
+      "metadata": {
+        "return_type": "logic",
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "FearOverlay",
+      "type": "overlay",
+      "sortid": 431,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fear_overlay",
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "FearOverlayDisplayOverlayIngame",
+      "type": "procedure",
+      "sortid": 431,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fear_overlay_display_overlay_ingame",
+      "metadata": {
+        "return_type": "logic",
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "BlackHole",
+      "type": "overlay",
+      "sortid": 432,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "black_hole",
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "BlackHoleDisplayOverlayIngame",
+      "type": "procedure",
+      "sortid": 433,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "black_hole_display_overlay_ingame",
+      "metadata": {
+        "return_type": "logic",
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures"
+    },
+    {
+      "name": "Scp294drinkGive3",
+      "type": "procedure",
+      "sortid": 434,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_294drink_give_3",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "guistate",
+            "type": "map"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "FrozenYogurt",
+      "type": "item",
+      "sortid": 435,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "frozen_yogurt",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "FrozenYogurtPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 436,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "frozen_yogurt_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Yogurt",
+      "type": "item",
+      "sortid": 437,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "yogurt",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "YogurtPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 438,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "yogurt_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Ink",
+      "type": "item",
+      "sortid": 439,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ink",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "InkRightclicked",
+      "type": "procedure",
+      "sortid": 440,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ink_rightclicked",
       "metadata": {
         "dependencies": [
           {
@@ -7442,6 +7618,24 @@
       "type": "number",
       "scope": "world",
       "value": "0"
+    },
+    {
+      "name": "fear",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "nuclear",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "blackh",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
     }
   ],
   "sound_elements": [
@@ -7780,6 +7974,30 @@
       ],
       "category": "neutral",
       "subtitle": "Heartbeat"
+    },
+    {
+      "name": "nuclear",
+      "files": [
+        "nuclear"
+      ],
+      "category": "neutral",
+      "subtitle": "Nuclear explosion"
+    },
+    {
+      "name": "gravitons",
+      "files": [
+        "gravitons"
+      ],
+      "category": "neutral",
+      "subtitle": "Singularity"
+    },
+    {
+      "name": "stomach",
+      "files": [
+        "stomach"
+      ],
+      "category": "neutral",
+      "subtitle": "Stomach ache"
     }
   ],
   "language_map": {
@@ -7869,6 +8087,7 @@
       "block.scp_additions.scp_079off": "SCP-079",
       "item.scp_additions.spray": "Methyl isothiocyanate spray bottle",
       "item.scp_additions.pieces_of_paper": "Pieces of paper",
+      "item.scp_additions.frozen_yogurt": "Cup of Frozen Yogurt",
       "advancements.scp_059_adv.title": "Delta Decay",
       "block.scp_additions.lv_5_right_reader_accept": "Level 5 Keycard Reader (Right) Accepted",
       "block.scp_additions.tesla_terminal_block": "Tesla Terminal (On)",
@@ -7892,6 +8111,7 @@
       "block.scp_additions.button_lon": "Button (Left) ON",
       "item.scp_additions.gin": "Cup of Gin and Tonic",
       "subtitles.click": "Tesla Terminal Click",
+      "subtitles.nuclear": "Nuclear explosion",
       "death.attack.scp059delta": "%s died of Delta radiation poisoning from SCP-059.",
       "advancements.hazmat_achi.descr": "Suited up in the hazmat gear.",
       "advancements.scp_additions_ach.descr": "Unravel the secrets of the SCP Foundation.",
@@ -7913,6 +8133,7 @@
       "item.scp_additions.cactus": "Cup of Cactus",
       "subtitles.accessdenied": "Access Denied",
       "item.scp_additions.geiger_1": "Geiger Counter",
+      "item.scp_additions.ink": "Cup of Ink",
       "item.scp_additions.geiger_2": "Geiger Counter",
       "item.scp_additions.geiger_3": "Geiger Counter",
       "subtitles.scp294coinslot": "SCP-294 coin slot",
@@ -7923,6 +8144,7 @@
       "item.scp_additions.spirit": "Cup of spirit",
       "subtitles.candyeat": "Eating candy",
       "entity.scp_additions.scp_0591infected_3": "infectedthree",
+      "item.scp_additions.yogurt": "Cup of Yogurt",
       "item.scp_additions.cassis_fanta": "Cup of Cassis Fanta",
       "block.scp_additions.tesla_active_3": "Tesla Gate AC3",
       "block.scp_additions.tesla_active_2": "Tesla Gate AC2",
@@ -8009,11 +8231,13 @@
       "block.scp_additions.scp_079_system_control": "SCP-079 System Control",
       "block.scp_additions.lv_4_right_reader_wrong": "Level 4 Keycard Reader (Right) Denied",
       "item.scp_additions.level_6_keycard": "Level 6 Keycard",
+      "subtitles.stomach": "Stomach ache",
       "item.scp_additions.carbon": "Cup of Carbon",
       "item.scp_additions.scp_330_blue_candy": "Blue Candy from SCP-330",
       "subtitles.scp902opening": "SCP-902 opening",
       "subtitles.scp914doorclose": "SCP-914 door closing",
       "item.scp_additions.cider": "Cup of Cider",
+      "subtitles.gravitons": "Singularity",
       "subtitles.scp330death": "SCP-330 blood loss",
       "itemGroup.tabsc_padditions_keycards": "SCP Additions Keycards",
       "block.scp_additions.tesla_gate": "Tesla Gate",

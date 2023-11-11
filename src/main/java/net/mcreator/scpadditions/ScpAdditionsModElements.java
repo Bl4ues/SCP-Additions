@@ -128,6 +128,12 @@ public class ScpAdditionsModElements {
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "scp294coinslot")));
 		sounds.put(new ResourceLocation("scp_additions", "heartbeat"),
 				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "heartbeat")));
+		sounds.put(new ResourceLocation("scp_additions", "nuclear"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "nuclear")));
+		sounds.put(new ResourceLocation("scp_additions", "gravitons"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "gravitons")));
+		sounds.put(new ResourceLocation("scp_additions", "stomach"),
+				new net.minecraft.util.SoundEvent(new ResourceLocation("scp_additions", "stomach")));
 		try {
 			ModFileScanData modFileInfo = ModList.get().getModFileById("scp_additions").getFile().getScanResult();
 			Set<ModFileScanData.AnnotationData> annotations = modFileInfo.getAnnotations();

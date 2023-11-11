@@ -1264,6 +1264,38 @@ public class Scp294drinkGiveProcedure {
 																	}
 																	return "";
 																}
+															}.getText()).equals("nuclear warhead") || (new Object() {
+																public String getText() {
+																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
+																	if (_tf != null) {
+																		return _tf.getText();
+																	}
+																	return "";
+																}
+															}.getText()).equals("Nuclear Warhead") || (new Object() {
+																public String getText() {
+																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
+																	if (_tf != null) {
+																		return _tf.getText();
+																	}
+																	return "";
+																}
+															}.getText()).equals("oppenheimer") || (new Object() {
+																public String getText() {
+																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
+																	if (_tf != null) {
+																		return _tf.getText();
+																	}
+																	return "";
+																}
+															}.getText()).equals("Oppenheimer") || (new Object() {
+																public String getText() {
+																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
+																	if (_tf != null) {
+																		return _tf.getText();
+																	}
+																	return "";
+																}
 															}.getText()).equals("nuclear reaction") || (new Object() {
 																public String getText() {
 																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
@@ -1297,54 +1329,70 @@ public class Scp294drinkGiveProcedure {
 																		}
 																	}
 																}
-																new Object() {
-																	private int ticks = 0;
-																	private float waitTicks;
-																	private IWorld world;
-
-																	public void start(IWorld world, int waitTicks) {
-																		this.waitTicks = waitTicks;
-																		MinecraftForge.EVENT_BUS.register(this);
-																		this.world = world;
-																	}
-
-																	@SubscribeEvent
-																	public void tick(TickEvent.ServerTickEvent event) {
-																		if (event.phase == TickEvent.Phase.END) {
-																			this.ticks += 1;
-																			if (this.ticks >= this.waitTicks)
-																				run();
-																		}
-																	}
-
-																	private void run() {
-																		if (world instanceof World && !((World) world).isRemote) {
-																			((World) world).createExplosion(null, (int) x, (int) y, (int) z,
-																					(float) 30, Explosion.Mode.NONE);
-																		}
-																		{
-																			List<Entity> _entfound = world.getEntitiesWithinAABB(Entity.class,
+																{
+																	List<Entity> _entfound = world
+																			.getEntitiesWithinAABB(Entity.class,
 																					new AxisAlignedBB(x - (30 / 2d), y - (30 / 2d), z - (30 / 2d),
 																							x + (30 / 2d), y + (30 / 2d), z + (30 / 2d)),
-																					null).stream().sorted(new Object() {
-																						Comparator<Entity> compareDistOf(double _x, double _y,
-																								double _z) {
-																							return Comparator.comparing(
-																									(Function<Entity, Double>) (_entcnd -> _entcnd
-																											.getDistanceSq(_x, _y, _z)));
-																						}
-																					}.compareDistOf(x, y, z)).collect(Collectors.toList());
-																			for (Entity entityiterator : _entfound) {
+																					null)
+																			.stream().sorted(new Object() {
+																				Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
+																					return Comparator
+																							.comparing((Function<Entity, Double>) (_entcnd -> _entcnd
+																									.getDistanceSq(_x, _y, _z)));
+																				}
+																			}.compareDistOf(x, y, z)).collect(Collectors.toList());
+																	for (Entity entityiterator : _entfound) {
+																		if (world instanceof World && !world.isRemote()) {
+																			((World) world).playSound(null, new BlockPos(x, y, z),
+																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																							.getValue(new ResourceLocation("scp_additions:nuclear")),
+																					SoundCategory.NEUTRAL, (float) 1, (float) 1);
+																		} else {
+																			((World) world).playSound(x, y, z,
+																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																							.getValue(new ResourceLocation("scp_additions:nuclear")),
+																					SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
+																		}
+																		{
+																			boolean _setval = (true);
+																			entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY,
+																					null).ifPresent(capability -> {
+																						capability.nuclear = _setval;
+																						capability.syncPlayerVariables(entity);
+																					});
+																		}
+																		new Object() {
+																			private int ticks = 0;
+																			private float waitTicks;
+																			private IWorld world;
+
+																			public void start(IWorld world, int waitTicks) {
+																				this.waitTicks = waitTicks;
+																				MinecraftForge.EVENT_BUS.register(this);
+																				this.world = world;
+																			}
+
+																			@SubscribeEvent
+																			public void tick(TickEvent.ServerTickEvent event) {
+																				if (event.phase == TickEvent.Phase.END) {
+																					this.ticks += 1;
+																					if (this.ticks >= this.waitTicks)
+																						run();
+																				}
+																			}
+
+																			private void run() {
 																				if (entityiterator instanceof LivingEntity) {
 																					((LivingEntity) entityiterator).attackEntityFrom(
 																							new DamageSource("nuclear").setDamageBypassesArmor(),
 																							(float) 100);
 																				}
+																				MinecraftForge.EVENT_BUS.unregister(this);
 																			}
-																		}
-																		MinecraftForge.EVENT_BUS.unregister(this);
+																		}.start(world, (int) 40);
 																	}
-																}.start(world, (int) 30);
+																}
 																ScpAdditionsModVariables.WorldVariables
 																		.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
 																				.get(world).Scp294stock + 1);

@@ -8,7 +8,6 @@ import net.minecraftforge.common.MinecraftForge;
 
 import net.minecraft.world.World;
 import net.minecraft.world.IWorld;
-import net.minecraft.world.Explosion;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.SoundCategory;
@@ -53,6 +52,7 @@ import net.mcreator.scpadditions.item.ChampionItem;
 import net.mcreator.scpadditions.ScpAdditionsModVariables;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Comparator;
+import java.util.AbstractMap;
 
 public class Scp294drinkGive2Procedure {
 
@@ -1623,6 +1624,17 @@ public class Scp294drinkGive2Procedure {
 																				.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
 																		SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
 															}
+															if (world instanceof World && !world.isRemote()) {
+																((World) world).playSound(null, new BlockPos(x, y, z),
+																		(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																				.getValue(new ResourceLocation("scp_additions:gravitons")),
+																		SoundCategory.NEUTRAL, (float) 1, (float) 1);
+															} else {
+																((World) world).playSound(x, y, z,
+																		(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
+																				.getValue(new ResourceLocation("scp_additions:gravitons")),
+																		SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
+															}
 															{
 																Entity _ent = entity;
 																if (_ent instanceof ServerPlayerEntity) {
@@ -1636,56 +1648,59 @@ public class Scp294drinkGive2Procedure {
 																	}
 																}
 															}
-															new Object() {
-																private int ticks = 0;
-																private float waitTicks;
-																private IWorld world;
-
-																public void start(IWorld world, int waitTicks) {
-																	this.waitTicks = waitTicks;
-																	MinecraftForge.EVENT_BUS.register(this);
-																	this.world = world;
-																}
-
-																@SubscribeEvent
-																public void tick(TickEvent.ServerTickEvent event) {
-																	if (event.phase == TickEvent.Phase.END) {
-																		this.ticks += 1;
-																		if (this.ticks >= this.waitTicks)
-																			run();
-																	}
-																}
-
-																private void run() {
-																	if (world instanceof World && !((World) world).isRemote) {
-																		((World) world).createExplosion(null, (int) x, (int) y, (int) z, (float) 20,
-																				Explosion.Mode.NONE);
-																	}
+															{
+																List<Entity> _entfound = world
+																		.getEntitiesWithinAABB(Entity.class,
+																				new AxisAlignedBB(x - (20 / 2d), y - (20 / 2d), z - (20 / 2d),
+																						x + (20 / 2d), y + (20 / 2d), z + (20 / 2d)),
+																				null)
+																		.stream().sorted(new Object() {
+																			Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
+																				return Comparator
+																						.comparing((Function<Entity, Double>) (_entcnd -> _entcnd
+																								.getDistanceSq(_x, _y, _z)));
+																			}
+																		}.compareDistOf(x, y, z)).collect(Collectors.toList());
+																for (Entity entityiterator : _entfound) {
 																	{
-																		List<Entity> _entfound = world
-																				.getEntitiesWithinAABB(Entity.class,
-																						new AxisAlignedBB(x - (20 / 2d), y - (20 / 2d), z - (20 / 2d),
-																								x + (20 / 2d), y + (20 / 2d), z + (20 / 2d)),
-																						null)
-																				.stream().sorted(new Object() {
-																					Comparator<Entity> compareDistOf(double _x, double _y,
-																							double _z) {
-																						return Comparator.comparing(
-																								(Function<Entity, Double>) (_entcnd -> _entcnd
-																										.getDistanceSq(_x, _y, _z)));
-																					}
-																				}.compareDistOf(x, y, z)).collect(Collectors.toList());
-																		for (Entity entityiterator : _entfound) {
+																		boolean _setval = (true);
+																		entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY,
+																				null).ifPresent(capability -> {
+																					capability.blackh = _setval;
+																					capability.syncPlayerVariables(entity);
+																				});
+																	}
+																	new Object() {
+																		private int ticks = 0;
+																		private float waitTicks;
+																		private IWorld world;
+
+																		public void start(IWorld world, int waitTicks) {
+																			this.waitTicks = waitTicks;
+																			MinecraftForge.EVENT_BUS.register(this);
+																			this.world = world;
+																		}
+
+																		@SubscribeEvent
+																		public void tick(TickEvent.ServerTickEvent event) {
+																			if (event.phase == TickEvent.Phase.END) {
+																				this.ticks += 1;
+																				if (this.ticks >= this.waitTicks)
+																					run();
+																			}
+																		}
+
+																		private void run() {
 																			if (entity instanceof LivingEntity) {
 																				((LivingEntity) entity).attackEntityFrom(
 																						new DamageSource("gravitons").setDamageBypassesArmor(),
 																						(float) 100);
 																			}
+																			MinecraftForge.EVENT_BUS.unregister(this);
 																		}
-																	}
-																	MinecraftForge.EVENT_BUS.unregister(this);
+																	}.start(world, (int) 30);
 																}
-															}.start(world, (int) 10);
+															}
 															ScpAdditionsModVariables.WorldVariables
 																	.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
 																			.get(world).Scp294stock + 1);
@@ -3665,6 +3680,34 @@ public class Scp294drinkGive2Procedure {
 																															ScpAdditionsModVariables.WorldVariables
 																																	.get(world)
 																																	.syncData(world);
+																														} else {
+																															Scp294drinkGive3Procedure
+																																	.executeProcedure(
+																																			Stream.of(
+																																					new AbstractMap.SimpleEntry<>(
+																																							"world",
+																																							world),
+																																					new AbstractMap.SimpleEntry<>(
+																																							"x",
+																																							x),
+																																					new AbstractMap.SimpleEntry<>(
+																																							"y",
+																																							y),
+																																					new AbstractMap.SimpleEntry<>(
+																																							"z",
+																																							z),
+																																					new AbstractMap.SimpleEntry<>(
+																																							"entity",
+																																							entity),
+																																					new AbstractMap.SimpleEntry<>(
+																																							"guistate",
+																																							guistate))
+																																					.collect(
+																																							HashMap::new,
+																																							(_m, _e) -> _m
+																																									.put(_e.getKey(),
+																																											_e.getValue()),
+																																							Map::putAll));
 																														}
 																													}
 																												}

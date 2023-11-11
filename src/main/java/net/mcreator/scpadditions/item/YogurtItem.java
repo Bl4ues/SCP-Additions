@@ -13,7 +13,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.block.BlockState;
 
-import net.mcreator.scpadditions.procedures.CorrosiveBlackPlayerFinishesUsingItemProcedure;
+import net.mcreator.scpadditions.procedures.YogurtPlayerFinishesUsingItemProcedure;
 import net.mcreator.scpadditions.ScpAdditionsModElements;
 
 import java.util.stream.Stream;
@@ -22,12 +22,12 @@ import java.util.HashMap;
 import java.util.AbstractMap;
 
 @ScpAdditionsModElements.ModElement.Tag
-public class CorrosiveBlackItem extends ScpAdditionsModElements.ModElement {
-	@ObjectHolder("scp_additions:corrosive_black")
+public class YogurtItem extends ScpAdditionsModElements.ModElement {
+	@ObjectHolder("scp_additions:yogurt")
 	public static final Item block = null;
 
-	public CorrosiveBlackItem(ScpAdditionsModElements instance) {
-		super(instance, 340);
+	public YogurtItem(ScpAdditionsModElements instance) {
+		super(instance, 437);
 	}
 
 	@Override
@@ -39,7 +39,7 @@ public class CorrosiveBlackItem extends ScpAdditionsModElements.ModElement {
 		public ItemCustom() {
 			super(new Item.Properties().group(null).maxStackSize(1).rarity(Rarity.COMMON)
 					.food((new Food.Builder()).hunger(4).saturation(0.3f).setAlwaysEdible().build()));
-			setRegistryName("corrosive_black");
+			setRegistryName("yogurt");
 		}
 
 		@Override
@@ -75,9 +75,8 @@ public class CorrosiveBlackItem extends ScpAdditionsModElements.ModElement {
 			double y = entity.getPosY();
 			double z = entity.getPosZ();
 
-			CorrosiveBlackPlayerFinishesUsingItemProcedure
-					.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("entity", entity))
-							.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
+			YogurtPlayerFinishesUsingItemProcedure.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("entity", entity)).collect(HashMap::new,
+					(_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
 			if (itemstack.isEmpty()) {
 				return retval;
 			} else {

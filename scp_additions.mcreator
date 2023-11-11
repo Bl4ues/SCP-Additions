@@ -7345,7 +7345,7 @@
           }
         ]
       },
-      "path": "~/Scp294Procedures/Drinks"
+      "path": "~/Scp294Procedures"
     },
     {
       "name": "FrozenYogurt",
@@ -7423,6 +7423,101 @@
           }
         ]
       },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Insulin",
+      "type": "item",
+      "sortid": 441,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "insulin",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "InsulinPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 442,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "insulin_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Ipecac",
+      "type": "item",
+      "sortid": 443,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ipecac",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "IpecacPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 444,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ipecac_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "IronC",
+      "type": "item",
+      "sortid": 445,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "iron_c",
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "IronCPlayerFinishesUsingItem",
+      "type": "procedure",
+      "sortid": 446,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "iron_c_player_finishes_using_item",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ]
+      },
+      "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "IronCc",
+      "type": "recipe",
+      "sortid": 447,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "iron_cc",
       "path": "~/Scp294Procedures/Drinks"
     }
   ],
@@ -8057,7 +8152,7 @@
       "block.scp_additions.scp_294_stocking": "SCP-294",
       "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
       "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
-      "death.attack.heroin": "%s died poisoned.",
+      "death.attack.heroin": "%s died from heroin poisoning.",
       "block.scp_additions.scp_902_closed": "SCP-902",
       "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
       "item.scp_additions.death": "Cup of Death",
@@ -8069,11 +8164,13 @@
       "death.attack.nuclear": "%s died from SCP-294\u0027s nuclear explosion.",
       "block.scp_additions.lv_2_right_reader": "Level 2 Keycard Reader (Right)",
       "advancements.decon_achievement.descr": "Pass through a Decontamination Checkpoint.",
+      "item.scp_additions.insulin": "Cup of Insulin",
       "item.scp_additions.espresso": "Cup of Espresso",
       "block.scp_additions.left_reader_accept": "Level 1 Keycard Reader (Left) Accepted",
       "subtitles.scp902closing": "SCP-902 closing",
       "death.attack.death": "%s died after drinking a cup of death from SCP-294, for some reason...",
       "subtitles.scp1176": "SCP-1176 curse",
+      "death.attack.iron": "%s died after drinking molten iron.",
       "subtitles.scp294pouring": "SCP-294 pouring liquid",
       "item.scp_additions.amnesia": "Cup of Amnesia",
       "block.scp_additions.scp_914clockworks_2": "SCP-914 Clockworks",
@@ -8104,8 +8201,9 @@
       "advancements.decon_achievement.title": "Decontaminated",
       "block.scp_additions.scp_914dial_very_fine": "SCP-914 dial",
       "subtitles.scp914death": "SCP-914 death",
+      "item.scp_additions.iron_c": "Cup of Iron",
       "item.scp_additions.cold": "Cup of Cold",
-      "death.attack.glass": "%s died after drinking melted glass.",
+      "death.attack.glass": "%s died after drinking molten glass.",
       "advancements.scp_572_a_achievement.descr": "Congratulations! You\u0027re the chosen one...",
       "item.scp_additions.cola": "Cup of Soda",
       "block.scp_additions.button_lon": "Button (Left) ON",
@@ -8159,6 +8257,7 @@
       "advancements.scp_914_metamorphosis.descr": "Got \"refined\" by SCP-914 on the \"1:1\" setting.",
       "item.scp_additions.glass": "Cup of Glass",
       "block.scp_additions.lv_6_right_reader_wrong": "Level 6 Keycard Reader (Right) Denied",
+      "item.scp_additions.ipecac": "Cup of Ipecac",
       "item.scp_additions.cup_of_coffee": "Cup of coffee",
       "item.scp_additions.hazmat_suit_leggings": "Hazmat Suit Leggings",
       "item.scp_additions.chim": "Cup of Chim",
@@ -8220,7 +8319,7 @@
       "block.scp_additions.scp_914_intake_door": "SCP-914 Intake Door",
       "advancements.scp_059_rebirth.descr": "Got infected with SCP-059-1.",
       "item.scp_additions.neutronium": "Cup of Neutronium",
-      "death.attack.gold": "%s died after drinking melted gold.",
+      "death.attack.gold": "%s died after drinking molten gold.",
       "block.scp_additions.scp_294_out_of_range": "SCP-294",
       "block.scp_additions.scp_059_1": "SCP-059-1",
       "block.scp_additions.tesla_active": "Tesla Gate AC1",

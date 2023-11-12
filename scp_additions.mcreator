@@ -7519,6 +7519,276 @@
       "locked_code": false,
       "registry_name": "iron_cc",
       "path": "~/Scp294Procedures/Drinks"
+    },
+    {
+      "name": "Level1Recipe",
+      "type": "recipe",
+      "sortid": 448,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "level_1_recipe",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Level2Recipe",
+      "type": "recipe",
+      "sortid": 449,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "level_2_recipe",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Level3Recipe",
+      "type": "recipe",
+      "sortid": 450,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "level_3_recipe",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Level4Recipe",
+      "type": "recipe",
+      "sortid": 451,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "level_4_recipe",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Level5Recipe",
+      "type": "recipe",
+      "sortid": 452,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "level_5_recipe",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Level6Recipe",
+      "type": "recipe",
+      "sortid": 453,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "level_6_recipe",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv1KRRight",
+      "type": "recipe",
+      "sortid": 454,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_1_kr_right",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv1KRLeft",
+      "type": "recipe",
+      "sortid": 455,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_1_kr_left",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv2KRRight",
+      "type": "recipe",
+      "sortid": 456,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_2_kr_right",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv2KRLeft",
+      "type": "recipe",
+      "sortid": 457,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_2_kr_left",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv3KRRight",
+      "type": "recipe",
+      "sortid": 458,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_3_kr_right",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv3KRLeft",
+      "type": "recipe",
+      "sortid": 459,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_3_kr_left",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv4KRRight",
+      "type": "recipe",
+      "sortid": 460,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_4_kr_right",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv4KRLeft",
+      "type": "recipe",
+      "sortid": 461,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_4_kr_left",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv5KRRight",
+      "type": "recipe",
+      "sortid": 462,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_5_kr_right",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv5KRLeft",
+      "type": "recipe",
+      "sortid": 463,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_5_kr_left",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv6KRRight",
+      "type": "recipe",
+      "sortid": 464,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_6_kr_right",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv6KRLeft",
+      "type": "recipe",
+      "sortid": 465,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_6_kr_left",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv1RtoL",
+      "type": "recipe",
+      "sortid": 466,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_1_rto_l",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv1LtoR",
+      "type": "recipe",
+      "sortid": 467,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_1_lto_r",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv2RtoL",
+      "type": "recipe",
+      "sortid": 468,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_2_rto_l",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv2LtoR",
+      "type": "recipe",
+      "sortid": 469,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_2_lto_r",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv3RtoL",
+      "type": "recipe",
+      "sortid": 470,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_3_rto_l",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv3LtoR",
+      "type": "recipe",
+      "sortid": 471,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_3_lto_r",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv4RtoL",
+      "type": "recipe",
+      "sortid": 472,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_4_rto_l",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv4LtoR",
+      "type": "recipe",
+      "sortid": 473,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_4_lto_r",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv5RtoL",
+      "type": "recipe",
+      "sortid": 474,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_5_rto_l",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv5LtoR",
+      "type": "recipe",
+      "sortid": 475,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_5_lto_r",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv6RtoL",
+      "type": "recipe",
+      "sortid": 476,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_6_rto_l",
+      "path": "~/Keycards"
+    },
+    {
+      "name": "Lv6LtoR",
+      "type": "recipe",
+      "sortid": 477,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "lv_6_lto_r",
+      "path": "~/Keycards"
     }
   ],
   "variable_elements": [

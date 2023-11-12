@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "scp_additions:lv_4_right_reader"
+    }
+  ],
+  "result": {
+    "item": "scp_additions:lv_4_left_reader",
+    "count": 1
+  }
+}

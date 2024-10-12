@@ -1,7 +1,7 @@
 {
   "parent": "scp_additions:custom/keycard1",
   "textures": {
-    "5": "scp_additions:blocks/tx1",
-    "particle": "scp_additions:items/tx1"
+    "5": "scp_additions:block/tx1",
+    "particle": "scp_additions:item/tx1"
   }
 }

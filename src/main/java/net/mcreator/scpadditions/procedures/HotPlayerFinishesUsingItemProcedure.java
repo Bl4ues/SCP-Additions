@@ -1,26 +1,19 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.Entity;
-
-import net.mcreator.scpadditions.ScpAdditionsMod;
-
-import java.util.Map;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.Registries;
 
 public class HotPlayerFinishesUsingItemProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("entity") == null) {
-			if (!dependencies.containsKey("entity"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency entity for procedure HotPlayerFinishesUsingItem!");
+	public static void execute(LevelAccessor world, Entity entity) {
+		if (entity == null)
 			return;
-		}
-		Entity entity = (Entity) dependencies.get("entity");
-		if (entity instanceof PlayerEntity && !entity.world.isRemote()) {
-			((PlayerEntity) entity).sendStatusMessage(new StringTextComponent("\"This is very hot!\""), (true));
-		}
-		entity.attackEntityFrom(DamageSource.HOT_FLOOR, (float) 3);
+		if (entity instanceof Player _player && !_player.level().isClientSide())
+			_player.displayClientMessage(Component.literal("\"This is very hot!\""), true);
+		entity.hurt(new DamageSource(world.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.HOT_FLOOR)), 3);
 	}
 }

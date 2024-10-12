@@ -1,202 +1,156 @@
 
 package net.mcreator.scpadditions.block;
 
-import net.minecraftforge.registries.ObjectHolder;
-import net.minecraftforge.fml.network.NetworkHooks;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.common.ToolType;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.network.NetworkHooks;
 
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.ISelectionContext;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.state.StateContainer;
-import net.minecraft.state.DirectionProperty;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.loot.LootContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Item;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.BlockItem;
-import net.minecraft.inventory.container.INamedContainerProvider;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.IWaterLoggable;
-import net.minecraft.block.HorizontalBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Block;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
 
-import net.mcreator.scpadditions.gui.TeslaTerminalGui;
-import net.mcreator.scpadditions.ScpAdditionsModElements;
+import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 import java.util.List;
 import java.util.Collections;
 
 import io.netty.buffer.Unpooled;
 
-@ScpAdditionsModElements.ModElement.Tag
-public class TeslaTerminalBlockBlock extends ScpAdditionsModElements.ModElement {
-	@ObjectHolder("scp_additions:tesla_terminal_block")
-	public static final Block block = null;
+public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedBlock {
+	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-	public TeslaTerminalBlockBlock(ScpAdditionsModElements instance) {
-		super(instance, 75);
+	public TeslaTerminalBlockBlock() {
+		super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(30f, 10f).requiresCorrectToolForDrops().noOcclusion().isRedstoneConductor((bs, br, bp) -> false));
+		this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(WATERLOGGED, false));
 	}
 
 	@Override
-	public void initElements() {
-		elements.blocks.add(() -> new CustomBlock());
-		elements.items.add(() -> new BlockItem(block, new Item.Properties().group(null)).setRegistryName(block.getRegistryName()));
+	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, world, list, flag);
 	}
 
 	@Override
-	@OnlyIn(Dist.CLIENT)
-	public void clientLoad(FMLClientSetupEvent event) {
-		RenderTypeLookup.setRenderLayer(block, RenderType.getCutout());
+	public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
+		return state.getFluidState().isEmpty();
 	}
 
-	public static class CustomBlock extends Block implements IWaterLoggable {
-		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
-		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+	@Override
+	public int getLightBlock(BlockState state, BlockGetter worldIn, BlockPos pos) {
+		return 0;
+	}
 
-		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 10f).setLightLevel(s -> 0).harvestLevel(1)
-					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setOpaque((bs, br, bp) -> false));
-			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
-			setRegistryName("tesla_terminal_block");
+	@Override
+	public VoxelShape getVisualShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return Shapes.empty();
+	}
+
+	@Override
+	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return switch (state.getValue(FACING)) {
+			default -> Shapes.or(box(1, 0, 11, 13, 1, 15), box(14, 0, 11, 16, 1, 14), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(2, 3.5, 7.75, 14, 10.5, 9.25), box(3, 0, 1, 15, 11, 5));
+			case NORTH -> Shapes.or(box(3, 0, 1, 15, 1, 5), box(0, 0, 2, 2, 1, 5), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(2, 3.5, 6.75, 14, 10.5, 8.25), box(1, 0, 11, 13, 11, 15));
+			case EAST -> Shapes.or(box(11, 0, 3, 15, 1, 15), box(11, 0, 0, 14, 1, 2), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(7.75, 3.5, 2, 9.25, 10.5, 14), box(1, 0, 1, 5, 11, 13));
+			case WEST -> Shapes.or(box(1, 0, 1, 5, 1, 13), box(2, 0, 14, 5, 1, 16), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(6.75, 3.5, 2, 8.25, 10.5, 14), box(11, 0, 3, 15, 11, 15));
+		};
+	}
+
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		builder.add(FACING, WATERLOGGED);
+	}
+
+	@Override
+	public BlockState getStateForPlacement(BlockPlaceContext context) {
+		boolean flag = context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER;
+		return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(WATERLOGGED, flag);
+	}
+
+	public BlockState rotate(BlockState state, Rotation rot) {
+		return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
+	}
+
+	public BlockState mirror(BlockState state, Mirror mirrorIn) {
+		return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
+	}
+
+	@Override
+	public FluidState getFluidState(BlockState state) {
+		return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+	}
+
+	@Override
+	public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos currentPos, BlockPos facingPos) {
+		if (state.getValue(WATERLOGGED)) {
+			world.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
 		}
+		return super.updateShape(state, facing, facingState, world, currentPos, facingPos);
+	}
 
-		@Override
-		public boolean propagatesSkylightDown(BlockState state, IBlockReader reader, BlockPos pos) {
-			return state.getFluidState().isEmpty();
+	@Override
+	public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
+		if (player.getInventory().getSelected().getItem() instanceof PickaxeItem tieredItem)
+			return tieredItem.getTier().getLevel() >= 1;
+		return false;
+	}
+
+	@Override
+	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
+		if (!dropsOriginal.isEmpty())
+			return dropsOriginal;
+		return Collections.singletonList(new ItemStack(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get()));
+	}
+
+	@Override
+	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
+		super.use(blockstate, world, pos, entity, hand, hit);
+		if (entity instanceof ServerPlayer player) {
+			NetworkHooks.openScreen(player, new MenuProvider() {
+				@Override
+				public Component getDisplayName() {
+					return Component.literal("Tesla Terminal (On)");
+				}
+
+				@Override
+				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+					return new TeslaTerminalMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos));
+				}
+			}, pos);
 		}
-
-		@Override
-		public int getOpacity(BlockState state, IBlockReader worldIn, BlockPos pos) {
-			return 0;
-		}
-
-		@Override
-		public VoxelShape getShape(BlockState state, IBlockReader world, BlockPos pos, ISelectionContext context) {
-			Vector3d offset = state.getOffset(world, pos);
-			switch ((Direction) state.get(FACING)) {
-				case SOUTH :
-				default :
-					return VoxelShapes
-							.or(makeCuboidShape(1, 0, 15, 13, 1, 11), makeCuboidShape(16, 0, 14, 14, 1, 11), makeCuboidShape(6, 0, 10, 10, 1, 6),
-									makeCuboidShape(7, 1, 9, 9, 9, 7), makeCuboidShape(2, 3.5, 9.25, 14, 10.5, 7.75),
-									makeCuboidShape(3, 0, 5, 15, 11, 1))
-
-							.withOffset(offset.x, offset.y, offset.z);
-				case NORTH :
-					return VoxelShapes.or(makeCuboidShape(15, 0, 1, 3, 1, 5), makeCuboidShape(0, 0, 2, 2, 1, 5), makeCuboidShape(10, 0, 6, 6, 1, 10),
-							makeCuboidShape(9, 1, 7, 7, 9, 9), makeCuboidShape(14, 3.5, 6.75, 2, 10.5, 8.25), makeCuboidShape(13, 0, 11, 1, 11, 15))
-
-							.withOffset(offset.x, offset.y, offset.z);
-				case EAST :
-					return VoxelShapes
-							.or(makeCuboidShape(15, 0, 15, 11, 1, 3), makeCuboidShape(14, 0, 0, 11, 1, 2), makeCuboidShape(10, 0, 10, 6, 1, 6),
-									makeCuboidShape(9, 1, 9, 7, 9, 7), makeCuboidShape(9.25, 3.5, 14, 7.75, 10.5, 2),
-									makeCuboidShape(5, 0, 13, 1, 11, 1))
-
-							.withOffset(offset.x, offset.y, offset.z);
-				case WEST :
-					return VoxelShapes
-							.or(makeCuboidShape(1, 0, 1, 5, 1, 13), makeCuboidShape(2, 0, 16, 5, 1, 14), makeCuboidShape(6, 0, 6, 10, 1, 10),
-									makeCuboidShape(7, 1, 7, 9, 9, 9), makeCuboidShape(6.75, 3.5, 2, 8.25, 10.5, 14),
-									makeCuboidShape(11, 0, 3, 15, 11, 15))
-
-							.withOffset(offset.x, offset.y, offset.z);
-			}
-		}
-
-		@Override
-		protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-			builder.add(FACING, WATERLOGGED);
-		}
-
-		@Override
-		public BlockState getStateForPlacement(BlockItemUseContext context) {
-			boolean flag = context.getWorld().getFluidState(context.getPos()).getFluid() == Fluids.WATER;
-			return this.getDefaultState().with(FACING, context.getPlacementHorizontalFacing().getOpposite()).with(WATERLOGGED, flag);
-		}
-
-		public BlockState rotate(BlockState state, Rotation rot) {
-			return state.with(FACING, rot.rotate(state.get(FACING)));
-		}
-
-		public BlockState mirror(BlockState state, Mirror mirrorIn) {
-			return state.rotate(mirrorIn.toRotation(state.get(FACING)));
-		}
-
-		@Override
-		public FluidState getFluidState(BlockState state) {
-			return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
-		}
-
-		@Override
-		public BlockState updatePostPlacement(BlockState state, Direction facing, BlockState facingState, IWorld world, BlockPos currentPos,
-				BlockPos facingPos) {
-			if (state.get(WATERLOGGED)) {
-				world.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(world));
-			}
-			return super.updatePostPlacement(state, facing, facingState, world, currentPos, facingPos);
-		}
-
-		@Override
-		public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
-			List<ItemStack> dropsOriginal = super.getDrops(state, builder);
-			if (!dropsOriginal.isEmpty())
-				return dropsOriginal;
-			return Collections.singletonList(new ItemStack(TeslaTerminalOffBlock.block));
-		}
-
-		@Override
-		public ActionResultType onBlockActivated(BlockState blockstate, World world, BlockPos pos, PlayerEntity entity, Hand hand,
-				BlockRayTraceResult hit) {
-			super.onBlockActivated(blockstate, world, pos, entity, hand, hit);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-			if (entity instanceof ServerPlayerEntity) {
-				NetworkHooks.openGui((ServerPlayerEntity) entity, new INamedContainerProvider() {
-					@Override
-					public ITextComponent getDisplayName() {
-						return new StringTextComponent("Tesla Terminal (On)");
-					}
-
-					@Override
-					public Container createMenu(int id, PlayerInventory inventory, PlayerEntity player) {
-						return new TeslaTerminalGui.GuiContainerMod(id, inventory,
-								new PacketBuffer(Unpooled.buffer()).writeBlockPos(new BlockPos(x, y, z)));
-					}
-				}, new BlockPos(x, y, z));
-			}
-			return ActionResultType.SUCCESS;
-		}
+		return InteractionResult.SUCCESS;
 	}
 }

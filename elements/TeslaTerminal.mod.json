@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "gui",
   "definition": {
     "type": 0,
@@ -13,13 +13,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_tesla_gate_on",
           "text": "Tesla Gate On",
+          "isUndecorated": false,
           "onClick": {
             "name": "TerminalOn"
           },
           "width": 92,
           "height": 20,
-          "name": "Tesla Gate On",
           "x": 168,
           "y": 98
         }
@@ -27,13 +28,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_tesla_gate_off",
           "text": "Tesla Gate Off",
+          "isUndecorated": false,
           "onClick": {
             "name": "TerminalOff"
           },
           "width": 98,
           "height": 20,
-          "name": "Tesla Gate Off",
           "x": 165,
           "y": 119
         }
@@ -41,12 +43,14 @@
       {
         "type": "label",
         "data": {
-          "text": "Tesla Gate Terminal",
+          "name": "label_tesla_gate_terminal",
+          "text": {
+            "fixedValue": "Tesla Gate Terminal"
+          },
           "color": {
             "value": -12829636,
             "falpha": 0.0
           },
-          "name": "Tesla Gate Terminal",
           "x": 164,
           "y": 84
         }
@@ -54,13 +58,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_log_out",
           "text": "Log out",
+          "isUndecorated": false,
           "onClick": {
             "name": "TeslaTerminalOffP"
           },
           "width": 61,
           "height": 20,
-          "name": "Log out",
           "x": 184,
           "y": 140
         }

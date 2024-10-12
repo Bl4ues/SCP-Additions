@@ -1,6 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_additions:items/decontext"
-  }
+    "layer0": "scp_additions:item/decontext"
+  },
+  "render_type": "translucent"
 }

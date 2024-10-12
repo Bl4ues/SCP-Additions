@@ -1,9 +1,10 @@
 {
   "parent": "scp_additions:custom/buttonloff",
   "textures": {
-    "all": "scp_additions:blocks/button",
-    "particle": "scp_additions:blocks/button",
-    "1": "scp_additions:blocks/butscreen",
-    "2": "scp_additions:blocks/button"
-  }
+    "all": "scp_additions:block/button",
+    "particle": "scp_additions:block/button",
+    "1": "scp_additions:block/butscreen",
+    "2": "scp_additions:block/button"
+  },
+  "render_type": "cutout"
 }

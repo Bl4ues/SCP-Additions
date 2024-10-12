@@ -1,215 +1,133 @@
 
 package net.mcreator.scpadditions.block;
 
-import net.minecraftforge.registries.ObjectHolder;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.common.ToolType;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.api.distmarker.Dist;
-
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.ISelectionContext;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Direction;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.state.StateContainer;
-import net.minecraft.state.DirectionProperty;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.particles.ParticleTypes;
-import net.minecraft.loot.LootContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Item;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.BlockItem;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.Minecraft;
-import net.minecraft.block.material.PushReaction;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.IWaterLoggable;
-import net.minecraft.block.HorizontalBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Block;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.procedures.TeslaActive3BProcedure;
-import net.mcreator.scpadditions.ScpAdditionsModElements;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
-import java.util.stream.Stream;
-import java.util.Random;
-import java.util.Map;
 import java.util.List;
-import java.util.HashMap;
 import java.util.Collections;
-import java.util.AbstractMap;
 
-@ScpAdditionsModElements.ModElement.Tag
-public class TeslaActive3Block extends ScpAdditionsModElements.ModElement {
-	@ObjectHolder("scp_additions:tesla_active_3")
-	public static final Block block = null;
+public class TeslaActive3Block extends Block implements SimpleWaterloggedBlock {
+	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-	public TeslaActive3Block(ScpAdditionsModElements instance) {
-		super(instance, 68);
+	public TeslaActive3Block() {
+		super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(30f, 100f).requiresCorrectToolForDrops().noOcclusion().pushReaction(PushReaction.BLOCK).hasPostProcess((bs, br, bp) -> true).emissiveRendering((bs, br, bp) -> true)
+				.isRedstoneConductor((bs, br, bp) -> false));
+		this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(WATERLOGGED, false));
 	}
 
 	@Override
-	public void initElements() {
-		elements.blocks.add(() -> new CustomBlock());
-		elements.items.add(() -> new BlockItem(block, new Item.Properties().group(null)).setRegistryName(block.getRegistryName()));
+	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, world, list, flag);
 	}
 
 	@Override
-	@OnlyIn(Dist.CLIENT)
-	public void clientLoad(FMLClientSetupEvent event) {
-		RenderTypeLookup.setRenderLayer(block, RenderType.getCutout());
+	public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
+		return state.getFluidState().isEmpty();
 	}
 
-	public static class CustomBlock extends Block implements IWaterLoggable {
-		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
-		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+	@Override
+	public int getLightBlock(BlockState state, BlockGetter worldIn, BlockPos pos) {
+		return 0;
+	}
 
-		public CustomBlock() {
-			super(Block.Properties.create(Material.IRON).sound(SoundType.METAL).hardnessAndResistance(30f, 100f).setLightLevel(s -> 0).harvestLevel(1)
-					.harvestTool(ToolType.PICKAXE).setRequiresTool().notSolid().setNeedsPostProcessing((bs, br, bp) -> true)
-					.setEmmisiveRendering((bs, br, bp) -> true).setOpaque((bs, br, bp) -> false));
-			this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, false));
-			setRegistryName("tesla_active_3");
+	@Override
+	public VoxelShape getVisualShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return Shapes.empty();
+	}
+
+	@Override
+	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return switch (state.getValue(FACING)) {
+			default -> Shapes.or(box(-16, -32, -2, -6, 32, 18), box(22, -32, -2, 32, 32, 18), box(23, -16, -2, 32, 32, 18), box(-16, -16, -2, -6, 32, 18), box(-16, 27, -2, 32, 32, 18), box(-16, -32, -16, 32, -16, 32));
+			case NORTH -> Shapes.or(box(22, -32, -2, 32, 32, 18), box(-16, -32, -2, -6, 32, 18), box(-16, -16, -2, -7, 32, 18), box(22, -16, -2, 32, 32, 18), box(-16, 27, -2, 32, 32, 18), box(-16, -32, -16, 32, -16, 32));
+			case EAST -> Shapes.or(box(-2, -32, 22, 18, 32, 32), box(-2, -32, -16, 18, 32, -6), box(-2, -16, -16, 18, 32, -7), box(-2, -16, 22, 18, 32, 32), box(-2, 27, -16, 18, 32, 32), box(-16, -32, -16, 32, -16, 32));
+			case WEST -> Shapes.or(box(-2, -32, -16, 18, 32, -6), box(-2, -32, 22, 18, 32, 32), box(-2, -16, 23, 18, 32, 32), box(-2, -16, -16, 18, 32, -6), box(-2, 27, -16, 18, 32, 32), box(-16, -32, -16, 32, -16, 32));
+		};
+	}
+
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		builder.add(FACING, WATERLOGGED);
+	}
+
+	@Override
+	public BlockState getStateForPlacement(BlockPlaceContext context) {
+		boolean flag = context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER;
+		return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(WATERLOGGED, flag);
+	}
+
+	public BlockState rotate(BlockState state, Rotation rot) {
+		return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
+	}
+
+	public BlockState mirror(BlockState state, Mirror mirrorIn) {
+		return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
+	}
+
+	@Override
+	public FluidState getFluidState(BlockState state) {
+		return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+	}
+
+	@Override
+	public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos currentPos, BlockPos facingPos) {
+		if (state.getValue(WATERLOGGED)) {
+			world.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
 		}
+		return super.updateShape(state, facing, facingState, world, currentPos, facingPos);
+	}
 
-		@Override
-		public boolean propagatesSkylightDown(BlockState state, IBlockReader reader, BlockPos pos) {
-			return state.getFluidState().isEmpty();
-		}
+	@Override
+	public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
+		if (player.getInventory().getSelected().getItem() instanceof PickaxeItem tieredItem)
+			return tieredItem.getTier().getLevel() >= 1;
+		return false;
+	}
 
-		@Override
-		public int getOpacity(BlockState state, IBlockReader worldIn, BlockPos pos) {
-			return 0;
-		}
+	@Override
+	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
+		if (!dropsOriginal.isEmpty())
+			return dropsOriginal;
+		return Collections.singletonList(new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get()));
+	}
 
-		@Override
-		public VoxelShape getShape(BlockState state, IBlockReader world, BlockPos pos, ISelectionContext context) {
-			Vector3d offset = state.getOffset(world, pos);
-			switch ((Direction) state.get(FACING)) {
-				case SOUTH :
-				default :
-					return VoxelShapes
-							.or(makeCuboidShape(-16, -32, 18, -6, 32, -2), makeCuboidShape(22, 32, 18, 32, -32, -2),
-									makeCuboidShape(32, -16, -2, 23, 32, 18), makeCuboidShape(-16, -16, -2, -6, 32, 18),
-									makeCuboidShape(-16, 32, 18, 32, 27, -2), makeCuboidShape(32, -16, -16, -16, -32, 32))
-
-							.withOffset(offset.x, offset.y, offset.z);
-				case NORTH :
-					return VoxelShapes
-							.or(makeCuboidShape(32, -32, -2, 22, 32, 18), makeCuboidShape(-6, 32, -2, -16, -32, 18),
-									makeCuboidShape(-16, -16, 18, -7, 32, -2), makeCuboidShape(32, -16, 18, 22, 32, -2),
-									makeCuboidShape(32, 32, -2, -16, 27, 18), makeCuboidShape(-16, -16, 32, 32, -32, -16))
-
-							.withOffset(offset.x, offset.y, offset.z);
-				case EAST :
-					return VoxelShapes
-							.or(makeCuboidShape(18, -32, 32, -2, 32, 22), makeCuboidShape(18, 32, -6, -2, -32, -16),
-									makeCuboidShape(-2, -16, -16, 18, 32, -7), makeCuboidShape(-2, -16, 32, 18, 32, 22),
-									makeCuboidShape(18, 32, 32, -2, 27, -16), makeCuboidShape(-16, -16, -16, 32, -32, 32))
-
-							.withOffset(offset.x, offset.y, offset.z);
-				case WEST :
-					return VoxelShapes
-							.or(makeCuboidShape(-2, -32, -16, 18, 32, -6), makeCuboidShape(-2, 32, 22, 18, -32, 32),
-									makeCuboidShape(18, -16, 32, -2, 32, 23), makeCuboidShape(18, -16, -16, -2, 32, -6),
-									makeCuboidShape(-2, 32, -16, 18, 27, 32), makeCuboidShape(32, -16, 32, -16, -32, -16))
-
-							.withOffset(offset.x, offset.y, offset.z);
-			}
-		}
-
-		@Override
-		protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-			builder.add(FACING, WATERLOGGED);
-		}
-
-		@Override
-		public BlockState getStateForPlacement(BlockItemUseContext context) {
-			boolean flag = context.getWorld().getFluidState(context.getPos()).getFluid() == Fluids.WATER;
-			return this.getDefaultState().with(FACING, context.getPlacementHorizontalFacing().getOpposite()).with(WATERLOGGED, flag);
-		}
-
-		public BlockState rotate(BlockState state, Rotation rot) {
-			return state.with(FACING, rot.rotate(state.get(FACING)));
-		}
-
-		public BlockState mirror(BlockState state, Mirror mirrorIn) {
-			return state.rotate(mirrorIn.toRotation(state.get(FACING)));
-		}
-
-		@Override
-		public FluidState getFluidState(BlockState state) {
-			return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
-		}
-
-		@Override
-		public BlockState updatePostPlacement(BlockState state, Direction facing, BlockState facingState, IWorld world, BlockPos currentPos,
-				BlockPos facingPos) {
-			if (state.get(WATERLOGGED)) {
-				world.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(world));
-			}
-			return super.updatePostPlacement(state, facing, facingState, world, currentPos, facingPos);
-		}
-
-		@Override
-		public PushReaction getPushReaction(BlockState state) {
-			return PushReaction.BLOCK;
-		}
-
-		@Override
-		public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
-			List<ItemStack> dropsOriginal = super.getDrops(state, builder);
-			if (!dropsOriginal.isEmpty())
-				return dropsOriginal;
-			return Collections.singletonList(new ItemStack(TeslaGateBlock.block));
-		}
-
-		@Override
-		public void onBlockAdded(BlockState blockstate, World world, BlockPos pos, BlockState oldState, boolean moving) {
-			super.onBlockAdded(blockstate, world, pos, oldState, moving);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-
-			TeslaActive3BProcedure.executeProcedure(Stream
-					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
-							new AbstractMap.SimpleEntry<>("z", z))
-					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-		}
-
-		@OnlyIn(Dist.CLIENT)
-		@Override
-		public void animateTick(BlockState blockstate, World world, BlockPos pos, Random random) {
-			super.animateTick(blockstate, world, pos, random);
-			PlayerEntity entity = Minecraft.getInstance().player;
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-			if (true)
-				for (int l = 0; l < 30; ++l) {
-					double d0 = (x + random.nextFloat());
-					double d1 = (y + random.nextFloat());
-					double d2 = (z + random.nextFloat());
-					int i1 = random.nextInt(2) * 2 - 1;
-					double d3 = (random.nextFloat() - 0.5D) * 1D;
-					double d4 = (random.nextFloat() - 0.5D) * 1D;
-					double d5 = (random.nextFloat() - 0.5D) * 1D;
-					world.addParticle(ParticleTypes.FIREWORK, d0, d1, d2, d3, d4, d5);
-				}
-		}
+	@Override
+	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
+		super.onPlace(blockstate, world, pos, oldState, moving);
+		TeslaActive3BProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
 	}
 }

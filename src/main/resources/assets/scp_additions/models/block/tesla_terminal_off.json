@@ -1,9 +1,10 @@
 {
   "parent": "scp_additions:custom/teslaterminaloff",
   "textures": {
-    "all": "scp_additions:blocks/terminal",
-    "particle": "scp_additions:blocks/terminal",
-    "1": "scp_additions:blocks/screen",
-    "2": "scp_additions:blocks/terminal"
-  }
+    "all": "scp_additions:block/terminal",
+    "particle": "scp_additions:block/terminal",
+    "1": "scp_additions:block/screen",
+    "2": "scp_additions:block/terminal"
+  },
+  "render_type": "cutout"
 }

@@ -1,7 +1,7 @@
 {
   "parent": "scp_additions:custom/geiger3",
   "textures": {
-    "0": "scp_additions:blocks/geiger",
-    "particle": "scp_additions:items/geiger"
+    "0": "scp_additions:block/geiger",
+    "particle": "scp_additions:item/geiger"
   }
 }

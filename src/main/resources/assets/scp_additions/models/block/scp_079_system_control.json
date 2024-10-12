@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp079controlsystem",
   "textures": {
-    "all": "scp_additions:blocks/scp079system",
-    "particle": "scp_additions:blocks/scp079system",
-    "0": "scp_additions:blocks/scp079system"
-  }
+    "all": "scp_additions:block/scp079system",
+    "particle": "scp_additions:block/scp079system",
+    "0": "scp_additions:block/scp079system"
+  },
+  "render_type": "solid"
 }

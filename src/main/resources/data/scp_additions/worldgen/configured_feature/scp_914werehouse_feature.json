@@ -1,0 +1,7 @@
+{
+  "type": "scp_additions:structure_feature",
+  "config": {
+    "structure": "scp_additions:scp914werehouse",
+    "ignored_blocks": "minecraft:structure_block"
+  }
+}

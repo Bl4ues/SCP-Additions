@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_additions:items/amnesia"
+    "layer0": "scp_additions:item/amnesia"
   }
 }

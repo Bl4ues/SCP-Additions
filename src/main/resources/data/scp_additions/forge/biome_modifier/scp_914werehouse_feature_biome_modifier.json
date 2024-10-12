@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#is_overworld",
+  "features": "scp_additions:scp_914werehouse_feature",
+  "step": "surface_structures"
+}

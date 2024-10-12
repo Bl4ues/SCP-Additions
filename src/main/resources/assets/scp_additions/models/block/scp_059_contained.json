@@ -1,9 +1,10 @@
 {
   "parent": "scp_additions:custom/scp059box",
   "textures": {
-    "all": "scp_additions:blocks/box",
-    "particle": "scp_additions:blocks/box",
-    "0": "scp_additions:blocks/scp059",
-    "1": "scp_additions:blocks/box"
-  }
+    "all": "scp_additions:block/box",
+    "particle": "scp_additions:block/box",
+    "0": "scp_additions:block/scp059",
+    "1": "scp_additions:block/box"
+  },
+  "render_type": "translucent"
 }

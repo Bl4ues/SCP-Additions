@@ -1,10 +1,12 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "item",
   "definition": {
     "renderType": 1,
     "texture": "spray",
     "customModelName": "spray:default",
+    "customProperties": {},
+    "states": [],
     "name": "Methyl isothiocyanate spray bottle",
     "rarity": "COMMON",
     "creativeTab": {
@@ -24,10 +26,11 @@
     "damageOnCrafting": false,
     "enableMeleeDamage": false,
     "damageVsEntity": 0.0,
-    "specialInfo": [
-      "Used to prevent the overgrowth of SCP-059-1."
-    ],
-    "hasGlow": false,
+    "specialInformation": {
+      "fixedValue": [
+        "Used to prevent the overgrowth of SCP-059-1."
+      ]
+    },
     "guiBoundTo": "<NONE>",
     "inventorySize": 9,
     "inventoryStackSize": 64,
@@ -37,6 +40,8 @@
     "onRightClickedOnBlock": {
       "name": "SprayRightclicked"
     },
+    "enableRanged": false,
+    "shootConstantly": false,
     "isFood": false,
     "nutritionalValue": 4,
     "saturation": 0.3,

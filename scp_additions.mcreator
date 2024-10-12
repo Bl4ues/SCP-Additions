@@ -7,6 +7,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_gate",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/tesla_gate.json",
+          "src/main/resources/assets/scp_additions/blockstates/tesla_gate.json",
+          "src/main/resources/assets/scp_additions/models/block/tesla_gate.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaGateBlock.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -15,7 +23,10 @@
       "sortid": 59,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "scp_additions"
+      "registry_name": "scp_additions",
+      "metadata": {
+        "files": []
+      }
     },
     {
       "name": "TeslaActive",
@@ -24,6 +35,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/TeslaActiveBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/tesla_active.json",
+          "src/main/resources/assets/scp_additions/models/block/tesla_active.json",
+          "src/main/resources/assets/scp_additions/models/item/tesla_active.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -34,6 +53,9 @@
       "locked_code": false,
       "registry_name": "tesla_active_procedure",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaActiveProcedureProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -62,6 +84,9 @@
       "locked_code": false,
       "registry_name": "tesla_gate_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -88,7 +113,14 @@
       "sortid": 63,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "tesla_terminal"
+      "registry_name": "tesla_terminal",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/network/TeslaTerminalButtonMessage.java",
+          "src/main/java/net/mcreator/scpadditions/world/inventory/TeslaTerminalMenu.java",
+          "src/main/java/net/mcreator/scpadditions/client/gui/TeslaTerminalScreen.java"
+        ]
+      }
     },
     {
       "name": "TeslaRecharge",
@@ -97,6 +129,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_recharge",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/tesla_recharge.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaRechargeBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/tesla_recharge.json",
+          "src/main/resources/assets/scp_additions/models/block/tesla_recharge.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -107,6 +147,9 @@
       "locked_code": false,
       "registry_name": "tesla_recharge_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaRechargeBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -135,6 +178,9 @@
       "locked_code": false,
       "registry_name": "tesla_recharge_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaRechargeUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -162,6 +208,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_2",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/tesla_active_2.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaActive2Block.java",
+          "src/main/resources/assets/scp_additions/blockstates/tesla_active_2.json",
+          "src/main/resources/assets/scp_additions/models/item/tesla_active_2.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -171,6 +225,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_3",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/tesla_active_3.json",
+          "src/main/resources/assets/scp_additions/models/item/tesla_active_3.json",
+          "src/main/resources/assets/scp_additions/blockstates/tesla_active_3.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaActive3Block.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -180,6 +242,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_active_4",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/tesla_active_4.json",
+          "src/main/resources/assets/scp_additions/models/item/tesla_active_4.json",
+          "src/main/resources/assets/scp_additions/models/block/tesla_active_4.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaActive4Block.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -190,6 +260,9 @@
       "locked_code": false,
       "registry_name": "tesla_active_2_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaActive2BlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -218,6 +291,9 @@
       "locked_code": false,
       "registry_name": "tesla_active_3_b",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaActive3BProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -246,6 +322,9 @@
       "locked_code": false,
       "registry_name": "tesla_active_4_b",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaActive4BProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -273,6 +352,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_gate_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/tesla_gate_recipe.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -282,6 +366,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "security_credentials",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java",
+          "src/main/resources/assets/scp_additions/models/item/security_credentials.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -291,6 +381,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "security_cred",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/security_cred.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -300,6 +395,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_block",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/tesla_terminal_block.json",
+          "src/main/resources/assets/scp_additions/blockstates/tesla_terminal_block.json",
+          "src/main/resources/assets/scp_additions/models/item/tesla_terminal_block.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -309,6 +412,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_rec",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/tesla_terminal_rec.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -319,6 +427,9 @@
       "locked_code": false,
       "registry_name": "terminal_tesla",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TerminalTeslaProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -350,6 +461,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla_terminal_off",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/tesla_terminal_off.json",
+          "src/main/resources/assets/scp_additions/models/block/tesla_terminal_off.json",
+          "src/main/resources/assets/scp_additions/models/item/tesla_terminal_off.json",
+          "src/main/java/net/mcreator/scpadditions/block/TeslaTerminalOffBlock.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -360,6 +479,9 @@
       "locked_code": false,
       "registry_name": "tesla_terminal_off_p",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeslaTerminalOffPProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -392,6 +514,9 @@
       "locked_code": false,
       "registry_name": "terminal_on",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TerminalOnProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -420,6 +545,9 @@
       "locked_code": false,
       "registry_name": "terminal_off",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TerminalOffProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -448,7 +576,8 @@
       "locked_code": false,
       "registry_name": "teslaGateOn",
       "metadata": {
-        "type": "logic"
+        "type": "logic",
+        "files": []
       }
     },
     {
@@ -458,6 +587,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079on",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_079on.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_079on.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_079on.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp079onBlock.java"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -467,6 +604,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079off",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_079off.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_079off.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_079off.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp079offBlock.java"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -477,6 +622,9 @@
       "locked_code": false,
       "registry_name": "scp_079on_p",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp079onPProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -505,6 +653,9 @@
       "locked_code": false,
       "registry_name": "scp_079off_p",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp079offPProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -532,6 +683,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079control",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp079controlBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_079control.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_079control.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_079control.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -541,6 +700,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079controloff",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp079controloffBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_079controloff.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_079controloff.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_079controloff.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -551,7 +718,8 @@
       "locked_code": false,
       "registry_name": "scp079controlOn",
       "metadata": {
-        "type": "logic"
+        "type": "logic",
+        "files": []
       }
     },
     {
@@ -561,6 +729,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079_system_control",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_079_system_control.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_079_system_control.json",
+          "src/main/java/net/mcreator/scpadditions/block/SCP079SystemControlBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_079_system_control.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -571,6 +747,9 @@
       "locked_code": false,
       "registry_name": "scp_079_system_control_p",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/SCP079SystemControlPProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -599,6 +778,9 @@
       "locked_code": false,
       "registry_name": "scp_079_system_control_off",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/SCP079SystemControlOffProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "world",
@@ -615,6 +797,9 @@
       "locked_code": false,
       "registry_name": "scp_079controloff_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp079controloffUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -643,6 +828,9 @@
       "locked_code": false,
       "registry_name": "scp_079controlsystemon",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp079controlsystemonProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "world",
@@ -659,6 +847,9 @@
       "locked_code": false,
       "registry_name": "scp_079controlon_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp079controlonUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -686,6 +877,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_330.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_330.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp330Block.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_330.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -695,6 +894,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_red_candy",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_330_red_candy.json",
+          "src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -704,6 +909,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_green_candy",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_330_green_candy.json",
+          "src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -713,6 +924,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_yellow_candy",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/Scp330YellowCandyItem.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_330_yellow_candy.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -722,6 +939,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_blue_candy",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_330_blue_candy.json",
+          "src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -732,6 +955,9 @@
       "locked_code": false,
       "registry_name": "red_candy",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/RedCandyProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -764,6 +990,9 @@
       "locked_code": false,
       "registry_name": "green_candy",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/GreenCandyProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -796,6 +1025,9 @@
       "locked_code": false,
       "registry_name": "yellow_candy",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/YellowCandyProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -828,6 +1060,9 @@
       "locked_code": false,
       "registry_name": "blue_candy",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BlueCandyProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -860,6 +1095,9 @@
       "locked_code": false,
       "registry_name": "scp_330_candy_drop",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp330CandyDropProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -892,6 +1130,9 @@
       "locked_code": false,
       "registry_name": "scp_330_candy_clear",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp330CandyClearProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -908,6 +1149,9 @@
       "locked_code": false,
       "registry_name": "scp_330_candy_give",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp330CandyGiveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -924,6 +1168,9 @@
       "locked_code": false,
       "registry_name": "scp_330_candy_clear_2",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp330CandyClear2Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -939,6 +1186,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_330_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_330_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -948,6 +1200,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tesla",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/tesla.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -957,6 +1214,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_079.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -966,6 +1228,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_426.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_426.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp426Block.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_426.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -976,6 +1246,9 @@
       "locked_code": false,
       "registry_name": "scp_426_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp426OnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -991,6 +1264,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_426_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_426_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -1000,6 +1278,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/SCP572Item.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_572.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -1010,6 +1294,9 @@
       "locked_code": false,
       "registry_name": "scp_572_living_entity_is_hit_with_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/SCP572LivingEntityIsHitWithItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1025,6 +1312,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_572_a_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_572_a_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -1035,6 +1327,9 @@
       "locked_code": false,
       "registry_name": "scp_572_item_in_inventory_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/SCP572ItemInInventoryTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1050,6 +1345,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_1176.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_1176.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_1176.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp1176Block.java"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -1059,6 +1362,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176honey",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_1176honey.json",
+          "src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -1068,6 +1377,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_1176_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_1176_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -1078,6 +1392,9 @@
       "locked_code": false,
       "registry_name": "scp_1176_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp1176UpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1105,6 +1422,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_additions_ach",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_additions_ach.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -1115,6 +1437,9 @@
       "locked_code": false,
       "registry_name": "blood_type_1",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BloodType1Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1129,7 +1454,12 @@
       "sortid": 112,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_type_overlay"
+      "registry_name": "blood_type_overlay",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodTypeOverlayOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodTypeOverlayDisplayOverlayIngame",
@@ -1140,6 +1470,9 @@
       "registry_name": "blood_type_overlay_display_overlay_ingame",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BloodTypeOverlayDisplayOverlayIngameProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1157,6 +1490,9 @@
       "registry_name": "overlay_opos",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayOposProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1174,6 +1510,9 @@
       "registry_name": "overlay_apos",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayAposProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1191,6 +1530,9 @@
       "registry_name": "overlay_aneg",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayAnegProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1208,6 +1550,9 @@
       "registry_name": "overlay_bpos",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayBposProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1225,6 +1570,9 @@
       "registry_name": "overlay_bneg",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayBnegProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1242,6 +1590,9 @@
       "registry_name": "overlay_a_bpos",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayABposProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1259,6 +1610,9 @@
       "registry_name": "overlay_a_bneg",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OverlayABnegProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1273,7 +1627,12 @@
       "sortid": 121,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_opos"
+      "registry_name": "blood_overlay_opos",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayOposOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodOverlayApos",
@@ -1281,7 +1640,12 @@
       "sortid": 122,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_apos"
+      "registry_name": "blood_overlay_apos",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayAposOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodOverlayAneg",
@@ -1289,7 +1653,12 @@
       "sortid": 123,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_aneg"
+      "registry_name": "blood_overlay_aneg",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayAnegOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodOverlayBpos",
@@ -1297,7 +1666,12 @@
       "sortid": 124,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_bpos"
+      "registry_name": "blood_overlay_bpos",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayBposOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodOverlayBneg",
@@ -1305,7 +1679,12 @@
       "sortid": 125,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_bneg"
+      "registry_name": "blood_overlay_bneg",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayBnegOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodOverlayABpos",
@@ -1313,7 +1692,12 @@
       "sortid": 126,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_a_bpos"
+      "registry_name": "blood_overlay_a_bpos",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayABposOverlay.java"
+        ]
+      }
     },
     {
       "name": "BloodOverlayABneg",
@@ -1321,7 +1705,12 @@
       "sortid": 127,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "blood_overlay_a_bneg"
+      "registry_name": "blood_overlay_a_bneg",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BloodOverlayABnegOverlay.java"
+        ]
+      }
     },
     {
       "name": "Scp1176honeyPlayerFinishesUsingItem",
@@ -1331,6 +1720,9 @@
       "locked_code": false,
       "registry_name": "scp_1176honey_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp1176honeyPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1363,6 +1755,9 @@
       "locked_code": false,
       "registry_name": "scp_1176_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1394,6 +1789,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "sugar",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/sugar.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -1403,6 +1803,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "honey_block",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/honey_block.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -1412,6 +1817,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_closed",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp902ClosedBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_902_closed.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_902_closed.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_902_closed.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -1421,6 +1834,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_open",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_902_open.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp902OpenBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_902_open.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_902_open.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -1431,6 +1852,9 @@
       "locked_code": false,
       "registry_name": "scp_902_closed_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp902ClosedUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1459,6 +1883,9 @@
       "locked_code": false,
       "registry_name": "scp_902_closed_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp902ClosedOnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1491,6 +1918,9 @@
       "locked_code": false,
       "registry_name": "scp_902_open_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp902OpenOnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1518,6 +1948,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_902_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_902_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -1528,6 +1963,9 @@
       "locked_code": false,
       "registry_name": "scp_additions_achievement",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/SCPAdditionsAchievementProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -1543,6 +1981,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_roff",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/button_roff.json",
+          "src/main/resources/assets/scp_additions/models/item/button_roff.json",
+          "src/main/java/net/mcreator/scpadditions/block/ButtonRoffBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/button_roff.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -1552,6 +1998,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_loff",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/button_loff.json",
+          "src/main/resources/assets/scp_additions/models/item/button_loff.json",
+          "src/main/java/net/mcreator/scpadditions/block/ButtonLoffBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/button_loff.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -1561,6 +2015,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_ron",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/button_ron.json",
+          "src/main/resources/assets/scp_additions/models/block/button_ron.json",
+          "src/main/java/net/mcreator/scpadditions/block/ButtonRonBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/button_ron.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -1570,6 +2032,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_lon",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/button_lon.json",
+          "src/main/java/net/mcreator/scpadditions/block/ButtonLonBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/button_lon.json",
+          "src/main/resources/assets/scp_additions/models/block/button_lon.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -1580,6 +2050,9 @@
       "locked_code": false,
       "registry_name": "button_roff_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ButtonRoffOnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1608,6 +2081,9 @@
       "locked_code": false,
       "registry_name": "button_loff_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ButtonLoffOnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1636,6 +2112,9 @@
       "locked_code": false,
       "registry_name": "button_ron_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ButtonRonBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1664,6 +2143,9 @@
       "locked_code": false,
       "registry_name": "button_lon_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ButtonLonBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1691,6 +2173,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/button_right.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -1700,6 +2187,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/button_left.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -1709,6 +2201,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_right_swap",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/button_right_swap.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -1718,6 +2215,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "button_left_swap",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/button_left_swap.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -1727,6 +2229,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914block",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_914block.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914block.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914blockBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914block.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1736,6 +2246,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914body",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_914body.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914body.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_914body.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914bodyBlock.java"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1745,6 +2263,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_1to_1",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_914dial_1to_1.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914dial_1to_1.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914dial_1to_1.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1754,6 +2280,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_rough",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/scp_914dial_rough.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914dial_rough.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914dial_rough.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1763,6 +2297,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_coarse",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/scp_914dial_coarse.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914dial_coarse.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914dial_coarse.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1772,6 +2314,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_fine",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/scp_914dial_fine.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914dial_fine.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_914dial_fine.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1781,6 +2331,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914dial_very_fine",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_914dial_very_fine.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914dial_very_fine.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914dial_very_fine.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1790,6 +2348,13 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_gui",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/world/inventory/Scp914GuiMenu.java",
+          "src/main/java/net/mcreator/scpadditions/client/gui/Scp914GuiScreen.java",
+          "src/main/java/net/mcreator/scpadditions/network/Scp914GuiButtonMessage.java"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1800,6 +2365,9 @@
       "locked_code": false,
       "registry_name": "scp_914to_1to_1",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914to1to1Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1829,6 +2397,9 @@
       "locked_code": false,
       "registry_name": "scp_914to_rough",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914toRoughProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1858,6 +2429,9 @@
       "locked_code": false,
       "registry_name": "scp_914to_coarse",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914toCoarseProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1887,6 +2461,9 @@
       "locked_code": false,
       "registry_name": "scp_914to_fine",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914toFineProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1916,6 +2493,9 @@
       "locked_code": false,
       "registry_name": "scp_914to_very_fine",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914toVeryFineProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -1945,6 +2525,9 @@
       "locked_code": false,
       "registry_name": "scp_914dial_rough_block_destroyed_by_player",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914dialRoughBlockDestroyedByPlayerProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "world",
@@ -1961,6 +2544,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp914clockworksBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_914clockworks.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_914clockworks.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914clockworks.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1970,6 +2561,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914clockworks_2",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp914clockworks2Block.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914clockworks_2.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914clockworks_2.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914clockworks_2.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -1980,6 +2579,9 @@
       "locked_code": false,
       "registry_name": "scp_914clockworks_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914clockworksUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2009,6 +2611,9 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914WindKeyProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2041,6 +2646,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_914_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -2068,6 +2678,9 @@
       "locked_code": false,
       "registry_name": "scp_9141to_1_player_reset",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp9141to1PlayerResetProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2085,6 +2698,9 @@
       "locked_code": false,
       "registry_name": "scp_9141to_1_player_reset_2",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp9141to1PlayerReset2Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2271,6 +2887,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/scp_914_intake.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_intake.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914IntakeBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_intake.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -2280,6 +2904,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp914OutputBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_output.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914_output.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_output.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -2290,6 +2922,9 @@
       "locked_code": false,
       "registry_name": "scp_914clockworks_2_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914clockworks2BlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2319,6 +2954,9 @@
       "locked_code": false,
       "registry_name": "scp_914clockworks_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914clockworksBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2347,6 +2985,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp914OutputDoorBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_output_door.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_output_door.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914_output_door.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -2356,6 +3002,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_output_door_closed",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/scp_914_output_door_closed.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914OutputDoorClosedBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_output_door_closed.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_output_door_closed.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -2365,6 +3019,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/scp_914_intake_door.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_intake_door.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914IntakeDoorBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_intake_door.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -2374,6 +3036,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_intake_door_closed",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_intake_door_closed.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_914_intake_door_closed.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914IntakeDoorClosedBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_intake_door_closed.json"
+        ]
+      },
       "path": "~/Scp914"
     },
     {
@@ -2384,6 +3054,9 @@
       "locked_code": false,
       "registry_name": "scp_914_output_door_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914OutputDoorUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2413,6 +3086,9 @@
       "locked_code": false,
       "registry_name": "scp_914_intake_door_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914IntakeDoorUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2442,6 +3118,9 @@
       "locked_code": false,
       "registry_name": "scp_914_output_door_closed_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914OutputDoorClosedBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2471,6 +3150,9 @@
       "locked_code": false,
       "registry_name": "scp_914_intake_door_closed_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914IntakeDoorClosedBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2500,6 +3182,9 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_coarse",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914WindKeyCoarseProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2533,6 +3218,9 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_1to_1",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914WindKey1to1Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2566,6 +3254,9 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_fine",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914WindKeyFineProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2599,6 +3290,9 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_very_fine",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914WindKeyVeryFineProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2631,23 +3325,15 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_key_wind",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_914_key_wind.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp914KeyWindBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_914_key_wind.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_914_key_wind.json"
+        ]
+      },
       "path": "~/Scp914"
-    },
-    {
-      "name": "Scp914werehouse",
-      "type": "structure",
-      "sortid": 188,
-      "compiles": true,
-      "locked_code": false,
-      "registry_name": "scp_914werehouse"
-    },
-    {
-      "name": "Scp330house",
-      "type": "structure",
-      "sortid": 189,
-      "compiles": true,
-      "locked_code": false,
-      "registry_name": "scp_330house"
     },
     {
       "name": "PlayingCard",
@@ -2656,6 +3342,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "playing_card",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java",
+          "src/main/resources/assets/scp_additions/models/item/playing_card.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -2665,6 +3357,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "credit_card",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java",
+          "src/main/resources/assets/scp_additions/models/item/credit_card.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -2674,6 +3372,17 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/forge/biome_modifier/scp_059_biome_modifier.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp059Block.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_059.json",
+          "src/main/resources/data/scp_additions/worldgen/configured_feature/scp_059.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_059.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_059.json",
+          "src/main/resources/data/scp_additions/worldgen/placed_feature/scp_059.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -2682,7 +3391,12 @@
       "sortid": 190,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "delta_radiation"
+      "registry_name": "delta_radiation",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/potion/DeltaRadiationMobEffect.java"
+        ]
+      }
     },
     {
       "name": "Scp059Adv",
@@ -2691,6 +3405,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_adv",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_059_adv.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -2701,6 +3420,9 @@
       "locked_code": false,
       "registry_name": "scp_059_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp059UpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2729,6 +3451,9 @@
       "locked_code": false,
       "registry_name": "delta_radiation_on_effect_active_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/DeltaRadiationOnEffectActiveTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2745,6 +3470,9 @@
       "locked_code": false,
       "registry_name": "scp_059inhand",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp059inhandProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2776,6 +3504,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_914_metamorphosis",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_914_metamorphosis.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -2785,6 +3518,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_rebirth",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_059_rebirth.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -2798,7 +3536,14 @@
         "eh": true,
         "el": true,
         "eb": true,
-        "ec": true
+        "ec": true,
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java",
+          "src/main/resources/assets/scp_additions/models/item/hazmat_suit_helmet.json",
+          "src/main/resources/assets/scp_additions/models/item/hazmat_suit_boots.json",
+          "src/main/resources/assets/scp_additions/models/item/hazmat_suit_chestplate.json",
+          "src/main/resources/assets/scp_additions/models/item/hazmat_suit_leggings.json"
+        ]
       },
       "path": "~/Misc"
     },
@@ -2810,6 +3555,9 @@
       "locked_code": false,
       "registry_name": "hazmat_suit_p",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/HazmatSuitPProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2826,6 +3574,9 @@
       "locked_code": false,
       "registry_name": "scp_914_refining",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914RefiningProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "world",
@@ -2842,6 +3593,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_1",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_059_1.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_059_1.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_059_1.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp0591Block.java"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -2852,6 +3611,9 @@
       "locked_code": false,
       "registry_name": "scp_0591_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp0591UpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2880,6 +3642,9 @@
       "locked_code": false,
       "registry_name": "scp_059_contained_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp059ContainedUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -2907,6 +3672,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_059_contained",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/scp_059_contained.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp059ContainedBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_059_contained.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_059_contained.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -2917,6 +3690,9 @@
       "locked_code": false,
       "registry_name": "scp_059_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp059OnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2949,6 +3725,9 @@
       "locked_code": false,
       "registry_name": "scp_059_contained_on_block_right_clicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp059ContainedOnBlockRightClickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -2980,6 +3759,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_1",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/Geiger1Item.java",
+          "src/main/resources/assets/scp_additions/models/item/geiger_1.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -2989,6 +3774,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_2",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/Geiger2Item.java",
+          "src/main/resources/assets/scp_additions/models/item/geiger_2.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -2998,6 +3789,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_3",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/Geiger3Item.java",
+          "src/main/resources/assets/scp_additions/models/item/geiger_3.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -3008,6 +3805,9 @@
       "locked_code": false,
       "registry_name": "scp_0591_entity_collides_in_the_block",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp0591EntityCollidesInTheBlockProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3039,6 +3839,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "geiger_counter",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/geiger_counter.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3048,6 +3853,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_helmet",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/hazmat_helmet.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3057,6 +3867,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_chest",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/hazmat_chest.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3066,6 +3881,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_legs",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/hazmat_legs.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3075,6 +3895,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_boots",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/hazmat_boots.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3084,6 +3909,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "hazmat_achi",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/hazmat_achi.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -3093,6 +3923,13 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_0591infected_3",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/renderer/Scp0591infected3Renderer.java",
+          "src/main/java/net/mcreator/scpadditions/entity/Scp0591infected3Entity.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_0591infected_3_spawn_egg.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -3119,6 +3956,9 @@
       "locked_code": false,
       "registry_name": "scp_059infected",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp059infectedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3135,6 +3975,9 @@
       "locked_code": false,
       "registry_name": "spray_rightclicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/SprayRightclickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3162,6 +4005,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "spray",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/spray.json",
+          "src/main/java/net/mcreator/scpadditions/item/SprayItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -3171,6 +4020,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "spray_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/spray_recipe.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3180,6 +4034,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_open",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/decon_open.json",
+          "src/main/resources/assets/scp_additions/models/item/decon_open.json",
+          "src/main/resources/assets/scp_additions/blockstates/decon_open.json",
+          "src/main/java/net/mcreator/scpadditions/block/DeconOpenBlock.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -3189,6 +4051,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_closed",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/decon_closed.json",
+          "src/main/java/net/mcreator/scpadditions/block/DeconClosedBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/decon_closed.json",
+          "src/main/resources/assets/scp_additions/blockstates/decon_closed.json"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -3199,6 +4069,9 @@
       "locked_code": false,
       "registry_name": "decon_open_update_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/DeconOpenUpdateTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3227,6 +4100,9 @@
       "locked_code": false,
       "registry_name": "decon_closed_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/DeconClosedBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3254,6 +4130,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_open_reload",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/decon_open_reload.json",
+          "src/main/resources/assets/scp_additions/blockstates/decon_open_reload.json",
+          "src/main/resources/assets/scp_additions/models/item/decon_open_reload.json",
+          "src/main/java/net/mcreator/scpadditions/block/DeconOpenReloadBlock.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -3264,6 +4148,9 @@
       "locked_code": false,
       "registry_name": "decon_open_reload_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/DeconOpenReloadBlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3290,7 +4177,10 @@
       "sortid": 222,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "sc_padditions_sc_ps"
+      "registry_name": "sc_padditions_sc_ps",
+      "metadata": {
+        "files": []
+      }
     },
     {
       "name": "DeconCheckpoint",
@@ -3300,7 +4190,8 @@
       "locked_code": false,
       "registry_name": "deconCheckpoint",
       "metadata": {
-        "type": "logic"
+        "type": "logic",
+        "files": []
       }
     },
     {
@@ -3310,6 +4201,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "decon_achievement",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/decon_achievement.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -3320,6 +4216,9 @@
       "locked_code": false,
       "registry_name": "rough_alive",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/RoughAliveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3353,6 +4252,9 @@
       "locked_code": false,
       "registry_name": "scp_914_wind_key_rough",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp914WindKeyRoughProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3386,6 +4288,9 @@
       "locked_code": false,
       "registry_name": "rough_items",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/RoughItemsProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3415,6 +4320,9 @@
       "locked_code": false,
       "registry_name": "coarse_alive",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CoarseAliveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3448,6 +4356,9 @@
       "locked_code": false,
       "registry_name": "coarse_items",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CoarseItemsProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3477,6 +4388,9 @@
       "locked_code": false,
       "registry_name": "oneto_one_alive",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OnetoOneAliveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3510,6 +4424,9 @@
       "locked_code": false,
       "registry_name": "fine_alive",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FineAliveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3543,6 +4460,9 @@
       "locked_code": false,
       "registry_name": "very_fine_alive",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/VeryFineAliveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -3576,6 +4496,9 @@
       "locked_code": false,
       "registry_name": "one_to_one_items",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/OneToOneItemsProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3605,6 +4528,9 @@
       "locked_code": false,
       "registry_name": "fine_items",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FineItemsProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3634,6 +4560,9 @@
       "locked_code": false,
       "registry_name": "very_fine_items",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/VeryFineItemsProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -3662,6 +4591,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "decontamination_checkpoint",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/decontamination_checkpoint.json"
+        ]
+      },
       "path": "~/Recipes"
     },
     {
@@ -3671,6 +4605,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_1_keycard",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/level_1_keycard.json",
+          "src/main/java/net/mcreator/scpadditions/item/Level1KeycardItem.java"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -3680,6 +4620,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_2_keycard",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/level_2_keycard.json",
+          "src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -3689,6 +4635,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_3_keycard",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/level_3_keycard.json",
+          "src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -3698,6 +4650,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_4_keycard",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/level_4_keycard.json",
+          "src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -3707,6 +4665,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_5_keycard",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/level_5_keycard.json",
+          "src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -3716,6 +4680,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_6_keycard",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/level_6_keycard.json",
+          "src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -3725,6 +4695,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "right_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/right_reader.json",
+          "src/main/resources/assets/scp_additions/models/block/right_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/RightReaderBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/right_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3734,6 +4712,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "right_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/block/right_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/RightReaderWrongBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3743,6 +4729,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "right_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/RightReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/right_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3752,6 +4746,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "left_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/left_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/LeftReaderBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/left_reader.json",
+          "src/main/resources/assets/scp_additions/models/item/left_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3761,6 +4763,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "left_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/left_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/LeftReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/left_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3770,6 +4780,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "left_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/LeftReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/block/left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/left_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3779,6 +4797,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_2_right_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/lv_2_right_reader.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_2_right_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3788,6 +4814,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_2_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_2_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_2_right_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderWrongBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3797,6 +4831,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_right_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_2_right_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/lv_2_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_2_right_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3806,6 +4848,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_2_left_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_2_left_reader.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_2_left_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3815,6 +4865,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_2_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_2_left_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_2_left_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3824,6 +4882,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_left_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_2_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_2_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_2_left_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderAcceptBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3833,6 +4899,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_3_right_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_3_right_reader.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_3_right_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3842,6 +4916,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_3_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_3_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_3_right_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderWrongBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3851,6 +4933,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_right_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_3_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_3_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_3_right_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderAcceptBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3860,6 +4950,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_reader",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_3_left_reader.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_3_left_reader.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_3_left_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3869,6 +4967,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/lv_3_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_3_left_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_3_left_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3878,6 +4984,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_left_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_3_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_3_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_3_left_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3887,6 +5001,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_4_right_reader.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_4_right_reader.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_4_right_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3896,6 +5018,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_4_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_4_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_4_right_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderWrongBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3905,6 +5035,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_right_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_4_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_4_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_4_right_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderAcceptBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3914,6 +5052,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_4_left_reader.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_4_left_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_4_left_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3923,6 +5069,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_4_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_4_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_4_left_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3932,6 +5086,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_left_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/lv_4_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_4_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_4_left_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3941,6 +5103,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_reader",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_5_right_reader.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_5_right_reader.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_5_right_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3950,6 +5120,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_5_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_5_right_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_5_right_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3959,6 +5137,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_right_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_5_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_5_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_5_right_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderAcceptBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3968,6 +5154,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_reader",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_5_left_reader.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_5_left_reader.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_5_left_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3977,6 +5171,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_5_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_5_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_5_left_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderWrongBlock.java"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3986,6 +5188,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_left_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_5_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_5_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_5_left_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -3995,6 +5205,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_6_right_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_6_right_reader.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_6_right_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -4004,6 +5222,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_6_right_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_6_right_reader_wrong.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_6_right_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -4013,6 +5239,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_right_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/blockstates/lv_6_right_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_6_right_reader_accept.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_6_right_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -4022,6 +5256,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_reader",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/lv_6_left_reader.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_6_left_reader.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/lv_6_left_reader.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -4031,6 +5273,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_reader_wrong",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderWrongBlock.java",
+          "src/main/resources/assets/scp_additions/blockstates/lv_6_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/item/lv_6_left_reader_wrong.json",
+          "src/main/resources/assets/scp_additions/models/block/lv_6_left_reader_wrong.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -4040,6 +5290,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_left_reader_accept",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/block/lv_6_left_reader_accept.json",
+          "src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderAcceptBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/lv_6_left_reader_accept.json",
+          "src/main/resources/assets/scp_additions/blockstates/lv_6_left_reader_accept.json"
+        ]
+      },
       "path": "~/Keycards/Keycard Readers"
     },
     {
@@ -4048,7 +5306,10 @@
       "sortid": 261,
       "compiles": true,
       "locked_code": false,
-      "registry_name": "sc_padditions_keycards"
+      "registry_name": "sc_padditions_keycards",
+      "metadata": {
+        "files": []
+      }
     },
     {
       "name": "Lv1RightWrong",
@@ -4058,6 +5319,9 @@
       "locked_code": false,
       "registry_name": "lv_1_right_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1RightWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4087,6 +5351,9 @@
       "locked_code": false,
       "registry_name": "lv_left_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/LvLeftWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4116,6 +5383,9 @@
       "locked_code": false,
       "registry_name": "lv_2_right_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2RightWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4145,6 +5415,9 @@
       "locked_code": false,
       "registry_name": "lv_2_left_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2LeftWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4174,6 +5447,9 @@
       "locked_code": false,
       "registry_name": "lv_3_right_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3RightWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4203,6 +5479,9 @@
       "locked_code": false,
       "registry_name": "lv_3_left_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3LeftWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4232,6 +5511,9 @@
       "locked_code": false,
       "registry_name": "lv_4_right_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4RightWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4261,6 +5543,9 @@
       "locked_code": false,
       "registry_name": "lv_4_left_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4LeftWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4290,6 +5575,9 @@
       "locked_code": false,
       "registry_name": "lv_5_right_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5RightWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4319,6 +5607,9 @@
       "locked_code": false,
       "registry_name": "lv_5_left_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5LeftWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4348,6 +5639,9 @@
       "locked_code": false,
       "registry_name": "lv_6_right_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6RightWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4377,6 +5671,9 @@
       "locked_code": false,
       "registry_name": "lv_6_left_wrong",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6LeftWrongProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4406,6 +5703,9 @@
       "locked_code": false,
       "registry_name": "lv_1_right_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1RightWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4435,6 +5735,9 @@
       "locked_code": false,
       "registry_name": "lv_1_left_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1LeftWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4464,6 +5767,9 @@
       "locked_code": false,
       "registry_name": "lv_2_right_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2RightWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4493,6 +5799,9 @@
       "locked_code": false,
       "registry_name": "lv_2_left_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2LeftWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4522,6 +5831,9 @@
       "locked_code": false,
       "registry_name": "lv_3_right_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3RightWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4551,6 +5863,9 @@
       "locked_code": false,
       "registry_name": "lv_3_left_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3LeftWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4580,6 +5895,9 @@
       "locked_code": false,
       "registry_name": "lv_4_right_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4RightWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4609,6 +5927,9 @@
       "locked_code": false,
       "registry_name": "lv_4_left_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4LeftWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4638,6 +5959,9 @@
       "locked_code": false,
       "registry_name": "lv_5_right_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5RightWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4667,6 +5991,9 @@
       "locked_code": false,
       "registry_name": "lv_5_left_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5LeftWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4696,6 +6023,9 @@
       "locked_code": false,
       "registry_name": "lv_6_right_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6RightWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4725,6 +6055,9 @@
       "locked_code": false,
       "registry_name": "lv_6_left_wrong_tick",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6LeftWrongTickProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4754,6 +6087,9 @@
       "locked_code": false,
       "registry_name": "lv_1_right_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1RightAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4783,6 +6119,9 @@
       "locked_code": false,
       "registry_name": "lv_1_left_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1LeftAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4812,6 +6151,9 @@
       "locked_code": false,
       "registry_name": "lv_2_right_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2RightAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4841,6 +6183,9 @@
       "locked_code": false,
       "registry_name": "lv_2_left_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2LeftAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4870,6 +6215,9 @@
       "locked_code": false,
       "registry_name": "lv_3_right_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3RightAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4899,6 +6247,9 @@
       "locked_code": false,
       "registry_name": "lv_3_left_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3LeftAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4928,6 +6279,9 @@
       "locked_code": false,
       "registry_name": "lv_4_right_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4RightAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4957,6 +6311,9 @@
       "locked_code": false,
       "registry_name": "lv_4_left_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4LeftAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -4986,6 +6343,9 @@
       "locked_code": false,
       "registry_name": "lv_5_right_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5RightAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5015,6 +6375,9 @@
       "locked_code": false,
       "registry_name": "lv_5_left_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5LeftAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5044,6 +6407,9 @@
       "locked_code": false,
       "registry_name": "lv_6_right_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6RightAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5073,6 +6439,9 @@
       "locked_code": false,
       "registry_name": "lv_6_left_accept",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6LeftAcceptProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5102,6 +6471,9 @@
       "locked_code": false,
       "registry_name": "lv_1_right",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1RightProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5135,6 +6507,9 @@
       "locked_code": false,
       "registry_name": "lv_1_left",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv1LeftProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5168,6 +6543,9 @@
       "locked_code": false,
       "registry_name": "lv_2_right",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2RightProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5201,6 +6579,9 @@
       "locked_code": false,
       "registry_name": "lv_2_left",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv2LeftProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5234,6 +6615,9 @@
       "locked_code": false,
       "registry_name": "lv_3_right",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3RightProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5267,6 +6651,9 @@
       "locked_code": false,
       "registry_name": "lv_3_left",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv3LeftProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5300,6 +6687,9 @@
       "locked_code": false,
       "registry_name": "lv_4_right",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4RightProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5333,6 +6723,9 @@
       "locked_code": false,
       "registry_name": "lv_4_left",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv4LeftProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5366,6 +6759,9 @@
       "locked_code": false,
       "registry_name": "lv_5_right",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5RightProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5399,6 +6795,9 @@
       "locked_code": false,
       "registry_name": "lv_5_left",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv5LeftProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5432,6 +6831,9 @@
       "locked_code": false,
       "registry_name": "lv_6_right",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6RightProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5465,6 +6867,9 @@
       "locked_code": false,
       "registry_name": "lv_6_left",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Lv6LeftProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5497,6 +6902,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "pieces_of_paper",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/pieces_of_paper.json",
+          "src/main/java/net/mcreator/scpadditions/item/PiecesOfPaperItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -5506,6 +6917,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "coin",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/coin.json",
+          "src/main/java/net/mcreator/scpadditions/item/CoinItem.java"
+        ]
+      },
       "path": "~/Misc"
     },
     {
@@ -5515,6 +6932,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_079control_achi",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/advancements/scp_079control_achi.json"
+        ]
+      },
       "path": "~/Achivements"
     },
     {
@@ -5525,6 +6947,9 @@
       "locked_code": false,
       "registry_name": "very_fine_items_2",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/VeryFineItems2Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5553,6 +6978,15 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_294",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/scp_294.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_294.json",
+          "src/main/java/net/mcreator/scpadditions/block/Scp294Block.java",
+          "src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_294.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -5562,6 +6996,15 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_294_out_of_range",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp294OutOfRangeBlock.java",
+          "src/main/resources/assets/scp_additions/models/block/scp_294_out_of_range.json",
+          "src/main/resources/assets/scp_additions/models/item/scp_294_out_of_range.json",
+          "src/main/resources/assets/scp_additions/blockstates/scp_294_out_of_range.json",
+          "src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -5571,6 +7014,15 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_294_stocking",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/block/Scp294StockingBlock.java",
+          "src/main/resources/assets/scp_additions/models/item/scp_294_stocking.json",
+          "src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java",
+          "src/main/resources/assets/scp_additions/blockstates/scp_294_stocking.json",
+          "src/main/resources/assets/scp_additions/models/block/scp_294_stocking.json"
+        ]
+      },
       "path": "~/SCPs"
     },
     {
@@ -5580,6 +7032,14 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "scp_294_gui",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/gui/Scp294GuiScreen.java",
+          "src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java",
+          "src/main/java/net/mcreator/scpadditions/network/Scp294GuiSlotMessage.java",
+          "src/main/java/net/mcreator/scpadditions/network/Scp294GuiButtonMessage.java"
+        ]
+      },
       "path": "~/Scp294Procedures"
     },
     {
@@ -5590,6 +7050,9 @@
       "locked_code": false,
       "registry_name": "scp_294drink_give",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294drinkGiveProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5626,6 +7089,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "empty_cup",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/empty_cup.json",
+          "src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5635,6 +7104,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cup_of_coffee",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CoffeeItem.java",
+          "src/main/resources/assets/scp_additions/models/item/cup_of_coffee.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5645,6 +7120,9 @@
       "locked_code": false,
       "registry_name": "coffee_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CoffeePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5662,6 +7140,9 @@
       "locked_code": false,
       "registry_name": "scp_294_out_of_range_procedure",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294OutOfRangeProcedureProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5691,6 +7172,9 @@
       "locked_code": false,
       "registry_name": "scp_294restock",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294restockProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5720,6 +7204,9 @@
       "locked_code": false,
       "registry_name": "scp_294restock_2",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294restock2Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5749,6 +7236,9 @@
       "locked_code": false,
       "registry_name": "scp_294_block_added",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294BlockAddedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "x",
@@ -5777,6 +7267,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cup_of_alcohol",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/Drink1Item.java",
+          "src/main/resources/assets/scp_additions/models/item/cup_of_alcohol.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5787,6 +7283,9 @@
       "locked_code": false,
       "registry_name": "drink_1_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Drink1PlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5803,6 +7302,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "ethanol",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/EthanolItem.java",
+          "src/main/resources/assets/scp_additions/models/item/ethanol.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5812,6 +7317,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "spirit",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/spirit.json",
+          "src/main/java/net/mcreator/scpadditions/item/SpiritItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5821,6 +7332,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "vodka",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/vodka.json",
+          "src/main/java/net/mcreator/scpadditions/item/VodkaItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5830,6 +7347,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "aloe",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/AloeItem.java",
+          "src/main/resources/assets/scp_additions/models/item/aloe.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5840,6 +7363,9 @@
       "locked_code": false,
       "registry_name": "aloe_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/AloePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5856,6 +7382,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cactus",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CactusItem.java",
+          "src/main/resources/assets/scp_additions/models/item/cactus.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5865,6 +7397,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "amnesia",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/AmnesiaItem.java",
+          "src/main/resources/assets/scp_additions/models/item/amnesia.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5875,6 +7413,9 @@
       "locked_code": false,
       "registry_name": "amnesia_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/AmnesiaPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5891,6 +7432,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "anti_energy",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/anti_energy.json",
+          "src/main/java/net/mcreator/scpadditions/item/AntiEnergyItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5901,6 +7448,9 @@
       "locked_code": false,
       "registry_name": "anti_energy_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/AntiEnergyPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5917,6 +7467,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "aqua_regia",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/AquaRegiaItem.java",
+          "src/main/resources/assets/scp_additions/models/item/aqua_regia.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5927,6 +7483,9 @@
       "locked_code": false,
       "registry_name": "aqua_regia_rightclicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/AquaRegiaRightclickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5943,6 +7502,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "beer",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/BeerItem.java",
+          "src/main/resources/assets/scp_additions/models/item/beer.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5953,6 +7518,9 @@
       "locked_code": false,
       "registry_name": "beer_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BeerPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5969,6 +7537,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lager",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/LagerItem.java",
+          "src/main/resources/assets/scp_additions/models/item/lager.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -5979,6 +7553,9 @@
       "locked_code": false,
       "registry_name": "lager_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/LagerPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -5995,6 +7572,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "corrosive_black",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/corrosive_black.json",
+          "src/main/java/net/mcreator/scpadditions/item/CorrosiveBlackItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6005,6 +7588,9 @@
       "locked_code": false,
       "registry_name": "corrosive_black_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CorrosiveBlackPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6025,6 +7611,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "bleach",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/bleach.json",
+          "src/main/java/net/mcreator/scpadditions/item/BleachItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6035,6 +7627,9 @@
       "locked_code": false,
       "registry_name": "bleach_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BleachPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6055,6 +7650,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/blood.json",
+          "src/main/java/net/mcreator/scpadditions/item/BloodItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6065,6 +7666,9 @@
       "locked_code": false,
       "registry_name": "blood_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BloodPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6081,6 +7685,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "blood_of_christ",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/BloodOfChristItem.java",
+          "src/main/resources/assets/scp_additions/models/item/blood_of_christ.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6091,6 +7701,9 @@
       "locked_code": false,
       "registry_name": "blood_of_christ_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BloodOfChristPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6107,6 +7720,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "grimace_shake",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/GrimaceShakeItem.java",
+          "src/main/resources/assets/scp_additions/models/item/grimace_shake.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6117,6 +7736,9 @@
       "locked_code": false,
       "registry_name": "grimace_shake_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/GrimaceShakePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6138,6 +7760,9 @@
       "locked_code": false,
       "registry_name": "scp_294_coin_slot",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294CoinSlotProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6171,6 +7796,9 @@
       "locked_code": false,
       "registry_name": "scp_294_coin_slot_2",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294CoinSlot2Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "world",
@@ -6187,6 +7815,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "quantum",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/quantum.json",
+          "src/main/java/net/mcreator/scpadditions/item/QuantumItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6197,6 +7831,9 @@
       "locked_code": false,
       "registry_name": "quantum_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/QuantumPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6229,6 +7866,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "carbon",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/carbon.json",
+          "src/main/java/net/mcreator/scpadditions/item/CarbonItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6239,6 +7882,9 @@
       "locked_code": false,
       "registry_name": "carbon_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CarbonPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6255,6 +7901,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cassis_fanta",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CassisFantaItem.java",
+          "src/main/resources/assets/scp_additions/models/item/cassis_fanta.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6265,6 +7917,9 @@
       "locked_code": false,
       "registry_name": "cassis_fanta_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CassisFantaPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6281,6 +7936,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "carrot",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/carrot.json",
+          "src/main/java/net/mcreator/scpadditions/item/CarrotItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6291,6 +7952,9 @@
       "locked_code": false,
       "registry_name": "carrot_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CarrotPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6307,6 +7971,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "champagne",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/champagne.json",
+          "src/main/java/net/mcreator/scpadditions/item/ChampagneItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6317,6 +7987,9 @@
       "locked_code": false,
       "registry_name": "champagne_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ChampagnePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6333,6 +8006,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "chim",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/ChimItem.java",
+          "src/main/resources/assets/scp_additions/models/item/chim.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6343,6 +8022,9 @@
       "locked_code": false,
       "registry_name": "chim_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ChimPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6363,6 +8045,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cider",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/cider.json",
+          "src/main/java/net/mcreator/scpadditions/item/CiderItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6373,6 +8061,9 @@
       "locked_code": false,
       "registry_name": "cider_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CiderPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6389,6 +8080,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "apple_cider",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/AppleCiderItem.java",
+          "src/main/resources/assets/scp_additions/models/item/apple_cider.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6398,6 +8095,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "pear_cider",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/pear_cider.json",
+          "src/main/java/net/mcreator/scpadditions/item/PearCiderItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6407,6 +8110,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "chocolate",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/chocolate.json",
+          "src/main/java/net/mcreator/scpadditions/item/ChocolateItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6417,6 +8126,9 @@
       "locked_code": false,
       "registry_name": "chocolate_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ChocolatePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6433,6 +8145,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cocaine",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/cocaine.json",
+          "src/main/java/net/mcreator/scpadditions/item/CocaineItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6443,6 +8161,9 @@
       "locked_code": false,
       "registry_name": "cocaine_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CocainePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6460,6 +8181,9 @@
       "locked_code": false,
       "registry_name": "scp_294drink_give_2",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294drinkGive2Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6496,6 +8220,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "coconut",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CoconutItem.java",
+          "src/main/resources/assets/scp_additions/models/item/coconut.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6506,6 +8236,9 @@
       "locked_code": false,
       "registry_name": "coconut_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CoconutPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6522,6 +8255,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cola",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/ColaItem.java",
+          "src/main/resources/assets/scp_additions/models/item/cola.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6532,6 +8271,9 @@
       "locked_code": false,
       "registry_name": "cola_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ColaPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6548,6 +8290,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cold",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/ColdItem.java",
+          "src/main/resources/assets/scp_additions/models/item/cold.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6558,6 +8306,9 @@
       "locked_code": false,
       "registry_name": "cold_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ColdPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6574,6 +8325,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "cosmopolitan",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CosmopolitanItem.java",
+          "src/main/resources/assets/scp_additions/models/item/cosmopolitan.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6584,6 +8341,9 @@
       "locked_code": false,
       "registry_name": "cosmopolitan_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CosmopolitanPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6600,6 +8360,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "courage",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/courage.json",
+          "src/main/java/net/mcreator/scpadditions/item/CourageItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6610,6 +8376,9 @@
       "locked_code": false,
       "registry_name": "courage_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CouragePlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6626,6 +8395,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "curry",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/CurryItem.java",
+          "src/main/resources/assets/scp_additions/models/item/curry.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6636,6 +8411,9 @@
       "locked_code": false,
       "registry_name": "curry_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CurryPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6652,6 +8430,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "death",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/death.json",
+          "src/main/java/net/mcreator/scpadditions/item/DeathItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6662,6 +8446,9 @@
       "locked_code": false,
       "registry_name": "death_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/DeathPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6678,6 +8465,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "eggs",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/EggsItem.java",
+          "src/main/resources/assets/scp_additions/models/item/eggs.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6688,6 +8481,9 @@
       "locked_code": false,
       "registry_name": "eggs_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/EggsPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6704,6 +8500,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "neutronium",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/neutronium.json",
+          "src/main/java/net/mcreator/scpadditions/item/NeutroniumItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6714,6 +8516,9 @@
       "locked_code": false,
       "registry_name": "neutronium_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/NeutroniumPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6730,6 +8535,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "energy_drink",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/EnergyDrinkItem.java",
+          "src/main/resources/assets/scp_additions/models/item/energy_drink.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6740,6 +8551,9 @@
       "locked_code": false,
       "registry_name": "energy_drink_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/EnergyDrinkPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6760,6 +8574,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "espresso",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/espresso.json",
+          "src/main/java/net/mcreator/scpadditions/item/EspressoItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6770,6 +8590,9 @@
       "locked_code": false,
       "registry_name": "espresso_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/EspressoPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6786,6 +8609,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "estus",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/EstusItem.java",
+          "src/main/resources/assets/scp_additions/models/item/estus.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6796,6 +8625,9 @@
       "locked_code": false,
       "registry_name": "estus_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/EstusPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6812,6 +8644,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "champion",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/ChampionItem.java",
+          "src/main/resources/assets/scp_additions/models/item/champion.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6822,6 +8660,9 @@
       "locked_code": false,
       "registry_name": "champion_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/ChampionPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6842,6 +8683,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "fear",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/fear.json",
+          "src/main/java/net/mcreator/scpadditions/item/FearItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6852,6 +8699,9 @@
       "locked_code": false,
       "registry_name": "fear_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FearPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6872,6 +8722,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "feces",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/FecesItem.java",
+          "src/main/resources/assets/scp_additions/models/item/feces.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6882,6 +8738,9 @@
       "locked_code": false,
       "registry_name": "feces_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FecesPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6898,6 +8757,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "feces_and_blood",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/FecesAndBloodItem.java",
+          "src/main/resources/assets/scp_additions/models/item/feces_and_blood.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6908,6 +8773,9 @@
       "locked_code": false,
       "registry_name": "feces_and_blood_rightclicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FecesAndBloodRightclickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6924,6 +8792,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "gin",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/gin.json",
+          "src/main/java/net/mcreator/scpadditions/item/GinItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6934,6 +8808,9 @@
       "locked_code": false,
       "registry_name": "gin_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/GinPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6950,6 +8827,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "glass",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/glass.json",
+          "src/main/java/net/mcreator/scpadditions/item/GlassItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6960,6 +8843,9 @@
       "locked_code": false,
       "registry_name": "glass_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/GlassPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -6980,6 +8866,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "glass_c",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/glass_c.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6989,6 +8880,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "gold_c",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/gold_c.json",
+          "src/main/java/net/mcreator/scpadditions/item/GoldCItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -6999,6 +8896,9 @@
       "locked_code": false,
       "registry_name": "gold_c_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/GoldCPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7019,6 +8919,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "gold_cc",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/gold_cc.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7028,6 +8933,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "grog",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/GrogItem.java",
+          "src/main/resources/assets/scp_additions/models/item/grog.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7037,6 +8948,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "happiness",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/HappinessItem.java",
+          "src/main/resources/assets/scp_additions/models/item/happiness.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7047,6 +8964,9 @@
       "locked_code": false,
       "registry_name": "happiness_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/HappinessPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7067,6 +8987,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "heroin",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/HeroinItem.java",
+          "src/main/resources/assets/scp_additions/models/item/heroin.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7077,6 +9003,9 @@
       "locked_code": false,
       "registry_name": "heroin_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/HeroinPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7097,6 +9026,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "morphine",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/MorphineItem.java",
+          "src/main/resources/assets/scp_additions/models/item/morphine.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7106,6 +9041,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "honey",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/honey.json",
+          "src/main/java/net/mcreator/scpadditions/item/HoneyItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7116,6 +9057,9 @@
       "locked_code": false,
       "registry_name": "honey_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/HoneyPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7132,6 +9076,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "hot",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/HotItem.java",
+          "src/main/resources/assets/scp_additions/models/item/hot.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7142,10 +9092,17 @@
       "locked_code": false,
       "registry_name": "hot_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/HotPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
             "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
           }
         ]
       },
@@ -7158,6 +9115,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "tea",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/tea.json",
+          "src/main/java/net/mcreator/scpadditions/item/TeaItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7168,6 +9131,9 @@
       "locked_code": false,
       "registry_name": "tea_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/TeaPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7184,6 +9150,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "corrosive_acid",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/corrosive_acid.json",
+          "src/main/java/net/mcreator/scpadditions/item/CorrosiveAcidItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7194,6 +9166,9 @@
       "locked_code": false,
       "registry_name": "corrosive_acid_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/CorrosiveAcidPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7210,6 +9185,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "ice_cream",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/ice_cream.json",
+          "src/main/java/net/mcreator/scpadditions/item/IceCreamItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7220,6 +9201,9 @@
       "locked_code": false,
       "registry_name": "ice_cream_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/IceCreamPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7236,6 +9220,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "nuclear",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/NuclearOverlay.java"
+        ]
+      },
       "path": "~/Scp294Procedures"
     },
     {
@@ -7247,6 +9236,9 @@
       "registry_name": "nuclear_display_overlay_ingame",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/NuclearDisplayOverlayIngameProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7263,6 +9255,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "fear_overlay",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/FearOverlayOverlay.java"
+        ]
+      },
       "path": "~/Scp294Procedures"
     },
     {
@@ -7274,6 +9271,9 @@
       "registry_name": "fear_overlay_display_overlay_ingame",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FearOverlayDisplayOverlayIngameProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7290,6 +9290,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "black_hole",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/client/screens/BlackHoleOverlay.java"
+        ]
+      },
       "path": "~/Scp294Procedures"
     },
     {
@@ -7301,6 +9306,9 @@
       "registry_name": "black_hole_display_overlay_ingame",
       "metadata": {
         "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/BlackHoleDisplayOverlayIngameProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7318,6 +9326,9 @@
       "locked_code": false,
       "registry_name": "scp_294drink_give_3",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/Scp294drinkGive3Procedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7354,6 +9365,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "frozen_yogurt",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/FrozenYogurtItem.java",
+          "src/main/resources/assets/scp_additions/models/item/frozen_yogurt.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7364,6 +9381,9 @@
       "locked_code": false,
       "registry_name": "frozen_yogurt_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/FrozenYogurtPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7380,6 +9400,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "yogurt",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/YogurtItem.java",
+          "src/main/resources/assets/scp_additions/models/item/yogurt.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7390,6 +9416,9 @@
       "locked_code": false,
       "registry_name": "yogurt_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/YogurtPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7406,6 +9435,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "ink",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/InkItem.java",
+          "src/main/resources/assets/scp_additions/models/item/ink.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7416,6 +9451,9 @@
       "locked_code": false,
       "registry_name": "ink_rightclicked",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/InkRightclickedProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7432,6 +9470,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "insulin",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/InsulinItem.java",
+          "src/main/resources/assets/scp_additions/models/item/insulin.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7442,6 +9486,9 @@
       "locked_code": false,
       "registry_name": "insulin_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/InsulinPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7462,6 +9509,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "ipecac",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/item/IpecacItem.java",
+          "src/main/resources/assets/scp_additions/models/item/ipecac.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7472,6 +9525,9 @@
       "locked_code": false,
       "registry_name": "ipecac_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/IpecacPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7492,6 +9548,12 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "iron_c",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/scp_additions/models/item/iron_c.json",
+          "src/main/java/net/mcreator/scpadditions/item/IronCItem.java"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7502,6 +9564,9 @@
       "locked_code": false,
       "registry_name": "iron_c_player_finishes_using_item",
       "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/scpadditions/procedures/IronCPlayerFinishesUsingItemProcedure.java"
+        ],
         "dependencies": [
           {
             "name": "entity",
@@ -7518,6 +9583,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "iron_cc",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/iron_cc.json"
+        ]
+      },
       "path": "~/Scp294Procedures/Drinks"
     },
     {
@@ -7527,6 +9597,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_1_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/level_1_recipe.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7536,6 +9611,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_2_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/level_2_recipe.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7545,6 +9625,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_3_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/level_3_recipe.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7554,6 +9639,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_4_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/level_4_recipe.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7563,6 +9653,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_5_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/level_5_recipe.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7572,6 +9667,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "level_6_recipe",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/level_6_recipe.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7581,6 +9681,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_kr_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_1_kr_right.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7590,6 +9695,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_kr_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_1_kr_left.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7599,6 +9709,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_kr_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_2_kr_right.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7608,6 +9723,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_kr_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_2_kr_left.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7617,6 +9737,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_kr_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_3_kr_right.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7626,6 +9751,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_kr_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_3_kr_left.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7635,6 +9765,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_kr_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_4_kr_right.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7644,6 +9779,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_kr_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_4_kr_left.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7653,6 +9793,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_kr_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_5_kr_right.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7662,6 +9807,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_kr_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_5_kr_left.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7671,6 +9821,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_kr_right",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_6_kr_right.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7680,6 +9835,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_kr_left",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_6_kr_left.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7689,6 +9849,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_rto_l",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_1_rto_l.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7698,6 +9863,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_1_lto_r",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_1_lto_r.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7707,6 +9877,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_rto_l",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_2_rto_l.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7716,6 +9891,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_2_lto_r",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_2_lto_r.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7725,6 +9905,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_rto_l",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_3_rto_l.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7734,6 +9919,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_3_lto_r",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_3_lto_r.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7743,6 +9933,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_rto_l",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_4_rto_l.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7752,6 +9947,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_4_lto_r",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_4_lto_r.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7761,6 +9961,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_rto_l",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_5_rto_l.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7770,6 +9975,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_5_lto_r",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_5_lto_r.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7779,6 +9989,11 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_rto_l",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_6_rto_l.json"
+        ]
+      },
       "path": "~/Keycards"
     },
     {
@@ -7788,7 +10003,44 @@
       "compiles": true,
       "locked_code": false,
       "registry_name": "lv_6_lto_r",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/recipes/lv_6_lto_r.json"
+        ]
+      },
       "path": "~/Keycards"
+    },
+    {
+      "name": "Scp914werehouseFeature",
+      "type": "feature",
+      "sortid": 479,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_914werehouse_feature",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/forge/biome_modifier/scp_914werehouse_feature_biome_modifier.json",
+          "src/main/resources/data/scp_additions/worldgen/configured_feature/scp_914werehouse_feature.json",
+          "src/main/resources/data/scp_additions/worldgen/placed_feature/scp_914werehouse_feature.json"
+        ],
+        "has_nbt_structure": true
+      }
+    },
+    {
+      "name": "Scp330houseFeature",
+      "type": "feature",
+      "sortid": 478,
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "scp_330house_feature",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/scp_additions/worldgen/placed_feature/scp_330house_feature.json",
+          "src/main/resources/data/scp_additions/forge/biome_modifier/scp_330house_feature_biome_modifier.json",
+          "src/main/resources/data/scp_additions/worldgen/configured_feature/scp_330house_feature.json"
+        ],
+        "has_nbt_structure": true
+      }
     }
   ],
   "variable_elements": [
@@ -8369,20 +10621,23 @@
     "en_us": {
       "item.scp_additions.empty_cup": "Paper Cup",
       "death.attack.scp914veryfine": "%s turned into [REDACTED] and died later after being \"refined\" by SCP-914 on the \"Very Fine\" setting.",
-      "item.scp_additions.tea": "Cup of Green Tea",
       "item.scp_additions.scp_0591infected_3_spawn_egg": "infectedthree Spawn Egg",
+      "item.scp_additions.tea": "Cup of Green Tea",
       "item.scp_additions.morphine": "Cup of Morphine",
       "block.scp_additions.scp_914body": "SCP-914 body",
       "advancements.scp_059_rebirth.title": "In the blue light of heaven",
       "item.scp_additions.fear": "Cup of Fear",
       "subtitles.scp079_1": "SCP-079 noise",
       "block.scp_additions.lv_6_left_reader_accept": "Level 6 Keycard Reader (Left) Accepted",
+      "gui.scp_additions.blood_overlay_a_bneg.label_blood_type_ab": "Blood Type: AB-",
+      "gui.scp_additions.blood_overlay_a_bpos.label_blood_type_ab": "Blood Type: AB+",
       "block.scp_additions.right_reader": "Level 1 Keycard Reader (Right)",
       "item.scp_additions.aloe": "Cup of Aloe Vera",
       "death.attack.quantum": "The throat and internal organs of %s froze and exploded.",
-      "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
-      "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
+      "gui.scp_additions.blood_overlay_aneg.label_blood_type_a": "Blood Type: A-",
       "death.attack.scp572": "%s fell victim to their confidence in SCP-572.",
+      "death.attack.scp330": "%s bled out after taking more than two candies from SCP-330.",
+      "block.scp_additions.lv_2_right_reader_wrong": "Level 2 Keycard Reader (Right) Denied",
       "gamerule.deconCheckpoint.description": "If enabled, Decontamination Checkpoints will save your spawnpoint when you walk through them.",
       "subtitles.scp079_2": "SCP-079 noise",
       "item.scp_additions.gold_c": "Cup of Gold",
@@ -8396,8 +10651,8 @@
       "block.scp_additions.scp_914_output_door_closed": "SCP-914 Output Door Closed",
       "block.scp_additions.lv_3_left_reader": "Level 3 Keycard Reader (Left)",
       "item.scp_additions.scp_330_yellow_candy": "Yellow Candy from SCP-330",
-      "block.scp_additions.scp_914_intake": "SCP-914 Intake",
       "death.attack.scp1176": "%s fell for the curse from SCP-1176.",
+      "block.scp_additions.scp_914_intake": "SCP-914 Intake",
       "block.scp_additions.scp_914_intake_door_closed": "SCP-914 Intake Door Closed",
       "item.scp_additions.cosmopolitan": "Cup of Cosmopolitan Cocktail",
       "item.scp_additions.blood": "Cup of blood",
@@ -8405,14 +10660,16 @@
       "gamerule.scp079controlOn": "SCP-079 remote control",
       "item.scp_additions.security_credentials": "Security Credentials",
       "advancements.scp_914_achievement.descr": "Used SCP-914",
+      "gui.scp_additions.blood_overlay_apos.label_blood_type_a": "Blood Type: A+",
+      "gui.scp_additions.tesla_terminal.label_tesla_gate_terminal": "Tesla Gate Terminal",
       "block.scp_additions.tesla_recharge": "Tesla Gate",
       "item.scp_additions.hot": "Cup of Hot",
       "block.scp_additions.right_reader_accept": "Level 1 Keycard Reader (Right) Accepted",
       "item.scp_additions.curry": "Cup of Curry sauce",
       "advancements.tesla.title": "Fried and Gone",
       "block.scp_additions.button_loff": "Button (Left)",
-      "item.scp_additions.anti_energy": "Cup of Anti-Energy",
       "block.scp_additions.lv_3_right_reader_accept": "Level 3 Keycard Reader (Right) Accepted",
+      "item.scp_additions.anti_energy": "Cup of Anti-Energy",
       "item.scp_additions.blood_of_christ": "Cup of blood of Christ",
       "item.scp_additions.energy_drink": "Cup of energy drink",
       "block.scp_additions.button_ron": "Button (Right) ON",
@@ -8420,17 +10677,19 @@
       "subtitles.doorclosing": "Door closing",
       "advancements.scp_079control_achi.title": "Unleashing the AI",
       "block.scp_additions.scp_294_stocking": "SCP-294",
-      "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
       "block.scp_additions.lv_4_left_reader": "Level 4 Keycard Reader (Left)",
+      "block.scp_additions.lv_6_left_reader": "Level 6 Keycard Reader (Left)",
       "death.attack.heroin": "%s died from heroin poisoning.",
       "block.scp_additions.scp_902_closed": "SCP-902",
       "block.scp_additions.lv_5_right_reader_wrong": "Level 5 Keycard Reader (Right) Denied",
       "item.scp_additions.death": "Cup of Death",
       "item.scp_additions.estus": "Cup of Estus",
+      "gui.scp_additions.scp_914_gui.button_very_fine": "Very Fine",
       "item.scp_additions.happiness": "Cup of Happiness",
       "subtitles.scp059box": "SCP-059 Containment Box",
       "item.scp_additions.corrosive_acid": "Cup of Corrosive Acid",
       "death.attack.acid": "%s insides were melted in corrosive acid. ",
+      "gui.scp_additions.scp_294_gui.scp294input": "Enter your order",
       "death.attack.nuclear": "%s died from SCP-294\u0027s nuclear explosion.",
       "block.scp_additions.lv_2_right_reader": "Level 2 Keycard Reader (Right)",
       "advancements.decon_achievement.descr": "Pass through a Decontamination Checkpoint.",
@@ -8442,10 +10701,12 @@
       "subtitles.scp1176": "SCP-1176 curse",
       "death.attack.iron": "%s died after drinking molten iron.",
       "subtitles.scp294pouring": "SCP-294 pouring liquid",
+      "gui.scp_additions.tesla_terminal.button_tesla_gate_off": "Tesla Gate Off",
       "item.scp_additions.amnesia": "Cup of Amnesia",
       "block.scp_additions.scp_914clockworks_2": "SCP-914 Clockworks",
       "block.scp_additions.lv_4_right_reader": "Level 4 Keycard Reader (Right)",
       "gamerule.teslaGateOn": "If Tesla Gates are on",
+      "item_group.scp_additions.sc_padditions_keycards": "SCP Additions Keycards",
       "block.scp_additions.lv_3_left_reader_wrong": "Level 3 Keycard Reader (Left) Denied",
       "death.attack.scp914fine": "%s died to heart attack after being \"refined\" by SCP-914 on the \"Fine\" setting.",
       "block.scp_additions.left_reader": "Level 1 Keycard Reader (Left)",
@@ -8465,6 +10726,7 @@
       "item.scp_additions.level_2_keycard": "Level 2 Keycard",
       "subtitles.scp294outofrange": "SCP-294 out of range",
       "block.scp_additions.scp_079on": "SCP-079",
+      "gui.scp_additions.scp_294_gui.label_coin": "Coin",
       "subtitles.scp914key": "Winding SCP-914\u0027s key",
       "block.scp_additions.lv_4_right_reader_accept": "Level 4 Keycard Reader (Right) Accepted",
       "item.scp_additions.chocolate": "Cup of Chocolate",
@@ -8488,6 +10750,7 @@
       "item.scp_additions.eggs": "Cup of eggs",
       "block.scp_additions.scp_1176": "SCP-1176",
       "item.scp_additions.champagne": "Cup of Champagne",
+      "gui.scp_additions.scp_914_gui.button_11": "1:1",
       "block.scp_additions.scp_914block": "SCP-914 Block",
       "death.attack.fear": "%s died of heart attack out of extreme fear.",
       "subtitles.scp914refining": "SCP-914 refining",
@@ -8502,6 +10765,7 @@
       "subtitles.accessdenied": "Access Denied",
       "item.scp_additions.geiger_1": "Geiger Counter",
       "item.scp_additions.ink": "Cup of Ink",
+      "item_group.scp_additions.sc_padditions_sc_ps": "SCP Additions SCPs",
       "item.scp_additions.geiger_2": "Geiger Counter",
       "item.scp_additions.geiger_3": "Geiger Counter",
       "subtitles.scp294coinslot": "SCP-294 coin slot",
@@ -8513,8 +10777,12 @@
       "subtitles.candyeat": "Eating candy",
       "entity.scp_additions.scp_0591infected_3": "infectedthree",
       "item.scp_additions.yogurt": "Cup of Yogurt",
+      "gui.scp_additions.tesla_terminal.button_tesla_gate_on": "Tesla Gate On",
+      "gui.scp_additions.blood_overlay_opos.label_blood_type_o": "Blood Type: O+",
       "item.scp_additions.cassis_fanta": "Cup of Cassis Fanta",
+      "gui.scp_additions.scp_294_gui.label_scp294": "SCP-294",
       "block.scp_additions.tesla_active_3": "Tesla Gate AC3",
+      "gui.scp_additions.scp_294_gui.button_enter": "Enter",
       "block.scp_additions.tesla_active_2": "Tesla Gate AC2",
       "subtitles.terminalon": "Tesla Terminal On",
       "block.scp_additions.tesla_active_4": "Tesla Gate AC4",
@@ -8532,9 +10800,11 @@
       "item.scp_additions.hazmat_suit_leggings": "Hazmat Suit Leggings",
       "item.scp_additions.chim": "Cup of Chim",
       "block.scp_additions.scp_079control": "Scp-079 Control (ON)",
+      "gui.scp_additions.blood_overlay_bneg.label_blood_type_b": "Blood Type: B-",
       "subtitles.scp294on": "SCP-294 on",
       "block.scp_additions.decon_closed": "DeconClosed",
       "advancements.scp_1176_achievement.title": "Cursed Honey",
+      "gui.scp_additions.blood_overlay_bpos.label_blood_type_b": "Blood Type: B+",
       "item.scp_additions.heroin": "Cup of Heroin",
       "gamerule.scp079controlOn.description": "If SCP-079 has control over the facility",
       "advancements.tesla.descr": "Electrifying exit! You\u0027ve earned a shocking send-off.",
@@ -8548,6 +10818,7 @@
       "block.scp_additions.right_reader_wrong": "Level 1 Keycard Reader (Right) Denied",
       "block.scp_additions.scp_426": "SCP-426",
       "death.attack.carbon": "%s died from severe burns, asphyxiation, and internal bleeding.",
+      "gui.scp_additions.scp_914_gui.button_coarse": "Coarse",
       "block.scp_additions.scp_914dial_1to_1": "SCP-914 dial",
       "death.attack.quantum2": "%s was caught in a gas explosion.",
       "itemGroup.tabscp_additions": "SCP Additions Misc",
@@ -8562,6 +10833,7 @@
       "block.scp_additions.scp_914dial_rough": "SCP-914 dial",
       "death.attack.void": "%s died from SCP-294\u0027s explosion.",
       "subtitles.scp294enter": "SCP-294 enter key",
+      "gui.scp_additions.tesla_terminal.button_log_out": "Log out",
       "item.scp_additions.honey": "Cup of Honey",
       "block.scp_additions.lv_3_right_reader_wrong": "Level 3 Keycard Reader (Right) Denied",
       "item.scp_additions.champion": "Cup of Eternal Champion",
@@ -8584,8 +10856,10 @@
       "block.scp_additions.scp_902_open": "SCP-902",
       "advancements.scp_914_achievement.title": "Anomalous Refinery",
       "gamerule.teslaGateOn.description": "If true, then the Tesla Gates are functional, can be swapped through the Tesla Gate Terminal",
+      "gui.scp_additions.blood_type_overlay.label_blood_type_o": "Blood Type: O-",
       "block.scp_additions.button_roff": "Button (Right)",
       "death.attack.gravitons": "%s collapsed into a singularity and ceased to exist.",
+      "item_group.scp_additions.scp_additions": "SCP Additions Misc",
       "block.scp_additions.scp_914_intake_door": "SCP-914 Intake Door",
       "advancements.scp_059_rebirth.descr": "Got infected with SCP-059-1.",
       "item.scp_additions.neutronium": "Cup of Neutronium",
@@ -8595,6 +10869,8 @@
       "block.scp_additions.tesla_active": "Tesla Gate AC1",
       "advancements.scp_902_achievement.title": "What\u0027s Inside the Box?",
       "block.scp_additions.decon_open": "Decontamination Checkpoint",
+      "effect.scp_additions.delta_radiation": "Delta Radiation",
+      "gui.scp_additions.scp_914_gui.button_fine": "Fine",
       "advancements.scp_426_achievement.descr": "Found SCP-426.",
       "item.scp_additions.hazmat_suit_helmet": "Hazmat Suit Helmet",
       "block.scp_additions.scp_079_system_control": "SCP-079 System Control",
@@ -8602,6 +10878,7 @@
       "item.scp_additions.level_6_keycard": "Level 6 Keycard",
       "subtitles.stomach": "Stomach ache",
       "item.scp_additions.carbon": "Cup of Carbon",
+      "gui.scp_additions.scp_914_gui.button_rough": "Rough",
       "item.scp_additions.scp_330_blue_candy": "Blue Candy from SCP-330",
       "subtitles.scp902opening": "SCP-902 opening",
       "subtitles.scp914doorclose": "SCP-914 door closing",
@@ -8734,7 +11011,7 @@
   "workspaceSettings": {
     "modid": "scp_additions",
     "modName": "SCP Additions",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "author": "Bl4ues, MCreator",
     "websiteURL": "https://mcreator.net",
     "license": "Creative Commons Sharealike 3.0",
@@ -8747,14 +11024,11 @@
       "kleiders_custom_renderer"
     ],
     "dependants": [],
-    "mcreatorDependencies": [
-      "kleidersplayerrenderer",
-      "just_enough_items"
-    ],
-    "currentGenerator": "forge-1.16.5",
+    "mcreatorDependencies": [],
+    "currentGenerator": "forge-1.20.1",
     "credits": "Created using mod maker MCreator - https://mcreator.net/about",
     "modElementsPackage": "net.mcreator.scpadditions",
     "lockBaseModFiles": false
   },
-  "mcreatorVersion": 202200234517
+  "mcreatorVersion": 202300452316
 }

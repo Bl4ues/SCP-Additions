@@ -1,6 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_additions:items/buttontext"
-  }
+    "layer0": "scp_additions:item/buttontext"
+  },
+  "render_type": "translucent"
 }

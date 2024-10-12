@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp294stocking",
   "textures": {
-    "all": "scp_additions:blocks/scp294",
-    "particle": "scp_additions:blocks/scp294",
-    "0": "scp_additions:blocks/scp294_stocking"
-  }
+    "all": "scp_additions:block/scp294",
+    "particle": "scp_additions:block/scp294",
+    "0": "scp_additions:block/scp294_stocking"
+  },
+  "render_type": "solid"
 }

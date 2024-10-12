@@ -1,9 +1,10 @@
 {
   "parent": "scp_additions:custom/scp079off",
   "textures": {
-    "all": "scp_additions:blocks/079body",
-    "particle": "scp_additions:blocks/079body",
-    "0": "scp_additions:blocks/079body",
-    "1": "scp_additions:blocks/079faceoff"
-  }
+    "all": "scp_additions:block/079body",
+    "particle": "scp_additions:block/079body",
+    "0": "scp_additions:block/079body",
+    "1": "scp_additions:block/079faceoff"
+  },
+  "render_type": "cutout"
 }

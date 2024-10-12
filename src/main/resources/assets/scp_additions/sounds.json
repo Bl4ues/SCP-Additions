@@ -1,6 +1,5 @@
 {
   "teslaactivate": {
-    "category": "hostile",
     "subtitle": "subtitles.teslaactivate",
     "sounds": [
       {
@@ -10,7 +9,6 @@
     ]
   },
   "teslaready": {
-    "category": "hostile",
     "subtitle": "subtitles.teslaready",
     "sounds": [
       {
@@ -20,7 +18,6 @@
     ]
   },
   "teslarecharge": {
-    "category": "hostile",
     "subtitle": "subtitles.teslarecharge",
     "sounds": [
       {
@@ -30,7 +27,6 @@
     ]
   },
   "click": {
-    "category": "neutral",
     "subtitle": "subtitles.click",
     "sounds": [
       {
@@ -40,7 +36,6 @@
     ]
   },
   "terminalon": {
-    "category": "neutral",
     "subtitle": "subtitles.terminalon",
     "sounds": [
       {
@@ -50,7 +45,6 @@
     ]
   },
   "terminaloff": {
-    "category": "neutral",
     "subtitle": "subtitles.terminaloff",
     "sounds": [
       {
@@ -60,7 +54,6 @@
     ]
   },
   "scp079_1": {
-    "category": "hostile",
     "subtitle": "subtitles.scp079_1",
     "sounds": [
       {
@@ -70,7 +63,6 @@
     ]
   },
   "candyeat": {
-    "category": "hostile",
     "subtitle": "subtitles.candyeat",
     "sounds": [
       {
@@ -80,7 +72,6 @@
     ]
   },
   "candy": {
-    "category": "hostile",
     "subtitle": "subtitles.candy",
     "sounds": [
       {
@@ -90,7 +81,6 @@
     ]
   },
   "scp330death": {
-    "category": "hostile",
     "subtitle": "subtitles.scp330death",
     "sounds": [
       {
@@ -100,7 +90,6 @@
     ]
   },
   "scp1176": {
-    "category": "music",
     "subtitle": "subtitles.scp1176",
     "sounds": [
       {
@@ -110,7 +99,6 @@
     ]
   },
   "scp902": {
-    "category": "hostile",
     "subtitle": "subtitles.scp902",
     "sounds": [
       {
@@ -120,7 +108,6 @@
     ]
   },
   "scp902closing": {
-    "category": "hostile",
     "subtitle": "subtitles.scp902closing",
     "sounds": [
       {
@@ -130,7 +117,6 @@
     ]
   },
   "scp902opening": {
-    "category": "hostile",
     "subtitle": "subtitles.scp902opening",
     "sounds": [
       {
@@ -140,7 +126,6 @@
     ]
   },
   "scp079_2": {
-    "category": "hostile",
     "subtitle": "subtitles.scp079_2",
     "sounds": [
       {
@@ -150,7 +135,6 @@
     ]
   },
   "button": {
-    "category": "neutral",
     "subtitle": "subtitles.button",
     "sounds": [
       {
@@ -160,7 +144,6 @@
     ]
   },
   "scp914doorclose": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914doorclose",
     "sounds": [
       {
@@ -170,7 +153,6 @@
     ]
   },
   "scp914dooropen": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914dooropen",
     "sounds": [
       {
@@ -180,7 +162,6 @@
     ]
   },
   "scp914key": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914key",
     "sounds": [
       {
@@ -190,7 +171,6 @@
     ]
   },
   "scp914refining": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914refining",
     "sounds": [
       {
@@ -200,7 +180,6 @@
     ]
   },
   "scp914dial": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914dial",
     "sounds": [
       {
@@ -210,7 +189,6 @@
     ]
   },
   "scp914inside": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914inside",
     "sounds": [
       {
@@ -220,7 +198,6 @@
     ]
   },
   "scp914death": {
-    "category": "neutral",
     "subtitle": "subtitles.scp914death",
     "sounds": [
       {
@@ -230,7 +207,6 @@
     ]
   },
   "scp059box": {
-    "category": "neutral",
     "subtitle": "subtitles.scp059box",
     "sounds": [
       {
@@ -240,7 +216,6 @@
     ]
   },
   "geiger2": {
-    "category": "neutral",
     "subtitle": "subtitles.geiger2",
     "sounds": [
       {
@@ -250,7 +225,6 @@
     ]
   },
   "geiger1": {
-    "category": "neutral",
     "subtitle": "subtitles.geiger1",
     "sounds": [
       {
@@ -260,7 +234,6 @@
     ]
   },
   "scp059_1": {
-    "category": "neutral",
     "subtitle": "subtitles.scp059_1",
     "sounds": [
       {
@@ -270,7 +243,6 @@
     ]
   },
   "geiger3": {
-    "category": "neutral",
     "subtitle": "subtitles.geiger3",
     "sounds": [
       {
@@ -280,7 +252,6 @@
     ]
   },
   "spray": {
-    "category": "neutral",
     "subtitle": "subtitles.spray",
     "sounds": [
       {
@@ -290,7 +261,6 @@
     ]
   },
   "decontamination": {
-    "category": "neutral",
     "subtitle": "subtitles.decontamination",
     "sounds": [
       {
@@ -300,7 +270,6 @@
     ]
   },
   "dooropen": {
-    "category": "neutral",
     "subtitle": "subtitles.dooropen",
     "sounds": [
       {
@@ -310,7 +279,6 @@
     ]
   },
   "doorclosing": {
-    "category": "neutral",
     "subtitle": "subtitles.doorclosing",
     "sounds": [
       {
@@ -320,7 +288,6 @@
     ]
   },
   "accessgranted": {
-    "category": "neutral",
     "subtitle": "subtitles.accessgranted",
     "sounds": [
       {
@@ -330,7 +297,6 @@
     ]
   },
   "accessdenied": {
-    "category": "neutral",
     "subtitle": "subtitles.accessdenied",
     "sounds": [
       {
@@ -340,7 +306,6 @@
     ]
   },
   "scp294enter": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294enter",
     "sounds": [
       {
@@ -350,7 +315,6 @@
     ]
   },
   "scp294pouring": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294pouring",
     "sounds": [
       {
@@ -360,7 +324,6 @@
     ]
   },
   "scp294emptycup": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294emptycup",
     "sounds": [
       {
@@ -370,7 +333,6 @@
     ]
   },
   "scp294outofrange": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294outofrange",
     "sounds": [
       {
@@ -380,7 +342,6 @@
     ]
   },
   "scp294on": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294on",
     "sounds": [
       {
@@ -390,7 +351,6 @@
     ]
   },
   "scp294off": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294off",
     "sounds": [
       {
@@ -400,7 +360,6 @@
     ]
   },
   "scp294coinslot": {
-    "category": "neutral",
     "subtitle": "subtitles.scp294coinslot",
     "sounds": [
       {
@@ -410,7 +369,6 @@
     ]
   },
   "heartbeat": {
-    "category": "neutral",
     "subtitle": "subtitles.heartbeat",
     "sounds": [
       {
@@ -420,7 +378,6 @@
     ]
   },
   "nuclear": {
-    "category": "neutral",
     "subtitle": "subtitles.nuclear",
     "sounds": [
       {
@@ -430,7 +387,6 @@
     ]
   },
   "gravitons": {
-    "category": "neutral",
     "subtitle": "subtitles.gravitons",
     "sounds": [
       {
@@ -440,7 +396,6 @@
     ]
   },
   "stomach": {
-    "category": "neutral",
     "subtitle": "subtitles.stomach",
     "sounds": [
       {

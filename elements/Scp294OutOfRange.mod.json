@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "block",
   "definition": {
     "texture": "scp294",
@@ -34,9 +34,11 @@
       }
     ],
     "name": "SCP-294",
-    "specialInfo": [
-      "The Coffee Machine"
-    ],
+    "specialInformation": {
+      "fixedValue": [
+        "The Coffee Machine"
+      ]
+    },
     "hardness": 40.0,
     "resistance": 40.0,
     "hasGravity": false,
@@ -101,13 +103,7 @@
     "luminance": 0,
     "unbreakable": false,
     "breakHarvestLevel": 1,
-    "spawnParticles": false,
-    "particleToSpawn": {
-      "value": "EXPLOSION_NORMAL"
-    },
-    "particleSpawningShape": "Spread",
-    "particleSpawningRadious": 0.5,
-    "particleAmount": 4,
+    "isBonemealable": false,
     "hasInventory": true,
     "guiBoundTo": "Scp294Gui",
     "openGUIOnRightClick": false,
@@ -128,11 +124,20 @@
     "onTickUpdate": {
       "name": "Scp294OutOfRangeProcedure"
     },
-    "spawnWorldTypes": [],
+    "generateFeature": false,
     "restrictionBiomes": [],
     "blocksToReplace": [
       {
-        "value": "Blocks.STONE"
+        "value": "Blocks.STONE#0"
+      },
+      {
+        "value": "Blocks.STONE#1"
+      },
+      {
+        "value": "Blocks.STONE#3"
+      },
+      {
+        "value": "Blocks.STONE#5"
       }
     ],
     "generationShape": "UNIFORM",

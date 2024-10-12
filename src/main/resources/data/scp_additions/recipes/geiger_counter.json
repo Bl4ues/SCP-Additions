@@ -1,33 +1,28 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "pattern": [
-    "01 ",
-    "345",
-    "678"
+    "aa ",
+    "bcd",
+    "ebf"
   ],
   "key": {
-    "0": {
+    "a": {
       "item": "minecraft:stick"
     },
-    "1": {
-      "item": "minecraft:stick"
-    },
-    "3": {
+    "b": {
       "item": "minecraft:iron_ingot"
     },
-    "4": {
+    "c": {
       "item": "minecraft:redstone"
     },
-    "5": {
+    "d": {
       "item": "minecraft:yellow_dye"
     },
-    "6": {
+    "e": {
       "item": "minecraft:iron_block"
     },
-    "7": {
-      "item": "minecraft:iron_ingot"
-    },
-    "8": {
+    "f": {
       "item": "minecraft:redstone_torch"
     }
   },

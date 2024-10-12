@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "gui",
   "definition": {
     "type": 1,
@@ -14,9 +14,9 @@
         "type": "textfield",
         "data": {
           "placeholder": "Enter your order",
+          "name": "scp294input",
           "width": 120,
           "height": 20,
-          "name": "scp294input",
           "x": 141,
           "y": 62
         }
@@ -24,12 +24,14 @@
       {
         "type": "label",
         "data": {
-          "text": "SCP-294",
+          "name": "label_scp294",
+          "text": {
+            "fixedValue": "SCP-294"
+          },
           "color": {
             "value": -12829636,
             "falpha": 0.0
           },
-          "name": "SCP-294",
           "x": 194,
           "y": 45
         }
@@ -37,13 +39,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_enter",
           "text": "Enter",
+          "isUndecorated": false,
           "onClick": {
             "name": "Scp294drinkGive"
           },
           "width": 51,
           "height": 20,
-          "name": "Enter",
           "x": 234,
           "y": 85
         }
@@ -54,8 +57,13 @@
           "inputLimit": {
             "value": "CUSTOM:Coin"
           },
+          "disablePlacement": {
+            "fixedValue": false
+          },
           "id": 0,
-          "disableStackInteraction": false,
+          "disablePickup": {
+            "fixedValue": false
+          },
           "dropItemsWhenNotBound": false,
           "onSlotChanged": {
             "name": "Scp294CoinSlot2"
@@ -66,7 +74,6 @@
           "onStackTransfer": {
             "name": "Scp294CoinSlot2"
           },
-          "name": "Slot #0",
           "x": 267,
           "y": 63
         }
@@ -74,12 +81,14 @@
       {
         "type": "label",
         "data": {
-          "text": "Coin",
+          "name": "label_coin",
+          "text": {
+            "fixedValue": "Coin"
+          },
           "color": {
             "value": -12829636,
             "falpha": 0.0
           },
-          "name": "Coin",
           "x": 265,
           "y": 49
         }

@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp426",
   "textures": {
-    "all": "scp_additions:blocks/scp426",
-    "particle": "scp_additions:blocks/scp426",
-    "0": "scp_additions:blocks/scp426"
-  }
+    "all": "scp_additions:block/scp426",
+    "particle": "scp_additions:block/scp426",
+    "0": "scp_additions:block/scp426"
+  },
+  "render_type": "cutout"
 }

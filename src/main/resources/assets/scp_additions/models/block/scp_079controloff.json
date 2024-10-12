@@ -1,12 +1,13 @@
 {
   "parent": "block/cube",
   "textures": {
-    "down": "scp_additions:blocks/scp079control",
-    "up": "scp_additions:blocks/scp079control",
-    "north": "scp_additions:blocks/scp079control",
-    "east": "scp_additions:blocks/scp079control",
-    "south": "scp_additions:blocks/scp079control",
-    "west": "scp_additions:blocks/scp079control",
-    "particle": "scp_additions:blocks/scp079control"
-  }
+    "down": "scp_additions:block/scp079control",
+    "up": "scp_additions:block/scp079control",
+    "north": "scp_additions:block/scp079control",
+    "east": "scp_additions:block/scp079control",
+    "south": "scp_additions:block/scp079control",
+    "west": "scp_additions:block/scp079control",
+    "particle": "scp_additions:block/scp079control"
+  },
+  "render_type": "cutout_mipped"
 }

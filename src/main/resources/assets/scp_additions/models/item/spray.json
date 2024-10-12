@@ -1,7 +1,7 @@
 {
   "parent": "scp_additions:custom/spray",
   "textures": {
-    "0": "scp_additions:blocks/spray",
-    "particle": "scp_additions:items/spray"
+    "0": "scp_additions:block/spray",
+    "particle": "scp_additions:item/spray"
   }
 }

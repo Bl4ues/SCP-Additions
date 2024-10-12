@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp914intakedooropened",
   "textures": {
-    "all": "scp_additions:blocks/scp914door",
-    "particle": "scp_additions:blocks/scp914door",
-    "0": "scp_additions:blocks/scp914door"
-  }
+    "all": "scp_additions:block/scp914door",
+    "particle": "scp_additions:block/scp914door",
+    "0": "scp_additions:block/scp914door"
+  },
+  "render_type": "cutout"
 }

@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp059",
   "textures": {
-    "all": "scp_additions:blocks/scp059",
-    "particle": "scp_additions:blocks/scp059",
-    "0": "scp_additions:blocks/scp059"
-  }
+    "all": "scp_additions:block/scp059",
+    "particle": "scp_additions:block/scp059",
+    "0": "scp_additions:block/scp059"
+  },
+  "render_type": "cutout"
 }

@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "block",
   "definition": {
     "texture": "tesla",
@@ -20,7 +20,7 @@
     "isItemTinted": false,
     "hasTransparency": true,
     "connectedSides": false,
-    "transparencyType": "SOLID",
+    "transparencyType": "CUTOUT",
     "disableOffset": false,
     "boundingBoxes": [
       {
@@ -97,7 +97,9 @@
       }
     ],
     "name": "Tesla Gate AC3",
-    "specialInfo": [],
+    "specialInformation": {
+      "fixedValue": []
+    },
     "hardness": 30.0,
     "resistance": 100.0,
     "hasGravity": false,
@@ -162,13 +164,7 @@
     "luminance": 0,
     "unbreakable": false,
     "breakHarvestLevel": 1,
-    "spawnParticles": true,
-    "particleToSpawn": {
-      "value": "FIREWORKS_SPARK"
-    },
-    "particleSpawningShape": "Spread",
-    "particleSpawningRadious": 1.0,
-    "particleAmount": 30,
+    "isBonemealable": false,
     "hasInventory": false,
     "guiBoundTo": "<NONE>",
     "openGUIOnRightClick": false,
@@ -189,11 +185,20 @@
     "onBlockAdded": {
       "name": "TeslaActive3B"
     },
-    "spawnWorldTypes": [],
+    "generateFeature": false,
     "restrictionBiomes": [],
     "blocksToReplace": [
       {
-        "value": "Blocks.STONE"
+        "value": "Blocks.STONE#0"
+      },
+      {
+        "value": "Blocks.STONE#1"
+      },
+      {
+        "value": "Blocks.STONE#3"
+      },
+      {
+        "value": "Blocks.STONE#5"
       }
     ],
     "generationShape": "UNIFORM",

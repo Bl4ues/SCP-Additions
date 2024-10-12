@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "overlay",
   "definition": {
     "priority": "HIGHEST",
@@ -7,7 +7,10 @@
       {
         "type": "label",
         "data": {
-          "text": "Blood Type: AB+",
+          "name": "label_blood_type_ab",
+          "text": {
+            "fixedValue": "Blood Type: AB+"
+          },
           "color": {
             "value": -65536,
             "falpha": 0.0
@@ -15,7 +18,7 @@
           "displayCondition": {
             "name": "OverlayABpos"
           },
-          "name": "Blood Type: AB+",
+          "anchorPoint": "CENTER",
           "x": 5,
           "y": 225
         }

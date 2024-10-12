@@ -1,111 +1,72 @@
 package net.mcreator.scpadditions.procedures;
 
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
 
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.DamageSource;
-import net.minecraft.potion.Effects;
-import net.minecraft.potion.EffectInstance;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.BlockPos;
 
-import net.mcreator.scpadditions.ScpAdditionsModVariables;
+import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.Map;
-
 public class Scp1176honeyPlayerFinishesUsingItemProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("world") == null) {
-			if (!dependencies.containsKey("world"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency world for procedure Scp1176honeyPlayerFinishesUsingItem!");
+	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
+		if (entity == null)
 			return;
-		}
-		if (dependencies.get("x") == null) {
-			if (!dependencies.containsKey("x"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency x for procedure Scp1176honeyPlayerFinishesUsingItem!");
-			return;
-		}
-		if (dependencies.get("y") == null) {
-			if (!dependencies.containsKey("y"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency y for procedure Scp1176honeyPlayerFinishesUsingItem!");
-			return;
-		}
-		if (dependencies.get("z") == null) {
-			if (!dependencies.containsKey("z"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency z for procedure Scp1176honeyPlayerFinishesUsingItem!");
-			return;
-		}
-		if (dependencies.get("entity") == null) {
-			if (!dependencies.containsKey("entity"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency entity for procedure Scp1176honeyPlayerFinishesUsingItem!");
-			return;
-		}
-		IWorld world = (IWorld) dependencies.get("world");
-		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
-		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
-		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
-		Entity entity = (Entity) dependencies.get("entity");
-		if ((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null)
-				.orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
-			if (entity instanceof LivingEntity)
-				((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.SATURATION, (int) 12000, (int) 10, (false), (false)));
-			if (entity instanceof LivingEntity) {
-				((LivingEntity) entity).removePotionEffect(Effects.POISON);
-			}
+		if ((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+				_entity.addEffect(new MobEffectInstance(MobEffects.SATURATION, 12000, 10, false, false));
+			if (entity instanceof LivingEntity _entity)
+				_entity.removeEffect(MobEffects.POISON);
 		} else {
-			if (world instanceof World && !world.isRemote()) {
-				((World) world).playSound(null, new BlockPos(x, y, z),
-						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp1176")),
-						SoundCategory.MUSIC, (float) 1, (float) 1);
-			} else {
-				((World) world).playSound(x, y, z,
-						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp1176")),
-						SoundCategory.MUSIC, (float) 1, (float) 1, false);
+			if (world instanceof Level _level) {
+				if (!_level.isClientSide()) {
+					_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp1176")), SoundSource.MUSIC, 1, 1);
+				} else {
+					_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp1176")), SoundSource.MUSIC, 1, 1, false);
+				}
 			}
-			if (entity instanceof LivingEntity)
-				((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.POISON, (int) 1360, (int) 10, (false), (false)));
-			if (entity instanceof LivingEntity)
-				((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.HUNGER, (int) 1360, (int) 1, (false), (false)));
-			if (entity instanceof LivingEntity)
-				((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.BLINDNESS, (int) 1360, (int) 1, (false), (false)));
-			if (entity instanceof LivingEntity)
-				((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.SLOWNESS, (int) 1360, (int) 3, (false), (false)));
-			new Object() {
-				private int ticks = 0;
-				private float waitTicks;
-				private IWorld world;
-
-				public void start(IWorld world, int waitTicks) {
-					this.waitTicks = waitTicks;
-					MinecraftForge.EVENT_BUS.register(this);
-					this.world = world;
-				}
-
-				@SubscribeEvent
-				public void tick(TickEvent.ServerTickEvent event) {
-					if (event.phase == TickEvent.Phase.END) {
-						this.ticks += 1;
-						if (this.ticks >= this.waitTicks)
-							run();
-					}
-				}
-
-				private void run() {
-					if (entity instanceof LivingEntity) {
-						((LivingEntity) entity).attackEntityFrom(new DamageSource("scp1176").setDamageBypassesArmor(), (float) 50);
-					}
-					MinecraftForge.EVENT_BUS.unregister(this);
-				}
-			}.start(world, (int) 1360);
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+				_entity.addEffect(new MobEffectInstance(MobEffects.POISON, 1360, 10, false, false));
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+				_entity.addEffect(new MobEffectInstance(MobEffects.HUNGER, 1360, 1, false, false));
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+				_entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 1360, 1, false, false));
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+				_entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1360, 3, false, false));
+			ScpAdditionsMod.queueServerWork(1360, () -> {
+				if (entity instanceof LivingEntity _entity)
+					_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
+						@Override
+						public Component getLocalizedDeathMessage(LivingEntity _msgEntity) {
+							String _translatekey = "death.attack." + "scp1176";
+							if (this.getEntity() == null && this.getDirectEntity() == null) {
+								return _msgEntity.getKillCredit() != null
+										? Component.translatable(_translatekey + ".player", _msgEntity.getDisplayName(), _msgEntity.getKillCredit().getDisplayName())
+										: Component.translatable(_translatekey, _msgEntity.getDisplayName());
+							} else {
+								Component _component = this.getEntity() == null ? this.getDirectEntity().getDisplayName() : this.getEntity().getDisplayName();
+								ItemStack _itemstack = ItemStack.EMPTY;
+								if (this.getEntity() instanceof LivingEntity _livingentity)
+									_itemstack = _livingentity.getMainHandItem();
+								return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+										? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
+										: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
+							}
+						}
+					}, 50);
+			});
 		}
 	}
 }

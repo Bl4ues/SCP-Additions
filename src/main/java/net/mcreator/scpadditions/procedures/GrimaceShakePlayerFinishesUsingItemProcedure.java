@@ -1,64 +1,44 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
-
-import net.minecraft.world.IWorld;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.Map;
-
 public class GrimaceShakePlayerFinishesUsingItemProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("world") == null) {
-			if (!dependencies.containsKey("world"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency world for procedure GrimaceShakePlayerFinishesUsingItem!");
+	public static void execute(LevelAccessor world, Entity entity) {
+		if (entity == null)
 			return;
-		}
-		if (dependencies.get("entity") == null) {
-			if (!dependencies.containsKey("entity"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency entity for procedure GrimaceShakePlayerFinishesUsingItem!");
-			return;
-		}
-		IWorld world = (IWorld) dependencies.get("world");
-		Entity entity = (Entity) dependencies.get("entity");
-		if (entity instanceof PlayerEntity && !entity.world.isRemote()) {
-			((PlayerEntity) entity).sendStatusMessage(new StringTextComponent("\"This doesn't taste so bad at a-\""), (true));
-		}
-		new Object() {
-			private int ticks = 0;
-			private float waitTicks;
-			private IWorld world;
-
-			public void start(IWorld world, int waitTicks) {
-				this.waitTicks = waitTicks;
-				MinecraftForge.EVENT_BUS.register(this);
-				this.world = world;
-			}
-
-			@SubscribeEvent
-			public void tick(TickEvent.ServerTickEvent event) {
-				if (event.phase == TickEvent.Phase.END) {
-					this.ticks += 1;
-					if (this.ticks >= this.waitTicks)
-						run();
-				}
-			}
-
-			private void run() {
-				if (entity instanceof LivingEntity) {
-					((LivingEntity) entity).attackEntityFrom(new DamageSource("grimace").setDamageBypassesArmor(), (float) 50);
-				}
-				MinecraftForge.EVENT_BUS.unregister(this);
-			}
-		}.start(world, (int) 40);
+		if (entity instanceof Player _player && !_player.level().isClientSide())
+			_player.displayClientMessage(Component.literal("\"This doesn't taste so bad at a-\""), true);
+		ScpAdditionsMod.queueServerWork(40, () -> {
+			if (entity instanceof LivingEntity _entity)
+				_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
+					@Override
+					public Component getLocalizedDeathMessage(LivingEntity _msgEntity) {
+						String _translatekey = "death.attack." + "grimace";
+						if (this.getEntity() == null && this.getDirectEntity() == null) {
+							return _msgEntity.getKillCredit() != null
+									? Component.translatable(_translatekey + ".player", _msgEntity.getDisplayName(), _msgEntity.getKillCredit().getDisplayName())
+									: Component.translatable(_translatekey, _msgEntity.getDisplayName());
+						} else {
+							Component _component = this.getEntity() == null ? this.getDirectEntity().getDisplayName() : this.getEntity().getDisplayName();
+							ItemStack _itemstack = ItemStack.EMPTY;
+							if (this.getEntity() instanceof LivingEntity _livingentity)
+								_itemstack = _livingentity.getMainHandItem();
+							return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+									? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
+									: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
+						}
+					}
+				}, 50);
+		});
 	}
 }

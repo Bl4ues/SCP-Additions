@@ -1,10 +1,12 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "item",
   "definition": {
     "renderType": 1,
     "texture": "tx6",
     "customModelName": "keycard6:default",
+    "customProperties": {},
+    "states": [],
     "name": "Level 6 Keycard",
     "rarity": "COMMON",
     "creativeTab": {
@@ -24,13 +26,16 @@
     "damageOnCrafting": false,
     "enableMeleeDamage": false,
     "damageVsEntity": 0.0,
-    "specialInfo": [
-      "Cosmic Top Secret (CTS)."
-    ],
-    "hasGlow": false,
+    "specialInformation": {
+      "fixedValue": [
+        "Cosmic Top Secret (CTS)."
+      ]
+    },
     "guiBoundTo": "<NONE>",
     "inventorySize": 9,
     "inventoryStackSize": 64,
+    "enableRanged": false,
+    "shootConstantly": false,
     "isFood": false,
     "nutritionalValue": 4,
     "saturation": 0.3,

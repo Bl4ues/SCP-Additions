@@ -1,6 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_additions:items/scp294text"
-  }
+    "layer0": "scp_additions:item/scp294text"
+  },
+  "render_type": "translucent"
 }

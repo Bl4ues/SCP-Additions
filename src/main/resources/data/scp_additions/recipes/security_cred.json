@@ -1,37 +1,23 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "pattern": [
-    "012",
-    "345",
-    "678"
+    "abc",
+    "ddd",
+    "bbb"
   ],
   "key": {
-    "0": {
+    "a": {
       "item": "minecraft:black_wool"
     },
-    "1": {
+    "b": {
       "item": "minecraft:redstone"
     },
-    "2": {
+    "c": {
       "item": "minecraft:blue_wool"
     },
-    "3": {
+    "d": {
       "item": "minecraft:paper"
-    },
-    "4": {
-      "item": "minecraft:paper"
-    },
-    "5": {
-      "item": "minecraft:paper"
-    },
-    "6": {
-      "item": "minecraft:redstone"
-    },
-    "7": {
-      "item": "minecraft:redstone"
-    },
-    "8": {
-      "item": "minecraft:redstone"
     }
   },
   "result": {

@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp914dialfine",
   "textures": {
-    "all": "scp_additions:blocks/scp914dial",
-    "particle": "scp_additions:blocks/scp914dial",
-    "0": "scp_additions:blocks/scp914dial"
-  }
+    "all": "scp_additions:block/scp914dial",
+    "particle": "scp_additions:block/scp914dial",
+    "0": "scp_additions:block/scp914dial"
+  },
+  "render_type": "solid"
 }

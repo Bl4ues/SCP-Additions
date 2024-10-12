@@ -1,192 +1,144 @@
 package net.mcreator.scpadditions.procedures;
 
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
 
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.DamageSource;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.potion.Effects;
-import net.minecraft.potion.EffectInstance;
-import net.minecraft.item.ItemStack;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.BlockPos;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.advancements.Advancement;
 
-import net.mcreator.scpadditions.item.Scp330YellowCandyItem;
-import net.mcreator.scpadditions.item.Scp330RedCandyItem;
-import net.mcreator.scpadditions.item.Scp330GreenCandyItem;
-import net.mcreator.scpadditions.item.Scp330BlueCandyItem;
+import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.stream.Stream;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.AbstractMap;
-
 public class Scp330CandyDropProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("world") == null) {
-			if (!dependencies.containsKey("world"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency world for procedure Scp330CandyDrop!");
+	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
+		if (entity == null)
 			return;
-		}
-		if (dependencies.get("x") == null) {
-			if (!dependencies.containsKey("x"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency x for procedure Scp330CandyDrop!");
-			return;
-		}
-		if (dependencies.get("y") == null) {
-			if (!dependencies.containsKey("y"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency y for procedure Scp330CandyDrop!");
-			return;
-		}
-		if (dependencies.get("z") == null) {
-			if (!dependencies.containsKey("z"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency z for procedure Scp330CandyDrop!");
-			return;
-		}
-		if (dependencies.get("entity") == null) {
-			if (!dependencies.containsKey("entity"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency entity for procedure Scp330CandyDrop!");
-			return;
-		}
-		IWorld world = (IWorld) dependencies.get("world");
-		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
-		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
-		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
-		Entity entity = (Entity) dependencies.get("entity");
 		if (entity.getPersistentData().getBoolean("candy0")) {
-			Scp330CandyGiveProcedure.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("entity", entity)).collect(HashMap::new,
-					(_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-			entity.getPersistentData().putBoolean("candy1", (true));
-			entity.getPersistentData().putBoolean("candy0", (false));
-			if (world instanceof World && !world.isRemote()) {
-				((World) world).playSound(null, new BlockPos(x, y, z),
-						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")),
-						SoundCategory.HOSTILE, (float) 1, (float) 1);
-			} else {
-				((World) world).playSound(x, y, z,
-						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")),
-						SoundCategory.HOSTILE, (float) 1, (float) 1, false);
+			Scp330CandyGiveProcedure.execute(entity);
+			entity.getPersistentData().putBoolean("candy1", true);
+			entity.getPersistentData().putBoolean("candy0", false);
+			if (world instanceof Level _level) {
+				if (!_level.isClientSide()) {
+					_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
+				} else {
+					_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
+				}
 			}
 		} else {
 			if (entity.getPersistentData().getBoolean("candy1")) {
-				Scp330CandyGiveProcedure.executeProcedure(Stream.of(new AbstractMap.SimpleEntry<>("entity", entity)).collect(HashMap::new,
-						(_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-				entity.getPersistentData().putBoolean("candy2", (true));
-				entity.getPersistentData().putBoolean("candy1", (false));
-				if (world instanceof World && !world.isRemote()) {
-					((World) world).playSound(null, new BlockPos(x, y, z),
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")),
-							SoundCategory.HOSTILE, (float) 1, (float) 1);
-				} else {
-					((World) world).playSound(x, y, z,
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")),
-							SoundCategory.HOSTILE, (float) 1, (float) 1, false);
+				Scp330CandyGiveProcedure.execute(entity);
+				entity.getPersistentData().putBoolean("candy2", true);
+				entity.getPersistentData().putBoolean("candy1", false);
+				if (world instanceof Level _level) {
+					if (!_level.isClientSide()) {
+						_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
+					} else {
+						_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
+					}
 				}
 			} else {
 				if (entity.getPersistentData().getBoolean("candy2")) {
-					if (entity instanceof ServerPlayerEntity) {
-						Advancement _adv = ((MinecraftServer) ((ServerPlayerEntity) entity).server).getAdvancementManager()
-								.getAdvancement(new ResourceLocation("scp_additions:scp_330_achievement"));
-						AdvancementProgress _ap = ((ServerPlayerEntity) entity).getAdvancements().getProgress(_adv);
+					if (entity instanceof ServerPlayer _player) {
+						Advancement _adv = _player.server.getAdvancements().getAdvancement(new ResourceLocation("scp_additions:scp_330_achievement"));
+						AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
 						if (!_ap.isDone()) {
-							Iterator _iterator = _ap.getRemaningCriteria().iterator();
-							while (_iterator.hasNext()) {
-								String _criterion = (String) _iterator.next();
-								((ServerPlayerEntity) entity).getAdvancements().grantCriterion(_adv, _criterion);
+							for (String criteria : _ap.getRemainingCriteria())
+								_player.getAdvancements().award(_adv, criteria);
+						}
+					}
+					if (world instanceof Level _level) {
+						if (!_level.isClientSide()) {
+							_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
+						} else {
+							_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
+						}
+					}
+					if (world instanceof Level _level) {
+						if (!_level.isClientSide()) {
+							_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp330death")), SoundSource.HOSTILE, 1, 1);
+						} else {
+							_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp330death")), SoundSource.HOSTILE, 1, 1, false);
+						}
+					}
+					if (entity instanceof LivingEntity _entity)
+						_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
+							@Override
+							public Component getLocalizedDeathMessage(LivingEntity _msgEntity) {
+								String _translatekey = "death.attack." + "scp330";
+								if (this.getEntity() == null && this.getDirectEntity() == null) {
+									return _msgEntity.getKillCredit() != null
+											? Component.translatable(_translatekey + ".player", _msgEntity.getDisplayName(), _msgEntity.getKillCredit().getDisplayName())
+											: Component.translatable(_translatekey, _msgEntity.getDisplayName());
+								} else {
+									Component _component = this.getEntity() == null ? this.getDirectEntity().getDisplayName() : this.getEntity().getDisplayName();
+									ItemStack _itemstack = ItemStack.EMPTY;
+									if (this.getEntity() instanceof LivingEntity _livingentity)
+										_itemstack = _livingentity.getMainHandItem();
+									return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+											? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
+											: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
+								}
 							}
-						}
+						}, 10);
+					if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+						_entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 140, 4, false, false));
+					if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+						_entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 140, 1, false, false));
+					ScpAdditionsMod.queueServerWork(140, () -> {
+						if (entity instanceof LivingEntity _entity)
+							_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
+								@Override
+								public Component getLocalizedDeathMessage(LivingEntity _msgEntity) {
+									String _translatekey = "death.attack." + "scp330";
+									if (this.getEntity() == null && this.getDirectEntity() == null) {
+										return _msgEntity.getKillCredit() != null
+												? Component.translatable(_translatekey + ".player", _msgEntity.getDisplayName(), _msgEntity.getKillCredit().getDisplayName())
+												: Component.translatable(_translatekey, _msgEntity.getDisplayName());
+									} else {
+										Component _component = this.getEntity() == null ? this.getDirectEntity().getDisplayName() : this.getEntity().getDisplayName();
+										ItemStack _itemstack = ItemStack.EMPTY;
+										if (this.getEntity() instanceof LivingEntity _livingentity)
+											_itemstack = _livingentity.getMainHandItem();
+										return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+												? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
+												: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
+									}
+								}
+							}, 50);
+						entity.getPersistentData().putBoolean("candy1", false);
+						entity.getPersistentData().putBoolean("candy2", false);
+						entity.getPersistentData().putBoolean("candy0", true);
+					});
+					if (entity instanceof Player _player) {
+						ItemStack _stktoremove = new ItemStack(ScpAdditionsModItems.SCP_330_RED_CANDY.get());
+						_player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem() == p.getItem(), 64, _player.inventoryMenu.getCraftSlots());
 					}
-					if (world instanceof World && !world.isRemote()) {
-						((World) world).playSound(null, new BlockPos(x, y, z),
-								(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")),
-								SoundCategory.HOSTILE, (float) 1, (float) 1);
-					} else {
-						((World) world).playSound(x, y, z,
-								(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:candy")),
-								SoundCategory.HOSTILE, (float) 1, (float) 1, false);
+					if (entity instanceof Player _player) {
+						ItemStack _stktoremove = new ItemStack(ScpAdditionsModItems.SCP_330_GREEN_CANDY.get());
+						_player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem() == p.getItem(), 64, _player.inventoryMenu.getCraftSlots());
 					}
-					if (world instanceof World && !world.isRemote()) {
-						((World) world)
-								.playSound(null, new BlockPos(x, y, z),
-										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-												.getValue(new ResourceLocation("scp_additions:scp330death")),
-										SoundCategory.HOSTILE, (float) 1, (float) 1);
-					} else {
-						((World) world).playSound(x, y, z,
-								(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-										.getValue(new ResourceLocation("scp_additions:scp330death")),
-								SoundCategory.HOSTILE, (float) 1, (float) 1, false);
+					if (entity instanceof Player _player) {
+						ItemStack _stktoremove = new ItemStack(ScpAdditionsModItems.SCP_330_YELLOW_CANDY.get());
+						_player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem() == p.getItem(), 64, _player.inventoryMenu.getCraftSlots());
 					}
-					if (entity instanceof LivingEntity) {
-						((LivingEntity) entity).attackEntityFrom(new DamageSource("scp330").setDamageBypassesArmor(), (float) 10);
-					}
-					if (entity instanceof LivingEntity)
-						((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.SLOWNESS, (int) 140, (int) 4, (false), (false)));
-					if (entity instanceof LivingEntity)
-						((LivingEntity) entity).addPotionEffect(new EffectInstance(Effects.BLINDNESS, (int) 140, (int) 1, (false), (false)));
-					new Object() {
-						private int ticks = 0;
-						private float waitTicks;
-						private IWorld world;
-
-						public void start(IWorld world, int waitTicks) {
-							this.waitTicks = waitTicks;
-							MinecraftForge.EVENT_BUS.register(this);
-							this.world = world;
-						}
-
-						@SubscribeEvent
-						public void tick(TickEvent.ServerTickEvent event) {
-							if (event.phase == TickEvent.Phase.END) {
-								this.ticks += 1;
-								if (this.ticks >= this.waitTicks)
-									run();
-							}
-						}
-
-						private void run() {
-							if (entity instanceof LivingEntity) {
-								((LivingEntity) entity).attackEntityFrom(new DamageSource("scp330").setDamageBypassesArmor(), (float) 50);
-							}
-							entity.getPersistentData().putBoolean("candy1", (false));
-							entity.getPersistentData().putBoolean("candy2", (false));
-							entity.getPersistentData().putBoolean("candy0", (true));
-							MinecraftForge.EVENT_BUS.unregister(this);
-						}
-					}.start(world, (int) 140);
-					if (entity instanceof PlayerEntity) {
-						ItemStack _stktoremove = new ItemStack(Scp330RedCandyItem.block);
-						((PlayerEntity) entity).inventory.func_234564_a_(p -> _stktoremove.getItem() == p.getItem(), (int) 64,
-								((PlayerEntity) entity).container.func_234641_j_());
-					}
-					if (entity instanceof PlayerEntity) {
-						ItemStack _stktoremove = new ItemStack(Scp330GreenCandyItem.block);
-						((PlayerEntity) entity).inventory.func_234564_a_(p -> _stktoremove.getItem() == p.getItem(), (int) 64,
-								((PlayerEntity) entity).container.func_234641_j_());
-					}
-					if (entity instanceof PlayerEntity) {
-						ItemStack _stktoremove = new ItemStack(Scp330YellowCandyItem.block);
-						((PlayerEntity) entity).inventory.func_234564_a_(p -> _stktoremove.getItem() == p.getItem(), (int) 64,
-								((PlayerEntity) entity).container.func_234641_j_());
-					}
-					if (entity instanceof PlayerEntity) {
-						ItemStack _stktoremove = new ItemStack(Scp330BlueCandyItem.block);
-						((PlayerEntity) entity).inventory.func_234564_a_(p -> _stktoremove.getItem() == p.getItem(), (int) 64,
-								((PlayerEntity) entity).container.func_234641_j_());
+					if (entity instanceof Player _player) {
+						ItemStack _stktoremove = new ItemStack(ScpAdditionsModItems.SCP_330_BLUE_CANDY.get());
+						_player.getInventory().clearOrCountMatchingItems(p -> _stktoremove.getItem() == p.getItem(), 64, _player.inventoryMenu.getCraftSlots());
 					}
 				}
 			}

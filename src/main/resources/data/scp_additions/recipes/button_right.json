@@ -1,37 +1,26 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "pattern": [
-    "012",
-    "345",
-    "678"
+    "abc",
+    "ade",
+    "abb"
   ],
   "key": {
-    "0": {
+    "a": {
       "item": "minecraft:iron_ingot"
     },
-    "1": {
+    "b": {
       "item": "minecraft:redstone"
     },
-    "2": {
+    "c": {
       "item": "minecraft:iron_nugget"
     },
-    "3": {
-      "item": "minecraft:iron_ingot"
-    },
-    "4": {
+    "d": {
       "item": "minecraft:stone_button"
     },
-    "5": {
+    "e": {
       "item": "minecraft:glass"
-    },
-    "6": {
-      "item": "minecraft:iron_ingot"
-    },
-    "7": {
-      "item": "minecraft:redstone"
-    },
-    "8": {
-      "item": "minecraft:redstone"
     }
   },
   "result": {

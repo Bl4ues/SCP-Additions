@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "gui",
   "definition": {
     "type": 0,
@@ -13,13 +13,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_rough",
           "text": "Rough",
+          "isUndecorated": false,
           "onClick": {
             "name": "Scp914toRough"
           },
           "width": 51,
           "height": 20,
-          "name": "Rough",
           "x": 123,
           "y": 116
         }
@@ -27,13 +28,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_fine",
           "text": "Fine",
+          "isUndecorated": false,
           "onClick": {
             "name": "Scp914toFine"
           },
           "width": 46,
           "height": 20,
-          "name": "Fine",
           "x": 231,
           "y": 80
         }
@@ -41,13 +43,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_coarse",
           "text": "Coarse",
+          "isUndecorated": false,
           "onClick": {
             "name": "Scp914toCoarse"
           },
           "width": 46,
           "height": 20,
-          "name": "Coarse",
           "x": 150,
           "y": 80
         }
@@ -55,13 +58,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_very_fine",
           "text": "Very Fine",
+          "isUndecorated": false,
           "onClick": {
             "name": "Scp914toVeryFine"
           },
           "width": 51,
           "height": 20,
-          "name": "Very Fine",
           "x": 249,
           "y": 116
         }
@@ -69,13 +73,14 @@
       {
         "type": "button",
         "data": {
+          "name": "button_11",
           "text": "1:1",
+          "isUndecorated": false,
           "onClick": {
             "name": "Scp914to1to1"
           },
           "width": 40,
           "height": 20,
-          "name": "1:1",
           "x": 193,
           "y": 46
         }

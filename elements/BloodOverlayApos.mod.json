@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "overlay",
   "definition": {
     "priority": "HIGHEST",
@@ -7,7 +7,10 @@
       {
         "type": "label",
         "data": {
-          "text": "Blood Type: A+",
+          "name": "label_blood_type_a",
+          "text": {
+            "fixedValue": "Blood Type: A+"
+          },
           "color": {
             "value": -65536,
             "falpha": 0.0
@@ -15,7 +18,7 @@
           "displayCondition": {
             "name": "OverlayApos"
           },
-          "name": "Blood Type: A+",
+          "anchorPoint": "CENTER",
           "x": 5,
           "y": 225
         }

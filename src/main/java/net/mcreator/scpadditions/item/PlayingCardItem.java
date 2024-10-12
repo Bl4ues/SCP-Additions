@@ -1,44 +1,22 @@
 
 package net.mcreator.scpadditions.item;
 
-import net.minecraftforge.registries.ObjectHolder;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
+import net.minecraft.network.chat.Component;
 
-import net.minecraft.item.Rarity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.Item;
-import net.minecraft.block.BlockState;
+import java.util.List;
 
-import net.mcreator.scpadditions.ScpAdditionsModElements;
-
-@ScpAdditionsModElements.ModElement.Tag
-public class PlayingCardItem extends ScpAdditionsModElements.ModElement {
-	@ObjectHolder("scp_additions:playing_card")
-	public static final Item block = null;
-
-	public PlayingCardItem(ScpAdditionsModElements instance) {
-		super(instance, 36);
+public class PlayingCardItem extends Item {
+	public PlayingCardItem() {
+		super(new Item.Properties().stacksTo(64).rarity(Rarity.COMMON));
 	}
 
 	@Override
-	public void initElements() {
-		elements.items.add(() -> new ItemCustom());
-	}
-
-	public static class ItemCustom extends Item {
-		public ItemCustom() {
-			super(new Item.Properties().group(ItemGroup.MISC).maxStackSize(64).rarity(Rarity.COMMON));
-			setRegistryName("playing_card");
-		}
-
-		@Override
-		public int getItemEnchantability() {
-			return 0;
-		}
-
-		@Override
-		public float getDestroySpeed(ItemStack par1ItemStack, BlockState par2Block) {
-			return 1F;
-		}
+	public void appendHoverText(ItemStack itemstack, Level world, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, world, list, flag);
 	}
 }

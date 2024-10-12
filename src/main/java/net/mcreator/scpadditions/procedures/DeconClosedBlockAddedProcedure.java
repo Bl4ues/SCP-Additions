@@ -1,869 +1,170 @@
 package net.mcreator.scpadditions.procedures;
 
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
 
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.state.Property;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.particles.ParticleTypes;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.BlockPos;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.advancements.Advancement;
 
-import net.mcreator.scpadditions.world.DeconCheckpointGameRule;
-import net.mcreator.scpadditions.block.DeconOpenReloadBlock;
+import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.stream.Collectors;
-import java.util.function.Function;
 import java.util.Map;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Comparator;
 
 public class DeconClosedBlockAddedProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("world") == null) {
-			if (!dependencies.containsKey("world"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency world for procedure DeconClosedBlockAdded!");
-			return;
-		}
-		if (dependencies.get("x") == null) {
-			if (!dependencies.containsKey("x"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency x for procedure DeconClosedBlockAdded!");
-			return;
-		}
-		if (dependencies.get("y") == null) {
-			if (!dependencies.containsKey("y"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency y for procedure DeconClosedBlockAdded!");
-			return;
-		}
-		if (dependencies.get("z") == null) {
-			if (!dependencies.containsKey("z"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency z for procedure DeconClosedBlockAdded!");
-			return;
-		}
-		IWorld world = (IWorld) dependencies.get("world");
-		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
-		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
-		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
+	public static void execute(LevelAccessor world, double x, double y, double z) {
 		{
-			List<Entity> _entfound = world.getEntitiesWithinAABB(Entity.class,
-					new AxisAlignedBB((x - 0.5) - (2.5 / 2d), y - (2.5 / 2d), z - (2.5 / 2d), (x - 0.5) + (2.5 / 2d), y + (2.5 / 2d), z + (2.5 / 2d)),
-					null).stream().sorted(new Object() {
-						Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
-							return Comparator.comparing((Function<Entity, Double>) (_entcnd -> _entcnd.getDistanceSq(_x, _y, _z)));
-						}
-					}.compareDistOf((x - 0.5), y, z)).collect(Collectors.toList());
+			final Vec3 _center = new Vec3((x - 0.5), y, z);
+			List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(2.5 / 2d), e -> true).stream().sorted(Comparator.comparingDouble(_entcnd -> _entcnd.distanceToSqr(_center))).toList();
 			for (Entity entityiterator : _entfound) {
-				if (world instanceof World && !world.isRemote()) {
-					((World) world)
-							.playSound(null, new BlockPos(entityiterator.getPosX(), entityiterator.getPosY() + 1, entityiterator.getPosZ()),
-									(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-											.getValue(new ResourceLocation("scp_additions:decontamination")),
-									SoundCategory.NEUTRAL, (float) 1, (float) 1);
-				} else {
-					((World) world).playSound((entityiterator.getPosX()), (entityiterator.getPosY() + 1), (entityiterator.getPosZ()),
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-									.getValue(new ResourceLocation("scp_additions:decontamination")),
-							SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-				}
-				if (world instanceof ServerWorld) {
-					((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD, (entityiterator.getPosX()), (entityiterator.getPosY() + 1),
-							(entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-				}
-				new Object() {
-					private int ticks = 0;
-					private float waitTicks;
-					private IWorld world;
-
-					public void start(IWorld world, int waitTicks) {
-						this.waitTicks = waitTicks;
-						MinecraftForge.EVENT_BUS.register(this);
-						this.world = world;
+				if (world instanceof Level _level) {
+					if (!_level.isClientSide()) {
+						_level.playSound(null, BlockPos.containing(entityiterator.getX(), entityiterator.getY() + 1, entityiterator.getZ()), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:decontamination")),
+								SoundSource.NEUTRAL, 1, 1);
+					} else {
+						_level.playLocalSound((entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:decontamination")), SoundSource.NEUTRAL, 1, 1,
+								false);
 					}
-
-					@SubscribeEvent
-					public void tick(TickEvent.ServerTickEvent event) {
-						if (event.phase == TickEvent.Phase.END) {
-							this.ticks += 1;
-							if (this.ticks >= this.waitTicks)
-								run();
-						}
-					}
-
-					private void run() {
-						if (world instanceof ServerWorld) {
-							((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD, (entityiterator.getPosX()), (entityiterator.getPosY() + 1),
-									(entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-						}
-						new Object() {
-							private int ticks = 0;
-							private float waitTicks;
-							private IWorld world;
-
-							public void start(IWorld world, int waitTicks) {
-								this.waitTicks = waitTicks;
-								MinecraftForge.EVENT_BUS.register(this);
-								this.world = world;
-							}
-
-							@SubscribeEvent
-							public void tick(TickEvent.ServerTickEvent event) {
-								if (event.phase == TickEvent.Phase.END) {
-									this.ticks += 1;
-									if (this.ticks >= this.waitTicks)
-										run();
-								}
-							}
-
-							private void run() {
-								if (world instanceof ServerWorld) {
-									((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD, (entityiterator.getPosX()),
-											(entityiterator.getPosY() + 1), (entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-								}
-								new Object() {
-									private int ticks = 0;
-									private float waitTicks;
-									private IWorld world;
-
-									public void start(IWorld world, int waitTicks) {
-										this.waitTicks = waitTicks;
-										MinecraftForge.EVENT_BUS.register(this);
-										this.world = world;
-									}
-
-									@SubscribeEvent
-									public void tick(TickEvent.ServerTickEvent event) {
-										if (event.phase == TickEvent.Phase.END) {
-											this.ticks += 1;
-											if (this.ticks >= this.waitTicks)
-												run();
-										}
-									}
-
-									private void run() {
-										if (world instanceof ServerWorld) {
-											((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD, (entityiterator.getPosX()),
-													(entityiterator.getPosY() + 1), (entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-										}
-										new Object() {
-											private int ticks = 0;
-											private float waitTicks;
-											private IWorld world;
-
-											public void start(IWorld world, int waitTicks) {
-												this.waitTicks = waitTicks;
-												MinecraftForge.EVENT_BUS.register(this);
-												this.world = world;
-											}
-
-											@SubscribeEvent
-											public void tick(TickEvent.ServerTickEvent event) {
-												if (event.phase == TickEvent.Phase.END) {
-													this.ticks += 1;
-													if (this.ticks >= this.waitTicks)
-														run();
-												}
-											}
-
-											private void run() {
-												if (world instanceof ServerWorld) {
-													((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD, (entityiterator.getPosX()),
-															(entityiterator.getPosY() + 1), (entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-												}
-												new Object() {
-													private int ticks = 0;
-													private float waitTicks;
-													private IWorld world;
-
-													public void start(IWorld world, int waitTicks) {
-														this.waitTicks = waitTicks;
-														MinecraftForge.EVENT_BUS.register(this);
-														this.world = world;
-													}
-
-													@SubscribeEvent
-													public void tick(TickEvent.ServerTickEvent event) {
-														if (event.phase == TickEvent.Phase.END) {
-															this.ticks += 1;
-															if (this.ticks >= this.waitTicks)
-																run();
-														}
-													}
-
-													private void run() {
-														if (world instanceof ServerWorld) {
-															((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD, (entityiterator.getPosX()),
-																	(entityiterator.getPosY() + 1), (entityiterator.getPosZ()), (int) 100, 1, 1, 1,
-																	1);
-														}
-														new Object() {
-															private int ticks = 0;
-															private float waitTicks;
-															private IWorld world;
-
-															public void start(IWorld world, int waitTicks) {
-																this.waitTicks = waitTicks;
-																MinecraftForge.EVENT_BUS.register(this);
-																this.world = world;
-															}
-
-															@SubscribeEvent
-															public void tick(TickEvent.ServerTickEvent event) {
-																if (event.phase == TickEvent.Phase.END) {
-																	this.ticks += 1;
-																	if (this.ticks >= this.waitTicks)
-																		run();
-																}
-															}
-
-															private void run() {
-																if (world instanceof ServerWorld) {
-																	((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD,
-																			(entityiterator.getPosX()), (entityiterator.getPosY() + 1),
-																			(entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-																}
-																new Object() {
-																	private int ticks = 0;
-																	private float waitTicks;
-																	private IWorld world;
-
-																	public void start(IWorld world, int waitTicks) {
-																		this.waitTicks = waitTicks;
-																		MinecraftForge.EVENT_BUS.register(this);
-																		this.world = world;
-																	}
-
-																	@SubscribeEvent
-																	public void tick(TickEvent.ServerTickEvent event) {
-																		if (event.phase == TickEvent.Phase.END) {
-																			this.ticks += 1;
-																			if (this.ticks >= this.waitTicks)
-																				run();
-																		}
-																	}
-
-																	private void run() {
-																		if (world instanceof ServerWorld) {
-																			((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD,
-																					(entityiterator.getPosX()), (entityiterator.getPosY() + 1),
-																					(entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-																		}
-																		new Object() {
-																			private int ticks = 0;
-																			private float waitTicks;
-																			private IWorld world;
-
-																			public void start(IWorld world, int waitTicks) {
-																				this.waitTicks = waitTicks;
-																				MinecraftForge.EVENT_BUS.register(this);
-																				this.world = world;
-																			}
-
-																			@SubscribeEvent
-																			public void tick(TickEvent.ServerTickEvent event) {
-																				if (event.phase == TickEvent.Phase.END) {
-																					this.ticks += 1;
-																					if (this.ticks >= this.waitTicks)
-																						run();
-																				}
-																			}
-
-																			private void run() {
-																				if (world instanceof ServerWorld) {
-																					((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD,
-																							(entityiterator.getPosX()),
-																							(entityiterator.getPosY() + 1),
-																							(entityiterator.getPosZ()), (int) 100, 1, 1, 1, 1);
-																				}
-																				new Object() {
-																					private int ticks = 0;
-																					private float waitTicks;
-																					private IWorld world;
-
-																					public void start(IWorld world, int waitTicks) {
-																						this.waitTicks = waitTicks;
-																						MinecraftForge.EVENT_BUS.register(this);
-																						this.world = world;
-																					}
-
-																					@SubscribeEvent
-																					public void tick(TickEvent.ServerTickEvent event) {
-																						if (event.phase == TickEvent.Phase.END) {
-																							this.ticks += 1;
-																							if (this.ticks >= this.waitTicks)
-																								run();
-																						}
-																					}
-
-																					private void run() {
-																						if (world instanceof ServerWorld) {
-																							((ServerWorld) world).spawnParticle(ParticleTypes.CLOUD,
-																									(entityiterator.getPosX()),
-																									(entityiterator.getPosY() + 1),
-																									(entityiterator.getPosZ()), (int) 100, 1, 1, 1,
-																									1);
-																						}
-																						new Object() {
-																							private int ticks = 0;
-																							private float waitTicks;
-																							private IWorld world;
-
-																							public void start(IWorld world, int waitTicks) {
-																								this.waitTicks = waitTicks;
-																								MinecraftForge.EVENT_BUS.register(this);
-																								this.world = world;
-																							}
-
-																							@SubscribeEvent
-																							public void tick(TickEvent.ServerTickEvent event) {
-																								if (event.phase == TickEvent.Phase.END) {
-																									this.ticks += 1;
-																									if (this.ticks >= this.waitTicks)
-																										run();
-																								}
-																							}
-
-																							private void run() {
-																								if (world instanceof ServerWorld) {
-																									((ServerWorld) world).spawnParticle(
-																											ParticleTypes.CLOUD,
-																											(entityiterator.getPosX()),
-																											(entityiterator.getPosY() + 1),
-																											(entityiterator.getPosZ()), (int) 100, 1,
-																											1, 1, 1);
-																								}
-																								new Object() {
-																									private int ticks = 0;
-																									private float waitTicks;
-																									private IWorld world;
-
-																									public void start(IWorld world, int waitTicks) {
-																										this.waitTicks = waitTicks;
-																										MinecraftForge.EVENT_BUS.register(this);
-																										this.world = world;
-																									}
-
-																									@SubscribeEvent
-																									public void tick(
-																											TickEvent.ServerTickEvent event) {
-																										if (event.phase == TickEvent.Phase.END) {
-																											this.ticks += 1;
-																											if (this.ticks >= this.waitTicks)
-																												run();
-																										}
-																									}
-
-																									private void run() {
-																										if (world instanceof ServerWorld) {
-																											((ServerWorld) world).spawnParticle(
-																													ParticleTypes.CLOUD,
-																													(entityiterator.getPosX()),
-																													(entityiterator.getPosY() + 1),
-																													(entityiterator.getPosZ()),
-																													(int) 100, 1, 1, 1, 1);
-																										}
-																										new Object() {
-																											private int ticks = 0;
-																											private float waitTicks;
-																											private IWorld world;
-
-																											public void start(IWorld world,
-																													int waitTicks) {
-																												this.waitTicks = waitTicks;
-																												MinecraftForge.EVENT_BUS
-																														.register(this);
-																												this.world = world;
-																											}
-
-																											@SubscribeEvent
-																											public void tick(
-																													TickEvent.ServerTickEvent event) {
-																												if (event.phase == TickEvent.Phase.END) {
-																													this.ticks += 1;
-																													if (this.ticks >= this.waitTicks)
-																														run();
-																												}
-																											}
-
-																											private void run() {
-																												if (world instanceof ServerWorld) {
-																													((ServerWorld) world)
-																															.spawnParticle(
-																																	ParticleTypes.CLOUD,
-																																	(entityiterator
-																																			.getPosX()),
-																																	(entityiterator
-																																			.getPosY()
-																																			+ 1),
-																																	(entityiterator
-																																			.getPosZ()),
-																																	(int) 100, 1, 1,
-																																	1, 1);
-																												}
-																												new Object() {
-																													private int ticks = 0;
-																													private float waitTicks;
-																													private IWorld world;
-
-																													public void start(IWorld world,
-																															int waitTicks) {
-																														this.waitTicks = waitTicks;
-																														MinecraftForge.EVENT_BUS
-																																.register(this);
-																														this.world = world;
-																													}
-
-																													@SubscribeEvent
-																													public void tick(
-																															TickEvent.ServerTickEvent event) {
-																														if (event.phase == TickEvent.Phase.END) {
-																															this.ticks += 1;
-																															if (this.ticks >= this.waitTicks)
-																																run();
-																														}
-																													}
-
-																													private void run() {
-																														if (world instanceof ServerWorld) {
-																															((ServerWorld) world)
-																																	.spawnParticle(
-																																			ParticleTypes.CLOUD,
-																																			(entityiterator
-																																					.getPosX()),
-																																			(entityiterator
-																																					.getPosY()
-																																					+ 1),
-																																			(entityiterator
-																																					.getPosZ()),
-																																			(int) 100,
-																																			1, 1, 1,
-																																			1);
-																														}
-																														new Object() {
-																															private int ticks = 0;
-																															private float waitTicks;
-																															private IWorld world;
-
-																															public void start(
-																																	IWorld world,
-																																	int waitTicks) {
-																																this.waitTicks = waitTicks;
-																																MinecraftForge.EVENT_BUS
-																																		.register(
-																																				this);
-																																this.world = world;
-																															}
-
-																															@SubscribeEvent
-																															public void tick(
-																																	TickEvent.ServerTickEvent event) {
-																																if (event.phase == TickEvent.Phase.END) {
-																																	this.ticks += 1;
-																																	if (this.ticks >= this.waitTicks)
-																																		run();
-																																}
-																															}
-
-																															private void run() {
-																																if (world instanceof ServerWorld) {
-																																	((ServerWorld) world)
-																																			.spawnParticle(
-																																					ParticleTypes.CLOUD,
-																																					(entityiterator
-																																							.getPosX()),
-																																					(entityiterator
-																																							.getPosY()
-																																							+ 1),
-																																					(entityiterator
-																																							.getPosZ()),
-																																					(int) 100,
-																																					1,
-																																					1,
-																																					1,
-																																					1);
-																																}
-																																new Object() {
-																																	private int ticks = 0;
-																																	private float waitTicks;
-																																	private IWorld world;
-
-																																	public void start(
-																																			IWorld world,
-																																			int waitTicks) {
-																																		this.waitTicks = waitTicks;
-																																		MinecraftForge.EVENT_BUS
-																																				.register(
-																																						this);
-																																		this.world = world;
-																																	}
-
-																																	@SubscribeEvent
-																																	public void tick(
-																																			TickEvent.ServerTickEvent event) {
-																																		if (event.phase == TickEvent.Phase.END) {
-																																			this.ticks += 1;
-																																			if (this.ticks >= this.waitTicks)
-																																				run();
-																																		}
-																																	}
-
-																																	private void run() {
-																																		if (world instanceof ServerWorld) {
-																																			((ServerWorld) world)
-																																					.spawnParticle(
-																																							ParticleTypes.CLOUD,
-																																							(entityiterator
-																																									.getPosX()),
-																																							(entityiterator
-																																									.getPosY()
-																																									+ 1),
-																																							(entityiterator
-																																									.getPosZ()),
-																																							(int) 100,
-																																							1,
-																																							1,
-																																							1,
-																																							1);
-																																		}
-																																		new Object() {
-																																			private int ticks = 0;
-																																			private float waitTicks;
-																																			private IWorld world;
-
-																																			public void start(
-																																					IWorld world,
-																																					int waitTicks) {
-																																				this.waitTicks = waitTicks;
-																																				MinecraftForge.EVENT_BUS
-																																						.register(
-																																								this);
-																																				this.world = world;
-																																			}
-
-																																			@SubscribeEvent
-																																			public void tick(
-																																					TickEvent.ServerTickEvent event) {
-																																				if (event.phase == TickEvent.Phase.END) {
-																																					this.ticks += 1;
-																																					if (this.ticks >= this.waitTicks)
-																																						run();
-																																				}
-																																			}
-
-																																			private void run() {
-																																				if (world instanceof ServerWorld) {
-																																					((ServerWorld) world)
-																																							.spawnParticle(
-																																									ParticleTypes.CLOUD,
-																																									(entityiterator
-																																											.getPosX()),
-																																									(entityiterator
-																																											.getPosY()
-																																											+ 1),
-																																									(entityiterator
-																																											.getPosZ()),
-																																									(int) 100,
-																																									1,
-																																									1,
-																																									1,
-																																									1);
-																																				}
-																																				new Object() {
-																																					private int ticks = 0;
-																																					private float waitTicks;
-																																					private IWorld world;
-
-																																					public void start(
-																																							IWorld world,
-																																							int waitTicks) {
-																																						this.waitTicks = waitTicks;
-																																						MinecraftForge.EVENT_BUS
-																																								.register(
-																																										this);
-																																						this.world = world;
-																																					}
-
-																																					@SubscribeEvent
-																																					public void tick(
-																																							TickEvent.ServerTickEvent event) {
-																																						if (event.phase == TickEvent.Phase.END) {
-																																							this.ticks += 1;
-																																							if (this.ticks >= this.waitTicks)
-																																								run();
-																																						}
-																																					}
-
-																																					private void run() {
-																																						if (world instanceof ServerWorld) {
-																																							((ServerWorld) world)
-																																									.spawnParticle(
-																																											ParticleTypes.CLOUD,
-																																											(entityiterator
-																																													.getPosX()),
-																																											(entityiterator
-																																													.getPosY()
-																																													+ 1),
-																																											(entityiterator
-																																													.getPosZ()),
-																																											(int) 100,
-																																											1,
-																																											1,
-																																											1,
-																																											1);
-																																						}
-																																						new Object() {
-																																							private int ticks = 0;
-																																							private float waitTicks;
-																																							private IWorld world;
-
-																																							public void start(
-																																									IWorld world,
-																																									int waitTicks) {
-																																								this.waitTicks = waitTicks;
-																																								MinecraftForge.EVENT_BUS
-																																										.register(
-																																												this);
-																																								this.world = world;
-																																							}
-
-																																							@SubscribeEvent
-																																							public void tick(
-																																									TickEvent.ServerTickEvent event) {
-																																								if (event.phase == TickEvent.Phase.END) {
-																																									this.ticks += 1;
-																																									if (this.ticks >= this.waitTicks)
-																																										run();
-																																								}
-																																							}
-
-																																							private void run() {
-																																								if (world instanceof ServerWorld) {
-																																									((ServerWorld) world)
-																																											.spawnParticle(
-																																													ParticleTypes.CLOUD,
-																																													(entityiterator
-																																															.getPosX()),
-																																													(entityiterator
-																																															.getPosY()
-																																															+ 1),
-																																													(entityiterator
-																																															.getPosZ()),
-																																													(int) 100,
-																																													1,
-																																													1,
-																																													1,
-																																													1);
-																																								}
-																																								new Object() {
-																																									private int ticks = 0;
-																																									private float waitTicks;
-																																									private IWorld world;
-
-																																									public void start(
-																																											IWorld world,
-																																											int waitTicks) {
-																																										this.waitTicks = waitTicks;
-																																										MinecraftForge.EVENT_BUS
-																																												.register(
-																																														this);
-																																										this.world = world;
-																																									}
-
-																																									@SubscribeEvent
-																																									public void tick(
-																																											TickEvent.ServerTickEvent event) {
-																																										if (event.phase == TickEvent.Phase.END) {
-																																											this.ticks += 1;
-																																											if (this.ticks >= this.waitTicks)
-																																												run();
-																																										}
-																																									}
-
-																																									private void run() {
-																																										if (world instanceof ServerWorld) {
-																																											((ServerWorld) world)
-																																													.spawnParticle(
-																																															ParticleTypes.CLOUD,
-																																															(entityiterator
-																																																	.getPosX()),
-																																															(entityiterator
-																																																	.getPosY()
-																																																	+ 1),
-																																															(entityiterator
-																																																	.getPosZ()),
-																																															(int) 100,
-																																															1,
-																																															1,
-																																															1,
-																																															1);
-																																										}
-																																										MinecraftForge.EVENT_BUS
-																																												.unregister(
-																																														this);
-																																									}
-																																								}.start(world,
-																																										(int) 5);
-																																								MinecraftForge.EVENT_BUS
-																																										.unregister(
-																																												this);
-																																							}
-																																						}.start(world,
-																																								(int) 5);
-																																						MinecraftForge.EVENT_BUS
-																																								.unregister(
-																																										this);
-																																					}
-																																				}.start(world,
-																																						(int) 5);
-																																				MinecraftForge.EVENT_BUS
-																																						.unregister(
-																																								this);
-																																			}
-																																		}.start(world,
-																																				(int) 5);
-																																		MinecraftForge.EVENT_BUS
-																																				.unregister(
-																																						this);
-																																	}
-																																}.start(world,
-																																		(int) 5);
-																																MinecraftForge.EVENT_BUS
-																																		.unregister(
-																																				this);
-																															}
-																														}.start(world, (int) 5);
-																														MinecraftForge.EVENT_BUS
-																																.unregister(this);
-																													}
-																												}.start(world, (int) 5);
-																												MinecraftForge.EVENT_BUS
-																														.unregister(this);
-																											}
-																										}.start(world, (int) 5);
-																										MinecraftForge.EVENT_BUS.unregister(this);
-																									}
-																								}.start(world, (int) 5);
-																								MinecraftForge.EVENT_BUS.unregister(this);
-																							}
-																						}.start(world, (int) 5);
-																						MinecraftForge.EVENT_BUS.unregister(this);
-																					}
-																				}.start(world, (int) 5);
-																				MinecraftForge.EVENT_BUS.unregister(this);
-																			}
-																		}.start(world, (int) 5);
-																		MinecraftForge.EVENT_BUS.unregister(this);
-																	}
-																}.start(world, (int) 5);
-																MinecraftForge.EVENT_BUS.unregister(this);
-															}
-														}.start(world, (int) 5);
-														MinecraftForge.EVENT_BUS.unregister(this);
-													}
-												}.start(world, (int) 5);
-												MinecraftForge.EVENT_BUS.unregister(this);
-											}
-										}.start(world, (int) 5);
-										MinecraftForge.EVENT_BUS.unregister(this);
-									}
-								}.start(world, (int) 5);
-								MinecraftForge.EVENT_BUS.unregister(this);
-							}
-						}.start(world, (int) 5);
-						MinecraftForge.EVENT_BUS.unregister(this);
-					}
-				}.start(world, (int) 5);
-				if (entityiterator instanceof LivingEntity)
-					((LivingEntity) entityiterator).clearActivePotions();
-				if (world.getWorldInfo().getGameRulesInstance().getBoolean(DeconCheckpointGameRule.gamerule)) {
-					if (entityiterator instanceof ServerPlayerEntity)
-						((ServerPlayerEntity) entityiterator).func_242111_a(((ServerPlayerEntity) entityiterator).world.getDimensionKey(),
-								new BlockPos(entityiterator.getPosX(), entityiterator.getPosY(), entityiterator.getPosZ()), 0, true, false);
 				}
-				if (entityiterator instanceof ServerPlayerEntity) {
-					Advancement _adv = ((MinecraftServer) ((ServerPlayerEntity) entityiterator).server).getAdvancementManager()
-							.getAdvancement(new ResourceLocation("scp_additions:decon_achievement"));
-					AdvancementProgress _ap = ((ServerPlayerEntity) entityiterator).getAdvancements().getProgress(_adv);
+				if (world instanceof ServerLevel _level)
+					_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+				ScpAdditionsMod.queueServerWork(5, () -> {
+					if (world instanceof ServerLevel _level)
+						_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+					ScpAdditionsMod.queueServerWork(5, () -> {
+						if (world instanceof ServerLevel _level)
+							_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+						ScpAdditionsMod.queueServerWork(5, () -> {
+							if (world instanceof ServerLevel _level)
+								_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+							ScpAdditionsMod.queueServerWork(5, () -> {
+								if (world instanceof ServerLevel _level)
+									_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+								ScpAdditionsMod.queueServerWork(5, () -> {
+									if (world instanceof ServerLevel _level)
+										_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+									ScpAdditionsMod.queueServerWork(5, () -> {
+										if (world instanceof ServerLevel _level)
+											_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+										ScpAdditionsMod.queueServerWork(5, () -> {
+											if (world instanceof ServerLevel _level)
+												_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+											ScpAdditionsMod.queueServerWork(5, () -> {
+												if (world instanceof ServerLevel _level)
+													_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+												ScpAdditionsMod.queueServerWork(5, () -> {
+													if (world instanceof ServerLevel _level)
+														_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+													ScpAdditionsMod.queueServerWork(5, () -> {
+														if (world instanceof ServerLevel _level)
+															_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+														ScpAdditionsMod.queueServerWork(5, () -> {
+															if (world instanceof ServerLevel _level)
+																_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+															ScpAdditionsMod.queueServerWork(5, () -> {
+																if (world instanceof ServerLevel _level)
+																	_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																ScpAdditionsMod.queueServerWork(5, () -> {
+																	if (world instanceof ServerLevel _level)
+																		_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																	ScpAdditionsMod.queueServerWork(5, () -> {
+																		if (world instanceof ServerLevel _level)
+																			_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																		ScpAdditionsMod.queueServerWork(5, () -> {
+																			if (world instanceof ServerLevel _level)
+																				_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																			ScpAdditionsMod.queueServerWork(5, () -> {
+																				if (world instanceof ServerLevel _level)
+																					_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																				ScpAdditionsMod.queueServerWork(5, () -> {
+																					if (world instanceof ServerLevel _level)
+																						_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																					ScpAdditionsMod.queueServerWork(5, () -> {
+																						if (world instanceof ServerLevel _level)
+																							_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																						ScpAdditionsMod.queueServerWork(5, () -> {
+																							if (world instanceof ServerLevel _level)
+																								_level.sendParticles(ParticleTypes.CLOUD, (entityiterator.getX()), (entityiterator.getY() + 1), (entityiterator.getZ()), 100, 1, 1, 1, 1);
+																						});
+																					});
+																				});
+																			});
+																		});
+																	});
+																});
+															});
+														});
+													});
+												});
+											});
+										});
+									});
+								});
+							});
+						});
+					});
+				});
+				if (entityiterator instanceof LivingEntity _entity)
+					_entity.removeAllEffects();
+				if (world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.DECONCHECKPOINT)) {
+					if (entityiterator instanceof ServerPlayer _serverPlayer)
+						_serverPlayer.setRespawnPosition(_serverPlayer.level().dimension(), BlockPos.containing(entityiterator.getX(), entityiterator.getY(), entityiterator.getZ()), _serverPlayer.getYRot(), true, false);
+				}
+				if (entityiterator instanceof ServerPlayer _player) {
+					Advancement _adv = _player.server.getAdvancements().getAdvancement(new ResourceLocation("scp_additions:decon_achievement"));
+					AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
 					if (!_ap.isDone()) {
-						Iterator _iterator = _ap.getRemaningCriteria().iterator();
-						while (_iterator.hasNext()) {
-							String _criterion = (String) _iterator.next();
-							((ServerPlayerEntity) entityiterator).getAdvancements().grantCriterion(_adv, _criterion);
-						}
+						for (String criteria : _ap.getRemainingCriteria())
+							_player.getAdvancements().award(_adv, criteria);
 					}
 				}
 			}
 		}
-		new Object() {
-			private int ticks = 0;
-			private float waitTicks;
-			private IWorld world;
-
-			public void start(IWorld world, int waitTicks) {
-				this.waitTicks = waitTicks;
-				MinecraftForge.EVENT_BUS.register(this);
-				this.world = world;
-			}
-
-			@SubscribeEvent
-			public void tick(TickEvent.ServerTickEvent event) {
-				if (event.phase == TickEvent.Phase.END) {
-					this.ticks += 1;
-					if (this.ticks >= this.waitTicks)
-						run();
-				}
-			}
-
-			private void run() {
-				if (world instanceof World && !world.isRemote()) {
-					((World) world).playSound(null, new BlockPos(x - 0.5, y, z + 1),
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")),
-							SoundCategory.NEUTRAL, (float) 1, (float) 1);
+		ScpAdditionsMod.queueServerWork(100, () -> {
+			if (world instanceof Level _level) {
+				if (!_level.isClientSide()) {
+					_level.playSound(null, BlockPos.containing(x - 0.5, y, z + 1), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")), SoundSource.NEUTRAL, 1, 1);
 				} else {
-					((World) world).playSound((x - 0.5), y, (z + 1),
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")),
-							SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
+					_level.playLocalSound((x - 0.5), y, (z + 1), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")), SoundSource.NEUTRAL, 1, 1, false);
 				}
-				if (world instanceof World && !world.isRemote()) {
-					((World) world).playSound(null, new BlockPos(x - 0.5, y, z - 1),
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")),
-							SoundCategory.NEUTRAL, (float) 1, (float) 1);
-				} else {
-					((World) world).playSound((x - 0.5), y, (z - 1),
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")),
-							SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-				}
-				{
-					BlockPos _bp = new BlockPos(x, y, z);
-					BlockState _bs = DeconOpenReloadBlock.block.getDefaultState();
-					BlockState _bso = world.getBlockState(_bp);
-					for (Map.Entry<Property<?>, Comparable<?>> entry : _bso.getValues().entrySet()) {
-						Property _property = _bs.getBlock().getStateContainer().getProperty(entry.getKey().getName());
-						if (_property != null && _bs.get(_property) != null)
-							try {
-								_bs = _bs.with(_property, (Comparable) entry.getValue());
-							} catch (Exception e) {
-							}
-					}
-					world.setBlockState(_bp, _bs, 3);
-				}
-				MinecraftForge.EVENT_BUS.unregister(this);
 			}
-		}.start(world, (int) 100);
+			if (world instanceof Level _level) {
+				if (!_level.isClientSide()) {
+					_level.playSound(null, BlockPos.containing(x - 0.5, y, z - 1), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")), SoundSource.NEUTRAL, 1, 1);
+				} else {
+					_level.playLocalSound((x - 0.5), y, (z - 1), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:dooropen")), SoundSource.NEUTRAL, 1, 1, false);
+				}
+			}
+			{
+				BlockPos _bp = BlockPos.containing(x, y, z);
+				BlockState _bs = ScpAdditionsModBlocks.DECON_OPEN_RELOAD.get().defaultBlockState();
+				BlockState _bso = world.getBlockState(_bp);
+				for (Map.Entry<Property<?>, Comparable<?>> entry : _bso.getValues().entrySet()) {
+					Property _property = _bs.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
+					if (_property != null && _bs.getValue(_property) != null)
+						try {
+							_bs = _bs.setValue(_property, (Comparable) entry.getValue());
+						} catch (Exception e) {
+						}
+				}
+				world.setBlock(_bp, _bs, 3);
+			}
+		});
 	}
 }

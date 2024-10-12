@@ -1,10 +1,11 @@
 {
   "parent": "scp_additions:custom/scp330",
   "textures": {
-    "all": "scp_additions:blocks/330",
-    "particle": "scp_additions:blocks/330",
-    "0": "scp_additions:blocks/330",
-    "1": "scp_additions:blocks/paper",
-    "2": "scp_additions:blocks/candies"
-  }
+    "all": "scp_additions:block/330",
+    "particle": "scp_additions:block/330",
+    "0": "scp_additions:block/330",
+    "1": "scp_additions:block/paper",
+    "2": "scp_additions:block/candies"
+  },
+  "render_type": "cutout"
 }

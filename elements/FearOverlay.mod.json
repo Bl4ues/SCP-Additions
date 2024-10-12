@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "overlay",
   "definition": {
     "priority": "NORMAL",
@@ -12,7 +12,7 @@
           "displayCondition": {
             "name": "FearOverlayDisplayOverlayIngame"
           },
-          "name": "pure-black-amh1tqh06166z417.png",
+          "anchorPoint": "CENTER",
           "x": -497,
           "y": -436
         }

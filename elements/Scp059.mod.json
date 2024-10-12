@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "block",
   "definition": {
     "texture": "scp059",
@@ -34,9 +34,11 @@
       }
     ],
     "name": "SCP-059",
-    "specialInfo": [
-      "Radioactive Mineral"
-    ],
+    "specialInformation": {
+      "fixedValue": [
+        "Radioactive Mineral"
+      ]
+    },
     "hardness": 2.0,
     "resistance": 10.0,
     "hasGravity": false,
@@ -101,13 +103,7 @@
     "luminance": 1,
     "unbreakable": false,
     "breakHarvestLevel": 1,
-    "spawnParticles": false,
-    "particleToSpawn": {
-      "value": "EXPLOSION_NORMAL"
-    },
-    "particleSpawningShape": "Spread",
-    "particleSpawningRadious": 0.5,
-    "particleAmount": 4,
+    "isBonemealable": false,
     "hasInventory": false,
     "guiBoundTo": "<NONE>",
     "openGUIOnRightClick": false,
@@ -134,10 +130,12 @@
     "onEntityCollides": {
       "name": "Scp0591EntityCollidesInTheBlock"
     },
-    "spawnWorldTypes": [
-      "Surface"
+    "generateFeature": true,
+    "restrictionBiomes": [
+      {
+        "value": "#is_overworld"
+      }
     ],
-    "restrictionBiomes": [],
     "blocksToReplace": [
       {
         "value": "Blocks.CAVE_AIR"

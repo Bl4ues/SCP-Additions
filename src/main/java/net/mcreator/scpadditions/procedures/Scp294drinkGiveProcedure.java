@@ -2,3511 +2,954 @@ package net.mcreator.scpadditions.procedures;
 
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
 
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.Explosion;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.DamageSource;
-import net.minecraft.item.ItemStack;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.BlockPos;
+import net.minecraft.client.gui.components.EditBox;
 
-import net.mcreator.scpadditions.item.VodkaItem;
-import net.mcreator.scpadditions.item.SpiritItem;
-import net.mcreator.scpadditions.item.QuantumItem;
-import net.mcreator.scpadditions.item.PearCiderItem;
-import net.mcreator.scpadditions.item.LagerItem;
-import net.mcreator.scpadditions.item.GrimaceShakeItem;
-import net.mcreator.scpadditions.item.EthanolItem;
-import net.mcreator.scpadditions.item.EmptyCupItem;
-import net.mcreator.scpadditions.item.Drink1Item;
-import net.mcreator.scpadditions.item.CorrosiveBlackItem;
-import net.mcreator.scpadditions.item.CoinItem;
-import net.mcreator.scpadditions.item.CoffeeItem;
-import net.mcreator.scpadditions.item.CocaineItem;
-import net.mcreator.scpadditions.item.CiderItem;
-import net.mcreator.scpadditions.item.ChocolateItem;
-import net.mcreator.scpadditions.item.ChimItem;
-import net.mcreator.scpadditions.item.ChampagneItem;
-import net.mcreator.scpadditions.item.CassisFantaItem;
-import net.mcreator.scpadditions.item.CarrotItem;
-import net.mcreator.scpadditions.item.CarbonItem;
-import net.mcreator.scpadditions.item.CactusItem;
-import net.mcreator.scpadditions.item.BloodOfChristItem;
-import net.mcreator.scpadditions.item.BloodItem;
-import net.mcreator.scpadditions.item.BleachItem;
-import net.mcreator.scpadditions.item.BeerItem;
-import net.mcreator.scpadditions.item.AquaRegiaItem;
-import net.mcreator.scpadditions.item.AppleCiderItem;
-import net.mcreator.scpadditions.item.AntiEnergyItem;
-import net.mcreator.scpadditions.item.AmnesiaItem;
-import net.mcreator.scpadditions.item.AloeItem;
-import net.mcreator.scpadditions.ScpAdditionsModVariables;
+import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
+import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.stream.Stream;
-import java.util.stream.Collectors;
 import java.util.function.Supplier;
-import java.util.function.Function;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Comparator;
-import java.util.AbstractMap;
 
 public class Scp294drinkGiveProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("world") == null) {
-			if (!dependencies.containsKey("world"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency world for procedure Scp294drinkGive!");
+	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity, HashMap guistate) {
+		if (entity == null || guistate == null)
 			return;
-		}
-		if (dependencies.get("x") == null) {
-			if (!dependencies.containsKey("x"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency x for procedure Scp294drinkGive!");
-			return;
-		}
-		if (dependencies.get("y") == null) {
-			if (!dependencies.containsKey("y"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency y for procedure Scp294drinkGive!");
-			return;
-		}
-		if (dependencies.get("z") == null) {
-			if (!dependencies.containsKey("z"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency z for procedure Scp294drinkGive!");
-			return;
-		}
-		if (dependencies.get("entity") == null) {
-			if (!dependencies.containsKey("entity"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency entity for procedure Scp294drinkGive!");
-			return;
-		}
-		if (dependencies.get("guistate") == null) {
-			if (!dependencies.containsKey("guistate"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency guistate for procedure Scp294drinkGive!");
-			return;
-		}
-		IWorld world = (IWorld) dependencies.get("world");
-		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
-		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
-		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
-		Entity entity = (Entity) dependencies.get("entity");
-		HashMap guistate = (HashMap) dependencies.get("guistate");
-		if (world instanceof World && !world.isRemote()) {
-			((World) world).playSound(null, new BlockPos(x, y, z),
-					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294enter")),
-					SoundCategory.NEUTRAL, (float) 1, (float) 1);
-		} else {
-			((World) world).playSound(x, y, z,
-					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294enter")),
-					SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-		}
-		if (CoinItem.block == (new Object() {
-			public ItemStack getItemStack(int sltid) {
-				Entity _ent = entity;
-				if (_ent instanceof ServerPlayerEntity) {
-					Container _current = ((ServerPlayerEntity) _ent).openContainer;
-					if (_current instanceof Supplier) {
-						Object invobj = ((Supplier) _current).get();
-						if (invobj instanceof Map) {
-							return ((Slot) ((Map) invobj).get(sltid)).getStack();
-						}
-					}
-				}
-				return ItemStack.EMPTY;
+		if (world instanceof Level _level) {
+			if (!_level.isClientSide()) {
+				_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294enter")), SoundSource.NEUTRAL, 1, 1);
+			} else {
+				_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294enter")), SoundSource.NEUTRAL, 1, 1, false);
 			}
-		}.getItemStack((int) (0))).getItem()) {
-			if ((new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("air") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("Air") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("nothing") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("Nothing") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("hl3") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("HL3") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("half life 3") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("Half Life 3") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("emptiness") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("Emptiness") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("vacuum") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("Vacuum") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("cup") || (new Object() {
-				public String getText() {
-					TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-					if (_tf != null) {
-						return _tf.getText();
-					}
-					return "";
-				}
-			}.getText()).equals("Cup")) {
-				if (world instanceof World && !world.isRemote()) {
-					((World) world)
-							.playSound(null, new BlockPos(x, y, z),
-									(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-											.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
-									SoundCategory.NEUTRAL, (float) 1, (float) 1);
-				} else {
-					((World) world).playSound(x, y, z,
-							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-									.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
-							SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-				}
-				{
-					Entity _ent = entity;
-					if (_ent instanceof ServerPlayerEntity) {
-						Container _current = ((ServerPlayerEntity) _ent).openContainer;
-						if (_current instanceof Supplier) {
-							Object invobj = ((Supplier) _current).get();
-							if (invobj instanceof Map) {
-								((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-								_current.detectAndSendChanges();
-							}
-						}
+		}
+		if (ScpAdditionsModItems.COIN.get() == (entity instanceof Player _plrSlotItem && _plrSlotItem.containerMenu instanceof Supplier _splr && _splr.get() instanceof Map _slt ? ((Slot) _slt.get(0)).getItem() : ItemStack.EMPTY).getItem()) {
+			if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("air")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Air")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("nothing")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Nothing")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("hl3")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("HL3")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("half life 3")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Half Life 3")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("emptiness")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Emptiness")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("vacuum")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Vacuum")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("cup")
+					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Cup")) {
+				if (world instanceof Level _level) {
+					if (!_level.isClientSide()) {
+						_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294emptycup")), SoundSource.NEUTRAL, 1, 1);
+					} else {
+						_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294emptycup")), SoundSource.NEUTRAL, 1, 1, false);
 					}
 				}
-				if (entity instanceof PlayerEntity) {
-					ItemStack _setstack = new ItemStack(EmptyCupItem.block);
-					_setstack.setCount((int) 1);
-					ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
+				if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+					((Slot) _slots.get(0)).remove(1);
+					_player.containerMenu.broadcastChanges();
 				}
-				ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+				if (entity instanceof Player _player) {
+					ItemStack _setstack = new ItemStack(ScpAdditionsModItems.EMPTY_CUP.get());
+					_setstack.setCount(1);
+					ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
+				}
+				ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 				ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 			} else {
-				if ((new Object() {
-					public String getText() {
-						TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-						if (_tf != null) {
-							return _tf.getText();
-						}
-						return "";
-					}
-				}.getText()).equals("Coffee") || (new Object() {
-					public String getText() {
-						TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-						if (_tf != null) {
-							return _tf.getText();
-						}
-						return "";
-					}
-				}.getText()).equals("coffee") || (new Object() {
-					public String getText() {
-						TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-						if (_tf != null) {
-							return _tf.getText();
-						}
-						return "";
-					}
-				}.getText()).equals("Black coffee") || (new Object() {
-					public String getText() {
-						TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-						if (_tf != null) {
-							return _tf.getText();
-						}
-						return "";
-					}
-				}.getText()).equals("black coffee")) {
-					if (world instanceof World && !world.isRemote()) {
-						((World) world)
-								.playSound(null, new BlockPos(x, y, z),
-										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-												.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-										SoundCategory.NEUTRAL, (float) 1, (float) 1);
-					} else {
-						((World) world).playSound(x, y, z,
-								(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-										.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-								SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-					}
-					{
-						Entity _ent = entity;
-						if (_ent instanceof ServerPlayerEntity) {
-							Container _current = ((ServerPlayerEntity) _ent).openContainer;
-							if (_current instanceof Supplier) {
-								Object invobj = ((Supplier) _current).get();
-								if (invobj instanceof Map) {
-									((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-									_current.detectAndSendChanges();
-								}
-							}
+				if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Coffee")
+						|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("coffee")
+						|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Black coffee")
+						|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("black coffee")) {
+					if (world instanceof Level _level) {
+						if (!_level.isClientSide()) {
+							_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+						} else {
+							_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 						}
 					}
-					new Object() {
-						private int ticks = 0;
-						private float waitTicks;
-						private IWorld world;
-
-						public void start(IWorld world, int waitTicks) {
-							this.waitTicks = waitTicks;
-							MinecraftForge.EVENT_BUS.register(this);
-							this.world = world;
+					if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+						((Slot) _slots.get(0)).remove(1);
+						_player.containerMenu.broadcastChanges();
+					}
+					ScpAdditionsMod.queueServerWork(40, () -> {
+						if (entity instanceof Player _player) {
+							ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CUP_OF_COFFEE.get());
+							_setstack.setCount(1);
+							ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 						}
-
-						@SubscribeEvent
-						public void tick(TickEvent.ServerTickEvent event) {
-							if (event.phase == TickEvent.Phase.END) {
-								this.ticks += 1;
-								if (this.ticks >= this.waitTicks)
-									run();
-							}
-						}
-
-						private void run() {
-							if (entity instanceof PlayerEntity) {
-								ItemStack _setstack = new ItemStack(CoffeeItem.block);
-								_setstack.setCount((int) 1);
-								ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-							}
-							MinecraftForge.EVENT_BUS.unregister(this);
-						}
-					}.start(world, (int) 40);
-					ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock
-							+ 1);
+					});
+					ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 					ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 				} else {
-					if ((new Object() {
-						public String getText() {
-							TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-							if (_tf != null) {
-								return _tf.getText();
-							}
-							return "";
-						}
-					}.getText()).equals("alcohol") || (new Object() {
-						public String getText() {
-							TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-							if (_tf != null) {
-								return _tf.getText();
-							}
-							return "";
-						}
-					}.getText()).equals("Alcohol")) {
-						if (world instanceof World && !world.isRemote()) {
-							((World) world).playSound(null, new BlockPos(x, y, z),
-									(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-											.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-									SoundCategory.NEUTRAL, (float) 1, (float) 1);
-						} else {
-							((World) world).playSound(x, y, z,
-									(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-											.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-									SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-						}
-						{
-							Entity _ent = entity;
-							if (_ent instanceof ServerPlayerEntity) {
-								Container _current = ((ServerPlayerEntity) _ent).openContainer;
-								if (_current instanceof Supplier) {
-									Object invobj = ((Supplier) _current).get();
-									if (invobj instanceof Map) {
-										((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-										_current.detectAndSendChanges();
-									}
-								}
+					if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("alcohol")
+							|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Alcohol")) {
+						if (world instanceof Level _level) {
+							if (!_level.isClientSide()) {
+								_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+							} else {
+								_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 							}
 						}
-						new Object() {
-							private int ticks = 0;
-							private float waitTicks;
-							private IWorld world;
-
-							public void start(IWorld world, int waitTicks) {
-								this.waitTicks = waitTicks;
-								MinecraftForge.EVENT_BUS.register(this);
-								this.world = world;
+						if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+							((Slot) _slots.get(0)).remove(1);
+							_player.containerMenu.broadcastChanges();
+						}
+						ScpAdditionsMod.queueServerWork(40, () -> {
+							if (entity instanceof Player _player) {
+								ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CUP_OF_ALCOHOL.get());
+								_setstack.setCount(1);
+								ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 							}
-
-							@SubscribeEvent
-							public void tick(TickEvent.ServerTickEvent event) {
-								if (event.phase == TickEvent.Phase.END) {
-									this.ticks += 1;
-									if (this.ticks >= this.waitTicks)
-										run();
-								}
-							}
-
-							private void run() {
-								if (entity instanceof PlayerEntity) {
-									ItemStack _setstack = new ItemStack(Drink1Item.block);
-									_setstack.setCount((int) 1);
-									ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-								}
-								MinecraftForge.EVENT_BUS.unregister(this);
-							}
-						}.start(world, (int) 40);
-						ScpAdditionsModVariables.WorldVariables
-								.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+						});
+						ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 						ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 					} else {
-						if ((new Object() {
-							public String getText() {
-								TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-								if (_tf != null) {
-									return _tf.getText();
-								}
-								return "";
-							}
-						}.getText()).equals("ethanol") || (new Object() {
-							public String getText() {
-								TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-								if (_tf != null) {
-									return _tf.getText();
-								}
-								return "";
-							}
-						}.getText()).equals("Ethanol") || (new Object() {
-							public String getText() {
-								TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-								if (_tf != null) {
-									return _tf.getText();
-								}
-								return "";
-							}
-						}.getText()).equals("ethanol liquid") || (new Object() {
-							public String getText() {
-								TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-								if (_tf != null) {
-									return _tf.getText();
-								}
-								return "";
-							}
-						}.getText()).equals("Ethanol liquid")) {
-							if (world instanceof World && !world.isRemote()) {
-								((World) world).playSound(null, new BlockPos(x, y, z),
-										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-												.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-										SoundCategory.NEUTRAL, (float) 1, (float) 1);
-							} else {
-								((World) world).playSound(x, y, z,
-										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-												.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-										SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-							}
-							{
-								Entity _ent = entity;
-								if (_ent instanceof ServerPlayerEntity) {
-									Container _current = ((ServerPlayerEntity) _ent).openContainer;
-									if (_current instanceof Supplier) {
-										Object invobj = ((Supplier) _current).get();
-										if (invobj instanceof Map) {
-											((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-											_current.detectAndSendChanges();
-										}
-									}
+						if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("ethanol")
+								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Ethanol")
+								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("ethanol liquid")
+								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Ethanol liquid")) {
+							if (world instanceof Level _level) {
+								if (!_level.isClientSide()) {
+									_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+								} else {
+									_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 								}
 							}
-							new Object() {
-								private int ticks = 0;
-								private float waitTicks;
-								private IWorld world;
-
-								public void start(IWorld world, int waitTicks) {
-									this.waitTicks = waitTicks;
-									MinecraftForge.EVENT_BUS.register(this);
-									this.world = world;
+							if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+								((Slot) _slots.get(0)).remove(1);
+								_player.containerMenu.broadcastChanges();
+							}
+							ScpAdditionsMod.queueServerWork(40, () -> {
+								if (entity instanceof Player _player) {
+									ItemStack _setstack = new ItemStack(ScpAdditionsModItems.ETHANOL.get());
+									_setstack.setCount(1);
+									ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 								}
-
-								@SubscribeEvent
-								public void tick(TickEvent.ServerTickEvent event) {
-									if (event.phase == TickEvent.Phase.END) {
-										this.ticks += 1;
-										if (this.ticks >= this.waitTicks)
-											run();
-									}
-								}
-
-								private void run() {
-									if (entity instanceof PlayerEntity) {
-										ItemStack _setstack = new ItemStack(EthanolItem.block);
-										_setstack.setCount((int) 1);
-										ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-									}
-									MinecraftForge.EVENT_BUS.unregister(this);
-								}
-							}.start(world, (int) 40);
-							ScpAdditionsModVariables.WorldVariables
-									.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+							});
+							ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 							ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 						} else {
-							if ((new Object() {
-								public String getText() {
-									TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-									if (_tf != null) {
-										return _tf.getText();
-									}
-									return "";
-								}
-							}.getText()).equals("spirit") || (new Object() {
-								public String getText() {
-									TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-									if (_tf != null) {
-										return _tf.getText();
-									}
-									return "";
-								}
-							}.getText()).equals("Spirit")) {
-								if (world instanceof World && !world.isRemote()) {
-									((World) world).playSound(null, new BlockPos(x, y, z),
-											(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-													.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-											SoundCategory.NEUTRAL, (float) 1, (float) 1);
-								} else {
-									((World) world).playSound(x, y, z,
-											(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-													.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-											SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-								}
-								{
-									Entity _ent = entity;
-									if (_ent instanceof ServerPlayerEntity) {
-										Container _current = ((ServerPlayerEntity) _ent).openContainer;
-										if (_current instanceof Supplier) {
-											Object invobj = ((Supplier) _current).get();
-											if (invobj instanceof Map) {
-												((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-												_current.detectAndSendChanges();
-											}
-										}
+							if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("spirit")
+									|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Spirit")) {
+								if (world instanceof Level _level) {
+									if (!_level.isClientSide()) {
+										_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+									} else {
+										_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 									}
 								}
-								new Object() {
-									private int ticks = 0;
-									private float waitTicks;
-									private IWorld world;
-
-									public void start(IWorld world, int waitTicks) {
-										this.waitTicks = waitTicks;
-										MinecraftForge.EVENT_BUS.register(this);
-										this.world = world;
+								if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+									((Slot) _slots.get(0)).remove(1);
+									_player.containerMenu.broadcastChanges();
+								}
+								ScpAdditionsMod.queueServerWork(40, () -> {
+									if (entity instanceof Player _player) {
+										ItemStack _setstack = new ItemStack(ScpAdditionsModItems.SPIRIT.get());
+										_setstack.setCount(1);
+										ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 									}
-
-									@SubscribeEvent
-									public void tick(TickEvent.ServerTickEvent event) {
-										if (event.phase == TickEvent.Phase.END) {
-											this.ticks += 1;
-											if (this.ticks >= this.waitTicks)
-												run();
-										}
-									}
-
-									private void run() {
-										if (entity instanceof PlayerEntity) {
-											ItemStack _setstack = new ItemStack(SpiritItem.block);
-											_setstack.setCount((int) 1);
-											ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-										}
-										MinecraftForge.EVENT_BUS.unregister(this);
-									}
-								}.start(world, (int) 40);
-								ScpAdditionsModVariables.WorldVariables
-										.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+								});
+								ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 								ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 							} else {
-								if ((new Object() {
-									public String getText() {
-										TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-										if (_tf != null) {
-											return _tf.getText();
-										}
-										return "";
-									}
-								}.getText()).equals("vodka") || (new Object() {
-									public String getText() {
-										TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-										if (_tf != null) {
-											return _tf.getText();
-										}
-										return "";
-									}
-								}.getText()).equals("Vodka")) {
-									if (world instanceof World && !world.isRemote()) {
-										((World) world).playSound(null, new BlockPos(x, y, z),
-												(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-														.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-												SoundCategory.NEUTRAL, (float) 1, (float) 1);
-									} else {
-										((World) world).playSound(x, y, z,
-												(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-														.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-												SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-									}
-									{
-										Entity _ent = entity;
-										if (_ent instanceof ServerPlayerEntity) {
-											Container _current = ((ServerPlayerEntity) _ent).openContainer;
-											if (_current instanceof Supplier) {
-												Object invobj = ((Supplier) _current).get();
-												if (invobj instanceof Map) {
-													((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-													_current.detectAndSendChanges();
-												}
-											}
+								if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("vodka")
+										|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Vodka")) {
+									if (world instanceof Level _level) {
+										if (!_level.isClientSide()) {
+											_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+										} else {
+											_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 										}
 									}
-									new Object() {
-										private int ticks = 0;
-										private float waitTicks;
-										private IWorld world;
-
-										public void start(IWorld world, int waitTicks) {
-											this.waitTicks = waitTicks;
-											MinecraftForge.EVENT_BUS.register(this);
-											this.world = world;
+									if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+										((Slot) _slots.get(0)).remove(1);
+										_player.containerMenu.broadcastChanges();
+									}
+									ScpAdditionsMod.queueServerWork(40, () -> {
+										if (entity instanceof Player _player) {
+											ItemStack _setstack = new ItemStack(ScpAdditionsModItems.VODKA.get());
+											_setstack.setCount(1);
+											ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 										}
-
-										@SubscribeEvent
-										public void tick(TickEvent.ServerTickEvent event) {
-											if (event.phase == TickEvent.Phase.END) {
-												this.ticks += 1;
-												if (this.ticks >= this.waitTicks)
-													run();
-											}
-										}
-
-										private void run() {
-											if (entity instanceof PlayerEntity) {
-												ItemStack _setstack = new ItemStack(VodkaItem.block);
-												_setstack.setCount((int) 1);
-												ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-											}
-											MinecraftForge.EVENT_BUS.unregister(this);
-										}
-									}.start(world, (int) 40);
-									ScpAdditionsModVariables.WorldVariables
-											.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+									});
+									ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 									ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 								} else {
-									if ((new Object() {
-										public String getText() {
-											TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-											if (_tf != null) {
-												return _tf.getText();
-											}
-											return "";
-										}
-									}.getText()).equals("aloe vera") || (new Object() {
-										public String getText() {
-											TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-											if (_tf != null) {
-												return _tf.getText();
-											}
-											return "";
-										}
-									}.getText()).equals("Aloe Vera")) {
-										if (world instanceof World && !world.isRemote()) {
-											((World) world).playSound(null, new BlockPos(x, y, z),
-													(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-															.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-													SoundCategory.NEUTRAL, (float) 1, (float) 1);
-										} else {
-											((World) world).playSound(x, y, z,
-													(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-															.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-													SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-										}
-										{
-											Entity _ent = entity;
-											if (_ent instanceof ServerPlayerEntity) {
-												Container _current = ((ServerPlayerEntity) _ent).openContainer;
-												if (_current instanceof Supplier) {
-													Object invobj = ((Supplier) _current).get();
-													if (invobj instanceof Map) {
-														((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-														_current.detectAndSendChanges();
-													}
-												}
+									if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("aloe vera")
+											|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Aloe Vera")) {
+										if (world instanceof Level _level) {
+											if (!_level.isClientSide()) {
+												_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+											} else {
+												_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 											}
 										}
-										new Object() {
-											private int ticks = 0;
-											private float waitTicks;
-											private IWorld world;
-
-											public void start(IWorld world, int waitTicks) {
-												this.waitTicks = waitTicks;
-												MinecraftForge.EVENT_BUS.register(this);
-												this.world = world;
+										if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+											((Slot) _slots.get(0)).remove(1);
+											_player.containerMenu.broadcastChanges();
+										}
+										ScpAdditionsMod.queueServerWork(40, () -> {
+											if (entity instanceof Player _player) {
+												ItemStack _setstack = new ItemStack(ScpAdditionsModItems.ALOE.get());
+												_setstack.setCount(1);
+												ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 											}
-
-											@SubscribeEvent
-											public void tick(TickEvent.ServerTickEvent event) {
-												if (event.phase == TickEvent.Phase.END) {
-													this.ticks += 1;
-													if (this.ticks >= this.waitTicks)
-														run();
-												}
-											}
-
-											private void run() {
-												if (entity instanceof PlayerEntity) {
-													ItemStack _setstack = new ItemStack(AloeItem.block);
-													_setstack.setCount((int) 1);
-													ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-												}
-												MinecraftForge.EVENT_BUS.unregister(this);
-											}
-										}.start(world, (int) 40);
-										ScpAdditionsModVariables.WorldVariables
-												.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+										});
+										ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 										ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 									} else {
-										if ((new Object() {
-											public String getText() {
-												TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-												if (_tf != null) {
-													return _tf.getText();
-												}
-												return "";
-											}
-										}.getText()).equals("cactus") || (new Object() {
-											public String getText() {
-												TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-												if (_tf != null) {
-													return _tf.getText();
-												}
-												return "";
-											}
-										}.getText()).equals("Cactus")) {
-											if (world instanceof World && !world.isRemote()) {
-												((World) world).playSound(null, new BlockPos(x, y, z),
-														(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-														SoundCategory.NEUTRAL, (float) 1, (float) 1);
-											} else {
-												((World) world).playSound(x, y, z,
-														(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-														SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-											}
-											{
-												Entity _ent = entity;
-												if (_ent instanceof ServerPlayerEntity) {
-													Container _current = ((ServerPlayerEntity) _ent).openContainer;
-													if (_current instanceof Supplier) {
-														Object invobj = ((Supplier) _current).get();
-														if (invobj instanceof Map) {
-															((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-															_current.detectAndSendChanges();
-														}
-													}
+										if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("cactus")
+												|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Cactus")) {
+											if (world instanceof Level _level) {
+												if (!_level.isClientSide()) {
+													_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+												} else {
+													_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 												}
 											}
-											new Object() {
-												private int ticks = 0;
-												private float waitTicks;
-												private IWorld world;
-
-												public void start(IWorld world, int waitTicks) {
-													this.waitTicks = waitTicks;
-													MinecraftForge.EVENT_BUS.register(this);
-													this.world = world;
+											if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+												((Slot) _slots.get(0)).remove(1);
+												_player.containerMenu.broadcastChanges();
+											}
+											ScpAdditionsMod.queueServerWork(40, () -> {
+												if (entity instanceof Player _player) {
+													ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CACTUS.get());
+													_setstack.setCount(1);
+													ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 												}
-
-												@SubscribeEvent
-												public void tick(TickEvent.ServerTickEvent event) {
-													if (event.phase == TickEvent.Phase.END) {
-														this.ticks += 1;
-														if (this.ticks >= this.waitTicks)
-															run();
-													}
-												}
-
-												private void run() {
-													if (entity instanceof PlayerEntity) {
-														ItemStack _setstack = new ItemStack(CactusItem.block);
-														_setstack.setCount((int) 1);
-														ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-													}
-													MinecraftForge.EVENT_BUS.unregister(this);
-												}
-											}.start(world, (int) 40);
-											ScpAdditionsModVariables.WorldVariables
-													.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+											});
+											ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 											ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 										} else {
-											if ((new Object() {
-												public String getText() {
-													TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-													if (_tf != null) {
-														return _tf.getText();
-													}
-													return "";
-												}
-											}.getText()).equals("amnesia") || (new Object() {
-												public String getText() {
-													TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-													if (_tf != null) {
-														return _tf.getText();
-													}
-													return "";
-												}
-											}.getText()).equals("Amnesia")) {
-												if (world instanceof World && !world.isRemote()) {
-													((World) world).playSound(null, new BlockPos(x, y, z),
-															(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																	.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-															SoundCategory.NEUTRAL, (float) 1, (float) 1);
-												} else {
-													((World) world).playSound(x, y, z,
-															(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																	.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-															SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-												}
-												{
-													Entity _ent = entity;
-													if (_ent instanceof ServerPlayerEntity) {
-														Container _current = ((ServerPlayerEntity) _ent).openContainer;
-														if (_current instanceof Supplier) {
-															Object invobj = ((Supplier) _current).get();
-															if (invobj instanceof Map) {
-																((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-																_current.detectAndSendChanges();
-															}
-														}
+											if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("amnesia")
+													|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Amnesia")) {
+												if (world instanceof Level _level) {
+													if (!_level.isClientSide()) {
+														_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+													} else {
+														_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 													}
 												}
-												new Object() {
-													private int ticks = 0;
-													private float waitTicks;
-													private IWorld world;
-
-													public void start(IWorld world, int waitTicks) {
-														this.waitTicks = waitTicks;
-														MinecraftForge.EVENT_BUS.register(this);
-														this.world = world;
+												if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+													((Slot) _slots.get(0)).remove(1);
+													_player.containerMenu.broadcastChanges();
+												}
+												ScpAdditionsMod.queueServerWork(40, () -> {
+													if (entity instanceof Player _player) {
+														ItemStack _setstack = new ItemStack(ScpAdditionsModItems.AMNESIA.get());
+														_setstack.setCount(1);
+														ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 													}
-
-													@SubscribeEvent
-													public void tick(TickEvent.ServerTickEvent event) {
-														if (event.phase == TickEvent.Phase.END) {
-															this.ticks += 1;
-															if (this.ticks >= this.waitTicks)
-																run();
-														}
-													}
-
-													private void run() {
-														if (entity instanceof PlayerEntity) {
-															ItemStack _setstack = new ItemStack(AmnesiaItem.block);
-															_setstack.setCount((int) 1);
-															ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-														}
-														MinecraftForge.EVENT_BUS.unregister(this);
-													}
-												}.start(world, (int) 40);
-												ScpAdditionsModVariables.WorldVariables.get(
-														world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+												});
+												ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 												ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 											} else {
-												if ((new Object() {
-													public String getText() {
-														TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-														if (_tf != null) {
-															return _tf.getText();
-														}
-														return "";
-													}
-												}.getText()).equals("anti-energy") || (new Object() {
-													public String getText() {
-														TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-														if (_tf != null) {
-															return _tf.getText();
-														}
-														return "";
-													}
-												}.getText()).equals("Anti-Energy") || (new Object() {
-													public String getText() {
-														TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-														if (_tf != null) {
-															return _tf.getText();
-														}
-														return "";
-													}
-												}.getText()).equals("anti energy") || (new Object() {
-													public String getText() {
-														TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-														if (_tf != null) {
-															return _tf.getText();
-														}
-														return "";
-													}
-												}.getText()).equals("Anti Energy")) {
-													if (world instanceof World && !world.isRemote()) {
-														((World) world).playSound(null, new BlockPos(x, y, z),
-																(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																		.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-																SoundCategory.NEUTRAL, (float) 1, (float) 1);
-													} else {
-														((World) world).playSound(x, y, z,
-																(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																		.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-																SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-													}
-													{
-														Entity _ent = entity;
-														if (_ent instanceof ServerPlayerEntity) {
-															Container _current = ((ServerPlayerEntity) _ent).openContainer;
-															if (_current instanceof Supplier) {
-																Object invobj = ((Supplier) _current).get();
-																if (invobj instanceof Map) {
-																	((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-																	_current.detectAndSendChanges();
-																}
-															}
+												if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("anti-energy")
+														|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Anti-Energy")
+														|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("anti energy")
+														|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Anti Energy")) {
+													if (world instanceof Level _level) {
+														if (!_level.isClientSide()) {
+															_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+														} else {
+															_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 														}
 													}
-													new Object() {
-														private int ticks = 0;
-														private float waitTicks;
-														private IWorld world;
-
-														public void start(IWorld world, int waitTicks) {
-															this.waitTicks = waitTicks;
-															MinecraftForge.EVENT_BUS.register(this);
-															this.world = world;
+													if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+														((Slot) _slots.get(0)).remove(1);
+														_player.containerMenu.broadcastChanges();
+													}
+													ScpAdditionsMod.queueServerWork(40, () -> {
+														if (entity instanceof Player _player) {
+															ItemStack _setstack = new ItemStack(ScpAdditionsModItems.ANTI_ENERGY.get());
+															_setstack.setCount(1);
+															ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 														}
-
-														@SubscribeEvent
-														public void tick(TickEvent.ServerTickEvent event) {
-															if (event.phase == TickEvent.Phase.END) {
-																this.ticks += 1;
-																if (this.ticks >= this.waitTicks)
-																	run();
-															}
-														}
-
-														private void run() {
-															if (entity instanceof PlayerEntity) {
-																ItemStack _setstack = new ItemStack(AntiEnergyItem.block);
-																_setstack.setCount((int) 1);
-																ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-															}
-															MinecraftForge.EVENT_BUS.unregister(this);
-														}
-													}.start(world, (int) 40);
-													ScpAdditionsModVariables.WorldVariables.get(
-															world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1);
+													});
+													ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 													ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 												} else {
-													if ((new Object() {
-														public String getText() {
-															TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-															if (_tf != null) {
-																return _tf.getText();
-															}
-															return "";
-														}
-													}.getText()).equals("antimatter") || (new Object() {
-														public String getText() {
-															TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-															if (_tf != null) {
-																return _tf.getText();
-															}
-															return "";
-														}
-													}.getText()).equals("Antimatter") || (new Object() {
-														public String getText() {
-															TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-															if (_tf != null) {
-																return _tf.getText();
-															}
-															return "";
-														}
-													}.getText()).equals("anti-matter") || (new Object() {
-														public String getText() {
-															TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-															if (_tf != null) {
-																return _tf.getText();
-															}
-															return "";
-														}
-													}.getText()).equals("Anti-matter") || (new Object() {
-														public String getText() {
-															TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-															if (_tf != null) {
-																return _tf.getText();
-															}
-															return "";
-														}
-													}.getText()).equals("void") || (new Object() {
-														public String getText() {
-															TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-															if (_tf != null) {
-																return _tf.getText();
-															}
-															return "";
-														}
-													}.getText()).equals("Void")) {
-														if (world instanceof World && !world.isRemote()) {
-															((World) world).playSound(null, new BlockPos(x, y, z),
-																	(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																			.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
-																	SoundCategory.NEUTRAL, (float) 1, (float) 1);
-														} else {
-															((World) world).playSound(x, y, z,
-																	(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																			.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
-																	SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-														}
-														{
-															Entity _ent = entity;
-															if (_ent instanceof ServerPlayerEntity) {
-																Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																if (_current instanceof Supplier) {
-																	Object invobj = ((Supplier) _current).get();
-																	if (invobj instanceof Map) {
-																		((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-																		_current.detectAndSendChanges();
-																	}
-																}
+													if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("antimatter")
+															|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Antimatter")
+															|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("anti-matter")
+															|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Anti-matter")
+															|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("void")
+															|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Void")) {
+														if (world instanceof Level _level) {
+															if (!_level.isClientSide()) {
+																_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294emptycup")), SoundSource.NEUTRAL, 1, 1);
+															} else {
+																_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294emptycup")), SoundSource.NEUTRAL, 1, 1, false);
 															}
 														}
-														new Object() {
-															private int ticks = 0;
-															private float waitTicks;
-															private IWorld world;
-
-															public void start(IWorld world, int waitTicks) {
-																this.waitTicks = waitTicks;
-																MinecraftForge.EVENT_BUS.register(this);
-																this.world = world;
-															}
-
-															@SubscribeEvent
-															public void tick(TickEvent.ServerTickEvent event) {
-																if (event.phase == TickEvent.Phase.END) {
-																	this.ticks += 1;
-																	if (this.ticks >= this.waitTicks)
-																		run();
-																}
-															}
-
-															private void run() {
-																if (world instanceof World && !((World) world).isRemote) {
-																	((World) world).createExplosion(null, (int) x, (int) y, (int) z, (float) 10,
-																			Explosion.Mode.NONE);
-																}
-																{
-																	List<Entity> _entfound = world
-																			.getEntitiesWithinAABB(Entity.class,
-																					new AxisAlignedBB(x - (10 / 2d), y - (10 / 2d), z - (10 / 2d),
-																							x + (10 / 2d), y + (10 / 2d), z + (10 / 2d)),
-																					null)
-																			.stream().sorted(new Object() {
-																				Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
-																					return Comparator
-																							.comparing((Function<Entity, Double>) (_entcnd -> _entcnd
-																									.getDistanceSq(_x, _y, _z)));
+														if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+															((Slot) _slots.get(0)).remove(1);
+															_player.containerMenu.broadcastChanges();
+														}
+														ScpAdditionsMod.queueServerWork(30, () -> {
+															if (world instanceof Level _level && !_level.isClientSide())
+																_level.explode(null, x, y, z, 10, Level.ExplosionInteraction.NONE);
+															{
+																final Vec3 _center = new Vec3(x, y, z);
+																List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(10 / 2d), e -> true).stream()
+																		.sorted(Comparator.comparingDouble(_entcnd -> _entcnd.distanceToSqr(_center))).toList();
+																for (Entity entityiterator : _entfound) {
+																	if (entityiterator instanceof LivingEntity _entity)
+																		_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
+																			@Override
+																			public Component getLocalizedDeathMessage(LivingEntity _msgEntity) {
+																				String _translatekey = "death.attack." + "void";
+																				if (this.getEntity() == null && this.getDirectEntity() == null) {
+																					return _msgEntity.getKillCredit() != null
+																							? Component.translatable(_translatekey + ".player", _msgEntity.getDisplayName(), _msgEntity.getKillCredit().getDisplayName())
+																							: Component.translatable(_translatekey, _msgEntity.getDisplayName());
+																				} else {
+																					Component _component = this.getEntity() == null ? this.getDirectEntity().getDisplayName() : this.getEntity().getDisplayName();
+																					ItemStack _itemstack = ItemStack.EMPTY;
+																					if (this.getEntity() instanceof LivingEntity _livingentity)
+																						_itemstack = _livingentity.getMainHandItem();
+																					return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+																							? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
+																							: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
 																				}
-																			}.compareDistOf(x, y, z)).collect(Collectors.toList());
-																	for (Entity entityiterator : _entfound) {
-																		if (entityiterator instanceof LivingEntity) {
-																			((LivingEntity) entityiterator).attackEntityFrom(
-																					new DamageSource("void").setDamageBypassesArmor(), (float) 100);
-																		}
-																	}
+																			}
+																		}, 100);
 																}
-																MinecraftForge.EVENT_BUS.unregister(this);
 															}
-														}.start(world, (int) 30);
-														ScpAdditionsModVariables.WorldVariables.get(
-																world).Scp294stock = (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock
-																		+ 1);
+														});
+														ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 														ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 													} else {
-														if ((new Object() {
-															public String getText() {
-																TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																if (_tf != null) {
-																	return _tf.getText();
-																}
-																return "";
-															}
-														}.getText()).equals("aqua regia") || (new Object() {
-															public String getText() {
-																TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																if (_tf != null) {
-																	return _tf.getText();
-																}
-																return "";
-															}
-														}.getText()).equals("Aqua Regia")) {
-															if (world instanceof World && !world.isRemote()) {
-																((World) world).playSound(null, new BlockPos(x, y, z),
-																		(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																				.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-																		SoundCategory.NEUTRAL, (float) 1, (float) 1);
-															} else {
-																((World) world).playSound(x, y, z,
-																		(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																				.getValue(new ResourceLocation("scp_additions:scp294pouring")),
-																		SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-															}
-															{
-																Entity _ent = entity;
-																if (_ent instanceof ServerPlayerEntity) {
-																	Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																	if (_current instanceof Supplier) {
-																		Object invobj = ((Supplier) _current).get();
-																		if (invobj instanceof Map) {
-																			((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-																			_current.detectAndSendChanges();
-																		}
-																	}
+														if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("aqua regia")
+																|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Aqua Regia")) {
+															if (world instanceof Level _level) {
+																if (!_level.isClientSide()) {
+																	_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+																} else {
+																	_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 																}
 															}
-															new Object() {
-																private int ticks = 0;
-																private float waitTicks;
-																private IWorld world;
-
-																public void start(IWorld world, int waitTicks) {
-																	this.waitTicks = waitTicks;
-																	MinecraftForge.EVENT_BUS.register(this);
-																	this.world = world;
+															if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																((Slot) _slots.get(0)).remove(1);
+																_player.containerMenu.broadcastChanges();
+															}
+															ScpAdditionsMod.queueServerWork(40, () -> {
+																if (entity instanceof Player _player) {
+																	ItemStack _setstack = new ItemStack(ScpAdditionsModItems.AQUA_REGIA.get());
+																	_setstack.setCount(1);
+																	ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																}
-
-																@SubscribeEvent
-																public void tick(TickEvent.ServerTickEvent event) {
-																	if (event.phase == TickEvent.Phase.END) {
-																		this.ticks += 1;
-																		if (this.ticks >= this.waitTicks)
-																			run();
-																	}
-																}
-
-																private void run() {
-																	if (entity instanceof PlayerEntity) {
-																		ItemStack _setstack = new ItemStack(AquaRegiaItem.block);
-																		_setstack.setCount((int) 1);
-																		ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity), _setstack);
-																	}
-																	MinecraftForge.EVENT_BUS.unregister(this);
-																}
-															}.start(world, (int) 40);
-															ScpAdditionsModVariables.WorldVariables
-																	.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																			.get(world).Scp294stock + 1);
+															});
+															ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 															ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 														} else {
-															if ((new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
+															if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("atomic")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Atomic")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("nuclear")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Nuclear")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("nuclear fusion")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Nuclear Fusion")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("nuclear fission")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Nuclear Fission")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("nuclear warhead")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Nuclear Warhead")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("oppenheimer")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Oppenheimer")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("nuclear reaction")
+																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Nuclear Reaction")) {
+																if (world instanceof Level _level) {
+																	if (!_level.isClientSide()) {
+																		_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294emptycup")), SoundSource.NEUTRAL, 1, 1);
+																	} else {
+																		_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294emptycup")), SoundSource.NEUTRAL, 1, 1, false);
 																	}
-																	return "";
 																}
-															}.getText()).equals("atomic") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Atomic") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("nuclear") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Nuclear") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("nuclear fusion") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Nuclear Fusion") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("nuclear fission") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Nuclear Fission") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("nuclear warhead") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Nuclear Warhead") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("oppenheimer") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Oppenheimer") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("nuclear reaction") || (new Object() {
-																public String getText() {
-																	TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																	if (_tf != null) {
-																		return _tf.getText();
-																	}
-																	return "";
-																}
-															}.getText()).equals("Nuclear Reaction")) {
-																if (world instanceof World && !world.isRemote()) {
-																	((World) world).playSound(null, new BlockPos(x, y, z),
-																			(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																					.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
-																			SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																} else {
-																	((World) world).playSound(x, y, z,
-																			(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																					.getValue(new ResourceLocation("scp_additions:scp294emptycup")),
-																			SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
+																if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																	((Slot) _slots.get(0)).remove(1);
+																	_player.containerMenu.broadcastChanges();
 																}
 																{
-																	Entity _ent = entity;
-																	if (_ent instanceof ServerPlayerEntity) {
-																		Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																		if (_current instanceof Supplier) {
-																			Object invobj = ((Supplier) _current).get();
-																			if (invobj instanceof Map) {
-																				((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-																				_current.detectAndSendChanges();
-																			}
-																		}
-																	}
-																}
-																{
-																	List<Entity> _entfound = world
-																			.getEntitiesWithinAABB(Entity.class,
-																					new AxisAlignedBB(x - (30 / 2d), y - (30 / 2d), z - (30 / 2d),
-																							x + (30 / 2d), y + (30 / 2d), z + (30 / 2d)),
-																					null)
-																			.stream().sorted(new Object() {
-																				Comparator<Entity> compareDistOf(double _x, double _y, double _z) {
-																					return Comparator
-																							.comparing((Function<Entity, Double>) (_entcnd -> _entcnd
-																									.getDistanceSq(_x, _y, _z)));
-																				}
-																			}.compareDistOf(x, y, z)).collect(Collectors.toList());
+																	final Vec3 _center = new Vec3(x, y, z);
+																	List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(30 / 2d), e -> true).stream()
+																			.sorted(Comparator.comparingDouble(_entcnd -> _entcnd.distanceToSqr(_center))).toList();
 																	for (Entity entityiterator : _entfound) {
-																		if (world instanceof World && !world.isRemote()) {
-																			((World) world).playSound(null, new BlockPos(x, y, z),
-																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																							.getValue(new ResourceLocation("scp_additions:nuclear")),
-																					SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																		} else {
-																			((World) world).playSound(x, y, z,
-																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																							.getValue(new ResourceLocation("scp_additions:nuclear")),
-																					SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
+																		if (world instanceof Level _level) {
+																			if (!_level.isClientSide()) {
+																				_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:nuclear")), SoundSource.NEUTRAL, 1, 1);
+																			} else {
+																				_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:nuclear")), SoundSource.NEUTRAL, 1, 1, false);
+																			}
 																		}
 																		{
-																			boolean _setval = (true);
-																			entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY,
-																					null).ifPresent(capability -> {
-																						capability.nuclear = _setval;
-																						capability.syncPlayerVariables(entity);
-																					});
+																			boolean _setval = true;
+																			entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
+																				capability.nuclear = _setval;
+																				capability.syncPlayerVariables(entity);
+																			});
 																		}
-																		new Object() {
-																			private int ticks = 0;
-																			private float waitTicks;
-																			private IWorld world;
-
-																			public void start(IWorld world, int waitTicks) {
-																				this.waitTicks = waitTicks;
-																				MinecraftForge.EVENT_BUS.register(this);
-																				this.world = world;
-																			}
-
-																			@SubscribeEvent
-																			public void tick(TickEvent.ServerTickEvent event) {
-																				if (event.phase == TickEvent.Phase.END) {
-																					this.ticks += 1;
-																					if (this.ticks >= this.waitTicks)
-																						run();
-																				}
-																			}
-
-																			private void run() {
-																				if (entityiterator instanceof LivingEntity) {
-																					((LivingEntity) entityiterator).attackEntityFrom(
-																							new DamageSource("nuclear").setDamageBypassesArmor(),
-																							(float) 100);
-																				}
-																				MinecraftForge.EVENT_BUS.unregister(this);
-																			}
-																		}.start(world, (int) 40);
+																		ScpAdditionsMod.queueServerWork(40, () -> {
+																			if (entityiterator instanceof LivingEntity _entity)
+																				_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
+																					@Override
+																					public Component getLocalizedDeathMessage(LivingEntity _msgEntity) {
+																						String _translatekey = "death.attack." + "nuclear";
+																						if (this.getEntity() == null && this.getDirectEntity() == null) {
+																							return _msgEntity.getKillCredit() != null
+																									? Component.translatable(_translatekey + ".player", _msgEntity.getDisplayName(), _msgEntity.getKillCredit().getDisplayName())
+																									: Component.translatable(_translatekey, _msgEntity.getDisplayName());
+																						} else {
+																							Component _component = this.getEntity() == null ? this.getDirectEntity().getDisplayName() : this.getEntity().getDisplayName();
+																							ItemStack _itemstack = ItemStack.EMPTY;
+																							if (this.getEntity() instanceof LivingEntity _livingentity)
+																								_itemstack = _livingentity.getMainHandItem();
+																							return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+																									? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
+																									: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
+																						}
+																					}
+																				}, 100);
+																		});
 																	}
 																}
-																ScpAdditionsModVariables.WorldVariables
-																		.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																				.get(world).Scp294stock + 1);
+																ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 																ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 															} else {
-																if ((new Object() {
-																	public String getText() {
-																		TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																		if (_tf != null) {
-																			return _tf.getText();
-																		}
-																		return "";
-																	}
-																}.getText()).equals("beer") || (new Object() {
-																	public String getText() {
-																		TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																		if (_tf != null) {
-																			return _tf.getText();
-																		}
-																		return "";
-																	}
-																}.getText()).equals("Beer")) {
-																	if (world instanceof World && !world.isRemote()) {
-																		((World) world).playSound(null, new BlockPos(x, y, z),
-																				(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(
-																						new ResourceLocation("scp_additions:scp294pouring")),
-																				SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																	} else {
-																		((World) world).playSound(x, y, z,
-																				(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS.getValue(
-																						new ResourceLocation("scp_additions:scp294pouring")),
-																				SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-																	}
-																	{
-																		Entity _ent = entity;
-																		if (_ent instanceof ServerPlayerEntity) {
-																			Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																			if (_current instanceof Supplier) {
-																				Object invobj = ((Supplier) _current).get();
-																				if (invobj instanceof Map) {
-																					((Slot) ((Map) invobj).get((int) (0))).decrStackSize((int) (1));
-																					_current.detectAndSendChanges();
-																				}
-																			}
+																if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("beer")
+																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Beer")) {
+																	if (world instanceof Level _level) {
+																		if (!_level.isClientSide()) {
+																			_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+																		} else {
+																			_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 																		}
 																	}
-																	new Object() {
-																		private int ticks = 0;
-																		private float waitTicks;
-																		private IWorld world;
-
-																		public void start(IWorld world, int waitTicks) {
-																			this.waitTicks = waitTicks;
-																			MinecraftForge.EVENT_BUS.register(this);
-																			this.world = world;
+																	if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																		((Slot) _slots.get(0)).remove(1);
+																		_player.containerMenu.broadcastChanges();
+																	}
+																	ScpAdditionsMod.queueServerWork(40, () -> {
+																		if (entity instanceof Player _player) {
+																			ItemStack _setstack = new ItemStack(ScpAdditionsModItems.BEER.get());
+																			_setstack.setCount(1);
+																			ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																		}
-
-																		@SubscribeEvent
-																		public void tick(TickEvent.ServerTickEvent event) {
-																			if (event.phase == TickEvent.Phase.END) {
-																				this.ticks += 1;
-																				if (this.ticks >= this.waitTicks)
-																					run();
-																			}
-																		}
-
-																		private void run() {
-																			if (entity instanceof PlayerEntity) {
-																				ItemStack _setstack = new ItemStack(BeerItem.block);
-																				_setstack.setCount((int) 1);
-																				ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity),
-																						_setstack);
-																			}
-																			MinecraftForge.EVENT_BUS.unregister(this);
-																		}
-																	}.start(world, (int) 40);
-																	ScpAdditionsModVariables.WorldVariables
-																			.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																					.get(world).Scp294stock + 1);
+																	});
+																	ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 																	ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																} else {
-																	if ((new Object() {
-																		public String getText() {
-																			TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																			if (_tf != null) {
-																				return _tf.getText();
-																			}
-																			return "";
-																		}
-																	}.getText()).equals("lager") || (new Object() {
-																		public String getText() {
-																			TextFieldWidget _tf = (TextFieldWidget) guistate.get("text:scp294input");
-																			if (_tf != null) {
-																				return _tf.getText();
-																			}
-																			return "";
-																		}
-																	}.getText()).equals("Lager")) {
-																		if (world instanceof World && !world.isRemote()) {
-																			((World) world).playSound(null, new BlockPos(x, y, z),
-																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																							.getValue(new ResourceLocation(
-																									"scp_additions:scp294pouring")),
-																					SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																		} else {
-																			((World) world).playSound(x, y, z,
-																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																							.getValue(new ResourceLocation(
-																									"scp_additions:scp294pouring")),
-																					SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-																		}
-																		{
-																			Entity _ent = entity;
-																			if (_ent instanceof ServerPlayerEntity) {
-																				Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																				if (_current instanceof Supplier) {
-																					Object invobj = ((Supplier) _current).get();
-																					if (invobj instanceof Map) {
-																						((Slot) ((Map) invobj).get((int) (0)))
-																								.decrStackSize((int) (1));
-																						_current.detectAndSendChanges();
-																					}
-																				}
+																	if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("lager")
+																			|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Lager")) {
+																		if (world instanceof Level _level) {
+																			if (!_level.isClientSide()) {
+																				_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1,
+																						1);
+																			} else {
+																				_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 																			}
 																		}
-																		new Object() {
-																			private int ticks = 0;
-																			private float waitTicks;
-																			private IWorld world;
-
-																			public void start(IWorld world, int waitTicks) {
-																				this.waitTicks = waitTicks;
-																				MinecraftForge.EVENT_BUS.register(this);
-																				this.world = world;
+																		if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																			((Slot) _slots.get(0)).remove(1);
+																			_player.containerMenu.broadcastChanges();
+																		}
+																		ScpAdditionsMod.queueServerWork(40, () -> {
+																			if (entity instanceof Player _player) {
+																				ItemStack _setstack = new ItemStack(ScpAdditionsModItems.LAGER.get());
+																				_setstack.setCount(1);
+																				ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																			}
-
-																			@SubscribeEvent
-																			public void tick(TickEvent.ServerTickEvent event) {
-																				if (event.phase == TickEvent.Phase.END) {
-																					this.ticks += 1;
-																					if (this.ticks >= this.waitTicks)
-																						run();
-																				}
-																			}
-
-																			private void run() {
-																				if (entity instanceof PlayerEntity) {
-																					ItemStack _setstack = new ItemStack(LagerItem.block);
-																					_setstack.setCount((int) 1);
-																					ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity),
-																							_setstack);
-																				}
-																				MinecraftForge.EVENT_BUS.unregister(this);
-																			}
-																		}.start(world, (int) 40);
-																		ScpAdditionsModVariables.WorldVariables
-																				.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																						.get(world).Scp294stock + 1);
+																		});
+																		ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 																		ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																	} else {
-																		if ((new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("black corrosive liquid") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("Black corrosive liquid") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("scp-106") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("SCP-106") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("scp 106") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("SCP 106") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("old man") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("Old man") || (new Object() {
-																			public String getText() {
-																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																						.get("text:scp294input");
-																				if (_tf != null) {
-																					return _tf.getText();
-																				}
-																				return "";
-																			}
-																		}.getText()).equals("106")) {
-																			if (world instanceof World && !world.isRemote()) {
-																				((World) world).playSound(null, new BlockPos(x, y, z),
-																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																								.getValue(new ResourceLocation(
-																										"scp_additions:scp294pouring")),
-																						SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																			} else {
-																				((World) world).playSound(x, y, z,
-																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																								.getValue(new ResourceLocation(
-																										"scp_additions:scp294pouring")),
-																						SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-																			}
-																			{
-																				Entity _ent = entity;
-																				if (_ent instanceof ServerPlayerEntity) {
-																					Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																					if (_current instanceof Supplier) {
-																						Object invobj = ((Supplier) _current).get();
-																						if (invobj instanceof Map) {
-																							((Slot) ((Map) invobj).get((int) (0)))
-																									.decrStackSize((int) (1));
-																							_current.detectAndSendChanges();
-																						}
-																					}
+																		if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("black corrosive liquid")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Black corrosive liquid")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("scp-106")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("SCP-106")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("scp 106")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("SCP 106")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("old man")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Old man")
+																				|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("106")) {
+																			if (world instanceof Level _level) {
+																				if (!_level.isClientSide()) {
+																					_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL,
+																							1, 1);
+																				} else {
+																					_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 																				}
 																			}
-																			new Object() {
-																				private int ticks = 0;
-																				private float waitTicks;
-																				private IWorld world;
-
-																				public void start(IWorld world, int waitTicks) {
-																					this.waitTicks = waitTicks;
-																					MinecraftForge.EVENT_BUS.register(this);
-																					this.world = world;
+																			if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																				((Slot) _slots.get(0)).remove(1);
+																				_player.containerMenu.broadcastChanges();
+																			}
+																			ScpAdditionsMod.queueServerWork(40, () -> {
+																				if (entity instanceof Player _player) {
+																					ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CORROSIVE_BLACK.get());
+																					_setstack.setCount(1);
+																					ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																				}
-
-																				@SubscribeEvent
-																				public void tick(TickEvent.ServerTickEvent event) {
-																					if (event.phase == TickEvent.Phase.END) {
-																						this.ticks += 1;
-																						if (this.ticks >= this.waitTicks)
-																							run();
-																					}
-																				}
-
-																				private void run() {
-																					if (entity instanceof PlayerEntity) {
-																						ItemStack _setstack = new ItemStack(CorrosiveBlackItem.block);
-																						_setstack.setCount((int) 1);
-																						ItemHandlerHelper.giveItemToPlayer(((PlayerEntity) entity),
-																								_setstack);
-																					}
-																					MinecraftForge.EVENT_BUS.unregister(this);
-																				}
-																			}.start(world, (int) 40);
-																			ScpAdditionsModVariables.WorldVariables
-																					.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																							.get(world).Scp294stock + 1);
+																			});
+																			ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 																			ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																		} else {
-																			if ((new Object() {
-																				public String getText() {
-																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																							.get("text:scp294input");
-																					if (_tf != null) {
-																						return _tf.getText();
-																					}
-																					return "";
-																				}
-																			}.getText()).equals("bleach") || (new Object() {
-																				public String getText() {
-																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																							.get("text:scp294input");
-																					if (_tf != null) {
-																						return _tf.getText();
-																					}
-																					return "";
-																				}
-																			}.getText()).equals("Bleach")) {
-																				if (world instanceof World && !world.isRemote()) {
-																					((World) world).playSound(null, new BlockPos(x, y, z),
-																							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																									.getValue(new ResourceLocation(
-																											"scp_additions:scp294pouring")),
-																							SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																				} else {
-																					((World) world).playSound(x, y, z,
-																							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																									.getValue(new ResourceLocation(
-																											"scp_additions:scp294pouring")),
-																							SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-																				}
-																				{
-																					Entity _ent = entity;
-																					if (_ent instanceof ServerPlayerEntity) {
-																						Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																						if (_current instanceof Supplier) {
-																							Object invobj = ((Supplier) _current).get();
-																							if (invobj instanceof Map) {
-																								((Slot) ((Map) invobj).get((int) (0)))
-																										.decrStackSize((int) (1));
-																								_current.detectAndSendChanges();
-																							}
-																						}
+																			if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("bleach")
+																					|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Bleach")) {
+																				if (world instanceof Level _level) {
+																					if (!_level.isClientSide()) {
+																						_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																								SoundSource.NEUTRAL, 1, 1);
+																					} else {
+																						_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 																					}
 																				}
-																				new Object() {
-																					private int ticks = 0;
-																					private float waitTicks;
-																					private IWorld world;
-
-																					public void start(IWorld world, int waitTicks) {
-																						this.waitTicks = waitTicks;
-																						MinecraftForge.EVENT_BUS.register(this);
-																						this.world = world;
+																				if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																					((Slot) _slots.get(0)).remove(1);
+																					_player.containerMenu.broadcastChanges();
+																				}
+																				ScpAdditionsMod.queueServerWork(40, () -> {
+																					if (entity instanceof Player _player) {
+																						ItemStack _setstack = new ItemStack(ScpAdditionsModItems.BLEACH.get());
+																						_setstack.setCount(1);
+																						ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																					}
-
-																					@SubscribeEvent
-																					public void tick(TickEvent.ServerTickEvent event) {
-																						if (event.phase == TickEvent.Phase.END) {
-																							this.ticks += 1;
-																							if (this.ticks >= this.waitTicks)
-																								run();
-																						}
-																					}
-
-																					private void run() {
-																						if (entity instanceof PlayerEntity) {
-																							ItemStack _setstack = new ItemStack(BleachItem.block);
-																							_setstack.setCount((int) 1);
-																							ItemHandlerHelper.giveItemToPlayer(
-																									((PlayerEntity) entity), _setstack);
-																						}
-																						MinecraftForge.EVENT_BUS.unregister(this);
-																					}
-																				}.start(world, (int) 40);
-																				ScpAdditionsModVariables.WorldVariables.get(
-																						world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																								.get(world).Scp294stock + 1);
+																				});
+																				ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 																				ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																			} else {
-																				if ((new Object() {
-																					public String getText() {
-																						TextFieldWidget _tf = (TextFieldWidget) guistate
-																								.get("text:scp294input");
-																						if (_tf != null) {
-																							return _tf.getText();
-																						}
-																						return "";
-																					}
-																				}.getText()).equals("blood") || (new Object() {
-																					public String getText() {
-																						TextFieldWidget _tf = (TextFieldWidget) guistate
-																								.get("text:scp294input");
-																						if (_tf != null) {
-																							return _tf.getText();
-																						}
-																						return "";
-																					}
-																				}.getText()).equals("Blood")) {
-																					if (world instanceof World && !world.isRemote()) {
-																						((World) world).playSound(null, new BlockPos(x, y, z),
-																								(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																										.getValue(new ResourceLocation(
-																												"scp_additions:scp294pouring")),
-																								SoundCategory.NEUTRAL, (float) 1, (float) 1);
-																					} else {
-																						((World) world).playSound(x, y, z,
-																								(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																										.getValue(new ResourceLocation(
-																												"scp_additions:scp294pouring")),
-																								SoundCategory.NEUTRAL, (float) 1, (float) 1, false);
-																					}
-																					{
-																						Entity _ent = entity;
-																						if (_ent instanceof ServerPlayerEntity) {
-																							Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																							if (_current instanceof Supplier) {
-																								Object invobj = ((Supplier) _current).get();
-																								if (invobj instanceof Map) {
-																									((Slot) ((Map) invobj).get((int) (0)))
-																											.decrStackSize((int) (1));
-																									_current.detectAndSendChanges();
-																								}
-																							}
-																						}
-																					}
-																					new Object() {
-																						private int ticks = 0;
-																						private float waitTicks;
-																						private IWorld world;
-
-																						public void start(IWorld world, int waitTicks) {
-																							this.waitTicks = waitTicks;
-																							MinecraftForge.EVENT_BUS.register(this);
-																							this.world = world;
-																						}
-
-																						@SubscribeEvent
-																						public void tick(TickEvent.ServerTickEvent event) {
-																							if (event.phase == TickEvent.Phase.END) {
-																								this.ticks += 1;
-																								if (this.ticks >= this.waitTicks)
-																									run();
-																							}
-																						}
-
-																						private void run() {
-																							if (entity instanceof PlayerEntity) {
-																								ItemStack _setstack = new ItemStack(BloodItem.block);
-																								_setstack.setCount((int) 1);
-																								ItemHandlerHelper.giveItemToPlayer(
-																										((PlayerEntity) entity), _setstack);
-																							}
-																							MinecraftForge.EVENT_BUS.unregister(this);
-																						}
-																					}.start(world, (int) 40);
-																					ScpAdditionsModVariables.WorldVariables.get(
-																							world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																									.get(world).Scp294stock + 1);
-																					ScpAdditionsModVariables.WorldVariables.get(world)
-																							.syncData(world);
-																				} else {
-																					if ((new Object() {
-																						public String getText() {
-																							TextFieldWidget _tf = (TextFieldWidget) guistate
-																									.get("text:scp294input");
-																							if (_tf != null) {
-																								return _tf.getText();
-																							}
-																							return "";
-																						}
-																					}.getText()).equals("blood of christ") || (new Object() {
-																						public String getText() {
-																							TextFieldWidget _tf = (TextFieldWidget) guistate
-																									.get("text:scp294input");
-																							if (_tf != null) {
-																								return _tf.getText();
-																							}
-																							return "";
-																						}
-																					}.getText()).equals("Blood of Christ") || (new Object() {
-																						public String getText() {
-																							TextFieldWidget _tf = (TextFieldWidget) guistate
-																									.get("text:scp294input");
-																							if (_tf != null) {
-																								return _tf.getText();
-																							}
-																							return "";
-																						}
-																					}.getText()).equals("blood of jesus") || (new Object() {
-																						public String getText() {
-																							TextFieldWidget _tf = (TextFieldWidget) guistate
-																									.get("text:scp294input");
-																							if (_tf != null) {
-																								return _tf.getText();
-																							}
-																							return "";
-																						}
-																					}.getText()).equals("Blood of Jesus") || (new Object() {
-																						public String getText() {
-																							TextFieldWidget _tf = (TextFieldWidget) guistate
-																									.get("text:scp294input");
-																							if (_tf != null) {
-																								return _tf.getText();
-																							}
-																							return "";
-																						}
-																					}.getText()).equals("blood of jesus christ") || (new Object() {
-																						public String getText() {
-																							TextFieldWidget _tf = (TextFieldWidget) guistate
-																									.get("text:scp294input");
-																							if (_tf != null) {
-																								return _tf.getText();
-																							}
-																							return "";
-																						}
-																					}.getText()).equals("Blood of Jesus Christ")) {
-																						if (world instanceof World && !world.isRemote()) {
-																							((World) world).playSound(null, new BlockPos(x, y, z),
-																									(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																											.getValue(new ResourceLocation(
-																													"scp_additions:scp294pouring")),
-																									SoundCategory.NEUTRAL, (float) 1, (float) 1);
+																				if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("blood")
+																						|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Blood")) {
+																					if (world instanceof Level _level) {
+																						if (!_level.isClientSide()) {
+																							_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																									SoundSource.NEUTRAL, 1, 1);
 																						} else {
-																							((World) world).playSound(x, y, z,
-																									(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																											.getValue(new ResourceLocation(
-																													"scp_additions:scp294pouring")),
-																									SoundCategory.NEUTRAL, (float) 1, (float) 1,
-																									false);
+																							_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1, false);
 																						}
-																						{
-																							Entity _ent = entity;
-																							if (_ent instanceof ServerPlayerEntity) {
-																								Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																								if (_current instanceof Supplier) {
-																									Object invobj = ((Supplier) _current).get();
-																									if (invobj instanceof Map) {
-																										((Slot) ((Map) invobj).get((int) (0)))
-																												.decrStackSize((int) (1));
-																										_current.detectAndSendChanges();
-																									}
-																								}
-																							}
+																					}
+																					if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																						((Slot) _slots.get(0)).remove(1);
+																						_player.containerMenu.broadcastChanges();
+																					}
+																					ScpAdditionsMod.queueServerWork(40, () -> {
+																						if (entity instanceof Player _player) {
+																							ItemStack _setstack = new ItemStack(ScpAdditionsModItems.BLOOD.get());
+																							_setstack.setCount(1);
+																							ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																						}
-																						new Object() {
-																							private int ticks = 0;
-																							private float waitTicks;
-																							private IWorld world;
-
-																							public void start(IWorld world, int waitTicks) {
-																								this.waitTicks = waitTicks;
-																								MinecraftForge.EVENT_BUS.register(this);
-																								this.world = world;
-																							}
-
-																							@SubscribeEvent
-																							public void tick(TickEvent.ServerTickEvent event) {
-																								if (event.phase == TickEvent.Phase.END) {
-																									this.ticks += 1;
-																									if (this.ticks >= this.waitTicks)
-																										run();
-																								}
-																							}
-
-																							private void run() {
-																								if (entity instanceof PlayerEntity
-																										&& !entity.world.isRemote()) {
-																									((PlayerEntity) entity).sendStatusMessage(
-																											new StringTextComponent(
-																													"SCP-294: \"Hic est enim Calix S\u00E1nguinis mei\""),
-																											(false));
-																								}
-																								if (entity instanceof PlayerEntity) {
-																									ItemStack _setstack = new ItemStack(
-																											BloodOfChristItem.block);
-																									_setstack.setCount((int) 1);
-																									ItemHandlerHelper.giveItemToPlayer(
-																											((PlayerEntity) entity), _setstack);
-																								}
-																								MinecraftForge.EVENT_BUS.unregister(this);
-																							}
-																						}.start(world, (int) 40);
-																						ScpAdditionsModVariables.WorldVariables.get(
-																								world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																										.get(world).Scp294stock + 1);
-																						ScpAdditionsModVariables.WorldVariables.get(world)
-																								.syncData(world);
-																					} else {
-																						if ((new Object() {
-																							public String getText() {
-																								TextFieldWidget _tf = (TextFieldWidget) guistate
-																										.get("text:scp294input");
-																								if (_tf != null) {
-																									return _tf.getText();
-																								}
-																								return "";
-																							}
-																						}.getText()).equals("grimace") || (new Object() {
-																							public String getText() {
-																								TextFieldWidget _tf = (TextFieldWidget) guistate
-																										.get("text:scp294input");
-																								if (_tf != null) {
-																									return _tf.getText();
-																								}
-																								return "";
-																							}
-																						}.getText()).equals("Grimace") || (new Object() {
-																							public String getText() {
-																								TextFieldWidget _tf = (TextFieldWidget) guistate
-																										.get("text:scp294input");
-																								if (_tf != null) {
-																									return _tf.getText();
-																								}
-																								return "";
-																							}
-																						}.getText()).equals("grimace shake") || (new Object() {
-																							public String getText() {
-																								TextFieldWidget _tf = (TextFieldWidget) guistate
-																										.get("text:scp294input");
-																								if (_tf != null) {
-																									return _tf.getText();
-																								}
-																								return "";
-																							}
-																						}.getText()).equals("Grimace Shake") || (new Object() {
-																							public String getText() {
-																								TextFieldWidget _tf = (TextFieldWidget) guistate
-																										.get("text:scp294input");
-																								if (_tf != null) {
-																									return _tf.getText();
-																								}
-																								return "";
-																							}
-																						}.getText()).equals("Grimace shake")) {
-																							if (world instanceof World && !world.isRemote()) {
-																								((World) world).playSound(null, new BlockPos(x, y, z),
-																										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																												.getValue(new ResourceLocation(
-																														"scp_additions:scp294pouring")),
-																										SoundCategory.NEUTRAL, (float) 1, (float) 1);
+																					});
+																					ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																					ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
+																				} else {
+																					if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("blood of christ")
+																							|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Blood of Christ")
+																							|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("blood of jesus")
+																							|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Blood of Jesus")
+																							|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("blood of jesus christ")
+																							|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Blood of Jesus Christ")) {
+																						if (world instanceof Level _level) {
+																							if (!_level.isClientSide()) {
+																								_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																										SoundSource.NEUTRAL, 1, 1);
 																							} else {
-																								((World) world).playSound(x, y, z,
-																										(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																												.getValue(new ResourceLocation(
-																														"scp_additions:scp294pouring")),
-																										SoundCategory.NEUTRAL, (float) 1, (float) 1,
+																								_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1,
 																										false);
 																							}
-																							{
-																								Entity _ent = entity;
-																								if (_ent instanceof ServerPlayerEntity) {
-																									Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																									if (_current instanceof Supplier) {
-																										Object invobj = ((Supplier) _current).get();
-																										if (invobj instanceof Map) {
-																											((Slot) ((Map) invobj).get((int) (0)))
-																													.decrStackSize((int) (1));
-																											_current.detectAndSendChanges();
-																										}
-																									}
+																						}
+																						if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																							((Slot) _slots.get(0)).remove(1);
+																							_player.containerMenu.broadcastChanges();
+																						}
+																						ScpAdditionsMod.queueServerWork(40, () -> {
+																							if (entity instanceof Player _player && !_player.level().isClientSide())
+																								_player.displayClientMessage(Component.literal("SCP-294: \"Hic est enim Calix S\u00E1nguinis mei\""), false);
+																							if (entity instanceof Player _player) {
+																								ItemStack _setstack = new ItemStack(ScpAdditionsModItems.BLOOD_OF_CHRIST.get());
+																								_setstack.setCount(1);
+																								ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
+																							}
+																						});
+																						ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																						ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
+																					} else {
+																						if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("grimace")
+																								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Grimace")
+																								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("grimace shake")
+																								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Grimace Shake")
+																								|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Grimace shake")) {
+																							if (world instanceof Level _level) {
+																								if (!_level.isClientSide()) {
+																									_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																											SoundSource.NEUTRAL, 1, 1);
+																								} else {
+																									_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1,
+																											false);
 																								}
 																							}
-																							new Object() {
-																								private int ticks = 0;
-																								private float waitTicks;
-																								private IWorld world;
-
-																								public void start(IWorld world, int waitTicks) {
-																									this.waitTicks = waitTicks;
-																									MinecraftForge.EVENT_BUS.register(this);
-																									this.world = world;
+																							if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																								((Slot) _slots.get(0)).remove(1);
+																								_player.containerMenu.broadcastChanges();
+																							}
+																							ScpAdditionsMod.queueServerWork(40, () -> {
+																								if (entity instanceof Player _player) {
+																									ItemStack _setstack = new ItemStack(ScpAdditionsModItems.GRIMACE_SHAKE.get());
+																									_setstack.setCount(1);
+																									ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																								}
-
-																								@SubscribeEvent
-																								public void tick(TickEvent.ServerTickEvent event) {
-																									if (event.phase == TickEvent.Phase.END) {
-																										this.ticks += 1;
-																										if (this.ticks >= this.waitTicks)
-																											run();
-																									}
-																								}
-
-																								private void run() {
-																									if (entity instanceof PlayerEntity) {
-																										ItemStack _setstack = new ItemStack(
-																												GrimaceShakeItem.block);
-																										_setstack.setCount((int) 1);
-																										ItemHandlerHelper.giveItemToPlayer(
-																												((PlayerEntity) entity), _setstack);
-																									}
-																									MinecraftForge.EVENT_BUS.unregister(this);
-																								}
-																							}.start(world, (int) 40);
-																							ScpAdditionsModVariables.WorldVariables.get(
-																									world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																											.get(world).Scp294stock + 1);
-																							ScpAdditionsModVariables.WorldVariables.get(world)
-																									.syncData(world);
+																							});
+																							ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																							ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																						} else {
-																							if ((new Object() {
-																								public String getText() {
-																									TextFieldWidget _tf = (TextFieldWidget) guistate
-																											.get("text:scp294input");
-																									if (_tf != null) {
-																										return _tf.getText();
-																									}
-																									return "";
-																								}
-																							}.getText()).equals("bose-einstein condensate")
-																									|| (new Object() {
-																										public String getText() {
-																											TextFieldWidget _tf = (TextFieldWidget) guistate
-																													.get("text:scp294input");
-																											if (_tf != null) {
-																												return _tf.getText();
-																											}
-																											return "";
-																										}
-																									}.getText()).equals("Bose-Einstein Condensate")
-																									|| (new Object() {
-																										public String getText() {
-																											TextFieldWidget _tf = (TextFieldWidget) guistate
-																													.get("text:scp294input");
-																											if (_tf != null) {
-																												return _tf.getText();
-																											}
-																											return "";
-																										}
-																									}.getText()).equals("bose einstein condensate")
-																									|| (new Object() {
-																										public String getText() {
-																											TextFieldWidget _tf = (TextFieldWidget) guistate
-																													.get("text:scp294input");
-																											if (_tf != null) {
-																												return _tf.getText();
-																											}
-																											return "";
-																										}
-																									}.getText()).equals("Bose Einstein Condensate")
-																									|| (new Object() {
-																										public String getText() {
-																											TextFieldWidget _tf = (TextFieldWidget) guistate
-																													.get("text:scp294input");
-																											if (_tf != null) {
-																												return _tf.getText();
-																											}
-																											return "";
-																										}
-																									}.getText()).equals("quantum gas")
-																									|| (new Object() {
-																										public String getText() {
-																											TextFieldWidget _tf = (TextFieldWidget) guistate
-																													.get("text:scp294input");
-																											if (_tf != null) {
-																												return _tf.getText();
-																											}
-																											return "";
-																										}
-																									}.getText()).equals("Quantum Gas")) {
-																								if (world instanceof World && !world.isRemote()) {
-																									((World) world).playSound(null,
-																											new BlockPos(x, y, z),
-																											(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																													.getValue(new ResourceLocation(
-																															"scp_additions:scp294pouring")),
-																											SoundCategory.NEUTRAL, (float) 1,
-																											(float) 1);
-																								} else {
-																									((World) world).playSound(x, y, z,
-																											(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																													.getValue(new ResourceLocation(
-																															"scp_additions:scp294pouring")),
-																											SoundCategory.NEUTRAL, (float) 1,
-																											(float) 1, false);
-																								}
-																								{
-																									Entity _ent = entity;
-																									if (_ent instanceof ServerPlayerEntity) {
-																										Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																										if (_current instanceof Supplier) {
-																											Object invobj = ((Supplier) _current)
-																													.get();
-																											if (invobj instanceof Map) {
-																												((Slot) ((Map) invobj).get((int) (0)))
-																														.decrStackSize((int) (1));
-																												_current.detectAndSendChanges();
-																											}
-																										}
+																							if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("bose-einstein condensate")
+																									|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Bose-Einstein Condensate")
+																									|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("bose einstein condensate")
+																									|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Bose Einstein Condensate")
+																									|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("quantum gas")
+																									|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Quantum Gas")) {
+																								if (world instanceof Level _level) {
+																									if (!_level.isClientSide()) {
+																										_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																												SoundSource.NEUTRAL, 1, 1);
+																									} else {
+																										_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1,
+																												1, false);
 																									}
 																								}
-																								new Object() {
-																									private int ticks = 0;
-																									private float waitTicks;
-																									private IWorld world;
-
-																									public void start(IWorld world, int waitTicks) {
-																										this.waitTicks = waitTicks;
-																										MinecraftForge.EVENT_BUS.register(this);
-																										this.world = world;
+																								if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																									((Slot) _slots.get(0)).remove(1);
+																									_player.containerMenu.broadcastChanges();
+																								}
+																								ScpAdditionsMod.queueServerWork(40, () -> {
+																									if (entity instanceof Player _player) {
+																										ItemStack _setstack = new ItemStack(ScpAdditionsModItems.QUANTUM.get());
+																										_setstack.setCount(1);
+																										ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																									}
-
-																									@SubscribeEvent
-																									public void tick(
-																											TickEvent.ServerTickEvent event) {
-																										if (event.phase == TickEvent.Phase.END) {
-																											this.ticks += 1;
-																											if (this.ticks >= this.waitTicks)
-																												run();
-																										}
-																									}
-
-																									private void run() {
-																										if (entity instanceof PlayerEntity) {
-																											ItemStack _setstack = new ItemStack(
-																													QuantumItem.block);
-																											_setstack.setCount((int) 1);
-																											ItemHandlerHelper.giveItemToPlayer(
-																													((PlayerEntity) entity),
-																													_setstack);
-																										}
-																										MinecraftForge.EVENT_BUS.unregister(this);
-																									}
-																								}.start(world, (int) 40);
-																								ScpAdditionsModVariables.WorldVariables.get(
-																										world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																												.get(world).Scp294stock + 1);
-																								ScpAdditionsModVariables.WorldVariables.get(world)
-																										.syncData(world);
+																								});
+																								ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																								ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																							} else {
-																								if ((new Object() {
-																									public String getText() {
-																										TextFieldWidget _tf = (TextFieldWidget) guistate
-																												.get("text:scp294input");
-																										if (_tf != null) {
-																											return _tf.getText();
-																										}
-																										return "";
-																									}
-																								}.getText()).equals("carbon") || (new Object() {
-																									public String getText() {
-																										TextFieldWidget _tf = (TextFieldWidget) guistate
-																												.get("text:scp294input");
-																										if (_tf != null) {
-																											return _tf.getText();
-																										}
-																										return "";
-																									}
-																								}.getText()).equals("Carbon")) {
-																									if (world instanceof World && !world.isRemote()) {
-																										((World) world).playSound(null,
-																												new BlockPos(x, y, z),
-																												(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																														.getValue(
-																																new ResourceLocation(
-																																		"scp_additions:scp294pouring")),
-																												SoundCategory.NEUTRAL, (float) 1,
-																												(float) 1);
-																									} else {
-																										((World) world).playSound(x, y, z,
-																												(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																														.getValue(
-																																new ResourceLocation(
-																																		"scp_additions:scp294pouring")),
-																												SoundCategory.NEUTRAL, (float) 1,
-																												(float) 1, false);
-																									}
-																									{
-																										Entity _ent = entity;
-																										if (_ent instanceof ServerPlayerEntity) {
-																											Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																											if (_current instanceof Supplier) {
-																												Object invobj = ((Supplier) _current)
-																														.get();
-																												if (invobj instanceof Map) {
-																													((Slot) ((Map) invobj)
-																															.get((int) (0)))
-																															.decrStackSize((int) (1));
-																													_current.detectAndSendChanges();
-																												}
-																											}
+																								if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("carbon")
+																										|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Carbon")) {
+																									if (world instanceof Level _level) {
+																										if (!_level.isClientSide()) {
+																											_level.playSound(null, BlockPos.containing(x, y, z),
+																													ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+																										} else {
+																											_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																													SoundSource.NEUTRAL, 1, 1, false);
 																										}
 																									}
-																									new Object() {
-																										private int ticks = 0;
-																										private float waitTicks;
-																										private IWorld world;
-
-																										public void start(IWorld world,
-																												int waitTicks) {
-																											this.waitTicks = waitTicks;
-																											MinecraftForge.EVENT_BUS.register(this);
-																											this.world = world;
+																									if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																										((Slot) _slots.get(0)).remove(1);
+																										_player.containerMenu.broadcastChanges();
+																									}
+																									ScpAdditionsMod.queueServerWork(40, () -> {
+																										if (entity instanceof Player _player) {
+																											ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CARBON.get());
+																											_setstack.setCount(1);
+																											ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																										}
-
-																										@SubscribeEvent
-																										public void tick(
-																												TickEvent.ServerTickEvent event) {
-																											if (event.phase == TickEvent.Phase.END) {
-																												this.ticks += 1;
-																												if (this.ticks >= this.waitTicks)
-																													run();
-																											}
-																										}
-
-																										private void run() {
-																											if (entity instanceof PlayerEntity) {
-																												ItemStack _setstack = new ItemStack(
-																														CarbonItem.block);
-																												_setstack.setCount((int) 1);
-																												ItemHandlerHelper.giveItemToPlayer(
-																														((PlayerEntity) entity),
-																														_setstack);
-																											}
-																											MinecraftForge.EVENT_BUS.unregister(this);
-																										}
-																									}.start(world, (int) 40);
-																									ScpAdditionsModVariables.WorldVariables.get(
-																											world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																													.get(world).Scp294stock + 1);
-																									ScpAdditionsModVariables.WorldVariables.get(world)
-																											.syncData(world);
+																									});
+																									ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																									ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																								} else {
-																									if ((new Object() {
-																										public String getText() {
-																											TextFieldWidget _tf = (TextFieldWidget) guistate
-																													.get("text:scp294input");
-																											if (_tf != null) {
-																												return _tf.getText();
-																											}
-																											return "";
-																										}
-																									}.getText()).equals("cassis fanta")
-																											|| (new Object() {
-																												public String getText() {
-																													TextFieldWidget _tf = (TextFieldWidget) guistate
-																															.get("text:scp294input");
-																													if (_tf != null) {
-																														return _tf.getText();
-																													}
-																													return "";
-																												}
-																											}.getText()).equals("Cassis Fanta")) {
-																										if (world instanceof World
-																												&& !world.isRemote()) {
-																											((World) world).playSound(null,
-																													new BlockPos(x, y, z),
-																													(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																															.getValue(
-																																	new ResourceLocation(
-																																			"scp_additions:scp294pouring")),
-																													SoundCategory.NEUTRAL, (float) 1,
-																													(float) 1);
-																										} else {
-																											((World) world).playSound(x, y, z,
-																													(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																															.getValue(
-																																	new ResourceLocation(
-																																			"scp_additions:scp294pouring")),
-																													SoundCategory.NEUTRAL, (float) 1,
-																													(float) 1, false);
-																										}
-																										{
-																											Entity _ent = entity;
-																											if (_ent instanceof ServerPlayerEntity) {
-																												Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																												if (_current instanceof Supplier) {
-																													Object invobj = ((Supplier) _current)
-																															.get();
-																													if (invobj instanceof Map) {
-																														((Slot) ((Map) invobj)
-																																.get((int) (0)))
-																																.decrStackSize(
-																																		(int) (1));
-																														_current.detectAndSendChanges();
-																													}
-																												}
+																									if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("cassis fanta")
+																											|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Cassis Fanta")) {
+																										if (world instanceof Level _level) {
+																											if (!_level.isClientSide()) {
+																												_level.playSound(null, BlockPos.containing(x, y, z),
+																														ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+																											} else {
+																												_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																														SoundSource.NEUTRAL, 1, 1, false);
 																											}
 																										}
-																										new Object() {
-																											private int ticks = 0;
-																											private float waitTicks;
-																											private IWorld world;
-
-																											public void start(IWorld world,
-																													int waitTicks) {
-																												this.waitTicks = waitTicks;
-																												MinecraftForge.EVENT_BUS
-																														.register(this);
-																												this.world = world;
+																										if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																											((Slot) _slots.get(0)).remove(1);
+																											_player.containerMenu.broadcastChanges();
+																										}
+																										ScpAdditionsMod.queueServerWork(40, () -> {
+																											if (entity instanceof Player _player) {
+																												ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CASSIS_FANTA.get());
+																												_setstack.setCount(1);
+																												ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																											}
-
-																											@SubscribeEvent
-																											public void tick(
-																													TickEvent.ServerTickEvent event) {
-																												if (event.phase == TickEvent.Phase.END) {
-																													this.ticks += 1;
-																													if (this.ticks >= this.waitTicks)
-																														run();
-																												}
-																											}
-
-																											private void run() {
-																												if (entity instanceof PlayerEntity) {
-																													ItemStack _setstack = new ItemStack(
-																															CassisFantaItem.block);
-																													_setstack.setCount((int) 1);
-																													ItemHandlerHelper
-																															.giveItemToPlayer(
-																																	((PlayerEntity) entity),
-																																	_setstack);
-																												}
-																												MinecraftForge.EVENT_BUS
-																														.unregister(this);
-																											}
-																										}.start(world, (int) 40);
-																										ScpAdditionsModVariables.WorldVariables.get(
-																												world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																														.get(world).Scp294stock + 1);
-																										ScpAdditionsModVariables.WorldVariables
-																												.get(world).syncData(world);
+																										});
+																										ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																										ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																									} else {
-																										if ((new Object() {
-																											public String getText() {
-																												TextFieldWidget _tf = (TextFieldWidget) guistate
-																														.get("text:scp294input");
-																												if (_tf != null) {
-																													return _tf.getText();
-																												}
-																												return "";
-																											}
-																										}.getText()).equals("carrot juice")
-																												|| (new Object() {
-																													public String getText() {
-																														TextFieldWidget _tf = (TextFieldWidget) guistate
-																																.get("text:scp294input");
-																														if (_tf != null) {
-																															return _tf.getText();
-																														}
-																														return "";
-																													}
-																												}.getText()).equals("Carrot juice")
-																												|| (new Object() {
-																													public String getText() {
-																														TextFieldWidget _tf = (TextFieldWidget) guistate
-																																.get("text:scp294input");
-																														if (_tf != null) {
-																															return _tf.getText();
-																														}
-																														return "";
-																													}
-																												}.getText()).equals("carrot")
-																												|| (new Object() {
-																													public String getText() {
-																														TextFieldWidget _tf = (TextFieldWidget) guistate
-																																.get("text:scp294input");
-																														if (_tf != null) {
-																															return _tf.getText();
-																														}
-																														return "";
-																													}
-																												}.getText()).equals("Carrot")) {
-																											if (world instanceof World
-																													&& !world.isRemote()) {
-																												((World) world).playSound(null,
-																														new BlockPos(x, y, z),
-																														(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																.getValue(
-																																		new ResourceLocation(
-																																				"scp_additions:scp294pouring")),
-																														SoundCategory.NEUTRAL,
-																														(float) 1, (float) 1);
-																											} else {
-																												((World) world).playSound(x, y, z,
-																														(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																.getValue(
-																																		new ResourceLocation(
-																																				"scp_additions:scp294pouring")),
-																														SoundCategory.NEUTRAL,
-																														(float) 1, (float) 1, false);
-																											}
-																											{
-																												Entity _ent = entity;
-																												if (_ent instanceof ServerPlayerEntity) {
-																													Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																													if (_current instanceof Supplier) {
-																														Object invobj = ((Supplier) _current)
-																																.get();
-																														if (invobj instanceof Map) {
-																															((Slot) ((Map) invobj)
-																																	.get((int) (0)))
-																																	.decrStackSize(
-																																			(int) (1));
-																															_current.detectAndSendChanges();
-																														}
-																													}
+																										if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("carrot juice")
+																												|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Carrot juice")
+																												|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("carrot")
+																												|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Carrot")) {
+																											if (world instanceof Level _level) {
+																												if (!_level.isClientSide()) {
+																													_level.playSound(null, BlockPos.containing(x, y, z),
+																															ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+																												} else {
+																													_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																															SoundSource.NEUTRAL, 1, 1, false);
 																												}
 																											}
-																											new Object() {
-																												private int ticks = 0;
-																												private float waitTicks;
-																												private IWorld world;
-
-																												public void start(IWorld world,
-																														int waitTicks) {
-																													this.waitTicks = waitTicks;
-																													MinecraftForge.EVENT_BUS
-																															.register(this);
-																													this.world = world;
+																											if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																												((Slot) _slots.get(0)).remove(1);
+																												_player.containerMenu.broadcastChanges();
+																											}
+																											ScpAdditionsMod.queueServerWork(40, () -> {
+																												if (entity instanceof Player _player) {
+																													ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CARROT.get());
+																													_setstack.setCount(1);
+																													ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																												}
-
-																												@SubscribeEvent
-																												public void tick(
-																														TickEvent.ServerTickEvent event) {
-																													if (event.phase == TickEvent.Phase.END) {
-																														this.ticks += 1;
-																														if (this.ticks >= this.waitTicks)
-																															run();
-																													}
-																												}
-
-																												private void run() {
-																													if (entity instanceof PlayerEntity) {
-																														ItemStack _setstack = new ItemStack(
-																																CarrotItem.block);
-																														_setstack.setCount((int) 1);
-																														ItemHandlerHelper
-																																.giveItemToPlayer(
-																																		((PlayerEntity) entity),
-																																		_setstack);
-																													}
-																													MinecraftForge.EVENT_BUS
-																															.unregister(this);
-																												}
-																											}.start(world, (int) 40);
-																											ScpAdditionsModVariables.WorldVariables
-																													.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																															.get(world).Scp294stock
-																															+ 1);
-																											ScpAdditionsModVariables.WorldVariables
-																													.get(world).syncData(world);
+																											});
+																											ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																											ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																										} else {
-																											if ((new Object() {
-																												public String getText() {
-																													TextFieldWidget _tf = (TextFieldWidget) guistate
-																															.get("text:scp294input");
-																													if (_tf != null) {
-																														return _tf.getText();
-																													}
-																													return "";
-																												}
-																											}.getText()).equals("champagne")
-																													|| (new Object() {
-																														public String getText() {
-																															TextFieldWidget _tf = (TextFieldWidget) guistate
-																																	.get("text:scp294input");
-																															if (_tf != null) {
-																																return _tf.getText();
-																															}
-																															return "";
-																														}
-																													}.getText())
-																															.equals("Champagne")) {
-																												if (world instanceof World
-																														&& !world.isRemote()) {
-																													((World) world).playSound(null,
-																															new BlockPos(x, y, z),
-																															(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																	.getValue(
-																																			new ResourceLocation(
-																																					"scp_additions:scp294pouring")),
-																															SoundCategory.NEUTRAL,
-																															(float) 1, (float) 1);
-																												} else {
-																													((World) world).playSound(x, y, z,
-																															(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																	.getValue(
-																																			new ResourceLocation(
-																																					"scp_additions:scp294pouring")),
-																															SoundCategory.NEUTRAL,
-																															(float) 1, (float) 1,
-																															false);
-																												}
-																												{
-																													Entity _ent = entity;
-																													if (_ent instanceof ServerPlayerEntity) {
-																														Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																														if (_current instanceof Supplier) {
-																															Object invobj = ((Supplier) _current)
-																																	.get();
-																															if (invobj instanceof Map) {
-																																((Slot) ((Map) invobj)
-																																		.get((int) (0)))
-																																		.decrStackSize(
-																																				(int) (1));
-																																_current.detectAndSendChanges();
-																															}
-																														}
+																											if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("champagne")
+																													|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Champagne")) {
+																												if (world instanceof Level _level) {
+																													if (!_level.isClientSide()) {
+																														_level.playSound(null, BlockPos.containing(x, y, z),
+																																ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1, 1);
+																													} else {
+																														_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																SoundSource.NEUTRAL, 1, 1, false);
 																													}
 																												}
-																												new Object() {
-																													private int ticks = 0;
-																													private float waitTicks;
-																													private IWorld world;
-
-																													public void start(IWorld world,
-																															int waitTicks) {
-																														this.waitTicks = waitTicks;
-																														MinecraftForge.EVENT_BUS
-																																.register(this);
-																														this.world = world;
+																												if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																													((Slot) _slots.get(0)).remove(1);
+																													_player.containerMenu.broadcastChanges();
+																												}
+																												ScpAdditionsMod.queueServerWork(40, () -> {
+																													if (entity instanceof Player _player) {
+																														ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CHAMPAGNE.get());
+																														_setstack.setCount(1);
+																														ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																													}
-
-																													@SubscribeEvent
-																													public void tick(
-																															TickEvent.ServerTickEvent event) {
-																														if (event.phase == TickEvent.Phase.END) {
-																															this.ticks += 1;
-																															if (this.ticks >= this.waitTicks)
-																																run();
-																														}
-																													}
-
-																													private void run() {
-																														if (entity instanceof PlayerEntity) {
-																															ItemStack _setstack = new ItemStack(
-																																	ChampagneItem.block);
-																															_setstack.setCount(
-																																	(int) 1);
-																															ItemHandlerHelper
-																																	.giveItemToPlayer(
-																																			((PlayerEntity) entity),
-																																			_setstack);
-																														}
-																														MinecraftForge.EVENT_BUS
-																																.unregister(this);
-																													}
-																												}.start(world, (int) 40);
-																												ScpAdditionsModVariables.WorldVariables
-																														.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																.get(world).Scp294stock
-																																+ 1);
-																												ScpAdditionsModVariables.WorldVariables
-																														.get(world).syncData(world);
+																												});
+																												ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																												ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																											} else {
-																												if ((new Object() {
-																													public String getText() {
-																														TextFieldWidget _tf = (TextFieldWidget) guistate
-																																.get("text:scp294input");
-																														if (_tf != null) {
-																															return _tf.getText();
-																														}
-																														return "";
-																													}
-																												}.getText()).equals("chim")
-																														|| (new Object() {
-																															public String getText() {
-																																TextFieldWidget _tf = (TextFieldWidget) guistate
-																																		.get("text:scp294input");
-																																if (_tf != null) {
-																																	return _tf
-																																			.getText();
-																																}
-																																return "";
-																															}
-																														}.getText()).equals("Chim")) {
-																													if (world instanceof World
-																															&& !world.isRemote()) {
-																														((World) world).playSound(
-																																null,
-																																new BlockPos(x, y, z),
-																																(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																		.getValue(
-																																				new ResourceLocation(
-																																						"scp_additions:scp294pouring")),
-																																SoundCategory.NEUTRAL,
-																																(float) 1, (float) 1);
-																													} else {
-																														((World) world).playSound(x,
-																																y, z,
-																																(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																		.getValue(
-																																				new ResourceLocation(
-																																						"scp_additions:scp294pouring")),
-																																SoundCategory.NEUTRAL,
-																																(float) 1, (float) 1,
-																																false);
-																													}
-																													{
-																														Entity _ent = entity;
-																														if (_ent instanceof ServerPlayerEntity) {
-																															Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																															if (_current instanceof Supplier) {
-																																Object invobj = ((Supplier) _current)
-																																		.get();
-																																if (invobj instanceof Map) {
-																																	((Slot) ((Map) invobj)
-																																			.get((int) (0)))
-																																			.decrStackSize(
-																																					(int) (1));
-																																	_current.detectAndSendChanges();
-																																}
-																															}
+																												if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("chim")
+																														|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("Chim")) {
+																													if (world instanceof Level _level) {
+																														if (!_level.isClientSide()) {
+																															_level.playSound(null, BlockPos.containing(x, y, z),
+																																	ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL, 1,
+																																	1);
+																														} else {
+																															_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																	SoundSource.NEUTRAL, 1, 1, false);
 																														}
 																													}
-																													new Object() {
-																														private int ticks = 0;
-																														private float waitTicks;
-																														private IWorld world;
-
-																														public void start(
-																																IWorld world,
-																																int waitTicks) {
-																															this.waitTicks = waitTicks;
-																															MinecraftForge.EVENT_BUS
-																																	.register(this);
-																															this.world = world;
+																													if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current && _current.get() instanceof Map _slots) {
+																														((Slot) _slots.get(0)).remove(1);
+																														_player.containerMenu.broadcastChanges();
+																													}
+																													ScpAdditionsMod.queueServerWork(40, () -> {
+																														if (entity instanceof Player _player) {
+																															ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CHIM.get());
+																															_setstack.setCount(1);
+																															ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																														}
-
-																														@SubscribeEvent
-																														public void tick(
-																																TickEvent.ServerTickEvent event) {
-																															if (event.phase == TickEvent.Phase.END) {
-																																this.ticks += 1;
-																																if (this.ticks >= this.waitTicks)
-																																	run();
-																															}
-																														}
-
-																														private void run() {
-																															if (entity instanceof PlayerEntity) {
-																																ItemStack _setstack = new ItemStack(
-																																		ChimItem.block);
-																																_setstack.setCount(
-																																		(int) 1);
-																																ItemHandlerHelper
-																																		.giveItemToPlayer(
-																																				((PlayerEntity) entity),
-																																				_setstack);
-																															}
-																															MinecraftForge.EVENT_BUS
-																																	.unregister(this);
-																														}
-																													}.start(world, (int) 40);
-																													ScpAdditionsModVariables.WorldVariables
-																															.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																	.get(world).Scp294stock
-																																	+ 1);
-																													ScpAdditionsModVariables.WorldVariables
-																															.get(world)
-																															.syncData(world);
+																													});
+																													ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																													ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																												} else {
-																													if ((new Object() {
-																														public String getText() {
-																															TextFieldWidget _tf = (TextFieldWidget) guistate
-																																	.get("text:scp294input");
-																															if (_tf != null) {
-																																return _tf.getText();
-																															}
-																															return "";
-																														}
-																													}.getText()).equals("cider")
-																															|| (new Object() {
-																																public String getText() {
-																																	TextFieldWidget _tf = (TextFieldWidget) guistate
-																																			.get("text:scp294input");
-																																	if (_tf != null) {
-																																		return _tf
-																																				.getText();
-																																	}
-																																	return "";
-																																}
-																															}.getText()).equals(
-																																	"Cider")) {
-																														if (world instanceof World
-																																&& !world
-																																		.isRemote()) {
-																															((World) world).playSound(
-																																	null,
-																																	new BlockPos(x, y,
-																																			z),
-																																	(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																			.getValue(
-																																					new ResourceLocation(
-																																							"scp_additions:scp294pouring")),
-																																	SoundCategory.NEUTRAL,
-																																	(float) 1,
-																																	(float) 1);
-																														} else {
-																															((World) world).playSound(
-																																	x, y, z,
-																																	(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																			.getValue(
-																																					new ResourceLocation(
-																																							"scp_additions:scp294pouring")),
-																																	SoundCategory.NEUTRAL,
-																																	(float) 1,
-																																	(float) 1, false);
-																														}
-																														{
-																															Entity _ent = entity;
-																															if (_ent instanceof ServerPlayerEntity) {
-																																Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																																if (_current instanceof Supplier) {
-																																	Object invobj = ((Supplier) _current)
-																																			.get();
-																																	if (invobj instanceof Map) {
-																																		((Slot) ((Map) invobj)
-																																				.get((int) (0)))
-																																				.decrStackSize(
-																																						(int) (1));
-																																		_current.detectAndSendChanges();
-																																	}
-																																}
+																													if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "").equals("cider")
+																															|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																	.equals("Cider")) {
+																														if (world instanceof Level _level) {
+																															if (!_level.isClientSide()) {
+																																_level.playSound(null, BlockPos.containing(x, y, z),
+																																		ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")), SoundSource.NEUTRAL,
+																																		1, 1);
+																															} else {
+																																_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																		SoundSource.NEUTRAL, 1, 1, false);
 																															}
 																														}
-																														new Object() {
-																															private int ticks = 0;
-																															private float waitTicks;
-																															private IWorld world;
-
-																															public void start(
-																																	IWorld world,
-																																	int waitTicks) {
-																																this.waitTicks = waitTicks;
-																																MinecraftForge.EVENT_BUS
-																																		.register(
-																																				this);
-																																this.world = world;
+																														if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current
+																																&& _current.get() instanceof Map _slots) {
+																															((Slot) _slots.get(0)).remove(1);
+																															_player.containerMenu.broadcastChanges();
+																														}
+																														ScpAdditionsMod.queueServerWork(40, () -> {
+																															if (entity instanceof Player _player) {
+																																ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CIDER.get());
+																																_setstack.setCount(1);
+																																ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																															}
-
-																															@SubscribeEvent
-																															public void tick(
-																																	TickEvent.ServerTickEvent event) {
-																																if (event.phase == TickEvent.Phase.END) {
-																																	this.ticks += 1;
-																																	if (this.ticks >= this.waitTicks)
-																																		run();
-																																}
-																															}
-
-																															private void run() {
-																																if (entity instanceof PlayerEntity) {
-																																	ItemStack _setstack = new ItemStack(
-																																			CiderItem.block);
-																																	_setstack
-																																			.setCount(
-																																					(int) 1);
-																																	ItemHandlerHelper
-																																			.giveItemToPlayer(
-																																					((PlayerEntity) entity),
-																																					_setstack);
-																																}
-																																MinecraftForge.EVENT_BUS
-																																		.unregister(
-																																				this);
-																															}
-																														}.start(world, (int) 40);
-																														ScpAdditionsModVariables.WorldVariables
-																																.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																		.get(world).Scp294stock
-																																		+ 1);
-																														ScpAdditionsModVariables.WorldVariables
-																																.get(world)
-																																.syncData(world);
+																														});
+																														ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock
+																																+ 1;
+																														ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																													} else {
-																														if ((new Object() {
-																															public String getText() {
-																																TextFieldWidget _tf = (TextFieldWidget) guistate
-																																		.get("text:scp294input");
-																																if (_tf != null) {
-																																	return _tf
-																																			.getText();
-																																}
-																																return "";
-																															}
-																														}.getText())
+																														if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																.equals("apple cider")
-																																|| (new Object() {
-																																	public String getText() {
-																																		TextFieldWidget _tf = (TextFieldWidget) guistate
-																																				.get("text:scp294input");
-																																		if (_tf != null) {
-																																			return _tf
-																																					.getText();
-																																		}
-																																		return "";
-																																	}
-																																}.getText()).equals(
-																																		"Apple Cider")) {
-																															if (world instanceof World
-																																	&& !world
-																																			.isRemote()) {
-																																((World) world)
-																																		.playSound(
-																																				null,
-																																				new BlockPos(
-																																						x,
-																																						y,
-																																						z),
-																																				(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																						.getValue(
-																																								new ResourceLocation(
-																																										"scp_additions:scp294pouring")),
-																																				SoundCategory.NEUTRAL,
-																																				(float) 1,
-																																				(float) 1);
-																															} else {
-																																((World) world)
-																																		.playSound(x,
-																																				y, z,
-																																				(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																						.getValue(
-																																								new ResourceLocation(
-																																										"scp_additions:scp294pouring")),
-																																				SoundCategory.NEUTRAL,
-																																				(float) 1,
-																																				(float) 1,
-																																				false);
-																															}
-																															{
-																																Entity _ent = entity;
-																																if (_ent instanceof ServerPlayerEntity) {
-																																	Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																																	if (_current instanceof Supplier) {
-																																		Object invobj = ((Supplier) _current)
-																																				.get();
-																																		if (invobj instanceof Map) {
-																																			((Slot) ((Map) invobj)
-																																					.get((int) (0)))
-																																					.decrStackSize(
-																																							(int) (1));
-																																			_current.detectAndSendChanges();
-																																		}
-																																	}
+																																|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																		.equals("Apple Cider")) {
+																															if (world instanceof Level _level) {
+																																if (!_level.isClientSide()) {
+																																	_level.playSound(null, BlockPos.containing(x, y, z),
+																																			ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																			SoundSource.NEUTRAL, 1, 1);
+																																} else {
+																																	_level.playLocalSound(x, y, z,
+																																			ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																			SoundSource.NEUTRAL, 1, 1, false);
 																																}
 																															}
-																															new Object() {
-																																private int ticks = 0;
-																																private float waitTicks;
-																																private IWorld world;
-
-																																public void start(
-																																		IWorld world,
-																																		int waitTicks) {
-																																	this.waitTicks = waitTicks;
-																																	MinecraftForge.EVENT_BUS
-																																			.register(
-																																					this);
-																																	this.world = world;
+																															if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current
+																																	&& _current.get() instanceof Map _slots) {
+																																((Slot) _slots.get(0)).remove(1);
+																																_player.containerMenu.broadcastChanges();
+																															}
+																															ScpAdditionsMod.queueServerWork(40, () -> {
+																																if (entity instanceof Player _player) {
+																																	ItemStack _setstack = new ItemStack(ScpAdditionsModItems.APPLE_CIDER.get());
+																																	_setstack.setCount(1);
+																																	ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																																}
-
-																																@SubscribeEvent
-																																public void tick(
-																																		TickEvent.ServerTickEvent event) {
-																																	if (event.phase == TickEvent.Phase.END) {
-																																		this.ticks += 1;
-																																		if (this.ticks >= this.waitTicks)
-																																			run();
-																																	}
-																																}
-
-																																private void run() {
-																																	if (entity instanceof PlayerEntity) {
-																																		ItemStack _setstack = new ItemStack(
-																																				AppleCiderItem.block);
-																																		_setstack
-																																				.setCount(
-																																						(int) 1);
-																																		ItemHandlerHelper
-																																				.giveItemToPlayer(
-																																						((PlayerEntity) entity),
-																																						_setstack);
-																																	}
-																																	MinecraftForge.EVENT_BUS
-																																			.unregister(
-																																					this);
-																																}
-																															}.start(world, (int) 40);
+																															});
 																															ScpAdditionsModVariables.WorldVariables
-																																	.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																			.get(world).Scp294stock
-																																			+ 1);
-																															ScpAdditionsModVariables.WorldVariables
-																																	.get(world)
-																																	.syncData(world);
+																																	.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																															ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																														} else {
-																															if ((new Object() {
-																																public String getText() {
-																																	TextFieldWidget _tf = (TextFieldWidget) guistate
-																																			.get("text:scp294input");
-																																	if (_tf != null) {
-																																		return _tf
-																																				.getText();
-																																	}
-																																	return "";
-																																}
-																															}.getText()).equals(
-																																	"pear cider")
-																																	|| (new Object() {
-																																		public String getText() {
-																																			TextFieldWidget _tf = (TextFieldWidget) guistate
-																																					.get("text:scp294input");
-																																			if (_tf != null) {
-																																				return _tf
-																																						.getText();
-																																			}
-																																			return "";
-																																		}
-																																	}.getText())
+																															if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																	.equals("pear cider")
+																																	|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																			.equals("Pear Cider")) {
-																																if (world instanceof World
-																																		&& !world
-																																				.isRemote()) {
-																																	((World) world)
-																																			.playSound(
-																																					null,
-																																					new BlockPos(
-																																							x,
-																																							y,
-																																							z),
-																																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																							.getValue(
-																																									new ResourceLocation(
-																																											"scp_additions:scp294pouring")),
-																																					SoundCategory.NEUTRAL,
-																																					(float) 1,
-																																					(float) 1);
-																																} else {
-																																	((World) world)
-																																			.playSound(
-																																					x,
-																																					y,
-																																					z,
-																																					(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																							.getValue(
-																																									new ResourceLocation(
-																																											"scp_additions:scp294pouring")),
-																																					SoundCategory.NEUTRAL,
-																																					(float) 1,
-																																					(float) 1,
-																																					false);
-																																}
-																																{
-																																	Entity _ent = entity;
-																																	if (_ent instanceof ServerPlayerEntity) {
-																																		Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																																		if (_current instanceof Supplier) {
-																																			Object invobj = ((Supplier) _current)
-																																					.get();
-																																			if (invobj instanceof Map) {
-																																				((Slot) ((Map) invobj)
-																																						.get((int) (0)))
-																																						.decrStackSize(
-																																								(int) (1));
-																																				_current.detectAndSendChanges();
-																																			}
-																																		}
+																																if (world instanceof Level _level) {
+																																	if (!_level.isClientSide()) {
+																																		_level.playSound(null, BlockPos.containing(x, y, z),
+																																				ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																				SoundSource.NEUTRAL, 1, 1);
+																																	} else {
+																																		_level.playLocalSound(x, y, z,
+																																				ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																				SoundSource.NEUTRAL, 1, 1, false);
 																																	}
 																																}
-																																new Object() {
-																																	private int ticks = 0;
-																																	private float waitTicks;
-																																	private IWorld world;
-
-																																	public void start(
-																																			IWorld world,
-																																			int waitTicks) {
-																																		this.waitTicks = waitTicks;
-																																		MinecraftForge.EVENT_BUS
-																																				.register(
-																																						this);
-																																		this.world = world;
+																																if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current
+																																		&& _current.get() instanceof Map _slots) {
+																																	((Slot) _slots.get(0)).remove(1);
+																																	_player.containerMenu.broadcastChanges();
+																																}
+																																ScpAdditionsMod.queueServerWork(40, () -> {
+																																	if (entity instanceof Player _player) {
+																																		ItemStack _setstack = new ItemStack(ScpAdditionsModItems.PEAR_CIDER.get());
+																																		_setstack.setCount(1);
+																																		ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																																	}
-
-																																	@SubscribeEvent
-																																	public void tick(
-																																			TickEvent.ServerTickEvent event) {
-																																		if (event.phase == TickEvent.Phase.END) {
-																																			this.ticks += 1;
-																																			if (this.ticks >= this.waitTicks)
-																																				run();
-																																		}
-																																	}
-
-																																	private void run() {
-																																		if (entity instanceof PlayerEntity) {
-																																			ItemStack _setstack = new ItemStack(
-																																					PearCiderItem.block);
-																																			_setstack
-																																					.setCount(
-																																							(int) 1);
-																																			ItemHandlerHelper
-																																					.giveItemToPlayer(
-																																							((PlayerEntity) entity),
-																																							_setstack);
-																																		}
-																																		MinecraftForge.EVENT_BUS
-																																				.unregister(
-																																						this);
-																																	}
-																																}.start(world,
-																																		(int) 40);
+																																});
 																																ScpAdditionsModVariables.WorldVariables
-																																		.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																				.get(world).Scp294stock
-																																				+ 1);
-																																ScpAdditionsModVariables.WorldVariables
-																																		.get(world)
-																																		.syncData(
-																																				world);
+																																		.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																																ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																															} else {
-																																if ((new Object() {
-																																	public String getText() {
-																																		TextFieldWidget _tf = (TextFieldWidget) guistate
-																																				.get("text:scp294input");
-																																		if (_tf != null) {
-																																			return _tf
-																																					.getText();
-																																		}
-																																		return "";
-																																	}
-																																}.getText()).equals(
-																																		"chocolate")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																		.equals("chocolate")
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("Chocolate")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("cocoa")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("Cocoa")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("hot chocolate")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("Hot chocolate")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("hot cocoa")
-																																		|| (new Object() {
-																																			public String getText() {
-																																				TextFieldWidget _tf = (TextFieldWidget) guistate
-																																						.get("text:scp294input");
-																																				if (_tf != null) {
-																																					return _tf
-																																							.getText();
-																																				}
-																																				return "";
-																																			}
-																																		}.getText())
+																																		|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
 																																				.equals("Hot cocoa")) {
-																																	if (world instanceof World
-																																			&& !world
-																																					.isRemote()) {
-																																		((World) world)
-																																				.playSound(
-																																						null,
-																																						new BlockPos(
-																																								x,
-																																								y,
-																																								z),
-																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																								.getValue(
-																																										new ResourceLocation(
-																																												"scp_additions:scp294pouring")),
-																																						SoundCategory.NEUTRAL,
-																																						(float) 1,
-																																						(float) 1);
-																																	} else {
-																																		((World) world)
-																																				.playSound(
-																																						x,
-																																						y,
-																																						z,
-																																						(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																								.getValue(
-																																										new ResourceLocation(
-																																												"scp_additions:scp294pouring")),
-																																						SoundCategory.NEUTRAL,
-																																						(float) 1,
-																																						(float) 1,
-																																						false);
-																																	}
-																																	{
-																																		Entity _ent = entity;
-																																		if (_ent instanceof ServerPlayerEntity) {
-																																			Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																																			if (_current instanceof Supplier) {
-																																				Object invobj = ((Supplier) _current)
-																																						.get();
-																																				if (invobj instanceof Map) {
-																																					((Slot) ((Map) invobj)
-																																							.get((int) (0)))
-																																							.decrStackSize(
-																																									(int) (1));
-																																					_current.detectAndSendChanges();
-																																				}
-																																			}
-																																		}
-																																	}
-																																	new Object() {
-																																		private int ticks = 0;
-																																		private float waitTicks;
-																																		private IWorld world;
-
-																																		public void start(
-																																				IWorld world,
-																																				int waitTicks) {
-																																			this.waitTicks = waitTicks;
-																																			MinecraftForge.EVENT_BUS
-																																					.register(
-																																							this);
-																																			this.world = world;
-																																		}
-
-																																		@SubscribeEvent
-																																		public void tick(
-																																				TickEvent.ServerTickEvent event) {
-																																			if (event.phase == TickEvent.Phase.END) {
-																																				this.ticks += 1;
-																																				if (this.ticks >= this.waitTicks)
-																																					run();
-																																			}
-																																		}
-
-																																		private void run() {
-																																			if (entity instanceof PlayerEntity) {
-																																				ItemStack _setstack = new ItemStack(
-																																						ChocolateItem.block);
-																																				_setstack
-																																						.setCount(
-																																								(int) 1);
-																																				ItemHandlerHelper
-																																						.giveItemToPlayer(
-																																								((PlayerEntity) entity),
-																																								_setstack);
-																																			}
-																																			MinecraftForge.EVENT_BUS
-																																					.unregister(
-																																							this);
-																																		}
-																																	}.start(world,
-																																			(int) 40);
-																																	ScpAdditionsModVariables.WorldVariables
-																																			.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																					.get(world).Scp294stock
-																																					+ 1);
-																																	ScpAdditionsModVariables.WorldVariables
-																																			.get(world)
-																																			.syncData(
-																																					world);
-																																} else {
-																																	if ((new Object() {
-																																		public String getText() {
-																																			TextFieldWidget _tf = (TextFieldWidget) guistate
-																																					.get("text:scp294input");
-																																			if (_tf != null) {
-																																				return _tf
-																																						.getText();
-																																			}
-																																			return "";
-																																		}
-																																	}.getText())
-																																			.equals("cocaine")
-																																			|| (new Object() {
-																																				public String getText() {
-																																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																																							.get("text:scp294input");
-																																					if (_tf != null) {
-																																						return _tf
-																																								.getText();
-																																					}
-																																					return "";
-																																				}
-																																			}.getText())
-																																					.equals("Cocaine")
-																																			|| (new Object() {
-																																				public String getText() {
-																																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																																							.get("text:scp294input");
-																																					if (_tf != null) {
-																																						return _tf
-																																								.getText();
-																																					}
-																																					return "";
-																																				}
-																																			}.getText())
-																																					.equals("cocaine drink")
-																																			|| (new Object() {
-																																				public String getText() {
-																																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																																							.get("text:scp294input");
-																																					if (_tf != null) {
-																																						return _tf
-																																								.getText();
-																																					}
-																																					return "";
-																																				}
-																																			}.getText())
-																																					.equals("Cocaine Drink")
-																																			|| (new Object() {
-																																				public String getText() {
-																																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																																							.get("text:scp294input");
-																																					if (_tf != null) {
-																																						return _tf
-																																								.getText();
-																																					}
-																																					return "";
-																																				}
-																																			}.getText())
-																																					.equals("cocaine energy drink")
-																																			|| (new Object() {
-																																				public String getText() {
-																																					TextFieldWidget _tf = (TextFieldWidget) guistate
-																																							.get("text:scp294input");
-																																					if (_tf != null) {
-																																						return _tf
-																																								.getText();
-																																					}
-																																					return "";
-																																				}
-																																			}.getText())
-																																					.equals("Cocaine Energy Drink")) {
-																																		if (world instanceof World
-																																				&& !world
-																																						.isRemote()) {
-																																			((World) world)
-																																					.playSound(
-																																							null,
-																																							new BlockPos(
-																																									x,
-																																									y,
-																																									z),
-																																							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																									.getValue(
-																																											new ResourceLocation(
-																																													"scp_additions:scp294pouring")),
-																																							SoundCategory.NEUTRAL,
-																																							(float) 1,
-																																							(float) 1);
+																																	if (world instanceof Level _level) {
+																																		if (!_level.isClientSide()) {
+																																			_level.playSound(null, BlockPos.containing(x, y, z),
+																																					ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																					SoundSource.NEUTRAL, 1, 1);
 																																		} else {
-																																			((World) world)
-																																					.playSound(
-																																							x,
-																																							y,
-																																							z,
-																																							(net.minecraft.util.SoundEvent) ForgeRegistries.SOUND_EVENTS
-																																									.getValue(
-																																											new ResourceLocation(
-																																													"scp_additions:scp294pouring")),
-																																							SoundCategory.NEUTRAL,
-																																							(float) 1,
-																																							(float) 1,
-																																							false);
+																																			_level.playLocalSound(x, y, z,
+																																					ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																					SoundSource.NEUTRAL, 1, 1, false);
 																																		}
-																																		{
-																																			Entity _ent = entity;
-																																			if (_ent instanceof ServerPlayerEntity) {
-																																				Container _current = ((ServerPlayerEntity) _ent).openContainer;
-																																				if (_current instanceof Supplier) {
-																																					Object invobj = ((Supplier) _current)
-																																							.get();
-																																					if (invobj instanceof Map) {
-																																						((Slot) ((Map) invobj)
-																																								.get((int) (0)))
-																																								.decrStackSize(
-																																										(int) (1));
-																																						_current.detectAndSendChanges();
-																																					}
-																																				}
+																																	}
+																																	if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current
+																																			&& _current.get() instanceof Map _slots) {
+																																		((Slot) _slots.get(0)).remove(1);
+																																		_player.containerMenu.broadcastChanges();
+																																	}
+																																	ScpAdditionsMod.queueServerWork(40, () -> {
+																																		if (entity instanceof Player _player) {
+																																			ItemStack _setstack = new ItemStack(ScpAdditionsModItems.CHOCOLATE.get());
+																																			_setstack.setCount(1);
+																																			ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
+																																		}
+																																	});
+																																	ScpAdditionsModVariables.WorldVariables
+																																			.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																																	ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
+																																} else {
+																																	if ((guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																			.equals("cocaine")
+																																			|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																					.equals("Cocaine")
+																																			|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																					.equals("cocaine drink")
+																																			|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																					.equals("Cocaine Drink")
+																																			|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																					.equals("cocaine energy drink")
+																																			|| (guistate.containsKey("text:scp294input") ? ((EditBox) guistate.get("text:scp294input")).getValue() : "")
+																																					.equals("Cocaine Energy Drink")) {
+																																		if (world instanceof Level _level) {
+																																			if (!_level.isClientSide()) {
+																																				_level.playSound(null, BlockPos.containing(x, y, z),
+																																						ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																						SoundSource.NEUTRAL, 1, 1);
+																																			} else {
+																																				_level.playLocalSound(x, y, z,
+																																						ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp294pouring")),
+																																						SoundSource.NEUTRAL, 1, 1, false);
 																																			}
 																																		}
-																																		new Object() {
-																																			private int ticks = 0;
-																																			private float waitTicks;
-																																			private IWorld world;
-
-																																			public void start(
-																																					IWorld world,
-																																					int waitTicks) {
-																																				this.waitTicks = waitTicks;
-																																				MinecraftForge.EVENT_BUS
-																																						.register(
-																																								this);
-																																				this.world = world;
+																																		if (entity instanceof Player _player && _player.containerMenu instanceof Supplier _current
+																																				&& _current.get() instanceof Map _slots) {
+																																			((Slot) _slots.get(0)).remove(1);
+																																			_player.containerMenu.broadcastChanges();
+																																		}
+																																		ScpAdditionsMod.queueServerWork(40, () -> {
+																																			if (entity instanceof Player _player) {
+																																				ItemStack _setstack = new ItemStack(ScpAdditionsModItems.COCAINE.get());
+																																				_setstack.setCount(1);
+																																				ItemHandlerHelper.giveItemToPlayer(_player, _setstack);
 																																			}
-
-																																			@SubscribeEvent
-																																			public void tick(
-																																					TickEvent.ServerTickEvent event) {
-																																				if (event.phase == TickEvent.Phase.END) {
-																																					this.ticks += 1;
-																																					if (this.ticks >= this.waitTicks)
-																																						run();
-																																				}
-																																			}
-
-																																			private void run() {
-																																				if (entity instanceof PlayerEntity) {
-																																					ItemStack _setstack = new ItemStack(
-																																							CocaineItem.block);
-																																					_setstack
-																																							.setCount(
-																																									(int) 1);
-																																					ItemHandlerHelper
-																																							.giveItemToPlayer(
-																																									((PlayerEntity) entity),
-																																									_setstack);
-																																				}
-																																				MinecraftForge.EVENT_BUS
-																																						.unregister(
-																																								this);
-																																			}
-																																		}.start(world,
-																																				(int) 40);
+																																		});
 																																		ScpAdditionsModVariables.WorldVariables
-																																				.get(world).Scp294stock = (ScpAdditionsModVariables.WorldVariables
-																																						.get(world).Scp294stock
-																																						+ 1);
-																																		ScpAdditionsModVariables.WorldVariables
-																																				.get(world)
-																																				.syncData(
-																																						world);
+																																				.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
+																																		ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 																																	} else {
-																																		Scp294drinkGive2Procedure
-																																				.executeProcedure(
-																																						Stream.of(
-																																								new AbstractMap.SimpleEntry<>(
-																																										"world",
-																																										world),
-																																								new AbstractMap.SimpleEntry<>(
-																																										"x",
-																																										x),
-																																								new AbstractMap.SimpleEntry<>(
-																																										"y",
-																																										y),
-																																								new AbstractMap.SimpleEntry<>(
-																																										"z",
-																																										z),
-																																								new AbstractMap.SimpleEntry<>(
-																																										"entity",
-																																										entity),
-																																								new AbstractMap.SimpleEntry<>(
-																																										"guistate",
-																																										guistate))
-																																								.collect(
-																																										HashMap::new,
-																																										(_m, _e) -> _m
-																																												.put(_e.getKey(),
-																																														_e.getValue()),
-																																										Map::putAll));
+																																		Scp294drinkGive2Procedure.execute(world, x, y, z, entity, guistate);
 																																	}
 																																}
 																															}

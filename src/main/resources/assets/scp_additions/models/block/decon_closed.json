@@ -1,9 +1,10 @@
 {
   "parent": "scp_additions:custom/deconclosed",
   "textures": {
-    "all": "scp_additions:blocks/decontamination",
-    "particle": "scp_additions:blocks/decontamination",
-    "0": "scp_additions:blocks/decontamination",
-    "1": "scp_additions:blocks/doors"
-  }
+    "all": "scp_additions:block/decontamination",
+    "particle": "scp_additions:block/decontamination",
+    "0": "scp_additions:block/decontamination",
+    "1": "scp_additions:block/doors"
+  },
+  "render_type": "translucent"
 }

@@ -1,0 +1,19 @@
+{
+  "feature": "scp_additions:scp_330house_feature",
+  "placement": [
+    {
+      "type": "minecraft:rarity_filter",
+      "chance": 1000000
+    },
+    {
+      "type": "minecraft:in_square"
+    },
+    {
+      "type": "minecraft:heightmap",
+      "heightmap": "OCEAN_FLOOR_WG"
+    },
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}

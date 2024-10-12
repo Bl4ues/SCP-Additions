@@ -1,8 +1,9 @@
 {
   "parent": "scp_additions:custom/scp1176",
   "textures": {
-    "all": "scp_additions:blocks/scp1176",
-    "particle": "scp_additions:blocks/scp1176",
-    "4": "scp_additions:blocks/scp1176"
-  }
+    "all": "scp_additions:block/scp1176",
+    "particle": "scp_additions:block/scp1176",
+    "4": "scp_additions:block/scp1176"
+  },
+  "render_type": "translucent"
 }

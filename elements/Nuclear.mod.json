@@ -1,5 +1,5 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "overlay",
   "definition": {
     "priority": "HIGH",
@@ -12,7 +12,7 @@
           "displayCondition": {
             "name": "NuclearDisplayOverlayIngame"
           },
-          "name": "solid_white.svg.png",
+          "anchorPoint": "CENTER",
           "x": -749,
           "y": -497
         }

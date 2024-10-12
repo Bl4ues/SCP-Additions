@@ -1,360 +1,187 @@
 
 package net.mcreator.scpadditions.block;
 
-import net.minecraftforge.registries.ObjectHolder;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.world.BiomeLoadingEvent;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.common.ToolType;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.api.distmarker.Dist;
+import org.checkerframework.checker.units.qual.s;
 
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.gen.feature.template.RuleTest;
-import net.minecraft.world.gen.feature.template.IRuleTestType;
-import net.minecraft.world.gen.feature.OreFeatureConfig;
-import net.minecraft.world.gen.feature.OreFeature;
-import net.minecraft.world.gen.feature.Feature;
-import net.minecraft.world.gen.feature.ConfiguredFeature;
-import net.minecraft.world.gen.GenerationStage;
-import net.minecraft.world.gen.ChunkGenerator;
-import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.ISeedReader;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.registry.WorldGenRegistries;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.ISelectionContext;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.state.properties.AttachFace;
-import net.minecraft.state.StateContainer;
-import net.minecraft.state.EnumProperty;
-import net.minecraft.state.DirectionProperty;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.loot.LootContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Item;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.BlockItem;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.IWaterLoggable;
-import net.minecraft.block.HorizontalFaceBlock;
-import net.minecraft.block.HorizontalBlock;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Block;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.AttachFace;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.util.RandomSource;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.procedures.Scp059UpdateTickProcedure;
 import net.mcreator.scpadditions.procedures.Scp059OnBlockRightClickedProcedure;
 import net.mcreator.scpadditions.procedures.Scp0591EntityCollidesInTheBlockProcedure;
-import net.mcreator.scpadditions.itemgroup.SCPadditionsSCPsItemGroup;
-import net.mcreator.scpadditions.ScpAdditionsModElements;
 
-import java.util.stream.Stream;
-import java.util.Random;
-import java.util.Map;
 import java.util.List;
-import java.util.HashMap;
 import java.util.Collections;
-import java.util.AbstractMap;
 
-@ScpAdditionsModElements.ModElement.Tag
-public class Scp059Block extends ScpAdditionsModElements.ModElement {
-	@ObjectHolder("scp_additions:scp_059")
-	public static final Block block = null;
+public class Scp059Block extends Block implements SimpleWaterloggedBlock {
+	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+	public static final EnumProperty<AttachFace> FACE = FaceAttachedHorizontalDirectionalBlock.FACE;
+	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-	public Scp059Block(ScpAdditionsModElements instance) {
-		super(instance, 12);
-		MinecraftForge.EVENT_BUS.register(this);
-		FMLJavaModLoadingContext.get().getModEventBus().register(new FeatureRegisterHandler());
+	public Scp059Block() {
+		super(BlockBehaviour.Properties.of().instrument(NoteBlockInstrument.BASEDRUM).sound(SoundType.STONE).strength(2f, 10f).lightLevel(s -> 1).noOcclusion().hasPostProcess((bs, br, bp) -> true).emissiveRendering((bs, br, bp) -> true)
+				.isRedstoneConductor((bs, br, bp) -> false));
+		this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(FACE, AttachFace.WALL).setValue(WATERLOGGED, false));
 	}
 
 	@Override
-	public void initElements() {
-		elements.blocks.add(() -> new CustomBlock());
-		elements.items
-				.add(() -> new BlockItem(block, new Item.Properties().group(SCPadditionsSCPsItemGroup.tab)).setRegistryName(block.getRegistryName()));
+	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, world, list, flag);
+		list.add(Component.literal("Radioactive Mineral"));
 	}
 
 	@Override
-	@OnlyIn(Dist.CLIENT)
-	public void clientLoad(FMLClientSetupEvent event) {
-		RenderTypeLookup.setRenderLayer(block, RenderType.getCutout());
+	public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
+		return state.getFluidState().isEmpty();
 	}
 
-	public static class CustomBlock extends Block implements IWaterLoggable {
-		public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
-		public static final EnumProperty<AttachFace> FACE = HorizontalFaceBlock.FACE;
-		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-
-		public CustomBlock() {
-			super(Block.Properties.create(Material.ROCK).sound(SoundType.STONE).hardnessAndResistance(2f, 10f).setLightLevel(s -> 1).harvestLevel(1)
-					.harvestTool(ToolType.PICKAXE).notSolid().setNeedsPostProcessing((bs, br, bp) -> true).setEmmisiveRendering((bs, br, bp) -> true)
-					.setOpaque((bs, br, bp) -> false));
-			this.setDefaultState(
-					this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(FACE, AttachFace.WALL).with(WATERLOGGED, false));
-			setRegistryName("scp_059");
-		}
-
-		@Override
-		@OnlyIn(Dist.CLIENT)
-		public void addInformation(ItemStack itemstack, IBlockReader world, List<ITextComponent> list, ITooltipFlag flag) {
-			super.addInformation(itemstack, world, list, flag);
-			list.add(new StringTextComponent("Radioactive Mineral"));
-		}
-
-		@Override
-		public boolean propagatesSkylightDown(BlockState state, IBlockReader reader, BlockPos pos) {
-			return state.getFluidState().isEmpty();
-		}
-
-		@Override
-		public int getOpacity(BlockState state, IBlockReader worldIn, BlockPos pos) {
-			return 0;
-		}
-
-		@Override
-		public VoxelShape getShape(BlockState state, IBlockReader world, BlockPos pos, ISelectionContext context) {
-			Vector3d offset = state.getOffset(world, pos);
-			switch ((Direction) state.get(FACING)) {
-				case SOUTH :
-				default :
-					switch ((AttachFace) state.get(FACE)) {
-						case FLOOR :
-							return VoxelShapes.or(makeCuboidShape(6, 0, 10, 10, 5, 6))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case CEILING :
-							return VoxelShapes.or(makeCuboidShape(10, 11, 6, 6, 16, 10))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case WALL :
-						default :
-							return VoxelShapes.or(makeCuboidShape(6, 6, 5, 10, 10, 0))
-
-									.withOffset(offset.x, offset.y, offset.z);
-					}
-				case NORTH :
-					switch ((AttachFace) state.get(FACE)) {
-						case FLOOR :
-							return VoxelShapes.or(makeCuboidShape(10, 0, 6, 6, 5, 10))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case CEILING :
-							return VoxelShapes.or(makeCuboidShape(6, 11, 10, 10, 16, 6))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case WALL :
-						default :
-							return VoxelShapes.or(makeCuboidShape(10, 10, 16, 6, 6, 11))
-
-									.withOffset(offset.x, offset.y, offset.z);
-					}
-				case EAST :
-					switch ((AttachFace) state.get(FACE)) {
-						case FLOOR :
-							return VoxelShapes.or(makeCuboidShape(10, 0, 10, 6, 5, 6))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case CEILING :
-							return VoxelShapes.or(makeCuboidShape(6, 11, 6, 10, 16, 10))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case WALL :
-						default :
-							return VoxelShapes.or(makeCuboidShape(5, 6, 10, 0, 10, 6))
-
-									.withOffset(offset.x, offset.y, offset.z);
-					}
-				case WEST :
-					switch ((AttachFace) state.get(FACE)) {
-						case FLOOR :
-							return VoxelShapes.or(makeCuboidShape(6, 0, 6, 10, 5, 10))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case CEILING :
-							return VoxelShapes.or(makeCuboidShape(10, 11, 10, 6, 16, 6))
-
-									.withOffset(offset.x, offset.y, offset.z);
-						case WALL :
-						default :
-							return VoxelShapes.or(makeCuboidShape(16, 10, 6, 11, 6, 10))
-
-									.withOffset(offset.x, offset.y, offset.z);
-					}
-			}
-		}
-
-		@Override
-		protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-			builder.add(FACING, FACE, WATERLOGGED);
-		}
-
-		@Override
-		public BlockState getStateForPlacement(BlockItemUseContext context) {
-			boolean flag = context.getWorld().getFluidState(context.getPos()).getFluid() == Fluids.WATER;
-			if (context.getFace().getAxis() == Direction.Axis.Y)
-				return this.getDefaultState().with(FACE, context.getFace().getOpposite() == Direction.UP ? AttachFace.CEILING : AttachFace.FLOOR)
-						.with(FACING, context.getPlacementHorizontalFacing()).with(WATERLOGGED, flag);
-			return this.getDefaultState().with(FACE, AttachFace.WALL).with(FACING, context.getFace()).with(WATERLOGGED, flag);
-		}
-
-		public BlockState rotate(BlockState state, Rotation rot) {
-			return state.with(FACING, rot.rotate(state.get(FACING)));
-		}
-
-		public BlockState mirror(BlockState state, Mirror mirrorIn) {
-			return state.rotate(mirrorIn.toRotation(state.get(FACING)));
-		}
-
-		@Override
-		public FluidState getFluidState(BlockState state) {
-			return state.get(WATERLOGGED) ? Fluids.WATER.getStillFluidState(false) : super.getFluidState(state);
-		}
-
-		@Override
-		public BlockState updatePostPlacement(BlockState state, Direction facing, BlockState facingState, IWorld world, BlockPos currentPos,
-				BlockPos facingPos) {
-			if (state.get(WATERLOGGED)) {
-				world.getPendingFluidTicks().scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickRate(world));
-			}
-			return super.updatePostPlacement(state, facing, facingState, world, currentPos, facingPos);
-		}
-
-		@Override
-		public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
-			List<ItemStack> dropsOriginal = super.getDrops(state, builder);
-			if (!dropsOriginal.isEmpty())
-				return dropsOriginal;
-			return Collections.singletonList(new ItemStack(this, 1));
-		}
-
-		@Override
-		public void onBlockAdded(BlockState blockstate, World world, BlockPos pos, BlockState oldState, boolean moving) {
-			super.onBlockAdded(blockstate, world, pos, oldState, moving);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-			world.getPendingBlockTicks().scheduleTick(pos, this, 20);
-		}
-
-		@Override
-		public void tick(BlockState blockstate, ServerWorld world, BlockPos pos, Random random) {
-			super.tick(blockstate, world, pos, random);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-
-			Scp059UpdateTickProcedure.executeProcedure(Stream
-					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
-							new AbstractMap.SimpleEntry<>("z", z))
-					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-			world.getPendingBlockTicks().scheduleTick(pos, this, 20);
-		}
-
-		@Override
-		public void onEntityCollision(BlockState blockstate, World world, BlockPos pos, Entity entity) {
-			super.onEntityCollision(blockstate, world, pos, entity);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-
-			Scp0591EntityCollidesInTheBlockProcedure.executeProcedure(Stream
-					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
-							new AbstractMap.SimpleEntry<>("z", z), new AbstractMap.SimpleEntry<>("entity", entity))
-					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-		}
-
-		@Override
-		public ActionResultType onBlockActivated(BlockState blockstate, World world, BlockPos pos, PlayerEntity entity, Hand hand,
-				BlockRayTraceResult hit) {
-			super.onBlockActivated(blockstate, world, pos, entity, hand, hit);
-			int x = pos.getX();
-			int y = pos.getY();
-			int z = pos.getZ();
-			double hitX = hit.getHitVec().x;
-			double hitY = hit.getHitVec().y;
-			double hitZ = hit.getHitVec().z;
-			Direction direction = hit.getFace();
-
-			Scp059OnBlockRightClickedProcedure.executeProcedure(Stream
-					.of(new AbstractMap.SimpleEntry<>("world", world), new AbstractMap.SimpleEntry<>("x", x), new AbstractMap.SimpleEntry<>("y", y),
-							new AbstractMap.SimpleEntry<>("z", z), new AbstractMap.SimpleEntry<>("entity", entity))
-					.collect(HashMap::new, (_m, _e) -> _m.put(_e.getKey(), _e.getValue()), Map::putAll));
-			return ActionResultType.SUCCESS;
-		}
+	@Override
+	public int getLightBlock(BlockState state, BlockGetter worldIn, BlockPos pos) {
+		return 0;
 	}
 
-	private static Feature<OreFeatureConfig> feature = null;
-	private static ConfiguredFeature<?, ?> configuredFeature = null;
-	private static IRuleTestType<CustomRuleTest> CUSTOM_MATCH = null;
-
-	private static class CustomRuleTest extends RuleTest {
-		static final CustomRuleTest INSTANCE = new CustomRuleTest();
-		static final com.mojang.serialization.Codec<CustomRuleTest> codec = com.mojang.serialization.Codec.unit(() -> INSTANCE);
-
-		public boolean test(BlockState blockAt, Random random) {
-			boolean blockCriteria = false;
-			if (blockAt.getBlock() == Blocks.CAVE_AIR)
-				blockCriteria = true;
-			return blockCriteria;
-		}
-
-		protected IRuleTestType<?> getType() {
-			return CUSTOM_MATCH;
-		}
+	@Override
+	public VoxelShape getVisualShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return Shapes.empty();
 	}
 
-	private static class FeatureRegisterHandler {
-		@SubscribeEvent
-		public void registerFeature(RegistryEvent.Register<Feature<?>> event) {
-			CUSTOM_MATCH = Registry.register(Registry.RULE_TEST, new ResourceLocation("scp_additions:scp_059_match"), () -> CustomRuleTest.codec);
-			feature = new OreFeature(OreFeatureConfig.CODEC) {
-				@Override
-				public boolean generate(ISeedReader world, ChunkGenerator generator, Random rand, BlockPos pos, OreFeatureConfig config) {
-					RegistryKey<World> dimensionType = world.getWorld().getDimensionKey();
-					boolean dimensionCriteria = false;
-					if (dimensionType == World.OVERWORLD)
-						dimensionCriteria = true;
-					if (!dimensionCriteria)
-						return false;
-					return super.generate(world, generator, rand, pos, config);
-				}
+	@Override
+	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return switch (state.getValue(FACING)) {
+			default -> switch (state.getValue(FACE)) {
+				case FLOOR -> box(6, 0, 6, 10, 5, 10);
+				case WALL -> box(6, 6, 0, 10, 10, 5);
+				case CEILING -> box(6, 11, 6, 10, 16, 10);
 			};
-			configuredFeature = feature.withConfiguration(new OreFeatureConfig(CustomRuleTest.INSTANCE, block.getDefaultState(), 16)).range(64)
-					.square().func_242731_b(1);
-			event.getRegistry().register(feature.setRegistryName("scp_059"));
-			Registry.register(WorldGenRegistries.CONFIGURED_FEATURE, new ResourceLocation("scp_additions:scp_059"), configuredFeature);
-		}
+			case NORTH -> switch (state.getValue(FACE)) {
+				case FLOOR -> box(6, 0, 6, 10, 5, 10);
+				case WALL -> box(6, 6, 11, 10, 10, 16);
+				case CEILING -> box(6, 11, 6, 10, 16, 10);
+			};
+			case EAST -> switch (state.getValue(FACE)) {
+				case FLOOR -> box(6, 0, 6, 10, 5, 10);
+				case WALL -> box(0, 6, 6, 5, 10, 10);
+				case CEILING -> box(6, 11, 6, 10, 16, 10);
+			};
+			case WEST -> switch (state.getValue(FACE)) {
+				case FLOOR -> box(6, 0, 6, 10, 5, 10);
+				case WALL -> box(11, 6, 6, 16, 10, 10);
+				case CEILING -> box(6, 11, 6, 10, 16, 10);
+			};
+		};
 	}
 
-	@SubscribeEvent
-	public void addFeatureToBiomes(BiomeLoadingEvent event) {
-		event.getGeneration().getFeatures(GenerationStage.Decoration.UNDERGROUND_ORES).add(() -> configuredFeature);
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		builder.add(FACING, FACE, WATERLOGGED);
+	}
+
+	@Override
+	public BlockState getStateForPlacement(BlockPlaceContext context) {
+		boolean flag = context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER;
+		if (context.getClickedFace().getAxis() == Direction.Axis.Y)
+			return this.defaultBlockState().setValue(FACE, context.getClickedFace().getOpposite() == Direction.UP ? AttachFace.CEILING : AttachFace.FLOOR).setValue(FACING, context.getHorizontalDirection()).setValue(WATERLOGGED, flag);
+		return this.defaultBlockState().setValue(FACE, AttachFace.WALL).setValue(FACING, context.getClickedFace()).setValue(WATERLOGGED, flag);
+	}
+
+	public BlockState rotate(BlockState state, Rotation rot) {
+		return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
+	}
+
+	public BlockState mirror(BlockState state, Mirror mirrorIn) {
+		return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
+	}
+
+	@Override
+	public FluidState getFluidState(BlockState state) {
+		return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+	}
+
+	@Override
+	public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos currentPos, BlockPos facingPos) {
+		if (state.getValue(WATERLOGGED)) {
+			world.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
+		}
+		return super.updateShape(state, facing, facingState, world, currentPos, facingPos);
+	}
+
+	@Override
+	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
+		if (!dropsOriginal.isEmpty())
+			return dropsOriginal;
+		return Collections.singletonList(new ItemStack(this, 1));
+	}
+
+	@Override
+	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
+		super.onPlace(blockstate, world, pos, oldState, moving);
+		world.scheduleTick(pos, this, 20);
+	}
+
+	@Override
+	public void tick(BlockState blockstate, ServerLevel world, BlockPos pos, RandomSource random) {
+		super.tick(blockstate, world, pos, random);
+		int x = pos.getX();
+		int y = pos.getY();
+		int z = pos.getZ();
+		Scp059UpdateTickProcedure.execute(world, x, y, z);
+		world.scheduleTick(pos, this, 20);
+	}
+
+	@Override
+	public void entityInside(BlockState blockstate, Level world, BlockPos pos, Entity entity) {
+		super.entityInside(blockstate, world, pos, entity);
+		Scp0591EntityCollidesInTheBlockProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ(), entity);
+	}
+
+	@Override
+	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
+		super.use(blockstate, world, pos, entity, hand, hit);
+		int x = pos.getX();
+		int y = pos.getY();
+		int z = pos.getZ();
+		double hitX = hit.getLocation().x;
+		double hitY = hit.getLocation().y;
+		double hitZ = hit.getLocation().z;
+		Direction direction = hit.getDirection();
+		Scp059OnBlockRightClickedProcedure.execute(world, x, y, z, entity);
+		return InteractionResult.SUCCESS;
 	}
 }

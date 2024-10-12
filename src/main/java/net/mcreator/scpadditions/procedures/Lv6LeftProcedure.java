@@ -1,82 +1,51 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraft.world.IWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.state.Property;
-import net.minecraft.item.ItemStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.core.BlockPos;
 
-import net.mcreator.scpadditions.item.Level6KeycardItem;
-import net.mcreator.scpadditions.block.Lv6LeftReaderWrongBlock;
-import net.mcreator.scpadditions.block.Lv6LeftReaderAcceptBlock;
-import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.ScpAdditionsModItems;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 import java.util.Map;
 
 public class Lv6LeftProcedure {
-
-	public static void executeProcedure(Map<String, Object> dependencies) {
-		if (dependencies.get("world") == null) {
-			if (!dependencies.containsKey("world"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency world for procedure Lv6Left!");
+	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
+		if (entity == null)
 			return;
-		}
-		if (dependencies.get("x") == null) {
-			if (!dependencies.containsKey("x"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency x for procedure Lv6Left!");
-			return;
-		}
-		if (dependencies.get("y") == null) {
-			if (!dependencies.containsKey("y"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency y for procedure Lv6Left!");
-			return;
-		}
-		if (dependencies.get("z") == null) {
-			if (!dependencies.containsKey("z"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency z for procedure Lv6Left!");
-			return;
-		}
-		if (dependencies.get("entity") == null) {
-			if (!dependencies.containsKey("entity"))
-				ScpAdditionsMod.LOGGER.warn("Failed to load dependency entity for procedure Lv6Left!");
-			return;
-		}
-		IWorld world = (IWorld) dependencies.get("world");
-		double x = dependencies.get("x") instanceof Integer ? (int) dependencies.get("x") : (double) dependencies.get("x");
-		double y = dependencies.get("y") instanceof Integer ? (int) dependencies.get("y") : (double) dependencies.get("y");
-		double z = dependencies.get("z") instanceof Integer ? (int) dependencies.get("z") : (double) dependencies.get("z");
-		Entity entity = (Entity) dependencies.get("entity");
-		if ((entity instanceof PlayerEntity) ? ((PlayerEntity) entity).inventory.hasItemStack(new ItemStack(Level6KeycardItem.block)) : false) {
+		if (entity instanceof Player _playerHasItem ? _playerHasItem.getInventory().contains(new ItemStack(ScpAdditionsModItems.LEVEL_6_KEYCARD.get())) : false) {
 			{
-				BlockPos _bp = new BlockPos(x, y, z);
-				BlockState _bs = Lv6LeftReaderAcceptBlock.block.getDefaultState();
+				BlockPos _bp = BlockPos.containing(x, y, z);
+				BlockState _bs = ScpAdditionsModBlocks.LV_6_LEFT_READER_ACCEPT.get().defaultBlockState();
 				BlockState _bso = world.getBlockState(_bp);
 				for (Map.Entry<Property<?>, Comparable<?>> entry : _bso.getValues().entrySet()) {
-					Property _property = _bs.getBlock().getStateContainer().getProperty(entry.getKey().getName());
-					if (_property != null && _bs.get(_property) != null)
+					Property _property = _bs.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
+					if (_property != null && _bs.getValue(_property) != null)
 						try {
-							_bs = _bs.with(_property, (Comparable) entry.getValue());
+							_bs = _bs.setValue(_property, (Comparable) entry.getValue());
 						} catch (Exception e) {
 						}
 				}
-				world.setBlockState(_bp, _bs, 3);
+				world.setBlock(_bp, _bs, 3);
 			}
 		} else {
 			{
-				BlockPos _bp = new BlockPos(x, y, z);
-				BlockState _bs = Lv6LeftReaderWrongBlock.block.getDefaultState();
+				BlockPos _bp = BlockPos.containing(x, y, z);
+				BlockState _bs = ScpAdditionsModBlocks.LV_6_LEFT_READER_WRONG.get().defaultBlockState();
 				BlockState _bso = world.getBlockState(_bp);
 				for (Map.Entry<Property<?>, Comparable<?>> entry : _bso.getValues().entrySet()) {
-					Property _property = _bs.getBlock().getStateContainer().getProperty(entry.getKey().getName());
-					if (_property != null && _bs.get(_property) != null)
+					Property _property = _bs.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
+					if (_property != null && _bs.getValue(_property) != null)
 						try {
-							_bs = _bs.with(_property, (Comparable) entry.getValue());
+							_bs = _bs.setValue(_property, (Comparable) entry.getValue());
 						} catch (Exception e) {
 						}
 				}
-				world.setBlockState(_bp, _bs, 3);
+				world.setBlock(_bp, _bs, 3);
 			}
 		}
 	}

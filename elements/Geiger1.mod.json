@@ -1,10 +1,12 @@
 {
-  "_fv": 33,
+  "_fv": 57,
   "_type": "item",
   "definition": {
     "renderType": 1,
     "texture": "geiger",
     "customModelName": "geiger1:default",
+    "customProperties": {},
+    "states": [],
     "name": "Geiger Counter",
     "rarity": "COMMON",
     "creativeTab": {
@@ -24,13 +26,16 @@
     "damageOnCrafting": false,
     "enableMeleeDamage": false,
     "damageVsEntity": 0.0,
-    "specialInfo": [
-      "Detects radioactivity levels in the surrounding environment."
-    ],
-    "hasGlow": false,
+    "specialInformation": {
+      "fixedValue": [
+        "Detects radioactivity levels in the surrounding environment."
+      ]
+    },
     "guiBoundTo": "<NONE>",
     "inventorySize": 9,
     "inventoryStackSize": 64,
+    "enableRanged": false,
+    "shootConstantly": false,
     "isFood": false,
     "nutritionalValue": 4,
     "saturation": 0.3,

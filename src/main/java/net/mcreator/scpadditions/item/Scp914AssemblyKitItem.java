@@ -37,6 +37,7 @@ public class Scp914AssemblyKitItem extends Item {
 	private static final int ANCHOR_X = 0;
 	private static final int ANCHOR_Y = 0;
 	private static final int ANCHOR_Z = 6;
+	private static final int PLAYER_CLEARANCE_OFFSET = 4;
 	private static final String STRUCTURE_RESOURCE = "/data/scp_additions/structures/scp_914_full.nbt";
 	private static StructureData cachedStructure;
 
@@ -67,7 +68,7 @@ public class Scp914AssemblyKitItem extends Item {
 
 		Player player = context.getPlayer();
 		Direction front = context.getHorizontalDirection();
-		BlockPos origin = context.getClickedPos().relative(context.getClickedFace());
+		BlockPos origin = context.getClickedPos().relative(context.getClickedFace()).relative(front, PLAYER_CLEARANCE_OFFSET);
 		StructureData structure = loadStructure();
 		if (structure == null) {
 			message(player, "Cannot assemble SCP-914: structure data failed to load.");

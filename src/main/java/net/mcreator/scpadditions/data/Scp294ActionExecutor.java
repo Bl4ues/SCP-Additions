@@ -70,7 +70,8 @@ public final class Scp294ActionExecutor {
 		if (!message.isBlank()) {
 			showMessage(entity, message, true);
 		}
-		playSound(world, x, y, z, action.contains("sound", Tag.TAG_STRING) ? action.getString("sound") : "minecraft:entity.generic.explode");
+		String sound = action.getString("sound");
+		playSound(world, x, y, z, sound.isBlank() ? "minecraft:entity.generic.explode" : sound);
 		spawnParticles(world, x, y + 0.75D, z, "explosion", 1, 0.0F);
 		spawnParticles(world, x, y + 0.75D, z, "smoke", Math.max(8, action.getInt("count")), Math.max(0.35F, action.getFloat("radius")));
 	}

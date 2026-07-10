@@ -1,0 +1,14 @@
+{
+  "enabled": false,
+  "aliases": [
+    "coffee",
+    "black coffee"
+  ],
+  "result": {
+    "item": "scp_additions:cup_of_coffee",
+    "count": 1
+  },
+  "delay_ticks": 40,
+  "sound": "scp_additions:scp294pouring",
+  "consumes_coin": true
+}

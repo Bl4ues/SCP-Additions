@@ -128,10 +128,23 @@ public final class Scp294DrinkManager {
 			Files.createDirectories(CONFIG_PATH.getParent());
 			if (Files.notExists(CONFIG_PATH)) {
 				Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
+			} else {
+				prettyPrintConfigIfNeeded();
 			}
 		} catch (IOException exception) {
 			ScpAdditionsMod.LOGGER.error("Failed to create SCP-294 config at {}", CONFIG_PATH, exception);
 		}
+	}
+
+	private static void prettyPrintConfigIfNeeded() throws IOException {
+		String content = Files.readString(CONFIG_PATH, StandardCharsets.UTF_8);
+		boolean looksMinified = !content.contains("\n") || content.lines().anyMatch(line -> line.length() > 240);
+		if (!looksMinified) {
+			return;
+		}
+
+		JsonElement json = JsonParser.parseString(content);
+		Files.writeString(CONFIG_PATH, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
 	}
 
 	private static void readMatchingConfig(JsonObject root) {

@@ -2,7 +2,6 @@ package net.mcreator.scpadditions.data;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
@@ -28,6 +27,8 @@ import java.util.List;
 import java.util.Optional;
 
 public final class Scp914Processor {
+	private static final Direction[] SEARCH_ORDER = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+
 	private Scp914Processor() {
 	}
 
@@ -37,10 +38,44 @@ public final class Scp914Processor {
 		}
 
 		BlockPos keyPos = BlockPos.containing(x, y, z);
-		Direction facing = getFacing(world, keyPos);
 		Scp914RecipeManager.MachineConfig machineConfig = Scp914RecipeManager.machineConfig();
-		Vec3 intakeCenter = centerOf(keyPos.offset(rotate(machineConfig.intakeOffset(), facing)));
-		Vec3 outputCenter = centerOf(keyPos.offset(rotate(machineConfig.outputOffset(), facing)));
+		Optional<ProcessingContext> optionalContext = findProcessingContext(level, keyPos, setting, machineConfig);
+		if (optionalContext.isEmpty()) {
+			return;
+		}
+
+		ProcessingContext context = optionalContext.get();
+		playSound(world, x, y, z, "scp_additions:scp914refining");
+		setRefining(world, true);
+
+		ScpAdditionsMod.queueServerWork(machineConfig.startDelayTicks(), () -> {
+			applyRecipe(level, context.outputCenter(), context.match());
+			ScpAdditionsMod.queueServerWork(machineConfig.finishDelayTicks(), () -> setRefining(world, false));
+		});
+	}
+
+	private static Optional<ProcessingContext> findProcessingContext(ServerLevel level, BlockPos keyPos, Scp914RecipeManager.Setting setting, Scp914RecipeManager.MachineConfig machineConfig) {
+		Direction preferredFacing = getFacing(level, keyPos);
+		Optional<ProcessingContext> preferred = tryDirection(level, keyPos, setting, machineConfig, preferredFacing);
+		if (preferred.isPresent()) {
+			return preferred;
+		}
+
+		for (Direction direction : SEARCH_ORDER) {
+			if (direction == preferredFacing) {
+				continue;
+			}
+			Optional<ProcessingContext> candidate = tryDirection(level, keyPos, setting, machineConfig, direction);
+			if (candidate.isPresent()) {
+				return candidate;
+			}
+		}
+		return Optional.empty();
+	}
+
+	private static Optional<ProcessingContext> tryDirection(ServerLevel level, BlockPos keyPos, Scp914RecipeManager.Setting setting, Scp914RecipeManager.MachineConfig machineConfig, Direction direction) {
+		Vec3 intakeCenter = centerOf(keyPos.offset(rotate(machineConfig.intakeOffset(), direction)));
+		Vec3 outputCenter = centerOf(keyPos.offset(rotate(machineConfig.outputOffset(), direction)));
 
 		List<ItemEntity> itemInputs = level.getEntitiesOfClass(ItemEntity.class, new AABB(intakeCenter, intakeCenter).inflate(machineConfig.searchRadius()), item -> !item.isRemoved() && !item.getItem().isEmpty())
 				.stream()
@@ -51,21 +86,7 @@ public final class Scp914Processor {
 				.sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)))
 				.toList();
 
-		Optional<Scp914RecipeManager.RecipeMatch> optionalMatch = Scp914RecipeManager.findRecipe(setting, itemInputs, entityInputs);
-		if (optionalMatch.isEmpty()) {
-			sendActionbar(user, "SCP-914 has nothing valid to refine.");
-			return;
-		}
-
-		Scp914RecipeManager.RecipeMatch match = optionalMatch.get();
-		playSound(world, x, y, z, "scp_additions:scp914refining");
-		setRefining(world, true);
-		sendActionbar(user, match.recipe().actionbar());
-
-		ScpAdditionsMod.queueServerWork(machineConfig.startDelayTicks(), () -> {
-			applyRecipe(level, outputCenter, match);
-			ScpAdditionsMod.queueServerWork(machineConfig.finishDelayTicks(), () -> setRefining(world, false));
-		});
+		return Scp914RecipeManager.findRecipe(setting, itemInputs, entityInputs).map(match -> new ProcessingContext(match, outputCenter));
 	}
 
 	private static void applyRecipe(ServerLevel level, Vec3 outputCenter, Scp914RecipeManager.RecipeMatch match) {
@@ -144,12 +165,6 @@ public final class Scp914Processor {
 		ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
 	}
 
-	private static void sendActionbar(Entity entity, String message) {
-		if (entity instanceof Player player && message != null && !message.isBlank()) {
-			player.displayClientMessage(Component.literal(message), true);
-		}
-	}
-
 	private static void playSound(LevelAccessor world, double x, double y, double z, String soundId) {
 		if (world instanceof Level level) {
 			ResourceLocation sound = new ResourceLocation(soundId);
@@ -159,5 +174,8 @@ public final class Scp914Processor {
 				level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(sound), SoundSource.NEUTRAL, 1, 1, false);
 			}
 		}
+	}
+
+	private record ProcessingContext(Scp914RecipeManager.RecipeMatch match, Vec3 outputCenter) {
 	}
 }

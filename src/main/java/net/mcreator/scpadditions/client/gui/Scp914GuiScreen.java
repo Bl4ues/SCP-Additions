@@ -27,7 +27,6 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	private static final double SNAP_THRESHOLD = 12.0D;
 	private static final ResourceLocation BACKGROUND = new ResourceLocation("scp_additions:textures/screens/scp_914_gui.png");
 	private static final ResourceLocation DIAL = new ResourceLocation("scp_additions:textures/screens/scp_914_dial.png");
-	private static final ResourceLocation DIAL_HOVER = new ResourceLocation("scp_additions:textures/screens/scp_914_dial_hover.png");
 
 	private final Level world;
 	private final int x, y, z;
@@ -54,6 +53,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		updateLayout();
 		if (!initializedSetting) {
 			selected = currentSettingFromBlock();
+			dragAngle = selected.angle();
 			initializedSetting = true;
 		}
 		this.renderBackground(guiGraphics);
@@ -62,43 +62,30 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	}
 
 	private void renderPanel(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-		RenderSystem.setShaderColor(1, 1, 1, 1);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
 		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
+
+		RenderSystem.setShaderColor(0.50F, 0.50F, 0.50F, 1.0F);
 		guiGraphics.blit(BACKGROUND, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		renderDarkenOverlay(guiGraphics, 0x80000000);
-		boolean hover = dragging || isMouseNearDial(mouseX, mouseY);
-		renderDial(guiGraphics, dragging ? dragAngle : selected.angle(), hover);
-		renderVignette(guiGraphics, 70, 40);
+
+		RenderSystem.setShaderColor(0.58F, 0.58F, 0.58F, 1.0F);
+		renderDial(guiGraphics, dragging ? dragAngle : selected.angle());
+
+		RenderSystem.setShaderColor(1, 1, 1, 1);
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
 	}
 
-	private void renderDial(GuiGraphics guiGraphics, double angle, boolean hover) {
+	private void renderDial(GuiGraphics guiGraphics, double angle) {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(DIAL_PIVOT_X, DIAL_PIVOT_Y, 0);
 		guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees((float) angle));
 		guiGraphics.pose().translate(-DIAL_PIVOT_X, -DIAL_PIVOT_Y, 0);
-		guiGraphics.blit(hover ? DIAL_HOVER : DIAL, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		guiGraphics.blit(DIAL, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		guiGraphics.pose().popPose();
-	}
-
-	private void renderDarkenOverlay(GuiGraphics guiGraphics, int color) {
-		guiGraphics.fill(0, 0, TEX_W, TEX_H, color);
-	}
-
-	private void renderVignette(GuiGraphics guiGraphics, int maxAlpha, int layers) {
-		for (int i = 0; i < layers; i++) {
-			int alpha = Math.max(0, (int) (maxAlpha * (1.0D - (double) i / layers)));
-			int color = alpha << 24;
-			guiGraphics.fill(i, i, TEX_W - i, i + 1, color);
-			guiGraphics.fill(i, TEX_H - i - 1, TEX_W - i, TEX_H - i, color);
-			guiGraphics.fill(i, i, i + 1, TEX_H - i, color);
-			guiGraphics.fill(TEX_W - i - 1, i, TEX_W - i, TEX_H - i, color);
-		}
 	}
 
 	private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -136,12 +123,12 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		double ty = textureY(mouseY);
 		DialSetting nearest = nearestSetting(tx, ty);
 		if (nearest != null && distance(tx, ty, nearest.x, nearest.y) <= 75.0D) {
-			selectSetting(nearest);
+			selectSetting(nearest, true);
 			return true;
 		}
 		if (isMouseNearDial(mouseX, mouseY)) {
 			dragging = true;
-			dragAngle = snappedDragAngle(angleFor(tx, ty));
+			updateDraggedDial(angleFor(tx, ty));
 			return true;
 		}
 		return true;
@@ -150,7 +137,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (dragging && button == 0) {
-			dragAngle = snappedDragAngle(angleFor(textureX(mouseX), textureY(mouseY)));
+			updateDraggedDial(angleFor(textureX(mouseX), textureY(mouseY)));
 			return true;
 		}
 		return true;
@@ -160,16 +147,30 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (dragging && button == 0) {
 			dragging = false;
-			selectSetting(nearestSettingByAngle(dragAngle));
+			selectSetting(nearestSettingByAngle(dragAngle), true);
 			return true;
 		}
 		return true;
 	}
 
-	private void selectSetting(DialSetting setting) {
+	private void updateDraggedDial(double rawAngle) {
+		double clamped = clampDialAngle(normalizeAngle(rawAngle));
+		DialSetting snapped = snappedSetting(clamped);
+		if (snapped != null) {
+			dragAngle = snapped.angle();
+			selectSetting(snapped, true);
+		} else {
+			dragAngle = clamped;
+		}
+	}
+
+	private void selectSetting(DialSetting setting, boolean sendPacket) {
+		boolean changed = selected != setting;
 		selected = setting;
 		dragAngle = setting.angle();
-		ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp914GuiButtonMessage(setting.buttonId, x, y, z));
+		if (sendPacket && changed) {
+			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp914GuiButtonMessage(setting.buttonId, x, y, z));
+		}
 	}
 
 	private DialSetting currentSettingFromBlock() {
@@ -217,14 +218,14 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		return best;
 	}
 
-	private double snappedDragAngle(double angle) {
+	private DialSetting snappedSetting(double angle) {
 		angle = clampDialAngle(normalizeAngle(angle));
 		for (DialSetting setting : DialSetting.values()) {
 			if (Math.abs(angle - setting.angle()) <= SNAP_THRESHOLD) {
-				return setting.angle();
+				return setting;
 			}
 		}
-		return angle;
+		return null;
 	}
 
 	private static double clampDialAngle(double angle) {

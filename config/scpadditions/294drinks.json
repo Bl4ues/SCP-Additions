@@ -20,6 +20,77 @@
       "refuse_message": "There is nothing to drink in the cup."
     },
     {
+      "id": "scp_additions:coffee",
+      "enabled": true,
+      "aliases": ["coffee", "black coffee"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": true,
+      "drinkable": true,
+      "cup_color": "#2B1608",
+      "effects": [{ "id": "minecraft:nausea", "duration": 40, "amplifier": 0, "visible": true, "show_icon": false }],
+      "actionbar": "The drink tastes like fairly strong black coffee.",
+      "drink_actions": [{ "type": "remove_effect", "effect": "minecraft:hunger" }]
+    },
+    {
+      "id": "scp_additions:water",
+      "enabled": true,
+      "aliases": ["water", "mineral water", "soda water"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": true,
+      "drinkable": true,
+      "cup_color": "#BFC7C9",
+      "effects": [],
+      "actionbar": "Well, that was refreshing."
+    },
+    {
+      "id": "scp_additions:cola",
+      "enabled": true,
+      "aliases": ["cola", "coke", "coca-cola", "coca cola", "pepsi", "soda"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": true,
+      "drinkable": true,
+      "cup_color": "#3A1C0D",
+      "effects": [],
+      "actionbar": "Cold and refreshing."
+    },
+    {
+      "id": "scp_additions:chocolate",
+      "enabled": true,
+      "aliases": ["chocolate", "cocoa", "hot chocolate", "hot cocoa"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": true,
+      "drinkable": true,
+      "cup_color": "#5A2E1B",
+      "effects": [],
+      "actionbar": "It is rich and heavy."
+    },
+    {
+      "id": "scp_additions:eyedrops",
+      "enabled": true,
+      "aliases": ["eyedrops", "eye drops", "revision eyedrops", "anti-blink", "anti blink"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": true,
+      "drinkable": true,
+      "cup_color": "#F8F8FF",
+      "effects": [{ "id": "minecraft:nausea", "duration": 200, "amplifier": 0, "visible": true, "show_icon": false }],
+      "actionbar": "It tastes awful. It was not meant to be drunk."
+    },
+    {
       "id": "scp_additions:antimatter",
       "enabled": true,
       "aliases": ["antimatter", "anti-matter", "void"],
@@ -127,21 +198,6 @@
         { "type": "effect", "effect": "minecraft:blindness", "duration": 30, "amplifier": 0, "visible": false, "show_icon": false },
         { "type": "kill", "delay_ticks": 6, "message": "tachyon violent reaction" }
       ]
-    },
-    {
-      "id": "scp_additions:coffee",
-      "enabled": true,
-      "aliases": ["coffee", "black coffee"],
-      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
-      "sound": "scp_additions:scp294pouring",
-      "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#2B1608",
-      "effects": [{ "id": "minecraft:nausea", "duration": 40, "amplifier": 0, "visible": true, "show_icon": false }],
-      "actionbar": "The drink tastes like fairly strong black coffee.",
-      "drink_actions": [{ "type": "remove_effect", "effect": "minecraft:hunger" }]
     },
     {
       "id": "scp_additions:black_corrosive_liquid",
@@ -254,145 +310,274 @@
       "drink_actions": [{ "type": "kill", "delay_ticks": 140, "message": "jewel lifeforce" }]
     },
     {
-      "id": "scp_additions:lava",
+      "id": "scp_additions:entity_cat",
       "enabled": true,
-      "aliases": ["lava", "magma", "earth", "rock", "rocks", "stone"],
+      "aliases": ["cat", "kitty", "kitten", "liquid cat"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#FF5A00",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#C98B48",
       "effects": [],
-      "actionbar": "The liquid burns through you almost instantly.",
-      "drink_actions": [{ "type": "kill", "delay_ticks": 1, "message": "lava magma" }]
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 12, "radius": 0.35 },
+        { "type": "spawn_entity", "entity": "minecraft:cat", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A confused cat appears near the machine." }
+      ]
     },
     {
-      "id": "scp_additions:quantum_gas",
+      "id": "scp_additions:entity_wolf",
       "enabled": true,
-      "aliases": ["bose-einstein condensate", "bose einstein condensate", "quantum gas", "quantum"],
+      "aliases": ["dog", "wolf", "puppy", "liquid dog"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#F7B7FF",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#C8C8C8",
       "effects": [],
-      "drink_actions": [{ "type": "kill", "delay_ticks": 1, "message": "quantum cold" }]
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 12, "radius": 0.35 },
+        { "type": "spawn_entity", "entity": "minecraft:wolf", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A wolf shakes itself dry beside the machine." }
+      ]
     },
     {
-      "id": "scp_additions:chocolate",
+      "id": "scp_additions:entity_bees",
       "enabled": true,
-      "aliases": ["chocolate", "cocoa", "hot chocolate", "hot cocoa"],
+      "aliases": ["bee", "bees", "honey bee", "swarm"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#5A2E1B",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#FFD400",
       "effects": [],
-      "actionbar": "It is rich and heavy."
+      "dispense_actions": [
+        { "type": "particle", "particle": "happy", "count": 12, "radius": 0.35 },
+        { "type": "spawn_entity", "entity": "minecraft:bee", "count": 4, "spread": 2.0 },
+        { "type": "actionbar", "message": "The cup buzzes before becoming bees." }
+      ]
     },
     {
-      "id": "scp_additions:eyedrops",
+      "id": "scp_additions:entity_chicken",
       "enabled": true,
-      "aliases": ["eyedrops", "eye drops", "revision eyedrops", "anti-blink", "anti blink"],
+      "aliases": ["chicken", "egg chicken", "liquid chicken"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#F8F8FF",
-      "effects": [{ "id": "minecraft:nausea", "duration": 200, "amplifier": 0, "visible": true, "show_icon": false }],
-      "actionbar": "It tastes awful. It was not meant to be drunk."
-    },
-    {
-      "id": "scp_additions:corrosive_acid",
-      "enabled": true,
-      "aliases": ["hydrofluoric acid", "hydroflouric acid", "hydrochloric acid", "corrosive acid", "acid"],
-      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
-      "sound": "scp_additions:scp294pouring",
-      "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#9A9A9A",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#FFF1D8",
       "effects": [],
-      "drink_actions": [{ "type": "kill", "delay_ticks": 1, "message": "acid" }]
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 12, "radius": 0.35 },
+        { "type": "spawn_entity", "entity": "minecraft:chicken", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A chicken pops out indignantly." }
+      ]
     },
     {
-      "id": "scp_additions:glass",
+      "id": "scp_additions:entity_silverfish",
       "enabled": true,
-      "aliases": ["glass", "molten glass"],
+      "aliases": ["silverfish", "bug water", "insects", "bugs"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#FF3333",
-      "effects": [{ "id": "minecraft:nausea", "duration": 100, "amplifier": 0, "visible": true, "show_icon": false }],
-      "drink_actions": [{ "type": "kill", "delay_ticks": 100, "message": "glass" }]
-    },
-    {
-      "id": "scp_additions:gold",
-      "enabled": true,
-      "aliases": ["gold", "molten gold"],
-      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
-      "sound": "scp_additions:scp294pouring",
-      "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#FFD700",
-      "effects": [{ "id": "minecraft:nausea", "duration": 100, "amplifier": 0, "visible": true, "show_icon": false }],
-      "drink_actions": [{ "type": "kill", "delay_ticks": 100, "message": "gold" }]
-    },
-    {
-      "id": "scp_additions:iron",
-      "enabled": true,
-      "aliases": ["iron", "steel", "metal", "razor blades", "razorblades", "molten iron"],
-      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
-      "sound": "scp_additions:scp294pouring",
-      "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#C0C0C0",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#B0B0B0",
       "effects": [],
-      "drink_actions": [{ "type": "kill", "delay_ticks": 1, "message": "iron metal" }]
+      "dispense_actions": [
+        { "type": "particle", "particle": "smoke", "count": 12, "radius": 0.35 },
+        { "type": "spawn_entity", "entity": "minecraft:silverfish", "count": 3, "spread": 1.4 },
+        { "type": "actionbar", "message": "Something skitters out of the cup." }
+      ]
     },
     {
-      "id": "scp_additions:water",
+      "id": "scp_additions:entity_zombie",
       "enabled": true,
-      "aliases": ["water", "mineral water", "soda water"],
+      "aliases": ["zombie", "undead", "liquid zombie"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#BFC7C9",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#3B7A57",
       "effects": [],
-      "actionbar": "Well, that was refreshing."
+      "dispense_actions": [
+        { "type": "particle", "particle": "smoke", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "minecraft:zombie", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A rotten hand crawls out of the output slot." }
+      ]
     },
     {
-      "id": "scp_additions:cola",
+      "id": "scp_additions:entity_skeleton",
       "enabled": true,
-      "aliases": ["cola", "coke", "coca-cola", "coca cola", "pepsi", "soda"],
+      "aliases": ["skeleton", "bones", "liquid skeleton"],
       "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
-      "delay_ticks": 40,
+      "delay_ticks": 0,
       "sound": "scp_additions:scp294pouring",
       "consumes_coin": true,
-      "give_result": true,
-      "drinkable": true,
-      "cup_color": "#3A1C0D",
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#D8D8D8",
       "effects": [],
-      "actionbar": "Cold and refreshing."
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "minecraft:skeleton", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "Bones assemble themselves beside the machine." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_creeper",
+      "enabled": true,
+      "aliases": ["creeper", "gunpowder creature"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#3FAA35",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "smoke", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "minecraft:creeper", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "The machine hisses back." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_enderman",
+      "enabled": true,
+      "aliases": ["enderman", "ender man", "tall dark stranger"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#1B1028",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "smoke", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "minecraft:enderman", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "The room suddenly feels too tall." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_villager",
+      "enabled": true,
+      "aliases": ["villager", "person", "someone", "human-ish"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#8B5A2B",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "minecraft:villager", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "Someone complains about the vending machine." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_iron_golem",
+      "enabled": true,
+      "aliases": ["iron golem", "security guard", "facility guard"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#C8C8C8",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 20, "radius": 0.55 },
+        { "type": "spawn_entity", "entity": "minecraft:iron_golem", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A heavy metallic guardian steps out." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_scp_131_a",
+      "enabled": true,
+      "aliases": ["scp-131-a", "scp 131 a", "eyepod a", "orange eyepod"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#FF8A00",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "happy", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "scpinventory:scp_131_a", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A small eyepod rolls out of the machine." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_scp_131_b",
+      "enabled": true,
+      "aliases": ["scp-131-b", "scp 131 b", "eyepod b", "yellow eyepod"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#FFE066",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "happy", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "scpinventory:scp_131_b", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A small eyepod rolls out of the machine." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_scp_1499",
+      "enabled": true,
+      "aliases": ["scp-1499", "scp 1499", "soviet gas mask", "gas mask creature"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#6B7A4A",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "smoke", "count": 20, "radius": 0.55 },
+        { "type": "spawn_entity", "entity": "gas_mask:scp_1499", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "The air distorts around a gas mask." }
+      ]
+    },
+    {
+      "id": "scp_additions:entity_scp_1025",
+      "enabled": true,
+      "aliases": ["scp-1025", "scp 1025", "encyclopedia of common diseases", "disease book"],
+      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "give_result": false,
+      "drinkable": false,
+      "cup_color": "#8A4B2A",
+      "effects": [],
+      "dispense_actions": [
+        { "type": "particle", "particle": "cloud", "count": 16, "radius": 0.45 },
+        { "type": "spawn_entity", "entity": "encyclopedia_of_common_diseases:scp_1025", "count": 1, "spread": 1.2 },
+        { "type": "actionbar", "message": "A book-like anomaly drops from the output slot." }
+      ]
     }
   ]
 }

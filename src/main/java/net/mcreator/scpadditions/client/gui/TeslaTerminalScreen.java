@@ -10,7 +10,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
@@ -82,13 +81,13 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
 		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
 
+		guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		renderPermissionText(guiGraphics);
 		if (isOverlayState()) {
-			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		} else {
+		} else if (visualState == VisualState.STANDBY_DISABLE || visualState == VisualState.STANDBY_ENABLE) {
 			guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		}
-		renderPermissionText(guiGraphics);
 
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
@@ -99,7 +98,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 63, 0);
+		guiGraphics.pose().translate(1278, 76, 0);
 		guiGraphics.pose().scale(3.0F, 3.0F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
@@ -326,8 +325,11 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		if (initializedDisplayState) {
 			return;
 		}
-		displayedTeslaGatesEnabled = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
-		displayedManualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+		displayedTeslaGatesEnabled = menu.initialTeslaGatesEnabled;
+		displayedManualOverride = menu.initialManualOverride;
+		if (displayedManualOverride) {
+			displayedTeslaGatesEnabled = true;
+		}
 		initializedDisplayState = true;
 	}
 

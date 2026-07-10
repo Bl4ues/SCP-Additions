@@ -67,12 +67,7 @@ public class TeslaTerminalOffBlock extends Block implements SimpleWaterloggedBlo
 
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-		return switch (state.getValue(FACING)) {
-			default -> Shapes.or(box(1, 0, 11, 13, 1, 15), box(14, 0, 11, 16, 1, 14), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(2, 3.5, 7.75, 14, 10.5, 9.25), box(3, 0, 1, 15, 11, 5));
-			case NORTH -> Shapes.or(box(3, 0, 1, 15, 1, 5), box(0, 0, 2, 2, 1, 5), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(2, 3.5, 6.75, 14, 10.5, 8.25), box(1, 0, 11, 13, 11, 15));
-			case EAST -> Shapes.or(box(11, 0, 3, 15, 1, 15), box(11, 0, 0, 14, 1, 2), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(7.75, 3.5, 2, 9.25, 10.5, 14), box(1, 0, 1, 5, 11, 13));
-			case WEST -> Shapes.or(box(1, 0, 1, 5, 1, 13), box(2, 0, 14, 5, 1, 16), box(6, 0, 6, 10, 1, 10), box(7, 1, 7, 9, 9, 9), box(6.75, 3.5, 2, 8.25, 10.5, 14), box(11, 0, 3, 15, 11, 15));
-		};
+		return Shapes.block();
 	}
 
 	@Override

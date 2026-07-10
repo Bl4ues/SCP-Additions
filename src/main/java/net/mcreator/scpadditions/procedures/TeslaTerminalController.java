@@ -40,14 +40,20 @@ public final class TeslaTerminalController {
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(false, server(world));
 	}
 
-	public static void toggleManualOverride(LevelAccessor world, double x, double y, double z, Player player) {
+	public static void setManualOverride(LevelAccessor world, double x, double y, double z, Player player, boolean enabled) {
 		if (!authorize(world, x, y, z, player)) {
 			return;
 		}
-		boolean current = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
-		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
-		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(!current, server(world));
+		if (enabled) {
+			world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
+		}
+		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(enabled, server(world));
 		play(world, x, y, z, "scp_additions:click");
+	}
+
+	public static void toggleManualOverride(LevelAccessor world, double x, double y, double z, Player player) {
+		boolean current = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+		setManualOverride(world, x, y, z, player, !current);
 	}
 
 	public static void logout(Player player) {

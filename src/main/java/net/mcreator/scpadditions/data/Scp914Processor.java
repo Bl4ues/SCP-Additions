@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.data;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
@@ -129,8 +130,8 @@ public final class Scp914Processor {
 
 	private static BlockPos toWorldOffset(Scp914RecipeManager.Offset offset, Direction front) {
 		Direction rightFromViewer = front.getCounterClockWise();
-		BlockPos right = rightFromViewer.getNormal();
-		BlockPos forward = front.getNormal();
+		Vec3i right = rightFromViewer.getNormal();
+		Vec3i forward = front.getNormal();
 		return new BlockPos(
 				right.getX() * offset.x() + forward.getX() * offset.z(),
 				offset.y(),

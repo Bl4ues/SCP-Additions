@@ -59,6 +59,10 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 			this.minecraft.player.closeContainer();
 			return true;
 		}
+		if ((key == 257 || key == 335) && scp294input.isFocused()) {
+			sendDrinkRequestAndClose();
+			return true;
+		}
 		if (scp294input.isFocused())
 			return scp294input.keyPressed(key, b, c);
 		return super.keyPressed(key, b, c);
@@ -106,8 +110,13 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		scp294input.setSuggestion(Component.translatable("gui.scp_additions.scp_294_gui.scp294input").getString());
 		scp294input.setMaxLength(32767);
 		this.addWidget(this.scp294input);
-		button_enter = Button.builder(Component.translatable("gui.scp_additions.scp_294_gui.button_enter"), e -> ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp294GuiButtonMessage(0, x, y, z, scp294input.getValue())))
+		button_enter = Button.builder(Component.translatable("gui.scp_additions.scp_294_gui.button_enter"), e -> sendDrinkRequestAndClose())
 				.bounds(this.leftPos + 108, this.topPos + 48, 51, 20).build();
 		this.addRenderableWidget(button_enter);
+	}
+
+	private void sendDrinkRequestAndClose() {
+		ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp294GuiButtonMessage(0, x, y, z, scp294input.getValue()));
+		this.minecraft.player.closeContainer();
 	}
 }

@@ -65,8 +65,7 @@ public final class Scp914RecipeManager {
 			      "entity_inputs": [],
 			      "entity_outputs": [],
 			      "chance": 1.0,
-			      "copy_input_nbt": false,
-			      "actionbar": "SCP-914 refines the input."
+			      "copy_input_nbt": false
 			    }
 			  ]
 			}

@@ -231,6 +231,7 @@ public final class Scp294DrinkManager {
 					GsonHelper.getAsString(action, "sound", ""),
 					GsonHelper.getAsString(action, "particle", ""),
 					GsonHelper.getAsString(action, "effect", GsonHelper.getAsString(action, "id", "")),
+					GsonHelper.getAsString(action, "entity", ""),
 					GsonHelper.getAsFloat(action, "amount", 0.0F),
 					Math.max(1, GsonHelper.getAsInt(action, "duration", 200)),
 					Math.max(0, GsonHelper.getAsInt(action, "amplifier", 0)),
@@ -238,6 +239,7 @@ public final class Scp294DrinkManager {
 					GsonHelper.getAsBoolean(action, "visible", true),
 					GsonHelper.getAsBoolean(action, "show_icon", true),
 					GsonHelper.getAsFloat(action, "radius", 0.0F),
+					GsonHelper.getAsDouble(action, "spread", 0.0D),
 					Math.max(0, GsonHelper.getAsInt(action, "count", 0)),
 					Math.max(0, GsonHelper.getAsInt(action, "seconds", 0))));
 		}
@@ -411,8 +413,8 @@ public final class Scp294DrinkManager {
 	public record ConfiguredEffect(ResourceLocation id, int duration, int amplifier, boolean ambient, boolean visible, boolean showIcon) {
 	}
 
-	public record ConfiguredAction(String type, int delayTicks, String message, String sound, String particle, String effect, float amount, int duration, int amplifier, boolean ambient, boolean visible, boolean showIcon,
-			float radius, int count, int seconds) {
+	public record ConfiguredAction(String type, int delayTicks, String message, String sound, String particle, String effect, String entity, float amount, int duration, int amplifier, boolean ambient,
+			boolean visible, boolean showIcon, float radius, double spread, int count, int seconds) {
 		public CompoundTag toTag() {
 			CompoundTag tag = new CompoundTag();
 			tag.putString("type", type());
@@ -421,6 +423,7 @@ public final class Scp294DrinkManager {
 			tag.putString("sound", sound());
 			tag.putString("particle", particle());
 			tag.putString("effect", effect());
+			tag.putString("entity", entity());
 			tag.putFloat("amount", amount());
 			tag.putInt("duration", duration());
 			tag.putInt("amplifier", amplifier());
@@ -428,6 +431,7 @@ public final class Scp294DrinkManager {
 			tag.putBoolean("visible", visible());
 			tag.putBoolean("show_icon", showIcon());
 			tag.putFloat("radius", radius());
+			tag.putDouble("spread", spread());
 			tag.putInt("count", count());
 			tag.putInt("seconds", seconds());
 			return tag;

@@ -35,7 +35,7 @@ public final class Scp294DrinkManager {
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("294drinks.json");
 	private static final String DEFAULT_CONFIG = """
 			{
-			  "version": 1,
+			  "version": 2,
 			  "matching": {
 			    "allow_partial": true,
 			    "fuzzy_threshold": 0.66
@@ -44,29 +44,34 @@ public final class Scp294DrinkManager {
 			    {
 			      "id": "scp_additions:coffee",
 			      "enabled": true,
-			      "aliases": ["black coffee"],
-			      "result": {
-			        "item": "scp_additions:cup_of_coffee",
-			        "count": 1
-			      },
+			      "aliases": ["coffee", "black coffee"],
+			      "result": { "item": "scp_additions:cup_of_coffee", "count": 1 },
 			      "delay_ticks": 40,
 			      "sound": "scp_additions:scp294pouring",
 			      "consumes_coin": true,
+			      "give_result": true,
+			      "drinkable": true,
 			      "cup_color": "#2B1608",
-			      "placeholder_cup_texture": "scp_additions:item/scp294_colored_cup_placeholder",
-			      "effects": []
+			      "actionbar": "The drink tastes like fairly strong black coffee.",
+			      "effects": [
+			        { "id": "minecraft:nausea", "duration": 40, "amplifier": 0, "visible": true, "show_icon": false }
+			      ],
+			      "drink_actions": [
+			        { "type": "remove_effect", "effect": "minecraft:hunger" }
+			      ],
+			      "dispense_actions": []
 			    },
 			    {
 			      "id": "scp_additions:empty_cup",
 			      "enabled": true,
 			      "aliases": ["air", "nothing", "hl3", "half life 3", "emptiness", "vacuum", "cup"],
-			      "result": {
-			        "item": "scp_additions:empty_cup",
-			        "count": 1
-			      },
+			      "result": { "item": "scp_additions:empty_cup", "count": 1 },
 			      "delay_ticks": 0,
 			      "sound": "scp_additions:scp294emptycup",
 			      "consumes_coin": true,
+			      "give_result": true,
+			      "drinkable": false,
+			      "refuse_message": "There is nothing to drink in the cup.",
 			      "cup_color": "#FFFFFF",
 			      "effects": []
 			    }
@@ -141,18 +146,26 @@ public final class Scp294DrinkManager {
 	private static DrinkDefinition parseDrink(JsonObject json) {
 		ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(json, "id"));
 		List<String> aliases = readAliases(id, json);
-		JsonObject result = GsonHelper.getAsJsonObject(json, "result");
-		ResourceLocation resultItem = new ResourceLocation(GsonHelper.getAsString(result, "item"));
+		JsonObject result = json.has("result") ? GsonHelper.getAsJsonObject(json, "result") : new JsonObject();
+		ResourceLocation resultItem = new ResourceLocation(GsonHelper.getAsString(result, "item", "scp_additions:cup_of_coffee"));
 		int resultCount = Math.max(1, GsonHelper.getAsInt(result, "count", 1));
 		int delayTicks = Math.max(0, GsonHelper.getAsInt(json, "delay_ticks", 40));
 		ResourceLocation sound = new ResourceLocation(GsonHelper.getAsString(json, "sound", "scp_additions:scp294pouring"));
 		boolean consumesCoin = GsonHelper.getAsBoolean(json, "consumes_coin", true);
+		boolean giveResult = GsonHelper.getAsBoolean(json, "give_result", true);
+		boolean drinkable = GsonHelper.getAsBoolean(json, "drinkable", true);
+		String refuseMessage = GsonHelper.getAsString(json, "refuse_message", "I shouldn't drink that.");
 		String actionbar = GsonHelper.getAsString(json, "actionbar", "");
 		int cupColor = parseColor(GsonHelper.getAsString(json, "cup_color", "#FFFFFF"));
 		String placeholderCupTexture = GsonHelper.getAsString(json, "placeholder_cup_texture", "scp_additions:item/scp294_colored_cup_placeholder");
 		List<ConfiguredEffect> effects = readEffects(json);
+		List<ConfiguredAction> drinkActions = readActions(json, "drink_actions");
+		if (json.has("actions")) {
+			drinkActions = mergeActions(drinkActions, readActions(json, "actions"));
+		}
+		List<ConfiguredAction> dispenseActions = readActions(json, "dispense_actions");
 
-		return new DrinkDefinition(id, aliases, resultItem, resultCount, delayTicks, sound, consumesCoin, actionbar, cupColor, placeholderCupTexture, effects);
+		return new DrinkDefinition(id, aliases, resultItem, resultCount, delayTicks, sound, consumesCoin, giveResult, drinkable, refuseMessage, actionbar, cupColor, placeholderCupTexture, effects, drinkActions, dispenseActions);
 	}
 
 	private static List<String> readAliases(ResourceLocation id, JsonObject json) {
@@ -166,10 +179,9 @@ public final class Scp294DrinkManager {
 				}
 			}
 		}
-		if (aliases.isEmpty()) {
-			aliases.add(id.getPath());
-		}
-		return List.copyOf(aliases);
+		aliases.add(id.getPath());
+		aliases.add(id.getPath().replace('_', ' '));
+		return List.copyOf(aliases.stream().distinct().toList());
 	}
 
 	private static List<ConfiguredEffect> readEffects(JsonObject json) {
@@ -189,6 +201,40 @@ public final class Scp294DrinkManager {
 					GsonHelper.getAsBoolean(effect, "show_icon", true)));
 		}
 		return List.copyOf(effects);
+	}
+
+	private static List<ConfiguredAction> readActions(JsonObject json, String key) {
+		List<ConfiguredAction> actions = new ArrayList<>();
+		if (!json.has(key)) {
+			return List.of();
+		}
+		JsonArray array = GsonHelper.getAsJsonArray(json, key);
+		for (JsonElement element : array) {
+			JsonObject action = GsonHelper.convertToJsonObject(element, "SCP-294 action");
+			actions.add(new ConfiguredAction(
+					GsonHelper.getAsString(action, "type", "actionbar"),
+					Math.max(0, GsonHelper.getAsInt(action, "delay_ticks", 0)),
+					GsonHelper.getAsString(action, "message", ""),
+					GsonHelper.getAsString(action, "sound", ""),
+					GsonHelper.getAsString(action, "particle", ""),
+					GsonHelper.getAsString(action, "effect", GsonHelper.getAsString(action, "id", "")),
+					GsonHelper.getAsFloat(action, "amount", 0.0F),
+					Math.max(1, GsonHelper.getAsInt(action, "duration", 200)),
+					Math.max(0, GsonHelper.getAsInt(action, "amplifier", 0)),
+					GsonHelper.getAsBoolean(action, "ambient", false),
+					GsonHelper.getAsBoolean(action, "visible", true),
+					GsonHelper.getAsBoolean(action, "show_icon", true),
+					GsonHelper.getAsFloat(action, "radius", 0.0F),
+					Math.max(0, GsonHelper.getAsInt(action, "count", 0)),
+					Math.max(0, GsonHelper.getAsInt(action, "seconds", 0))));
+		}
+		return List.copyOf(actions);
+	}
+
+	private static List<ConfiguredAction> mergeActions(List<ConfiguredAction> first, List<ConfiguredAction> second) {
+		List<ConfiguredAction> merged = new ArrayList<>(first);
+		merged.addAll(second);
+		return List.copyOf(merged);
 	}
 
 	public static MatchResult findByInput(String rawInput) {
@@ -236,10 +282,26 @@ public final class Scp294DrinkManager {
 		drinkTag.putString("id", drink.id().toString());
 		drinkTag.putInt("cup_color", drink.cupColor());
 		drinkTag.putString("actionbar", drink.actionbar());
+		drinkTag.putBoolean("drinkable", drink.drinkable());
+		drinkTag.putString("refuse_message", drink.refuseMessage());
 		drinkTag.putString("placeholder_cup_texture", drink.placeholderCupTexture());
+		drinkTag.put("effects", effectsToTag(drink.effects()));
+		drinkTag.put("drink_actions", actionsToTag(drink.drinkActions()));
+		tag.put("Scp294Drink", drinkTag);
+		return stack;
+	}
 
+	public static ListTag actionsToTag(List<ConfiguredAction> actions) {
+		ListTag actionTags = new ListTag();
+		for (ConfiguredAction action : actions) {
+			actionTags.add(action.toTag());
+		}
+		return actionTags;
+	}
+
+	private static ListTag effectsToTag(List<ConfiguredEffect> effects) {
 		ListTag effectTags = new ListTag();
-		for (ConfiguredEffect effect : drink.effects()) {
+		for (ConfiguredEffect effect : effects) {
 			CompoundTag effectTag = new CompoundTag();
 			effectTag.putString("id", effect.id().toString());
 			effectTag.putInt("duration", effect.duration());
@@ -249,9 +311,7 @@ public final class Scp294DrinkManager {
 			effectTag.putBoolean("show_icon", effect.showIcon());
 			effectTags.add(effectTag);
 		}
-		drinkTag.put("effects", effectTags);
-		tag.put("Scp294Drink", drinkTag);
-		return stack;
+		return effectTags;
 	}
 
 	private static double score(String input, String alias) {
@@ -330,11 +390,35 @@ public final class Scp294DrinkManager {
 		return Math.max(min, Math.min(max, value));
 	}
 
-	public record DrinkDefinition(ResourceLocation id, List<String> aliases, ResourceLocation resultItem, int resultCount, int delayTicks, ResourceLocation sound, boolean consumesCoin, String actionbar, int cupColor,
-			String placeholderCupTexture, List<ConfiguredEffect> effects) {
+	public record DrinkDefinition(ResourceLocation id, List<String> aliases, ResourceLocation resultItem, int resultCount, int delayTicks, ResourceLocation sound, boolean consumesCoin, boolean giveResult,
+			boolean drinkable, String refuseMessage, String actionbar, int cupColor, String placeholderCupTexture, List<ConfiguredEffect> effects, List<ConfiguredAction> drinkActions,
+			List<ConfiguredAction> dispenseActions) {
 	}
 
 	public record ConfiguredEffect(ResourceLocation id, int duration, int amplifier, boolean ambient, boolean visible, boolean showIcon) {
+	}
+
+	public record ConfiguredAction(String type, int delayTicks, String message, String sound, String particle, String effect, float amount, int duration, int amplifier, boolean ambient, boolean visible, boolean showIcon,
+			float radius, int count, int seconds) {
+		public CompoundTag toTag() {
+			CompoundTag tag = new CompoundTag();
+			tag.putString("type", type());
+			tag.putInt("delay_ticks", delayTicks());
+			tag.putString("message", message());
+			tag.putString("sound", sound());
+			tag.putString("particle", particle());
+			tag.putString("effect", effect());
+			tag.putFloat("amount", amount());
+			tag.putInt("duration", duration());
+			tag.putInt("amplifier", amplifier());
+			tag.putBoolean("ambient", ambient());
+			tag.putBoolean("visible", visible());
+			tag.putBoolean("show_icon", showIcon());
+			tag.putFloat("radius", radius());
+			tag.putInt("count", count());
+			tag.putInt("seconds", seconds());
+			return tag;
+		}
 	}
 
 	public record MatchResult(DrinkDefinition drink) {

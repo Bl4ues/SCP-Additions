@@ -1,14 +1,21 @@
 package net.mcreator.scpadditions.data;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -17,72 +24,130 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 public final class Scp914Processor {
-	private static final int START_DELAY_TICKS = 30;
-	private static final int FINISH_DELAY_TICKS = 160;
-	private static final Vec3 INTAKE_OFFSET = new Vec3(-4, 0, -3);
-	private static final Vec3 OUTPUT_OFFSET = new Vec3(4, 0, -3);
-
 	private Scp914Processor() {
 	}
 
 	public static void process(LevelAccessor world, double x, double y, double z, Entity user, Scp914RecipeManager.Setting setting) {
-		playSound(world, x, y, z, "scp_additions:scp914refining");
-		setRefining(world, true);
-
-		ScpAdditionsMod.queueServerWork(START_DELAY_TICKS, () -> {
-			tryProcessItem(world, x, y, z, setting);
-			ScpAdditionsMod.queueServerWork(FINISH_DELAY_TICKS, () -> setRefining(world, false));
-		});
-	}
-
-	private static void tryProcessItem(LevelAccessor world, double x, double y, double z, Scp914RecipeManager.Setting setting) {
 		if (!(world instanceof ServerLevel level)) {
 			return;
 		}
 
-		Vec3 intakeCenter = new Vec3(x + INTAKE_OFFSET.x, y + INTAKE_OFFSET.y, z + INTAKE_OFFSET.z);
-		Optional<ItemEntity> optionalInput = level.getEntitiesOfClass(ItemEntity.class, new AABB(intakeCenter, intakeCenter).inflate(2), item -> !item.getItem().isEmpty())
+		BlockPos keyPos = BlockPos.containing(x, y, z);
+		Direction facing = getFacing(world, keyPos);
+		Scp914RecipeManager.MachineConfig machineConfig = Scp914RecipeManager.machineConfig();
+		Vec3 intakeCenter = centerOf(keyPos.offset(rotate(machineConfig.intakeOffset(), facing)));
+		Vec3 outputCenter = centerOf(keyPos.offset(rotate(machineConfig.outputOffset(), facing)));
+
+		List<ItemEntity> itemInputs = level.getEntitiesOfClass(ItemEntity.class, new AABB(intakeCenter, intakeCenter).inflate(machineConfig.searchRadius()), item -> !item.isRemoved() && !item.getItem().isEmpty())
 				.stream()
-				.min(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)));
+				.sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)))
+				.toList();
+		List<Entity> entityInputs = level.getEntitiesOfClass(Entity.class, new AABB(intakeCenter, intakeCenter).inflate(machineConfig.searchRadius()), entity -> !(entity instanceof ItemEntity) && !entity.isRemoved())
+				.stream()
+				.sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)))
+				.toList();
 
-		if (optionalInput.isEmpty()) {
+		Optional<Scp914RecipeManager.RecipeMatch> optionalMatch = Scp914RecipeManager.findRecipe(setting, itemInputs, entityInputs);
+		if (optionalMatch.isEmpty()) {
+			sendActionbar(user, "SCP-914 has nothing valid to refine.");
 			return;
 		}
 
-		ItemEntity inputEntity = optionalInput.get();
-		ItemStack inputStack = inputEntity.getItem();
-		Optional<Scp914RecipeManager.RecipeDefinition> optionalRecipe = Scp914RecipeManager.findRecipe(setting, inputStack);
-		if (optionalRecipe.isEmpty()) {
+		Scp914RecipeManager.RecipeMatch match = optionalMatch.get();
+		playSound(world, x, y, z, "scp_additions:scp914refining");
+		setRefining(world, true);
+		sendActionbar(user, match.recipe().actionbar());
+
+		ScpAdditionsMod.queueServerWork(machineConfig.startDelayTicks(), () -> {
+			applyRecipe(level, outputCenter, match);
+			ScpAdditionsMod.queueServerWork(machineConfig.finishDelayTicks(), () -> setRefining(world, false));
+		});
+	}
+
+	private static void applyRecipe(ServerLevel level, Vec3 outputCenter, Scp914RecipeManager.RecipeMatch match) {
+		if (level.random.nextFloat() > match.recipe().chance()) {
+			consumeInputs(match);
 			return;
 		}
 
-		Scp914RecipeManager.RecipeDefinition recipe = optionalRecipe.get();
-		ItemStack outputStack = Scp914RecipeManager.createResult(recipe, inputStack);
-		if (outputStack.isEmpty()) {
-			return;
+		ItemStack firstInputStack = match.firstInputStack();
+		consumeInputs(match);
+
+		for (Scp914RecipeManager.ItemOutput output : match.recipe().itemOutputs()) {
+			ItemStack outputStack = Scp914RecipeManager.createItemOutput(output, firstInputStack, match.recipe().copyInputNbt());
+			if (!outputStack.isEmpty()) {
+				ItemEntity outputEntity = new ItemEntity(level, outputCenter.x, outputCenter.y, outputCenter.z, outputStack);
+				outputEntity.setPickUpDelay(10);
+				level.addFreshEntity(outputEntity);
+			}
 		}
 
-		inputStack.shrink(recipe.inputCount());
-		if (inputStack.isEmpty()) {
-			inputEntity.discard();
-		} else {
-			inputEntity.setItem(inputStack);
+		for (Scp914RecipeManager.EntityOutput output : match.recipe().entityOutputs()) {
+			Optional<EntityType<?>> type = Scp914RecipeManager.getEntityType(output);
+			if (type.isEmpty()) {
+				ScpAdditionsMod.LOGGER.warn("SCP-914 recipe {} points to missing entity output {}", match.recipe().id(), output.entity());
+				continue;
+			}
+			for (int i = 0; i < output.count(); i++) {
+				Entity spawned = type.get().spawn(level, BlockPos.containing(outputCenter), MobSpawnType.MOB_SUMMONED);
+				if (spawned != null) {
+					spawned.setDeltaMovement(0, 0, 0);
+				}
+			}
 		}
+	}
 
-		if (level.random.nextFloat() <= recipe.chance()) {
-			Vec3 outputPos = new Vec3(x + OUTPUT_OFFSET.x, y + OUTPUT_OFFSET.y, z + OUTPUT_OFFSET.z);
-			ItemEntity outputEntity = new ItemEntity(level, outputPos.x, outputPos.y, outputPos.z, outputStack);
-			outputEntity.setPickUpDelay(10);
-			level.addFreshEntity(outputEntity);
+	private static void consumeInputs(Scp914RecipeManager.RecipeMatch match) {
+		for (Scp914RecipeManager.ItemUse itemUse : match.itemUses()) {
+			ItemStack stack = itemUse.entity().getItem();
+			stack.shrink(itemUse.count());
+			if (stack.isEmpty()) {
+				itemUse.entity().discard();
+			} else {
+				itemUse.entity().setItem(stack);
+			}
 		}
+		for (Scp914RecipeManager.EntityUse entityUse : match.entityUses()) {
+			if (entityUse.consume() && !(entityUse.entity() instanceof Player)) {
+				entityUse.entity().discard();
+			}
+		}
+	}
+
+	private static Direction getFacing(LevelAccessor world, BlockPos keyPos) {
+		BlockState state = world.getBlockState(keyPos);
+		if (state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+			return state.getValue(HorizontalDirectionalBlock.FACING);
+		}
+		return Direction.NORTH;
+	}
+
+	private static BlockPos rotate(Scp914RecipeManager.Offset offset, Direction facing) {
+		return switch (facing) {
+			case EAST -> new BlockPos(-offset.z(), offset.y(), offset.x());
+			case SOUTH -> new BlockPos(-offset.x(), offset.y(), -offset.z());
+			case WEST -> new BlockPos(offset.z(), offset.y(), -offset.x());
+			default -> new BlockPos(offset.x(), offset.y(), offset.z());
+		};
+	}
+
+	private static Vec3 centerOf(BlockPos pos) {
+		return new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
 	}
 
 	private static void setRefining(LevelAccessor world, boolean value) {
 		ScpAdditionsModVariables.MapVariables.get(world).Scp914refining = value;
 		ScpAdditionsModVariables.MapVariables.get(world).syncData(world);
+	}
+
+	private static void sendActionbar(Entity entity, String message) {
+		if (entity instanceof Player player && message != null && !message.isBlank()) {
+			player.displayClientMessage(Component.literal(message), true);
+		}
 	}
 
 	private static void playSound(LevelAccessor world, double x, double y, double z, String soundId) {

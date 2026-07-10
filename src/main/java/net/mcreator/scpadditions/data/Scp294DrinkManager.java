@@ -9,7 +9,6 @@ import com.google.gson.JsonParser;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
@@ -31,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 public final class Scp294DrinkManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -98,7 +96,7 @@ public final class Scp294DrinkManager {
 		try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
 			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
 			readMatchingConfig(root);
-			JsonArray drinks = GsonHelper.getAsJsonArray(root, "drinks", new JsonArray());
+			JsonArray drinks = root.has("drinks") ? GsonHelper.getAsJsonArray(root, "drinks") : new JsonArray();
 
 			for (JsonElement element : drinks) {
 				try {

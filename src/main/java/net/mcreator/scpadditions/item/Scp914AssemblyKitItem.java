@@ -26,10 +26,9 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,8 +37,8 @@ public class Scp914AssemblyKitItem extends Item {
 	private static final int ANCHOR_X = 0;
 	private static final int ANCHOR_Y = 0;
 	private static final int ANCHOR_Z = 6;
+	private static final String STRUCTURE_RESOURCE = "/data/scp_additions/structures/scp_914_full.nbt";
 	private static StructureData cachedStructure;
-	private static final String SCP_914_FULL_NBT = "H4sIAAAAAAAA/6WazWrbQBSFRzPyf/IALaWljxDopll3Xbrq1qi2EoQdy1gKJn2DvnU9qY8JE809p8QwmJDPE517lE8weO7czJVd87sOzrm4RqdVntb1zE3rXd/0Td25+Jq58a9tu9p0c+eKcubCvu3wocsruFHXV319/sQQUwiMF5ggMKXAjARmLDATgZkKzExg5gKzEJgrgykug+aMNWcw1pzBWHMGY80ZjDVnMFZ2L2QHY2UHY2UHY2UHY2UHY2UHY2W/3B8CY2UH8zJ7kWHGAjMRGCs7GCu7c+f7Q2CYxyLDPBYZ5rGCzBkM81jhuMcKxz1WkDmDYR6LDPNYZJjHIsM8xjoFwzzG5gyGeYzNGQzzGMvuhexgmMdYdjDMYyw7GOYxlv3ieoFhHkuz+wwzERjmKJbLnfMzRz3PSGCYoyLDHOXJDMEwR0WGOco77ihP5gyGOSoyzFGRYY6KDHMU6xQMcxSbMxjmKDZnMMxRLLsXsoNhjmLZwTBHsexgmKNYdnDMUSw7GOaoNHuOYR5j2cEwjwWSHQzz2PPfExjmsUDmDIZ5LDjuseC4xwKZMxjmsfjOPBbfmcfiO/MY6xSM1SkYq1MwVqdgmDNZp2CYM1mnYJgzWadgrE7BWJ2CYX5mnYKxOgVjdQrG6hQMexawTsGwZwHrFAx7FrBOwVidgrE6BcOeO6zTyz0iMFanlyUw7BnHOsWyOsWyOsVizzjWKZbVKZZyXveyr5BhvMAEgZkJzFxgFgaDMysrFxgrFxgrFxgrFxgrFxgrVxBygbFygbFygbFygbFygbFylQ4XxBkrOxgrOxgrO5hSYEYC89ItZYaZCPtMBcbqC4zVFxilryvyf5qeeeYY5pb0zDPHMLek54c5hrmF5fJCLi/k8kIuL+TyQq4g5AoDuUYZhrklPfcbZxjmnzT7JMOw+zk998sxzD+sdzDMP+kZ4zTDMP+kc55lGOaf9BxynmGYf9i9Ckbpi/knPc/MMcw/6XlmjmH+Sc8GcwzzD8vlhVxeyOWFXF7I5YVcQcgVhFxByBWEXEHIFYRcpXt9XpdjmFtYdjDMLenZYI5hbknPBnMMc0t6NphjmFtYX2CUviy3lOd31mkQOg1Cp0HoNAidBqHTIHQahE6D0GkQOg1Cp0HoNAx0OtlX27rv63n8/NSV36uH2r3vVvtltV43fdPuutv409ebL8/fYzo99OY/Du2+PsSvOE3d+K5aNbt7V9ZV1zts8Glwg1Xc4NgeNl12l2P9P7sAvH5odvXqUN31t1Vz0C7x4+Dmy039tDw2u7W2yefhTdrHfv/YL9dt++piFsfT7A/b9v6+XrvRXbXt6tzm74ZbaNdPb7q4ZtdXm3rw4ob3+WCFfMv9sG6q7fKmb5c3b7qQf4FOd/PiW9VXP+tDd/q1c9d/3F9hjr/RqCcAAA==";
 
 	public Scp914AssemblyKitItem() {
 		super(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
@@ -121,9 +120,11 @@ public class Scp914AssemblyKitItem extends Item {
 		if (cachedStructure != null) {
 			return cachedStructure;
 		}
-		try {
-			byte[] bytes = Base64.getDecoder().decode(SCP_914_FULL_NBT);
-			CompoundTag root = NbtIo.readCompressed(new ByteArrayInputStream(bytes));
+		try (InputStream stream = Scp914AssemblyKitItem.class.getResourceAsStream(STRUCTURE_RESOURCE)) {
+			if (stream == null) {
+				return null;
+			}
+			CompoundTag root = NbtIo.readCompressed(stream);
 			ListTag paletteTag = root.getList("palette", Tag.TAG_COMPOUND);
 			List<BlockState> palette = new ArrayList<>();
 			for (int i = 0; i < paletteTag.size(); i++) {
@@ -137,7 +138,9 @@ public class Scp914AssemblyKitItem extends Item {
 				ListTag pos = blockTag.getList("pos", Tag.TAG_INT);
 				int stateIndex = blockTag.getInt("state");
 				BlockState state = stateIndex >= 0 && stateIndex < palette.size() ? palette.get(stateIndex) : Blocks.AIR.defaultBlockState();
-				blocks.add(new TemplateBlock(pos.getInt(0), pos.getInt(1), pos.getInt(2), state));
+				if (!state.isAir()) {
+					blocks.add(new TemplateBlock(pos.getInt(0), pos.getInt(1), pos.getInt(2), state));
+				}
 			}
 
 			cachedStructure = new StructureData(blocks);

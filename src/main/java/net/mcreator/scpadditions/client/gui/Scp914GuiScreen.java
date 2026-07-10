@@ -22,6 +22,9 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	private static final int TEX_H = 876;
 	private static final int DIAL_PIVOT_X = 567;
 	private static final int DIAL_PIVOT_Y = 486;
+	private static final double MIN_DIAL_ANGLE = -87.0D;
+	private static final double MAX_DIAL_ANGLE = 89.2D;
+	private static final double SNAP_THRESHOLD = 12.0D;
 	private static final ResourceLocation BACKGROUND = new ResourceLocation("scp_additions:textures/screens/scp_914_gui.png");
 	private static final ResourceLocation DIAL = new ResourceLocation("scp_additions:textures/screens/scp_914_dial.png");
 	private static final ResourceLocation DIAL_HOVER = new ResourceLocation("scp_additions:textures/screens/scp_914_dial_hover.png");
@@ -66,8 +69,10 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
 		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
 		guiGraphics.blit(BACKGROUND, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		renderDarkenOverlay(guiGraphics, 0x80000000);
 		boolean hover = dragging || isMouseNearDial(mouseX, mouseY);
 		renderDial(guiGraphics, dragging ? dragAngle : selected.angle(), hover);
+		renderVignette(guiGraphics, 70, 40);
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
 	}
@@ -81,14 +86,27 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		guiGraphics.pose().popPose();
 	}
 
+	private void renderDarkenOverlay(GuiGraphics guiGraphics, int color) {
+		guiGraphics.fill(0, 0, TEX_W, TEX_H, color);
+	}
+
+	private void renderVignette(GuiGraphics guiGraphics, int maxAlpha, int layers) {
+		for (int i = 0; i < layers; i++) {
+			int alpha = Math.max(0, (int) (maxAlpha * (1.0D - (double) i / layers)));
+			int color = alpha << 24;
+			guiGraphics.fill(i, i, TEX_W - i, i + 1, color);
+			guiGraphics.fill(i, TEX_H - i - 1, TEX_W - i, TEX_H - i, color);
+			guiGraphics.fill(i, i, i + 1, TEX_H - i, color);
+			guiGraphics.fill(TEX_W - i - 1, i, TEX_W - i, TEX_H - i, color);
+		}
+	}
+
 	private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
 		double tx = textureX(mouseX);
 		double ty = textureY(mouseY);
 		DialSetting nearest = nearestSetting(tx, ty);
 		if (nearest != null && distance(tx, ty, nearest.x, nearest.y) <= 70.0D) {
 			guiGraphics.renderTooltip(this.font, Component.literal(nearest.label), mouseX, mouseY);
-		} else if (isMouseNearDial(mouseX, mouseY)) {
-			guiGraphics.renderTooltip(this.font, Component.literal("Drag dial"), mouseX, mouseY);
 		}
 	}
 
@@ -123,7 +141,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		}
 		if (isMouseNearDial(mouseX, mouseY)) {
 			dragging = true;
-			dragAngle = angleFor(tx, ty);
+			dragAngle = snappedDragAngle(angleFor(tx, ty));
 			return true;
 		}
 		return true;
@@ -132,7 +150,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (dragging && button == 0) {
-			dragAngle = angleFor(textureX(mouseX), textureY(mouseY));
+			dragAngle = snappedDragAngle(angleFor(textureX(mouseX), textureY(mouseY)));
 			return true;
 		}
 		return true;
@@ -186,6 +204,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	}
 
 	private DialSetting nearestSettingByAngle(double angle) {
+		angle = clampDialAngle(normalizeAngle(angle));
 		DialSetting best = DialSetting.ONE_TO_ONE;
 		double bestDiff = Double.MAX_VALUE;
 		for (DialSetting setting : DialSetting.values()) {
@@ -196,6 +215,22 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 			}
 		}
 		return best;
+	}
+
+	private double snappedDragAngle(double angle) {
+		angle = clampDialAngle(normalizeAngle(angle));
+		for (DialSetting setting : DialSetting.values()) {
+			if (Math.abs(angle - setting.angle()) <= SNAP_THRESHOLD) {
+				return setting.angle();
+			}
+		}
+		return angle;
+	}
+
+	private static double clampDialAngle(double angle) {
+		if (angle < MIN_DIAL_ANGLE) return MIN_DIAL_ANGLE;
+		if (angle > MAX_DIAL_ANGLE) return MAX_DIAL_ANGLE;
+		return angle;
 	}
 
 	private static double normalizeAngle(double angle) {

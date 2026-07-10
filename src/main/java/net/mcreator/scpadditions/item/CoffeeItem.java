@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.item;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -53,6 +54,19 @@ public class CoffeeItem extends Item {
 
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (stack.hasTag() && stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+			CompoundTag drinkTag = stack.getTag().getCompound("Scp294Drink");
+			if (drinkTag.contains("drinkable", Tag.TAG_BYTE) && !drinkTag.getBoolean("drinkable")) {
+				if (!world.isClientSide()) {
+					String message = drinkTag.getString("refuse_message");
+					if (!message.isBlank()) {
+						player.displayClientMessage(Component.literal(message), true);
+					}
+				}
+				return InteractionResultHolder.fail(stack);
+			}
+		}
 		return ItemUtils.startUsingInstantly(world, player, hand);
 	}
 

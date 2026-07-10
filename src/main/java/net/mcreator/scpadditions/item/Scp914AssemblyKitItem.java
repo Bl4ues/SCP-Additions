@@ -52,9 +52,7 @@ public class Scp914AssemblyKitItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
-		tooltip.add(Component.literal("Places the saved SCP-914 structure."));
-		tooltip.add(Component.literal("Click the floor at the front-center of the machine."));
-		tooltip.add(Component.literal("Blocked space is marked with red particles."));
+		tooltip.add(Component.literal("Places SCP-914. Blocked space is marked red."));
 	}
 
 	@Override
@@ -68,7 +66,7 @@ public class Scp914AssemblyKitItem extends Item {
 		}
 
 		Player player = context.getPlayer();
-		Direction front = context.getHorizontalDirection().getOpposite();
+		Direction front = context.getHorizontalDirection();
 		BlockPos origin = context.getClickedPos().relative(context.getClickedFace());
 		StructureData structure = loadStructure();
 		if (structure == null) {

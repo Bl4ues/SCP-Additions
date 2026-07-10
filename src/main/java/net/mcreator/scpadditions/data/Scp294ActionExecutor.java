@@ -121,13 +121,15 @@ public final class Scp294ActionExecutor {
 	}
 
 	private static void hurt(Entity entity, float amount) {
-		if (amount > 0 && entity instanceof LivingEntity living && living.level() instanceof Level level) {
+		if (amount > 0 && entity instanceof LivingEntity living) {
+			Level level = living.level();
 			living.hurt(level.damageSources().generic(), amount);
 		}
 	}
 
 	private static void kill(Entity entity, String message) {
-		if (entity instanceof LivingEntity living && living.level() instanceof Level level) {
+		if (entity instanceof LivingEntity living) {
+			Level level = living.level();
 			if (!message.isBlank()) {
 				showMessage(entity, message, false);
 			}

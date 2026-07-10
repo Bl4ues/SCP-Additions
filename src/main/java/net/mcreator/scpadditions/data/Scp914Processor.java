@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 public final class Scp914Processor {
-	private static final Direction[] SEARCH_ORDER = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-
 	private Scp914Processor() {
 	}
 
@@ -39,7 +37,8 @@ public final class Scp914Processor {
 
 		BlockPos keyPos = BlockPos.containing(x, y, z);
 		Scp914RecipeManager.MachineConfig machineConfig = Scp914RecipeManager.machineConfig();
-		Optional<ProcessingContext> optionalContext = findProcessingContext(level, keyPos, setting, machineConfig);
+		Direction front = getFacing(level, keyPos);
+		Optional<ProcessingContext> optionalContext = tryDirection(level, keyPos, setting, machineConfig, front);
 		if (optionalContext.isEmpty()) {
 			return;
 		}
@@ -54,28 +53,9 @@ public final class Scp914Processor {
 		});
 	}
 
-	private static Optional<ProcessingContext> findProcessingContext(ServerLevel level, BlockPos keyPos, Scp914RecipeManager.Setting setting, Scp914RecipeManager.MachineConfig machineConfig) {
-		Direction preferredFacing = getFacing(level, keyPos);
-		Optional<ProcessingContext> preferred = tryDirection(level, keyPos, setting, machineConfig, preferredFacing);
-		if (preferred.isPresent()) {
-			return preferred;
-		}
-
-		for (Direction direction : SEARCH_ORDER) {
-			if (direction == preferredFacing) {
-				continue;
-			}
-			Optional<ProcessingContext> candidate = tryDirection(level, keyPos, setting, machineConfig, direction);
-			if (candidate.isPresent()) {
-				return candidate;
-			}
-		}
-		return Optional.empty();
-	}
-
-	private static Optional<ProcessingContext> tryDirection(ServerLevel level, BlockPos keyPos, Scp914RecipeManager.Setting setting, Scp914RecipeManager.MachineConfig machineConfig, Direction direction) {
-		Vec3 intakeCenter = centerOf(keyPos.offset(rotate(machineConfig.intakeOffset(), direction)));
-		Vec3 outputCenter = centerOf(keyPos.offset(rotate(machineConfig.outputOffset(), direction)));
+	private static Optional<ProcessingContext> tryDirection(ServerLevel level, BlockPos keyPos, Scp914RecipeManager.Setting setting, Scp914RecipeManager.MachineConfig machineConfig, Direction front) {
+		Vec3 intakeCenter = centerOf(keyPos.offset(toWorldOffset(machineConfig.intakeOffset(), front)));
+		Vec3 outputCenter = centerOf(keyPos.offset(toWorldOffset(machineConfig.outputOffset(), front)));
 
 		List<ItemEntity> itemInputs = level.getEntitiesOfClass(ItemEntity.class, new AABB(intakeCenter, intakeCenter).inflate(machineConfig.searchRadius()), item -> !item.isRemoved() && !item.getItem().isEmpty())
 				.stream()
@@ -147,13 +127,14 @@ public final class Scp914Processor {
 		return Direction.NORTH;
 	}
 
-	private static BlockPos rotate(Scp914RecipeManager.Offset offset, Direction facing) {
-		return switch (facing) {
-			case EAST -> new BlockPos(-offset.z(), offset.y(), offset.x());
-			case SOUTH -> new BlockPos(-offset.x(), offset.y(), -offset.z());
-			case WEST -> new BlockPos(offset.z(), offset.y(), -offset.x());
-			default -> new BlockPos(offset.x(), offset.y(), offset.z());
-		};
+	private static BlockPos toWorldOffset(Scp914RecipeManager.Offset offset, Direction front) {
+		Direction rightFromViewer = front.getCounterClockWise();
+		BlockPos right = rightFromViewer.getNormal();
+		BlockPos forward = front.getNormal();
+		return new BlockPos(
+				right.getX() * offset.x() + forward.getX() * offset.z(),
+				offset.y(),
+				right.getZ() * offset.x() + forward.getZ() * offset.z());
 	}
 
 	private static Vec3 centerOf(BlockPos pos) {

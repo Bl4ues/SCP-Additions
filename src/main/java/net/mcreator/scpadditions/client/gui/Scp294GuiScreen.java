@@ -65,10 +65,10 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 		guiGraphics.blit(hasCoinInserted() ? COIN_ON : COIN_OFF, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		renderOrderText(guiGraphics);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.55F);
 		guiGraphics.blit(SCREEN_OVERLAY, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
+		renderOrderText(guiGraphics);
 
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
@@ -80,12 +80,12 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		if (visible.length() > 26) {
 			visible = visible.substring(Math.max(0, visible.length() - 26));
 		}
-		int color = inputFocused ? 0x2F3945 : 0x4A5664;
+		int color = inputFocused ? 0x07111B : 0x1B2A35;
 		String cursor = inputFocused && (System.currentTimeMillis() / 400L) % 2L == 0L ? "_" : "";
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(108, 216, 0);
+		guiGraphics.pose().translate(112, 178, 0);
 		guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(0.15F));
-		guiGraphics.pose().scale(1.75F, 1.75F, 1.0F);
+		guiGraphics.pose().scale(1.9F, 1.9F, 1.0F);
 		guiGraphics.drawString(this.font, visible + cursor, 0, 0, color, false);
 		guiGraphics.pose().popPose();
 	}

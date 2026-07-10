@@ -60,8 +60,10 @@ public final class Scp914Processor {
 	}
 
 	private static Optional<ProcessingContext> tryDirection(ServerLevel level, BlockPos keyPos, Scp914RecipeManager.Setting setting, Scp914RecipeManager.MachineConfig machineConfig, Direction front) {
-		Vec3 intakeCenter = centerOf(keyPos.offset(toWorldOffset(machineConfig.intakeOffset(), front)));
-		Vec3 outputCenter = centerOf(keyPos.offset(toWorldOffset(machineConfig.outputOffset(), front)));
+		Scp914RecipeManager.Offset intakeOffset = normalizeLegacyRangeOffset(machineConfig.intakeOffset());
+		Scp914RecipeManager.Offset outputOffset = normalizeLegacyRangeOffset(machineConfig.outputOffset());
+		Vec3 intakeCenter = centerOf(keyPos.offset(toWorldOffset(intakeOffset, front)));
+		Vec3 outputCenter = centerOf(keyPos.offset(toWorldOffset(outputOffset, front)));
 
 		List<ItemEntity> itemInputs = level.getEntitiesOfClass(ItemEntity.class, new AABB(intakeCenter, intakeCenter).inflate(machineConfig.searchRadius()), item -> !item.isRemoved() && !item.getItem().isEmpty())
 				.stream()
@@ -73,6 +75,16 @@ public final class Scp914Processor {
 				.toList();
 
 		return Scp914RecipeManager.findRecipe(setting, itemInputs, entityInputs).map(match -> new ProcessingContext(match, outputCenter));
+	}
+
+	private static Scp914RecipeManager.Offset normalizeLegacyRangeOffset(Scp914RecipeManager.Offset offset) {
+		if (offset.x() == -4 && offset.y() == 0 && offset.z() == -3) {
+			return new Scp914RecipeManager.Offset(-5, 0, -3);
+		}
+		if (offset.x() == 4 && offset.y() == 0 && offset.z() == -3) {
+			return new Scp914RecipeManager.Offset(5, 0, -3);
+		}
+		return offset;
 	}
 
 	private static void applyRecipe(ServerLevel level, Vec3 outputCenter, Scp914RecipeManager.RecipeMatch match) {

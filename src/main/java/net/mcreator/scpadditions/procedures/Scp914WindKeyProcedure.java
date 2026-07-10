@@ -12,6 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.advancements.Advancement;
 
+import net.mcreator.scpadditions.data.Scp914Processor;
+import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 public class Scp914WindKeyProcedure {
@@ -33,22 +35,24 @@ public class Scp914WindKeyProcedure {
 				_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp914key")), SoundSource.NEUTRAL, 1, 1, false);
 			}
 		}
-		if (ScpAdditionsModVariables.MapVariables.get(world).Scp914Rough) {
-			Scp914WindKeyRoughProcedure.execute(world, x, y, z, entity);
-		} else {
-			if (ScpAdditionsModVariables.MapVariables.get(world).Scp914Coarse) {
-				Scp914WindKeyCoarseProcedure.execute(world, x, y, z, entity);
-			} else {
-				if (ScpAdditionsModVariables.MapVariables.get(world).Scp914OneToOne) {
-					Scp914WindKey1to1Procedure.execute(world, x, y, z, entity);
-				} else {
-					if (ScpAdditionsModVariables.MapVariables.get(world).Scp914Fine) {
-						Scp914WindKeyFineProcedure.execute(world, x, y, z, entity);
-					} else {
-						Scp914WindKeyVeryFineProcedure.execute(world, x, y, z, entity);
-					}
-				}
-			}
+
+		Scp914Processor.process(world, x, y, z, entity, getSelectedSetting(world));
+	}
+
+	private static Scp914RecipeManager.Setting getSelectedSetting(LevelAccessor world) {
+		ScpAdditionsModVariables.MapVariables variables = ScpAdditionsModVariables.MapVariables.get(world);
+		if (variables.Scp914Rough) {
+			return Scp914RecipeManager.Setting.ROUGH;
 		}
+		if (variables.Scp914Coarse) {
+			return Scp914RecipeManager.Setting.COARSE;
+		}
+		if (variables.Scp914OneToOne) {
+			return Scp914RecipeManager.Setting.ONE_TO_ONE;
+		}
+		if (variables.Scp914Fine) {
+			return Scp914RecipeManager.Setting.FINE;
+		}
+		return Scp914RecipeManager.Setting.VERY_FINE;
 	}
 }

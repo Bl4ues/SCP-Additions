@@ -66,7 +66,9 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 		guiGraphics.blit(hasCoinInserted() ? COIN_ON : COIN_OFF, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		renderOrderText(guiGraphics);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.55F);
 		guiGraphics.blit(SCREEN_OVERLAY, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		RenderSystem.setShaderColor(1, 1, 1, 1);
 
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
@@ -121,7 +123,7 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		double ty = textureY(mouseY);
 		if (contains(COIN_POLY, tx, ty)) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp294GuiButtonMessage(1, x, y, z, ""));
-			inputFocused = false;
+			inputFocused = true;
 			return true;
 		}
 		if (contains(INPUT_POLY, tx, ty)) {
@@ -132,13 +134,14 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 			sendDrinkRequestAndClose();
 			return true;
 		}
-		inputFocused = false;
+		inputFocused = true;
 		return true;
 	}
 
 	@Override
 	public boolean charTyped(char codePoint, int modifiers) {
-		if (inputFocused && isAllowedInputCharacter(codePoint) && order.length() < 80) {
+		inputFocused = true;
+		if (isAllowedInputCharacter(codePoint) && order.length() < 80) {
 			order += codePoint;
 			return true;
 		}
@@ -155,11 +158,13 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 			sendDrinkRequestAndClose();
 			return true;
 		}
-		if (inputFocused && key == 259 && !order.isEmpty()) {
+		if (key == 259 && !order.isEmpty()) {
+			inputFocused = true;
 			order = order.substring(0, order.length() - 1);
 			return true;
 		}
-		if (inputFocused && isPaste(key, c)) {
+		if (isPaste(key, c)) {
+			inputFocused = true;
 			String clipboard = this.minecraft.keyboardHandler.getClipboard();
 			for (char ch : clipboard.toCharArray()) {
 				if (isAllowedInputCharacter(ch) && order.length() < 80) {

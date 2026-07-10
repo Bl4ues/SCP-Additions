@@ -23,6 +23,7 @@ public class ScpAdditionsModTabs {
 				tabData.accept(ScpAdditionsModBlocks.BUTTON_LOFF.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.TESLA_GATE.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem());
+				tabData.accept(ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get().asItem());
 				tabData.accept(ScpAdditionsModItems.SECURITY_CREDENTIALS.get());
 				tabData.accept(ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());

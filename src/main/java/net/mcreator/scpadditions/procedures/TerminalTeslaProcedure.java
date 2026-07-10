@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.core.BlockPos;
 
+import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
 import io.netty.buffer.Unpooled;
@@ -31,7 +32,10 @@ public class TerminalTeslaProcedure {
 
 			@Override
 			public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-				return new TeslaTerminalMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos));
+				FriendlyByteBuf data = new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos);
+				data.writeBoolean(world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON));
+				data.writeBoolean(world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE));
+				return new TeslaTerminalMenu(id, inventory, data);
 			}
 		}, pos);
 	}

@@ -6,9 +6,7 @@ license="Creative Commons Sharealike 3.0"
 modId="scp_additions"
 version="1.0.9"
 displayName="SCP Additions"
-displayURL="https://mcreator.net"
-credits="Created using mod maker MCreator - https://mcreator.net/about"
-authors="Bl4ues, MCreator"
+authors="Bl4ues"
 
 [[dependencies.scp_additions]]
     modId="minecraft"

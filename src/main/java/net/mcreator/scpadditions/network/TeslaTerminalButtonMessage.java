@@ -75,7 +75,10 @@ public class TeslaTerminalButtonMessage {
 			TeslaTerminalController.logout(entity);
 		}
 		if (buttonID == 3) {
-			TeslaTerminalController.toggleManualOverride(world, x, y, z, entity);
+			TeslaTerminalController.setManualOverride(world, x, y, z, entity, true);
+		}
+		if (buttonID == 4) {
+			TeslaTerminalController.setManualOverride(world, x, y, z, entity, false);
 		}
 	}
 

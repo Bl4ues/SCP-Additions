@@ -1,28 +1,67 @@
 # SCP-294 legacy drinks to port
 
-This file is a reminder list for rebuilding SCP-294 defaults as JSON-driven drink definitions.
+This file is a reminder list for rebuilding SCP-294 defaults as config-driven drink definitions.
 
-New JSON path:
+Runtime config path created by the mod:
 
 ```text
-src/main/resources/data/<namespace>/scp294/drinks/<drink_id>.json
+config/scpadditions/294drinks.json
+```
+
+Repository template path:
+
+```text
+config/scpadditions/294drinks.json
 ```
 
 Schema draft:
 
 ```json
 {
-  "enabled": true,
-  "aliases": ["coffee", "black coffee"],
-  "result": {
-    "item": "scp_additions:cup_of_coffee",
-    "count": 1
+  "version": 1,
+  "matching": {
+    "allow_partial": true,
+    "fuzzy_threshold": 0.66,
+    "ambiguous_margin": 0.02
   },
-  "delay_ticks": 40,
-  "sound": "scp_additions:scp294pouring",
-  "consumes_coin": true
+  "drinks": [
+    {
+      "id": "scp_additions:coffee",
+      "enabled": true,
+      "aliases": ["black coffee"],
+      "result": {
+        "item": "scp_additions:cup_of_coffee",
+        "count": 1
+      },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "actionbar": "Dispensing black coffee...",
+      "cup_color": "#2B1608",
+      "placeholder_cup_texture": "scp_additions:item/scp294_colored_cup_placeholder",
+      "effects": [
+        {
+          "id": "minecraft:speed",
+          "duration": 200,
+          "amplifier": 0,
+          "ambient": false,
+          "visible": true,
+          "show_icon": true
+        }
+      ]
+    }
+  ]
 }
 ```
+
+Matching behavior:
+
+- Case-insensitive.
+- Punctuation-insensitive.
+- Exact aliases win first.
+- Partial aliases are allowed by default: typing `coffee` can match `black coffee` if it is the only closest match.
+- Fuzzy typo matching is enabled by `fuzzy_threshold`.
+- If multiple different drinks are equally close within `ambiguous_margin`, SCP-294 returns out of range instead of guessing.
 
 Special legacy behavior to port:
 
@@ -99,5 +138,7 @@ scp_additions:iron_c
 
 Notes for next pass:
 
-- Some legacy drinks had additional effects/death/explosion behavior in item-use procedures rather than in the SCP-294 dispensing procedure. The current JSON scaffold only covers aliases -> item output. Add optional post-drink behavior later if needed.
+- `cup_color`, `placeholder_cup_texture`, `actionbar`, and `effects` are already parsed and written into the dispensed stack NBT under `Scp294Drink`.
+- The dynamic colored cup item/model still needs to be implemented later to consume those NBT values visually and mechanically.
+- Some legacy drinks had additional effects/death/explosion behavior in item-use procedures rather than in the SCP-294 dispensing procedure.
 - The exact legacy alias list can still be recovered from Git history before the hardcoded procedures were replaced.

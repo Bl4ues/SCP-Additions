@@ -1,7 +1,3 @@
-
-/*
- *    MCreator note: This file will be REGENERATED on each build.
- */
 package net.mcreator.scpadditions.init;
 
 import net.minecraftforge.registries.RegistryObject;
@@ -46,9 +42,6 @@ import net.mcreator.scpadditions.block.Scp079onBlock;
 import net.mcreator.scpadditions.block.Scp079offBlock;
 import net.mcreator.scpadditions.block.Scp079controloffBlock;
 import net.mcreator.scpadditions.block.Scp079controlBlock;
-import net.mcreator.scpadditions.block.Scp059ContainedBlock;
-import net.mcreator.scpadditions.block.Scp059Block;
-import net.mcreator.scpadditions.block.Scp0591Block;
 import net.mcreator.scpadditions.block.SCP079SystemControlBlock;
 import net.mcreator.scpadditions.block.RightReaderWrongBlock;
 import net.mcreator.scpadditions.block.RightReaderBlock;
@@ -104,9 +97,6 @@ public class ScpAdditionsModBlocks {
 	public static final RegistryObject<Block> DECON_OPEN = REGISTRY.register("decon_open", () -> new DeconOpenBlock());
 	public static final RegistryObject<Block> SCP_079_SYSTEM_CONTROL = REGISTRY.register("scp_079_system_control", () -> new SCP079SystemControlBlock());
 	public static final RegistryObject<Block> SCP_079CONTROLOFF = REGISTRY.register("scp_079controloff", () -> new Scp079controloffBlock());
-	public static final RegistryObject<Block> SCP_059 = REGISTRY.register("scp_059", () -> new Scp059Block());
-	public static final RegistryObject<Block> SCP_059_CONTAINED = REGISTRY.register("scp_059_contained", () -> new Scp059ContainedBlock());
-	public static final RegistryObject<Block> SCP_059_1 = REGISTRY.register("scp_059_1", () -> new Scp0591Block());
 	public static final RegistryObject<Block> SCP_079ON = REGISTRY.register("scp_079on", () -> new Scp079onBlock());
 	public static final RegistryObject<Block> SCP_294 = REGISTRY.register("scp_294", () -> new Scp294Block());
 	public static final RegistryObject<Block> SCP_330 = REGISTRY.register("scp_330", () -> new Scp330Block());

@@ -1,0 +1,284 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "id": "scp_additions:cat_rough_to_string",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:cat", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:string", "count": 2 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:cat_1_to_1_to_ocelot",
+      "enabled": true,
+      "setting": "1_to_1",
+      "entity_inputs": [{ "entity": "minecraft:cat", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:ocelot", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:ocelot_1_to_1_to_cat",
+      "enabled": true,
+      "setting": "1_to_1",
+      "entity_inputs": [{ "entity": "minecraft:ocelot", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:cat", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:wolf_rough_to_bone",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:wolf", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:bone", "count": 3 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:wolf_fine_to_fox",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:wolf", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:fox", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:fox_1_to_1_to_wolf",
+      "enabled": true,
+      "setting": "1_to_1",
+      "entity_inputs": [{ "entity": "minecraft:fox", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:wolf", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:pig_fine_to_hoglin",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:pig", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:hoglin", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:cow_fine_to_mooshroom",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:cow", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:mooshroom", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:mooshroom_1_to_1_to_cow",
+      "enabled": true,
+      "setting": "1_to_1",
+      "entity_inputs": [{ "entity": "minecraft:mooshroom", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:cow", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:sheep_rough_to_wool",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:sheep", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:white_wool", "count": 3 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:chicken_rough_to_feathers",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:chicken", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:feather", "count": 3 }, { "item": "minecraft:egg", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:rabbit_rough_to_hide",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:rabbit", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:rabbit_hide", "count": 2 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:bee_rough_to_honeycomb",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:bee", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:honeycomb", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:bee_fine_to_allay",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:bee", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:allay", "count": 1 }],
+      "chance": 0.35,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:cod_fine_to_axolotl",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:cod", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:axolotl", "count": 1 }],
+      "chance": 0.55,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:squid_fine_to_glow_squid",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:squid", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:glow_squid", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:zombie_coarse_to_rotten_flesh",
+      "enabled": true,
+      "setting": "coarse",
+      "entity_inputs": [{ "entity": "minecraft:zombie", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:rotten_flesh", "count": 5 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:zombie_fine_to_villager",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:zombie", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:villager", "count": 1 }],
+      "chance": 0.25,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:zombie_very_fine_to_husk_or_drowned",
+      "enabled": true,
+      "setting": "very_fine",
+      "entity_inputs": [{ "entity": "minecraft:zombie", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:husk", "count": 1 }, { "entity": "minecraft:drowned", "count": 1 }],
+      "chance": 0.6,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:skeleton_fine_to_stray",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:skeleton", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:stray", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:creeper_rough_to_gunpowder",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:creeper", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:gunpowder", "count": 4 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:creeper_fine_to_charged_creeper_placeholder",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:creeper", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:creeper", "count": 2 }],
+      "chance": 0.45,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:enderman_rough_to_ender_pearl",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:enderman", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:ender_pearl", "count": 2 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:villager_1_to_1_to_wandering_trader",
+      "enabled": true,
+      "setting": "1_to_1",
+      "entity_inputs": [{ "entity": "minecraft:villager", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:wandering_trader", "count": 1 }],
+      "chance": 0.5,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:villager_fine_to_iron_golem",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "minecraft:villager", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "minecraft:iron_golem", "count": 1 }],
+      "chance": 0.2,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:iron_golem_rough_to_iron",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "minecraft:iron_golem", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:iron_ingot", "count": 8 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:scp_131_a_fine_to_b_pair",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "scpinventory:scp_131_a", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "scpinventory:scp_131_a", "count": 1 }, { "entity": "scpinventory:scp_131_b", "count": 1 }],
+      "chance": 0.5,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:scp_131_b_fine_to_a_pair",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "scpinventory:scp_131_b", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "scpinventory:scp_131_a", "count": 1 }, { "entity": "scpinventory:scp_131_b", "count": 1 }],
+      "chance": 0.5,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:scp_1499_1_to_1_to_gas_mask_item",
+      "enabled": true,
+      "setting": "1_to_1",
+      "entity_inputs": [{ "entity": "gas_mask:scp_1499", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "gas_mask:gas_mask_helmet", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:scp_1025_rough_to_book",
+      "enabled": true,
+      "setting": "rough",
+      "entity_inputs": [{ "entity": "encyclopedia_of_common_diseases:scp_1025", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "minecraft:book", "count": 1 }],
+      "chance": 1.0,
+      "copy_input_nbt": false
+    },
+    {
+      "id": "scp_additions:scp_1025_fine_to_panacea",
+      "enabled": true,
+      "setting": "fine",
+      "entity_inputs": [{ "entity": "encyclopedia_of_common_diseases:scp_1025", "count": 1, "consume": true }],
+      "item_outputs": [{ "item": "panacea:panacea", "count": 1 }],
+      "chance": 0.35,
+      "copy_input_nbt": false
+    }
+  ]
+}

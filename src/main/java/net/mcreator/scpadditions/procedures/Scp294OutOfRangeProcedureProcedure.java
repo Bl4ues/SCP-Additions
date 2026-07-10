@@ -15,35 +15,39 @@ import java.util.Map;
 public class Scp294OutOfRangeProcedureProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z) {
 		ScpAdditionsMod.queueServerWork(20, () -> {
-			{
-				BlockPos _bp = BlockPos.containing(x, y, z);
-				BlockState _bs = ScpAdditionsModBlocks.SCP_294.get().defaultBlockState();
-				BlockState _bso = world.getBlockState(_bp);
-				for (Map.Entry<Property<?>, Comparable<?>> entry : _bso.getValues().entrySet()) {
-					Property _property = _bs.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
-					if (_property != null && _bs.getValue(_property) != null)
-						try {
-							_bs = _bs.setValue(_property, (Comparable) entry.getValue());
-						} catch (Exception e) {
-						}
-				}
-				BlockEntity _be = world.getBlockEntity(_bp);
-				CompoundTag _bnbt = null;
-				if (_be != null) {
-					_bnbt = _be.saveWithFullMetadata();
-					_be.setRemoved();
-				}
-				world.setBlock(_bp, _bs, 3);
-				if (_bnbt != null) {
-					_be = world.getBlockEntity(_bp);
-					if (_be != null) {
-						try {
-							_be.load(_bnbt);
-						} catch (Exception ignored) {
-						}
+			BlockPos pos = BlockPos.containing(x, y, z);
+			BlockState newState = copyProperties(world.getBlockState(pos), ScpAdditionsModBlocks.SCP_294.get().defaultBlockState());
+			BlockEntity blockEntity = world.getBlockEntity(pos);
+			CompoundTag blockEntityTag = null;
+			if (blockEntity != null) {
+				blockEntityTag = blockEntity.saveWithFullMetadata();
+				blockEntity.setRemoved();
+			}
+			world.setBlock(pos, newState, 3);
+			if (blockEntityTag != null) {
+				BlockEntity newBlockEntity = world.getBlockEntity(pos);
+				if (newBlockEntity != null) {
+					try {
+						newBlockEntity.load(blockEntityTag);
+					} catch (Exception ignored) {
 					}
 				}
 			}
 		});
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private static BlockState copyProperties(BlockState from, BlockState to) {
+		BlockState result = to;
+		for (Map.Entry<Property<?>, Comparable<?>> entry : from.getValues().entrySet()) {
+			Property property = result.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
+			if (property != null) {
+				try {
+					result = result.setValue((Property) property, (Comparable) entry.getValue());
+				} catch (Exception ignored) {
+				}
+			}
+		}
+		return result;
 	}
 }

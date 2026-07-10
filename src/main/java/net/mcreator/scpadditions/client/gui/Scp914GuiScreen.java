@@ -27,6 +27,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	private static final double SNAP_THRESHOLD = 12.0D;
 	private static final ResourceLocation BACKGROUND = new ResourceLocation("scp_additions:textures/screens/scp_914_gui.png");
 	private static final ResourceLocation DIAL = new ResourceLocation("scp_additions:textures/screens/scp_914_dial.png");
+	private static final ResourceLocation DIAL_HOVER = new ResourceLocation("scp_additions:textures/screens/scp_914_dial_hover.png");
 
 	private final Level world;
 	private final int x, y, z;
@@ -72,19 +73,19 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 		guiGraphics.blit(BACKGROUND, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 
 		RenderSystem.setShaderColor(0.58F, 0.58F, 0.58F, 1.0F);
-		renderDial(guiGraphics, dragging ? dragAngle : selected.angle());
+		renderDial(guiGraphics, dragging ? dragAngle : selected.angle(), dragging || isMouseNearDial(mouseX, mouseY));
 
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
 	}
 
-	private void renderDial(GuiGraphics guiGraphics, double angle) {
+	private void renderDial(GuiGraphics guiGraphics, double angle, boolean hover) {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(DIAL_PIVOT_X, DIAL_PIVOT_Y, 0);
 		guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees((float) angle));
 		guiGraphics.pose().translate(-DIAL_PIVOT_X, -DIAL_PIVOT_Y, 0);
-		guiGraphics.blit(DIAL, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		guiGraphics.blit(hover ? DIAL_HOVER : DIAL, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		guiGraphics.pose().popPose();
 	}
 

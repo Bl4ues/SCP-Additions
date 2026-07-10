@@ -84,7 +84,7 @@ public final class Scp914Processor {
 		ItemStack firstInputStack = match.firstInputStack();
 		consumeInputs(match);
 
-		for (Scp914RecipeManager.ItemOutput output : match.recipe().itemOutputs()) {
+		for (Scp914RecipeManager.ItemOutput output : Scp914RecipeManager.rollItemOutputs(match.recipe(), level.random)) {
 			ItemStack outputStack = Scp914RecipeManager.createItemOutput(output, firstInputStack, match.recipe().copyInputNbt());
 			if (!outputStack.isEmpty()) {
 				ItemEntity outputEntity = new ItemEntity(level, outputCenter.x, outputCenter.y, outputCenter.z, outputStack);

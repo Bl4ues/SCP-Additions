@@ -4,6 +4,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -14,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.data.Scp294ActionExecutor;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
@@ -41,9 +43,12 @@ public class Scp294drinkGiveProcedure {
 		}
 
 		Scp294DrinkManager.DrinkDefinition drink = match.drink();
-		ItemStack result = Scp294DrinkManager.createResult(drink);
-		if (result.isEmpty()) {
-			return;
+		ItemStack result = ItemStack.EMPTY;
+		if (drink.giveResult()) {
+			result = Scp294DrinkManager.createResult(drink);
+			if (result.isEmpty()) {
+				return;
+			}
 		}
 
 		if (drink.consumesCoin()) {
@@ -51,8 +56,15 @@ public class Scp294drinkGiveProcedure {
 			player.containerMenu.broadcastChanges();
 		}
 
+		player.closeContainer();
 		playSound(world, x, y, z, drink.sound());
-		ScpAdditionsMod.queueServerWork(drink.delayTicks(), () -> ItemHandlerHelper.giveItemToPlayer(player, result.copy()));
+		ListTag dispenseActions = Scp294DrinkManager.actionsToTag(drink.dispenseActions());
+		Scp294ActionExecutor.executeActions(world, x, y, z, player, dispenseActions);
+
+		if (drink.giveResult()) {
+			ItemStack resultCopy = result.copy();
+			ScpAdditionsMod.queueServerWork(drink.delayTicks(), () -> ItemHandlerHelper.giveItemToPlayer(player, resultCopy));
+		}
 
 		ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock + 1;
 		ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);

@@ -156,6 +156,25 @@ public final class Scp294ActionExecutor {
 		if (!configured.isBlank()) {
 			return new ResourceLocation(configured);
 		}
+
+		String marker = action.getString("message").toLowerCase();
+		if (marker.contains("bleach")) return new ResourceLocation("scp_additions:scp294_bleach");
+		if (marker.contains("106") || marker.contains("corrosive black")) return new ResourceLocation("scp_additions:scp294_106");
+		if (marker.contains("butt ghost")) return new ResourceLocation("scp_additions:scp294_butt_ghost");
+		if (marker.contains("carbon")) return new ResourceLocation("scp_additions:scp294_carbon");
+		if (marker.contains("neutronium") || marker.contains("density")) return new ResourceLocation("scp_additions:scp294_neutronium");
+		if (marker.contains("jewel") || marker.contains("lifeforce")) return new ResourceLocation("scp_additions:scp294_lifeforce");
+		if (marker.contains("lava") || marker.contains("magma")) return new ResourceLocation("scp_additions:scp294_lava");
+		if (marker.contains("quantum") || marker.contains("nitrogen") || marker.contains("helium") || marker.contains("hydrogen")) return new ResourceLocation("scp_additions:scp294_cold");
+		if (marker.contains("radiation") || marker.contains("radioactive") || marker.contains("nuclear")) return new ResourceLocation("scp_additions:scp294_radiation");
+		if (marker.contains("fear")) return new ResourceLocation("scp_additions:scp294_fear");
+		if (marker.contains("overdose") || marker.contains("heroin")) return new ResourceLocation("scp_additions:scp294_overdose");
+		if (marker.contains("glass")) return new ResourceLocation("scp_additions:scp294_glass");
+		if (marker.contains("gold")) return new ResourceLocation("scp_additions:scp294_gold");
+		if (marker.contains("metal") || marker.contains("iron")) return new ResourceLocation("scp_additions:scp294_metal");
+		if (marker.contains("joy") || marker.contains("happiness")) return new ResourceLocation("scp_additions:scp294_happiness");
+		if (marker.contains("death")) return new ResourceLocation("scp_additions:scp294_death");
+		if (marker.contains("violent reaction") || marker.contains("antimatter") || marker.contains("tachyon") || marker.contains("quark") || marker.contains("682")) return new ResourceLocation("scp_additions:scp294_violent_reaction");
 		return DEFAULT_DAMAGE_TYPE;
 	}
 

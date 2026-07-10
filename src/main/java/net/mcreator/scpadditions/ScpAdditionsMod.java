@@ -11,7 +11,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.common.MinecraftForge;
 
 import net.minecraft.resources.ResourceLocation;
@@ -58,6 +57,9 @@ public class ScpAdditionsMod {
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);
 
 		ScpAdditionsModMenus.REGISTRY.register(bus);
+
+		Scp294DrinkManager.loadFromConfig();
+		Scp914RecipeManager.loadFromConfig();
 	}
 
 	private static final String PROTOCOL_VERSION = "1";
@@ -67,12 +69,6 @@ public class ScpAdditionsMod {
 	public static <T> void addNetworkMessage(Class<T> messageType, BiConsumer<T, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, T> decoder, BiConsumer<T, Supplier<NetworkEvent.Context>> messageConsumer) {
 		PACKET_HANDLER.registerMessage(messageID, messageType, encoder, decoder, messageConsumer);
 		messageID++;
-	}
-
-	@SubscribeEvent
-	public void addReloadListeners(AddReloadListenerEvent event) {
-		event.addListener(new Scp294DrinkManager());
-		event.addListener(new Scp914RecipeManager());
 	}
 
 	private static final Collection<AbstractMap.SimpleEntry<Runnable, Integer>> workQueue = new ConcurrentLinkedQueue<>();

@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.data;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -14,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -145,8 +147,9 @@ public final class Scp294ActionExecutor {
 
 		Level level = living.level();
 		ResourceLocation damageTypeId = resolveDamageType(action);
-		ResourceKey<DamageType> damageType = ResourceKey.create(Registries.DAMAGE_TYPE, damageTypeId);
-		living.hurt(level.damageSources().source(damageType), Float.MAX_VALUE);
+		ResourceKey<DamageType> damageTypeKey = ResourceKey.create(Registries.DAMAGE_TYPE, damageTypeId);
+		Holder.Reference<DamageType> damageType = level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(damageTypeKey);
+		living.hurt(new DamageSource(damageType), Float.MAX_VALUE);
 	}
 
 	private static ResourceLocation resolveDamageType(CompoundTag action) {

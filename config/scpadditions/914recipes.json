@@ -27,8 +27,7 @@
       "entity_inputs": [],
       "entity_outputs": [],
       "chance": 1.0,
-      "copy_input_nbt": false,
-      "actionbar": "SCP-914 refines the input."
+      "copy_input_nbt": false
     },
     {
       "id": "scp_additions:zombie_to_rotten_flesh_rough",
@@ -50,8 +49,7 @@
       ],
       "entity_outputs": [],
       "chance": 1.0,
-      "copy_input_nbt": false,
-      "actionbar": "SCP-914 processes a living subject."
+      "copy_input_nbt": false
     },
     {
       "id": "scp_additions:iron_and_redstone_to_compass_1_to_1",
@@ -76,8 +74,7 @@
       "entity_inputs": [],
       "entity_outputs": [],
       "chance": 1.0,
-      "copy_input_nbt": false,
-      "actionbar": "SCP-914 combines the inputs."
+      "copy_input_nbt": false
     }
   ]
 }

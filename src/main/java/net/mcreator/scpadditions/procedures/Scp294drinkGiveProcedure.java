@@ -77,6 +77,24 @@ public class Scp294drinkGiveProcedure {
 		ScpAdditionsModVariables.WorldVariables.get(world).syncData(world);
 	}
 
+	public static void insertCoinFromInventory(Player player) {
+		Slot coinSlot = getCoinSlot(player);
+		if (coinSlot == null || coinSlot.hasItem()) {
+			return;
+		}
+
+		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+			ItemStack stack = player.getInventory().getItem(i);
+			if (stack.getItem() == ScpAdditionsModItems.COIN.get()) {
+				ItemStack coin = stack.split(1);
+				coinSlot.set(coin);
+				coinSlot.setChanged();
+				player.containerMenu.broadcastChanges();
+				return;
+			}
+		}
+	}
+
 	private static Slot getCoinSlot(Player player) {
 		if (player.containerMenu instanceof Supplier<?> supplier && supplier.get() instanceof Map<?, ?> slots) {
 			Object slot = slots.get(0);

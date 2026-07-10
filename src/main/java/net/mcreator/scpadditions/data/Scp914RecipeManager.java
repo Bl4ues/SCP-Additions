@@ -27,15 +27,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class Scp914RecipeManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("914recipes.json");
+	private static final Path CONFIG_ROOT = FMLPaths.CONFIGDIR.get().resolve("scpadditions");
+	private static final Path CONFIG_PATH = CONFIG_ROOT.resolve("914recipes.json");
+	private static final Path FRAGMENT_DIR = CONFIG_ROOT.resolve("914recipes.d");
 	private static final String DEFAULT_CONFIG = """
 			{
 			  "version": 2,
@@ -69,52 +73,73 @@ public final class Scp914RecipeManager {
 	public static synchronized void loadFromConfig() {
 		ensureConfigExists();
 		List<RecipeDefinition> parsed = new ArrayList<>();
-
-		try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
-			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-			machineConfig = readMachineConfig(root);
-			JsonArray recipesArray = root.has("recipes") ? GsonHelper.getAsJsonArray(root, "recipes") : new JsonArray();
-
-			for (JsonElement element : recipesArray) {
-				try {
-					JsonObject json = GsonHelper.convertToJsonObject(element, "SCP-914 recipe");
-					if (json.has("enabled") && !GsonHelper.getAsBoolean(json, "enabled")) {
-						continue;
-					}
-					parsed.add(parseRecipe(json));
-				} catch (Exception exception) {
-					ScpAdditionsMod.LOGGER.error("Failed to load one SCP-914 recipe entry", exception);
-				}
-			}
-		} catch (Exception exception) {
-			ScpAdditionsMod.LOGGER.error("Failed to load SCP-914 recipes from {}", CONFIG_PATH, exception);
-		}
-
+		readRecipeFile(CONFIG_PATH, parsed, true);
+		readFragmentFiles(parsed);
 		recipes = List.copyOf(parsed);
 		ScpAdditionsMod.LOGGER.info("Loaded {} SCP-914 recipe definitions from config", recipes.size());
 	}
 
 	private static void ensureConfigExists() {
 		try {
-			Files.createDirectories(CONFIG_PATH.getParent());
+			Files.createDirectories(CONFIG_ROOT);
+			Files.createDirectories(FRAGMENT_DIR);
 			if (Files.notExists(CONFIG_PATH)) {
 				Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
 			} else {
-				prettyPrintConfigIfNeeded();
+				prettyPrintConfigIfNeeded(CONFIG_PATH);
 			}
 		} catch (IOException exception) {
 			ScpAdditionsMod.LOGGER.error("Failed to create SCP-914 config at {}", CONFIG_PATH, exception);
 		}
 	}
 
-	private static void prettyPrintConfigIfNeeded() throws IOException {
-		String content = Files.readString(CONFIG_PATH, StandardCharsets.UTF_8);
+	private static void readFragmentFiles(List<RecipeDefinition> parsed) {
+		if (Files.notExists(FRAGMENT_DIR)) {
+			return;
+		}
+		try (Stream<Path> files = Files.list(FRAGMENT_DIR)) {
+			files.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".json"))
+					.sorted(Comparator.comparing(path -> path.getFileName().toString()))
+					.forEach(path -> readRecipeFile(path, parsed, false));
+		} catch (IOException exception) {
+			ScpAdditionsMod.LOGGER.error("Failed to read SCP-914 recipe fragments from {}", FRAGMENT_DIR, exception);
+		}
+	}
+
+	private static void readRecipeFile(Path path, List<RecipeDefinition> parsed, boolean readMachine) {
+		try {
+			prettyPrintConfigIfNeeded(path);
+			try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+				JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+				if (readMachine) {
+					machineConfig = readMachineConfig(root);
+				}
+				JsonArray recipesArray = root.has("recipes") ? GsonHelper.getAsJsonArray(root, "recipes") : new JsonArray();
+				for (JsonElement element : recipesArray) {
+					try {
+						JsonObject json = GsonHelper.convertToJsonObject(element, "SCP-914 recipe");
+						if (json.has("enabled") && !GsonHelper.getAsBoolean(json, "enabled")) {
+							continue;
+						}
+						parsed.add(parseRecipe(json));
+					} catch (Exception exception) {
+						ScpAdditionsMod.LOGGER.error("Failed to load one SCP-914 recipe entry from {}", path, exception);
+					}
+				}
+			}
+		} catch (Exception exception) {
+			ScpAdditionsMod.LOGGER.error("Failed to load SCP-914 recipes from {}", path, exception);
+		}
+	}
+
+	private static void prettyPrintConfigIfNeeded(Path path) throws IOException {
+		String content = Files.readString(path, StandardCharsets.UTF_8);
 		boolean looksMinified = !content.contains("\n") || content.lines().anyMatch(line -> line.length() > 240);
 		if (!looksMinified) {
 			return;
 		}
 		JsonElement json = JsonParser.parseString(content);
-		Files.writeString(CONFIG_PATH, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
+		Files.writeString(path, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
 	}
 
 	private static MachineConfig readMachineConfig(JsonObject root) {
@@ -159,7 +184,6 @@ public final class Scp914RecipeManager {
 		if (itemOutputs.isEmpty() && weightedItemOutputs.isEmpty() && entityOutputs.isEmpty()) {
 			throw new IllegalArgumentException("SCP-914 recipe " + id + " has no outputs");
 		}
-
 		return new RecipeDefinition(id, setting, itemInputs, entityInputs, itemOutputs, weightedItemOutputs, entityOutputs, chance, copyInputNbt, actionbar);
 	}
 
@@ -232,42 +256,28 @@ public final class Scp914RecipeManager {
 	}
 
 	public static Optional<RecipeMatch> findRecipe(Setting setting, List<ItemEntity> itemEntities, List<Entity> entities) {
-		return recipes.stream()
-				.filter(recipe -> recipe.setting() == setting)
-				.map(recipe -> match(recipe, itemEntities, entities))
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.findFirst();
+		return recipes.stream().filter(recipe -> recipe.setting() == setting).map(recipe -> match(recipe, itemEntities, entities)).filter(Optional::isPresent).map(Optional::get).findFirst();
 	}
 
 	private static Optional<RecipeMatch> match(RecipeDefinition recipe, List<ItemEntity> itemEntities, List<Entity> entities) {
 		List<ItemUse> itemUses = new ArrayList<>();
 		Map<ItemEntity, Integer> reservedItemCounts = new HashMap<>();
-
 		for (ItemIngredient ingredient : recipe.itemInputs()) {
 			int remaining = ingredient.count();
 			for (ItemEntity itemEntity : itemEntities) {
 				ItemStack stack = itemEntity.getItem();
 				ResourceLocation stackId = ForgeRegistries.ITEMS.getKey(stack.getItem());
-				if (!ingredient.item().equals(stackId)) {
-					continue;
-				}
+				if (!ingredient.item().equals(stackId)) continue;
 				int alreadyReserved = reservedItemCounts.getOrDefault(itemEntity, 0);
 				int available = stack.getCount() - alreadyReserved;
-				if (available <= 0) {
-					continue;
-				}
+				if (available <= 0) continue;
 				int used = Math.min(available, remaining);
 				reservedItemCounts.put(itemEntity, alreadyReserved + used);
 				itemUses.add(new ItemUse(itemEntity, used));
 				remaining -= used;
-				if (remaining <= 0) {
-					break;
-				}
+				if (remaining <= 0) break;
 			}
-			if (remaining > 0) {
-				return Optional.empty();
-			}
+			if (remaining > 0) return Optional.empty();
 		}
 
 		List<EntityUse> entityUses = new ArrayList<>();
@@ -275,39 +285,26 @@ public final class Scp914RecipeManager {
 		for (EntityIngredient ingredient : recipe.entityInputs()) {
 			int remaining = ingredient.count();
 			for (Entity entity : entities) {
-				if (reservedEntities.contains(entity)) {
-					continue;
-				}
+				if (reservedEntities.contains(entity)) continue;
 				ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
-				if (!ingredient.entity().equals(entityId)) {
-					continue;
-				}
+				if (!ingredient.entity().equals(entityId)) continue;
 				reservedEntities.add(entity);
 				entityUses.add(new EntityUse(entity, ingredient.consume()));
 				remaining--;
-				if (remaining <= 0) {
-					break;
-				}
+				if (remaining <= 0) break;
 			}
-			if (remaining > 0) {
-				return Optional.empty();
-			}
+			if (remaining > 0) return Optional.empty();
 		}
-
 		return Optional.of(new RecipeMatch(recipe, List.copyOf(itemUses), List.copyOf(entityUses)));
 	}
 
 	public static List<ItemOutput> rollItemOutputs(RecipeDefinition recipe, RandomSource random) {
-		if (recipe.weightedItemOutputs().isEmpty()) {
-			return recipe.itemOutputs();
-		}
+		if (recipe.weightedItemOutputs().isEmpty()) return recipe.itemOutputs();
 		int totalWeight = recipe.weightedItemOutputs().stream().mapToInt(WeightedItemOutput::weight).sum();
 		int roll = random.nextInt(Math.max(1, totalWeight));
 		for (WeightedItemOutput output : recipe.weightedItemOutputs()) {
 			roll -= output.weight();
-			if (roll < 0) {
-				return List.of(output.output());
-			}
+			if (roll < 0) return List.of(output.output());
 		}
 		return List.of(recipe.weightedItemOutputs().get(0).output());
 	}
@@ -319,9 +316,7 @@ public final class Scp914RecipeManager {
 			return ItemStack.EMPTY;
 		}
 		ItemStack result = new ItemStack(item, output.count());
-		if (copyInputNbt && inputStack != null && inputStack.hasTag()) {
-			result.setTag(inputStack.getTag().copy());
-		}
+		if (copyInputNbt && inputStack != null && inputStack.hasTag()) result.setTag(inputStack.getTag().copy());
 		return result;
 	}
 
@@ -335,70 +330,26 @@ public final class Scp914RecipeManager {
 	}
 
 	public enum Setting {
-		ROUGH("rough"),
-		COARSE("coarse"),
-		ONE_TO_ONE("1_to_1"),
-		FINE("fine"),
-		VERY_FINE("very_fine");
-
+		ROUGH("rough"), COARSE("coarse"), ONE_TO_ONE("1_to_1"), FINE("fine"), VERY_FINE("very_fine");
 		private final String serializedName;
-
-		Setting(String serializedName) {
-			this.serializedName = serializedName;
-		}
-
-		public String serializedName() {
-			return serializedName;
-		}
-
+		Setting(String serializedName) { this.serializedName = serializedName; }
+		public String serializedName() { return serializedName; }
 		public static Setting fromSerializedName(String value) {
 			String normalized = value.trim().toLowerCase(Locale.ROOT);
-			for (Setting setting : values()) {
-				if (setting.serializedName.equals(normalized)) {
-					return setting;
-				}
-			}
+			for (Setting setting : values()) if (setting.serializedName.equals(normalized)) return setting;
 			throw new IllegalArgumentException("Unknown SCP-914 setting: " + value);
 		}
 	}
 
-	public record RecipeDefinition(ResourceLocation id, Setting setting, List<ItemIngredient> itemInputs, List<EntityIngredient> entityInputs, List<ItemOutput> itemOutputs,
-			List<WeightedItemOutput> weightedItemOutputs, List<EntityOutput> entityOutputs, float chance, boolean copyInputNbt, String actionbar) {
-	}
-
-	public record ItemIngredient(ResourceLocation item, int count) {
-	}
-
-	public record EntityIngredient(ResourceLocation entity, int count, boolean consume) {
-	}
-
-	public record ItemOutput(ResourceLocation item, int count) {
-	}
-
-	public record WeightedItemOutput(int weight, ItemOutput output) {
-	}
-
-	public record EntityOutput(ResourceLocation entity, int count) {
-	}
-
-	public record ItemUse(ItemEntity entity, int count) {
-	}
-
-	public record EntityUse(Entity entity, boolean consume) {
-	}
-
-	public record RecipeMatch(RecipeDefinition recipe, List<ItemUse> itemUses, List<EntityUse> entityUses) {
-		public ItemStack firstInputStack() {
-			return itemUses.isEmpty() ? ItemStack.EMPTY : itemUses.get(0).entity().getItem();
-		}
-	}
-
-	public record MachineConfig(Offset intakeOffset, Offset outputOffset, double searchRadius, int startDelayTicks, int finishDelayTicks) {
-		public static MachineConfig defaults() {
-			return new MachineConfig(new Offset(-4, 0, -3), new Offset(4, 0, -3), 1.5D, 30, 160);
-		}
-	}
-
-	public record Offset(int x, int y, int z) {
-	}
+	public record RecipeDefinition(ResourceLocation id, Setting setting, List<ItemIngredient> itemInputs, List<EntityIngredient> entityInputs, List<ItemOutput> itemOutputs, List<WeightedItemOutput> weightedItemOutputs, List<EntityOutput> entityOutputs, float chance, boolean copyInputNbt, String actionbar) {}
+	public record ItemIngredient(ResourceLocation item, int count) {}
+	public record EntityIngredient(ResourceLocation entity, int count, boolean consume) {}
+	public record ItemOutput(ResourceLocation item, int count) {}
+	public record WeightedItemOutput(int weight, ItemOutput output) {}
+	public record EntityOutput(ResourceLocation entity, int count) {}
+	public record ItemUse(ItemEntity entity, int count) {}
+	public record EntityUse(Entity entity, boolean consume) {}
+	public record RecipeMatch(RecipeDefinition recipe, List<ItemUse> itemUses, List<EntityUse> entityUses) { public ItemStack firstInputStack() { return itemUses.isEmpty() ? ItemStack.EMPTY : itemUses.get(0).entity().getItem(); } }
+	public record MachineConfig(Offset intakeOffset, Offset outputOffset, double searchRadius, int startDelayTicks, int finishDelayTicks) { public static MachineConfig defaults() { return new MachineConfig(new Offset(-4, 0, -3), new Offset(4, 0, -3), 1.5D, 30, 160); } }
+	public record Offset(int x, int y, int z) {}
 }

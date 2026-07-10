@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -37,7 +38,7 @@ public final class Scp914RecipeManager {
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("914recipes.json");
 	private static final String DEFAULT_CONFIG = """
 			{
-			  "version": 1,
+			  "version": 2,
 			  "machine": {
 			    "intake_offset": [-4, 0, -3],
 			    "output_offset": [4, 0, -3],
@@ -50,20 +51,8 @@ public final class Scp914RecipeManager {
 			      "id": "scp_additions:level_1_keycard_rough",
 			      "enabled": true,
 			      "setting": "rough",
-			      "item_inputs": [
-			        {
-			          "item": "scp_additions:level_1_keycard",
-			          "count": 1
-			        }
-			      ],
-			      "item_outputs": [
-			        {
-			          "item": "scp_additions:pieces_of_paper",
-			          "count": 1
-			        }
-			      ],
-			      "entity_inputs": [],
-			      "entity_outputs": [],
+			      "item_inputs": [{ "item": "scp_additions:level_1_keycard", "count": 1 }],
+			      "item_outputs": [{ "item": "scp_additions:pieces_of_paper", "count": 1 }],
 			      "chance": 1.0,
 			      "copy_input_nbt": false
 			    }
@@ -124,7 +113,6 @@ public final class Scp914RecipeManager {
 		if (!looksMinified) {
 			return;
 		}
-
 		JsonElement json = JsonParser.parseString(content);
 		Files.writeString(CONFIG_PATH, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
 	}
@@ -133,7 +121,6 @@ public final class Scp914RecipeManager {
 		if (!root.has("machine")) {
 			return MachineConfig.defaults();
 		}
-
 		JsonObject json = GsonHelper.getAsJsonObject(root, "machine");
 		return new MachineConfig(
 				readOffset(json, "intake_offset", -4, 0, -3),
@@ -147,7 +134,6 @@ public final class Scp914RecipeManager {
 		if (!json.has(name)) {
 			return new Offset(defaultX, defaultY, defaultZ);
 		}
-
 		JsonArray array = GsonHelper.getAsJsonArray(json, name);
 		if (array.size() != 3) {
 			throw new IllegalArgumentException(name + " must have exactly 3 integers");
@@ -161,6 +147,7 @@ public final class Scp914RecipeManager {
 		List<ItemIngredient> itemInputs = readItemInputs(json);
 		List<EntityIngredient> entityInputs = readEntityInputs(json);
 		List<ItemOutput> itemOutputs = readItemOutputs(json);
+		List<WeightedItemOutput> weightedItemOutputs = readWeightedItemOutputs(json);
 		List<EntityOutput> entityOutputs = readEntityOutputs(json);
 		float chance = Math.max(0.0F, Math.min(1.0F, GsonHelper.getAsFloat(json, "chance", 1.0F)));
 		boolean copyInputNbt = GsonHelper.getAsBoolean(json, "copy_input_nbt", false);
@@ -169,11 +156,11 @@ public final class Scp914RecipeManager {
 		if (itemInputs.isEmpty() && entityInputs.isEmpty()) {
 			throw new IllegalArgumentException("SCP-914 recipe " + id + " has no inputs");
 		}
-		if (itemOutputs.isEmpty() && entityOutputs.isEmpty()) {
+		if (itemOutputs.isEmpty() && weightedItemOutputs.isEmpty() && entityOutputs.isEmpty()) {
 			throw new IllegalArgumentException("SCP-914 recipe " + id + " has no outputs");
 		}
 
-		return new RecipeDefinition(id, setting, itemInputs, entityInputs, itemOutputs, entityOutputs, chance, copyInputNbt, actionbar);
+		return new RecipeDefinition(id, setting, itemInputs, entityInputs, itemOutputs, weightedItemOutputs, entityOutputs, chance, copyInputNbt, actionbar);
 	}
 
 	private static List<ItemIngredient> readItemInputs(JsonObject json) {
@@ -215,6 +202,18 @@ public final class Scp914RecipeManager {
 			for (JsonElement element : array) {
 				JsonObject output = GsonHelper.convertToJsonObject(element, "SCP-914 item output");
 				outputs.add(new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
+			}
+		}
+		return List.copyOf(outputs);
+	}
+
+	private static List<WeightedItemOutput> readWeightedItemOutputs(JsonObject json) {
+		List<WeightedItemOutput> outputs = new ArrayList<>();
+		if (json.has("weighted_item_outputs")) {
+			JsonArray array = GsonHelper.getAsJsonArray(json, "weighted_item_outputs");
+			for (JsonElement element : array) {
+				JsonObject output = GsonHelper.convertToJsonObject(element, "SCP-914 weighted item output");
+				outputs.add(new WeightedItemOutput(Math.max(1, GsonHelper.getAsInt(output, "weight", 1)), new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1)))));
 			}
 		}
 		return List.copyOf(outputs);
@@ -298,13 +297,27 @@ public final class Scp914RecipeManager {
 		return Optional.of(new RecipeMatch(recipe, List.copyOf(itemUses), List.copyOf(entityUses)));
 	}
 
+	public static List<ItemOutput> rollItemOutputs(RecipeDefinition recipe, RandomSource random) {
+		if (recipe.weightedItemOutputs().isEmpty()) {
+			return recipe.itemOutputs();
+		}
+		int totalWeight = recipe.weightedItemOutputs().stream().mapToInt(WeightedItemOutput::weight).sum();
+		int roll = random.nextInt(Math.max(1, totalWeight));
+		for (WeightedItemOutput output : recipe.weightedItemOutputs()) {
+			roll -= output.weight();
+			if (roll < 0) {
+				return List.of(output.output());
+			}
+		}
+		return List.of(recipe.weightedItemOutputs().get(0).output());
+	}
+
 	public static ItemStack createItemOutput(ItemOutput output, ItemStack inputStack, boolean copyInputNbt) {
 		Item item = ForgeRegistries.ITEMS.getValue(output.item());
 		if (item == null || item == Items.AIR) {
 			ScpAdditionsMod.LOGGER.warn("SCP-914 output points to missing item {}", output.item());
 			return ItemStack.EMPTY;
 		}
-
 		ItemStack result = new ItemStack(item, output.count());
 		if (copyInputNbt && inputStack != null && inputStack.hasTag()) {
 			result.setTag(inputStack.getTag().copy());
@@ -349,8 +362,8 @@ public final class Scp914RecipeManager {
 		}
 	}
 
-	public record RecipeDefinition(ResourceLocation id, Setting setting, List<ItemIngredient> itemInputs, List<EntityIngredient> entityInputs, List<ItemOutput> itemOutputs, List<EntityOutput> entityOutputs, float chance,
-			boolean copyInputNbt, String actionbar) {
+	public record RecipeDefinition(ResourceLocation id, Setting setting, List<ItemIngredient> itemInputs, List<EntityIngredient> entityInputs, List<ItemOutput> itemOutputs,
+			List<WeightedItemOutput> weightedItemOutputs, List<EntityOutput> entityOutputs, float chance, boolean copyInputNbt, String actionbar) {
 	}
 
 	public record ItemIngredient(ResourceLocation item, int count) {
@@ -360,6 +373,9 @@ public final class Scp914RecipeManager {
 	}
 
 	public record ItemOutput(ResourceLocation item, int count) {
+	}
+
+	public record WeightedItemOutput(int weight, ItemOutput output) {
 	}
 
 	public record EntityOutput(ResourceLocation entity, int count) {

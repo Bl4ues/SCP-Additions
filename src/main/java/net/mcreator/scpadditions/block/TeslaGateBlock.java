@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.BlockGetter;
@@ -127,9 +128,28 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
 
 	@Override
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
+		if (tryRaiseOnPlacement(blockstate, world, pos, oldState, moving)) {
+			return;
+		}
 		super.onPlace(blockstate, world, pos, oldState, moving);
 		world.scheduleTick(pos, this, 10);
 		TeslaGateUpdateTickProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
+	}
+
+	private boolean tryRaiseOnPlacement(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
+		if (moving || oldState.getBlock() == this || world.isClientSide()) {
+			return false;
+		}
+		if (world.getBlockState(pos.below()).getBlock() == this || !world.getBlockState(pos.below()).isFaceSturdy(world, pos.below(), Direction.UP)) {
+			return false;
+		}
+		BlockPos raisedPos = pos.above();
+		if (!world.getBlockState(raisedPos).isAir()) {
+			return false;
+		}
+		world.setBlock(raisedPos, blockstate, 3);
+		world.setBlock(pos, blockstate.getValue(WATERLOGGED) ? Blocks.WATER.defaultBlockState() : Blocks.AIR.defaultBlockState(), 3);
+		return true;
 	}
 
 	@Override

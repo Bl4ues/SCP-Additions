@@ -5,6 +5,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -27,7 +28,7 @@ public final class TeslaTerminalController {
 			return;
 		}
 		play(world, x, y, z, "scp_additions:click");
-		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, world.getServer());
+		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
 		message(player, "Tesla gates enabled.");
 	}
 
@@ -36,7 +37,7 @@ public final class TeslaTerminalController {
 			return;
 		}
 		play(world, x, y, z, "scp_additions:click");
-		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(false, world.getServer());
+		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(false, server(world));
 		message(player, "Tesla gates disabled.");
 	}
 
@@ -45,7 +46,7 @@ public final class TeslaTerminalController {
 			return;
 		}
 		boolean current = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
-		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(!current, world.getServer());
+		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(!current, server(world));
 		play(world, x, y, z, "scp_additions:click");
 		message(player, !current ? "Manual override engaged." : "Manual override disengaged.");
 	}
@@ -63,6 +64,10 @@ public final class TeslaTerminalController {
 		play(world, x, y, z, "scp_additions:accessdenied");
 		message(player, "Incorrect credentials. Please contact Security Admin.");
 		return false;
+	}
+
+	private static MinecraftServer server(LevelAccessor world) {
+		return world instanceof Level level ? level.getServer() : null;
 	}
 
 	private static void message(Player player, String text) {

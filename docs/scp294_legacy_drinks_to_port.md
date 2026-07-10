@@ -21,8 +21,7 @@ Schema draft:
   "version": 1,
   "matching": {
     "allow_partial": true,
-    "fuzzy_threshold": 0.66,
-    "ambiguous_margin": 0.02
+    "fuzzy_threshold": 0.66
   },
   "drinks": [
     {
@@ -59,9 +58,10 @@ Matching behavior:
 - Case-insensitive.
 - Punctuation-insensitive.
 - Exact aliases win first.
-- Partial aliases are allowed by default: typing `coffee` can match `black coffee` if it is the only closest match.
+- Partial aliases are allowed by default: typing `coffee` can match `black coffee`.
 - Fuzzy typo matching is enabled by `fuzzy_threshold`.
-- If multiple different drinks are equally close within `ambiguous_margin`, SCP-294 returns out of range instead of guessing.
+- If multiple drinks are close enough, the first/best option by JSON order wins.
+- SCP-294 returns out of range only when no configured drink is close enough to the request.
 
 Special legacy behavior to port:
 

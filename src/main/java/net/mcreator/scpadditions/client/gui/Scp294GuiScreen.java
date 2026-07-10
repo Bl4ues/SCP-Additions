@@ -14,12 +14,9 @@ import net.mcreator.scpadditions.world.inventory.Scp294GuiMenu;
 import net.mcreator.scpadditions.network.Scp294GuiButtonMessage;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.HashMap;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
-	private final static HashMap<String, Object> guistate = Scp294GuiMenu.guistate;
 	private final Level world;
 	private final int x, y, z;
 	private final Player entity;
@@ -108,15 +105,9 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		};
 		scp294input.setSuggestion(Component.translatable("gui.scp_additions.scp_294_gui.scp294input").getString());
 		scp294input.setMaxLength(32767);
-		guistate.put("text:scp294input", scp294input);
 		this.addWidget(this.scp294input);
-		button_enter = Button.builder(Component.translatable("gui.scp_additions.scp_294_gui.button_enter"), e -> {
-			if (true) {
-				ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp294GuiButtonMessage(0, x, y, z));
-				Scp294GuiButtonMessage.handleButtonAction(entity, 0, x, y, z);
-			}
-		}).bounds(this.leftPos + 108, this.topPos + 48, 51, 20).build();
-		guistate.put("button:button_enter", button_enter);
+		button_enter = Button.builder(Component.translatable("gui.scp_additions.scp_294_gui.button_enter"), e -> ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp294GuiButtonMessage(0, x, y, z, scp294input.getValue())))
+				.bounds(this.leftPos + 108, this.topPos + 48, 51, 20).build();
 		this.addRenderableWidget(button_enter);
 	}
 }

@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "machine": {
+    "intake_offset": [-4, 0, -3],
+    "output_offset": [4, 0, -3],
+    "search_radius": 2.0,
+    "start_delay_ticks": 30,
+    "finish_delay_ticks": 160
+  },
+  "recipes": [
+    {
+      "id": "scp_additions:level_1_keycard_rough",
+      "enabled": true,
+      "setting": "rough",
+      "item_inputs": [
+        {
+          "item": "scp_additions:level_1_keycard",
+          "count": 1
+        }
+      ],
+      "item_outputs": [
+        {
+          "item": "scp_additions:pieces_of_paper",
+          "count": 1
+        }
+      ],
+      "entity_inputs": [],
+      "entity_outputs": [],
+      "chance": 1.0,
+      "copy_input_nbt": false,
+      "actionbar": "SCP-914 refines the input."
+    },
+    {
+      "id": "scp_additions:zombie_to_rotten_flesh_rough",
+      "enabled": false,
+      "setting": "rough",
+      "item_inputs": [],
+      "entity_inputs": [
+        {
+          "entity": "minecraft:zombie",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "item_outputs": [
+        {
+          "item": "minecraft:rotten_flesh",
+          "count": 3
+        }
+      ],
+      "entity_outputs": [],
+      "chance": 1.0,
+      "copy_input_nbt": false,
+      "actionbar": "SCP-914 processes a living subject."
+    },
+    {
+      "id": "scp_additions:iron_and_redstone_to_compass_1_to_1",
+      "enabled": false,
+      "setting": "1_to_1",
+      "item_inputs": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 4
+        },
+        {
+          "item": "minecraft:redstone",
+          "count": 1
+        }
+      ],
+      "item_outputs": [
+        {
+          "item": "minecraft:compass",
+          "count": 1
+        }
+      ],
+      "entity_inputs": [],
+      "entity_outputs": [],
+      "chance": 1.0,
+      "copy_input_nbt": false,
+      "actionbar": "SCP-914 combines the inputs."
+    }
+  ]
+}

@@ -16,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.data.Scp294ActionExecutor;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class Scp294DrinkHandler {
@@ -33,6 +34,7 @@ public final class Scp294DrinkHandler {
 		CompoundTag drinkTag = stack.getTag().getCompound("Scp294Drink");
 		showActionbar(entity, drinkTag);
 		applyConfiguredEffects(entity, drinkTag);
+		executeDrinkActions(entity, drinkTag);
 	}
 
 	private static void showActionbar(LivingEntity entity, CompoundTag drinkTag) {
@@ -67,5 +69,13 @@ public final class Scp294DrinkHandler {
 					!effectTag.contains("visible", Tag.TAG_BYTE) || effectTag.getBoolean("visible"),
 					!effectTag.contains("show_icon", Tag.TAG_BYTE) || effectTag.getBoolean("show_icon")));
 		}
+	}
+
+	private static void executeDrinkActions(LivingEntity entity, CompoundTag drinkTag) {
+		if (!drinkTag.contains("drink_actions", Tag.TAG_LIST)) {
+			return;
+		}
+		ListTag actions = drinkTag.getList("drink_actions", Tag.TAG_COMPOUND);
+		Scp294ActionExecutor.executeActions(entity.level(), entity.getX(), entity.getY(), entity.getZ(), entity, actions);
 	}
 }

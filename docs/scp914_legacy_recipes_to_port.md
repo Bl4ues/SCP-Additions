@@ -1,29 +1,50 @@
 # SCP-914 legacy recipes to port
 
-This file is a reminder list for rebuilding SCP-914 defaults as JSON-driven recipe definitions.
+This file is a reminder list for rebuilding SCP-914 defaults as config-driven recipe definitions.
 
-New JSON path:
+Runtime config path created by the mod:
 
 ```text
-src/main/resources/data/<namespace>/scp914/recipes/<recipe_id>.json
+config/scpadditions/914recipes.json
+```
+
+Repository template path:
+
+```text
+config/scpadditions/914recipes.json
 ```
 
 Schema draft:
 
 ```json
 {
-  "enabled": true,
-  "setting": "rough",
-  "input": {
-    "item": "scp_additions:level_1_keycard",
-    "count": 1
+  "version": 1,
+  "machine": {
+    "intake_offset": [-4, 0, -3],
+    "output_offset": [4, 0, -3],
+    "search_radius": 2.0,
+    "start_delay_ticks": 30,
+    "finish_delay_ticks": 160
   },
-  "output": {
-    "item": "scp_additions:pieces_of_paper",
-    "count": 1
-  },
-  "chance": 1.0,
-  "copy_input_nbt": false
+  "recipes": [
+    {
+      "id": "scp_additions:iron_and_redstone_to_compass_1_to_1",
+      "enabled": true,
+      "setting": "1_to_1",
+      "item_inputs": [
+        { "item": "minecraft:iron_ingot", "count": 4 },
+        { "item": "minecraft:redstone", "count": 1 }
+      ],
+      "entity_inputs": [],
+      "item_outputs": [
+        { "item": "minecraft:compass", "count": 1 }
+      ],
+      "entity_outputs": [],
+      "chance": 1.0,
+      "copy_input_nbt": false,
+      "actionbar": "SCP-914 combines the inputs."
+    }
+  ]
 }
 ```
 
@@ -37,6 +58,19 @@ fine
 very_fine
 ```
 
+Current behavior:
+
+- SCP-914 now checks for a valid configured recipe before starting refinement.
+- If there is no valid input, it does not start the refinement sequence.
+- Intake/output positions are orientation-aware.
+- The old default offsets remain the base: intake `[-4, 0, -3]`, output `[4, 0, -3]`.
+- Those offsets rotate according to the Wind Key block facing, so the machine can be built in different orientations.
+- Recipes can require multiple item stacks.
+- Recipes can require entities/living subjects.
+- Recipes can mix item and entity inputs.
+- Recipes can output items and/or entities.
+- The old `/kill @e[distance=..3]` behavior is gone; only matched inputs are consumed.
+
 Known legacy item transformations to port first:
 
 ```text
@@ -48,7 +82,7 @@ rough: scp_additions:level_5_keycard -> scp_additions:pieces_of_paper
 rough: scp_additions:level_6_keycard -> scp_additions:pieces_of_paper
 ```
 
-Legacy classes removed/replaced in this pass:
+Legacy classes removed/replaced:
 
 ```text
 RoughItemsProcedure
@@ -70,7 +104,6 @@ Scp914WindKeyVeryFineProcedure
 
 Notes for next pass:
 
-- The current JSON scaffold only processes item entities placed in the SCP-914 intake area.
-- Legacy entity/living transformations were removed as hardcode. If we want entity support later, add a separate JSON type or an optional `entity_input` / `entity_output` branch.
-- The old procedures used command-based `/kill @e[distance=..3]`; the new processor removes only the selected input item stack.
 - The exact full legacy item/entity transformation list can still be recovered from Git history before this cleanup pass.
+- Player-as-input behavior is intentionally conservative: matched players are not discarded by the generic processor.
+- If we want player refinement later, add explicit player effects/damage/teleport handling instead of treating players like disposable entities.

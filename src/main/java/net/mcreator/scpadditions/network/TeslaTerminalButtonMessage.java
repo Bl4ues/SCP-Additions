@@ -12,9 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
-import net.mcreator.scpadditions.procedures.TeslaTerminalOffPProcedure;
-import net.mcreator.scpadditions.procedures.TerminalOnProcedure;
-import net.mcreator.scpadditions.procedures.TerminalOffProcedure;
+import net.mcreator.scpadditions.procedures.TeslaTerminalController;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.function.Supplier;
@@ -59,22 +57,25 @@ public class TeslaTerminalButtonMessage {
 	}
 
 	public static void handleButtonAction(Player entity, int buttonID, int x, int y, int z) {
+		if (entity == null) {
+			return;
+		}
 		Level world = entity.level();
 		HashMap guistate = TeslaTerminalMenu.guistate;
 		// security measure to prevent arbitrary chunk generation
 		if (!world.hasChunkAt(new BlockPos(x, y, z)))
 			return;
 		if (buttonID == 0) {
-
-			TerminalOnProcedure.execute(world, x, y, z);
+			TeslaTerminalController.enableTeslaGates(world, x, y, z, entity);
 		}
 		if (buttonID == 1) {
-
-			TerminalOffProcedure.execute(world, x, y, z);
+			TeslaTerminalController.disableTeslaGates(world, x, y, z, entity);
 		}
 		if (buttonID == 2) {
-
-			TeslaTerminalOffPProcedure.execute(world, x, y, z, entity);
+			TeslaTerminalController.logout(entity);
+		}
+		if (buttonID == 3) {
+			TeslaTerminalController.toggleManualOverride(world, x, y, z, entity);
 		}
 	}
 

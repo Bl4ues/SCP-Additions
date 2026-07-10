@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "matching": {
+    "allow_partial": true,
+    "fuzzy_threshold": 0.66,
+    "ambiguous_margin": 0.02
+  },
+  "drinks": [
+    {
+      "id": "scp_additions:coffee",
+      "enabled": true,
+      "aliases": ["black coffee"],
+      "result": {
+        "item": "scp_additions:cup_of_coffee",
+        "count": 1
+      },
+      "delay_ticks": 40,
+      "sound": "scp_additions:scp294pouring",
+      "consumes_coin": true,
+      "actionbar": "Dispensing black coffee...",
+      "cup_color": "#2B1608",
+      "placeholder_cup_texture": "scp_additions:item/scp294_colored_cup_placeholder",
+      "effects": []
+    },
+    {
+      "id": "scp_additions:empty_cup",
+      "enabled": true,
+      "aliases": ["air", "nothing", "hl3", "half life 3", "emptiness", "vacuum", "cup"],
+      "result": {
+        "item": "scp_additions:empty_cup",
+        "count": 1
+      },
+      "delay_ticks": 0,
+      "sound": "scp_additions:scp294emptycup",
+      "consumes_coin": true,
+      "actionbar": "Dispensing an empty cup...",
+      "cup_color": "#FFFFFF",
+      "effects": []
+    }
+  ]
+}

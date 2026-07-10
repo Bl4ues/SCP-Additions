@@ -145,6 +145,7 @@ public final class Scp914Processor {
 		}
 	}
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static BlockState copyProperties(BlockState from, BlockState to) {
 		BlockState result = to;
 		for (Map.Entry<Property<?>, Comparable<?>> entry : from.getValues().entrySet()) {

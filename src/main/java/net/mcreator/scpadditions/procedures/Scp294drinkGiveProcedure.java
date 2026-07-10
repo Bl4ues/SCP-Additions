@@ -38,9 +38,6 @@ public class Scp294drinkGiveProcedure {
 		Scp294DrinkManager.MatchResult match = Scp294DrinkManager.findByInput(input);
 		if (!match.found()) {
 			playSound(world, x, y, z, new ResourceLocation("scp_additions:scp294outofrange"));
-			if (match.ambiguous()) {
-				player.displayClientMessage(Component.literal("SCP-294 found multiple possible matches. Request out of range."), true);
-			}
 			return;
 		}
 

@@ -1,0 +1,10 @@
+{
+  "death.attack.scp294": "%s died after drinking something SCP-294 should never have dispensed.",
+  "death.attack.scp294_106": "%s was corroded from within by SCP-294's black liquid.",
+  "death.attack.scp294_butt_ghost": "%s was claimed by the Butt Ghost.",
+  "death.attack.scp294_carbon": "%s could not process pure carbon slurry.",
+  "death.attack.scp294_neutronium": "%s collapsed under impossible density.",
+  "death.attack.scp294_lifeforce": "%s burned out after drinking concentrated lifeforce.",
+  "death.attack.scp294_lava": "%s tried to drink molten earth.",
+  "death.attack.scp294_violent_reaction": "%s was erased by SCP-294's violent reaction."
+}

@@ -14,6 +14,7 @@ import net.mcreator.scpadditions.network.Scp294GuiButtonMessage;
 import net.mcreator.scpadditions.world.inventory.Scp294GuiMenu;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
 
 public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 	private static final int TEX_W = 600;
@@ -62,6 +63,8 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		guiGraphics.blit(BACKGROUND, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		guiGraphics.blit(SCREEN_OVERLAY, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		guiGraphics.blit(hasCoinInserted() ? COIN_ON : COIN_OFF, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		renderDarkenOverlay(guiGraphics, 0x0D000000);
+		renderVignette(guiGraphics, 18, 28);
 		renderOrderText(guiGraphics);
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
@@ -69,12 +72,32 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
 	private void renderOrderText(GuiGraphics guiGraphics) {
 		String visible = order.isBlank() && !inputFocused ? "ENTER YOUR ORDER" : order;
-		if (visible.length() > 38) {
-			visible = visible.substring(Math.max(0, visible.length() - 38));
+		if (visible.length() > 24) {
+			visible = visible.substring(Math.max(0, visible.length() - 24));
 		}
-		int color = inputFocused ? 0xD8F0FF : 0x8EA8B8;
+		int color = inputFocused ? 0x2F3945 : 0x4A5664;
 		String cursor = inputFocused && (System.currentTimeMillis() / 400L) % 2L == 0L ? "_" : "";
-		guiGraphics.drawString(this.font, visible + cursor, 112, 252, color, false);
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(118, 208, 0);
+		guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(-4.2F));
+		guiGraphics.pose().scale(1.85F, 1.85F, 1.0F);
+		guiGraphics.drawString(this.font, visible + cursor, 0, 0, color, false);
+		guiGraphics.pose().popPose();
+	}
+
+	private void renderDarkenOverlay(GuiGraphics guiGraphics, int color) {
+		guiGraphics.fill(0, 0, TEX_W, TEX_H, color);
+	}
+
+	private void renderVignette(GuiGraphics guiGraphics, int maxAlpha, int layers) {
+		for (int i = 0; i < layers; i++) {
+			int alpha = Math.max(0, (int) (maxAlpha * (1.0D - (double) i / layers)));
+			int color = alpha << 24;
+			guiGraphics.fill(i, i, TEX_W - i, i + 1, color);
+			guiGraphics.fill(i, TEX_H - i - 1, TEX_W - i, TEX_H - i, color);
+			guiGraphics.fill(i, i, i + 1, TEX_H - i, color);
+			guiGraphics.fill(TEX_W - i - 1, i, TEX_W - i, TEX_H - i, color);
+		}
 	}
 
 	private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {

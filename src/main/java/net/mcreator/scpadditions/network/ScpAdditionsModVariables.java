@@ -92,8 +92,6 @@ public class ScpAdditionsModVariables {
 				clone.PlayerOn1to1_9 = original.PlayerOn1to1_9;
 				clone.PlayerOn1to1_10 = original.PlayerOn1to1_10;
 				clone.PlayerOn1to1_11 = original.PlayerOn1to1_11;
-				clone.scp059infected1 = original.scp059infected1;
-				clone.scp059infected0 = original.scp059infected0;
 				clone.fear = original.fear;
 				clone.nuclear = original.nuclear;
 				clone.blackh = original.blackh;
@@ -314,8 +312,6 @@ public class ScpAdditionsModVariables {
 		public boolean PlayerOn1to1_9 = false;
 		public boolean PlayerOn1to1_10 = false;
 		public boolean PlayerOn1to1_11 = false;
-		public boolean scp059infected1 = false;
-		public boolean scp059infected0 = false;
 		public boolean fear = false;
 		public boolean nuclear = false;
 		public boolean blackh = false;
@@ -346,8 +342,6 @@ public class ScpAdditionsModVariables {
 			nbt.putBoolean("PlayerOn1to1_9", PlayerOn1to1_9);
 			nbt.putBoolean("PlayerOn1to1_10", PlayerOn1to1_10);
 			nbt.putBoolean("PlayerOn1to1_11", PlayerOn1to1_11);
-			nbt.putBoolean("scp059infected1", scp059infected1);
-			nbt.putBoolean("scp059infected0", scp059infected0);
 			nbt.putBoolean("fear", fear);
 			nbt.putBoolean("nuclear", nuclear);
 			nbt.putBoolean("blackh", blackh);
@@ -375,8 +369,6 @@ public class ScpAdditionsModVariables {
 			PlayerOn1to1_9 = nbt.getBoolean("PlayerOn1to1_9");
 			PlayerOn1to1_10 = nbt.getBoolean("PlayerOn1to1_10");
 			PlayerOn1to1_11 = nbt.getBoolean("PlayerOn1to1_11");
-			scp059infected1 = nbt.getBoolean("scp059infected1");
-			scp059infected0 = nbt.getBoolean("scp059infected0");
 			fear = nbt.getBoolean("fear");
 			nuclear = nbt.getBoolean("nuclear");
 			blackh = nbt.getBoolean("blackh");
@@ -423,8 +415,6 @@ public class ScpAdditionsModVariables {
 					variables.PlayerOn1to1_9 = message.data.PlayerOn1to1_9;
 					variables.PlayerOn1to1_10 = message.data.PlayerOn1to1_10;
 					variables.PlayerOn1to1_11 = message.data.PlayerOn1to1_11;
-					variables.scp059infected1 = message.data.scp059infected1;
-					variables.scp059infected0 = message.data.scp059infected0;
 					variables.fear = message.data.fear;
 					variables.nuclear = message.data.nuclear;
 					variables.blackh = message.data.blackh;

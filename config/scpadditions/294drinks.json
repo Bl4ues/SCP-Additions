@@ -2,8 +2,7 @@
   "version": 1,
   "matching": {
     "allow_partial": true,
-    "fuzzy_threshold": 0.66,
-    "ambiguous_margin": 0.02
+    "fuzzy_threshold": 0.66
   },
   "drinks": [
     {

@@ -43,7 +43,6 @@ public final class KeycardReaderHelper {
 	}
 
 	private static int keycardLevel(Item item) {
-		if (item == ScpAdditionsModItems.SECURITY_CREDENTIALS.get()) return 6;
 		if (item == ScpAdditionsModItems.LEVEL_6_KEYCARD.get()) return 6;
 		if (item == ScpAdditionsModItems.LEVEL_5_KEYCARD.get()) return 5;
 		if (item == ScpAdditionsModItems.LEVEL_4_KEYCARD.get()) return 4;

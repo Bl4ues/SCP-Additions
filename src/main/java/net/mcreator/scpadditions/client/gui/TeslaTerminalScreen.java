@@ -1,34 +1,51 @@
 package net.mcreator.scpadditions.client.gui;
 
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.network.chat.Component;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.GuiGraphics;
 
-import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
-import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
+import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
-import net.mcreator.scpadditions.ScpAdditionsMod;
-
-import java.util.HashMap;
+import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
+import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
-	private final static HashMap<String, Object> guistate = TeslaTerminalMenu.guistate;
+	private static final int TEX_W = 1410;
+	private static final int TEX_H = 1080;
+	private static final ResourceLocation SCREEN_ON = screen("1");
+	private static final ResourceLocation SCREEN_STANDBY_DISABLE = screen("2");
+	private static final ResourceLocation SCREEN_OFF = screen("3");
+	private static final ResourceLocation SCREEN_STANDBY_ENABLE = screen("4");
+	private static final ResourceLocation SCREEN_CREDENTIAL_PROMPT = screen("5");
+	private static final ResourceLocation SCREEN_INVALID_CREDENTIALS = screen("6");
+	private static final ResourceLocation SCREEN_AUTH_SUCCESS = screen("7");
+	private static final ResourceLocation SCREEN_OVERRIDE_WARNING = screen("8");
+	private static final ResourceLocation SCREEN_OVERRIDE_STANDBY = screen("9");
+	private static final ResourceLocation SCREEN_OVERRIDE_ENGAGED = screen("10");
+	private static final ResourceLocation SCREEN_ON_OVERRIDE = screen("11");
+
+	private static final Rect OVERRIDE_TOGGLE = new Rect(1269, 637, 1393, 689);
+	private static final Rect TESLA_TOGGLE = new Rect(1050, 1007, 1393, 1069);
+	private static final Rect CREDENTIAL_OK = new Rect(345, 671, 688, 734);
+	private static final Rect CREDENTIAL_CANCEL = new Rect(756, 671, 1101, 734);
+	private static final Rect WARNING_ENGAGE = new Rect(383, 978, 764, 1027);
+	private static final Rect WARNING_CANCEL = new Rect(820, 978, 1165, 1027);
+
 	private final Level world;
 	private final int x, y, z;
 	private final Player entity;
-	Button button_tesla_gate_on;
-	Button button_tesla_gate_off;
-	Button button_manual_override;
-	Button button_log_out;
+	private double guiScale = 1.0D;
+	private VisualState visualState = VisualState.MAIN;
+	private PendingAction pendingAction = PendingAction.NONE;
+	private int visualTimer = 0;
 
 	public TeslaTerminalScreen(TeslaTerminalMenu container, Inventory inventory, Component text) {
 		super(container, inventory, text);
@@ -37,27 +54,70 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		this.y = container.y;
 		this.z = container.z;
 		this.entity = container.entity;
-		this.imageWidth = 220;
-		this.imageHeight = 150;
+		this.imageWidth = TEX_W;
+		this.imageHeight = TEX_H;
 	}
 
-	private static final ResourceLocation texture = new ResourceLocation("scp_additions:textures/screens/tesla_terminal.png");
+	private static ResourceLocation screen(String id) {
+		return new ResourceLocation("scp_additions:textures/screens/" + id + ".png");
+	}
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+		updateLayout();
 		this.renderBackground(guiGraphics);
-		super.render(guiGraphics, mouseX, mouseY, partialTicks);
-		this.renderTooltip(guiGraphics, mouseX, mouseY);
+		renderTerminal(guiGraphics);
+	}
+
+	private void renderTerminal(GuiGraphics guiGraphics) {
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.setShaderColor(1, 1, 1, 1);
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
+		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
+		guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		renderPermissionText(guiGraphics);
+		guiGraphics.pose().popPose();
+		RenderSystem.disableBlend();
+		RenderSystem.setShaderColor(1, 1, 1, 1);
+	}
+
+	private void renderPermissionText(GuiGraphics guiGraphics) {
+		String text = hasCredentials() ? "GRANTED" : "DENIED";
+		int color = hasCredentials() ? 0x608952 : 0xAC384A;
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(1278, 70, 0);
+		guiGraphics.pose().scale(2.0F, 2.0F, 1.0F);
+		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
+		guiGraphics.pose().popPose();
+	}
+
+	private ResourceLocation currentTexture() {
+		return switch (visualState) {
+			case CREDENTIAL_PROMPT -> SCREEN_CREDENTIAL_PROMPT;
+			case INVALID_CREDENTIALS -> SCREEN_INVALID_CREDENTIALS;
+			case AUTH_SUCCESS -> SCREEN_AUTH_SUCCESS;
+			case STANDBY_DISABLE -> SCREEN_STANDBY_DISABLE;
+			case STANDBY_ENABLE -> SCREEN_STANDBY_ENABLE;
+			case OVERRIDE_WARNING -> SCREEN_OVERRIDE_WARNING;
+			case OVERRIDE_STANDBY -> SCREEN_OVERRIDE_STANDBY;
+			case OVERRIDE_ENGAGED -> SCREEN_OVERRIDE_ENGAGED;
+			case MAIN -> {
+				if (isManualOverride()) {
+					yield SCREEN_ON_OVERRIDE;
+				}
+				yield areTeslaGatesEnabled() ? SCREEN_ON : SCREEN_OFF;
+			}
+		};
 	}
 
 	@Override
 	protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		guiGraphics.fill(this.leftPos, this.topPos, this.leftPos + this.imageWidth, this.topPos + this.imageHeight, 0xE0202428);
-		guiGraphics.fill(this.leftPos + 6, this.topPos + 18, this.leftPos + this.imageWidth - 6, this.topPos + 20, 0xFF3A4048);
-		RenderSystem.disableBlend();
+	}
+
+	@Override
+	protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
 	}
 
 	@Override
@@ -66,67 +126,140 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 			this.minecraft.player.closeContainer();
 			return true;
 		}
-		return super.keyPressed(key, b, c);
+		return true;
+	}
+
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (button != 0) {
+			return true;
+		}
+		double tx = textureX(mouseX);
+		double ty = textureY(mouseY);
+
+		if (visualState == VisualState.MAIN) {
+			if (TESLA_TOGGLE.contains(tx, ty)) {
+				pendingAction = areTeslaGatesEnabled() ? PendingAction.DISABLE_GATES : PendingAction.ENABLE_GATES;
+				visualState = VisualState.CREDENTIAL_PROMPT;
+				return true;
+			}
+			if (OVERRIDE_TOGGLE.contains(tx, ty)) {
+				pendingAction = isManualOverride() ? PendingAction.OVERRIDE_OFF : PendingAction.OVERRIDE_ON;
+				visualState = VisualState.CREDENTIAL_PROMPT;
+				return true;
+			}
+			return true;
+		}
+
+		if (visualState == VisualState.CREDENTIAL_PROMPT) {
+			if (CREDENTIAL_OK.contains(tx, ty)) {
+				if (hasCredentials()) {
+					setTimedState(VisualState.AUTH_SUCCESS, 55);
+				} else {
+					visualState = VisualState.INVALID_CREDENTIALS;
+				}
+				return true;
+			}
+			if (CREDENTIAL_CANCEL.contains(tx, ty)) {
+				resetToMain();
+				return true;
+			}
+		}
+
+		if (visualState == VisualState.INVALID_CREDENTIALS) {
+			if (CREDENTIAL_OK.contains(tx, ty) || CREDENTIAL_CANCEL.contains(tx, ty)) {
+				resetToMain();
+				return true;
+			}
+		}
+
+		if (visualState == VisualState.OVERRIDE_WARNING) {
+			if (WARNING_ENGAGE.contains(tx, ty)) {
+				setTimedState(VisualState.OVERRIDE_STANDBY, 50);
+				return true;
+			}
+			if (WARNING_CANCEL.contains(tx, ty)) {
+				resetToMain();
+				return true;
+			}
+		}
+
+		return true;
 	}
 
 	@Override
 	public void containerTick() {
 		super.containerTick();
-		if (button_tesla_gate_on != null) {
-			button_tesla_gate_on.active = hasCredentials();
-		}
-		if (button_tesla_gate_off != null) {
-			button_tesla_gate_off.active = hasCredentials();
-		}
-		if (button_manual_override != null) {
-			button_manual_override.active = hasCredentials();
-			button_manual_override.setMessage(Component.literal(isManualOverride() ? "Disengage Override" : "Engage Override"));
+		if (visualTimer > 0) {
+			visualTimer--;
+			if (visualTimer <= 0) {
+				onTimedStateFinished();
+			}
 		}
 	}
 
-	@Override
-	protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-		guiGraphics.drawString(this.font, Component.literal("MONITORING STATION"), 10, 7, 0xD6DCE2, false);
-		guiGraphics.drawString(this.font, Component.literal("Elevated Permissions: " + (hasCredentials() ? "GRANTED" : "DENIED")), 10, 28, hasCredentials() ? 0x77DD77 : 0xFF7777, false);
-		guiGraphics.drawString(this.font, Component.literal("Tesla Gates: " + (areTeslaGatesEnabled() ? "ENABLED" : "DISABLED")), 10, 43, areTeslaGatesEnabled() ? 0x77DD77 : 0xFFAA66, false);
-		guiGraphics.drawString(this.font, Component.literal("Manual Override: " + (isManualOverride() ? "ENGAGED" : "STANDBY")), 10, 58, isManualOverride() ? 0xFF7777 : 0x9AA4AA, false);
-		if (!hasCredentials()) {
-			guiGraphics.drawString(this.font, Component.literal("Insert Security Credentials to configure gates."), 10, 75, 0xFFCC77, false);
+	private void onTimedStateFinished() {
+		if (visualState == VisualState.AUTH_SUCCESS) {
+			if (pendingAction == PendingAction.DISABLE_GATES) {
+				setTimedState(VisualState.STANDBY_DISABLE, 65);
+			} else if (pendingAction == PendingAction.ENABLE_GATES) {
+				setTimedState(VisualState.STANDBY_ENABLE, 65);
+			} else if (pendingAction == PendingAction.OVERRIDE_ON) {
+				visualState = VisualState.OVERRIDE_WARNING;
+			} else if (pendingAction == PendingAction.OVERRIDE_OFF) {
+				setTimedState(VisualState.OVERRIDE_STANDBY, 45);
+			} else {
+				resetToMain();
+			}
+			return;
+		}
+
+		if (visualState == VisualState.STANDBY_DISABLE) {
+			sendAction(PendingAction.DISABLE_GATES);
+			resetToMain();
+			return;
+		}
+
+		if (visualState == VisualState.STANDBY_ENABLE) {
+			sendAction(PendingAction.ENABLE_GATES);
+			resetToMain();
+			return;
+		}
+
+		if (visualState == VisualState.OVERRIDE_STANDBY) {
+			sendAction(pendingAction);
+			if (pendingAction == PendingAction.OVERRIDE_ON) {
+				setTimedState(VisualState.OVERRIDE_ENGAGED, 60);
+			} else {
+				resetToMain();
+			}
+			return;
+		}
+
+		if (visualState == VisualState.OVERRIDE_ENGAGED) {
+			resetToMain();
 		}
 	}
 
-	@Override
-	public void onClose() {
-		super.onClose();
-	}
-
-	@Override
-	public void init() {
-		super.init();
-		button_tesla_gate_on = Button.builder(Component.literal("Enable Tesla Gates"), e -> {
+	private void sendAction(PendingAction action) {
+		if (action == PendingAction.ENABLE_GATES) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(0, x, y, z));
-		}).bounds(this.leftPos + 14, this.topPos + 91, 92, 20).build();
-		guistate.put("button:button_tesla_gate_on", button_tesla_gate_on);
-		this.addRenderableWidget(button_tesla_gate_on);
-
-		button_tesla_gate_off = Button.builder(Component.literal("Disable Tesla Gates"), e -> {
+		} else if (action == PendingAction.DISABLE_GATES) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(1, x, y, z));
-		}).bounds(this.leftPos + 114, this.topPos + 91, 92, 20).build();
-		guistate.put("button:button_tesla_gate_off", button_tesla_gate_off);
-		this.addRenderableWidget(button_tesla_gate_off);
-
-		button_manual_override = Button.builder(Component.literal("Engage Override"), e -> {
+		} else if (action == PendingAction.OVERRIDE_ON || action == PendingAction.OVERRIDE_OFF) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(3, x, y, z));
-		}).bounds(this.leftPos + 14, this.topPos + 115, 126, 20).build();
-		guistate.put("button:button_manual_override", button_manual_override);
-		this.addRenderableWidget(button_manual_override);
+		}
+	}
 
-		button_log_out = Button.builder(Component.literal("Log Out"), e -> {
-			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(2, x, y, z));
-			this.minecraft.player.closeContainer();
-		}).bounds(this.leftPos + 146, this.topPos + 115, 60, 20).build();
-		guistate.put("button:button_log_out", button_log_out);
-		this.addRenderableWidget(button_log_out);
+	private void setTimedState(VisualState state, int timer) {
+		this.visualState = state;
+		this.visualTimer = timer;
+	}
+
+	private void resetToMain() {
+		this.visualState = VisualState.MAIN;
+		this.pendingAction = PendingAction.NONE;
+		this.visualTimer = 0;
 	}
 
 	private boolean hasCredentials() {
@@ -139,5 +272,45 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	private boolean isManualOverride() {
 		return world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+	}
+
+	private void updateLayout() {
+		this.guiScale = Math.min(1.0D, Math.min((this.width - 20.0D) / TEX_W, (this.height - 20.0D) / TEX_H));
+		this.leftPos = (int) Math.round((this.width - TEX_W * guiScale) / 2.0D);
+		this.topPos = (int) Math.round((this.height - TEX_H * guiScale) / 2.0D);
+	}
+
+	private double textureX(double mouseX) {
+		return (mouseX - this.leftPos) / guiScale;
+	}
+
+	private double textureY(double mouseY) {
+		return (mouseY - this.topPos) / guiScale;
+	}
+
+	private enum VisualState {
+		MAIN,
+		CREDENTIAL_PROMPT,
+		INVALID_CREDENTIALS,
+		AUTH_SUCCESS,
+		STANDBY_DISABLE,
+		STANDBY_ENABLE,
+		OVERRIDE_WARNING,
+		OVERRIDE_STANDBY,
+		OVERRIDE_ENGAGED
+	}
+
+	private enum PendingAction {
+		NONE,
+		ENABLE_GATES,
+		DISABLE_GATES,
+		OVERRIDE_ON,
+		OVERRIDE_OFF
+	}
+
+	private record Rect(double x1, double y1, double x2, double y2) {
+		private boolean contains(double x, double y) {
+			return x >= Math.min(x1, x2) && x <= Math.max(x1, x2) && y >= Math.min(y1, y2) && y <= Math.max(y1, y2);
+		}
 	}
 }

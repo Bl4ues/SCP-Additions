@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.data;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -31,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class Scp914RecipeManager {
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("914recipes.json");
 	private static final String DEFAULT_CONFIG = """
 			{
@@ -107,10 +110,23 @@ public final class Scp914RecipeManager {
 			Files.createDirectories(CONFIG_PATH.getParent());
 			if (Files.notExists(CONFIG_PATH)) {
 				Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
+			} else {
+				prettyPrintConfigIfNeeded();
 			}
 		} catch (IOException exception) {
 			ScpAdditionsMod.LOGGER.error("Failed to create SCP-914 config at {}", CONFIG_PATH, exception);
 		}
+	}
+
+	private static void prettyPrintConfigIfNeeded() throws IOException {
+		String content = Files.readString(CONFIG_PATH, StandardCharsets.UTF_8);
+		boolean looksMinified = !content.contains("\n") || content.lines().anyMatch(line -> line.length() > 240);
+		if (!looksMinified) {
+			return;
+		}
+
+		JsonElement json = JsonParser.parseString(content);
+		Files.writeString(CONFIG_PATH, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
 	}
 
 	private static MachineConfig readMachineConfig(JsonObject root) {

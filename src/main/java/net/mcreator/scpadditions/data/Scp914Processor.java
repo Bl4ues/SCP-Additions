@@ -14,17 +14,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public final class Scp914Processor {
@@ -45,6 +49,7 @@ public final class Scp914Processor {
 		}
 
 		ProcessingContext context = optionalContext.get();
+		closeDoorsImmediately(level, keyPos);
 		playSound(world, x, y, z, "scp_additions:scp914refining");
 		setRefining(world, true);
 
@@ -118,6 +123,40 @@ public final class Scp914Processor {
 				entityUse.entity().discard();
 			}
 		}
+	}
+
+	private static void closeDoorsImmediately(ServerLevel level, BlockPos keyPos) {
+		boolean closedAnyDoor = false;
+		for (BlockPos pos : BlockPos.betweenClosed(keyPos.offset(-8, -4, -8), keyPos.offset(8, 4, 8))) {
+			BlockPos target = pos.immutable();
+			BlockState state = level.getBlockState(target);
+			Block block = state.getBlock();
+			if (block == ScpAdditionsModBlocks.SCP_914_INTAKE_DOOR.get()) {
+				level.setBlock(target, copyProperties(state, ScpAdditionsModBlocks.SCP_914_INTAKE_DOOR_CLOSED.get().defaultBlockState()), 3);
+				closedAnyDoor = true;
+			} else if (block == ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR.get()) {
+				level.setBlock(target, copyProperties(state, ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR_CLOSED.get().defaultBlockState()), 3);
+				closedAnyDoor = true;
+			}
+		}
+
+		if (closedAnyDoor) {
+			level.playSound(null, keyPos, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp914doorclose")), SoundSource.NEUTRAL, 1, 1);
+		}
+	}
+
+	private static BlockState copyProperties(BlockState from, BlockState to) {
+		BlockState result = to;
+		for (Map.Entry<Property<?>, Comparable<?>> entry : from.getValues().entrySet()) {
+			Property property = result.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
+			if (property != null) {
+				try {
+					result = result.setValue(property, entry.getValue());
+				} catch (Exception ignored) {
+				}
+			}
+		}
+		return result;
 	}
 
 	private static Direction getFacing(LevelAccessor world, BlockPos keyPos) {

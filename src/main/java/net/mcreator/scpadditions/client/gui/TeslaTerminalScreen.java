@@ -46,6 +46,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private VisualState visualState = VisualState.MAIN;
 	private PendingAction pendingAction = PendingAction.NONE;
 	private int visualTimer = 0;
+	private boolean authenticated = false;
+	private boolean initializedDisplayState = false;
+	private boolean displayedTeslaGatesEnabled = true;
+	private boolean displayedManualOverride = false;
 
 	public TeslaTerminalScreen(TeslaTerminalMenu container, Inventory inventory, Component text) {
 		super(container, inventory, text);
@@ -64,6 +68,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+		initializeDisplayState();
 		updateLayout();
 		this.renderBackground(guiGraphics);
 		renderTerminal(guiGraphics);
@@ -76,40 +81,60 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
 		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
-		guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+
+		if (isOverlayState()) {
+			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		} else {
+			guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		}
 		renderPermissionText(guiGraphics);
+
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
-		String text = hasCredentials() ? "GRANTED" : "DENIED";
-		int color = hasCredentials() ? 0x608952 : 0xAC384A;
+		String text = authenticated ? "GRANTED" : "DENIED";
+		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 70, 0);
-		guiGraphics.pose().scale(2.0F, 2.0F, 1.0F);
+		guiGraphics.pose().translate(1278, 63, 0);
+		guiGraphics.pose().scale(3.0F, 3.0F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
 	}
 
 	private ResourceLocation currentTexture() {
 		return switch (visualState) {
+			case STANDBY_DISABLE -> SCREEN_STANDBY_DISABLE;
+			case STANDBY_ENABLE -> SCREEN_STANDBY_ENABLE;
+			case MAIN, CREDENTIAL_PROMPT, INVALID_CREDENTIALS, AUTH_SUCCESS, OVERRIDE_WARNING, OVERRIDE_STANDBY, OVERRIDE_ENGAGED -> mainTexture();
+		};
+	}
+
+	private ResourceLocation mainTexture() {
+		if (displayedManualOverride) {
+			return SCREEN_ON_OVERRIDE;
+		}
+		return displayedTeslaGatesEnabled ? SCREEN_ON : SCREEN_OFF;
+	}
+
+	private ResourceLocation overlayTexture() {
+		return switch (visualState) {
 			case CREDENTIAL_PROMPT -> SCREEN_CREDENTIAL_PROMPT;
 			case INVALID_CREDENTIALS -> SCREEN_INVALID_CREDENTIALS;
 			case AUTH_SUCCESS -> SCREEN_AUTH_SUCCESS;
-			case STANDBY_DISABLE -> SCREEN_STANDBY_DISABLE;
-			case STANDBY_ENABLE -> SCREEN_STANDBY_ENABLE;
 			case OVERRIDE_WARNING -> SCREEN_OVERRIDE_WARNING;
 			case OVERRIDE_STANDBY -> SCREEN_OVERRIDE_STANDBY;
 			case OVERRIDE_ENGAGED -> SCREEN_OVERRIDE_ENGAGED;
-			case MAIN -> {
-				if (isManualOverride()) {
-					yield SCREEN_ON_OVERRIDE;
-				}
-				yield areTeslaGatesEnabled() ? SCREEN_ON : SCREEN_OFF;
-			}
+			default -> mainTexture();
 		};
+	}
+
+	private boolean isOverlayState() {
+		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
+				|| visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	@Override
@@ -139,13 +164,21 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.MAIN) {
 			if (TESLA_TOGGLE.contains(tx, ty)) {
-				pendingAction = areTeslaGatesEnabled() ? PendingAction.DISABLE_GATES : PendingAction.ENABLE_GATES;
-				visualState = VisualState.CREDENTIAL_PROMPT;
+				pendingAction = displayedTeslaGatesEnabled ? PendingAction.DISABLE_GATES : PendingAction.ENABLE_GATES;
+				if (authenticated) {
+					beginAuthorizedAction(pendingAction);
+				} else {
+					visualState = VisualState.CREDENTIAL_PROMPT;
+				}
 				return true;
 			}
 			if (OVERRIDE_TOGGLE.contains(tx, ty)) {
-				pendingAction = isManualOverride() ? PendingAction.OVERRIDE_OFF : PendingAction.OVERRIDE_ON;
-				visualState = VisualState.CREDENTIAL_PROMPT;
+				pendingAction = displayedManualOverride ? PendingAction.OVERRIDE_OFF : PendingAction.OVERRIDE_ON;
+				if (authenticated) {
+					beginAuthorizedAction(pendingAction);
+				} else {
+					visualState = VisualState.CREDENTIAL_PROMPT;
+				}
 				return true;
 			}
 			return true;
@@ -153,7 +186,8 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.CREDENTIAL_PROMPT) {
 			if (CREDENTIAL_OK.contains(tx, ty)) {
-				if (hasCredentials()) {
+				if (hasCredentialsItem()) {
+					authenticated = true;
 					setTimedState(VisualState.AUTH_SUCCESS, 55);
 				} else {
 					visualState = VisualState.INVALID_CREDENTIALS;
@@ -175,7 +209,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.OVERRIDE_WARNING) {
 			if (WARNING_ENGAGE.contains(tx, ty)) {
-				setTimedState(VisualState.OVERRIDE_STANDBY, 50);
+				setTimedState(VisualState.OVERRIDE_STANDBY, 110);
 				return true;
 			}
 			if (WARNING_CANCEL.contains(tx, ty)) {
@@ -200,34 +234,24 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	private void onTimedStateFinished() {
 		if (visualState == VisualState.AUTH_SUCCESS) {
-			if (pendingAction == PendingAction.DISABLE_GATES) {
-				setTimedState(VisualState.STANDBY_DISABLE, 65);
-			} else if (pendingAction == PendingAction.ENABLE_GATES) {
-				setTimedState(VisualState.STANDBY_ENABLE, 65);
-			} else if (pendingAction == PendingAction.OVERRIDE_ON) {
-				visualState = VisualState.OVERRIDE_WARNING;
-			} else if (pendingAction == PendingAction.OVERRIDE_OFF) {
-				setTimedState(VisualState.OVERRIDE_STANDBY, 45);
-			} else {
-				resetToMain();
-			}
+			beginAuthorizedAction(pendingAction);
 			return;
 		}
 
 		if (visualState == VisualState.STANDBY_DISABLE) {
-			sendAction(PendingAction.DISABLE_GATES);
+			applyAndSendAction(PendingAction.DISABLE_GATES);
 			resetToMain();
 			return;
 		}
 
 		if (visualState == VisualState.STANDBY_ENABLE) {
-			sendAction(PendingAction.ENABLE_GATES);
+			applyAndSendAction(PendingAction.ENABLE_GATES);
 			resetToMain();
 			return;
 		}
 
 		if (visualState == VisualState.OVERRIDE_STANDBY) {
-			sendAction(pendingAction);
+			applyAndSendAction(pendingAction);
 			if (pendingAction == PendingAction.OVERRIDE_ON) {
 				setTimedState(VisualState.OVERRIDE_ENGAGED, 60);
 			} else {
@@ -241,13 +265,49 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		}
 	}
 
+	private void beginAuthorizedAction(PendingAction action) {
+		if (action == PendingAction.DISABLE_GATES) {
+			setTimedState(VisualState.STANDBY_DISABLE, 125);
+		} else if (action == PendingAction.ENABLE_GATES) {
+			setTimedState(VisualState.STANDBY_ENABLE, 125);
+		} else if (action == PendingAction.OVERRIDE_ON) {
+			visualState = VisualState.OVERRIDE_WARNING;
+			visualTimer = 0;
+		} else if (action == PendingAction.OVERRIDE_OFF) {
+			setTimedState(VisualState.OVERRIDE_STANDBY, 110);
+		} else {
+			resetToMain();
+		}
+	}
+
+	private void applyAndSendAction(PendingAction action) {
+		applyLocalAction(action);
+		sendAction(action);
+	}
+
+	private void applyLocalAction(PendingAction action) {
+		if (action == PendingAction.ENABLE_GATES) {
+			displayedTeslaGatesEnabled = true;
+		} else if (action == PendingAction.DISABLE_GATES) {
+			displayedTeslaGatesEnabled = false;
+			displayedManualOverride = false;
+		} else if (action == PendingAction.OVERRIDE_ON) {
+			displayedTeslaGatesEnabled = true;
+			displayedManualOverride = true;
+		} else if (action == PendingAction.OVERRIDE_OFF) {
+			displayedManualOverride = false;
+		}
+	}
+
 	private void sendAction(PendingAction action) {
 		if (action == PendingAction.ENABLE_GATES) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(0, x, y, z));
 		} else if (action == PendingAction.DISABLE_GATES) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(1, x, y, z));
-		} else if (action == PendingAction.OVERRIDE_ON || action == PendingAction.OVERRIDE_OFF) {
+		} else if (action == PendingAction.OVERRIDE_ON) {
 			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(3, x, y, z));
+		} else if (action == PendingAction.OVERRIDE_OFF) {
+			ScpAdditionsMod.PACKET_HANDLER.sendToServer(new TeslaTerminalButtonMessage(4, x, y, z));
 		}
 	}
 
@@ -262,16 +322,17 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		this.visualTimer = 0;
 	}
 
-	private boolean hasCredentials() {
+	private void initializeDisplayState() {
+		if (initializedDisplayState) {
+			return;
+		}
+		displayedTeslaGatesEnabled = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
+		displayedManualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+		initializedDisplayState = true;
+	}
+
+	private boolean hasCredentialsItem() {
 		return entity != null && entity.getInventory().contains(new ItemStack(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
-	}
-
-	private boolean areTeslaGatesEnabled() {
-		return world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
-	}
-
-	private boolean isManualOverride() {
-		return world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 	}
 
 	private void updateLayout() {

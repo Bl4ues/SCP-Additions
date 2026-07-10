@@ -20,10 +20,13 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -56,6 +59,7 @@ public final class Scp294ActionExecutor {
 			case "sound" -> playSound(world, x, y, z, action.getString("sound"));
 			case "particle" -> spawnParticles(world, x, y, z, action.getString("particle"), Math.max(1, action.getInt("count")), action.getFloat("radius"));
 			case "visual_explosion" -> visualExplosion(world, x, y, z, action);
+			case "spawn_entity" -> spawnEntity(world, x, y, z, action);
 			case "effect" -> addEffect(entity, action);
 			case "remove_effect" -> removeEffect(entity, action.getString("effect"));
 			case "heal" -> heal(entity, action.getFloat("amount"));
@@ -80,6 +84,36 @@ public final class Scp294ActionExecutor {
 		spawnParticles(world, x, y + 0.75D, z, "flash", 1, 0.0F);
 		spawnParticles(world, x, y + 0.75D, z, "explosion", 1, 0.0F);
 		spawnParticles(world, x, y + 0.75D, z, "smoke", Math.max(8, action.getInt("count")), Math.max(0.35F, action.getFloat("radius")));
+	}
+
+	private static void spawnEntity(LevelAccessor world, double x, double y, double z, CompoundTag action) {
+		if (!(world instanceof ServerLevel level)) {
+			return;
+		}
+
+		String entityId = action.getString("entity");
+		if (entityId.isBlank()) {
+			return;
+		}
+
+		EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(entityId));
+		if (type == null) {
+			ScpAdditionsMod.LOGGER.warn("SCP-294 spawn_entity points to missing entity {}", entityId);
+			return;
+		}
+
+		int count = Math.max(1, action.getInt("count"));
+		double spread = Math.max(0.0D, action.getDouble("spread"));
+		Vec3 center = new Vec3(x + 0.5D, y + 1.0D, z + 0.5D);
+		for (int i = 0; i < count; i++) {
+			double sx = spread <= 0.0D ? center.x : center.x + ((level.random.nextDouble() - 0.5D) * spread);
+			double sz = spread <= 0.0D ? center.z : center.z + ((level.random.nextDouble() - 0.5D) * spread);
+			Entity spawned = type.spawn(level, BlockPos.containing(sx, center.y, sz), MobSpawnType.MOB_SUMMONED);
+			if (spawned != null) {
+				spawned.moveTo(sx, center.y, sz, level.random.nextFloat() * 360.0F, 0.0F);
+				spawned.setDeltaMovement(0, 0, 0);
+			}
+		}
 	}
 
 	private static void showMessage(Entity entity, String message, boolean actionbar) {

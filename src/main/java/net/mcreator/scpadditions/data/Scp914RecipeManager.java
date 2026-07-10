@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -86,7 +85,7 @@ public final class Scp914RecipeManager {
 		try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
 			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
 			machineConfig = readMachineConfig(root);
-			JsonArray recipesArray = GsonHelper.getAsJsonArray(root, "recipes", new JsonArray());
+			JsonArray recipesArray = root.has("recipes") ? GsonHelper.getAsJsonArray(root, "recipes") : new JsonArray();
 
 			for (JsonElement element : recipesArray) {
 				try {

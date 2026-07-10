@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,8 +38,7 @@ public final class Scp294DrinkManager {
 			  "version": 1,
 			  "matching": {
 			    "allow_partial": true,
-			    "fuzzy_threshold": 0.66,
-			    "ambiguous_margin": 0.02
+			    "fuzzy_threshold": 0.66
 			  },
 			  "drinks": [
 			    {
@@ -82,7 +80,6 @@ public final class Scp294DrinkManager {
 	private static Map<String, DrinkDefinition> drinksByAlias = Map.of();
 	private static boolean allowPartialMatches = true;
 	private static double fuzzyThreshold = 0.66D;
-	private static double ambiguousMargin = 0.02D;
 
 	private Scp294DrinkManager() {
 	}
@@ -91,7 +88,7 @@ public final class Scp294DrinkManager {
 		ensureConfigExists();
 
 		Map<ResourceLocation, DrinkDefinition> parsedById = new LinkedHashMap<>();
-		Map<String, DrinkDefinition> parsedByAlias = new HashMap<>();
+		Map<String, DrinkDefinition> parsedByAlias = new LinkedHashMap<>();
 
 		try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
 			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
@@ -108,7 +105,7 @@ public final class Scp294DrinkManager {
 					DrinkDefinition drink = parseDrink(json);
 					parsedById.put(drink.id(), drink);
 					for (String alias : drink.aliases()) {
-						parsedByAlias.put(normalize(alias), drink);
+						parsedByAlias.putIfAbsent(normalize(alias), drink);
 					}
 				} catch (Exception exception) {
 					ScpAdditionsMod.LOGGER.error("Failed to load one SCP-294 drink entry", exception);
@@ -119,7 +116,7 @@ public final class Scp294DrinkManager {
 		}
 
 		drinksById = Map.copyOf(parsedById);
-		drinksByAlias = Map.copyOf(parsedByAlias);
+		drinksByAlias = new LinkedHashMap<>(parsedByAlias);
 		ScpAdditionsMod.LOGGER.info("Loaded {} SCP-294 drink definitions from config", drinksById.size());
 	}
 
@@ -141,7 +138,6 @@ public final class Scp294DrinkManager {
 		JsonObject matching = GsonHelper.getAsJsonObject(root, "matching");
 		allowPartialMatches = GsonHelper.getAsBoolean(matching, "allow_partial", true);
 		fuzzyThreshold = clamp(GsonHelper.getAsDouble(matching, "fuzzy_threshold", 0.66D), 0.0D, 1.0D);
-		ambiguousMargin = clamp(GsonHelper.getAsDouble(matching, "ambiguous_margin", 0.02D), 0.0D, 1.0D);
 	}
 
 	private static DrinkDefinition parseDrink(JsonObject json) {
@@ -210,7 +206,6 @@ public final class Scp294DrinkManager {
 
 		DrinkDefinition bestDrink = null;
 		double bestScore = 0.0D;
-		boolean ambiguous = false;
 
 		for (Map.Entry<String, DrinkDefinition> entry : drinksByAlias.entrySet()) {
 			String alias = entry.getKey();
@@ -221,19 +216,13 @@ public final class Scp294DrinkManager {
 				continue;
 			}
 
-			if (score > bestScore + ambiguousMargin) {
+			if (score > bestScore) {
 				bestScore = score;
 				bestDrink = drink;
-				ambiguous = false;
-			} else if (Math.abs(score - bestScore) <= ambiguousMargin && bestDrink != null && !bestDrink.id().equals(drink.id())) {
-				ambiguous = true;
 			}
 		}
 
-		if (bestDrink == null) {
-			return MatchResult.noMatch();
-		}
-		return ambiguous ? MatchResult.ambiguous() : MatchResult.match(bestDrink);
+		return bestDrink == null ? MatchResult.noMatch() : MatchResult.match(bestDrink);
 	}
 
 	public static ItemStack createResult(DrinkDefinition drink) {
@@ -350,17 +339,13 @@ public final class Scp294DrinkManager {
 	public record ConfiguredEffect(ResourceLocation id, int duration, int amplifier, boolean ambient, boolean visible, boolean showIcon) {
 	}
 
-	public record MatchResult(DrinkDefinition drink, boolean ambiguous) {
+	public record MatchResult(DrinkDefinition drink) {
 		public static MatchResult match(DrinkDefinition drink) {
-			return new MatchResult(drink, false);
-		}
-
-		public static MatchResult ambiguous() {
-			return new MatchResult(null, true);
+			return new MatchResult(drink);
 		}
 
 		public static MatchResult noMatch() {
-			return new MatchResult(null, false);
+			return new MatchResult(null);
 		}
 
 		public boolean found() {

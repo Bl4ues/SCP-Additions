@@ -54,50 +54,38 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 	}
 
 	private void renderPanel(GuiGraphics guiGraphics) {
-		RenderSystem.setShaderColor(1, 1, 1, 1);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
 		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
+
+		RenderSystem.setShaderColor(0.95F, 0.95F, 0.95F, 1.0F);
 		guiGraphics.blit(BACKGROUND, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		guiGraphics.blit(SCREEN_OVERLAY, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+
+		RenderSystem.setShaderColor(1, 1, 1, 1);
 		guiGraphics.blit(hasCoinInserted() ? COIN_ON : COIN_OFF, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		renderDarkenOverlay(guiGraphics, 0x0D000000);
-		renderVignette(guiGraphics, 18, 28);
 		renderOrderText(guiGraphics);
+		guiGraphics.blit(SCREEN_OVERLAY, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
+		RenderSystem.setShaderColor(1, 1, 1, 1);
 	}
 
 	private void renderOrderText(GuiGraphics guiGraphics) {
 		String visible = order.isBlank() && !inputFocused ? "ENTER YOUR ORDER" : order;
-		if (visible.length() > 24) {
-			visible = visible.substring(Math.max(0, visible.length() - 24));
+		if (visible.length() > 26) {
+			visible = visible.substring(Math.max(0, visible.length() - 26));
 		}
 		int color = inputFocused ? 0x2F3945 : 0x4A5664;
 		String cursor = inputFocused && (System.currentTimeMillis() / 400L) % 2L == 0L ? "_" : "";
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(118, 208, 0);
-		guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(-4.2F));
-		guiGraphics.pose().scale(1.85F, 1.85F, 1.0F);
+		guiGraphics.pose().translate(108, 216, 0);
+		guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(0.15F));
+		guiGraphics.pose().scale(1.75F, 1.75F, 1.0F);
 		guiGraphics.drawString(this.font, visible + cursor, 0, 0, color, false);
 		guiGraphics.pose().popPose();
-	}
-
-	private void renderDarkenOverlay(GuiGraphics guiGraphics, int color) {
-		guiGraphics.fill(0, 0, TEX_W, TEX_H, color);
-	}
-
-	private void renderVignette(GuiGraphics guiGraphics, int maxAlpha, int layers) {
-		for (int i = 0; i < layers; i++) {
-			int alpha = Math.max(0, (int) (maxAlpha * (1.0D - (double) i / layers)));
-			int color = alpha << 24;
-			guiGraphics.fill(i, i, TEX_W - i, i + 1, color);
-			guiGraphics.fill(i, TEX_H - i - 1, TEX_W - i, TEX_H - i, color);
-			guiGraphics.fill(i, i, i + 1, TEX_H - i, color);
-			guiGraphics.fill(TEX_W - i - 1, i, TEX_W - i, TEX_H - i, color);
-		}
 	}
 
 	private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {

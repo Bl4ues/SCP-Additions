@@ -152,7 +152,7 @@ public final class Scp914Processor {
 			Property property = result.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
 			if (property != null) {
 				try {
-					result = result.setValue(property, entry.getValue());
+					result = result.setValue((Property) property, (Comparable) entry.getValue());
 				} catch (Exception ignored) {
 				}
 			}

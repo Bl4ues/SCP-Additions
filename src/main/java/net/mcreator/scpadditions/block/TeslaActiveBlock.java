@@ -74,7 +74,7 @@ public class TeslaActiveBlock extends Block implements SimpleWaterloggedBlock {
 
 	@Override
 	public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-		return TeslaGateShapeHelper.shape(state.getValue(FACING));
+		return Shapes.empty();
 	}
 
 	@Override

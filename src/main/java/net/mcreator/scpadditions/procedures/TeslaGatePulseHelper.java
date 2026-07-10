@@ -18,6 +18,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
 import java.util.Comparator;
 import java.util.List;
@@ -33,8 +34,12 @@ public final class TeslaGatePulseHelper {
 			return;
 		}
 
+		boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+		double pulseRadius = manualOverride ? 2.25D : 1.5D;
+		float damage = manualOverride ? 40.0F : 20.0F;
+
 		final Vec3 center = new Vec3(x, y, z);
-		List<Entity> entities = world.getEntitiesOfClass(Entity.class, new AABB(center, center).inflate(3 / 2d), e -> true).stream().sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(center))).toList();
+		List<Entity> entities = world.getEntitiesOfClass(Entity.class, new AABB(center, center).inflate(pulseRadius), e -> true).stream().sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(center))).toList();
 		for (Entity entity : entities) {
 			if (entity instanceof LivingEntity living) {
 				living.hurt(new DamageSource(living.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {
@@ -55,7 +60,7 @@ public final class TeslaGatePulseHelper {
 								? Component.translatable(translateKey + ".item", messageEntity.getDisplayName(), component, itemStack.getDisplayName())
 								: Component.translatable(translateKey, messageEntity.getDisplayName(), component);
 					}
-				}, 20);
+				}, damage);
 			}
 			if (entity instanceof ServerPlayer player) {
 				Advancement advancement = player.server.getAdvancements().getAdvancement(new ResourceLocation("scp_additions:tesla"));
@@ -70,6 +75,6 @@ public final class TeslaGatePulseHelper {
 			}
 		}
 
-		ScpAdditionsMod.queueServerWork(3, () -> TeslaGateTransitionHelper.transitionIfCurrent(world, x, y, z, expectedBlock, nextBlock));
+		ScpAdditionsMod.queueServerWork(manualOverride ? 1 : 3, () -> TeslaGateTransitionHelper.transitionIfCurrent(world, x, y, z, expectedBlock, nextBlock));
 	}
 }

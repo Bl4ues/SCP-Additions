@@ -29,7 +29,6 @@ public final class TeslaTerminalController {
 		}
 		play(world, x, y, z, "scp_additions:click");
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
-		message(player, "Tesla gates enabled.");
 	}
 
 	public static void disableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {
@@ -38,7 +37,7 @@ public final class TeslaTerminalController {
 		}
 		play(world, x, y, z, "scp_additions:click");
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(false, server(world));
-		message(player, "Tesla gates disabled.");
+		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(false, server(world));
 	}
 
 	public static void toggleManualOverride(LevelAccessor world, double x, double y, double z, Player player) {
@@ -46,9 +45,9 @@ public final class TeslaTerminalController {
 			return;
 		}
 		boolean current = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(!current, server(world));
 		play(world, x, y, z, "scp_additions:click");
-		message(player, !current ? "Manual override engaged." : "Manual override disengaged.");
 	}
 
 	public static void logout(Player player) {

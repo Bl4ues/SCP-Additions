@@ -4,6 +4,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -19,7 +20,6 @@ import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 public class Scp294drinkGiveProcedure {
@@ -35,13 +35,16 @@ public class Scp294drinkGiveProcedure {
 			return;
 		}
 
-		Optional<Scp294DrinkManager.DrinkDefinition> optionalDrink = Scp294DrinkManager.findByAlias(input);
-		if (optionalDrink.isEmpty()) {
+		Scp294DrinkManager.MatchResult match = Scp294DrinkManager.findByInput(input);
+		if (!match.found()) {
 			playSound(world, x, y, z, new ResourceLocation("scp_additions:scp294outofrange"));
+			if (match.ambiguous()) {
+				player.displayClientMessage(Component.literal("SCP-294 found multiple possible matches. Request out of range."), true);
+			}
 			return;
 		}
 
-		Scp294DrinkManager.DrinkDefinition drink = optionalDrink.get();
+		Scp294DrinkManager.DrinkDefinition drink = match.drink();
 		ItemStack result = Scp294DrinkManager.createResult(drink);
 		if (result.isEmpty()) {
 			return;
@@ -52,6 +55,9 @@ public class Scp294drinkGiveProcedure {
 			player.containerMenu.broadcastChanges();
 		}
 
+		if (!drink.actionbar().isBlank()) {
+			player.displayClientMessage(Component.literal(drink.actionbar()), true);
+		}
 		playSound(world, x, y, z, drink.sound());
 		ScpAdditionsMod.queueServerWork(drink.delayTicks(), () -> ItemHandlerHelper.giveItemToPlayer(player, result.copy()));
 

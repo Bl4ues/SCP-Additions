@@ -3,15 +3,18 @@ package net.mcreator.scpadditions.data;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -24,6 +27,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 public final class Scp294ActionExecutor {
+	private static final String DEFAULT_DAMAGE_TYPE = "scp_additions:scp294";
+
 	private Scp294ActionExecutor() {
 	}
 
@@ -51,7 +56,7 @@ public final class Scp294ActionExecutor {
 			case "remove_effect" -> removeEffect(entity, action.getString("effect"));
 			case "heal" -> heal(entity, action.getFloat("amount"));
 			case "hurt" -> hurt(entity, action.getFloat("amount"));
-			case "kill" -> kill(entity, action.getString("message"));
+			case "kill" -> kill(entity, action);
 			case "set_fire" -> {
 				if (entity != null) {
 					entity.setSecondsOnFire(Math.max(1, action.getInt("seconds")));
@@ -128,14 +133,63 @@ public final class Scp294ActionExecutor {
 		}
 	}
 
-	private static void kill(Entity entity, String message) {
-		if (entity instanceof LivingEntity living) {
-			Level level = living.level();
-			if (!message.isBlank()) {
-				showMessage(entity, message, false);
-			}
-			living.hurt(level.damageSources().generic(), Float.MAX_VALUE);
+	private static void kill(Entity entity, CompoundTag action) {
+		if (!(entity instanceof LivingEntity living)) {
+			return;
 		}
+
+		String message = action.getString("message");
+		if (!message.isBlank()) {
+			showMessage(entity, message, false);
+		}
+
+		Level level = living.level();
+		ResourceLocation damageTypeId = resolveDamageType(action);
+		ResourceKey<DamageType> damageType = ResourceKey.create(Registries.DAMAGE_TYPE, damageTypeId);
+		living.hurt(level.damageSources().source(damageType), Float.MAX_VALUE);
+	}
+
+	private static ResourceLocation resolveDamageType(CompoundTag action) {
+		String configured = action.contains("damage_type", Tag.TAG_STRING) ? action.getString("damage_type") : "";
+		if (!configured.isBlank()) {
+			return new ResourceLocation(configured);
+		}
+
+		String message = action.getString("message").toLowerCase();
+		if (message.contains("bleach")) {
+			return new ResourceLocation("scp_additions:scp294_bleach");
+		}
+		if (message.contains("acid")) {
+			return new ResourceLocation("scp_additions:scp294_acid");
+		}
+		if (message.contains("radiation") || message.contains("radioactive")) {
+			return new ResourceLocation("scp_additions:scp294_radiation");
+		}
+		if (message.contains("fear")) {
+			return new ResourceLocation("scp_additions:scp294_fear");
+		}
+		if (message.contains("overdose")) {
+			return new ResourceLocation("scp_additions:scp294_overdose");
+		}
+		if (message.contains("molten glass") || message.contains("glass")) {
+			return new ResourceLocation("scp_additions:scp294_glass");
+		}
+		if (message.contains("molten gold") || message.contains("gold")) {
+			return new ResourceLocation("scp_additions:scp294_gold");
+		}
+		if (message.contains("metal") || message.contains("iron")) {
+			return new ResourceLocation("scp_additions:scp294_metal");
+		}
+		if (message.contains("density") || message.contains("carbon") || message.contains("neutronium")) {
+			return new ResourceLocation("scp_additions:scp294_density");
+		}
+		if (message.contains("cold") || message.contains("quantum") || message.contains("nitrogen") || message.contains("helium") || message.contains("hydrogen")) {
+			return new ResourceLocation("scp_additions:scp294_cold");
+		}
+		if (message.contains("joy") || message.contains("happiness")) {
+			return new ResourceLocation("scp_additions:scp294_happiness");
+		}
+		return new ResourceLocation(DEFAULT_DAMAGE_TYPE);
 	}
 
 	private static void playSound(LevelAccessor world, double x, double y, double z, String soundId) {

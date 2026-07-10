@@ -36,6 +36,7 @@ public class ScpAdditionsModItems {
 	public static final RegistryObject<Item> SCP_914_OUTPUT = block(ScpAdditionsModBlocks.SCP_914_OUTPUT);
 	public static final RegistryObject<Item> SCP_914_INTAKE_DOOR = block(ScpAdditionsModBlocks.SCP_914_INTAKE_DOOR);
 	public static final RegistryObject<Item> SCP_914_OUTPUT_DOOR = block(ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR);
+	public static final RegistryObject<Item> SCP_914_ASSEMBLY_KIT = REGISTRY.register("scp_914_assembly_kit", () -> new Scp914AssemblyKitItem());
 	public static final RegistryObject<Item> SCP_1176 = block(ScpAdditionsModBlocks.SCP_1176);
 	public static final RegistryObject<Item> SCP_330_RED_CANDY = REGISTRY.register("scp_330_red_candy", () -> new Scp330RedCandyItem());
 	public static final RegistryObject<Item> SCP_330_GREEN_CANDY = REGISTRY.register("scp_330_green_candy", () -> new Scp330GreenCandyItem());

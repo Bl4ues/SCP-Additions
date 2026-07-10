@@ -52,7 +52,6 @@ public final class Scp294DrinkManager {
 			      "delay_ticks": 40,
 			      "sound": "scp_additions:scp294pouring",
 			      "consumes_coin": true,
-			      "actionbar": "Dispensing black coffee...",
 			      "cup_color": "#2B1608",
 			      "placeholder_cup_texture": "scp_additions:item/scp294_colored_cup_placeholder",
 			      "effects": []
@@ -68,7 +67,6 @@ public final class Scp294DrinkManager {
 			      "delay_ticks": 0,
 			      "sound": "scp_additions:scp294emptycup",
 			      "consumes_coin": true,
-			      "actionbar": "Dispensing an empty cup...",
 			      "cup_color": "#FFFFFF",
 			      "effects": []
 			    }

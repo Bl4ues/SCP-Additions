@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -33,8 +32,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
-
-import net.mcreator.scpadditions.procedures.TerminalTeslaProcedure;
 
 import java.util.List;
 import java.util.Collections;
@@ -127,15 +124,6 @@ public class TeslaTerminalOffBlock extends Block implements SimpleWaterloggedBlo
 
 	@Override
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
-		int x = pos.getX();
-		int y = pos.getY();
-		int z = pos.getZ();
-		double hitX = hit.getLocation().x;
-		double hitY = hit.getLocation().y;
-		double hitZ = hit.getLocation().z;
-		Direction direction = hit.getDirection();
-		TerminalTeslaProcedure.execute(world, x, y, z, entity);
 		return InteractionResult.SUCCESS;
 	}
 }

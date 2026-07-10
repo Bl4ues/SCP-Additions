@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraftforge.network.NetworkHooks;
@@ -42,7 +41,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
-import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 import java.util.List;
 import java.util.Collections;
@@ -132,7 +130,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
 		if (!dropsOriginal.isEmpty())
 			return dropsOriginal;
-		return Collections.singletonList(new ItemStack(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get()));
+		return Collections.singletonList(new ItemStack(this, 1));
 	}
 
 	@Override
@@ -142,7 +140,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 			NetworkHooks.openScreen(player, new MenuProvider() {
 				@Override
 				public Component getDisplayName() {
-					return Component.literal("Tesla Terminal (On)");
+					return Component.literal("Tesla Terminal");
 				}
 
 				@Override

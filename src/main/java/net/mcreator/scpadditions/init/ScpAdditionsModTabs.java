@@ -36,6 +36,7 @@ public class ScpAdditionsModTabs {
 				tabData.accept(ScpAdditionsModBlocks.SCP_426.get().asItem());
 				tabData.accept(ScpAdditionsModItems.SCP_572.get());
 				tabData.accept(ScpAdditionsModBlocks.SCP_902_CLOSED.get().asItem());
+				tabData.accept(ScpAdditionsModItems.SCP_914_ASSEMBLY_KIT.get());
 				tabData.accept(ScpAdditionsModBlocks.SCP_914BLOCK.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_914CLOCKWORKS.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_914BODY.get().asItem());

@@ -1,16 +1,3 @@
-/*
- *    MCreator note:
- *
- *    If you lock base mod element files, you can edit this file and it won't get overwritten.
- *    If you change your modid or package, you need to apply these changes to this file MANUALLY.
- *
- *    Settings in @Mod annotation WON'T be changed in case of the base mod element
- *    files lock too, so you need to set them manually here in such case.
- *
- *    If you do not lock base mod element files in Workspace settings, this file
- *    will be REGENERATED on each build.
- *
- */
 package net.mcreator.scpadditions;
 
 import org.apache.logging.log4j.Logger;
@@ -24,11 +11,14 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.common.MinecraftForge;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
+import net.mcreator.scpadditions.data.Scp294DrinkManager;
+import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
@@ -77,6 +67,12 @@ public class ScpAdditionsMod {
 	public static <T> void addNetworkMessage(Class<T> messageType, BiConsumer<T, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, T> decoder, BiConsumer<T, Supplier<NetworkEvent.Context>> messageConsumer) {
 		PACKET_HANDLER.registerMessage(messageID, messageType, encoder, decoder, messageConsumer);
 		messageID++;
+	}
+
+	@SubscribeEvent
+	public void addReloadListeners(AddReloadListenerEvent event) {
+		event.addListener(new Scp294DrinkManager());
+		event.addListener(new Scp914RecipeManager());
 	}
 
 	private static final Collection<AbstractMap.SimpleEntry<Runnable, Integer>> workQueue = new ConcurrentLinkedQueue<>();

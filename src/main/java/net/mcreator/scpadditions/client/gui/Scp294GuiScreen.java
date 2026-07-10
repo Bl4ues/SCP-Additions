@@ -4,7 +4,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
@@ -128,7 +127,7 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
 	@Override
 	public boolean charTyped(char codePoint, int modifiers) {
-		if (inputFocused && StringUtil.isAllowedChatCharacter(codePoint) && order.length() < 80) {
+		if (inputFocused && isAllowedInputCharacter(codePoint) && order.length() < 80) {
 			order += codePoint;
 			return true;
 		}
@@ -152,7 +151,7 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 		if (inputFocused && isPaste(key, c)) {
 			String clipboard = this.minecraft.keyboardHandler.getClipboard();
 			for (char ch : clipboard.toCharArray()) {
-				if (StringUtil.isAllowedChatCharacter(ch) && order.length() < 80) {
+				if (isAllowedInputCharacter(ch) && order.length() < 80) {
 					order += ch;
 				}
 			}
@@ -163,6 +162,10 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
 	private boolean isPaste(int key, int modifiers) {
 		return key == 86 && hasControlDown();
+	}
+
+	private static boolean isAllowedInputCharacter(char character) {
+		return character >= 32 && character != 127;
 	}
 
 	private void sendDrinkRequestAndClose() {

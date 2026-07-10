@@ -17,18 +17,9 @@ authors="Bl4ues, MCreator"
     ordering="NONE"
     side="BOTH"
 
-
-[[dependencies.scp_additions]]
-    modId="kleiders_custom_renderer"
-    mandatory=true
-    versionRange="[0,)"
-    ordering="NONE"
-    side="BOTH"
-
 [[dependencies.scp_additions]]
     modId="kleiders_custom_renderer"
     mandatory=false
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"
-

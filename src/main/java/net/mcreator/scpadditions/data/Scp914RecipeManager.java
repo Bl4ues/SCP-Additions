@@ -1,7 +1,5 @@
 package net.mcreator.scpadditions.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -33,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class Scp914RecipeManager {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("914recipes.json");
 	private static final String DEFAULT_CONFIG = """
 			{
@@ -41,7 +38,7 @@ public final class Scp914RecipeManager {
 			  "machine": {
 			    "intake_offset": [-4, 0, -3],
 			    "output_offset": [4, 0, -3],
-			    "search_radius": 2.0,
+			    "search_radius": 1.5,
 			    "start_delay_ticks": 30,
 			    "finish_delay_ticks": 160
 			  },
@@ -120,11 +117,12 @@ public final class Scp914RecipeManager {
 		if (!root.has("machine")) {
 			return MachineConfig.defaults();
 		}
+
 		JsonObject json = GsonHelper.getAsJsonObject(root, "machine");
 		return new MachineConfig(
 				readOffset(json, "intake_offset", -4, 0, -3),
 				readOffset(json, "output_offset", 4, 0, -3),
-				Math.max(0.5D, GsonHelper.getAsDouble(json, "search_radius", 2.0D)),
+				Math.max(0.5D, GsonHelper.getAsDouble(json, "search_radius", 1.5D)),
 				Math.max(0, GsonHelper.getAsInt(json, "start_delay_ticks", 30)),
 				Math.max(0, GsonHelper.getAsInt(json, "finish_delay_ticks", 160)));
 	}
@@ -133,6 +131,7 @@ public final class Scp914RecipeManager {
 		if (!json.has(name)) {
 			return new Offset(defaultX, defaultY, defaultZ);
 		}
+
 		JsonArray array = GsonHelper.getAsJsonArray(json, name);
 		if (array.size() != 3) {
 			throw new IllegalArgumentException(name + " must have exactly 3 integers");
@@ -364,7 +363,7 @@ public final class Scp914RecipeManager {
 
 	public record MachineConfig(Offset intakeOffset, Offset outputOffset, double searchRadius, int startDelayTicks, int finishDelayTicks) {
 		public static MachineConfig defaults() {
-			return new MachineConfig(new Offset(-4, 0, -3), new Offset(4, 0, -3), 2.0D, 30, 160);
+			return new MachineConfig(new Offset(-4, 0, -3), new Offset(4, 0, -3), 1.5D, 30, 160);
 		}
 	}
 

@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -71,12 +70,12 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
 
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-		return switch (state.getValue(FACING)) {
-			default -> Shapes.or(box(-16, -32, -2, -6, 32, 18), box(22, -32, -2, 32, 32, 18), box(23, -16, -2, 32, 32, 18), box(-16, -16, -2, -6, 32, 18), box(-16, 27, -2, 32, 32, 18), box(-16, -32, -16, 32, -16, 32));
-			case NORTH -> Shapes.or(box(22, -32, -2, 32, 32, 18), box(-16, -32, -2, -6, 32, 18), box(-16, -16, -2, -7, 32, 18), box(22, -16, -2, 32, 32, 18), box(-16, 27, -2, 32, 32, 18), box(-16, -32, -16, 32, -16, 32));
-			case EAST -> Shapes.or(box(-2, -32, 22, 18, 32, 32), box(-2, -32, -16, 18, 32, -6), box(-2, -16, -16, 18, 32, -7), box(-2, -16, 22, 18, 32, 32), box(-2, 27, -16, 18, 32, 32), box(-16, -32, -16, 32, -16, 32));
-			case WEST -> Shapes.or(box(-2, -32, -16, 18, 32, -6), box(-2, -32, 22, 18, 32, 32), box(-2, -16, 23, 18, 32, 32), box(-2, -16, -16, 18, 32, -6), box(-2, 27, -16, 18, 32, 32), box(-16, -32, -16, 32, -16, 32));
-		};
+		return TeslaGateShapeHelper.shape(state.getValue(FACING));
+	}
+
+	@Override
+	public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return TeslaGateShapeHelper.shape(state.getValue(FACING));
 	}
 
 	@Override

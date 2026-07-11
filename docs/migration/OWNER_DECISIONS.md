@@ -22,9 +22,8 @@ The following gameplay systems must be configurable and individually disableable
 - horror movement behavior
 - blink system
 - SCP-173 behavior and natural spawning
-- SCP-131 behavior
 
-Facility blocks and decorative props are ordinary content and remain registered and available without a module toggle. Configuration toggles are reserved for systems that materially change gameplay behavior.
+Facility blocks, decorative props and explicitly spawned SCP-131 entities are ordinary content and remain registered and available without module toggles. Configuration toggles are reserved for systems that materially alter global gameplay behavior.
 
 SCP-131-A and SCP-131-B do **not** currently have natural spawning. The 3.0 migration must preserve that behavior and must not invent a natural spawn system unless it is designed and approved later.
 
@@ -56,7 +55,6 @@ All gameplay modules are enabled by default:
 - stamina
 - blink
 - SCP-173
-- SCP-131
 
 ## Release
 

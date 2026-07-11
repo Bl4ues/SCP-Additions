@@ -1,7 +1,12 @@
 package net.mcreator.scpadditions.block;
 
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -80,6 +85,17 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
 		return Shapes.block();
+	}
+
+	@Override
+	public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
+		super.animateTick(state, world, pos, random);
+		if (random.nextInt(200) == 0) {
+			SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", "terminalloop"));
+			if (sound != null) {
+				world.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, sound, SoundSource.BLOCKS, 1.0F, 1.0F, false);
+			}
+		}
 	}
 
 	@Override

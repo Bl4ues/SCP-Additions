@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
+import net.mcreator.scpadditions.integration.PlayerItemAccess;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -27,18 +28,7 @@ public final class KeycardReaderHelper {
 	}
 
 	private static int highestKeycardLevel(Player player) {
-		int highest = 0;
-		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-			ItemStack stack = player.getInventory().getItem(i);
-			if (stack.isEmpty()) {
-				continue;
-			}
-			highest = Math.max(highest, keycardLevel(stack));
-			if (highest >= 6) {
-				return highest;
-			}
-		}
-		return highest;
+		return PlayerItemAccess.highestLevel(player, KeycardReaderHelper::keycardLevel);
 	}
 
 	private static int keycardLevel(ItemStack stack) {

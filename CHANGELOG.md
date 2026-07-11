@@ -11,9 +11,12 @@ Hotfix update for the 2.0.0 overhaul.
 - Improved keycard reader checks so NBT-modified keycards are accepted as the correct keycard item;
 - Fixed Tesla Gate transparency issues with shaders by explicitly registering the Tesla Gate block render layers as cutout on the client;
 - Fixed the default SCP-294 drink configuration not being included in the final built `.jar`;
+- Expanded the bundled SCP-294 default drink list with the legacy drink outputs and several SCP:CB-inspired dangerous outputs;
+- Expanded the bundled SCP-914 default recipe list with keycard, vanilla item, SCP Additions item, and entity transformations;
 - Improved SCP-294 config generation so the first generated `294drinks.json` can be copied from the full packaged template instead of falling back to the minimal internal example;
+- Improved SCP-914 config generation so the first generated `914recipes.json` can be copied from the full packaged template instead of falling back to the minimal internal example;
 - Included the default `config/scpadditions` templates in the build output;
-- Kept existing local SCP-294 configs untouched, so custom configs are not overwritten automatically.
+- Kept existing local SCP-294/SCP-914 configs untouched, so custom configs are not overwritten automatically.
 
 ## SCP Additions 2.0.0
 

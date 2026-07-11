@@ -1,5 +1,15 @@
 # Changelog
 
+## SCP Additions 2.0.2
+
+Hotfix update for the 2.0.1 hotfix.
+
+- Updated the mod version to 2.0.2;
+- Fixed bundled SCP-294 and SCP-914 JSON templates being processed as single-line/minified files in the final build output;
+- Added build-time pretty printing for packaged `config/scpadditions/*.json` templates so newly generated configs are readable for humans;
+- Fixed the inactive Tesla Gate transparency issue by rendering the inactive gate model with the translucent render layer instead of cutout;
+- Kept the active/shocking Tesla Gate models on cutout rendering because they were already rendering correctly.
+
 ## SCP Additions 2.0.1
 
 Hotfix update for the 2.0.0 overhaul.

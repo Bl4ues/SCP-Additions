@@ -359,7 +359,16 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private boolean hasCredentialsItem() {
-		return entity != null && entity.getInventory().contains(new ItemStack(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
+		if (entity == null) {
+			return false;
+		}
+		for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+			ItemStack stack = entity.getInventory().getItem(i);
+			if (stack.is(ScpAdditionsModItems.SECURITY_CREDENTIALS.get())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void playRandomClick() {

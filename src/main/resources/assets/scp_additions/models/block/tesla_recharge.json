@@ -6,5 +6,5 @@
     "3": "scp_additions:block/warning",
     "4": "scp_additions:block/teslagate"
   },
-  "render_type": "cutout"
+  "render_type": "translucent"
 }

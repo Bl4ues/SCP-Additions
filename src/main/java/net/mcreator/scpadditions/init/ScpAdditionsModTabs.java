@@ -34,6 +34,7 @@ public class ScpAdditionsModTabs {
 				tabData.accept(ScpAdditionsModBlocks.SCP_079ON.get().asItem());
 				tabData.accept(Scp131Items.SCP_131_A_SPAWN_EGG.get());
 				tabData.accept(Scp131Items.SCP_131_B_SPAWN_EGG.get());
+				tabData.accept(Scp131Items.SCP_173_SPAWN_EGG.get());
 				tabData.accept(ScpAdditionsModBlocks.SCP_294.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_330.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_426.get().asItem());
@@ -82,7 +83,6 @@ public class ScpAdditionsModTabs {
 			tabData.accept(ScpAdditionsModItems.COIN.get());
 			tabData.accept(ScpAdditionsModItems.EMPTY_CUP.get());
 		}
-
 		if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
 			tabData.accept(ScpAdditionsModItems.SCP_330_RED_CANDY.get());
 			tabData.accept(ScpAdditionsModItems.SCP_330_GREEN_CANDY.get());

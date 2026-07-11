@@ -24,6 +24,8 @@ public class TerminalTeslaProcedure {
 			return;
 		}
 		BlockPos pos = BlockPos.containing(x, y, z);
+		boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
+		boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 		NetworkHooks.openScreen(player, new MenuProvider() {
 			@Override
 			public Component getDisplayName() {
@@ -33,10 +35,14 @@ public class TerminalTeslaProcedure {
 			@Override
 			public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
 				FriendlyByteBuf data = new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos);
-				data.writeBoolean(world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON));
-				data.writeBoolean(world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE));
+				data.writeBoolean(teslaOn);
+				data.writeBoolean(manualOverride);
 				return new TeslaTerminalMenu(id, inventory, data);
 			}
-		}, pos);
+		}, data -> {
+			data.writeBlockPos(pos);
+			data.writeBoolean(teslaOn);
+			data.writeBoolean(manualOverride);
+		});
 	}
 }

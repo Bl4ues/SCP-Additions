@@ -22,22 +22,29 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] dropped items remain recoverable
 - [ ] keys remain available to shared access checks
 - [ ] ammunition and weapon mirrors remain synchronized
-- [ ] real coins are stored only in SCP Inventory while the inventory module is enabled
-- [ ] coin pickup creates no vanilla mirror
-- [ ] pre-migration vanilla coins have a safe migration or compatibility path
+- [ ] with custom inventory enabled, real coins are stored only in the capability
+- [ ] with custom inventory enabled, coin pickup creates no vanilla mirror
+- [ ] with custom inventory disabled, coin pickup goes to vanilla inventory
+- [ ] pre-migration vanilla coins have an explicit migration or compatibility path
+- [ ] switching inventory mode does not automatically merge, copy or duplicate balances
 
 ## SCP-294 currency integration
 
-- [ ] coin button detects currency stored in SCP Inventory
-- [ ] inserting a coin removes exactly one real coin from SCP Inventory
-- [ ] inserting a coin creates no vanilla mirror or duplicate stack
+- [ ] with custom inventory enabled, coin button detects capability currency
+- [ ] with custom inventory enabled, SCP-294 ignores vanilla coin stacks
+- [ ] with custom inventory enabled, inserting a coin removes exactly one real coin from the capability
+- [ ] with custom inventory disabled, coin button detects vanilla inventory currency
+- [ ] with custom inventory disabled, SCP-294 ignores capability currency
+- [ ] with custom inventory disabled, inserting a coin removes exactly one real vanilla coin
+- [ ] capability and vanilla balances are never added together
+- [ ] inserting a coin creates no mirror or duplicate stack
 - [ ] the inserted coin is represented by the machine slot/state exactly once
 - [ ] a successful coin-consuming drink removes exactly one inserted coin
 - [ ] a non-coin-consuming drink preserves the inserted coin
 - [ ] an unknown/out-of-range request does not silently delete the inserted coin
 - [ ] closing and reopening the GUI cannot duplicate the inserted coin
 - [ ] logout, death and chunk unload cannot duplicate currency
-- [ ] when the inventory module is disabled, the documented vanilla compatibility path still works
+- [ ] changing inventory mode while a coin is inserted has a deterministic, duplication-safe result
 
 ## Usable-item sessions
 

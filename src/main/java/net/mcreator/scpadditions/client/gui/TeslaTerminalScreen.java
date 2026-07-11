@@ -5,7 +5,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
@@ -23,13 +22,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
 	private static final int TEX_W = 1410;
@@ -45,7 +38,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final ResourceLocation SCREEN_OVERRIDE_STANDBY = screen("9");
 	private static final ResourceLocation SCREEN_OVERRIDE_ENGAGED = screen("10");
 	private static final ResourceLocation SCREEN_ON_OVERRIDE = screen("11");
-	private static final Map<ResourceLocation, ResourceLocation> FILTERED_OVERRIDE_CACHE = new HashMap<>();
 
 	private static final Rect OVERRIDE_TOGGLE = new Rect(1269, 637, 1393, 689);
 	private static final Rect TESLA_TOGGLE = new Rect(1050, 1007, 1393, 1069);
@@ -115,73 +107,9 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void renderOverlay(GuiGraphics guiGraphics) {
-		ResourceLocation texture = overlayTexture();
 		RenderSystem.setShaderColor(1, 1, 1, 1);
-		if (isOverrideOverlayState()) {
-			// Override screens are exported over a pale/green matte. Strip that matte at runtime
-			// and draw only the actual warning/standby modal, leaving the terminal visible behind it.
-			guiGraphics.blit(filteredOverrideTexture(texture), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		} else {
-			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		}
+		guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
-	}
-
-	private ResourceLocation filteredOverrideTexture(ResourceLocation texture) {
-		ResourceLocation cached = FILTERED_OVERRIDE_CACHE.get(texture);
-		if (cached != null) {
-			return cached;
-		}
-		ResourceLocation generated = createFilteredOverrideTexture(texture);
-		FILTERED_OVERRIDE_CACHE.put(texture, generated);
-		return generated;
-	}
-
-	private ResourceLocation createFilteredOverrideTexture(ResourceLocation texture) {
-		try {
-			var resource = Minecraft.getInstance().getResourceManager().getResource(texture);
-			if (resource.isEmpty()) {
-				return texture;
-			}
-			try (InputStream stream = resource.get().open()) {
-				NativeImage source = NativeImage.read(stream);
-				try {
-					NativeImage filtered = new NativeImage(source.getWidth(), source.getHeight(), true);
-					for (int py = 0; py < source.getHeight(); py++) {
-						for (int px = 0; px < source.getWidth(); px++) {
-							int pixel = source.getPixelRGBA(px, py);
-							filtered.setPixelRGBA(px, py, keepOverridePixel(pixel) ? pixel : 0);
-						}
-					}
-					DynamicTexture dynamicTexture = new DynamicTexture(filtered);
-					String name = "scp_additions_tesla_terminal_override_filtered_" + texture.getPath().replace('/', '_').replace('.', '_');
-					return Minecraft.getInstance().getTextureManager().register(name, dynamicTexture);
-				} finally {
-					source.close();
-				}
-			}
-		} catch (IOException | RuntimeException exception) {
-			return texture;
-		}
-	}
-
-	private boolean keepOverridePixel(int pixel) {
-		int alpha = (pixel >>> 24) & 255;
-		if (alpha <= 16) {
-			return false;
-		}
-		int r = pixel & 255;
-		int g = (pixel >>> 8) & 255;
-		int b = (pixel >>> 16) & 255;
-		return !isOverrideMattePixel(r, g, b);
-	}
-
-	private boolean isOverrideMattePixel(int r, int g, int b) {
-		int max = Math.max(r, Math.max(g, b));
-		int min = Math.min(r, Math.min(g, b));
-		boolean greenGrayMatte = r >= 70 && r <= 205 && g >= 80 && g <= 220 && b >= 70 && b <= 205 && g >= r - 8 && g >= b - 8 && max - min <= 85;
-		boolean paleWashedMatte = r >= 90 && r <= 215 && g >= 90 && g <= 220 && b >= 90 && b <= 215 && max - min <= 55;
-		return greenGrayMatte || paleWashedMatte;
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
@@ -224,10 +152,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private boolean isOverlayState() {
 		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
 				|| visualState == VisualState.OVERRIDE_ENGAGED;
-	}
-
-	private boolean isOverrideOverlayState() {
-		return visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY || visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	@Override

@@ -1,5 +1,20 @@
 # Changelog
 
+## SCP Additions 2.0.1
+
+Hotfix update for the 2.0.0 overhaul.
+
+- Updated the mod version to 2.0.1;
+- Fixed the missing Level 1 Keycard language entry;
+- Fixed Security Credentials not being detected by the Tesla Gate Terminal when the item had NBT data;
+- Fixed Level 1-6 Keycards not being detected by keycard readers when the item had NBT data;
+- Improved keycard reader checks so NBT-modified keycards are accepted as the correct keycard item;
+- Fixed Tesla Gate transparency issues with shaders by explicitly registering the Tesla Gate block render layers as cutout on the client;
+- Fixed the default SCP-294 drink configuration not being included in the final built `.jar`;
+- Improved SCP-294 config generation so the first generated `294drinks.json` can be copied from the full packaged template instead of falling back to the minimal internal example;
+- Included the default `config/scpadditions` templates in the build output;
+- Kept existing local SCP-294 configs untouched, so custom configs are not overwritten automatically.
+
 ## SCP Additions 2.0.0
 
 Major overhaul for the 1.20.1 version of SCP Additions.

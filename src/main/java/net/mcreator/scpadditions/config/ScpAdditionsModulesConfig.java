@@ -68,8 +68,6 @@ public final class ScpAdditionsModulesConfig {
 		@SerializedName("scp_131")
 		public Toggle scp131 = new Toggle();
 
-		public Toggle facility = new Toggle();
-
 		private static Root defaults() {
 			return new Root();
 		}
@@ -81,7 +79,6 @@ public final class ScpAdditionsModulesConfig {
 			if (blink == null) blink = new Toggle();
 			if (scp173 == null) scp173 = new EntityModule();
 			if (scp131 == null) scp131 = new Toggle();
-			if (facility == null) facility = new Toggle();
 			return this;
 		}
 	}

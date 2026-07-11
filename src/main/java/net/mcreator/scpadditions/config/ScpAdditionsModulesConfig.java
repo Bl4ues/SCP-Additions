@@ -54,6 +54,7 @@ public final class ScpAdditionsModulesConfig {
 
 	public static final class Root {
 		public Toggle inventory = new Toggle();
+		public Toggle interactions = new Toggle();
 		public Toggle hud = new Toggle();
 		public Vitals vitals = new Vitals();
 		public Toggle blink = new Toggle();
@@ -67,6 +68,7 @@ public final class ScpAdditionsModulesConfig {
 
 		private Root normalize() {
 			if (inventory == null) inventory = new Toggle();
+			if (interactions == null) interactions = new Toggle();
 			if (hud == null) hud = new Toggle();
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();

@@ -17,7 +17,6 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,9 +68,6 @@ public final class FacilityModule {
                     .title(Component.translatable("item_group.scp_unity_extra_blocks.scp_unity_extra_misc"))
                     .icon(() -> new ItemStack(ARCHIVAL_BOTTOM.get()))
                     .displayItems((parameters, output) -> {
-                        if (!ScpAdditionsModulesConfig.get().facility.enabled) {
-                            return;
-                        }
                         for (RegistryObject<Block> block : CREATIVE_BLOCKS) {
                             output.accept(block.get());
                         }

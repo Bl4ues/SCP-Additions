@@ -32,6 +32,8 @@ public class ScpAdditionsModTabs {
 	public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS = REGISTRY.register("sc_padditions_sc_ps",
 			() -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_sc_ps")).icon(() -> new ItemStack(ScpAdditionsModBlocks.SCP_1176.get())).displayItems((parameters, tabData) -> {
 				tabData.accept(ScpAdditionsModBlocks.SCP_079ON.get().asItem());
+				tabData.accept(Scp131Items.SCP_131_A_SPAWN_EGG.get());
+				tabData.accept(Scp131Items.SCP_131_B_SPAWN_EGG.get());
 				tabData.accept(ScpAdditionsModBlocks.SCP_294.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_330.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_426.get().asItem());

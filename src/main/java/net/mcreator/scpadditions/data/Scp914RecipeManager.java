@@ -22,10 +22,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -40,12 +42,13 @@ public final class Scp914RecipeManager {
 	private static final Path CONFIG_ROOT = FMLPaths.CONFIGDIR.get().resolve("scpadditions");
 	private static final Path CONFIG_PATH = CONFIG_ROOT.resolve("914recipes.json");
 	private static final Path FRAGMENT_DIR = CONFIG_ROOT.resolve("914recipes.d");
+	private static final String BUNDLED_CONFIG = "config/scpadditions/914recipes.json";
 	private static final String DEFAULT_CONFIG = """
 			{
 			  "version": 2,
 			  "machine": {
-			    "intake_offset": [-4, 0, -3],
-			    "output_offset": [4, 0, -3],
+			    "intake_offset": [-5, 0, -3],
+			    "output_offset": [5, 0, -3],
 			    "search_radius": 1.5,
 			    "start_delay_ticks": 30,
 			    "finish_delay_ticks": 160
@@ -84,13 +87,23 @@ public final class Scp914RecipeManager {
 			Files.createDirectories(CONFIG_ROOT);
 			Files.createDirectories(FRAGMENT_DIR);
 			if (Files.notExists(CONFIG_PATH)) {
-				Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
+				writeDefaultConfig();
 			} else {
 				prettyPrintConfigIfNeeded(CONFIG_PATH);
 			}
 		} catch (IOException exception) {
 			ScpAdditionsMod.LOGGER.error("Failed to create SCP-914 config at {}", CONFIG_PATH, exception);
 		}
+	}
+
+	private static void writeDefaultConfig() throws IOException {
+		try (InputStream stream = Scp914RecipeManager.class.getClassLoader().getResourceAsStream(BUNDLED_CONFIG)) {
+			if (stream != null) {
+				Files.copy(stream, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
+				return;
+			}
+		}
+		Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
 	}
 
 	private static void readFragmentFiles(List<RecipeDefinition> parsed) {
@@ -148,8 +161,8 @@ public final class Scp914RecipeManager {
 		}
 		JsonObject json = GsonHelper.getAsJsonObject(root, "machine");
 		return new MachineConfig(
-				readOffset(json, "intake_offset", -4, 0, -3),
-				readOffset(json, "output_offset", 4, 0, -3),
+				readOffset(json, "intake_offset", -5, 0, -3),
+				readOffset(json, "output_offset", 5, 0, -3),
 				Math.max(0.5D, GsonHelper.getAsDouble(json, "search_radius", 1.5D)),
 				Math.max(0, GsonHelper.getAsInt(json, "start_delay_ticks", 30)),
 				Math.max(0, GsonHelper.getAsInt(json, "finish_delay_ticks", 160)));
@@ -350,6 +363,6 @@ public final class Scp914RecipeManager {
 	public record ItemUse(ItemEntity entity, int count) {}
 	public record EntityUse(Entity entity, boolean consume) {}
 	public record RecipeMatch(RecipeDefinition recipe, List<ItemUse> itemUses, List<EntityUse> entityUses) { public ItemStack firstInputStack() { return itemUses.isEmpty() ? ItemStack.EMPTY : itemUses.get(0).entity().getItem(); } }
-	public record MachineConfig(Offset intakeOffset, Offset outputOffset, double searchRadius, int startDelayTicks, int finishDelayTicks) { public static MachineConfig defaults() { return new MachineConfig(new Offset(-4, 0, -3), new Offset(4, 0, -3), 1.5D, 30, 160); } }
+	public record MachineConfig(Offset intakeOffset, Offset outputOffset, double searchRadius, int startDelayTicks, int finishDelayTicks) { public static MachineConfig defaults() { return new MachineConfig(new Offset(-5, 0, -3), new Offset(5, 0, -3), 1.5D, 30, 160); } }
 	public record Offset(int x, int y, int z) {}
 }

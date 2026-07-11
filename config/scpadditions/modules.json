@@ -18,8 +18,7 @@
     "natural_spawn_enabled": true
   },
   "scp_131": {
-    "enabled": true,
-    "natural_spawn_enabled": true
+    "enabled": true
   },
   "facility": {
     "enabled": true

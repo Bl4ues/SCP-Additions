@@ -12,15 +12,15 @@ public final class Scp131Items {
 
     public static final RegistryObject<Item> SCP_131_A_SPAWN_EGG = REGISTRY.register("scp_131_a_spawn_egg", () ->
             new NamedSpawnEggItem(ScpAdditionsModEntities.SCP_131_A, 0xD96724, 0x1F1B18,
-                    new Item.Properties(), "SCP-131-A Spawn Egg"));
+                    new Item.Properties(), "SCP-131-A Spawn Egg", "tooltip.scp_additions.scp_131_a_spawn_egg"));
 
     public static final RegistryObject<Item> SCP_131_B_SPAWN_EGG = REGISTRY.register("scp_131_b_spawn_egg", () ->
             new NamedSpawnEggItem(ScpAdditionsModEntities.SCP_131_B, 0xDDBB45, 0x342B18,
-                    new Item.Properties(), "SCP-131-B Spawn Egg"));
+                    new Item.Properties(), "SCP-131-B Spawn Egg", "tooltip.scp_additions.scp_131_b_spawn_egg"));
 
     public static final RegistryObject<Item> SCP_173_SPAWN_EGG = REGISTRY.register("scp_173_spawn_egg", () ->
             new NamedSpawnEggItem(ScpAdditionsModEntities.SCP_173, 0x8B8B82, 0x4A1712,
-                    new Item.Properties(), "SCP-173 Spawn Egg"));
+                    new Item.Properties(), "SCP-173 Spawn Egg", "tooltip.scp_additions.scp_173_spawn_egg"));
 
     private Scp131Items() {
     }

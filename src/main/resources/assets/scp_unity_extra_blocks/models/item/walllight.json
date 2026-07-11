@@ -1,7 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_unity_extra_blocks:item/heater_item"
+    "layer0": "scp_unity_extra_blocks:item/wall_light_item"
   },
   "render_type": "translucent"
 }

@@ -3,7 +3,6 @@ package net.mcreator.scpadditions.procedures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -34,7 +33,7 @@ public final class KeycardReaderHelper {
 			if (stack.isEmpty()) {
 				continue;
 			}
-			highest = Math.max(highest, keycardLevel(stack.getItem()));
+			highest = Math.max(highest, keycardLevel(stack));
 			if (highest >= 6) {
 				return highest;
 			}
@@ -42,13 +41,13 @@ public final class KeycardReaderHelper {
 		return highest;
 	}
 
-	private static int keycardLevel(Item item) {
-		if (item == ScpAdditionsModItems.LEVEL_6_KEYCARD.get()) return 6;
-		if (item == ScpAdditionsModItems.LEVEL_5_KEYCARD.get()) return 5;
-		if (item == ScpAdditionsModItems.LEVEL_4_KEYCARD.get()) return 4;
-		if (item == ScpAdditionsModItems.LEVEL_3_KEYCARD.get()) return 3;
-		if (item == ScpAdditionsModItems.LEVEL_2_KEYCARD.get()) return 2;
-		if (item == ScpAdditionsModItems.LEVEL_1_KEYCARD.get()) return 1;
+	private static int keycardLevel(ItemStack stack) {
+		if (stack.is(ScpAdditionsModItems.LEVEL_6_KEYCARD.get())) return 6;
+		if (stack.is(ScpAdditionsModItems.LEVEL_5_KEYCARD.get())) return 5;
+		if (stack.is(ScpAdditionsModItems.LEVEL_4_KEYCARD.get())) return 4;
+		if (stack.is(ScpAdditionsModItems.LEVEL_3_KEYCARD.get())) return 3;
+		if (stack.is(ScpAdditionsModItems.LEVEL_2_KEYCARD.get())) return 2;
+		if (stack.is(ScpAdditionsModItems.LEVEL_1_KEYCARD.get())) return 1;
 		return 0;
 	}
 

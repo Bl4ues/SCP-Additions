@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "scp_unity_extra_blocks:item/screen_locked"
+  },
+  "render_type": "translucent"
+}

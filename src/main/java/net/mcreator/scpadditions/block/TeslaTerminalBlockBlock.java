@@ -159,6 +159,8 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
 		super.use(blockstate, world, pos, entity, hand, hit);
 		if (entity instanceof ServerPlayer player) {
+			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
+			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 			NetworkHooks.openScreen(player, new MenuProvider() {
 				@Override
 				public Component getDisplayName() {
@@ -168,11 +170,15 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 				@Override
 				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
 					FriendlyByteBuf data = new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos);
-					data.writeBoolean(world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON));
-					data.writeBoolean(world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE));
+					data.writeBoolean(teslaOn);
+					data.writeBoolean(manualOverride);
 					return new TeslaTerminalMenu(id, inventory, data);
 				}
-			}, pos);
+			}, data -> {
+				data.writeBlockPos(pos);
+				data.writeBoolean(teslaOn);
+				data.writeBoolean(manualOverride);
+			});
 		}
 		return InteractionResult.SUCCESS;
 	}

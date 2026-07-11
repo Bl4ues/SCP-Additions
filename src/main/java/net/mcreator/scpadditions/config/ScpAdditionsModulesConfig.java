@@ -29,9 +29,7 @@ public final class ScpAdditionsModulesConfig {
 		Root loaded = Root.defaults();
 		try {
 			Files.createDirectories(CONFIG_PATH.getParent());
-			if (Files.notExists(CONFIG_PATH)) {
-				writeDefaults(loaded);
-			} else {
+			if (Files.exists(CONFIG_PATH)) {
 				try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
 					Root parsed = GSON.fromJson(reader, Root.class);
 					if (parsed != null) {
@@ -39,6 +37,7 @@ public final class ScpAdditionsModulesConfig {
 					}
 				}
 			}
+			writeConfig(loaded);
 		} catch (IOException | JsonParseException exception) {
 			ScpAdditionsMod.LOGGER.error("Failed to load {}. Using safe default module settings for this launch.", CONFIG_PATH, exception);
 		}
@@ -46,9 +45,10 @@ public final class ScpAdditionsModulesConfig {
 		ScpAdditionsMod.LOGGER.info("Loaded SCP Additions module configuration from {}", CONFIG_PATH);
 	}
 
-	private static void writeDefaults(Root defaults) throws IOException {
-		try (Writer writer = Files.newBufferedWriter(CONFIG_PATH, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-			GSON.toJson(defaults, writer);
+	private static void writeConfig(Root config) throws IOException {
+		try (Writer writer = Files.newBufferedWriter(CONFIG_PATH, StandardCharsets.UTF_8,
+				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
+			GSON.toJson(config, writer);
 		}
 	}
 

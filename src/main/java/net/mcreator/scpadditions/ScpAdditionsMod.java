@@ -19,8 +19,10 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
+import net.mcreator.scpadditions.entity.Scp131Sounds;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.world.features.StructureFeature;
+import net.mcreator.scpadditions.init.Scp131Items;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
@@ -48,9 +50,11 @@ public class ScpAdditionsMod {
 		MinecraftForge.EVENT_BUS.register(this);
 		IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 		ScpAdditionsModSounds.REGISTRY.register(bus);
+		Scp131Sounds.REGISTRY.register(bus);
 		ScpAdditionsModBlocks.REGISTRY.register(bus);
 		ScpAdditionsModBlockEntities.REGISTRY.register(bus);
 		ScpAdditionsModItems.REGISTRY.register(bus);
+		Scp131Items.REGISTRY.register(bus);
 		ScpAdditionsModEntities.REGISTRY.register(bus);
 
 		ScpAdditionsModTabs.REGISTRY.register(bus);

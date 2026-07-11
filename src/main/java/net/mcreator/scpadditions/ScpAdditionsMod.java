@@ -16,6 +16,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.world.features.StructureFeature;
@@ -58,6 +59,7 @@ public class ScpAdditionsMod {
 
 		ScpAdditionsModMenus.REGISTRY.register(bus);
 
+		ScpAdditionsModulesConfig.load();
 		Scp294DrinkManager.loadFromConfig();
 		Scp914RecipeManager.loadFromConfig();
 	}

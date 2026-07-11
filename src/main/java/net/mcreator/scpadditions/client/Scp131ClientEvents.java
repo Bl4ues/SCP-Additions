@@ -4,8 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -24,9 +22,7 @@ public final class Scp131ClientEvents {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+        if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         boolean down = false;
@@ -43,13 +39,6 @@ public final class Scp131ClientEvents {
         if (!sent && heldTicks >= HOLD_TICKS) {
             ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp131StopPacket());
             sent = true;
-        }
-    }
-
-    @SubscribeEvent
-    public static void onOverlay(RenderGuiOverlayEvent.Post event) {
-        if (event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) {
-            Scp131NoticeOverlay.render(event.getGuiGraphics());
         }
     }
 }

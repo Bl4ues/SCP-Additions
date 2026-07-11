@@ -14,7 +14,16 @@ public final class TeslaTerminalController {
 	}
 
 	public static boolean hasSecurityCredentials(Player player) {
-		return player != null && player.getInventory().contains(new ItemStack(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
+		if (player == null) {
+			return false;
+		}
+		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+			ItemStack stack = player.getInventory().getItem(i);
+			if (stack.is(ScpAdditionsModItems.SECURITY_CREDENTIALS.get())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static void enableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {

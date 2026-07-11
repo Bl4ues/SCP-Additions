@@ -50,12 +50,15 @@ import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
 import java.util.List;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.netty.buffer.Unpooled;
 
 public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedBlock {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+	private static final Map<Long, Long> TERMINAL_LOOP_NEXT_TICK = new HashMap<>();
 
 	public TeslaTerminalBlockBlock() {
 		super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(30f, 10f).requiresCorrectToolForDrops().noOcclusion().isRedstoneConductor((bs, br, bp) -> false));
@@ -90,10 +93,17 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	@Override
 	public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 		super.animateTick(state, world, pos, random);
-		if (random.nextInt(200) == 0) {
+		long key = pos.asLong();
+		long gameTime = world.getGameTime();
+		long nextLoop = TERMINAL_LOOP_NEXT_TICK.getOrDefault(key, 0L);
+		if (gameTime >= nextLoop) {
 			SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", "terminalloop"));
 			if (sound != null) {
 				world.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, sound, SoundSource.BLOCKS, 1.0F, 1.0F, false);
+			}
+			TERMINAL_LOOP_NEXT_TICK.put(key, gameTime + 200L);
+			if (TERMINAL_LOOP_NEXT_TICK.size() > 512) {
+				TERMINAL_LOOP_NEXT_TICK.clear();
 			}
 		}
 	}

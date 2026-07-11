@@ -1,407 +1,56 @@
 {
-  "teslaactivate": {
-    "subtitle": "subtitles.teslaactivate",
-    "sounds": [
-      {
-        "name": "scp_additions:teslaactivate",
-        "stream": false
-      }
-    ]
-  },
-  "teslaready": {
-    "subtitle": "subtitles.teslaready",
-    "sounds": [
-      {
-        "name": "scp_additions:teslaready",
-        "stream": false
-      }
-    ]
-  },
-  "teslarecharge": {
-    "subtitle": "subtitles.teslarecharge",
-    "sounds": [
-      {
-        "name": "scp_additions:teslarecharge",
-        "stream": false
-      }
-    ]
-  },
-  "click": {
-    "subtitle": "subtitles.click",
-    "sounds": [
-      {
-        "name": "scp_additions:click",
-        "stream": false
-      }
-    ]
-  },
-  "terminalon": {
-    "subtitle": "subtitles.terminalon",
-    "sounds": [
-      {
-        "name": "scp_additions:terminalon",
-        "stream": false
-      }
-    ]
-  },
-  "terminaloff": {
-    "subtitle": "subtitles.terminaloff",
-    "sounds": [
-      {
-        "name": "scp_additions:terminaloff",
-        "stream": false
-      }
-    ]
-  },
-  "scp079_1": {
-    "subtitle": "subtitles.scp079_1",
-    "sounds": [
-      {
-        "name": "scp_additions:079_1",
-        "stream": false
-      }
-    ]
-  },
-  "candyeat": {
-    "subtitle": "subtitles.candyeat",
-    "sounds": [
-      {
-        "name": "scp_additions:candyeat",
-        "stream": false
-      }
-    ]
-  },
-  "candy": {
-    "subtitle": "subtitles.candy",
-    "sounds": [
-      {
-        "name": "scp_additions:candy",
-        "stream": false
-      }
-    ]
-  },
-  "scp330death": {
-    "subtitle": "subtitles.scp330death",
-    "sounds": [
-      {
-        "name": "scp_additions:330death",
-        "stream": false
-      }
-    ]
-  },
-  "scp1176": {
-    "subtitle": "subtitles.scp1176",
-    "sounds": [
-      {
-        "name": "scp_additions:scp1176",
-        "stream": true
-      }
-    ]
-  },
-  "scp902": {
-    "subtitle": "subtitles.scp902",
-    "sounds": [
-      {
-        "name": "scp_additions:scp902",
-        "stream": false
-      }
-    ]
-  },
-  "scp902closing": {
-    "subtitle": "subtitles.scp902closing",
-    "sounds": [
-      {
-        "name": "scp_additions:scp902closing",
-        "stream": false
-      }
-    ]
-  },
-  "scp902opening": {
-    "subtitle": "subtitles.scp902opening",
-    "sounds": [
-      {
-        "name": "scp_additions:scp902opening",
-        "stream": false
-      }
-    ]
-  },
-  "scp079_2": {
-    "subtitle": "subtitles.scp079_2",
-    "sounds": [
-      {
-        "name": "scp_additions:079_2",
-        "stream": false
-      }
-    ]
-  },
-  "button": {
-    "subtitle": "subtitles.button",
-    "sounds": [
-      {
-        "name": "scp_additions:button",
-        "stream": false
-      }
-    ]
-  },
-  "scp914doorclose": {
-    "subtitle": "subtitles.scp914doorclose",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914doorclose",
-        "stream": false
-      }
-    ]
-  },
-  "scp914dooropen": {
-    "subtitle": "subtitles.scp914dooropen",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914dooropen",
-        "stream": false
-      }
-    ]
-  },
-  "scp914key": {
-    "subtitle": "subtitles.scp914key",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914key",
-        "stream": false
-      }
-    ]
-  },
-  "scp914refining": {
-    "subtitle": "subtitles.scp914refining",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914refining",
-        "stream": false
-      }
-    ]
-  },
-  "scp914dial": {
-    "subtitle": "subtitles.scp914dial",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914dial",
-        "stream": false
-      }
-    ]
-  },
-  "scp914inside": {
-    "subtitle": "subtitles.scp914inside",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914inside",
-        "stream": false
-      }
-    ]
-  },
-  "scp914death": {
-    "subtitle": "subtitles.scp914death",
-    "sounds": [
-      {
-        "name": "scp_additions:scp914death",
-        "stream": false
-      }
-    ]
-  },
-  "scp059box": {
-    "subtitle": "subtitles.scp059box",
-    "sounds": [
-      {
-        "name": "scp_additions:scp059box",
-        "stream": false
-      }
-    ]
-  },
-  "geiger2": {
-    "subtitle": "subtitles.geiger2",
-    "sounds": [
-      {
-        "name": "scp_additions:geiger2",
-        "stream": false
-      }
-    ]
-  },
-  "geiger1": {
-    "subtitle": "subtitles.geiger1",
-    "sounds": [
-      {
-        "name": "scp_additions:geiger1",
-        "stream": false
-      }
-    ]
-  },
-  "scp059_1": {
-    "subtitle": "subtitles.scp059_1",
-    "sounds": [
-      {
-        "name": "scp_additions:scp059_1",
-        "stream": false
-      }
-    ]
-  },
-  "geiger3": {
-    "subtitle": "subtitles.geiger3",
-    "sounds": [
-      {
-        "name": "scp_additions:geiger3",
-        "stream": false
-      }
-    ]
-  },
-  "spray": {
-    "subtitle": "subtitles.spray",
-    "sounds": [
-      {
-        "name": "scp_additions:spray",
-        "stream": false
-      }
-    ]
-  },
-  "decontamination": {
-    "subtitle": "subtitles.decontamination",
-    "sounds": [
-      {
-        "name": "scp_additions:decontamination",
-        "stream": false
-      }
-    ]
-  },
-  "dooropen": {
-    "subtitle": "subtitles.dooropen",
-    "sounds": [
-      {
-        "name": "scp_additions:dooropen",
-        "stream": false
-      }
-    ]
-  },
-  "doorclosing": {
-    "subtitle": "subtitles.doorclosing",
-    "sounds": [
-      {
-        "name": "scp_additions:doorclose",
-        "stream": false
-      }
-    ]
-  },
-  "accessgranted": {
-    "subtitle": "subtitles.accessgranted",
-    "sounds": [
-      {
-        "name": "scp_additions:accessgranted",
-        "stream": false
-      }
-    ]
-  },
-  "accessdenied": {
-    "subtitle": "subtitles.accessdenied",
-    "sounds": [
-      {
-        "name": "scp_additions:accessdenied",
-        "stream": false
-      }
-    ]
-  },
-  "scp294enter": {
-    "subtitle": "subtitles.scp294enter",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294enter",
-        "stream": false
-      }
-    ]
-  },
-  "scp294pouring": {
-    "subtitle": "subtitles.scp294pouring",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294pouring",
-        "stream": false
-      }
-    ]
-  },
-  "scp294emptycup": {
-    "subtitle": "subtitles.scp294emptycup",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294emptycup",
-        "stream": false
-      }
-    ]
-  },
-  "scp294outofrange": {
-    "subtitle": "subtitles.scp294outofrange",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294outofrange",
-        "stream": false
-      }
-    ]
-  },
-  "scp294on": {
-    "subtitle": "subtitles.scp294on",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294on",
-        "stream": false
-      }
-    ]
-  },
-  "scp294off": {
-    "subtitle": "subtitles.scp294off",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294off",
-        "stream": false
-      }
-    ]
-  },
-  "scp294coinslot": {
-    "subtitle": "subtitles.scp294coinslot",
-    "sounds": [
-      {
-        "name": "scp_additions:scp294coinslot",
-        "stream": false
-      }
-    ]
-  },
-  "heartbeat": {
-    "subtitle": "subtitles.heartbeat",
-    "sounds": [
-      {
-        "name": "scp_additions:heartbeat",
-        "stream": false
-      }
-    ]
-  },
-  "nuclear": {
-    "subtitle": "subtitles.nuclear",
-    "sounds": [
-      {
-        "name": "scp_additions:nuclear",
-        "stream": false
-      }
-    ]
-  },
-  "gravitons": {
-    "subtitle": "subtitles.gravitons",
-    "sounds": [
-      {
-        "name": "scp_additions:gravitons",
-        "stream": false
-      }
-    ]
-  },
-  "stomach": {
-    "subtitle": "subtitles.stomach",
-    "sounds": [
-      {
-        "name": "scp_additions:stomach",
-        "stream": false
-      }
-    ]
-  }
+  "teslaactivate": { "subtitle": "subtitles.teslaactivate", "sounds": [{ "name": "scp_additions:teslaactivate", "stream": false }] },
+  "overcharge": { "subtitle": "subtitles.overcharge", "sounds": [{ "name": "scp_additions:overcharge", "stream": false }] },
+  "teslaready": { "subtitle": "subtitles.teslaready", "sounds": [{ "name": "scp_additions:teslaready", "stream": false }] },
+  "teslarecharge": { "subtitle": "subtitles.teslarecharge", "sounds": [{ "name": "scp_additions:teslarecharge", "stream": false }] },
+  "click": { "subtitle": "subtitles.click", "sounds": [{ "name": "scp_additions:click", "stream": false }] },
+  "click_1": { "subtitle": "subtitles.click_1", "sounds": [{ "name": "scp_additions:click_1", "stream": false }] },
+  "click_2": { "subtitle": "subtitles.click_2", "sounds": [{ "name": "scp_additions:click_2", "stream": false }] },
+  "select": { "subtitle": "subtitles.select", "sounds": [{ "name": "scp_additions:select", "stream": false }] },
+  "popup": { "subtitle": "subtitles.popup", "sounds": [{ "name": "scp_additions:popup", "stream": false }] },
+  "turningon": { "subtitle": "subtitles.turningon", "sounds": [{ "name": "scp_additions:turningon", "stream": true }] },
+  "turningoff": { "subtitle": "subtitles.turningoff", "sounds": [{ "name": "scp_additions:turningoff", "stream": true }] },
+  "overrideon": { "subtitle": "subtitles.overrideon", "sounds": [{ "name": "scp_additions:overrideon", "stream": true }] },
+  "terminalloop": { "subtitle": "subtitles.terminalloop", "sounds": [{ "name": "scp_additions:terminalloop", "stream": true }] },
+  "terminalon": { "subtitle": "subtitles.terminalon", "sounds": [{ "name": "scp_additions:terminalon", "stream": false }] },
+  "terminaloff": { "subtitle": "subtitles.terminaloff", "sounds": [{ "name": "scp_additions:terminaloff", "stream": false }] },
+  "scp079_1": { "subtitle": "subtitles.scp079_1", "sounds": [{ "name": "scp_additions:079_1", "stream": false }] },
+  "candyeat": { "subtitle": "subtitles.candyeat", "sounds": [{ "name": "scp_additions:candyeat", "stream": false }] },
+  "candy": { "subtitle": "subtitles.candy", "sounds": [{ "name": "scp_additions:candy", "stream": false }] },
+  "scp330death": { "subtitle": "subtitles.scp330death", "sounds": [{ "name": "scp_additions:330death", "stream": false }] },
+  "scp1176": { "subtitle": "subtitles.scp1176", "sounds": [{ "name": "scp_additions:scp1176", "stream": true }] },
+  "scp902": { "subtitle": "subtitles.scp902", "sounds": [{ "name": "scp_additions:scp902", "stream": false }] },
+  "scp902closing": { "subtitle": "subtitles.scp902closing", "sounds": [{ "name": "scp_additions:scp902closing", "stream": false }] },
+  "scp902opening": { "subtitle": "subtitles.scp902opening", "sounds": [{ "name": "scp_additions:scp902opening", "stream": false }] },
+  "scp079_2": { "subtitle": "subtitles.scp079_2", "sounds": [{ "name": "scp_additions:079_2", "stream": false }] },
+  "button": { "subtitle": "subtitles.button", "sounds": [{ "name": "scp_additions:button", "stream": false }] },
+  "scp914doorclose": { "subtitle": "subtitles.scp914doorclose", "sounds": [{ "name": "scp_additions:scp914doorclose", "stream": false }] },
+  "scp914dooropen": { "subtitle": "subtitles.scp914dooropen", "sounds": [{ "name": "scp_additions:scp914dooropen", "stream": false }] },
+  "scp914key": { "subtitle": "subtitles.scp914key", "sounds": [{ "name": "scp_additions:scp914key", "stream": false }] },
+  "scp914refining": { "subtitle": "subtitles.scp914refining", "sounds": [{ "name": "scp_additions:scp914refining", "stream": false }] },
+  "scp914dial": { "subtitle": "subtitles.scp914dial", "sounds": [{ "name": "scp_additions:scp914dial", "stream": false }] },
+  "scp914inside": { "subtitle": "subtitles.scp914inside", "sounds": [{ "name": "scp_additions:scp914inside", "stream": false }] },
+  "scp914death": { "subtitle": "subtitles.scp914death", "sounds": [{ "name": "scp_additions:scp914death", "stream": false }] },
+  "scp059box": { "subtitle": "subtitles.scp059box", "sounds": [{ "name": "scp_additions:scp059box", "stream": false }] },
+  "geiger2": { "subtitle": "subtitles.geiger2", "sounds": [{ "name": "scp_additions:geiger2", "stream": false }] },
+  "geiger1": { "subtitle": "subtitles.geiger1", "sounds": [{ "name": "scp_additions:geiger1", "stream": false }] },
+  "scp059_1": { "subtitle": "subtitles.scp059_1", "sounds": [{ "name": "scp_additions:scp059_1", "stream": false }] },
+  "geiger3": { "subtitle": "subtitles.geiger3", "sounds": [{ "name": "scp_additions:geiger3", "stream": false }] },
+  "spray": { "subtitle": "subtitles.spray", "sounds": [{ "name": "scp_additions:spray", "stream": false }] },
+  "decontamination": { "subtitle": "subtitles.decontamination", "sounds": [{ "name": "scp_additions:decontamination", "stream": false }] },
+  "dooropen": { "subtitle": "subtitles.dooropen", "sounds": [{ "name": "scp_additions:dooropen", "stream": false }] },
+  "doorclosing": { "subtitle": "subtitles.doorclosing", "sounds": [{ "name": "scp_additions:doorclose", "stream": false }] },
+  "accessgranted": { "subtitle": "subtitles.accessgranted", "sounds": [{ "name": "scp_additions:accessgranted", "stream": false }] },
+  "accessdenied": { "subtitle": "subtitles.accessdenied", "sounds": [{ "name": "scp_additions:accessdenied", "stream": false }] },
+  "scp294enter": { "subtitle": "subtitles.scp294enter", "sounds": [{ "name": "scp_additions:scp294enter", "stream": false }] },
+  "scp294pouring": { "subtitle": "subtitles.scp294pouring", "sounds": [{ "name": "scp_additions:scp294pouring", "stream": false }] },
+  "scp294emptycup": { "subtitle": "subtitles.scp294emptycup", "sounds": [{ "name": "scp_additions:scp294emptycup", "stream": false }] },
+  "scp294outofrange": { "subtitle": "subtitles.scp294outofrange", "sounds": [{ "name": "scp_additions:scp294outofrange", "stream": false }] },
+  "scp294on": { "subtitle": "subtitles.scp294on", "sounds": [{ "name": "scp_additions:scp294on", "stream": false }] },
+  "scp294off": { "subtitle": "subtitles.scp294off", "sounds": [{ "name": "scp_additions:scp294off", "stream": false }] },
+  "scp294coinslot": { "subtitle": "subtitles.scp294coinslot", "sounds": [{ "name": "scp_additions:scp294coinslot", "stream": false }] },
+  "heartbeat": { "subtitle": "subtitles.heartbeat", "sounds": [{ "name": "scp_additions:heartbeat", "stream": false }] },
+  "nuclear": { "subtitle": "subtitles.nuclear", "sounds": [{ "name": "scp_additions:nuclear", "stream": false }] },
+  "gravitons": { "subtitle": "subtitles.gravitons", "sounds": [{ "name": "scp_additions:gravitons", "stream": false }] },
+  "stomach": { "subtitle": "subtitles.stomach", "sounds": [{ "name": "scp_additions:stomach", "stream": false }] }
 }

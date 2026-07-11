@@ -21,6 +21,7 @@ import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.entity.Scp131Sounds;
 import net.mcreator.scpadditions.facility.FacilityModule;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.Scp131Items;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
@@ -62,8 +63,8 @@ public class ScpAdditionsMod {
 
 		StructureFeature.REGISTRY.register(bus);
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);
-
 		ScpAdditionsModMenus.REGISTRY.register(bus);
+		ScpEntityNetwork.register();
 
 		ScpAdditionsModulesConfig.load();
 		Scp294DrinkManager.loadFromConfig();

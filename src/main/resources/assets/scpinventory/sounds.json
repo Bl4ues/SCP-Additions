@@ -1,0 +1,66 @@
+{
+  "scare": {
+    "sounds": [
+      "scpinventory:scare"
+    ]
+  },
+  "horror": {
+    "sounds": [
+      "scpinventory:horror"
+    ]
+  },
+  "statue_death": {
+    "sounds": [
+      "scpinventory:statue_death"
+    ]
+  },
+  "stone_scrap": {
+    "sounds": [
+      "scpinventory:stone_scrap_1",
+      "scpinventory:stone_scrap_2",
+      "scpinventory:stone_scrap_3",
+      "scpinventory:stone_scrap_4",
+      "scpinventory:stone_scrap_5"
+    ]
+  },
+  "stone_drag": {
+    "sounds": [
+      "scpinventory:stone_drag"
+    ]
+  },
+  "neck_snap": {
+    "sounds": [
+      "scpinventory:neck_snap"
+    ]
+  },
+  "rattle": {
+    "sounds": [
+      "scpinventory:rattle1",
+      "scpinventory:rattle2",
+      "scpinventory:rattle3"
+    ]
+  },
+  "eye_pod_idle": {
+    "sounds": [
+      "scpinventory:idle"
+    ]
+  },
+  "eye_pod_move": {
+    "sounds": [
+      "scpinventory:walk"
+    ]
+  },
+  "eye_pod_voice": {
+    "sounds": [
+      "scpinventory:noise_1",
+      "scpinventory:noise_2",
+      "scpinventory:noise_3",
+      "scpinventory:noise_4",
+      "scpinventory:noise_5",
+      "scpinventory:noise_6",
+      "scpinventory:noise_7",
+      "scpinventory:noise_8",
+      "scpinventory:noise_9"
+    ]
+  }
+}

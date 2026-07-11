@@ -1,0 +1,12 @@
+{
+  "death.attack.scpinventory.scp_173_neck_snap": "%1$s's neck was snapped by SCP-173",
+  "effect.scpinventory.eye_sore": "Eye Sore",
+  "entity.scpinventory.scp_131_a": "SCP-131-A",
+  "entity.scpinventory.scp_131_b": "SCP-131-B",
+  "entity.scpinventory.scp_173": "SCP-173",
+  "key.categories.scpinventory": "SCP Inventory",
+  "key.scpinventory.open_inventory": "Open SCP Inventory",
+  "key.scpinventory.context_interact": "Context Interact",
+  "key.scpinventory.context_config_select": "Context Config Select",
+  "key.scpinventory.blink": "Blink"
+}

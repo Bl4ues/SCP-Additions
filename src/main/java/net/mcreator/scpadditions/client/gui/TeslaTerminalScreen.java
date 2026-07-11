@@ -117,8 +117,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private void renderOverlay(GuiGraphics guiGraphics) {
 		ResourceLocation texture = overlayTexture();
 		if (isOverrideOverlayState()) {
-			// Two-pass render: first keep the whole authored overlay faint, then draw only fully opaque pixels on top.
-			// Semi-transparent matte pixels in the PNG are deliberately discarded on the front pass.
 			RenderSystem.setShaderColor(1, 1, 1, 0.25F);
 			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 			RenderSystem.setShaderColor(1, 1, 1, 1.0F);
@@ -153,8 +151,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 					for (int py = 0; py < source.getHeight(); py++) {
 						for (int px = 0; px < source.getWidth(); px++) {
 							int pixel = source.getPixelRGBA(px, py);
-							int alpha = (pixel >>> 24) & 255;
-							solid.setPixelRGBA(px, py, alpha == 255 ? pixel : 0);
+							solid.setPixelRGBA(px, py, keepSolidOverlayPixel(pixel) ? pixel : 0);
 						}
 					}
 					DynamicTexture dynamicTexture = new DynamicTexture(solid);
@@ -169,11 +166,30 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		}
 	}
 
+	private boolean keepSolidOverlayPixel(int pixel) {
+		int alpha = (pixel >>> 24) & 255;
+		if (alpha != 255) {
+			return false;
+		}
+		int r = pixel & 255;
+		int g = (pixel >>> 8) & 255;
+		int b = (pixel >>> 16) & 255;
+		return !isOverrideMattePixel(r, g, b);
+	}
+
+	private boolean isOverrideMattePixel(int r, int g, int b) {
+		int max = Math.max(r, Math.max(g, b));
+		int min = Math.min(r, Math.min(g, b));
+		boolean greenishMatte = r >= 85 && r <= 190 && g >= 95 && g <= 210 && b >= 85 && b <= 190 && g >= r && g >= b && max - min <= 70;
+		boolean paleMatte = r >= 100 && r <= 190 && g >= 100 && g <= 200 && b >= 100 && b <= 190 && max - min <= 45;
+		return greenishMatte || paleMatte;
+	}
+
 	private void renderPermissionText(GuiGraphics guiGraphics) {
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 76, 0);
+		guiGraphics.pose().translate(1278, 77, 0);
 		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();

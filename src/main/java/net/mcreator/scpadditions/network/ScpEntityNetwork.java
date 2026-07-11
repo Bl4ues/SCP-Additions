@@ -11,18 +11,29 @@ public final class ScpEntityNetwork {
     }
 
     public static synchronized void register() {
-        if (registered) {
-            return;
-        }
+        if (registered) return;
         registered = true;
         ScpAdditionsMod.addNetworkMessage(Scp131NoticePacket.class,
                 Scp131NoticePacket::encode, Scp131NoticePacket::decode, Scp131NoticePacket::handle);
         ScpAdditionsMod.addNetworkMessage(Scp131StopPacket.class,
                 Scp131StopPacket::encode, Scp131StopPacket::decode, Scp131StopPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(BlinkStatePacket.class,
+                BlinkStatePacket::encode, BlinkStatePacket::decode, BlinkStatePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(BlinkInputStatePacket.class,
+                BlinkInputStatePacket::encode, BlinkInputStatePacket::decode, BlinkInputStatePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScareSoundPacket.class,
+                ScareSoundPacket::encode, ScareSoundPacket::decode, ScareSoundPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {
-        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
-                new Scp131NoticePacket(following));
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new Scp131NoticePacket(following));
+    }
+
+    public static void setBlinkActive(ServerPlayer player, boolean active) {
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new BlinkStatePacket(active));
+    }
+
+    public static void playScare(ServerPlayer player) {
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new ScareSoundPacket());
     }
 }

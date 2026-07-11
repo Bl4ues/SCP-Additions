@@ -20,10 +20,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.Map;
 public final class Scp294DrinkManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("294drinks.json");
+	private static final String BUNDLED_CONFIG = "config/scpadditions/294drinks.json";
 	private static final String DEFAULT_CONFIG = """
 			{
 			  "version": 2,
@@ -127,13 +130,23 @@ public final class Scp294DrinkManager {
 		try {
 			Files.createDirectories(CONFIG_PATH.getParent());
 			if (Files.notExists(CONFIG_PATH)) {
-				Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
+				writeDefaultConfig();
 			} else {
 				prettyPrintConfigIfNeeded();
 			}
 		} catch (IOException exception) {
 			ScpAdditionsMod.LOGGER.error("Failed to create SCP-294 config at {}", CONFIG_PATH, exception);
 		}
+	}
+
+	private static void writeDefaultConfig() throws IOException {
+		try (InputStream stream = Scp294DrinkManager.class.getClassLoader().getResourceAsStream(BUNDLED_CONFIG)) {
+			if (stream != null) {
+				Files.copy(stream, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
+				return;
+			}
+		}
+		Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
 	}
 
 	private static void prettyPrintConfigIfNeeded() throws IOException {

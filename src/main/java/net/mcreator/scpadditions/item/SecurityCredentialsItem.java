@@ -28,6 +28,6 @@ public class SecurityCredentialsItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack itemstack, Level world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
-		list.add(Component.literal("Grants Tesla Terminal access."));
+		list.add(Component.literal("Grants Admin access to Tesla Gate Security Terminals."));
 	}
 }

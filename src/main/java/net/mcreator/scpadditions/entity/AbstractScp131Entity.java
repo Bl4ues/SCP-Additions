@@ -2,14 +2,16 @@ package net.mcreator.scpadditions.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -23,7 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -39,7 +41,12 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     private static final EntityDataAccessor<Boolean> FOLLOWING = SynchedEntityData.defineId(AbstractScp131Entity.class, EntityDataSerializers.BOOLEAN);
     private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
     private static final String OWNER_TAG = "FollowOwner";
-
+    private static final double SCP_173_SCAN_RANGE = 15.0D;
+    private static final double SCP_173_SCAN_RANGE_SQR = SCP_173_SCAN_RANGE * SCP_173_SCAN_RANGE;
+    private static final double SCP_173_WATCH_DISTANCE = 1.2D;
+    private static final double SCP_173_WATCH_DISTANCE_SQR = SCP_173_WATCH_DISTANCE * SCP_173_WATCH_DISTANCE;
+    private static final double SCP_173_FAR_WATCH_DISTANCE = 1.8D;
+    private static final double SCP_173_FAR_WATCH_DISTANCE_SQR = SCP_173_FAR_WATCH_DISTANCE * SCP_173_FAR_WATCH_DISTANCE;
     private static final double OWNER_FOLLOW_DISTANCE = 1.55D;
     private static final double OWNER_FOLLOW_DISTANCE_SQR = OWNER_FOLLOW_DISTANCE * OWNER_FOLLOW_DISTANCE;
     private static final double OWNER_CLOSE_DISTANCE = 0.75D;
@@ -50,12 +57,10 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     private static final int OWNER_ROAM_RANDOM_TICKS = 22;
     private static final double OWNER_RETURN_DISTANCE = 32.0D;
     private static final double OWNER_RETURN_DISTANCE_SQR = OWNER_RETURN_DISTANCE * OWNER_RETURN_DISTANCE;
-
     private static final double COMPANION_SCAN_RANGE = 16.0D;
     private static final double COMPANION_SCAN_RANGE_SQR = COMPANION_SCAN_RANGE * COMPANION_SCAN_RANGE;
     private static final double COMPANION_FOLLOW_DISTANCE = 2.25D;
     private static final double COMPANION_FOLLOW_DISTANCE_SQR = COMPANION_FOLLOW_DISTANCE * COMPANION_FOLLOW_DISTANCE;
-
     private static final double IDLE_A_SCAN_RANGE = 16.0D;
     private static final double IDLE_A_SCAN_RANGE_SQR = IDLE_A_SCAN_RANGE * IDLE_A_SCAN_RANGE;
     private static final double IDLE_A_FOLLOW_DISTANCE = 2.6D;
@@ -63,7 +68,6 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     private static final double IDLE_A_CLOSE_DISTANCE = 1.35D;
     private static final double IDLE_A_CLOSE_DISTANCE_SQR = IDLE_A_CLOSE_DISTANCE * IDLE_A_CLOSE_DISTANCE;
     private static final int IDLE_A_ROAM_INTERVAL_TICKS = 34;
-
     private static final double GROUP_TOGGLE_RANGE = 24.0D;
     private static final double GROUP_TOGGLE_RANGE_SQR = GROUP_TOGGLE_RANGE * GROUP_TOGGLE_RANGE;
     private static final int AMBIENT_NOISE_MIN_TICKS = 360;
@@ -77,6 +81,7 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private UUID followOwner;
+    private boolean wasWatchingScp173;
     private int nextOwnerRoamTick;
     private int nextAmbientNoiseTick;
 
@@ -94,6 +99,8 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     }
 
     public abstract String scpName();
+
+    public abstract String textureName();
 
     @Override
     protected void defineSynchedData() {
@@ -116,18 +123,21 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
             return;
         }
 
-        boolean enabled = ScpAdditionsModulesConfig.get().scp131.enabled;
-        if (isNoAi() == enabled) {
-            setNoAi(!enabled);
-        }
-        if (!enabled) {
-            getNavigation().stop();
-            return;
-        }
-
         setPersistenceRequired();
         scheduleInitialAmbientNoise();
         maybePlayAmbientNoise();
+
+        Scp173Entity scp173 = findNearestScp173();
+        if (scp173 != null) {
+            wasWatchingScp173 = true;
+            runToAndWatch(scp173);
+            return;
+        }
+
+        if (wasWatchingScp173) {
+            wasWatchingScp173 = false;
+            teleportToOwnerIfTooFar();
+        }
 
         if (isFollowing()) {
             followOwner();
@@ -138,28 +148,16 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (!ScpAdditionsModulesConfig.get().scp131.enabled) {
-            return InteractionResult.PASS;
-        }
-
         if (!level().isClientSide) {
-            List<AbstractScp131Entity> group = findNearbyGroup();
-            boolean stop = group.stream().anyMatch(entity -> entity.isFollowingPlayer(player));
-            if (stop) {
-                for (AbstractScp131Entity entity : group) {
-                    if (entity.isFollowingPlayer(player)) {
-                        entity.stopFollowing();
-                    }
-                }
-                player.displayClientMessage(Component.literal("SCP-131 stopped following you"), true);
-            } else {
-                for (AbstractScp131Entity entity : group) {
-                    entity.startFollowing(player);
-                }
-                player.displayClientMessage(Component.literal("SCP-131 is following you"), true);
-                playVoice(1.0F);
-                scheduleAmbientNoise(220 + random.nextInt(320));
+            boolean startedFollowing = startFollowGroup(player, this);
+            if (!startedFollowing) {
+                return InteractionResult.SUCCESS;
             }
+            if (player instanceof ServerPlayer serverPlayer) {
+                ScpEntityNetwork.showScp131Notice(serverPlayer, true);
+            }
+            playVoice(1.0F);
+            scheduleAmbientNoise(220 + random.nextInt(320));
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }
@@ -249,6 +247,18 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     protected void playStepSound(BlockPos pos, BlockState state) {
     }
 
+    private static boolean startFollowGroup(Player player, AbstractScp131Entity trigger) {
+        List<AbstractScp131Entity> group = trigger.findNearbyGroup();
+        if (group.stream().anyMatch(scp131 -> scp131.isFollowingPlayer(player))) {
+            return false;
+        }
+
+        for (AbstractScp131Entity scp131 : group) {
+            scp131.startFollowing(player);
+        }
+        return true;
+    }
+
     private List<AbstractScp131Entity> findNearbyGroup() {
         List<AbstractScp131Entity> group = new ArrayList<>();
         AABB area = getBoundingBox().inflate(GROUP_TOGGLE_RANGE);
@@ -266,21 +276,69 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
         entityData.set(FOLLOWING, following);
     }
 
+    private Scp173Entity findNearestScp173() {
+        AABB area = getBoundingBox().inflate(SCP_173_SCAN_RANGE);
+        Scp173Entity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (Scp173Entity scp173 : level().getEntitiesOfClass(Scp173Entity.class, area,
+                entity -> entity.isAlive() && entity.distanceToSqr(this) <= SCP_173_SCAN_RANGE_SQR)) {
+            double distance = distanceToSqr(scp173);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = scp173;
+            }
+        }
+        return best;
+    }
+
+    private void runToAndWatch(Scp173Entity scp173) {
+        lookHardAt(scp173);
+        double distanceSqr = distanceToSqr(scp173);
+        boolean hasLineOfSight = hasLineOfSight(scp173);
+        if (!hasLineOfSight || distanceSqr > SCP_173_FAR_WATCH_DISTANCE_SQR || distanceSqr < SCP_173_WATCH_DISTANCE_SQR) {
+            Vec3 spot = watchSpotNear(scp173);
+            getNavigation().moveTo(spot.x, spot.y, spot.z, 1.45D);
+        } else {
+            getNavigation().stop();
+            setDeltaMovement(Vec3.ZERO);
+        }
+        lookHardAt(scp173);
+    }
+
+    private Vec3 watchSpotNear(Scp173Entity scp173) {
+        Vec3 away = position().subtract(scp173.position());
+        Vec3 horizontal = new Vec3(away.x, 0.0D, away.z);
+        if (horizontal.lengthSqr() < 0.0001D) {
+            horizontal = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+        Vec3 direction = horizontal.normalize();
+        return scp173.position().add(direction.scale(SCP_173_WATCH_DISTANCE));
+    }
+
+    private void teleportToOwnerIfTooFar() {
+        if (followOwner == null) {
+            return;
+        }
+
+        Player owner = level().getPlayerByUUID(followOwner);
+        if (owner == null || owner.isRemoved() || !owner.isAlive() || distanceToSqr(owner) <= OWNER_RETURN_DISTANCE_SQR) {
+            return;
+        }
+
+        teleportNearOwner(owner);
+    }
+
     private void teleportNearOwner(Player owner) {
         getNavigation().stop();
-        Vec3 look = owner.getLookAngle();
-        Vec3 horizontalLook = new Vec3(look.x, 0.0D, look.z);
-        if (horizontalLook.lengthSqr() < 0.0001D) {
-            horizontalLook = new Vec3(0.0D, 0.0D, 1.0D);
-        }
-        Vec3 behindOwner = owner.position().subtract(horizontalLook.normalize().scale(1.15D));
+        Vec3 behindOwner = owner.position().subtract(owner.getLookAngle().normalize().scale(1.15D));
         moveTo(behindOwner.x, owner.getY(), behindOwner.z, owner.getYRot(), 0.0F);
         scheduleNextOwnerRoam(8);
     }
 
     private void followOwner() {
         if (followOwner == null) {
-            stopFollowing();
+            setFollowing(false);
+            getNavigation().stop();
             return;
         }
 
@@ -302,6 +360,7 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
             getNavigation().moveTo(spot.x, spot.y, spot.z, tooFar ? FOLLOW_CATCH_UP_SPEED : FOLLOW_CLOSE_SPEED);
             scheduleNextOwnerRoam(OWNER_ROAM_INTERVAL_TICKS + random.nextInt(OWNER_ROAM_RANDOM_TICKS + 1));
         }
+
         getLookControl().setLookAt(owner, 35.0F, 25.0F);
     }
 
@@ -377,14 +436,16 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
     private Vec3 idleAFollowSpot(Scp131AEntity scp131A) {
         long seed = Math.abs(getUUID().getLeastSignificantBits() % 2048L);
-        double angle = ((seed / 2048.0D) * Math.PI * 2.0D) + (tickCount * 0.02D) + ((random.nextDouble() - 0.5D) * 0.35D);
+        double angle = ((seed / 2048.0D) * Math.PI * 2.0D) + (tickCount * 0.02D)
+                + ((random.nextDouble() - 0.5D) * 0.35D);
         double radius = IDLE_A_CLOSE_DISTANCE + random.nextDouble() * 0.45D;
         return scp131A.position().add(Math.cos(angle) * radius, 0.0D, Math.sin(angle) * radius);
     }
 
     private Vec3 companionRoamSpot(AbstractScp131Entity leader) {
         long seed = Math.abs(getUUID().getLeastSignificantBits() % 2048L);
-        double angle = (tickCount * 0.04D) + ((seed / 2048.0D) * Math.PI * 2.0D) + ((random.nextDouble() - 0.5D) * 0.45D);
+        double angle = (tickCount * 0.04D) + ((seed / 2048.0D) * Math.PI * 2.0D)
+                + ((random.nextDouble() - 0.5D) * 0.45D);
         double radius = 0.85D + random.nextDouble() * 1.05D;
         return leader.position().add(Math.cos(angle) * radius, 0.0D, Math.sin(angle) * radius);
     }
@@ -394,7 +455,8 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
         double baseAngle = (tickCount * 0.055D) + ((seed / 2048.0D) * Math.PI * 2.0D);
         double jitter = (random.nextDouble() - 0.5D) * 0.65D;
         double angle = baseAngle + jitter;
-        double radius = OWNER_ROAM_MIN_DISTANCE + random.nextDouble() * (OWNER_ROAM_MAX_DISTANCE - OWNER_ROAM_MIN_DISTANCE);
+        double radius = OWNER_ROAM_MIN_DISTANCE
+                + random.nextDouble() * (OWNER_ROAM_MAX_DISTANCE - OWNER_ROAM_MIN_DISTANCE);
         return owner.position().add(Math.cos(angle) * radius, 0.0D, Math.sin(angle) * radius);
     }
 
@@ -417,11 +479,31 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     }
 
     private void playVoice(float volume) {
-        level().playSound(null, getX(), getY() + 0.35D, getZ(), Scp131Sounds.EYE_POD_VOICE.get(), SoundSource.NEUTRAL,
-                volume, 0.86F + (random.nextFloat() * 0.30F));
+        level().playSound(null, getX(), getY() + 0.35D, getZ(), Scp131Sounds.EYE_POD_VOICE.get(),
+                SoundSource.NEUTRAL, volume, 0.86F + (random.nextFloat() * 0.30F));
     }
 
     private void scheduleNextOwnerRoam(int delay) {
         nextOwnerRoamTick = tickCount + Math.max(0, delay);
+    }
+
+    private void lookHardAt(LivingEntity target) {
+        getLookControl().setLookAt(target, 90.0F, 90.0F);
+        Vec3 toTarget = target.getEyePosition().subtract(getEyePosition());
+        double horizontal = Math.sqrt((toTarget.x * toTarget.x) + (toTarget.z * toTarget.z));
+        if (horizontal <= 0.0001D) {
+            return;
+        }
+
+        float yaw = (float) (Mth.atan2(toTarget.z, toTarget.x) * Mth.RAD_TO_DEG) - 90.0F;
+        float pitch = (float) (-(Mth.atan2(toTarget.y, horizontal) * Mth.RAD_TO_DEG));
+        setYRot(yaw);
+        yRotO = yaw;
+        yBodyRot = yaw;
+        yBodyRotO = yaw;
+        yHeadRot = yaw;
+        yHeadRotO = yaw;
+        setXRot(pitch);
+        xRotO = pitch;
     }
 }

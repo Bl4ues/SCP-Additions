@@ -41,6 +41,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final Rect CREDENTIAL_CANCEL = new Rect(756, 671, 1101, 734);
 	private static final Rect WARNING_ENGAGE = new Rect(383, 978, 764, 1027);
 	private static final Rect WARNING_CANCEL = new Rect(820, 978, 1165, 1027);
+	private static final Rect OVERRIDE_MODAL_CROP = new Rect(354, 737, 1200, 1048);
 
 	private final Level world;
 	private final int x, y, z;
@@ -49,6 +50,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private VisualState visualState = VisualState.MAIN;
 	private PendingAction pendingAction = PendingAction.NONE;
 	private int visualTimer = 0;
+	private int terminalLoopTimer = 0;
 	private boolean authenticated = false;
 	private boolean initializedDisplayState = false;
 	private boolean displayedTeslaGatesEnabled = true;
@@ -92,9 +94,8 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 			renderPermissionText(guiGraphics);
 			if (isOverlayState()) {
-				float alpha = overlayAlpha();
-				RenderSystem.setShaderColor(1, 1, 1, alpha);
-				guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+				RenderSystem.setShaderColor(1, 1, 1, overlayAlpha());
+				renderOverlay(guiGraphics);
 				RenderSystem.setShaderColor(1, 1, 1, 1);
 			}
 		}
@@ -104,8 +105,21 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 	}
 
+	private void renderOverlay(GuiGraphics guiGraphics) {
+		ResourceLocation texture = overlayTexture();
+		if (isOverrideOverlayState()) {
+			int x1 = (int) OVERRIDE_MODAL_CROP.minX();
+			int y1 = (int) OVERRIDE_MODAL_CROP.minY();
+			int width = (int) OVERRIDE_MODAL_CROP.width();
+			int height = (int) OVERRIDE_MODAL_CROP.height();
+			guiGraphics.blit(texture, x1, y1, x1, y1, width, height, TEX_W, TEX_H);
+		} else {
+			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		}
+	}
+
 	private float overlayAlpha() {
-		if (visualState == VisualState.OVERRIDE_WARNING) {
+		if (isOverrideOverlayState()) {
 			return 0.72F;
 		}
 		return 1.0F;
@@ -115,7 +129,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 68, 0);
+		guiGraphics.pose().translate(1278, 75, 0);
 		guiGraphics.pose().scale(3.0F, 3.0F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
@@ -151,6 +165,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private boolean isOverlayState() {
 		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
 				|| visualState == VisualState.OVERRIDE_ENGAGED;
+	}
+
+	private boolean isOverrideOverlayState() {
+		return visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY || visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	@Override
@@ -252,6 +270,12 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	@Override
 	public void containerTick() {
 		super.containerTick();
+		if (terminalLoopTimer <= 0) {
+			playBlockSound("terminalloop", 1.0F, 1.0F);
+			terminalLoopTimer = 200;
+		} else {
+			terminalLoopTimer--;
+		}
 		if (visualTimer > 0) {
 			visualTimer--;
 			if (visualTimer <= 0) {
@@ -366,24 +390,24 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private void playRandomClick() {
 		String id = Math.random() < 0.5D ? "click_1" : "click_2";
 		float pitch = 0.92F + (float) (Math.random() * 0.16D);
-		playBlockSound(id, pitch);
+		playBlockSound(id, pitch, 0.5F);
 	}
 
 	private void playSelect() {
-		playBlockSound("select", 1.0F);
+		playBlockSound("select", 1.0F, 1.0F);
 	}
 
 	private void playPopup() {
-		playBlockSound("popup", 1.0F);
+		playBlockSound("popup", 1.0F, 1.0F);
 	}
 
-	private void playBlockSound(String soundId, float pitch) {
+	private void playBlockSound(String soundId, float pitch, float volume) {
 		if (world == null) {
 			return;
 		}
 		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", soundId));
 		if (sound != null) {
-			world.playLocalSound(x + 0.5D, y + 0.5D, z + 0.5D, sound, SoundSource.BLOCKS, 1.0F, pitch, false);
+			world.playLocalSound(x + 0.5D, y + 0.5D, z + 0.5D, sound, SoundSource.BLOCKS, volume, pitch, false);
 		}
 	}
 
@@ -433,7 +457,31 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	private record Rect(double x1, double y1, double x2, double y2) {
 		private boolean contains(double x, double y) {
-			return x >= Math.min(x1, x2) && x <= Math.max(x1, x2) && y >= Math.min(y1, y2) && y <= Math.max(y1, y2);
+			return x >= minX() && x <= maxX() && y >= minY() && y <= maxY();
+		}
+
+		private double minX() {
+			return Math.min(x1, x2);
+		}
+
+		private double maxX() {
+			return Math.max(x1, x2);
+		}
+
+		private double minY() {
+			return Math.min(y1, y2);
+		}
+
+		private double maxY() {
+			return Math.max(y1, y2);
+		}
+
+		private double width() {
+			return maxX() - minX();
+		}
+
+		private double height() {
+			return maxY() - minY();
 		}
 	}
 }

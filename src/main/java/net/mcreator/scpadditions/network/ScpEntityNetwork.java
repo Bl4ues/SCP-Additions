@@ -26,14 +26,17 @@ public final class ScpEntityNetwork {
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {
+        if (player == null || player.isCreative() || player.isSpectator()) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new Scp131NoticePacket(following));
     }
 
     public static void setBlinkActive(ServerPlayer player, boolean active) {
+        if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new BlinkStatePacket(active));
     }
 
     public static void playScare(ServerPlayer player) {
+        if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new ScareSoundPacket());
     }
 }

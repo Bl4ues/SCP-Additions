@@ -49,6 +49,12 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.2.0'
 }
 
+processResources {
+    from('config') {
+        into 'config'
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

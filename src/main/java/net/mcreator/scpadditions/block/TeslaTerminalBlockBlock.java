@@ -101,7 +101,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 			if (sound != null) {
 				world.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, sound, SoundSource.BLOCKS, 0.4F, 1.0F, false);
 			}
-			TERMINAL_LOOP_NEXT_TICK.put(key, gameTime + 175L);
+			TERMINAL_LOOP_NEXT_TICK.put(key, gameTime + 160L);
 			if (TERMINAL_LOOP_NEXT_TICK.size() > 512) {
 				TERMINAL_LOOP_NEXT_TICK.clear();
 			}

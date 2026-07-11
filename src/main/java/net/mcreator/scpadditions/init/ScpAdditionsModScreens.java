@@ -26,7 +26,7 @@ public class ScpAdditionsModScreens {
 			MenuScreens.register(ScpAdditionsModMenus.SCP_914_GUI.get(), Scp914GuiScreen::new);
 			MenuScreens.register(ScpAdditionsModMenus.SCP_294_GUI.get(), Scp294GuiScreen::new);
 
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_GATE.get(), RenderType.cutout());
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_GATE.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_RECHARGE.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());

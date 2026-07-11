@@ -19,8 +19,5 @@
   },
   "scp_131": {
     "enabled": true
-  },
-  "facility": {
-    "enabled": true
   }
 }

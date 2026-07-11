@@ -3,9 +3,11 @@ package net.mcreator.scpadditions.procedures;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -37,6 +39,10 @@ public final class TeslaGatePulseHelper {
 		boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 		double pulseRadius = manualOverride ? 2.25D : 1.5D;
 		float damage = manualOverride ? 40.0F : 20.0F;
+
+		if (manualOverride) {
+			emitOverrideParticles(world, x, y, z);
+		}
 
 		final Vec3 center = new Vec3(x, y, z);
 		List<Entity> entities = world.getEntitiesOfClass(Entity.class, new AABB(center, center).inflate(pulseRadius), e -> true).stream().sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(center))).toList();
@@ -76,5 +82,13 @@ public final class TeslaGatePulseHelper {
 		}
 
 		ScpAdditionsMod.queueServerWork(manualOverride ? 1 : 3, () -> TeslaGateTransitionHelper.transitionIfCurrent(world, x, y, z, expectedBlock, nextBlock));
+	}
+
+	private static void emitOverrideParticles(LevelAccessor world, double x, double y, double z) {
+		if (!(world instanceof ServerLevel serverLevel)) {
+			return;
+		}
+		serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, x + 0.5D, y + 1.05D, z + 0.5D, 8, 0.45D, 0.55D, 0.45D, 0.03D);
+		serverLevel.sendParticles(ParticleTypes.SMOKE, x + 0.5D, y + 0.95D, z + 0.5D, 2, 0.35D, 0.30D, 0.35D, 0.01D);
 	}
 }

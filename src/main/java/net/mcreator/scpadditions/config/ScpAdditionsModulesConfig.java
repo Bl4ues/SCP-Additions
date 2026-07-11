@@ -4,9 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
-
 import net.minecraftforge.fml.loading.FMLPaths;
-
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.io.IOException;
@@ -32,9 +30,7 @@ public final class ScpAdditionsModulesConfig {
 			if (Files.exists(CONFIG_PATH)) {
 				try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
 					Root parsed = GSON.fromJson(reader, Root.class);
-					if (parsed != null) {
-						loaded = parsed.normalize();
-					}
+					if (parsed != null) loaded = parsed.normalize();
 				}
 			}
 			writeConfig(loaded);
@@ -65,13 +61,6 @@ public final class ScpAdditionsModulesConfig {
 		@SerializedName("scp_173")
 		public EntityModule scp173 = new EntityModule();
 
-		/**
-		 * Runtime compatibility field for the already-migrated SCP-131 implementation.
-		 * SCP-131 is explicit-spawn content, so this field is deliberately excluded
-		 * from modules.json and remains enabled unconditionally.
-		 */
-		public transient Toggle scp131 = new Toggle();
-
 		private static Root defaults() {
 			return new Root();
 		}
@@ -82,8 +71,6 @@ public final class ScpAdditionsModulesConfig {
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();
 			if (scp173 == null) scp173 = new EntityModule();
-			if (scp131 == null) scp131 = new Toggle();
-			scp131.enabled = true;
 			return this;
 		}
 	}

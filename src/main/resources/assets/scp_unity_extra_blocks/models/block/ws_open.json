@@ -1,0 +1,10 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/ws_open",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/ws",
+    "particle": "scp_unity_extra_blocks:block/ws",
+    "0": "scp_unity_extra_blocks:block/workshopdoor",
+    "1": "scp_unity_extra_blocks:block/workshop"
+  },
+  "render_type": "translucent"
+}

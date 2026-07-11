@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_unity_extra_blocks:block/tesla_bot_alt",
+    "up": "scp_unity_extra_blocks:block/tesla_bot_alt",
+    "north": "scp_unity_extra_blocks:block/tesla_top_alt",
+    "east": "scp_unity_extra_blocks:block/tesla_top_alt",
+    "south": "scp_unity_extra_blocks:block/tesla_top_alt",
+    "west": "scp_unity_extra_blocks:block/tesla_top_alt",
+    "particle": "scp_unity_extra_blocks:block/tesla_bot_alt"
+  },
+  "render_type": "solid"
+}

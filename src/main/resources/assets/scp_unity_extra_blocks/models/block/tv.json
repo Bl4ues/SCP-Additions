@@ -1,0 +1,10 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/tv",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/glass",
+    "particle": "scp_unity_extra_blocks:block/glass",
+    "0": "scp_unity_extra_blocks:block/plastic",
+    "1": "scp_unity_extra_blocks:block/glass"
+  },
+  "render_type": "translucent"
+}

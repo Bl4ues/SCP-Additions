@@ -1,0 +1,9 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/heater",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/heater",
+    "particle": "scp_unity_extra_blocks:block/heater",
+    "0": "scp_unity_extra_blocks:block/heater"
+  },
+  "render_type": "solid"
+}

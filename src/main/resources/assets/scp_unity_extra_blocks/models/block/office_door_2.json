@@ -1,0 +1,9 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/office_2",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/officedoortext",
+    "particle": "scp_unity_extra_blocks:block/officedoortext",
+    "0": "scp_unity_extra_blocks:block/officedoor"
+  },
+  "render_type": "translucent"
+}

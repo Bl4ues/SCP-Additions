@@ -64,6 +64,10 @@ dependencies {
 processResources {
     exclude 'assets/scp_additions/lang/en_us_3_0.json'
 
+    // The standalone Inventory replaced Minecraft's global font with Roboto.
+    // The integrated mod must use Roboto only through explicitly styled UI text.
+    exclude 'assets/minecraft/font/default.json'
+
     from('config') {
         into 'config'
     }

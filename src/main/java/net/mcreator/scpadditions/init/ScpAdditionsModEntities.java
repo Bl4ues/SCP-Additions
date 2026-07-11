@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -34,6 +35,10 @@ public class ScpAdditionsModEntities {
 	public static void createAttributes(EntityAttributeCreationEvent event) {
 		event.put(SCP_131_A.get(), AbstractScp131Entity.createAttributes().build());
 		event.put(SCP_131_B.get(), AbstractScp131Entity.createAttributes().build());
-		event.put(SCP_173.get(), Scp173Entity.createAttributes().build());
+		event.put(SCP_173.get(), Scp173Entity.createAttributes()
+				.add(Attributes.ARMOR, 80.0D)
+				.add(Attributes.ARMOR_TOUGHNESS, 40.0D)
+				.add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
+				.build());
 	}
 }

@@ -89,22 +89,28 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 
 ## SCP-131
 
-- [ ] both variants register and render
+- [ ] both variants register under `scp_additions`
+- [ ] both spawn eggs appear in the SCP creative tab after SCP-079 and before SCP-294
+- [ ] both variants render at the intended scale
 - [ ] glow masks render correctly
-- [ ] animations and sounds load
+- [ ] idle animation and voice sounds load
+- [ ] right-clicking starts and stops nearby SCP-131 followers without duplicating entities
+- [ ] following state and owner persist across save/reload
+- [ ] SCP-131-B follows a nearby idle SCP-131-A
 - [ ] no natural spawn is introduced unintentionally
 - [ ] explicitly spawned entities remain loadable when behavior is disabled
+- [ ] SCP-173-specific watching behavior remains deferred until the SCP-173 integration update
 
 ## Facility
 
 - [ ] every migrated block has a valid item model
 - [ ] every custom model resolves its textures
+- [ ] facility blocks and props remain available without a gameplay toggle
 - [ ] door collision changes correctly across all animation states
 - [ ] doors cannot become permanently desynchronized
 - [ ] preferred Unity buttons operate doors correctly
 - [ ] legacy Additions buttons still load in old worlds
 - [ ] keycard readers still use Additions clearance levels
-- [ ] facility-disabled configuration suppresses active behavior without missing registries
 
 ## Release compatibility
 

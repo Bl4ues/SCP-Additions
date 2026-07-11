@@ -43,11 +43,17 @@ Migrated from SCP Inventory:
 
 Coin handling is intentionally different from ammunition and weapon compatibility:
 
-1. The real coin exists only in SCP Inventory storage while the custom inventory module is active.
-2. Pickup routes the Additions coin directly into that storage.
-3. SCP-294 queries and consumes currency through a server-authoritative shared currency service.
-4. The SCP-294 GUI may display a virtual inserted-coin state, but it must not create a second real coin stack.
-5. Failed or cancelled transactions must have an explicit refund path and must never duplicate currency.
+1. When the custom SCP Inventory module is enabled, the real coin exists only in the SCP Inventory capability.
+2. With the custom inventory enabled, coin pickup routes directly into the capability and creates no vanilla mirror.
+3. With the custom inventory enabled, SCP-294 must read and extract coins only from the capability. It must not fall back to vanilla inventory.
+4. When the custom SCP Inventory module is disabled, coin pickup follows vanilla inventory behavior.
+5. With the custom inventory disabled, SCP-294 must read and extract coins only from the vanilla inventory. It must ignore capability currency.
+6. Capability and vanilla balances must never be added together or treated as simultaneous payment sources.
+7. Switching modes must not copy currency automatically. Any migration of existing coins between stores must be explicit, server-authoritative and duplication-safe.
+8. The SCP-294 GUI represents an inserted coin exactly once through its machine slot/state.
+9. Failed or cancelled transactions must have an explicit refund path and must never duplicate currency.
+
+The shared `PlayerCurrencyAccess` service owns this mode selection. The SCP Inventory capability will register its mutable backend during the inventory-core migration. SCP-294 will only be switched to this service after that backend is available, preventing the default-enabled inventory module from temporarily disabling coin payments.
 
 ### Vitals
 
@@ -96,7 +102,8 @@ Existing SCP Additions keycard readers remain the access-control foundation.
 8. SCP Inventory and SCP Unity Extra Blocks IDs may be redesigned because standalone world compatibility is not required.
 9. Shared gameplay checks must use compatibility services instead of directly scanning only the vanilla inventory.
 10. Coin payment and mutation must use a dedicated server-side currency abstraction rather than a read-only item scan.
-11. Every migration phase must build before the next phase begins.
+11. Currency source selection is exclusive: capability when custom inventory is enabled, vanilla inventory when it is disabled.
+12. Every migration phase must build before the next phase begins.
 
 ## Networking
 

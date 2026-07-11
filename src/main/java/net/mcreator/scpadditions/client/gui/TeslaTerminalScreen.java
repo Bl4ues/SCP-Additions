@@ -41,7 +41,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final Rect CREDENTIAL_CANCEL = new Rect(756, 671, 1101, 734);
 	private static final Rect WARNING_ENGAGE = new Rect(383, 978, 764, 1027);
 	private static final Rect WARNING_CANCEL = new Rect(820, 978, 1165, 1027);
-	private static final Rect OVERRIDE_MODAL_CROP = new Rect(354, 737, 1200, 1048);
 
 	private final Level world;
 	private final int x, y, z;
@@ -104,21 +103,8 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void renderOverlay(GuiGraphics guiGraphics) {
-		ResourceLocation texture = overlayTexture();
-		if (isOverrideOverlayState()) {
-			// Keep a subtle darkened lower-panel backdrop, then draw the modal itself mostly solid.
-			guiGraphics.fill(0, 647, TEX_W, TEX_H, 0x52000000);
-			int x1 = (int) OVERRIDE_MODAL_CROP.minX();
-			int y1 = (int) OVERRIDE_MODAL_CROP.minY();
-			int width = (int) OVERRIDE_MODAL_CROP.width();
-			int height = (int) OVERRIDE_MODAL_CROP.height();
-			RenderSystem.setShaderColor(1, 1, 1, 0.94F);
-			guiGraphics.blit(texture, x1, y1, x1, y1, width, height, TEX_W, TEX_H);
-			RenderSystem.setShaderColor(1, 1, 1, 1);
-		} else {
-			RenderSystem.setShaderColor(1, 1, 1, 1);
-			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		}
+		RenderSystem.setShaderColor(1, 1, 1, 1);
+		guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
@@ -161,10 +147,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private boolean isOverlayState() {
 		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
 				|| visualState == VisualState.OVERRIDE_ENGAGED;
-	}
-
-	private boolean isOverrideOverlayState() {
-		return visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY || visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	@Override
@@ -379,7 +361,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		clickVariant = !clickVariant;
 		String id = clickVariant ? "click_1" : "click_2";
 		float pitch = 0.90F + (float) (Math.random() * 0.20D);
-		playBlockSound(id, pitch, 0.5F);
+		playBlockSound(id, pitch, 0.3F);
 	}
 
 	private void playSelect() {
@@ -463,14 +445,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		private double maxY() {
 			return Math.max(y1, y2);
-		}
-
-		private double width() {
-			return maxX() - minX();
-		}
-
-		private double height() {
-			return maxY() - minY();
 		}
 	}
 }

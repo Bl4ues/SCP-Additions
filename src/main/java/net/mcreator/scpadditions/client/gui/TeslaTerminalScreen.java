@@ -2,12 +2,16 @@ package net.mcreator.scpadditions.client.gui;
 
 import net.minecraftforge.registries.ForgeRegistries;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -103,15 +107,21 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void renderOverlay(GuiGraphics guiGraphics) {
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-		guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		if (isOverrideOverlayState()) {
+			RenderSystem.setShaderColor(1, 1, 1, 0.84F);
+			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			RenderSystem.setShaderColor(1, 1, 1, 1);
+		} else {
+			RenderSystem.setShaderColor(1, 1, 1, 1);
+			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		}
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 75, 0);
+		guiGraphics.pose().translate(1278, 78, 0);
 		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
@@ -147,6 +157,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private boolean isOverlayState() {
 		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
 				|| visualState == VisualState.OVERRIDE_ENGAGED;
+	}
+
+	private boolean isOverrideOverlayState() {
+		return visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY || visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	@Override
@@ -361,7 +375,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		clickVariant = !clickVariant;
 		String id = clickVariant ? "click_1" : "click_2";
 		float pitch = 0.90F + (float) (Math.random() * 0.20D);
-		playBlockSound(id, pitch, 0.3F);
+		playBlockSound(id, pitch, 0.2F);
 	}
 
 	private void playSelect() {
@@ -383,12 +397,9 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void playHeadSound(String soundId) {
-		if (world == null || entity == null) {
-			return;
-		}
 		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", soundId));
 		if (sound != null) {
-			world.playLocalSound(entity.getX(), entity.getY() + entity.getEyeHeight(), entity.getZ(), sound, SoundSource.AMBIENT, 1.0F, 1.0F, false);
+			Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(sound.getLocation(), SoundSource.AMBIENT, 1.0F, 1.0F, RandomSource.create(), false, 0, SoundInstance.Attenuation.NONE, 0.0D, 0.0D, 0.0D, true));
 		}
 	}
 

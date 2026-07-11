@@ -7,6 +7,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.BlinkWatcherEntity;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
@@ -46,10 +47,20 @@ public final class BlinkWatcherAggroEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide
                 || !(event.player instanceof ServerPlayer player)) return;
+
+        UUID id = player.getUUID();
+        if (!ScpAdditionsModulesConfig.get().scp173.enabled) {
+            boolean wasActive = LAST_ACTIVE.getOrDefault(id, false);
+            LAST_ACTIVE.put(id, false);
+            LAST_CLOSE_REVEAL.remove(id);
+            LAST_THREAT_TICK.remove(id);
+            if (wasActive || player.tickCount % 40 == 0) ScpEntityNetwork.setBlinkActive(player, false);
+            return;
+        }
+
         ThreatState threat = findThreatState(player);
         boolean rawActive = threat.active();
         boolean closeReveal = threat.closeObservedReveal();
-        UUID id = player.getUUID();
         boolean previousActive = LAST_ACTIVE.getOrDefault(id, false);
         boolean previousCloseReveal = LAST_CLOSE_REVEAL.getOrDefault(id, false);
         if (rawActive) LAST_THREAT_TICK.put(id, player.tickCount);
@@ -148,12 +159,15 @@ public final class BlinkWatcherAggroEvents {
     private static boolean wasObservedBefore(ServerPlayer player, Scp173Entity scp173) {
         return LAST_OBSERVED_TICK.containsKey(observationKey(player, scp173));
     }
+
     private static ObservationKey observationKey(ServerPlayer player, Scp173Entity scp173) {
         return new ObservationKey(player.getUUID(), scp173.getUUID());
     }
+
     private static boolean shouldKeepHudForParanoia(ServerPlayer player, UUID id) {
         return player.tickCount - LAST_THREAT_TICK.getOrDefault(id, -HUD_DISENGAGE_DELAY_TICKS) <= HUD_DISENGAGE_DELAY_TICKS;
     }
+
     private static boolean maybeSendRevealSound(ServerPlayer player, UUID id, boolean ignoreCooldown) {
         int last = LAST_REVEAL_SOUND_TICK.getOrDefault(id, -REVEAL_SOUND_COOLDOWN_TICKS);
         if (!ignoreCooldown && player.tickCount - last < REVEAL_SOUND_COOLDOWN_TICKS) return false;
@@ -163,9 +177,11 @@ public final class BlinkWatcherAggroEvents {
     }
 
     private record ObservationKey(UUID playerId, UUID scpId) { }
+
     private record RevealState(boolean shouldPlay, boolean forceSound) {
         private static final RevealState NONE = new RevealState(false, false);
     }
+
     private record ThreatState(boolean active, boolean closeObservedReveal, boolean hasWatcher, boolean forceRevealSound) {
         private static final ThreatState INACTIVE = new ThreatState(false, false, false, false);
     }

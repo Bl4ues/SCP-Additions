@@ -36,9 +36,18 @@ Migrated from SCP Inventory:
 - item classification
 - inventory routing
 - equipment and key slots
-- coin, ammunition and weapon mirrors
+- ammunition and weapon mirrors
+- SCP Inventory-owned coin storage without vanilla coin mirrors
 - usable-item sessions
 - inventory GUI, context menu and codex
+
+Coin handling is intentionally different from ammunition and weapon compatibility:
+
+1. The real coin exists only in SCP Inventory storage while the custom inventory module is active.
+2. Pickup routes the Additions coin directly into that storage.
+3. SCP-294 queries and consumes currency through a server-authoritative shared currency service.
+4. The SCP-294 GUI may display a virtual inserted-coin state, but it must not create a second real coin stack.
+5. Failed or cancelled transactions must have an explicit refund path and must never duplicate currency.
 
 ### Vitals
 
@@ -60,6 +69,8 @@ Migrated from SCP Inventory:
 - SCP-131-A
 - SCP-131-B
 - GeckoLib models, animations and render layers
+
+Only SCP-173 currently has a natural-spawn implementation. SCP-131 remains spawnable through explicit placement or commands until a separate spawn design is approved.
 
 ### Facility
 
@@ -84,7 +95,8 @@ Existing SCP Additions keycard readers remain the access-control foundation.
 7. Preserve every published SCP Additions registry ID needed by existing worlds.
 8. SCP Inventory and SCP Unity Extra Blocks IDs may be redesigned because standalone world compatibility is not required.
 9. Shared gameplay checks must use compatibility services instead of directly scanning only the vanilla inventory.
-10. Every migration phase must build before the next phase begins.
+10. Coin payment and mutation must use a dedicated server-side currency abstraction rather than a read-only item scan.
+11. Every migration phase must build before the next phase begins.
 
 ## Networking
 

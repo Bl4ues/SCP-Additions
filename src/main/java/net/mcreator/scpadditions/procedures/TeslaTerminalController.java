@@ -18,24 +18,15 @@ public final class TeslaTerminalController {
 	}
 
 	public static void enableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {
-		if (!authorize(player)) {
-			return;
-		}
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
 	}
 
 	public static void disableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {
-		if (!authorize(player)) {
-			return;
-		}
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(false, server(world));
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(false, server(world));
 	}
 
 	public static void setManualOverride(LevelAccessor world, double x, double y, double z, Player player, boolean enabled) {
-		if (!authorize(player)) {
-			return;
-		}
 		if (enabled) {
 			world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
 		}
@@ -51,10 +42,6 @@ public final class TeslaTerminalController {
 		if (player != null) {
 			player.closeContainer();
 		}
-	}
-
-	private static boolean authorize(Player player) {
-		return hasSecurityCredentials(player);
 	}
 
 	private static MinecraftServer server(LevelAccessor world) {

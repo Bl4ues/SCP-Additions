@@ -27,15 +27,16 @@ public class TeslaGateUpdateTickProcedure {
 		boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 		double detectionRadius = manualOverride ? 3.5D : 2.0D;
 		int activationDelay = manualOverride ? 1 : 5;
+		ResourceLocation activationSound = new ResourceLocation("scp_additions", manualOverride ? "overcharge" : "teslaactivate");
 
 		final Vec3 center = new Vec3(x, y, z);
 		List<Entity> entities = world.getEntitiesOfClass(Entity.class, new AABB(center, center).inflate(detectionRadius), e -> true).stream().sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(center))).toList();
 		for (Entity ignored : entities) {
 			if (world instanceof Level level) {
 				if (!level.isClientSide()) {
-					level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:teslaactivate")), SoundSource.HOSTILE, 1, manualOverride ? 1.25F : 1F);
+					level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(activationSound), SoundSource.HOSTILE, 1, manualOverride ? 1.25F : 1F);
 				} else {
-					level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:teslaactivate")), SoundSource.HOSTILE, 1, manualOverride ? 1.25F : 1F, false);
+					level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(activationSound), SoundSource.HOSTILE, 1, manualOverride ? 1.25F : 1F, false);
 				}
 			}
 			ScpAdditionsMod.queueServerWork(activationDelay, () -> TeslaGateTransitionHelper.transitionIfCurrent(world, x, y, z, ScpAdditionsModBlocks.TESLA_GATE, ScpAdditionsModBlocks.TESLA_ACTIVE));

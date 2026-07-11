@@ -13,7 +13,7 @@
 - Duplicate features to remove: **none identified at this stage**
 - Incomplete content to hide from release: **none identified at this stage**
 
-The following systems must be configurable and individually disableable without removing their registry entries:
+The following gameplay systems must be configurable and individually disableable without removing their registry entries:
 
 - SCP Inventory replacement
 - custom HUD
@@ -23,7 +23,8 @@ The following systems must be configurable and individually disableable without 
 - blink system
 - SCP-173 behavior and natural spawning
 - SCP-131 behavior
-- facility content
+
+Facility blocks and decorative props are ordinary content and remain registered and available without a module toggle. Configuration toggles are reserved for systems that materially change gameplay behavior.
 
 SCP-131-A and SCP-131-B do **not** currently have natural spawning. The 3.0 migration must preserve that behavior and must not invent a natural spawn system unless it is designed and approved later.
 
@@ -43,10 +44,11 @@ SCP-131-A and SCP-131-B do **not** currently have natural spawning. The 3.0 migr
 - Keycards and keycard readers remain based on SCP Additions
 - Existing SCP Additions buttons are superseded for new maps, but their registry IDs remain for world compatibility
 - All other existing SCP Additions blocks remain registered and supported
+- Facility blocks and props are always available content rather than a configurable gameplay module
 
-## Default module state
+## Default gameplay module state
 
-All modules are enabled by default:
+All gameplay modules are enabled by default:
 
 - SCP Inventory
 - HUD
@@ -55,7 +57,6 @@ All modules are enabled by default:
 - blink
 - SCP-173
 - SCP-131
-- facility blocks
 
 ## Release
 

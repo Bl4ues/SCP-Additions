@@ -62,6 +62,8 @@ dependencies {
 }
 
 processResources {
+    exclude 'assets/scp_additions/lang/en_us_3_0.json'
+
     from('config') {
         into 'config'
     }
@@ -81,7 +83,7 @@ processResources {
         // language file, then merge both into the single locale Minecraft loads.
         def langDir = file("$buildDir/resources/main/assets/scp_additions/lang")
         def baseLangFile = new File(langDir, 'en_us.json')
-        def langPatchFile = new File(langDir, 'en_us_3_0.json')
+        def langPatchFile = file('src/main/resources/assets/scp_additions/lang/en_us_3_0.json')
         if (baseLangFile.exists() && langPatchFile.exists()) {
             def parser = new groovy.json.JsonSlurper()
             def baseLang = parser.parse(baseLangFile)
@@ -89,7 +91,6 @@ processResources {
             langPatch.each { key, value -> baseLang[key] = value }
             def mergedLang = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(baseLang))
             baseLangFile.setText(mergedLang + System.lineSeparator(), 'UTF-8')
-            langPatchFile.delete()
         }
 
         // teslagate.png contains the faulty inactive alpha atlas. The active

@@ -22,8 +22,18 @@ The following systems must be configurable and individually disableable without 
 - horror movement behavior
 - blink system
 - SCP-173 behavior and natural spawning
-- SCP-131 behavior and natural spawning
+- SCP-131 behavior
 - facility content
+
+SCP-131-A and SCP-131-B do **not** currently have natural spawning. The 3.0 migration must preserve that behavior and must not invent a natural spawn system unless it is designed and approved later.
+
+## Inventory and machine integration
+
+- SCP Additions coins become SCP Inventory-owned currency when the custom inventory module is enabled.
+- Real coins must not be retained in the vanilla player inventory merely as mirrors.
+- SCP-294 must detect, insert and consume coins directly through the shared inventory/currency integration layer.
+- Coin pickup, payment and refund paths must remain server-authoritative and duplication-safe.
+- Ammunition, weapons, accessories and temporary usable-item sessions keep their own compatibility rules; the coin policy must not be generalized to those categories without explicit review.
 
 ## Facility integration
 

@@ -87,27 +87,35 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.STANDBY_DISABLE || visualState == VisualState.STANDBY_ENABLE) {
 			guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			renderPermissionText(guiGraphics);
 		} else {
 			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			renderPermissionText(guiGraphics);
 			if (isOverlayState()) {
-				float alpha = visualState == VisualState.OVERRIDE_WARNING ? 0.88F : 1.0F;
+				float alpha = overlayAlpha();
 				RenderSystem.setShaderColor(1, 1, 1, alpha);
 				guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 				RenderSystem.setShaderColor(1, 1, 1, 1);
 			}
 		}
-		renderPermissionText(guiGraphics);
 
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 	}
 
+	private float overlayAlpha() {
+		if (visualState == VisualState.OVERRIDE_WARNING) {
+			return 0.72F;
+		}
+		return 1.0F;
+	}
+
 	private void renderPermissionText(GuiGraphics guiGraphics) {
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 82, 0);
+		guiGraphics.pose().translate(1278, 68, 0);
 		guiGraphics.pose().scale(3.0F, 3.0F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
@@ -266,7 +274,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		if (visualState == VisualState.OVERRIDE_STANDBY) {
 			visualState = VisualState.OVERRIDE_ENGAGED;
 			visualTimer = 0;
-			return;
 		}
 	}
 
@@ -358,7 +365,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	private void playRandomClick() {
 		String id = Math.random() < 0.5D ? "click_1" : "click_2";
-		float pitch = 0.94F + (float) (Math.random() * 0.12D);
+		float pitch = 0.92F + (float) (Math.random() * 0.16D);
 		playBlockSound(id, pitch);
 	}
 

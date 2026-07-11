@@ -78,6 +78,8 @@ The shared `PlayerCurrencyAccess` service owns this mode selection. The SCP Inve
 
 Only SCP-173 currently has a natural-spawn implementation. SCP-131 remains spawnable through explicit placement or commands until a separate spawn design is approved.
 
+The initial SCP-131 integration includes both variants, rendering, glow, sounds, persistence and social/follow behavior. Its special reaction to SCP-173 is intentionally deferred until the dedicated SCP-173 update so the 131 classes do not depend on an incomplete entity implementation.
+
 ### Facility
 
 Migrated from SCP Unity Extra Blocks:
@@ -88,7 +90,7 @@ Migrated from SCP Unity Extra Blocks:
 - lights and environmental blocks
 - facility sounds
 
-Existing SCP Additions keycard readers remain the access-control foundation.
+Existing SCP Additions keycard readers remain the access-control foundation. Facility blocks and decorative props are ordinary always-available content, not a toggleable gameplay module.
 
 ## Integration rules
 
@@ -96,8 +98,8 @@ Existing SCP Additions keycard readers remain the access-control foundation.
 2. Do not copy standalone build scripts into SCP Additions.
 3. Do not compile SCP Inventory through generated source patches in the final project.
 4. Migrate the already generated canonical Inventory sources into normal source files.
-5. Keep registry entries present even when a module is disabled.
-6. Configuration toggles disable behavior, HUD, spawning or creative exposure—not registry creation.
+5. Keep registry entries present even when a gameplay module is disabled.
+6. Configuration toggles disable substantial gameplay behavior, HUD systems or spawning—not ordinary blocks, props or registry creation.
 7. Preserve every published SCP Additions registry ID needed by existing worlds.
 8. SCP Inventory and SCP Unity Extra Blocks IDs may be redesigned because standalone world compatibility is not required.
 9. Shared gameplay checks must use compatibility services instead of directly scanning only the vanilla inventory.

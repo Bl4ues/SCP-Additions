@@ -20,7 +20,24 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] pickup routing handles every configured item category
 - [ ] full custom inventory does not duplicate or delete items
 - [ ] dropped items remain recoverable
-- [ ] key, coin, ammunition and weapon mirrors remain synchronized
+- [ ] keys remain available to shared access checks
+- [ ] ammunition and weapon mirrors remain synchronized
+- [ ] real coins are stored only in SCP Inventory while the inventory module is enabled
+- [ ] coin pickup creates no vanilla mirror
+- [ ] pre-migration vanilla coins have a safe migration or compatibility path
+
+## SCP-294 currency integration
+
+- [ ] coin button detects currency stored in SCP Inventory
+- [ ] inserting a coin removes exactly one real coin from SCP Inventory
+- [ ] inserting a coin creates no vanilla mirror or duplicate stack
+- [ ] the inserted coin is represented by the machine slot/state exactly once
+- [ ] a successful coin-consuming drink removes exactly one inserted coin
+- [ ] a non-coin-consuming drink preserves the inserted coin
+- [ ] an unknown/out-of-range request does not silently delete the inserted coin
+- [ ] closing and reopening the GUI cannot duplicate the inserted coin
+- [ ] logout, death and chunk unload cannot duplicate currency
+- [ ] when the inventory module is disabled, the documented vanilla compatibility path still works
 
 ## Usable-item sessions
 
@@ -51,7 +68,7 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] readers detect keycards in custom key slots
 - [ ] readers reject insufficient clearance
 - [ ] Tesla terminal detects security credentials in both inventories
-- [ ] no item is counted twice by mirrors
+- [ ] no item is counted twice by compatibility sources
 
 ## SCP-173 and blink
 
@@ -68,8 +85,8 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] both variants register and render
 - [ ] glow masks render correctly
 - [ ] animations and sounds load
-- [ ] natural-spawn toggle works
-- [ ] existing spawned entities remain loadable when behavior is disabled
+- [ ] no natural spawn is introduced unintentionally
+- [ ] explicitly spawned entities remain loadable when behavior is disabled
 
 ## Facility
 

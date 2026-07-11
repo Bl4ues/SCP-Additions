@@ -5,6 +5,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
@@ -22,7 +23,13 @@ import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
 	private static final int TEX_W = 1410;
@@ -38,6 +45,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final ResourceLocation SCREEN_OVERRIDE_STANDBY = screen("9");
 	private static final ResourceLocation SCREEN_OVERRIDE_ENGAGED = screen("10");
 	private static final ResourceLocation SCREEN_ON_OVERRIDE = screen("11");
+	private static final Map<ResourceLocation, ResourceLocation> SOLID_OVERLAY_CACHE = new HashMap<>();
 
 	private static final Rect OVERRIDE_TOGGLE = new Rect(1269, 637, 1393, 689);
 	private static final Rect TESLA_TOGGLE = new Rect(1050, 1007, 1393, 1069);
@@ -45,7 +53,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final Rect CREDENTIAL_CANCEL = new Rect(756, 671, 1101, 734);
 	private static final Rect WARNING_ENGAGE = new Rect(383, 978, 764, 1027);
 	private static final Rect WARNING_CANCEL = new Rect(820, 978, 1165, 1027);
-	private static final Rect OVERRIDE_MODAL = new Rect(354, 737, 1200, 1049);
 
 	private final Level world;
 	private final int x, y, z;
@@ -110,12 +117,12 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private void renderOverlay(GuiGraphics guiGraphics) {
 		ResourceLocation texture = overlayTexture();
 		if (isOverrideOverlayState()) {
-			// Draw the full transparent overlay softly first, then redraw the solid modal crop.
-			// This keeps the intended tinted backing without making the whole lower screen opaque.
+			// Two-pass render: first keep the whole authored overlay faint, then draw only fully opaque pixels on top.
+			// Semi-transparent matte pixels in the PNG are deliberately discarded on the front pass.
 			RenderSystem.setShaderColor(1, 1, 1, 0.25F);
 			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 			RenderSystem.setShaderColor(1, 1, 1, 1.0F);
-			blitRect(guiGraphics, texture, OVERRIDE_MODAL);
+			guiGraphics.blit(solidOnlyTexture(texture), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		} else {
 			RenderSystem.setShaderColor(1, 1, 1, 1);
 			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
@@ -123,19 +130,50 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 	}
 
-	private void blitRect(GuiGraphics guiGraphics, ResourceLocation texture, Rect rect) {
-		int x = (int) rect.minX();
-		int y = (int) rect.minY();
-		int width = (int) (rect.maxX() - rect.minX());
-		int height = (int) (rect.maxY() - rect.minY());
-		guiGraphics.blit(texture, x, y, x, y, width, height, TEX_W, TEX_H);
+	private ResourceLocation solidOnlyTexture(ResourceLocation texture) {
+		ResourceLocation cached = SOLID_OVERLAY_CACHE.get(texture);
+		if (cached != null) {
+			return cached;
+		}
+		ResourceLocation generated = createSolidOnlyTexture(texture);
+		SOLID_OVERLAY_CACHE.put(texture, generated);
+		return generated;
+	}
+
+	private ResourceLocation createSolidOnlyTexture(ResourceLocation texture) {
+		try {
+			var resource = Minecraft.getInstance().getResourceManager().getResource(texture);
+			if (resource.isEmpty()) {
+				return texture;
+			}
+			try (InputStream stream = resource.get().open()) {
+				NativeImage source = NativeImage.read(stream);
+				try {
+					NativeImage solid = new NativeImage(source.getWidth(), source.getHeight(), true);
+					for (int py = 0; py < source.getHeight(); py++) {
+						for (int px = 0; px < source.getWidth(); px++) {
+							int pixel = source.getPixelRGBA(px, py);
+							int alpha = (pixel >>> 24) & 255;
+							solid.setPixelRGBA(px, py, alpha == 255 ? pixel : 0);
+						}
+					}
+					DynamicTexture dynamicTexture = new DynamicTexture(solid);
+					String name = "scp_additions_tesla_terminal_solid_" + texture.getPath().replace('/', '_').replace('.', '_');
+					return Minecraft.getInstance().getTextureManager().register(name, dynamicTexture);
+				} finally {
+					source.close();
+				}
+			}
+		} catch (IOException | RuntimeException exception) {
+			return texture;
+		}
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 77, 0);
+		guiGraphics.pose().translate(1278, 76, 0);
 		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();

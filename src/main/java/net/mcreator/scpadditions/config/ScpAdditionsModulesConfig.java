@@ -66,7 +66,7 @@ public final class ScpAdditionsModulesConfig {
 		public EntityModule scp173 = new EntityModule();
 
 		@SerializedName("scp_131")
-		public EntityModule scp131 = new EntityModule();
+		public Toggle scp131 = new Toggle();
 
 		public Toggle facility = new Toggle();
 
@@ -80,7 +80,7 @@ public final class ScpAdditionsModulesConfig {
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();
 			if (scp173 == null) scp173 = new EntityModule();
-			if (scp131 == null) scp131 = new EntityModule();
+			if (scp131 == null) scp131 = new Toggle();
 			if (facility == null) facility = new Toggle();
 			return this;
 		}

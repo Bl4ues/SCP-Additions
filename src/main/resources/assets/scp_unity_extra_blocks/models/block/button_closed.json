@@ -1,0 +1,12 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/button_closed",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/screen_closed",
+    "particle": "scp_unity_extra_blocks:block/screen_closed",
+    "0": "scp_unity_extra_blocks:block/button_text",
+    "1": "scp_unity_extra_blocks:block/warning",
+    "4": "scp_unity_extra_blocks:block/screen_closed",
+    "missing": "scp_unity_extra_blocks:block/"
+  },
+  "render_type": "cutout"
+}

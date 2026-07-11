@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_unity_extra_blocks:block/archival_mid_alt",
+    "up": "scp_unity_extra_blocks:block/archival_mid_alt",
+    "north": "scp_unity_extra_blocks:block/archival_mid_alt",
+    "east": "scp_unity_extra_blocks:block/archival_mid_alt",
+    "south": "scp_unity_extra_blocks:block/archival_mid_alt",
+    "west": "scp_unity_extra_blocks:block/archival_mid_alt",
+    "particle": "scp_unity_extra_blocks:block/archival_mid_alt"
+  },
+  "render_type": "solid"
+}

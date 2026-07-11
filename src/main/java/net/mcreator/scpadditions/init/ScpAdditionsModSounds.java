@@ -16,9 +16,18 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 public class ScpAdditionsModSounds {
 	public static final DeferredRegister<SoundEvent> REGISTRY = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, ScpAdditionsMod.MODID);
 	public static final RegistryObject<SoundEvent> TESLAACTIVATE = REGISTRY.register("teslaactivate", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "teslaactivate")));
+	public static final RegistryObject<SoundEvent> OVERCHARGE = REGISTRY.register("overcharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "overcharge")));
 	public static final RegistryObject<SoundEvent> TESLAREADY = REGISTRY.register("teslaready", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "teslaready")));
 	public static final RegistryObject<SoundEvent> TESLARECHARGE = REGISTRY.register("teslarecharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "teslarecharge")));
 	public static final RegistryObject<SoundEvent> CLICK = REGISTRY.register("click", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "click")));
+	public static final RegistryObject<SoundEvent> CLICK_1 = REGISTRY.register("click_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "click_1")));
+	public static final RegistryObject<SoundEvent> CLICK_2 = REGISTRY.register("click_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "click_2")));
+	public static final RegistryObject<SoundEvent> SELECT = REGISTRY.register("select", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "select")));
+	public static final RegistryObject<SoundEvent> POPUP = REGISTRY.register("popup", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "popup")));
+	public static final RegistryObject<SoundEvent> TURNINGON = REGISTRY.register("turningon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "turningon")));
+	public static final RegistryObject<SoundEvent> TURNINGOFF = REGISTRY.register("turningoff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "turningoff")));
+	public static final RegistryObject<SoundEvent> OVERRIDEON = REGISTRY.register("overrideon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "overrideon")));
+	public static final RegistryObject<SoundEvent> TERMINALLOOP = REGISTRY.register("terminalloop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalloop")));
 	public static final RegistryObject<SoundEvent> TERMINALON = REGISTRY.register("terminalon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalon")));
 	public static final RegistryObject<SoundEvent> TERMINALOFF = REGISTRY.register("terminaloff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminaloff")));
 	public static final RegistryObject<SoundEvent> SCP079_1 = REGISTRY.register("scp079_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp079_1")));

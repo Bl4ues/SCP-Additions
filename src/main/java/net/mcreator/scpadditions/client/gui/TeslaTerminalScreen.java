@@ -110,9 +110,9 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private void renderOverlay(GuiGraphics guiGraphics) {
 		ResourceLocation texture = overlayTexture();
 		if (isOverrideOverlayState()) {
-			// The override PNG still contains a broad semi-transparent matte behind the modal.
-			// Render that backing softly, then redraw the actual modal at full strength so the dialog stays readable.
-			RenderSystem.setShaderColor(1, 1, 1, 0.34F);
+			// Draw the full transparent overlay softly first, then redraw the solid modal crop.
+			// This keeps the intended tinted backing without making the whole lower screen opaque.
+			RenderSystem.setShaderColor(1, 1, 1, 0.25F);
 			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 			RenderSystem.setShaderColor(1, 1, 1, 1.0F);
 			blitRect(guiGraphics, texture, OVERRIDE_MODAL);

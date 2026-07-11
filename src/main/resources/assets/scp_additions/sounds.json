@@ -52,18 +52,12 @@
   "heartbeat": { "subtitle": "subtitles.heartbeat", "sounds": [{ "name": "scp_additions:heartbeat", "stream": false }] },
   "nuclear": { "subtitle": "subtitles.nuclear", "sounds": [{ "name": "scp_additions:nuclear", "stream": false }] },
   "gravitons": { "subtitle": "subtitles.gravitons", "sounds": [{ "name": "scp_additions:gravitons", "stream": false }] },
-  "eye_pod_voice": {
-    "sounds": [
-      "scpinventory:noise_1",
-      "scpinventory:noise_2",
-      "scpinventory:noise_3",
-      "scpinventory:noise_4",
-      "scpinventory:noise_5",
-      "scpinventory:noise_6",
-      "scpinventory:noise_7",
-      "scpinventory:noise_8",
-      "scpinventory:noise_9"
-    ]
-  },
+  "eye_pod_voice": { "sounds": ["scpinventory:noise_1", "scpinventory:noise_2", "scpinventory:noise_3", "scpinventory:noise_4", "scpinventory:noise_5", "scpinventory:noise_6", "scpinventory:noise_7", "scpinventory:noise_8", "scpinventory:noise_9"] },
+  "scare": { "sounds": ["scpinventory:scare"] },
+  "horror": { "sounds": ["scpinventory:horror"] },
+  "statue_death": { "sounds": ["scpinventory:statue_death"] },
+  "stone_scrap": { "sounds": ["scpinventory:stone_scrap_1", "scpinventory:stone_scrap_2", "scpinventory:stone_scrap_3", "scpinventory:stone_scrap_4", "scpinventory:stone_scrap_5"] },
+  "neck_snap": { "sounds": ["scpinventory:neck_snap"] },
+  "rattle": { "sounds": ["scpinventory:rattle1", "scpinventory:rattle2", "scpinventory:rattle3"] },
   "stomach": { "subtitle": "subtitles.stomach", "sounds": [{ "name": "scp_additions:stomach", "stream": false }] }
 }

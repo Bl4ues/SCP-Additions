@@ -22,6 +22,8 @@ public final class Scp173ClientModEvents {
                 (gui, graphics, partialTick, width, height) -> BlinkClient.renderBlackout(graphics, width, height));
         event.registerAboveAll("blink_meter_overlay",
                 (gui, graphics, partialTick, width, height) -> BlinkClient.renderHud(graphics, width, height, partialTick));
+        event.registerAboveAll("scp_131_notice_overlay",
+                (gui, graphics, partialTick, width, height) -> Scp131NoticeOverlay.render(graphics));
     }
 
     @SubscribeEvent

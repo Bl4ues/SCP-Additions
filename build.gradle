@@ -76,6 +76,20 @@ processResources {
                 jsonFile.setText(groovy.json.JsonOutput.prettyPrint(raw) + System.lineSeparator(), 'UTF-8')
             }
         }
+
+        // teslagate.png contains the faulty inactive alpha atlas. The active
+        // model uses the corrected teslagate2.png atlas, but also contains a
+        // separate electrical "shock" element. Generate the inactive model
+        // from that corrected base and remove only the electrical element.
+        def modelDir = file("$buildDir/resources/main/assets/scp_additions/models/custom")
+        def activeTeslaModel = new File(modelDir, 'teslagateactive1.json')
+        def inactiveTeslaModel = new File(modelDir, 'teslagateinactive.json')
+        if (activeTeslaModel.exists()) {
+            def model = new groovy.json.JsonSlurper().parse(activeTeslaModel)
+            model.elements = model.elements.findAll { element -> element.name != 'shock' }
+            def generated = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(model))
+            inactiveTeslaModel.setText(generated + System.lineSeparator(), 'UTF-8')
+        }
     }
 }
 

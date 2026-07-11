@@ -65,9 +65,12 @@ The shared `PlayerCurrencyAccess` service owns this mode selection. The SCP Inve
 
 ### Blink
 
-- blink timer and input
-- blink HUD
-- integration hooks used by SCP-173
+- automatic blink timer
+- manual hold-to-blink input
+- vignette, blackout and blink meter overlays
+- Eye Sore drain acceleration
+- authoritative client/server closed-eye synchronization
+- threat confirmation, reveal sound and paranoia retention
 
 ### Entities
 
@@ -76,9 +79,26 @@ The shared `PlayerCurrencyAccess` service owns this mode selection. The SCP Inve
 - SCP-131-B
 - GeckoLib models, animations and render layers
 
-Only SCP-173 currently has a natural-spawn implementation. SCP-131 remains spawnable through explicit placement or commands until a separate spawn design is approved.
+Only SCP-173 currently has a natural-spawn implementation. SCP-131 remains spawnable only through explicit placement or commands until a separate spawn design is approved.
 
-The initial SCP-131 integration includes both variants, rendering, glow, sounds, persistence and social/follow behavior. Its special reaction to SCP-173 is intentionally deferred until the dedicated SCP-173 update so the 131 classes do not depend on an incomplete entity implementation.
+SCP-131 is always-available explicit content rather than a gameplay module. Its canonical interaction contract is preserved: right-click starts following, holding physical G for 20 ticks stops owned followers, and feedback uses the custom SCP-styled notice overlay rather than the actionbar.
+
+The SCP-173 integration preserves the final standalone implementation, including:
+
+- sampled visual observation through transparent blocks
+- client interpolation lock while observed
+- deterministic snap movement and path-aware fallback
+- blink-triggered immediate reevaluation
+- frozen air and water physics
+- contact-only neck snap damage
+- configurable non-player observers and targets
+- routine spawning, inactive-until-seen state and isolated despawn
+- target recovery after player respawn
+- isolated post-kill despawn
+- reveal/paranoia memory
+- movement scrape pulses and full sound set
+- 1730 health durability rules
+- SCP-131 observer behavior
 
 ### Facility
 
@@ -99,7 +119,7 @@ Existing SCP Additions keycard readers remain the access-control foundation. Fac
 3. Do not compile SCP Inventory through generated source patches in the final project.
 4. Migrate the already generated canonical Inventory sources into normal source files.
 5. Keep registry entries present even when a gameplay module is disabled.
-6. Configuration toggles disable substantial gameplay behavior, HUD systems or spawning—not ordinary blocks, props or registry creation.
+6. Configuration toggles disable substantial gameplay behavior, HUD systems or spawning—not ordinary blocks, props, explicit-only entities or registry creation.
 7. Preserve every published SCP Additions registry ID needed by existing worlds.
 8. SCP Inventory and SCP Unity Extra Blocks IDs may be redesigned because standalone world compatibility is not required.
 9. Shared gameplay checks must use compatibility services instead of directly scanning only the vanilla inventory.
@@ -109,7 +129,7 @@ Existing SCP Additions keycard readers remain the access-control foundation. Fac
 
 ## Networking
 
-The existing SCP Additions channel remains active. SCP Inventory networking may initially be migrated as a separate internal channel if preserving packet order is safer. Channel consolidation is optional and should happen only after functional parity.
+The existing SCP Additions channel remains active. Entity and blink packets are registered on that channel. SCP Inventory networking may initially be migrated as a separate internal channel if preserving packet order is safer; consolidation should happen only after functional parity.
 
 ## MCreator policy
 

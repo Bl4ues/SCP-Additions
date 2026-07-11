@@ -11,7 +11,7 @@
   "turningon": { "subtitle": "subtitles.turningon", "sounds": [{ "name": "scp_additions:turningon", "stream": false }] },
   "turningoff": { "subtitle": "subtitles.turningoff", "sounds": [{ "name": "scp_additions:turningoff", "stream": false }] },
   "overrideon": { "subtitle": "subtitles.overrideon", "sounds": [{ "name": "scp_additions:overrideon", "stream": false }] },
-  "terminalloop": { "subtitle": "subtitles.terminalloop", "sounds": [{ "name": "scp_additions:terminalloop", "stream": false, "attenuation_distance": 4 }] },
+  "terminalloop": { "subtitle": "subtitles.terminalloop", "sounds": [{ "name": "scp_additions:terminalloop", "stream": false }] },
   "terminalon": { "subtitle": "subtitles.terminalon", "sounds": [{ "name": "scp_additions:terminalon", "stream": false }] },
   "terminaloff": { "subtitle": "subtitles.terminaloff", "sounds": [{ "name": "scp_additions:terminaloff", "stream": false }] },
   "scp079_1": { "subtitle": "subtitles.scp079_1", "sounds": [{ "name": "scp_additions:079_1", "stream": false }] },

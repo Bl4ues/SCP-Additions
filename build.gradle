@@ -22,6 +22,8 @@ minecraft {
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${project.layout.buildDirectory.get().asFile}/createSrgToMcp/output.srg"
 
             mods {
                 scp_additions {
@@ -35,6 +37,8 @@ minecraft {
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${project.layout.buildDirectory.get().asFile}/createSrgToMcp/output.srg"
 
             mods {
                 scp_additions {

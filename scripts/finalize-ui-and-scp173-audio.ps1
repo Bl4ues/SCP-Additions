@@ -5,11 +5,27 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
+# Validate binary conversion tools before touching tracked files.
+if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+    throw @'
+ffmpeg was not found in PATH.
+Install it with:
+
+    winget install --id Gyan.FFmpeg -e
+
+Open a new PowerShell window afterwards and run this script again.
+'@
+}
+if (-not (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
+    throw 'ffprobe was not found in PATH. It is installed together with ffmpeg.'
+}
+
 # Apply the narrow Roboto exception to the Tesla Terminal permission label.
 $terminalPath = Join-Path $repoRoot 'src\main\java\net\mcreator\scpadditions\client\gui\TeslaTerminalScreen.java'
 $terminalText = Get-Content $terminalPath -Raw -Encoding UTF8
-$importAnchor = "import net.mcreator.scpadditions.ScpAdditionsMod;`n"
-$fontImport = "import net.mcreator.scpadditions.client.ScpFonts;`n"
+$lineEnding = if ($terminalText.Contains("`r`n")) { "`r`n" } else { "`n" }
+$importAnchor = "import net.mcreator.scpadditions.ScpAdditionsMod;$lineEnding"
+$fontImport = "import net.mcreator.scpadditions.client.ScpFonts;$lineEnding"
 
 if (-not $terminalText.Contains($fontImport)) {
     if (-not $terminalText.Contains($importAnchor)) {
@@ -26,24 +42,11 @@ if ($terminalText.Contains($oldDraw)) {
     throw 'Tesla Terminal permission draw call was not found.'
 }
 
-Set-Content $terminalPath $terminalText -Encoding UTF8 -NoNewline
+$utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($terminalPath, $terminalText, $utf8WithoutBom)
 Write-Host 'Applied Roboto only to Tesla Terminal GRANTED/DENIED.'
 
 # Convert stereo SCP-173 scrape assets to mono so OpenAL can spatialize them.
-if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
-    throw @'
-ffmpeg was not found in PATH.
-Install it with:
-
-    winget install --id Gyan.FFmpeg -e
-
-Open a new PowerShell window afterwards and run this script again.
-'@
-}
-if (-not (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
-    throw 'ffprobe was not found in PATH. It is installed together with ffmpeg.'
-}
-
 $soundDir = Join-Path $repoRoot 'src\main\resources\assets\scpinventory\sounds'
 $files = Get-ChildItem -Path $soundDir -Filter 'stone_scrap_*.ogg' -File | Sort-Object Name
 if ($files.Count -eq 0) {

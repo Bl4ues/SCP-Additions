@@ -12,4 +12,9 @@ public class Scp131BEntity extends AbstractScp131Entity {
     public String scpName() {
         return "SCP-131-B";
     }
+
+    @Override
+    public String textureName() {
+        return "scp131b";
+    }
 }

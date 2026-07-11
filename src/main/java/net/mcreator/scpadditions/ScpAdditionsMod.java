@@ -19,6 +19,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
+import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
@@ -53,6 +54,7 @@ public class ScpAdditionsMod {
 		ScpAdditionsModEntities.REGISTRY.register(bus);
 
 		ScpAdditionsModTabs.REGISTRY.register(bus);
+		FacilityModule.register(bus);
 
 		StructureFeature.REGISTRY.register(bus);
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);

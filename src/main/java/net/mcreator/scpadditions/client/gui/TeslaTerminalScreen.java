@@ -1,9 +1,13 @@
 package net.mcreator.scpadditions.client.gui;
 
+import net.minecraftforge.registries.ForgeRegistries;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -81,13 +85,18 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
 		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
 
-		guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		renderPermissionText(guiGraphics);
-		if (isOverlayState()) {
-			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		} else if (visualState == VisualState.STANDBY_DISABLE || visualState == VisualState.STANDBY_ENABLE) {
+		if (visualState == VisualState.STANDBY_DISABLE || visualState == VisualState.STANDBY_ENABLE) {
 			guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		} else {
+			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			if (isOverlayState()) {
+				float alpha = visualState == VisualState.OVERRIDE_WARNING ? 0.88F : 1.0F;
+				RenderSystem.setShaderColor(1, 1, 1, alpha);
+				guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+				RenderSystem.setShaderColor(1, 1, 1, 1);
+			}
 		}
+		renderPermissionText(guiGraphics);
 
 		guiGraphics.pose().popPose();
 		RenderSystem.disableBlend();
@@ -98,7 +107,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 76, 0);
+		guiGraphics.pose().translate(1278, 82, 0);
 		guiGraphics.pose().scale(3.0F, 3.0F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
@@ -160,23 +169,28 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		}
 		double tx = textureX(mouseX);
 		double ty = textureY(mouseY);
+		if (tx >= 0 && tx <= TEX_W && ty >= 0 && ty <= TEX_H) {
+			playRandomClick();
+		}
 
-		if (visualState == VisualState.MAIN) {
-			if (TESLA_TOGGLE.contains(tx, ty)) {
+		if (visualState == VisualState.MAIN || visualState == VisualState.OVERRIDE_ENGAGED) {
+			if (visualState == VisualState.MAIN && TESLA_TOGGLE.contains(tx, ty)) {
+				playSelect();
 				pendingAction = displayedTeslaGatesEnabled ? PendingAction.DISABLE_GATES : PendingAction.ENABLE_GATES;
 				if (authenticated) {
 					beginAuthorizedAction(pendingAction);
 				} else {
-					visualState = VisualState.CREDENTIAL_PROMPT;
+					showCredentialPrompt();
 				}
 				return true;
 			}
 			if (OVERRIDE_TOGGLE.contains(tx, ty)) {
+				playSelect();
 				pendingAction = displayedManualOverride ? PendingAction.OVERRIDE_OFF : PendingAction.OVERRIDE_ON;
 				if (authenticated) {
 					beginAuthorizedAction(pendingAction);
 				} else {
-					visualState = VisualState.CREDENTIAL_PROMPT;
+					showCredentialPrompt();
 				}
 				return true;
 			}
@@ -185,6 +199,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.CREDENTIAL_PROMPT) {
 			if (CREDENTIAL_OK.contains(tx, ty)) {
+				playSelect();
 				if (hasCredentialsItem()) {
 					authenticated = true;
 					setTimedState(VisualState.AUTH_SUCCESS, 55);
@@ -194,6 +209,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 				return true;
 			}
 			if (CREDENTIAL_CANCEL.contains(tx, ty)) {
+				playSelect();
 				resetToMain();
 				return true;
 			}
@@ -201,6 +217,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.INVALID_CREDENTIALS) {
 			if (CREDENTIAL_OK.contains(tx, ty) || CREDENTIAL_CANCEL.contains(tx, ty)) {
+				playSelect();
 				resetToMain();
 				return true;
 			}
@@ -208,10 +225,14 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 		if (visualState == VisualState.OVERRIDE_WARNING) {
 			if (WARNING_ENGAGE.contains(tx, ty)) {
-				setTimedState(VisualState.OVERRIDE_STANDBY, 110);
+				playSelect();
+				applyAndSendAction(PendingAction.OVERRIDE_ON);
+				playHeadSound("overrideon");
+				setTimedState(VisualState.OVERRIDE_STANDBY, 170);
 				return true;
 			}
 			if (WARNING_CANCEL.contains(tx, ty)) {
+				playSelect();
 				resetToMain();
 				return true;
 			}
@@ -237,43 +258,34 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 			return;
 		}
 
-		if (visualState == VisualState.STANDBY_DISABLE) {
-			applyAndSendAction(PendingAction.DISABLE_GATES);
-			resetToMain();
-			return;
-		}
-
-		if (visualState == VisualState.STANDBY_ENABLE) {
-			applyAndSendAction(PendingAction.ENABLE_GATES);
+		if (visualState == VisualState.STANDBY_DISABLE || visualState == VisualState.STANDBY_ENABLE) {
 			resetToMain();
 			return;
 		}
 
 		if (visualState == VisualState.OVERRIDE_STANDBY) {
-			applyAndSendAction(pendingAction);
-			if (pendingAction == PendingAction.OVERRIDE_ON) {
-				setTimedState(VisualState.OVERRIDE_ENGAGED, 60);
-			} else {
-				resetToMain();
-			}
+			visualState = VisualState.OVERRIDE_ENGAGED;
+			visualTimer = 0;
 			return;
-		}
-
-		if (visualState == VisualState.OVERRIDE_ENGAGED) {
-			resetToMain();
 		}
 	}
 
 	private void beginAuthorizedAction(PendingAction action) {
 		if (action == PendingAction.DISABLE_GATES) {
-			setTimedState(VisualState.STANDBY_DISABLE, 125);
+			applyAndSendAction(action);
+			playHeadSound("turningoff");
+			setTimedState(VisualState.STANDBY_DISABLE, 185);
 		} else if (action == PendingAction.ENABLE_GATES) {
-			setTimedState(VisualState.STANDBY_ENABLE, 125);
+			applyAndSendAction(action);
+			playHeadSound("turningon");
+			setTimedState(VisualState.STANDBY_ENABLE, 185);
 		} else if (action == PendingAction.OVERRIDE_ON) {
 			visualState = VisualState.OVERRIDE_WARNING;
 			visualTimer = 0;
+			playPopup();
 		} else if (action == PendingAction.OVERRIDE_OFF) {
-			setTimedState(VisualState.OVERRIDE_STANDBY, 110);
+			applyAndSendAction(action);
+			resetToMain();
 		} else {
 			resetToMain();
 		}
@@ -310,6 +322,12 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		}
 	}
 
+	private void showCredentialPrompt() {
+		visualState = VisualState.CREDENTIAL_PROMPT;
+		visualTimer = 0;
+		playPopup();
+	}
+
 	private void setTimedState(VisualState state, int timer) {
 		this.visualState = state;
 		this.visualTimer = timer;
@@ -329,12 +347,47 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		displayedManualOverride = menu.initialManualOverride;
 		if (displayedManualOverride) {
 			displayedTeslaGatesEnabled = true;
+			visualState = VisualState.OVERRIDE_ENGAGED;
 		}
 		initializedDisplayState = true;
 	}
 
 	private boolean hasCredentialsItem() {
 		return entity != null && entity.getInventory().contains(new ItemStack(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
+	}
+
+	private void playRandomClick() {
+		String id = Math.random() < 0.5D ? "click_1" : "click_2";
+		float pitch = 0.94F + (float) (Math.random() * 0.12D);
+		playBlockSound(id, pitch);
+	}
+
+	private void playSelect() {
+		playBlockSound("select", 1.0F);
+	}
+
+	private void playPopup() {
+		playBlockSound("popup", 1.0F);
+	}
+
+	private void playBlockSound(String soundId, float pitch) {
+		if (world == null) {
+			return;
+		}
+		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", soundId));
+		if (sound != null) {
+			world.playLocalSound(x + 0.5D, y + 0.5D, z + 0.5D, sound, SoundSource.BLOCKS, 1.0F, pitch, false);
+		}
+	}
+
+	private void playHeadSound(String soundId) {
+		if (world == null || entity == null) {
+			return;
+		}
+		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", soundId));
+		if (sound != null) {
+			world.playLocalSound(entity.getX(), entity.getY() + entity.getEyeHeight(), entity.getZ(), sound, SoundSource.AMBIENT, 1.0F, 1.0F, false);
+		}
 	}
 
 	private void updateLayout() {

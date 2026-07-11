@@ -20,15 +20,20 @@ import java.util.List;
 
 public class TeslaGateUpdateTickProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z) {
-		if (!world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON)) {
+		boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+		boolean teslaGateOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
+		if (manualOverride && !teslaGateOn && world instanceof Level level && !level.isClientSide()) {
+			world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, level.getServer());
+			teslaGateOn = true;
+		}
+		if (!teslaGateOn && !manualOverride) {
 			return;
 		}
 
-		boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 		double detectionRadius = manualOverride ? 3.5D : 2.0D;
 		int activationDelay = manualOverride ? 1 : 5;
 		ResourceLocation activationSound = new ResourceLocation("scp_additions", manualOverride ? "overcharge" : "teslaactivate");
-		float activationVolume = manualOverride ? 1.5F : 1.0F;
+		float activationVolume = manualOverride ? 2.0F : 1.0F;
 
 		final Vec3 center = new Vec3(x, y, z);
 		List<Entity> entities = world.getEntitiesOfClass(Entity.class, new AABB(center, center).inflate(detectionRadius), e -> true).stream().sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(center))).toList();

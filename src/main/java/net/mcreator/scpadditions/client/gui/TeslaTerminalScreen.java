@@ -45,6 +45,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final Rect CREDENTIAL_CANCEL = new Rect(756, 671, 1101, 734);
 	private static final Rect WARNING_ENGAGE = new Rect(383, 978, 764, 1027);
 	private static final Rect WARNING_CANCEL = new Rect(820, 978, 1165, 1027);
+	private static final Rect OVERRIDE_MODAL = new Rect(354, 737, 1200, 1049);
 
 	private final Level world;
 	private final int x, y, z;
@@ -107,21 +108,34 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void renderOverlay(GuiGraphics guiGraphics) {
+		ResourceLocation texture = overlayTexture();
 		if (isOverrideOverlayState()) {
-			RenderSystem.setShaderColor(1, 1, 1, 0.84F);
-			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-			RenderSystem.setShaderColor(1, 1, 1, 1);
+			// The override PNG still contains a broad semi-transparent matte behind the modal.
+			// Render that backing softly, then redraw the actual modal at full strength so the dialog stays readable.
+			RenderSystem.setShaderColor(1, 1, 1, 0.34F);
+			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			RenderSystem.setShaderColor(1, 1, 1, 1.0F);
+			blitRect(guiGraphics, texture, OVERRIDE_MODAL);
 		} else {
 			RenderSystem.setShaderColor(1, 1, 1, 1);
-			guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		}
+		RenderSystem.setShaderColor(1, 1, 1, 1);
+	}
+
+	private void blitRect(GuiGraphics guiGraphics, ResourceLocation texture, Rect rect) {
+		int x = (int) rect.minX();
+		int y = (int) rect.minY();
+		int width = (int) (rect.maxX() - rect.minX());
+		int height = (int) (rect.maxY() - rect.minY());
+		guiGraphics.blit(texture, x, y, x, y, width, height, TEX_W, TEX_H);
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 78, 0);
+		guiGraphics.pose().translate(1278, 77, 0);
 		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();

@@ -50,11 +50,11 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private VisualState visualState = VisualState.MAIN;
 	private PendingAction pendingAction = PendingAction.NONE;
 	private int visualTimer = 0;
-	private int terminalLoopTimer = 0;
 	private boolean authenticated = false;
 	private boolean initializedDisplayState = false;
 	private boolean displayedTeslaGatesEnabled = true;
 	private boolean displayedManualOverride = false;
+	private boolean clickVariant = false;
 
 	public TeslaTerminalScreen(TeslaTerminalMenu container, Inventory inventory, Component text) {
 		super(container, inventory, text);
@@ -94,9 +94,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 			renderPermissionText(guiGraphics);
 			if (isOverlayState()) {
-				RenderSystem.setShaderColor(1, 1, 1, overlayAlpha());
 				renderOverlay(guiGraphics);
-				RenderSystem.setShaderColor(1, 1, 1, 1);
 			}
 		}
 
@@ -108,21 +106,19 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private void renderOverlay(GuiGraphics guiGraphics) {
 		ResourceLocation texture = overlayTexture();
 		if (isOverrideOverlayState()) {
+			// Keep a subtle darkened lower-panel backdrop, then draw the modal itself mostly solid.
+			guiGraphics.fill(0, 647, TEX_W, TEX_H, 0x52000000);
 			int x1 = (int) OVERRIDE_MODAL_CROP.minX();
 			int y1 = (int) OVERRIDE_MODAL_CROP.minY();
 			int width = (int) OVERRIDE_MODAL_CROP.width();
 			int height = (int) OVERRIDE_MODAL_CROP.height();
+			RenderSystem.setShaderColor(1, 1, 1, 0.94F);
 			guiGraphics.blit(texture, x1, y1, x1, y1, width, height, TEX_W, TEX_H);
+			RenderSystem.setShaderColor(1, 1, 1, 1);
 		} else {
+			RenderSystem.setShaderColor(1, 1, 1, 1);
 			guiGraphics.blit(texture, 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		}
-	}
-
-	private float overlayAlpha() {
-		if (isOverrideOverlayState()) {
-			return 0.72F;
-		}
-		return 1.0F;
 	}
 
 	private void renderPermissionText(GuiGraphics guiGraphics) {
@@ -130,7 +126,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(1278, 75, 0);
-		guiGraphics.pose().scale(3.0F, 3.0F, 1.0F);
+		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
 		guiGraphics.pose().popPose();
 	}
@@ -195,9 +191,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		}
 		double tx = textureX(mouseX);
 		double ty = textureY(mouseY);
-		if (tx >= 0 && tx <= TEX_W && ty >= 0 && ty <= TEX_H) {
-			playRandomClick();
-		}
+		playRandomClick();
 
 		if (visualState == VisualState.MAIN || visualState == VisualState.OVERRIDE_ENGAGED) {
 			if (visualState == VisualState.MAIN && TESLA_TOGGLE.contains(tx, ty)) {
@@ -270,12 +264,6 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	@Override
 	public void containerTick() {
 		super.containerTick();
-		if (terminalLoopTimer <= 0) {
-			playBlockSound("terminalloop", 1.0F, 1.0F);
-			terminalLoopTimer = 200;
-		} else {
-			terminalLoopTimer--;
-		}
 		if (visualTimer > 0) {
 			visualTimer--;
 			if (visualTimer <= 0) {
@@ -388,8 +376,9 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void playRandomClick() {
-		String id = Math.random() < 0.5D ? "click_1" : "click_2";
-		float pitch = 0.92F + (float) (Math.random() * 0.16D);
+		clickVariant = !clickVariant;
+		String id = clickVariant ? "click_1" : "click_2";
+		float pitch = 0.90F + (float) (Math.random() * 0.20D);
 		playBlockSound(id, pitch, 0.5F);
 	}
 
@@ -398,7 +387,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void playPopup() {
-		playBlockSound("popup", 1.0F, 1.0F);
+		playBlockSound("popup", 1.0F, 1.5F);
 	}
 
 	private void playBlockSound(String soundId, float pitch, float volume) {

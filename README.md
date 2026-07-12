@@ -6,10 +6,16 @@ Version 3.0 consolidates the former SCP Inventory and SCP Unity Extra Blocks pro
 
 ## Requirements
 
+### Required
+
 - Minecraft 1.20.1
 - Forge 47.4.10 or newer
 - GeckoLib 4.4.9 or newer
-- `kleiders_custom_renderer` is optional
+
+### Optional client-side enhancements
+
+- **Kleiders Custom Renderer**: renders the custom player skins selected by SCP-914 on the 1:1 setting. All other SCP-914 player effects work without it.
+- **MoreMcmeta Emissive Textures**: enables emissive overlays for supported facility lights and glowing block textures. Install the MoreMcmeta base dependency required by the plugin as well.
 
 ## Major features
 
@@ -45,7 +51,7 @@ Version 3.0 consolidates the former SCP Inventory and SCP Unity Extra Blocks pro
 ### SCP machinery and anomalous objects
 
 - **SCP-294**: configurable drink machine with dynamic cups, fuzzy matching, aliases, effects, actions, sounds, custom death messages, and data-driven drink definitions.
-- **SCP-914**: configurable refinement machine with item and entity recipes, weighted outputs, recipe fragments, draggable dial GUI, machine offsets, and an assembly kit for placing the complete structure.
+- **SCP-914**: configurable refinement machine with item and entity recipes, weighted outputs, recipe fragments, draggable dial GUI, machine offsets, and an assembly kit for placing the complete structure. Players inside the intake receive setting-specific Rough, Coarse, 1:1, Fine, and Very Fine outcomes independently of the JSON recipe list.
 - **Additional SCP content**: SCP-330, SCP-426, SCP-572, SCP-902, SCP-1176, and related items and mechanics.
 
 ## Configuration
@@ -58,8 +64,15 @@ Major systems are configurable without rebuilding the mod:
 - `config/scpadditions/914recipes.d/*.json`
 - `config/scpinventory/scpinventory.json`
 - `config/scpinventory/context_interactions.json`
+- `config/scpadditions/scp914_skins/*.png`
 
 Bundled defaults are copied only when a configuration file does not already exist. Existing local configurations are not overwritten automatically.
+
+### SCP-914 1:1 skin pool
+
+On first launch, the mod creates `config/scpadditions/scp914_skins` and copies the eleven legacy SCP-914 skins into it. Add any compatible 64x64 or legacy 64x32 Minecraft skin PNG to this directory to include it in the random 1:1 pool.
+
+The selected filename is stored and synchronized by the server. For multiplayer rendering, each client must have a PNG with the same filename in its own `scp914_skins` directory and must install the optional Kleiders Custom Renderer.
 
 To regenerate the newest defaults, back up and remove the relevant generated configuration files before starting the game again.
 

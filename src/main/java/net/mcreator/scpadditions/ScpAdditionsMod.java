@@ -20,6 +20,7 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
+import net.mcreator.scpadditions.data.Scp914SkinManager;
 import net.mcreator.scpadditions.entity.Scp131Sounds;
 import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.entity.Scp173TargetConfig;
@@ -87,6 +88,7 @@ public class ScpAdditionsMod {
 		StaminaItemEffectConfig.load();
 		Scp294DrinkManager.loadFromConfig();
 		Scp914RecipeManager.loadFromConfig();
+		Scp914SkinManager.initialize();
 	}
 
 	private static final String PROTOCOL_VERSION = "1";

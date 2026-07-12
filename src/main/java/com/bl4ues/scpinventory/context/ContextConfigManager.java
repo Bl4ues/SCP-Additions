@@ -34,6 +34,7 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -522,18 +523,7 @@ public final class ContextConfigManager {
 
     private static JsonObject loadRoot() {
         try {
-            File file = configFile();
-            if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                copyBundledConfig(file);
-            }
-            if (!file.exists()) {
-                JsonObject root = new JsonObject();
-                root.addProperty("_comment", "Context interaction prompts for SCP Inventory. Edited in-game with /scpinventory context or config/scpinventory/context_interactions.json.");
-                root.add("interactions", new JsonArray());
-                saveRoot(root);
-                return root;
-            }
+            File file = ensureConfigFile();
             JsonElement parsed = JsonParser.parseReader(new FileReader(file));
             JsonObject root = parsed != null && parsed.isJsonObject() ? parsed.getAsJsonObject() : new JsonObject();
             interactions(root);
@@ -544,6 +534,25 @@ public final class ContextConfigManager {
             root.add("interactions", new JsonArray());
             return root;
         }
+    }
+
+    static File ensureConfigFile() {
+        File file = configFile();
+        if (!file.exists()) {
+            file.getParentFile().mkdirs();
+            copyBundledConfig(file);
+        }
+        if (!file.exists()) {
+            try {
+                Files.writeString(file.toPath(),
+                        DefaultContextInteractions.loadBundledConfig(),
+                        StandardCharsets.UTF_8);
+            } catch (Exception exception) {
+                ScpInventoryMod.LOGGER.error(
+                        "Failed to create fallback context interaction config", exception);
+            }
+        }
+        return file;
     }
 
     private static void copyBundledConfig(File file) {

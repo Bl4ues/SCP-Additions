@@ -20,7 +20,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,17 +86,7 @@ public final class ContextInteractionRegistry {
         maxEntityRange = 0.0D;
 
         try {
-            File dir = new File("config/scpinventory");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-
-            File file = new File(dir, "context_interactions.json");
-            if (!file.exists()) {
-                try (FileWriter writer = new FileWriter(file)) {
-                    writer.write(defaultConfig());
-                }
-            }
+            File file = ContextConfigManager.ensureConfigFile();
 
             JsonObject root = JsonParser.parseReader(new FileReader(file)).getAsJsonObject();
             JsonArray interactions = root.has("interactions") && root.get("interactions").isJsonArray()
@@ -193,10 +182,6 @@ public final class ContextInteractionRegistry {
         return new Rule(kind, id, block, entityType, range, priority, action, name, showAction, showName, autoName,
                 local[0], local[1], local[2], worldOffset[0], worldOffset[1], worldOffset[2], rotationMode,
                 allowE, allowRightClick, clickFace, useItem, icon);
-    }
-
-    private static String defaultConfig() {
-        return DefaultContextInteractions.CONFIG;
     }
 
     private static JsonObject getObject(JsonObject obj, String key) {

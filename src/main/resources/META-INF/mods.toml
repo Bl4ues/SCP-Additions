@@ -37,5 +37,13 @@ Combines the existing SCP Additions content with the SCP Inventory gameplay syst
     modId="kleiders_custom_renderer"
     mandatory=false
     versionRange="[0,)"
-    ordering="NONE"
-    side="BOTH"
+    ordering="AFTER"
+    side="CLIENT"
+
+
+[[dependencies.scp_additions]]
+    modId="moremcmeta_emissive_plugin"
+    mandatory=false
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="CLIENT"

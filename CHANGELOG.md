@@ -4,6 +4,19 @@
 
 The largest SCP Additions update so far. SCP Inventory and SCP Unity Extra Blocks have been consolidated into SCP Additions as internal systems, so only one mod file is required.
 
+### Release candidate corrections
+
+- Fixed first-run `context_interactions.json` generation so the complete bundled list of 99 interaction definitions is copied instead of the obsolete short in-code example;
+- Made the bundled context interaction JSON the single authoritative default used by both the runtime registry and the in-game editor;
+- Restored setting-specific SCP-914 processing for players inside the intake while keeping item and non-player entity transformations on the modern JSON recipe engine;
+- Restored Rough crushing damage, Coarse slowdown and delayed lethal damage, Fine temporary speed and jump enhancement followed by collapse, and Very Fine extreme temporary enhancement followed by lethal damage;
+- Restored the SCP-914 1:1 metamorphosis advancement and player appearance transformation;
+- Added `config/scpadditions/scp914_skins`, with the eleven legacy skins copied on first launch and support for additional 64x64 or legacy 64x32 PNG skins;
+- Added random 1:1 skin selection, persistence, remote-player synchronization, and tracking synchronization;
+- Kept Kleiders Custom Renderer optional: it is required only to render SCP-914-selected player skins;
+- Added MoreMcmeta Emissive Textures as an optional client dependency for supported emissive facility textures;
+- Clarified that GeckoLib 4.4.9 or newer is required while Kleiders Custom Renderer and MoreMcmeta Emissive Textures are optional client enhancements;
+
 ### Integrated SCP Inventory systems
 
 - Added the full SCP Inventory interface with dedicated storage for general items, equipment, keycards, ammunition, weapons, documents, and currency;

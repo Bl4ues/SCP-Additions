@@ -92,9 +92,22 @@ public class ScpAdditionsModVariables {
 				clone.PlayerOn1to1_9 = original.PlayerOn1to1_9;
 				clone.PlayerOn1to1_10 = original.PlayerOn1to1_10;
 				clone.PlayerOn1to1_11 = original.PlayerOn1to1_11;
+				clone.scp914Skin = original.scp914Skin;
 				clone.fear = original.fear;
 				clone.nuclear = original.nuclear;
 				clone.blackh = original.blackh;
+			}
+		}
+
+		@SubscribeEvent
+		public static void onStartTracking(PlayerEvent.StartTracking event) {
+			if (event.getEntity() instanceof ServerPlayer observer
+					&& event.getTarget() instanceof Player target
+					&& !observer.level().isClientSide()) {
+				target.getCapability(PLAYER_VARIABLES_CAPABILITY, null).ifPresent(variables ->
+						ScpAdditionsMod.PACKET_HANDLER.send(
+								PacketDistributor.PLAYER.with(() -> observer),
+								new PlayerVariablesSyncMessage(target.getId(), variables)));
 			}
 		}
 
@@ -312,13 +325,16 @@ public class ScpAdditionsModVariables {
 		public boolean PlayerOn1to1_9 = false;
 		public boolean PlayerOn1to1_10 = false;
 		public boolean PlayerOn1to1_11 = false;
+		public String scp914Skin = "";
 		public boolean fear = false;
 		public boolean nuclear = false;
 		public boolean blackh = false;
 
 		public void syncPlayerVariables(Entity entity) {
-			if (entity instanceof ServerPlayer serverPlayer)
-				ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new PlayerVariablesSyncMessage(this));
+			if (entity instanceof ServerPlayer)
+				ScpAdditionsMod.PACKET_HANDLER.send(
+						PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
+						new PlayerVariablesSyncMessage(entity.getId(), this));
 		}
 
 		public Tag writeNBT() {
@@ -342,6 +358,7 @@ public class ScpAdditionsModVariables {
 			nbt.putBoolean("PlayerOn1to1_9", PlayerOn1to1_9);
 			nbt.putBoolean("PlayerOn1to1_10", PlayerOn1to1_10);
 			nbt.putBoolean("PlayerOn1to1_11", PlayerOn1to1_11);
+			nbt.putString("scp914Skin", scp914Skin == null ? "" : scp914Skin);
 			nbt.putBoolean("fear", fear);
 			nbt.putBoolean("nuclear", nuclear);
 			nbt.putBoolean("blackh", blackh);
@@ -369,6 +386,7 @@ public class ScpAdditionsModVariables {
 			PlayerOn1to1_9 = nbt.getBoolean("PlayerOn1to1_9");
 			PlayerOn1to1_10 = nbt.getBoolean("PlayerOn1to1_10");
 			PlayerOn1to1_11 = nbt.getBoolean("PlayerOn1to1_11");
+			scp914Skin = nbt.getString("scp914Skin");
 			fear = nbt.getBoolean("fear");
 			nuclear = nbt.getBoolean("nuclear");
 			blackh = nbt.getBoolean("blackh");
@@ -376,48 +394,61 @@ public class ScpAdditionsModVariables {
 	}
 
 	public static class PlayerVariablesSyncMessage {
+		private final int entityId;
 		private final PlayerVariables data;
 
 		public PlayerVariablesSyncMessage(FriendlyByteBuf buffer) {
+			this.entityId = buffer.readVarInt();
 			this.data = new PlayerVariables();
-			this.data.readNBT(buffer.readNbt());
+			CompoundTag nbt = buffer.readNbt();
+			if (nbt != null)
+				this.data.readNBT(nbt);
 		}
 
-		public PlayerVariablesSyncMessage(PlayerVariables data) {
+		public PlayerVariablesSyncMessage(int entityId, PlayerVariables data) {
+			this.entityId = entityId;
 			this.data = data;
 		}
 
 		public static void buffer(PlayerVariablesSyncMessage message, FriendlyByteBuf buffer) {
+			buffer.writeVarInt(message.entityId);
 			buffer.writeNbt((CompoundTag) message.data.writeNBT());
 		}
 
 		public static void handler(PlayerVariablesSyncMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
 			NetworkEvent.Context context = contextSupplier.get();
 			context.enqueueWork(() -> {
-				if (!context.getDirection().getReceptionSide().isServer()) {
-					PlayerVariables variables = ((PlayerVariables) Minecraft.getInstance().player.getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables()));
-					variables.Opos = message.data.Opos;
-					variables.Oneg = message.data.Oneg;
-					variables.Apos = message.data.Apos;
-					variables.Aneg = message.data.Aneg;
-					variables.Bpos = message.data.Bpos;
-					variables.Bneg = message.data.Bneg;
-					variables.ABpos = message.data.ABpos;
-					variables.ABneg = message.data.ABneg;
-					variables.PlayerOn1to1 = message.data.PlayerOn1to1;
-					variables.PlayerOn1to1_2 = message.data.PlayerOn1to1_2;
-					variables.PlayerOn1to1_3 = message.data.PlayerOn1to1_3;
-					variables.PlayerOn1to1_4 = message.data.PlayerOn1to1_4;
-					variables.PlayerOn1to1_5 = message.data.PlayerOn1to1_5;
-					variables.PlayerOn1to1_6 = message.data.PlayerOn1to1_6;
-					variables.PlayerOn1to1_7 = message.data.PlayerOn1to1_7;
-					variables.PlayerOn1to1_8 = message.data.PlayerOn1to1_8;
-					variables.PlayerOn1to1_9 = message.data.PlayerOn1to1_9;
-					variables.PlayerOn1to1_10 = message.data.PlayerOn1to1_10;
-					variables.PlayerOn1to1_11 = message.data.PlayerOn1to1_11;
-					variables.fear = message.data.fear;
-					variables.nuclear = message.data.nuclear;
-					variables.blackh = message.data.blackh;
+				if (!context.getDirection().getReceptionSide().isServer()
+						&& Minecraft.getInstance().level != null) {
+					Entity target = Minecraft.getInstance().level.getEntity(message.entityId);
+					if (target instanceof Player player) {
+						PlayerVariables variables = ((PlayerVariables) player
+								.getCapability(PLAYER_VARIABLES_CAPABILITY, null)
+								.orElse(new PlayerVariables()));
+						variables.Opos = message.data.Opos;
+						variables.Oneg = message.data.Oneg;
+						variables.Apos = message.data.Apos;
+						variables.Aneg = message.data.Aneg;
+						variables.Bpos = message.data.Bpos;
+						variables.Bneg = message.data.Bneg;
+						variables.ABpos = message.data.ABpos;
+						variables.ABneg = message.data.ABneg;
+						variables.PlayerOn1to1 = message.data.PlayerOn1to1;
+						variables.PlayerOn1to1_2 = message.data.PlayerOn1to1_2;
+						variables.PlayerOn1to1_3 = message.data.PlayerOn1to1_3;
+						variables.PlayerOn1to1_4 = message.data.PlayerOn1to1_4;
+						variables.PlayerOn1to1_5 = message.data.PlayerOn1to1_5;
+						variables.PlayerOn1to1_6 = message.data.PlayerOn1to1_6;
+						variables.PlayerOn1to1_7 = message.data.PlayerOn1to1_7;
+						variables.PlayerOn1to1_8 = message.data.PlayerOn1to1_8;
+						variables.PlayerOn1to1_9 = message.data.PlayerOn1to1_9;
+						variables.PlayerOn1to1_10 = message.data.PlayerOn1to1_10;
+						variables.PlayerOn1to1_11 = message.data.PlayerOn1to1_11;
+						variables.scp914Skin = message.data.scp914Skin;
+						variables.fear = message.data.fear;
+						variables.nuclear = message.data.nuclear;
+						variables.blackh = message.data.blackh;
+					}
 				}
 			});
 			context.setPacketHandled(true);

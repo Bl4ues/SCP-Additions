@@ -21,6 +21,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -56,11 +57,11 @@ import java.util.function.Supplier;
 /**
  * Complete SCP Unity block integration.
  *
- * Public registry IDs now live under {@code scp_additions}. The original
- * {@code scp_unity_extra_blocks} asset namespace remains as a resource library,
- * and {@link FacilityLegacyMappings} remaps old block/item IDs when a world is
- * loaded. Animation frames stay registered for world compatibility but only
- * stable endpoints are exposed in the creative tab.
+ * Public registry IDs live under {@code scp_additions}. The original
+ * {@code scp_unity_extra_blocks} namespace remains as a resource library, and
+ * {@link FacilityLegacyMappings} remaps old block/item IDs when a world loads.
+ * Animation frames stay registered for compatibility but only stable endpoints
+ * are exposed in the creative tab.
  */
 public final class FacilityModule {
     public static final String MODID = ScpAdditionsMod.MODID;
@@ -85,7 +86,7 @@ public final class FacilityModule {
     private static final RegistryObject<SoundEvent> UNITY_OFFICE_OPEN = sound("unity_office_open");
     private static final RegistryObject<SoundEvent> UNITY_OFFICE_CLOSE = sound("unity_office_close");
 
-    // Architectural pieces already present in the first migration batch.
+    // Architectural pieces.
     public static final RegistryObject<Block> TESLA_BOTTOM = structure("tesla_bottom");
     public static final RegistryObject<Block> TESLA_MID_1 = structure("tesla_mid_1");
     public static final RegistryObject<Block> TESLA_MID_2 = structure("tesla_mid_2");
@@ -117,10 +118,10 @@ public final class FacilityModule {
             () -> new WallLightBlock(false), true);
     public static final RegistryObject<Block> WALLLIGHT_2 = registerBlock("walllight_2",
             () -> new WallLightBlock(true), false);
-    public static final RegistryObject<Block> HEATER = prop("heater", true, false);
-    public static final RegistryObject<Block> SIGN_SUPPORT = prop("sign_support", true, true);
-    public static final RegistryObject<Block> TV = prop("tv", true, false);
-    public static final RegistryObject<Block> TRASHBIN = prop("trashbin", true, false);
+    public static final RegistryObject<Block> HEATER = registerBlock("heater", HeaterBlock::new, true);
+    public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", SignSupportBlock::new, true);
+    public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
+    public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
 
     // Button states. Only LOCKED and CLOSED are public items.
     public static final RegistryObject<Block> BUTTON_LOCKED = registerButton("button_locked", ButtonState.LOCKED, true);
@@ -129,42 +130,45 @@ public final class FacilityModule {
     public static final RegistryObject<Block> BUTTON_OPEN = registerButton("button_open", ButtonState.OPEN, false);
     public static final RegistryObject<Block> BUTTON_CLOSING = registerButton("button_closing", ButtonState.CLOSING, false);
 
-    // Door families. Frame registry names match the standalone mod exactly.
+    // Door collision indices reproduce the standalone classes. Heavy doors
+    // become passable at opening frame 10 and solid again at closing frame 9.
+    // Smaller doors stay solid throughout their transition and become passable
+    // only at the fully-open endpoint.
     public static final DoorFamily DEFAULT_DOOR = door("default",
             "default_door", numbered("default_door_", 1, 13), "default_door_open",
-            descending("default_clos_", 13, 1), 1, false,
+            descending("default_clos_", 13, 1), 1, false, 9, 4, SoundType.METAL,
             UNITY_DOOR_OPENING, UNITY_DOOR_CLOSING);
     public static final DoorFamily YELLOW_DOOR = door("yellow",
             "yellow_closed", numbered("yellow_", 1, 13), "yellow_open",
-            descending("yellow_c_", 13, 1), 1, false,
+            descending("yellow_c_", 13, 1), 1, false, 9, 4, SoundType.METAL,
             UNITY_DOOR_OPENING, UNITY_DOOR_CLOSING);
     public static final DoorFamily BLACK_DOOR = door("black",
             "black_closed", numbered("black_", 1, 13), "black_open",
-            descending("black_c_", 13, 1), 1, false,
+            descending("black_c_", 13, 1), 1, false, 9, 4, SoundType.METAL,
             UNITY_DOOR_OPENING, UNITY_DOOR_CLOSING);
     public static final DoorFamily NORMAL_DOOR = door("normal",
             "normal_door", numbered("ndoor_", 1, 4), "door_open",
-            numbered("door_c_", 1, 3), 5, true,
+            numbered("door_c_", 1, 3), 5, true, 4, 0, SoundType.WOOD,
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
     public static final DoorFamily LEFT_LOG_DOOR = door("left_logistics",
             "left_log_door", numbered("left_log_door_", 1, 4), "left_log_door_open",
-            numbered("left_log_clo_", 1, 3), 5, true,
+            numbered("left_log_clo_", 1, 3), 5, true, 4, 0, SoundType.WOOD,
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
     public static final DoorFamily RIGHT_LOG_DOOR = door("right_logistics",
             "right_log_door", numbered("right_log_door_", 1, 4), "right_log_door_open",
-            List.of("right_log_clos_1", "right_log_clos_2", "right_clos_3"), 5, true,
-            UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
+            List.of("right_log_clos_1", "right_log_clos_2", "right_clos_3"),
+            5, true, 4, 0, SoundType.WOOD, UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
     public static final DoorFamily OFFICE_DOOR = door("office",
             "office_door", numbered("office_door_", 1, 4), "office_door_open",
-            numbered("office_c_", 1, 3), 5, true,
+            numbered("office_c_", 1, 3), 5, true, 4, 0, SoundType.WOOD,
             UNITY_OFFICE_OPEN, UNITY_OFFICE_CLOSE);
     public static final DoorFamily BATH_DOOR = door("bathroom",
             "bath_door", numbered("bath_door_", 1, 3), "bath_door_open",
-            numbered("bath_c_", 1, 3), 5, true,
+            numbered("bath_c_", 1, 3), 5, true, 3, 0, SoundType.WOOD,
             UNITY_BATH_OPEN, UNITY_BATH_CLOSE);
     public static final DoorFamily WORKSHOP_DOOR = door("workshop",
             "ws_dclosed", numbered("ws_", 1, 4), "ws_open",
-            List.of("w_sc_1", "w_sc_2", "wsc_3"), 5, true,
+            List.of("w_sc_1", "w_sc_2", "wsc_3"), 5, true, 4, 0, SoundType.WOOD,
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
 
     public static final RegistryObject<CreativeModeTab> SCP_UNITY_BLOCKS = TABS.register("scp_unity_blocks", () ->
@@ -194,54 +198,56 @@ public final class FacilityModule {
     }
 
     private static RegistryObject<SoundEvent> sound(String path) {
-        return SOUNDS.register(path, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MODID, path)));
+        return SOUNDS.register(path,
+                () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MODID, path)));
     }
 
     private static RegistryObject<Block> structure(String path) {
         return registerBlock(path, FacilityStructureBlock::new, true);
     }
 
-    private static RegistryObject<Block> prop(String path, boolean directional, boolean noCollision) {
-        return registerBlock(path,
-                () -> directional ? new DirectionalPropBlock(noCollision) : new FacilityStructureBlock(), true);
-    }
-
     private static RegistryObject<Block> registerButton(String path, ButtonState state, boolean publicItem) {
         return registerBlock(path, () -> new DoorButtonBlock(state), publicItem);
     }
 
-    private static RegistryObject<Block> registerBlock(String path, Supplier<? extends Block> factory, boolean publicItem) {
+    private static RegistryObject<Block> registerBlock(String path,
+            Supplier<? extends Block> factory, boolean publicItem) {
         RegistryObject<Block> block = BLOCKS.register(path, factory);
-        RegistryObject<Item> item = ITEMS.register(path, () -> new BlockItem(block.get(), new Item.Properties()));
+        RegistryObject<Item> item = ITEMS.register(path,
+                () -> new BlockItem(block.get(), new Item.Properties()));
         BLOCKS_BY_PATH.put(path, block);
         ITEMS_BY_PATH.put(path, item);
-        if (publicItem) {
-            CREATIVE_ITEMS.add(item);
-        }
+        if (publicItem) CREATIVE_ITEMS.add(item);
         return block;
     }
 
     private static DoorFamily door(String id, String closedPath, List<String> openingPaths,
             String openPath, List<String> closingPaths, int frameDelay, boolean directUse,
+            int openingPassableFrame, int closingSolidFrame, SoundType soundType,
             RegistryObject<SoundEvent> openingSound, RegistryObject<SoundEvent> closingSound) {
         RegistryObject<Block> closed = registerBlock(closedPath,
-                () -> new AnimatedDoorBlock(id, DoorStage.CLOSED, 0), true);
+                () -> new AnimatedDoorBlock(id, DoorStage.CLOSED, 0, soundType), true);
+
         List<RegistryObject<Block>> opening = new ArrayList<>();
         for (int i = 0; i < openingPaths.size(); i++) {
             final int frame = i;
             opening.add(registerBlock(openingPaths.get(i),
-                    () -> new AnimatedDoorBlock(id, DoorStage.OPENING, frame), false));
+                    () -> new AnimatedDoorBlock(id, DoorStage.OPENING, frame, soundType), false));
         }
+
         RegistryObject<Block> open = registerBlock(openPath,
-                () -> new AnimatedDoorBlock(id, DoorStage.OPEN, 0), false);
+                () -> new AnimatedDoorBlock(id, DoorStage.OPEN, 0, soundType), false);
+
         List<RegistryObject<Block>> closing = new ArrayList<>();
         for (int i = 0; i < closingPaths.size(); i++) {
             final int frame = i;
             closing.add(registerBlock(closingPaths.get(i),
-                    () -> new AnimatedDoorBlock(id, DoorStage.CLOSING, frame), false));
+                    () -> new AnimatedDoorBlock(id, DoorStage.CLOSING, frame, soundType), false));
         }
-        DoorFamily family = new DoorFamily(id, closed, List.copyOf(opening), open, List.copyOf(closing),
-                frameDelay, directUse, openingSound, closingSound);
+
+        DoorFamily family = new DoorFamily(id, closed, List.copyOf(opening), open,
+                List.copyOf(closing), frameDelay, directUse, openingPassableFrame,
+                closingSolidFrame, openingSound, closingSound);
         DOOR_FAMILIES.put(id, family);
         return family;
     }
@@ -277,7 +283,7 @@ public final class FacilityModule {
         return level.hasNeighborSignal(pos) || level.hasNeighborSignal(pos.above());
     }
 
-    private static VoxelShape doorShape(Direction facing) {
+    private static VoxelShape heavyDoorShape(Direction facing) {
         return facing.getAxis() == Direction.Axis.X
                 ? Block.box(4.75D, 0.0D, 0.0D, 11.25D, 32.0D, 16.0D)
                 : Block.box(0.0D, 0.0D, 4.75D, 16.0D, 32.0D, 11.25D);
@@ -303,9 +309,8 @@ public final class FacilityModule {
         BlockState current = level.getBlockState(pos);
         if (!(current.getBlock() instanceof DoorButtonBlock)) return;
         Direction facing = current.getValue(HorizontalDirectionalBlock.FACING);
-        BlockState replacement = buttonFor(target).get().defaultBlockState()
-                .setValue(HorizontalDirectionalBlock.FACING, facing);
-        level.setBlock(pos, replacement, Block.UPDATE_ALL);
+        level.setBlock(pos, buttonFor(target).get().defaultBlockState()
+                .setValue(HorizontalDirectionalBlock.FACING, facing), Block.UPDATE_ALL);
 
         BlockPos pairPos = pos.relative(facing.getOpposite(), 2);
         BlockState pairState = level.getBlockState(pairPos);
@@ -333,6 +338,7 @@ public final class FacilityModule {
     public record DoorFamily(String id, RegistryObject<Block> closed,
             List<RegistryObject<Block>> opening, RegistryObject<Block> open,
             List<RegistryObject<Block>> closing, int frameDelay, boolean directUse,
+            int openingPassableFrame, int closingSolidFrame,
             RegistryObject<SoundEvent> openingSound, RegistryObject<SoundEvent> closingSound) {
     }
 
@@ -348,29 +354,26 @@ public final class FacilityModule {
         }
     }
 
-    private static class DirectionalPropBlock extends HorizontalDirectionalBlock {
-        private final boolean noCollision;
+    private abstract static class HorizontalWaterloggedPropBlock extends HorizontalDirectionalBlock
+            implements SimpleWaterloggedBlock {
+        protected static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-        private DirectionalPropBlock(boolean noCollision) {
-            super(properties(noCollision));
-            this.noCollision = noCollision;
-            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
-        }
-
-        private static BlockBehaviour.Properties properties(boolean noCollision) {
-            BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
-                    .sound(SoundType.METAL).strength(1.0F, 10.0F).noOcclusion();
-            return noCollision ? properties.noCollission() : properties;
+        protected HorizontalWaterloggedPropBlock(BlockBehaviour.Properties properties) {
+            super(properties.noOcclusion().isRedstoneConductor((state, level, pos) -> false));
+            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH)
+                    .setValue(WATERLOGGED, false));
         }
 
         @Override
         protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FACING);
+            builder.add(FACING, WATERLOGGED);
         }
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+            boolean waterlogged = context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER;
+            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite())
+                    .setValue(WATERLOGGED, waterlogged);
         }
 
         @Override
@@ -384,8 +387,29 @@ public final class FacilityModule {
         }
 
         @Override
-        public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-            return noCollision ? Shapes.empty() : super.getVisualShape(state, level, pos, context);
+        public FluidState getFluidState(BlockState state) {
+            return state.getValue(WATERLOGGED)
+                    ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor,
+                LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+            if (state.getValue(WATERLOGGED)) {
+                level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            }
+            return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
+        }
+
+        @Override
+        public VoxelShape getVisualShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return Shapes.empty();
+        }
+
+        @Override
+        public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+            return Collections.singletonList(new ItemStack(this));
         }
     }
 
@@ -399,14 +423,15 @@ public final class FacilityModule {
         }
 
         @Override
-        public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean moving) {
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
             level.scheduleTick(pos, this, 1);
         }
 
         @Override
-        public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor,
-                BlockPos neighborPos, boolean moving) {
+        public void neighborChanged(BlockState state, Level level, BlockPos pos,
+                Block neighbor, BlockPos neighborPos, boolean moving) {
             level.scheduleTick(pos, this, 1);
         }
 
@@ -425,51 +450,52 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level,
-                BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target,
+                BlockGetter level, BlockPos pos, Player player) {
             return new ItemStack(ALARM_LAMP.get());
         }
     }
 
-    private static final class WallLightBlock extends HorizontalDirectionalBlock implements SimpleWaterloggedBlock {
-        private static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    private static final class WallLightBlock extends HorizontalWaterloggedPropBlock {
         private final boolean upper;
 
         private WallLightBlock(boolean upper) {
-            super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(1.0F, 10.0F)
-                    .lightLevel(state -> 15).noOcclusion().noCollission());
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F).lightLevel(state -> 15));
             this.upper = upper;
-            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(WATERLOGGED, false));
         }
 
         @Override
-        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FACING, WATERLOGGED);
-        }
-
-        @Override
-        public BlockState getStateForPlacement(BlockPlaceContext context) {
-            boolean waterlogged = context.getLevel().getFluidState(context.getClickedPos()).is(Fluids.WATER);
-            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite())
-                    .setValue(WATERLOGGED, waterlogged);
-        }
-
-        @Override
-        public FluidState getFluidState(BlockState state) {
-            return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
-        }
-
-        @Override
-        public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor,
-                LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-            if (state.getValue(WATERLOGGED)) {
-                level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            Direction facing = state.getValue(FACING);
+            if (upper) {
+                return switch (facing) {
+                    case NORTH -> Shapes.or(box(5, 0, 14.6, 11, 2.5, 16.6),
+                            box(10, -0.01, 15, 12, 2.51, 17), box(4, -0.01, 15, 6, 2.51, 17));
+                    case EAST -> Shapes.or(box(-0.6, 0, 5, 1.4, 2.5, 11),
+                            box(-1, -0.01, 10, 1, 2.51, 12), box(-1, -0.01, 4, 1, 2.51, 6));
+                    case WEST -> Shapes.or(box(14.6, 0, 5, 16.6, 2.5, 11),
+                            box(15, -0.01, 4, 17, 2.51, 6), box(15, -0.01, 10, 17, 2.51, 12));
+                    default -> Shapes.or(box(5, 0, -0.6, 11, 2.5, 1.4),
+                            box(4, -0.01, -1, 6, 2.51, 1), box(10, -0.01, -1, 12, 2.51, 1));
+                };
             }
-            return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
+            return switch (facing) {
+                case NORTH -> Shapes.or(box(10, 13.49, 15, 12, 16.01, 17),
+                        box(5, 13.5, 14.6, 11, 16, 16.6), box(4, 13.49, 15, 6, 16.01, 17));
+                case EAST -> Shapes.or(box(-1, 13.49, 10, 1, 16.01, 12),
+                        box(-0.6, 13.5, 5, 1.4, 16, 11), box(-1, 13.49, 4, 1, 16.01, 6));
+                case WEST -> Shapes.or(box(15, 13.49, 4, 17, 16.01, 6),
+                        box(14.6, 13.5, 5, 16.6, 16, 11), box(15, 13.49, 10, 17, 16.01, 12));
+                default -> Shapes.or(box(4, 13.49, -1, 6, 16.01, 1),
+                        box(5, 13.5, -0.6, 11, 16, 1.4), box(10, 13.49, -1, 12, 16.01, 1));
+            };
         }
 
         @Override
-        public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean moving) {
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
             if (!upper && !level.isClientSide && level.getBlockState(pos.above()).canBeReplaced()) {
                 level.setBlock(pos.above(), WALLLIGHT_2.get().defaultBlockState()
@@ -478,7 +504,8 @@ public final class FacilityModule {
         }
 
         @Override
-        public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean moving) {
             if (state.getBlock() != newState.getBlock()) {
                 BlockPos other = upper ? pos.below() : pos.above();
                 Block expected = upper ? WALLLIGHT.get() : WALLLIGHT_2.get();
@@ -489,13 +516,198 @@ public final class FacilityModule {
 
         @Override
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-            return upper ? Collections.emptyList() : Collections.singletonList(new ItemStack(WALLLIGHT.get()));
+            return upper ? Collections.emptyList()
+                    : Collections.singletonList(new ItemStack(WALLLIGHT.get()));
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level,
-                BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target,
+                BlockGetter level, BlockPos pos, Player player) {
             return new ItemStack(WALLLIGHT.get());
+        }
+    }
+
+    private static final class HeaterBlock extends HorizontalWaterloggedPropBlock {
+        private HeaterBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F).lightLevel(state -> 5));
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return switch (state.getValue(FACING)) {
+                case NORTH -> Shapes.or(box(6, 0, 6, 10, 1, 10), box(6, 14.9, 6, 10, 15.9, 10),
+                        box(6.35, 1, 7.6, 8.45, 13.75, 9.7), box(6, 13.45, 5.6, 10, 14.95, 10.5),
+                        box(7.65, 1, 6.5, 10.65, 13.75, 8.5));
+                case EAST -> Shapes.or(box(6, 0, 6, 10, 1, 10), box(6, 14.9, 6, 10, 15.9, 10),
+                        box(6.3, 1, 6.35, 8.4, 13.75, 8.45), box(5.5, 13.45, 6, 10.4, 14.95, 10),
+                        box(7.5, 1, 7.65, 9.5, 13.75, 10.65));
+                case WEST -> Shapes.or(box(6, 0, 6, 10, 1, 10), box(6, 14.9, 6, 10, 15.9, 10),
+                        box(7.6, 1, 7.55, 9.7, 13.75, 9.65), box(5.6, 13.45, 6, 10.5, 14.95, 10),
+                        box(6.5, 1, 5.35, 8.5, 13.75, 8.35));
+                default -> Shapes.or(box(6, 0, 6, 10, 1, 10), box(6, 14.9, 6, 10, 15.9, 10),
+                        box(7.55, 1, 6.3, 9.65, 13.75, 8.4), box(6, 13.45, 5.5, 10, 14.95, 10.4),
+                        box(5.35, 1, 7.5, 8.35, 13.75, 9.5));
+            };
+        }
+    }
+
+    private static final class SignSupportBlock extends HorizontalWaterloggedPropBlock {
+        private SignSupportBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.GLASS)
+                    .strength(1.0F, 10.0F).noCollission());
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return switch (state.getValue(FACING)) {
+                case NORTH -> Shapes.or(box(8.2, -3.75, 15.55, 8.7, -3.25, 16.8),
+                        box(22.8, -3.75, 15.55, 23.3, -3.25, 16.8),
+                        box(22.8, -12.55, 15.55, 23.3, -12.05, 16.8),
+                        box(8.2, -12.55, 15.55, 8.7, -12.05, 16.8),
+                        box(8.2, -13.35, 15.7, 23.7, -12.85, 15.9),
+                        box(8.2, -3.15, 15.7, 23.7, -2.65, 15.9));
+                case EAST -> Shapes.or(box(-0.8, -3.75, 8.2, 0.45, -3.25, 8.7),
+                        box(-0.8, -3.75, 22.8, 0.45, -3.25, 23.3),
+                        box(-0.8, -12.55, 22.8, 0.45, -12.05, 23.3),
+                        box(-0.8, -12.55, 8.2, 0.45, -12.05, 8.7),
+                        box(0.1, -13.35, 8.2, 0.3, -12.85, 23.7),
+                        box(0.1, -3.15, 8.2, 0.3, -2.65, 23.7));
+                case WEST -> Shapes.or(box(15.55, -3.75, 7.3, 16.8, -3.25, 7.8),
+                        box(15.55, -3.75, -7.3, 16.8, -3.25, -6.8),
+                        box(15.55, -12.55, -7.3, 16.8, -12.05, -6.8),
+                        box(15.55, -12.55, 7.3, 16.8, -12.05, 7.8),
+                        box(15.7, -13.35, -7.7, 15.9, -12.85, 7.8),
+                        box(15.7, -3.15, -7.7, 15.9, -2.65, 7.8));
+                default -> Shapes.or(box(7.3, -3.75, -0.8, 7.8, -3.25, 0.45),
+                        box(-7.3, -3.75, -0.8, -6.8, -3.25, 0.45),
+                        box(-7.3, -12.55, -0.8, -6.8, -12.05, 0.45),
+                        box(7.3, -12.55, -0.8, 7.8, -12.05, 0.45),
+                        box(-7.7, -13.35, 0.1, 7.8, -12.85, 0.3),
+                        box(-7.7, -3.15, 0.1, 7.8, -2.65, 0.3));
+            };
+        }
+    }
+
+    private static final class TvBlock extends DirectionalBlock {
+        private TvBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F).noCollission().noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false));
+            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(FACING,
+                    context.getNearestLookingDirection().getOpposite());
+        }
+
+        @Override
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        }
+
+        @Override
+        public VoxelShape getVisualShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return Shapes.empty();
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return switch (state.getValue(FACING)) {
+                case NORTH -> Shapes.or(box(-16, -13.05, 15.25, 32, -12.3, 17.75),
+                        box(-16, 12.55, 15.25, 32, 13.3, 17.75),
+                        box(31.225, -12.275, 15.25, 31.975, 12.625, 17.75),
+                        box(-15.975, -12.375, 15.25, -15.225, 12.625, 17.75));
+                case EAST -> Shapes.or(box(-1.75, -13.05, -16, 0.75, -12.3, 32),
+                        box(-1.75, 12.55, -16, 0.75, 13.3, 32),
+                        box(-1.75, -12.275, 31.225, 0.75, 12.625, 31.975),
+                        box(-1.75, -12.375, -15.975, 0.75, 12.625, -15.225));
+                case WEST -> Shapes.or(box(15.25, -13.05, -16, 17.75, -12.3, 32),
+                        box(15.25, 12.55, -16, 17.75, 13.3, 32),
+                        box(15.25, -12.275, -15.975, 17.75, 12.625, -15.225),
+                        box(15.25, -12.375, 31.225, 17.75, 12.625, 31.975));
+                case UP -> Shapes.or(box(-16, -1.75, -13.05, 32, 0.75, -12.3),
+                        box(-16, -1.75, 12.55, 32, 0.75, 13.3),
+                        box(31.225, -1.75, -12.275, 31.975, 0.75, 12.625),
+                        box(-15.975, -1.75, -12.375, -15.225, 0.75, 12.625));
+                case DOWN -> Shapes.or(box(-16, 15.25, 28.3, 32, 17.75, 29.05),
+                        box(-16, 15.25, 2.7, 32, 17.75, 3.45),
+                        box(31.225, 15.25, 3.375, 31.975, 17.75, 28.275),
+                        box(-15.975, 15.25, 3.375, -15.225, 17.75, 28.375));
+                default -> Shapes.or(box(-16, -13.05, -1.75, 32, -12.3, 0.75),
+                        box(-16, 12.55, -1.75, 32, 13.3, 0.75),
+                        box(-15.975, -12.275, -1.75, -15.225, 12.625, 0.75),
+                        box(31.225, -12.375, -1.75, 31.975, 12.625, 0.75));
+            };
+        }
+
+        @Override
+        public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+            return Collections.singletonList(new ItemStack(this));
+        }
+    }
+
+    private static final class TrashbinBlock extends HorizontalDirectionalBlock {
+        private TrashbinBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F).noOcclusion());
+            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(FACING,
+                    context.getHorizontalDirection().getOpposite());
+        }
+
+        @Override
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        }
+
+        @Override
+        public VoxelShape getVisualShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return Shapes.empty();
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return state.getValue(FACING).getAxis() == Direction.Axis.X
+                    ? box(5.5, 0, 4.25, 10.5, 12, 11.75)
+                    : box(4.25, 0, 5.5, 11.75, 12, 10.5);
+        }
+
+        @Override
+        public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+            return Collections.singletonList(new ItemStack(this));
         }
     }
 
@@ -504,8 +716,8 @@ public final class FacilityModule {
         private final DoorStage stage;
         private final int frame;
 
-        private AnimatedDoorBlock(String familyId, DoorStage stage, int frame) {
-            super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(1.0F, 10.0F)
+        private AnimatedDoorBlock(String familyId, DoorStage stage, int frame, SoundType soundType) {
+            super(BlockBehaviour.Properties.of().sound(soundType).strength(1.0F, 10.0F)
                     .noOcclusion().isRedstoneConductor((state, level, pos) -> false));
             this.familyId = familyId;
             this.stage = stage;
@@ -524,7 +736,8 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+            return defaultBlockState().setValue(FACING,
+                    context.getHorizontalDirection().getOpposite());
         }
 
         @Override
@@ -542,43 +755,49 @@ public final class FacilityModule {
             return switch (stage) {
                 case OPEN -> true;
                 case CLOSED -> false;
-                case OPENING -> frame >= Math.max(1, family.opening().size() / 2);
-                case CLOSING -> frame < Math.max(1, family.closing().size() / 2);
+                case OPENING -> frame >= family.openingPassableFrame();
+                case CLOSING -> frame < family.closingSolidFrame();
             };
         }
 
         @Override
-        public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-            return doorShape(state.getValue(FACING));
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return heavyDoorShape(state.getValue(FACING));
         }
 
         @Override
-        public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
-                CollisionContext context) {
-            return passable() ? Shapes.empty() : doorShape(state.getValue(FACING));
+        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return passable() ? Shapes.empty() : heavyDoorShape(state.getValue(FACING));
         }
 
         @Override
-        public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        public VoxelShape getVisualShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
             return Shapes.empty();
         }
 
         @Override
-        public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean moving) {
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
-            int delay = stage == DoorStage.OPENING || stage == DoorStage.CLOSING ? family().frameDelay() : 1;
+            int delay = stage == DoorStage.OPENING || stage == DoorStage.CLOSING
+                    ? family().frameDelay() : 1;
             level.scheduleTick(pos, this, delay);
         }
 
         @Override
-        public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor,
-                BlockPos neighborPos, boolean moving) {
-            if (stage == DoorStage.CLOSED || stage == DoorStage.OPEN) level.scheduleTick(pos, this, 1);
+        public void neighborChanged(BlockState state, Level level, BlockPos pos,
+                Block neighbor, BlockPos neighborPos, boolean moving) {
+            if (stage == DoorStage.CLOSED || stage == DoorStage.OPEN) {
+                level.scheduleTick(pos, this, 1);
+            }
         }
 
         @Override
-        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                InteractionHand hand, BlockHitResult hit) {
+        public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                Player player, InteractionHand hand, BlockHitResult hit) {
             DoorFamily family = family();
             if (!family.directUse() || (stage != DoorStage.CLOSED && stage != DoorStage.OPEN)) {
                 return InteractionResult.PASS;
@@ -598,7 +817,9 @@ public final class FacilityModule {
                     if (doorPowered(level, pos)) startOpening(level, pos, state, family);
                 }
                 case OPEN -> {
-                    if (!family.directUse() && !doorPowered(level, pos)) startClosing(level, pos, state, family);
+                    if (!family.directUse() && !doorPowered(level, pos)) {
+                        startClosing(level, pos, state, family);
+                    }
                 }
                 case OPENING -> {
                     Block next = frame + 1 < family.opening().size()
@@ -613,16 +834,22 @@ public final class FacilityModule {
             }
         }
 
-        private static void startOpening(ServerLevel level, BlockPos pos, BlockState state, DoorFamily family) {
+        private static void startOpening(ServerLevel level, BlockPos pos,
+                BlockState state, DoorFamily family) {
             if (family.opening().isEmpty()) return;
-            level.playSound(null, pos, family.openingSound().get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-            level.setBlock(pos, copyFacing(state, family.opening().get(0).get()), Block.UPDATE_ALL);
+            level.playSound(null, pos, family.openingSound().get(),
+                    SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.setBlock(pos, copyFacing(state, family.opening().get(0).get()),
+                    Block.UPDATE_ALL);
         }
 
-        private static void startClosing(ServerLevel level, BlockPos pos, BlockState state, DoorFamily family) {
+        private static void startClosing(ServerLevel level, BlockPos pos,
+                BlockState state, DoorFamily family) {
             if (family.closing().isEmpty()) return;
-            level.playSound(null, pos, family.closingSound().get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-            level.setBlock(pos, copyFacing(state, family.closing().get(0).get()), Block.UPDATE_ALL);
+            level.playSound(null, pos, family.closingSound().get(),
+                    SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.setBlock(pos, copyFacing(state, family.closing().get(0).get()),
+                    Block.UPDATE_ALL);
         }
 
         @Override
@@ -631,8 +858,8 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level,
-                BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target,
+                BlockGetter level, BlockPos pos, Player player) {
             return new ItemStack(family().closed().get());
         }
     }
@@ -654,7 +881,8 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+            return defaultBlockState().setValue(FACING,
+                    context.getHorizontalDirection().getOpposite());
         }
 
         @Override
@@ -668,7 +896,8 @@ public final class FacilityModule {
         }
 
         @Override
-        public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
             return switch (state.getValue(FACING)) {
                 case NORTH -> Block.box(-4.2D, -2.66D, 14.2D, -0.9D, 2.64D, 16.0D);
                 case EAST -> Block.box(0.0D, -2.66D, -4.2D, 1.8D, 2.64D, -0.9D);
@@ -684,14 +913,17 @@ public final class FacilityModule {
         }
 
         @Override
-        public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        public int getSignal(BlockState state, BlockGetter level,
+                BlockPos pos, Direction direction) {
             return isSignalSource(state) ? 15 : 0;
         }
 
         @Override
-        public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean moving) {
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
             if (level.isClientSide) return;
+
             Direction facing = state.getValue(FACING);
             BlockPos pairPos = pos.relative(facing.getOpposite(), 2);
             BlockState pairState = level.getBlockState(pairPos);
@@ -705,34 +937,41 @@ public final class FacilityModule {
         }
 
         @Override
-        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                InteractionHand hand, BlockHitResult hit) {
+        public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                Player player, InteractionHand hand, BlockHitResult hit) {
             if (buttonState != ButtonState.CLOSED && buttonState != ButtonState.OPEN) {
                 return InteractionResult.PASS;
             }
             if (!level.isClientSide && level instanceof ServerLevel server) {
                 setButtonPair(server, pos,
-                        buttonState == ButtonState.CLOSED ? ButtonState.OPENING : ButtonState.CLOSING);
+                        buttonState == ButtonState.CLOSED
+                                ? ButtonState.OPENING : ButtonState.CLOSING);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         @Override
-        public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-            if (buttonState == ButtonState.OPENING) setButtonPair(level, pos, ButtonState.OPEN);
-            else if (buttonState == ButtonState.CLOSING) setButtonPair(level, pos, ButtonState.CLOSED);
+        public void tick(BlockState state, ServerLevel level,
+                BlockPos pos, RandomSource random) {
+            if (buttonState == ButtonState.OPENING) {
+                setButtonPair(level, pos, ButtonState.OPEN);
+            } else if (buttonState == ButtonState.CLOSING) {
+                setButtonPair(level, pos, ButtonState.CLOSED);
+            }
         }
 
         @Override
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-            Block drop = buttonState == ButtonState.LOCKED ? BUTTON_LOCKED.get() : BUTTON_CLOSED.get();
+            Block drop = buttonState == ButtonState.LOCKED
+                    ? BUTTON_LOCKED.get() : BUTTON_CLOSED.get();
             return Collections.singletonList(new ItemStack(drop));
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level,
-                BlockPos pos, Player player) {
-            return new ItemStack(buttonState == ButtonState.LOCKED ? BUTTON_LOCKED.get() : BUTTON_CLOSED.get());
+        public ItemStack getCloneItemStack(BlockState state, HitResult target,
+                BlockGetter level, BlockPos pos, Player player) {
+            return new ItemStack(buttonState == ButtonState.LOCKED
+                    ? BUTTON_LOCKED.get() : BUTTON_CLOSED.get());
         }
     }
 }

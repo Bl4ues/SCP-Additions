@@ -14,7 +14,8 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
  * Break-time cleanup for facility multiblocks and manually assembled Unity
- * button pairs. Original and mirrored visual variants are equivalent here.
+ * button pairs. Right-side, authored left-side and legacy reflected variants
+ * are equivalent here.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilityBlockEvents {
@@ -70,6 +71,7 @@ public final class FacilityBlockEvents {
 
     private static boolean isLockedButton(Block block) {
         return block == FacilityModule.BUTTON_LOCKED.get()
+                || LeftDoorButtons.isLocked(block)
                 || MirroredDoorButtons.isLocked(block);
     }
 
@@ -78,6 +80,7 @@ public final class FacilityBlockEvents {
                 || block == FacilityModule.BUTTON_OPENING.get()
                 || block == FacilityModule.BUTTON_OPEN.get()
                 || block == FacilityModule.BUTTON_CLOSING.get()
+                || LeftDoorButtons.isFunctional(block)
                 || MirroredDoorButtons.isFunctional(block);
     }
 }

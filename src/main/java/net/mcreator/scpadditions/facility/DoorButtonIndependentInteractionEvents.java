@@ -42,27 +42,41 @@ public final class DoorButtonIndependentInteractionEvents {
         if (phase != Phase.CLOSED && phase != Phase.OPEN) {
             return;
         }
-        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return;
+
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
+
+        if (event.getLevel() instanceof ServerLevel level) {
+            activateButton(level, pos);
+        }
+    }
+
+    /**
+     * Direct block-level fallback used by both original and mirrored variants.
+     * This keeps the button functional even if another interaction handler
+     * consumes the Forge event before this subscriber sees it.
+     */
+    public static boolean activateButton(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) {
+            return false;
+        }
+
+        BlockState state = level.getBlockState(pos);
+        Phase phase = phaseOf(state.getBlock());
+        if ((phase != Phase.CLOSED && phase != Phase.OPEN)
+                || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return false;
         }
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         BlockPos counterpartPos = pos.relative(facing.getOpposite(), 2);
-        BlockState counterpartState = event.getLevel().getBlockState(counterpartPos);
+        BlockState counterpartState = level.getBlockState(counterpartPos);
         boolean linked = isFunctional(counterpartState.getBlock())
                 && counterpartState.hasProperty(HorizontalDirectionalBlock.FACING)
                 && counterpartState.getValue(HorizontalDirectionalBlock.FACING) == facing.getOpposite();
 
         Phase transition = phase == Phase.CLOSED ? Phase.OPENING : Phase.CLOSING;
         Phase endpoint = phase == Phase.CLOSED ? Phase.OPEN : Phase.CLOSED;
-
-        event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
-
-        if (!(event.getLevel() instanceof ServerLevel level)) {
-            return;
-        }
-
         boolean clickedMirrored = MirroredDoorButtons.isAny(state.getBlock());
         boolean counterpartMirrored = linked && MirroredDoorButtons.isAny(counterpartState.getBlock());
         Direction counterpartFacing = linked
@@ -71,7 +85,8 @@ public final class DoorButtonIndependentInteractionEvents {
 
         setState(level, pos, facing, clickedMirrored, transition);
         if (linked) {
-            setState(level, counterpartPos, counterpartFacing, counterpartMirrored, transition);
+            setState(level, counterpartPos, counterpartFacing,
+                    counterpartMirrored, transition);
         }
 
         ScpAdditionsMod.queueServerWork(TRANSITION_TICKS, () -> {
@@ -80,6 +95,7 @@ public final class DoorButtonIndependentInteractionEvents {
                 completeTransition(level, counterpartPos, endpoint);
             }
         });
+        return true;
     }
 
     private static void completeTransition(ServerLevel level, BlockPos pos, Phase endpoint) {
@@ -105,6 +121,7 @@ public final class DoorButtonIndependentInteractionEvents {
         Block target = blockFor(targetPhase, mirrored);
         level.setBlock(pos, target.defaultBlockState()
                 .setValue(HorizontalDirectionalBlock.FACING, facing), Block.UPDATE_ALL);
+        level.updateNeighborsAt(pos, target);
 
         // Base Unity states still contain the old auto-mirroring onPlace hook.
         // Restore an existing manually placed counterpart exactly as it was, or

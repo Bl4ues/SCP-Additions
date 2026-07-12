@@ -19,21 +19,18 @@ jobs:
         with:
           ref: integration/scp-additions-3.0
 
-      - name: Write supplied default configs
-        run: python3 scripts/requested_fix/write_defaults.py
-
-      - name: Fix facility panels and key ownership
-        run: python3 scripts/requested_fix/patch_facility_keys.py
-
-      - name: Fix screwdriver interaction and fonts
-        run: python3 scripts/requested_fix/patch_screwdriver_fonts.py
-
-      - name: Fix first-run default loading
-        run: python3 scripts/requested_fix/patch_defaults.py
-
-      - name: Validate JSON defaults
+      - name: Apply patches and build
+        id: patch
+        shell: bash
         run: |
-          python3 - <<'PY'
+          set +e
+          {
+            set -e
+            python3 scripts/requested_fix/write_defaults.py
+            python3 scripts/requested_fix/patch_facility_keys.py
+            python3 scripts/requested_fix/patch_screwdriver_fonts.py
+            python3 scripts/requested_fix/patch_defaults.py
+            python3 - <<'PY'
           import json
           from pathlib import Path
           files = [
@@ -47,24 +44,37 @@ jobs:
               json.loads(path.read_text(encoding='utf-8'))
               print(f'Valid JSON: {path}')
           PY
+            chmod +x gradlew
+            ./gradlew clean build --stacktrace
+          } > /tmp/requested-fix.log 2>&1
+          status=$?
+          cat /tmp/requested-fix.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Build integrated mod
-        run: |
-          chmod +x gradlew
-          ./gradlew clean build --stacktrace
-
-      - name: Remove temporary migration helpers
+      - name: Commit verified fixes
+        if: steps.patch.outputs.status == '0'
         run: |
           rm -rf scripts/requested_fix
           rm -f scripts/inspect_requested_fix_targets.py
           rm -f .github/workflows/inspect-requested-fix-targets.yml
           rm -f migration-reference/requested-fix-targets.txt
+          rm -f migration-reference/requested-fix-run.log
           rm -f .github/workflows/apply-requested-fixes.yml
-
-      - name: Commit verified fixes
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix integrated panels, UI, keycards and defaults"
           git push origin HEAD:integration/scp-additions-3.0
+
+      - name: Record failure diagnostics
+        if: steps.patch.outputs.status != '0'
+        run: |
+          git reset --hard HEAD
+          cp /tmp/requested-fix.log migration-reference/requested-fix-run.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add migration-reference/requested-fix-run.log
+          git commit -m "Record requested fix workflow failure"
+          git push origin HEAD:integration/scp-additions-3.0
+          exit 1

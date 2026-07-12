@@ -51,7 +51,7 @@ public final class HeavyDoorControlPanelAccess {
      * temporarily enter their ACCEPT state, and a legacy node is pulsed only when
      * no modern panel is connected.
      *
-     * @return number of interfaces that were activated
+     * @return number of connected interfaces authorizing the action
      */
     public static int openConnectedControls(ServerLevel level, BlockPos doorPos) {
         ControlSnapshot controls = inspect(level, doorPos);
@@ -59,33 +59,28 @@ public final class HeavyDoorControlPanelAccess {
             return 0;
         }
 
-        int changed = 0;
         if (!controls.buttons().isEmpty()) {
-            changed += DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
+            DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
                     level, doorPos, true);
         }
         for (BlockPos readerPos : controls.readers()) {
-            if (setReaderAccepted(level, readerPos, true)) {
-                changed++;
-            }
+            setReaderAccepted(level, readerPos, true);
         }
 
         // A legacy pulse node is the fallback authorizer for installations that
         // intentionally have no button or reader attached to the door.
         if (!controls.hasModernPanel()) {
             for (BlockPos legacyPos : controls.legacyNodes()) {
-                if (setLegacyNodePowered(level, legacyPos, true)) {
-                    changed++;
-                }
+                setLegacyNodePowered(level, legacyPos, true);
             }
         }
-        return changed;
+        return controls.authorizingCount();
     }
 
     /**
      * Closes every connected valid interface and removes its redstone output.
      *
-     * @return number of interfaces that were deactivated
+     * @return number of connected interfaces authorizing the action
      */
     public static int closeConnectedControls(ServerLevel level, BlockPos doorPos) {
         ControlSnapshot controls = inspect(level, doorPos);
@@ -93,22 +88,17 @@ public final class HeavyDoorControlPanelAccess {
             return 0;
         }
 
-        int changed = 0;
         if (!controls.buttons().isEmpty()) {
-            changed += DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
+            DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
                     level, doorPos, false);
         }
         for (BlockPos readerPos : controls.readers()) {
-            if (setReaderAccepted(level, readerPos, false)) {
-                changed++;
-            }
+            setReaderAccepted(level, readerPos, false);
         }
         for (BlockPos legacyPos : controls.legacyNodes()) {
-            if (setLegacyNodePowered(level, legacyPos, false)) {
-                changed++;
-            }
+            setLegacyNodePowered(level, legacyPos, false);
         }
-        return changed;
+        return controls.authorizingCount();
     }
 
     private static ControlSnapshot inspect(ServerLevel level, BlockPos doorPos) {
@@ -238,6 +228,13 @@ public final class HeavyDoorControlPanelAccess {
 
         private boolean canManipulate() {
             return hasModernPanel() || !legacyNodes.isEmpty();
+        }
+
+        private int authorizingCount() {
+            if (hasModernPanel()) {
+                return buttons.size() + readers.size();
+            }
+            return legacyNodes.size();
         }
     }
 }

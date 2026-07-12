@@ -67,14 +67,16 @@ public final class DoorButtonPlacementEvents {
         BlockPos logicalPosition;
         Block target;
         if (clickedLeftHalf) {
-            // Original model is visually offset to the right of the doorway and
-            // therefore keeps its logical anchor one block to screen-left.
+            // The original model is offset from its logical block in one
+            // direction, so its anchor lives one block to screen-left.
             logicalPosition = visualPosition.relative(screenLeft);
             target = locked ? FacilityModule.BUTTON_LOCKED.get()
                     : FacilityModule.BUTTON_CLOSED.get();
         } else {
-            // The supplied model is already authored for the opposite side.
-            logicalPosition = visualPosition;
+            // The authored opposite-side model uses the inverse anchor. Matching
+            // the reader placement contract keeps the visible panel on the face
+            // half that was clicked while the redstone block sits on the other side.
+            logicalPosition = visualPosition.relative(screenLeft.getOpposite());
             target = locked ? LeftDoorButtons.BUTTON_LOCKED.get()
                     : LeftDoorButtons.BUTTON_CLOSED.get();
         }

@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.network;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -23,6 +24,12 @@ public final class ScpEntityNetwork {
                 BlinkInputStatePacket::encode, BlinkInputStatePacket::decode, BlinkInputStatePacket::handle);
         ScpAdditionsMod.addNetworkMessage(ScareSoundPacket.class,
                 ScareSoundPacket::encode, ScareSoundPacket::decode, ScareSoundPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(KeycardReaderOpenScreenPacket.class,
+                KeycardReaderOpenScreenPacket::encode, KeycardReaderOpenScreenPacket::decode,
+                KeycardReaderOpenScreenPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(KeycardReaderSetLevelPacket.class,
+                KeycardReaderSetLevelPacket::encode, KeycardReaderSetLevelPacket::decode,
+                KeycardReaderSetLevelPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {
@@ -38,5 +45,11 @@ public final class ScpEntityNetwork {
     public static void playScare(ServerPlayer player) {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new ScareSoundPacket());
+    }
+
+    public static void openKeycardReaderScreen(ServerPlayer player, BlockPos pos, int level) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
+                new KeycardReaderOpenScreenPacket(pos, level));
     }
 }

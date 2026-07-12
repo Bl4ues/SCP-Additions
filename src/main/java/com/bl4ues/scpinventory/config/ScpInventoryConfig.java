@@ -20,35 +20,79 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Shared readable configuration used by inventory classification, vitals and
- * later interaction/codex modules. Missing sections are added without replacing
- * sections already written by another integrated subsystem.
- */
+/** Shared readable configuration for inventory classification and related systems. */
 public final class ScpInventoryConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get()
             .resolve("scpinventory").resolve("scpinventory.json");
 
+    /**
+     * Public defaults combine SCP Additions' own gameplay items, the finalized
+     * SCP modpack compatibility list, and useful vanilla survival items. Explicit
+     * JSON rules always take priority over automatic classifier heuristics.
+     */
     private static final List<String> DEFAULT_ITEM_RULES = List.of(
-            "minecraft:flint|COIN",
+            "scp_additions:level_1_keycard|KEY",
+            "scp_additions:level_2_keycard|KEY",
+            "scp_additions:level_3_keycard|KEY",
+            "scp_additions:level_4_keycard|KEY",
+            "scp_additions:level_5_keycard|KEY",
+            "scp_additions:level_6_keycard|KEY",
+            "scp_additions:security_credentials|KEY",
+            "scp_additions:coin|COIN",
+            "scp_additions:scp_572|WEAPON",
+            "scp_additions:geiger_1|USABLE",
+            "scp_additions:geiger_2|USABLE",
+            "scp_additions:geiger_3|USABLE",
+            "scp_additions:spray|USABLE",
+            "scp_additions:screwdriver|USABLE",
+
+            "encyclopedia_of_common_diseases:encyclopedia_of_common_diseases|USABLE",
+            "management_wanted:fire_axe|WEAPON",
+            "management_wanted:knife|WEAPON",
+            "management_wanted:pizza_cutter|WEAPON",
+            "gas_mask:gas_mask_helmet|HEAD",
+            "scpfr:medkit|CONSUMABLE",
+            "scpfr:scp_207|CONSUMABLE",
+            "panacea:panacea|CONSUMABLE",
+            "scpo:mop|USABLE",
+            "scpo:scp_714|ACCESSORYHAND",
+            "scpo:scp_420_j|USABLE",
+            "scpo:scp_1079|USABLE",
+            "scpo:scp_1079_candy|CONSUMABLE",
+            "scpo:scp_178_helmet|HEAD",
+            "scpo:scp_500_bottle|USABLE",
+            "scpo:money|MISCELLANEOUS",
+
             "minecraft:arrow|AMMO",
-            "minecraft:leather|ACCESSORYHAND",
-            "minecraft:clock|ACCESSORY",
-            "minecraft:fishing_rod|USABLE",
-            "minecraft:spyglass|USABLE",
+            "minecraft:spectral_arrow|AMMO",
+            "minecraft:tipped_arrow|AMMO",
             "minecraft:bow|WEAPON",
             "minecraft:crossbow|WEAPON",
+            "minecraft:trident|WEAPON",
+            "minecraft:fishing_rod|USABLE",
+            "minecraft:spyglass|USABLE",
             "minecraft:shield|USABLE",
             "minecraft:goat_horn|USABLE",
             "minecraft:ender_pearl|USABLE",
             "minecraft:snowball|USABLE",
-            "minecraft:egg|USABLE"
+            "minecraft:egg|USABLE",
+            "minecraft:writable_book|USABLE",
+            "minecraft:flint_and_steel|USABLE",
+            "minecraft:shears|USABLE",
+            "minecraft:brush|USABLE"
     );
-    private static final List<String> DEFAULT_ITEM_EFFECTS =
-            List.of("minecraft:leather|NO_STAMINA");
-    private static final List<String> DEFAULT_HIDDEN_STATUS_EFFECTS =
-            List.of("minecraft:bad_omen");
+
+    private static final List<String> DEFAULT_ITEM_EFFECTS = List.of(
+            "scpo:scp_714|NO_STAMINA"
+    );
+
+    private static final List<String> DEFAULT_HIDDEN_STATUS_EFFECTS = List.of(
+            "minecraft:bad_omen",
+            "scpo:pestilence",
+            "scpinventory:eye_sore",
+            "scp_additions:eye_sore"
+    );
 
     private static volatile boolean loaded;
     private static List<String> itemRules = DEFAULT_ITEM_RULES;
@@ -104,7 +148,7 @@ public final class ScpInventoryConfig {
             boolean changed = false;
             if (root.has("item_rules") && root.get("item_rules").isJsonArray()) {
                 itemRules = Collections.unmodifiableList(
-                        parseTypedRules(root.getAsJsonArray("item_rules"), DEFAULT_ITEM_RULES));
+                        parseTypedRules(root.getAsJsonArray("item_rules")));
             } else {
                 root.add("item_rules", typedRulesToJson(DEFAULT_ITEM_RULES));
                 changed = true;
@@ -139,7 +183,7 @@ public final class ScpInventoryConfig {
 
             if (!root.has("_comment")) {
                 root.addProperty("_comment",
-                        "SCP Inventory classification, item effects and codex configuration.");
+                        "SCP Inventory configuration. Explicit rules override automatic survival-compatible classification.");
                 changed = true;
             }
 
@@ -152,8 +196,9 @@ public final class ScpInventoryConfig {
                 }
             }
         } catch (Exception exception) {
-            ScpAdditionsMod.LOGGER.error("Failed to load SCP Inventory config from {}",
-                    CONFIG_PATH, exception);
+            ScpAdditionsMod.LOGGER.error(
+                    "Failed to load SCP Inventory config from {}", CONFIG_PATH,
+                    exception);
         }
 
         loaded = true;
@@ -165,8 +210,7 @@ public final class ScpInventoryConfig {
         if (!loaded) load();
     }
 
-    private static List<String> parseTypedRules(JsonArray array,
-            List<String> defaults) {
+    private static List<String> parseTypedRules(JsonArray array) {
         List<String> result = new ArrayList<>();
         for (JsonElement entry : array) {
             if (entry.isJsonPrimitive()) {
@@ -181,7 +225,7 @@ public final class ScpInventoryConfig {
                 }
             }
         }
-        return result.isEmpty() ? new ArrayList<>(defaults) : result;
+        return result;
     }
 
     private static List<String> parseEffectRules(JsonArray array) {
@@ -196,7 +240,8 @@ public final class ScpInventoryConfig {
                 if (id.isBlank()) continue;
                 if (object.has("effects") && object.get("effects").isJsonArray()) {
                     for (JsonElement effect : object.getAsJsonArray("effects")) {
-                        if (effect.isJsonPrimitive() && !effect.getAsString().isBlank()) {
+                        if (effect.isJsonPrimitive()
+                                && !effect.getAsString().isBlank()) {
                             result.add(id + "|" + effect.getAsString().trim());
                         }
                     }
@@ -240,7 +285,8 @@ public final class ScpInventoryConfig {
             String[] parts = raw.split("\\|", 2);
             JsonObject object = new JsonObject();
             object.addProperty("id", parts[0]);
-            object.addProperty("type", parts.length > 1 ? parts[1] : "MISC");
+            object.addProperty("type",
+                    parts.length > 1 ? parts[1] : "MISCELLANEOUS");
             array.add(object);
         }
         return array;

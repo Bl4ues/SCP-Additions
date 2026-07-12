@@ -110,6 +110,29 @@ processResources {
             }
         }
 
+        // Copy loot tables, recipes and other namespace-owned data into the new
+        // namespace. Also rewrite tag entries under data/minecraft so mineable
+        // and tool tags point to the migrated registry IDs.
+        def legacyData = file("$buildDir/resources/main/data/scp_unity_extra_blocks")
+        def additionsData = file("$buildDir/resources/main/data/scp_additions")
+        if (legacyData.exists()) {
+            project.copy {
+                from legacyData
+                into additionsData
+            }
+        }
+        def allData = file("$buildDir/resources/main/data")
+        if (allData.exists()) {
+            fileTree(allData).matching {
+                include '**/*.json'
+            }.each { jsonFile ->
+                def raw = jsonFile.getText('UTF-8')
+                if (raw.contains('scp_unity_extra_blocks:')) {
+                    jsonFile.setText(raw.replace('scp_unity_extra_blocks:', 'scp_additions:'), 'UTF-8')
+                }
+            }
+        }
+
         // Keep new 3.0 translation entries isolated from the generated legacy
         // language file, then merge both into the single locale Minecraft loads.
         def langDir = file("$buildDir/resources/main/assets/scp_additions/lang")

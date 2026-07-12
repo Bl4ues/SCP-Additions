@@ -444,6 +444,16 @@ public final class ScpInventoryScreen extends Screen {
         RenderSystem.disableBlend();
     }
 
+    private void drawText(GuiGraphics graphics, String text, int x, int y,
+            int color, float scale) {
+        PoseStack pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(x, y, 0.0F);
+        pose.scale(scale, scale, 1.0F);
+        graphics.drawString(font, montserrat(text), 0, 0, color, false);
+        pose.popPose();
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);

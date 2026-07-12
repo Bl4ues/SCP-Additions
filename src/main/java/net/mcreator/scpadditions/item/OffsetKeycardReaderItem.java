@@ -4,7 +4,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -16,29 +15,32 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * One public item for a legacy left/right keycard-reader block pair.
+ * One public item for every legacy left/right keycard-reader block variant.
  *
- * The reader models intentionally live one block to the side of their logical
- * redstone block. This item moves that logical block to the opposite side of
- * the clicked visual position, so the model appears exactly where the player
- * clicked while the old redstone architecture and registry IDs remain intact.
+ * Readers still use the old offset logical block because it carries the
+ * redstone implementation. The item shifts that logical block so the visible
+ * reader appears exactly on the half of the wall the player clicked.
  */
 public final class OffsetKeycardReaderItem extends BlockItem {
-    private final Supplier<? extends Block> rightBlock;
-    private final Supplier<? extends BlockItem> rightItem;
+    private final Supplier<? extends Block> rightPlacementBlock;
+    private final Supplier<? extends BlockItem> rightPlacementItem;
+    private final List<Supplier<? extends Block>> canonicalReaderBlocks;
 
-    public OffsetKeycardReaderItem(Block leftBlock, Supplier<? extends Block> rightBlock,
-            Supplier<? extends BlockItem> rightItem, Item.Properties properties) {
-        super(leftBlock, properties);
-        this.rightBlock = rightBlock;
-        this.rightItem = rightItem;
+    public OffsetKeycardReaderItem(Block leftPlacementBlock,
+            Supplier<? extends Block> rightPlacementBlock,
+            Supplier<? extends BlockItem> rightPlacementItem,
+            List<Supplier<? extends Block>> canonicalReaderBlocks,
+            Item.Properties properties) {
+        super(leftPlacementBlock, properties);
+        this.rightPlacementBlock = rightPlacementBlock;
+        this.rightPlacementItem = rightPlacementItem;
+        this.canonicalReaderBlocks = List.copyOf(canonicalReaderBlocks);
     }
 
     @Override
@@ -87,42 +89,47 @@ public final class OffsetKeycardReaderItem extends BlockItem {
         }
 
         if (clickedLeftHalf) {
-            return rightItem.get().place(shiftedPlacement);
+            return rightPlacementItem.get().place(shiftedPlacement);
         }
         return super.place(shiftedPlacement);
     }
 
     @Override
     public String getDescriptionId() {
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(this);
-        if (id == null) {
-            return super.getDescriptionId();
-        }
-        return "item." + id.getNamespace() + "." + id.getPath();
+        return "item.scp_additions.keycard_reader";
     }
 
     @Override
     public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
         tooltip.add(Component.translatable("tooltip.scp_additions.keycard_reader_placement").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.scp_additions.keycard_reader_configure").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     /**
-     * Make Block#asItem resolve both legacy block variants to the one public
-     * item. This also unifies pick-block and every existing normal/accept/wrong
-     * reader drop without rewriting all 36 legacy block classes.
+     * Make Block#asItem resolve every normal reader level and side to the one
+     * public item. Accept/wrong states already drop their corresponding normal
+     * block, so they inherit this mapping too.
      */
     @Override
     public void registerBlocks(Map<Block, Item> blockToItemMap, Item item) {
         super.registerBlocks(blockToItemMap, item);
-        blockToItemMap.put(rightBlock.get(), item);
+        blockToItemMap.put(rightPlacementBlock.get(), item);
+        for (Supplier<? extends Block> readerBlock : canonicalReaderBlocks) {
+            blockToItemMap.put(readerBlock.get(), item);
+        }
     }
 
     @Override
     public void removeFromBlockToItemMap(Map<Block, Item> blockToItemMap, Item item) {
         super.removeFromBlockToItemMap(blockToItemMap, item);
-        if (blockToItemMap.get(rightBlock.get()) == item) {
-            blockToItemMap.remove(rightBlock.get());
+        if (blockToItemMap.get(rightPlacementBlock.get()) == item) {
+            blockToItemMap.remove(rightPlacementBlock.get());
+        }
+        for (Supplier<? extends Block> readerBlock : canonicalReaderBlocks) {
+            if (blockToItemMap.get(readerBlock.get()) == item) {
+                blockToItemMap.remove(readerBlock.get());
+            }
         }
     }
 }

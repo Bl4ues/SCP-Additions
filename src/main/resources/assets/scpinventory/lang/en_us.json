@@ -16,5 +16,11 @@
   "key.scpinventory.open_inventory": "Open SCP Inventory",
   "key.scpinventory.context_interact": "Context Interact",
   "key.scpinventory.context_config_select": "Context Config Select",
-  "key.scpinventory.blink": "Blink"
+  "key.scpinventory.blink": "Blink",
+  "key.scp_additions.scp_inventory": "Open SCP Inventory",
+  "key.scp_additions.context_interact": "Interact / Pick Up",
+  "screen.scp_additions.scp_inventory": "SCP Inventory",
+  "screen.scp_additions.scp_inventory.inventory": "INVENTORY",
+  "screen.scp_additions.scp_inventory.keys": "KEYS",
+  "overlay.scp_additions.scp_inventory_full": "Your inventory is full"
 }

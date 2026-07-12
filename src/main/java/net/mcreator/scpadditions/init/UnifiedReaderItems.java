@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -9,6 +10,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.item.OffsetKeycardReaderItem;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public final class UnifiedReaderItems {
     public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
@@ -22,7 +24,7 @@ public final class UnifiedReaderItems {
                     ScpAdditionsModBlocks.LEFT_READER.get(),
                     ScpAdditionsModBlocks.RIGHT_READER,
                     () -> (BlockItem) ScpAdditionsModItems.RIGHT_READER.get(),
-                    List.of(
+                    List.<Supplier<? extends Block>>of(
                             ScpAdditionsModBlocks.LEFT_READER,
                             ScpAdditionsModBlocks.RIGHT_READER,
                             ScpAdditionsModBlocks.LV_2_LEFT_READER,

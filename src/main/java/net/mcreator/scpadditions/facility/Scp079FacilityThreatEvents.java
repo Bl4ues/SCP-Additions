@@ -13,14 +13,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
 import java.util.Comparator;
@@ -29,12 +27,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Small contextual proof of concept for SCP-079 facility control.
+ * Contextual proof of concept for SCP-079 facility control.
  *
- * The legacy invisible pulse node remains available for indiscriminate devices.
- * This controller only targets the three redstone heavy-door families and acts
- * when a player is actively being pursued: it can close an open door ahead of a
- * fleeing player or open a closed door separating the pursuer from its target.
+ * SCP-079 can manipulate only the three redstone heavy-door families and only
+ * through a connected functional button, keycard reader, or existing legacy
+ * Facility Pulse Node. Locked buttons, ordinary redstone and bare doors do not
+ * grant access.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -43,11 +41,12 @@ public final class Scp079FacilityThreatEvents {
     private static final int FLEE_DOOR_RADIUS = 7;
     private static final int PURSUER_DOOR_RADIUS = 6;
     private static final int PURSUER_SEARCH_RADIUS = 14;
-    private static final int TEMPORARY_POWER_TICKS = 100;
     private static final int DOOR_COOLDOWN_TICKS = 600;
     private static final int MIN_GLOBAL_COOLDOWN_TICKS = 160;
     private static final int GLOBAL_COOLDOWN_VARIANCE_TICKS = 140;
+
     private static final float CLOSE_AHEAD_CHANCE = 0.20F;
+    private static final float UNPROVOKED_CLOSE_CHANCE = 0.03F;
     private static final float OPEN_FOR_THREAT_CHANCE = 0.30F;
 
     private static final Map<ResourceKey<Level>, Long> NEXT_ACTION_TIME =
@@ -84,40 +83,56 @@ public final class Scp079FacilityThreatEvents {
             DOOR_COOLDOWNS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
         }
 
+        RandomSource random = level.getRandom();
         List<Mob> pursuers = level.getEntitiesOfClass(Mob.class,
                 player.getBoundingBox().inflate(PURSUER_SEARCH_RADIUS),
-                mob -> mob.isAlive() && mob.getTarget() == player);
-        if (pursuers.isEmpty()) {
-            return;
-        }
-        pursuers = pursuers.stream()
+                mob -> mob.isAlive() && mob.getTarget() == player).stream()
                 .sorted(Comparator.comparingDouble(player::distanceToSqr))
                 .toList();
 
-        RandomSource random = level.getRandom();
+        if (!pursuers.isEmpty()) {
+            DoorMatch doorAhead = findOpenDoorAhead(level, player, pursuers,
+                    gameTime, true);
+            if (doorAhead != null && random.nextFloat() < CLOSE_AHEAD_CHANCE
+                    && forceClosed(level, doorAhead)) {
+                recordAction(level, doorAhead.pos(), gameTime, random);
+                return;
+            }
 
-        DoorMatch doorAhead = findOpenDoorAhead(level, player, pursuers, gameTime);
-        if (doorAhead != null && random.nextFloat() < CLOSE_AHEAD_CHANCE
-                && forceClosed(level, doorAhead)) {
-            recordAction(level, doorAhead.pos(), gameTime, random);
+            DoorMatch doorForThreat = findClosedDoorForThreat(level, player,
+                    pursuers, gameTime);
+            if (doorForThreat != null
+                    && random.nextFloat() < OPEN_FOR_THREAT_CHANCE
+                    && forceOpen(level, doorForThreat)) {
+                recordAction(level, doorForThreat.pos(), gameTime, random);
+            }
             return;
         }
 
-        DoorMatch doorForThreat = findClosedDoorForThreat(level, player, pursuers, gameTime);
-        if (doorForThreat != null && random.nextFloat() < OPEN_FOR_THREAT_CHANCE
-                && forceOpen(level, doorForThreat)) {
-            recordAction(level, doorForThreat.pos(), gameTime, random);
+        // Low-probability CB-style harassment even when nothing is chasing the
+        // player. Movement toward an open door is required, so standing near or
+        // merely looking at one does not repeatedly roll the chance.
+        DoorMatch unprovokedDoor = findOpenDoorAhead(level, player, List.of(),
+                gameTime, false);
+        if (unprovokedDoor != null
+                && random.nextFloat() < UNPROVOKED_CLOSE_CHANCE
+                && forceClosed(level, unprovokedDoor)) {
+            recordAction(level, unprovokedDoor.pos(), gameTime, random);
         }
     }
 
-    private static DoorMatch findOpenDoorAhead(ServerLevel level, ServerPlayer player,
-            List<Mob> pursuers, long gameTime) {
-        if (!player.isSprinting()) {
+    private static DoorMatch findOpenDoorAhead(ServerLevel level,
+            ServerPlayer player, List<Mob> pursuers, long gameTime,
+            boolean requirePursuerBehind) {
+        if (requirePursuerBehind && !player.isSprinting()) {
             return null;
         }
 
         Vec3 travel = horizontal(player.getDeltaMovement());
         if (travel.lengthSqr() < 0.0025D) {
+            if (!requirePursuerBehind) {
+                return null;
+            }
             travel = horizontal(player.getLookAngle());
         }
         if (travel.lengthSqr() < 0.0001D) {
@@ -125,13 +140,16 @@ public final class Scp079FacilityThreatEvents {
         }
         Vec3 travelDirection = travel.normalize();
 
-        boolean threatBehind = pursuers.stream().anyMatch(mob -> {
-            Vec3 fromThreatToPlayer = horizontal(player.position().subtract(mob.position()));
-            return fromThreatToPlayer.lengthSqr() > 0.0001D
-                    && fromThreatToPlayer.normalize().dot(travelDirection) > 0.20D;
-        });
-        if (!threatBehind) {
-            return null;
+        if (requirePursuerBehind) {
+            boolean threatBehind = pursuers.stream().anyMatch(mob -> {
+                Vec3 fromThreatToPlayer = horizontal(
+                        player.position().subtract(mob.position()));
+                return fromThreatToPlayer.lengthSqr() > 0.0001D
+                        && fromThreatToPlayer.normalize().dot(travelDirection) > 0.20D;
+            });
+            if (!threatBehind) {
+                return null;
+            }
         }
 
         DoorMatch best = null;
@@ -144,14 +162,16 @@ public final class Scp079FacilityThreatEvents {
             BlockPos pos = mutable.immutable();
             DoorMatch match = matchDoor(level, pos);
             if (match == null || match.stage() != DoorStage.OPEN
-                    || onCooldown(level, pos, gameTime)) {
+                    || onCooldown(level, pos, gameTime)
+                    || !HeavyDoorControlPanelAccess.hasControllableInterface(level, pos)) {
                 continue;
             }
 
-            Vec3 toDoor = Vec3.atCenterOf(pos).subtract(player.position());
-            Vec3 horizontalToDoor = horizontal(toDoor);
+            Vec3 horizontalToDoor = horizontal(
+                    Vec3.atCenterOf(pos).subtract(player.position()));
             double distance = horizontalToDoor.lengthSqr();
-            if (distance < 0.25D || distance > FLEE_DOOR_RADIUS * FLEE_DOOR_RADIUS
+            if (distance < 0.25D
+                    || distance > FLEE_DOOR_RADIUS * FLEE_DOOR_RADIUS
                     || horizontalToDoor.normalize().dot(travelDirection) < 0.45D) {
                 continue;
             }
@@ -178,7 +198,9 @@ public final class Scp079FacilityThreatEvents {
                 DoorMatch match = matchDoor(level, pos);
                 if (match == null || match.stage() != DoorStage.CLOSED
                         || onCooldown(level, pos, gameTime)
-                        || !oppositeSides(match.state(), pos, pursuer.position(), player.position())) {
+                        || !HeavyDoorControlPanelAccess.hasControllableInterface(level, pos)
+                        || !oppositeSides(match.state(), pos,
+                                pursuer.position(), player.position())) {
                     continue;
                 }
 
@@ -215,9 +237,9 @@ public final class Scp079FacilityThreatEvents {
             return false;
         }
 
-        int panelCount = DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
-                level, match.pos(), true);
-        if (panelCount == 0 && !placeTemporaryPower(level, match.pos())) {
+        int controlCount = HeavyDoorControlPanelAccess.openConnectedControls(
+                level, match.pos());
+        if (controlCount <= 0) {
             return false;
         }
 
@@ -239,11 +261,16 @@ public final class Scp079FacilityThreatEvents {
             return false;
         }
 
-        int panelCount = DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
-                level, match.pos(), false);
-        boolean stillPowered = level.hasNeighborSignal(match.pos())
-                || level.hasNeighborSignal(match.pos().above());
-        if (panelCount == 0 && stillPowered) {
+        int controlCount = HeavyDoorControlPanelAccess.closeConnectedControls(
+                level, match.pos());
+        if (controlCount <= 0) {
+            return false;
+        }
+
+        // Do not visually close the connected panel while an unrelated lever or
+        // other ordinary redstone source is still forcing the door open.
+        if (doorPowered(level, match.pos())) {
+            HeavyDoorControlPanelAccess.openConnectedControls(level, match.pos());
             return false;
         }
 
@@ -257,33 +284,10 @@ public final class Scp079FacilityThreatEvents {
         return true;
     }
 
-    private static boolean placeTemporaryPower(ServerLevel level, BlockPos doorPos) {
-        Block powerBlock = ScpAdditionsModBlocks.SCP_079CONTROL.get();
-        Block offBlock = ScpAdditionsModBlocks.SCP_079CONTROLOFF.get();
-        BlockPos[] probes = {doorPos.above(), doorPos.above(2)};
-        Direction[] horizontalDirections = {
-                Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST
-        };
-
-        for (BlockPos probe : probes) {
-            for (Direction direction : horizontalDirections) {
-                BlockPos powerPos = probe.relative(direction);
-                if (!level.getBlockState(powerPos).canBeReplaced()) {
-                    continue;
-                }
-
-                level.setBlock(powerPos, powerBlock.defaultBlockState(), Block.UPDATE_ALL);
-                ScpAdditionsMod.queueServerWork(TEMPORARY_POWER_TICKS, () -> {
-                    Block current = level.getBlockState(powerPos).getBlock();
-                    if (current == powerBlock || current == offBlock) {
-                        level.removeBlock(powerPos, false);
-                        level.updateNeighborsAt(powerPos, powerBlock);
-                    }
-                });
-                return true;
-            }
-        }
-        return false;
+    private static boolean doorPowered(ServerLevel level, BlockPos doorPos) {
+        return level.hasNeighborSignal(doorPos)
+                || level.hasNeighborSignal(doorPos.above())
+                || level.hasNeighborSignal(doorPos.above(2));
     }
 
     private static DoorMatch matchDoor(ServerLevel level, BlockPos pos) {
@@ -312,7 +316,8 @@ public final class Scp079FacilityThreatEvents {
         return null;
     }
 
-    private static boolean onCooldown(ServerLevel level, BlockPos pos, long gameTime) {
+    private static boolean onCooldown(ServerLevel level, BlockPos pos,
+            long gameTime) {
         return DOOR_COOLDOWNS.getOrDefault(
                 new DoorKey(level.dimension(), pos.asLong()), 0L) > gameTime;
     }

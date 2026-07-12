@@ -1,0 +1,28 @@
+name: Run canonical SCP Inventory port
+
+on:
+  push:
+    branches:
+      - integration/scp-additions-3.0
+
+permissions:
+  contents: write
+
+jobs:
+  port:
+    if: contains(github.event.head_commit.message, 'run canonical SCP Inventory port')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run canonical port script
+        run: python3 scripts/port_canonical_scpinventory.py
+      - name: Commit canonical port
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/main/java
+          git commit -m "feat(inventory): transplant exact final SCP Inventory"
+          git push origin HEAD:integration/scp-additions-3.0

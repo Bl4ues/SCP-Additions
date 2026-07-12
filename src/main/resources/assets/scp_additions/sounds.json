@@ -59,5 +59,13 @@
   "stone_scrap": { "sounds": ["scpinventory:stone_scrap_1", "scpinventory:stone_scrap_2", "scpinventory:stone_scrap_3", "scpinventory:stone_scrap_4", "scpinventory:stone_scrap_5"] },
   "neck_snap": { "sounds": ["scpinventory:neck_snap"] },
   "rattle": { "sounds": ["scpinventory:rattle1", "scpinventory:rattle2", "scpinventory:rattle3"] },
-  "stomach": { "subtitle": "subtitles.stomach", "sounds": [{ "name": "scp_additions:stomach", "stream": false }] }
+  "stomach": { "subtitle": "subtitles.stomach", "sounds": [{ "name": "scp_additions:stomach", "stream": false }] },
+  "unity_door_opening": { "subtitle": "subtitles.scp_additions.unity_door_opening", "sounds": [{ "name": "scp_unity_extra_blocks:open", "stream": false }] },
+  "unity_door_closing": { "subtitle": "subtitles.scp_additions.unity_door_closing", "sounds": [{ "name": "scp_unity_extra_blocks:closing", "stream": false }] },
+  "unity_door_open": { "subtitle": "subtitles.scp_additions.unity_door_open", "sounds": [{ "name": "scp_unity_extra_blocks:default_open", "stream": false }] },
+  "unity_door_close": { "subtitle": "subtitles.scp_additions.unity_door_close", "sounds": [{ "name": "scp_unity_extra_blocks:default_close", "stream": false }] },
+  "unity_bath_open": { "sounds": [{ "name": "scp_unity_extra_blocks:bathroom_open", "stream": false }] },
+  "unity_bath_close": { "sounds": [{ "name": "scp_unity_extra_blocks:bathroom_close", "stream": false }] },
+  "unity_office_open": { "sounds": [{ "name": "scp_unity_extra_blocks:office_open", "stream": false }] },
+  "unity_office_close": { "sounds": [{ "name": "scp_unity_extra_blocks:office_close", "stream": false }] }
 }

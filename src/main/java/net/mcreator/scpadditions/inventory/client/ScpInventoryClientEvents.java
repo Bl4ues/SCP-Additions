@@ -7,6 +7,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.inventory.ScpInventoryRequestSyncPacket;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -28,6 +29,8 @@ public final class ScpInventoryClientEvents {
 
         while (ScpInventoryKeybinds.OPEN.consumeClick()) {
             if (minecraft.screen == null) {
+                ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                        new ScpInventoryRequestSyncPacket());
                 minecraft.setScreen(new ScpInventoryScreen());
             }
         }

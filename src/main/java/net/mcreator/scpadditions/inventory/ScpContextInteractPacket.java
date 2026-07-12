@@ -8,9 +8,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
@@ -74,8 +76,10 @@ public final class ScpContextInteractPacket {
         if (rules.isEmpty()) return;
         ContextInteractionRegistry.Rule rule = rules.get(0);
         Vec3 anchor = rule.resolveEntityAnchor(entity);
-        if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D)
+        if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D
+                || isOccluded(level, player, anchor, null)) {
             return;
+        }
 
         InteractionResult result = entity.interact(player, InteractionHand.MAIN_HAND);
         if (result.consumesAction()) player.swing(InteractionHand.MAIN_HAND, true);
@@ -90,13 +94,24 @@ public final class ScpContextInteractPacket {
         if (rules.isEmpty()) return;
         ContextInteractionRegistry.Rule rule = rules.get(0);
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);
-        if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D)
+        if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D
+                || isOccluded(level, player, anchor, pos)) {
             return;
+        }
 
         BlockHitResult hit = new BlockHitResult(anchor,
                 rule.resolveClickFace(state, player), pos, false);
         InteractionResult result = state.use(level, player,
                 InteractionHand.MAIN_HAND, hit);
         if (result.consumesAction()) player.swing(InteractionHand.MAIN_HAND, true);
+    }
+
+    private static boolean isOccluded(Level level, ServerPlayer player,
+            Vec3 anchor, BlockPos allowedTarget) {
+        Vec3 eye = player.getEyePosition();
+        BlockHitResult hit = level.clip(new ClipContext(eye, anchor,
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        if (hit.getType() == HitResult.Type.MISS) return false;
+        return allowedTarget == null || !hit.getBlockPos().equals(allowedTarget);
     }
 }

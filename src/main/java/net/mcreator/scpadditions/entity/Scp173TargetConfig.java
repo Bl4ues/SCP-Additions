@@ -28,13 +28,16 @@ import java.util.Locale;
 
 public final class Scp173TargetConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpinventory").resolve("scpinventory.json");
+    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get()
+            .resolve("scpinventory").resolve("scpinventory.json");
     private static final List<String> DEFAULT_TARGETS = List.of(
-            "minecraft:villager", "minecraft:wandering_trader", "minecraft:iron_golem", "minecraft:snow_golem",
-            "minecraft:enderman", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk",
-            "minecraft:drowned", "minecraft:zombified_piglin", "minecraft:skeleton", "minecraft:stray",
-            "minecraft:wither_skeleton", "minecraft:pillager", "minecraft:vindicator", "minecraft:evoker",
-            "minecraft:illusioner", "minecraft:ravager", "#minecraft:raiders"
+            "minecraft:villager",
+            "minecraft:iron_golem",
+            "minecraft:enderman",
+            "minecraft:zombie",
+            "minecraft:skeleton",
+            "minecraft:pillager",
+            "#minecraft:raiders"
     );
     private static volatile List<String> targets = DEFAULT_TARGETS;
 
@@ -47,17 +50,18 @@ public final class Scp173TargetConfig {
             Files.createDirectories(CONFIG_PATH.getParent());
             JsonObject root = new JsonObject();
             if (Files.exists(CONFIG_PATH)) {
-                try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
+                try (Reader reader = Files.newBufferedReader(CONFIG_PATH,
+                        StandardCharsets.UTF_8)) {
                     JsonElement parsed = JsonParser.parseReader(reader);
-                    if (parsed.isJsonObject()) {
-                        root = parsed.getAsJsonObject();
-                    }
+                    if (parsed.isJsonObject()) root = parsed.getAsJsonObject();
                 }
             }
-            if (root.has("scp_173_targets") && root.get("scp_173_targets").isJsonArray()) {
+            if (root.has("scp_173_targets")
+                    && root.get("scp_173_targets").isJsonArray()) {
                 List<String> values = new ArrayList<>();
                 for (JsonElement entry : root.getAsJsonArray("scp_173_targets")) {
-                    String value = entry.isJsonPrimitive() ? entry.getAsString().trim() : "";
+                    String value = entry.isJsonPrimitive()
+                            ? entry.getAsString().trim() : "";
                     if (!value.isBlank()) values.add(value);
                 }
                 if (!values.isEmpty()) loaded = Collections.unmodifiableList(values);
@@ -65,19 +69,24 @@ public final class Scp173TargetConfig {
                 JsonArray values = new JsonArray();
                 DEFAULT_TARGETS.forEach(values::add);
                 root.add("scp_173_targets", values);
-                try (Writer writer = Files.newBufferedWriter(CONFIG_PATH, StandardCharsets.UTF_8,
-                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
+                try (Writer writer = Files.newBufferedWriter(CONFIG_PATH,
+                        StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING,
+                        StandardOpenOption.WRITE)) {
                     GSON.toJson(root, writer);
                 }
             }
         } catch (Exception exception) {
-            ScpAdditionsMod.LOGGER.error("Failed to load SCP-173 target configuration from {}", CONFIG_PATH, exception);
+            ScpAdditionsMod.LOGGER.error(
+                    "Failed to load SCP-173 target configuration from {}",
+                    CONFIG_PATH, exception);
         }
         targets = loaded;
     }
 
     public static boolean isConfiguredTarget(LivingEntity entity) {
-        if (entity == null || entity instanceof Scp173Entity || !entity.isAlive()) return false;
+        if (entity == null || entity instanceof Scp173Entity || !entity.isAlive())
+            return false;
         if (entity instanceof AbstractScp131Entity) return true;
         EntityType<?> type = entity.getType();
         ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
@@ -88,12 +97,14 @@ public final class Scp173TargetConfig {
         return false;
     }
 
-    private static boolean matchesRule(EntityType<?> type, ResourceLocation id, String rawRule) {
+    private static boolean matchesRule(EntityType<?> type, ResourceLocation id,
+            String rawRule) {
         if (rawRule == null || rawRule.isBlank()) return false;
         String rule = rawRule.trim();
         if (rule.startsWith("#")) {
             ResourceLocation tagId = ResourceLocation.tryParse(rule.substring(1));
-            return tagId != null && type.builtInRegistryHolder().is(TagKey.create(Registries.ENTITY_TYPE, tagId));
+            return tagId != null && type.builtInRegistryHolder()
+                    .is(TagKey.create(Registries.ENTITY_TYPE, tagId));
         }
         ResourceLocation exactId = ResourceLocation.tryParse(rule);
         if (exactId != null) return exactId.equals(id);

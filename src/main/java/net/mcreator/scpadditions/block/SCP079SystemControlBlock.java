@@ -94,8 +94,33 @@ public class SCP079SystemControlBlock extends Block implements SimpleWaterlogged
 	}
 
 	@Override
-	public void neighborChanged(BlockState blockstate, Level world, BlockPos pos, Block neighborBlock, BlockPos fromPos, boolean moving) {
+	public void onPlace(BlockState state, Level world, BlockPos pos,
+			BlockState oldState, boolean moving) {
+		super.onPlace(state, world, pos, oldState, moving);
+		if (!world.isClientSide && state.getBlock() != oldState.getBlock()) {
+			updateFacilityControl(world, pos);
+		}
+	}
+
+	@Override
+	public void neighborChanged(BlockState blockstate, Level world, BlockPos pos,
+			Block neighborBlock, BlockPos fromPos, boolean moving) {
 		super.neighborChanged(blockstate, world, pos, neighborBlock, fromPos, moving);
+		if (!world.isClientSide) {
+			updateFacilityControl(world, pos);
+		}
+	}
+
+	@Override
+	public void onRemove(BlockState state, Level world, BlockPos pos,
+			BlockState newState, boolean moving) {
+		if (!world.isClientSide && state.getBlock() != newState.getBlock()) {
+			SCP079SystemControlOffProcedure.execute(world);
+		}
+		super.onRemove(state, world, pos, newState, moving);
+	}
+
+	private static void updateFacilityControl(Level world, BlockPos pos) {
 		if (world.getBestNeighborSignal(pos) > 0) {
 			SCP079SystemControlPProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
 		} else {

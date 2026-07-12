@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.item;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -10,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -90,9 +91,9 @@ public final class OffsetKeycardReaderItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.scp_additions.keycard_reader_placement"));
+        tooltip.add(Component.translatable("tooltip.scp_additions.keycard_reader_placement").withStyle(ChatFormatting.GRAY));
     }
 
     /**
@@ -104,5 +105,13 @@ public final class OffsetKeycardReaderItem extends BlockItem {
     public void registerBlocks(Map<Block, Item> blockToItemMap, Item item) {
         super.registerBlocks(blockToItemMap, item);
         blockToItemMap.put(rightBlock.get(), item);
+    }
+
+    @Override
+    public void removeFromBlockToItemMap(Map<Block, Item> blockToItemMap, Item item) {
+        super.removeFromBlockToItemMap(blockToItemMap, item);
+        if (blockToItemMap.get(rightBlock.get()) == item) {
+            blockToItemMap.remove(rightBlock.get());
+        }
     }
 }

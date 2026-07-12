@@ -53,25 +53,19 @@ public class ScpAdditionsModTabs {
 				tabData.accept(ScpAdditionsModBlocks.SCP_1176.get().asItem());
 			}).withSearchBar().build());
 	public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_KEYCARDS = REGISTRY.register("sc_padditions_keycards",
-			() -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_keycards")).icon(() -> new ItemStack(ScpAdditionsModBlocks.RIGHT_READER.get())).displayItems((parameters, tabData) -> {
+			() -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_keycards")).icon(() -> new ItemStack(UnifiedReaderItems.LEVEL_1_READER.get())).displayItems((parameters, tabData) -> {
 				tabData.accept(ScpAdditionsModItems.LEVEL_1_KEYCARD.get());
 				tabData.accept(ScpAdditionsModItems.LEVEL_2_KEYCARD.get());
 				tabData.accept(ScpAdditionsModItems.LEVEL_3_KEYCARD.get());
 				tabData.accept(ScpAdditionsModItems.LEVEL_4_KEYCARD.get());
 				tabData.accept(ScpAdditionsModItems.LEVEL_5_KEYCARD.get());
 				tabData.accept(ScpAdditionsModItems.LEVEL_6_KEYCARD.get());
-				tabData.accept(ScpAdditionsModBlocks.RIGHT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LEFT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_2_RIGHT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_2_LEFT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_3_RIGHT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_3_LEFT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_4_RIGHT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_4_LEFT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_5_RIGHT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_5_LEFT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_6_RIGHT_READER.get().asItem());
-				tabData.accept(ScpAdditionsModBlocks.LV_6_LEFT_READER.get().asItem());
+				tabData.accept(UnifiedReaderItems.LEVEL_1_READER.get());
+				tabData.accept(UnifiedReaderItems.LEVEL_2_READER.get());
+				tabData.accept(UnifiedReaderItems.LEVEL_3_READER.get());
+				tabData.accept(UnifiedReaderItems.LEVEL_4_READER.get());
+				tabData.accept(UnifiedReaderItems.LEVEL_5_READER.get());
+				tabData.accept(UnifiedReaderItems.LEVEL_6_READER.get());
 			}).withSearchBar().build());
 
 	@SubscribeEvent

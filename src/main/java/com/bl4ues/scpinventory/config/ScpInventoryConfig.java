@@ -6,99 +6,83 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Supplier;
 
-/** Shared readable configuration for inventory classification and related systems. */
 public final class ScpInventoryConfig {
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get()
-            .resolve("scpinventory").resolve("scpinventory.json");
+    private static final File CONFIG_FILE = new File("config/scpinventory/scpinventory.json");
 
-    /**
-     * Public defaults combine SCP Additions' own gameplay items, the finalized
-     * SCP modpack compatibility list, and useful vanilla survival items. Explicit
-     * JSON rules always take priority over automatic classifier heuristics.
-     */
     private static final List<String> DEFAULT_ITEM_RULES = List.of(
-            "scp_additions:level_1_keycard|KEY",
-            "scp_additions:level_2_keycard|KEY",
-            "scp_additions:level_3_keycard|KEY",
-            "scp_additions:level_4_keycard|KEY",
-            "scp_additions:level_5_keycard|KEY",
-            "scp_additions:level_6_keycard|KEY",
-            "scp_additions:security_credentials|KEY",
-            "scp_additions:coin|COIN",
-            "scp_additions:scp_572|WEAPON",
-            "scp_additions:geiger_1|USABLE",
-            "scp_additions:geiger_2|USABLE",
-            "scp_additions:geiger_3|USABLE",
-            "scp_additions:spray|USABLE",
-            "scp_additions:screwdriver|USABLE",
-
-            "encyclopedia_of_common_diseases:encyclopedia_of_common_diseases|USABLE",
-            "management_wanted:fire_axe|WEAPON",
-            "management_wanted:knife|WEAPON",
-            "management_wanted:pizza_cutter|WEAPON",
-            "gas_mask:gas_mask_helmet|HEAD",
-            "scpfr:medkit|CONSUMABLE",
-            "scpfr:scp_207|CONSUMABLE",
-            "panacea:panacea|CONSUMABLE",
-            "scpo:mop|USABLE",
-            "scpo:scp_714|ACCESSORYHAND",
-            "scpo:scp_420_j|USABLE",
-            "scpo:scp_1079|USABLE",
-            "scpo:scp_1079_candy|CONSUMABLE",
-            "scpo:scp_178_helmet|HEAD",
-            "scpo:scp_500_bottle|USABLE",
-            "scpo:money|MISCELLANEOUS",
-
+            "minecraft:flint|COIN",
             "minecraft:arrow|AMMO",
-            "minecraft:spectral_arrow|AMMO",
-            "minecraft:tipped_arrow|AMMO",
-            "minecraft:bow|WEAPON",
-            "minecraft:crossbow|WEAPON",
-            "minecraft:trident|WEAPON",
+            "minecraft:leather|ACCESSORYHAND",
+            "minecraft:clock|ACCESSORY",
             "minecraft:fishing_rod|USABLE",
             "minecraft:spyglass|USABLE",
+            "minecraft:bow|WEAPON",
+            "minecraft:crossbow|WEAPON",
             "minecraft:shield|USABLE",
             "minecraft:goat_horn|USABLE",
             "minecraft:ender_pearl|USABLE",
             "minecraft:snowball|USABLE",
-            "minecraft:egg|USABLE",
-            "minecraft:writable_book|USABLE",
-            "minecraft:flint_and_steel|USABLE",
-            "minecraft:shears|USABLE",
-            "minecraft:brush|USABLE"
+            "minecraft:egg|USABLE"
     );
 
     private static final List<String> DEFAULT_ITEM_EFFECTS = List.of(
-            "scpo:scp_714|NO_STAMINA"
+            "minecraft:leather|NO_STAMINA"
     );
 
     private static final List<String> DEFAULT_HIDDEN_STATUS_EFFECTS = List.of(
-            "minecraft:bad_omen",
-            "scpo:pestilence",
-            "scpinventory:eye_sore",
-            "scp_additions:eye_sore"
+            "minecraft:bad_omen"
     );
 
-    private static volatile boolean loaded;
+    private static final List<String> DEFAULT_SCP_173_TARGETS = List.of(
+            "minecraft:villager",
+            "minecraft:wandering_trader",
+            "minecraft:iron_golem",
+            "minecraft:snow_golem",
+            "minecraft:enderman",
+            "minecraft:zombie",
+            "minecraft:zombie_villager",
+            "minecraft:husk",
+            "minecraft:drowned",
+            "minecraft:zombified_piglin",
+            "minecraft:skeleton",
+            "minecraft:stray",
+            "minecraft:wither_skeleton",
+            "minecraft:pillager",
+            "minecraft:vindicator",
+            "minecraft:evoker",
+            "minecraft:illusioner",
+            "minecraft:ravager",
+            "#minecraft:raiders"
+    );
+
+    private static final List<String> DEFAULT_CODEX_DOCUMENTS = List.of();
+
+    public static final JsonListValue ITEM_RULES = new JsonListValue(ScpInventoryConfig::itemRules);
+    public static final JsonListValue ITEM_EFFECTS = new JsonListValue(ScpInventoryConfig::itemEffects);
+    public static final JsonListValue CODEX_DOCUMENTS = new JsonListValue(ScpInventoryConfig::codexDocuments);
+    public static final JsonListValue HIDDEN_STATUS_EFFECTS = new JsonListValue(ScpInventoryConfig::hiddenStatusEffects);
+    public static final JsonListValue SCP_173_TARGETS = new JsonListValue(ScpInventoryConfig::scp173Targets);
+
+    private static boolean loaded = false;
     private static List<String> itemRules = DEFAULT_ITEM_RULES;
     private static List<String> itemEffects = DEFAULT_ITEM_EFFECTS;
+    private static List<String> codexDocuments = DEFAULT_CODEX_DOCUMENTS;
     private static List<String> hiddenStatusEffects = DEFAULT_HIDDEN_STATUS_EFFECTS;
-    private static List<String> codexDocuments = List.of();
+    private static List<String> scp173Targets = DEFAULT_SCP_173_TARGETS;
 
     private ScpInventoryConfig() {
     }
@@ -113,211 +97,314 @@ public final class ScpInventoryConfig {
         return itemEffects;
     }
 
-    public static List<String> hiddenStatusEffects() {
-        ensureLoaded();
-        return hiddenStatusEffects;
-    }
-
     public static List<String> codexDocuments() {
         ensureLoaded();
         return codexDocuments;
     }
 
-    public static synchronized void reload() {
+    public static List<String> hiddenStatusEffects() {
+        ensureLoaded();
+        return hiddenStatusEffects;
+    }
+
+    public static List<String> scp173Targets() {
+        ensureLoaded();
+        return scp173Targets;
+    }
+
+    public static void reload() {
         loaded = false;
         load();
     }
 
-    public static synchronized void load() {
+    private static void ensureLoaded() {
+        if (!loaded) {
+            load();
+        }
+    }
+
+    private static void load() {
         itemRules = DEFAULT_ITEM_RULES;
         itemEffects = DEFAULT_ITEM_EFFECTS;
+        codexDocuments = DEFAULT_CODEX_DOCUMENTS;
         hiddenStatusEffects = DEFAULT_HIDDEN_STATUS_EFFECTS;
-        codexDocuments = List.of();
+        scp173Targets = DEFAULT_SCP_173_TARGETS;
 
         try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-            JsonObject root = new JsonObject();
-            if (Files.exists(CONFIG_PATH)) {
-                try (Reader reader = Files.newBufferedReader(CONFIG_PATH,
-                        StandardCharsets.UTF_8)) {
-                    JsonElement parsed = JsonParser.parseReader(reader);
-                    if (parsed.isJsonObject()) root = parsed.getAsJsonObject();
-                }
+            File dir = CONFIG_FILE.getParentFile();
+            if (dir != null && !dir.exists()) {
+                dir.mkdirs();
+            }
+            if (!CONFIG_FILE.exists()) {
+                writeDefaultConfig();
+                loaded = true;
+                return;
             }
 
-            boolean changed = false;
-            if (root.has("item_rules") && root.get("item_rules").isJsonArray()) {
-                itemRules = Collections.unmodifiableList(
-                        parseTypedRules(root.getAsJsonArray("item_rules")));
-            } else {
-                root.add("item_rules", typedRulesToJson(DEFAULT_ITEM_RULES));
-                changed = true;
+            JsonObject root = JsonParser.parseReader(new FileReader(CONFIG_FILE)).getAsJsonObject();
+            if (root.has("item_rules")) {
+                itemRules = Collections.unmodifiableList(parseItemRules(root.get("item_rules")));
             }
-
-            if (root.has("item_effects") && root.get("item_effects").isJsonArray()) {
-                itemEffects = Collections.unmodifiableList(
-                        parseEffectRules(root.getAsJsonArray("item_effects")));
-            } else {
-                root.add("item_effects", effectRulesToJson(DEFAULT_ITEM_EFFECTS));
-                changed = true;
+            if (root.has("item_effects")) {
+                itemEffects = Collections.unmodifiableList(parseItemEffects(root.get("item_effects")));
             }
-
-            if (root.has("hidden_status_effects")
-                    && root.get("hidden_status_effects").isJsonArray()) {
-                hiddenStatusEffects = Collections.unmodifiableList(
-                        parseSimpleList(root.getAsJsonArray("hidden_status_effects")));
-            } else {
-                root.add("hidden_status_effects",
-                        simpleListToJson(DEFAULT_HIDDEN_STATUS_EFFECTS));
-                changed = true;
+            if (root.has("codex_documents")) {
+                codexDocuments = Collections.unmodifiableList(parseCodexDocuments(root.get("codex_documents")));
             }
-
-            if (root.has("codex_documents")
-                    && root.get("codex_documents").isJsonArray()) {
-                codexDocuments = Collections.unmodifiableList(
-                        parseCodex(root.getAsJsonArray("codex_documents")));
-            } else {
-                root.add("codex_documents", new JsonArray());
-                changed = true;
+            if (root.has("hidden_status_effects")) {
+                hiddenStatusEffects = Collections.unmodifiableList(parseStringOrIdList(root.get("hidden_status_effects"), DEFAULT_HIDDEN_STATUS_EFFECTS));
             }
-
-            if (!root.has("_comment")) {
-                root.addProperty("_comment",
-                        "SCP Inventory configuration. Explicit rules override automatic survival-compatible classification.");
-                changed = true;
+            if (root.has("scp_173_targets")) {
+                scp173Targets = Collections.unmodifiableList(parseStringOrIdList(root.get("scp_173_targets"), DEFAULT_SCP_173_TARGETS));
             }
-
-            if (changed || !Files.exists(CONFIG_PATH)) {
-                try (Writer writer = Files.newBufferedWriter(CONFIG_PATH,
-                        StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING,
-                        StandardOpenOption.WRITE)) {
-                    GSON.toJson(root, writer);
-                }
-            }
-        } catch (Exception exception) {
-            ScpAdditionsMod.LOGGER.error(
-                    "Failed to load SCP Inventory config from {}", CONFIG_PATH,
-                    exception);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
 
         loaded = true;
-        ScpAdditionsMod.LOGGER.info("Loaded {} SCP Inventory item rule(s)",
-                itemRules.size());
     }
 
-    private static void ensureLoaded() {
-        if (!loaded) load();
-    }
-
-    private static List<String> parseTypedRules(JsonArray array) {
-        List<String> result = new ArrayList<>();
-        for (JsonElement entry : array) {
+    private static List<String> parseItemRules(JsonElement element) {
+        List<String> values = new ArrayList<>();
+        if (element == null || !element.isJsonArray()) {
+            return new ArrayList<>(DEFAULT_ITEM_RULES);
+        }
+        for (JsonElement entry : element.getAsJsonArray()) {
             if (entry.isJsonPrimitive()) {
-                String raw = entry.getAsString().trim();
-                if (!raw.isBlank()) result.add(raw);
-            } else if (entry.isJsonObject()) {
-                JsonObject object = entry.getAsJsonObject();
-                String id = firstString(object, "id", "item");
-                String type = firstString(object, "type", "slot");
-                if (!id.isBlank() && !type.isBlank()) {
-                    result.add(id + "|" + type.toUpperCase(Locale.ROOT));
+                values.add(entry.getAsString());
+                continue;
+            }
+            if (!entry.isJsonObject()) {
+                continue;
+            }
+            JsonObject obj = entry.getAsJsonObject();
+            String id = firstString(obj, "id", "item");
+            String type = firstString(obj, "type", "slot");
+            if (!id.isBlank() && !type.isBlank()) {
+                values.add(id + "|" + type.toUpperCase(Locale.ROOT));
+            }
+        }
+        return values;
+    }
+
+    private static List<String> parseItemEffects(JsonElement element) {
+        List<String> values = new ArrayList<>();
+        if (element == null || !element.isJsonArray()) {
+            return new ArrayList<>(DEFAULT_ITEM_EFFECTS);
+        }
+        for (JsonElement entry : element.getAsJsonArray()) {
+            if (entry.isJsonPrimitive()) {
+                values.add(entry.getAsString());
+                continue;
+            }
+            if (!entry.isJsonObject()) {
+                continue;
+            }
+            JsonObject obj = entry.getAsJsonObject();
+            String id = firstString(obj, "id", "item");
+            if (id.isBlank()) {
+                continue;
+            }
+            if (obj.has("effects") && obj.get("effects").isJsonArray()) {
+                for (JsonElement effect : obj.getAsJsonArray("effects")) {
+                    if (effect.isJsonPrimitive() && !effect.getAsString().isBlank()) {
+                        values.add(id + "|" + effect.getAsString());
+                    }
+                }
+            } else {
+                String effect = firstString(obj, "effect");
+                if (!effect.isBlank()) {
+                    values.add(id + "|" + effect);
                 }
             }
         }
-        return result;
+        return values;
     }
 
-    private static List<String> parseEffectRules(JsonArray array) {
-        List<String> result = new ArrayList<>();
-        for (JsonElement entry : array) {
+    private static List<String> parseCodexDocuments(JsonElement element) {
+        List<String> values = new ArrayList<>();
+        if (element == null || !element.isJsonArray()) {
+            return new ArrayList<>(DEFAULT_CODEX_DOCUMENTS);
+        }
+        for (JsonElement entry : element.getAsJsonArray()) {
             if (entry.isJsonPrimitive()) {
-                String raw = entry.getAsString().trim();
-                if (!raw.isBlank()) result.add(raw);
+                String raw = entry.getAsString();
+                if (!isDebugCodexDocument(raw)) {
+                    values.add(raw);
+                }
+                continue;
+            }
+            if (!entry.isJsonObject()) {
+                continue;
+            }
+            JsonObject obj = entry.getAsJsonObject();
+            if (isDebugCodexDocument(obj)) {
+                continue;
+            }
+            String id = firstString(obj, "id", "item");
+            if (id.isBlank()) {
+                continue;
+            }
+            Map<String, String> fields = new LinkedHashMap<>();
+            fields.put("id", id);
+            putIfPresent(fields, obj, "category");
+            putIfPresent(fields, obj, "name");
+            putIfPresent(fields, obj, "image");
+            putIfPresent(fields, obj, "text");
+            putIfPresent(fields, obj, "image_width");
+            putIfPresent(fields, obj, "image_height");
+            putIfPresent(fields, obj, "creator");
+            putIfPresent(fields, obj, "timestamp");
+            putIfPresent(fields, obj, "uuid");
+            putIfPresent(fields, obj, "nbt_key");
+            putIfPresent(fields, obj, "nbt_value");
+            values.add(toKeyValueRule(fields));
+        }
+        return values;
+    }
+
+    private static boolean isDebugCodexDocument(JsonObject obj) {
+        return isDebugCodexDocument(firstString(obj, "category") + " "
+                + firstString(obj, "name") + " "
+                + firstString(obj, "text"));
+    }
+
+    private static boolean isDebugCodexDocument(String raw) {
+        String lower = raw == null ? "" : raw.toLowerCase(Locale.ROOT);
+        return lower.contains("debug") || lower.contains("debug_paper_long");
+    }
+
+    private static List<String> parseStringOrIdList(JsonElement element, List<String> defaults) {
+        List<String> values = new ArrayList<>();
+        if (element == null || !element.isJsonArray()) {
+            return new ArrayList<>(defaults);
+        }
+        for (JsonElement entry : element.getAsJsonArray()) {
+            if (entry.isJsonPrimitive()) {
+                String value = entry.getAsString().trim();
+                if (!value.isBlank()) {
+                    values.add(value);
+                }
             } else if (entry.isJsonObject()) {
-                JsonObject object = entry.getAsJsonObject();
-                String id = firstString(object, "id", "item");
-                if (id.isBlank()) continue;
-                if (object.has("effects") && object.get("effects").isJsonArray()) {
-                    for (JsonElement effect : object.getAsJsonArray("effects")) {
-                        if (effect.isJsonPrimitive()
-                                && !effect.getAsString().isBlank()) {
-                            result.add(id + "|" + effect.getAsString().trim());
-                        }
+                String id = firstString(entry.getAsJsonObject(), "id", "entity", "effect", "tag");
+                if (!id.isBlank()) {
+                    values.add(id);
+                }
+            }
+        }
+        return values;
+    }
+
+    private static void writeDefaultConfig() throws Exception {
+        JsonObject root = new JsonObject();
+        root.addProperty("_comment", "SCP Inventory configuration. This replaces scpinventory-common.toml with readable vertical JSON lists.");
+
+        JsonArray rules = new JsonArray();
+        for (String rule : DEFAULT_ITEM_RULES) {
+            String[] parts = rule.split("\\|", 2);
+            JsonObject obj = new JsonObject();
+            obj.addProperty("id", parts[0]);
+            obj.addProperty("type", parts.length > 1 ? parts[1] : "MISC");
+            rules.add(obj);
+        }
+        root.add("item_rules", rules);
+
+        JsonArray effects = new JsonArray();
+        for (String rule : DEFAULT_ITEM_EFFECTS) {
+            String[] parts = rule.split("\\|", 2);
+            JsonObject obj = new JsonObject();
+            obj.addProperty("id", parts[0]);
+            JsonArray effectList = new JsonArray();
+            if (parts.length > 1) {
+                effectList.add(parts[1]);
+            }
+            obj.add("effects", effectList);
+            effects.add(obj);
+        }
+        root.add("item_effects", effects);
+
+        JsonArray hidden = new JsonArray();
+        for (String effect : DEFAULT_HIDDEN_STATUS_EFFECTS) {
+            hidden.add(effect);
+        }
+        root.add("hidden_status_effects", hidden);
+
+        JsonArray scp173Targets = new JsonArray();
+        for (String id : DEFAULT_SCP_173_TARGETS) {
+            scp173Targets.add(id);
+        }
+        root.add("scp_173_targets", scp173Targets);
+
+        JsonArray codex = new JsonArray();
+        for (String rule : DEFAULT_CODEX_DOCUMENTS) {
+            codex.add(keyValueRuleToJson(rule));
+        }
+        root.add("codex_documents", codex);
+
+        try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
+            GSON.toJson(root, writer);
+        }
+    }
+
+    private static JsonObject keyValueRuleToJson(String raw) {
+        JsonObject obj = new JsonObject();
+        for (String part : raw.split(";|\\r?\\n")) {
+            String[] pair = part.split("=", 2);
+            if (pair.length == 2 && !pair[0].isBlank()) {
+                String key = pair[0].trim();
+                String value = pair[1].trim();
+                if ("image_width".equals(key) || "image_height".equals(key)) {
+                    try {
+                        obj.addProperty(key, Integer.parseInt(value));
+                    } catch (NumberFormatException ignored) {
+                        obj.addProperty(key, value);
                     }
                 } else {
-                    String effect = firstString(object, "effect");
-                    if (!effect.isBlank()) result.add(id + "|" + effect);
+                    obj.addProperty(key, value);
                 }
             }
         }
-        return result;
+        return obj;
     }
 
-    private static List<String> parseSimpleList(JsonArray array) {
-        List<String> result = new ArrayList<>();
-        for (JsonElement entry : array) {
-            if (entry.isJsonPrimitive() && !entry.getAsString().isBlank()) {
-                result.add(entry.getAsString().trim());
+    private static void putIfPresent(Map<String, String> fields, JsonObject obj, String key) {
+        if (obj.has(key) && !obj.get(key).isJsonNull()) {
+            fields.put(key, obj.get(key).getAsString());
+        }
+    }
+
+    private static String toKeyValueRule(Map<String, String> fields) {
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<String, String> entry : fields.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().isBlank()) {
+                continue;
             }
-        }
-        return result;
-    }
-
-    private static List<String> parseCodex(JsonArray array) {
-        List<String> result = new ArrayList<>();
-        for (JsonElement entry : array) {
-            if (entry.isJsonPrimitive()) {
-                String raw = entry.getAsString().trim();
-                if (!raw.isBlank()) result.add(raw);
-            } else if (entry.isJsonObject()) {
-                JsonObject object = entry.getAsJsonObject();
-                String id = firstString(object, "id", "item");
-                if (!id.isBlank()) result.add("id=" + id);
+            if (builder.length() > 0) {
+                builder.append(';');
             }
+            builder.append(entry.getKey()).append('=').append(entry.getValue());
         }
-        return result;
+        return builder.toString();
     }
 
-    private static JsonArray typedRulesToJson(List<String> rules) {
-        JsonArray array = new JsonArray();
-        for (String raw : rules) {
-            String[] parts = raw.split("\\|", 2);
-            JsonObject object = new JsonObject();
-            object.addProperty("id", parts[0]);
-            object.addProperty("type",
-                    parts.length > 1 ? parts[1] : "MISCELLANEOUS");
-            array.add(object);
-        }
-        return array;
-    }
-
-    private static JsonArray effectRulesToJson(List<String> rules) {
-        JsonArray array = new JsonArray();
-        for (String raw : rules) {
-            String[] parts = raw.split("\\|", 2);
-            JsonObject object = new JsonObject();
-            object.addProperty("id", parts[0]);
-            JsonArray effects = new JsonArray();
-            if (parts.length > 1) effects.add(parts[1]);
-            object.add("effects", effects);
-            array.add(object);
-        }
-        return array;
-    }
-
-    private static JsonArray simpleListToJson(List<String> values) {
-        JsonArray array = new JsonArray();
-        values.forEach(array::add);
-        return array;
-    }
-
-    private static String firstString(JsonObject object, String... keys) {
+    private static String firstString(JsonObject obj, String... keys) {
         for (String key : keys) {
-            if (object.has(key) && object.get(key).isJsonPrimitive()) {
-                return object.get(key).getAsString().trim();
+            if (obj.has(key) && !obj.get(key).isJsonNull()) {
+                return obj.get(key).getAsString().trim();
             }
         }
         return "";
+    }
+
+    public static final class JsonListValue {
+        private final Supplier<List<String>> supplier;
+
+        private JsonListValue(Supplier<List<String>> supplier) {
+            this.supplier = supplier;
+        }
+
+        public List<String> get() {
+            return supplier.get();
+        }
     }
 }

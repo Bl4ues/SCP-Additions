@@ -9,16 +9,17 @@ import net.minecraftforge.common.util.LazyOptional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public final class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
+public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
+
+    public static final Capability<IScpInventory> INSTANCE = ScpInventoryCapability.INSTANCE;
+
     private final IScpInventory backend = new ScpInventory();
-    private final LazyOptional<IScpInventory> optional = LazyOptional.of(() -> backend);
+    private final LazyOptional<IScpInventory> optionalData = LazyOptional.of(() -> backend);
 
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability,
-            @Nullable Direction side) {
-        return capability == ScpInventoryCapability.INSTANCE
-                ? optional.cast() : LazyOptional.empty();
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        return cap == INSTANCE ? optionalData.cast() : LazyOptional.empty();
     }
 
     @Override
@@ -27,11 +28,7 @@ public final class ScpInventoryProvider implements ICapabilitySerializable<Compo
     }
 
     @Override
-    public void deserializeNBT(CompoundTag tag) {
-        backend.deserializeNBT(tag);
-    }
-
-    public void invalidate() {
-        optional.invalidate();
+    public void deserializeNBT(CompoundTag nbt) {
+        backend.deserializeNBT(nbt);
     }
 }

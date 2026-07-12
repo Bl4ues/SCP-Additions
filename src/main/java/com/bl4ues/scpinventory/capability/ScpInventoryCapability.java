@@ -4,10 +4,9 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
-public final class ScpInventoryCapability {
+public class ScpInventoryCapability {
+
     public static final Capability<IScpInventory> INSTANCE =
             CapabilityManager.get(new CapabilityToken<>() {});
-
-    private ScpInventoryCapability() {
-    }
 }
+

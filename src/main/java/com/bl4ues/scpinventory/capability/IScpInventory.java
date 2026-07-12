@@ -2,61 +2,75 @@ package com.bl4ues.scpinventory.capability;
 
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
+import com.bl4ues.scpinventory.item.ScpItemType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
 public interface IScpInventory {
+
     int DEFAULT_MAIN_SLOT_COUNT = 12;
     int MIN_MAIN_SLOT_COUNT = 1;
     int MAX_MAIN_SLOT_COUNT = 128;
     int MAX_KEY_COUNT = 12;
 
     List<ItemStack> getInventory();
+    void setInventory(List<ItemStack> list);
     ItemStack getInventoryItem(int index);
     boolean setInventoryItem(int index, ItemStack stack);
+    boolean isInventoryFull();
+    boolean addInventoryItem(ItemStack stack);
     int addInventoryItems(ItemStack stack);
     ItemStack extractInventoryItem(int index);
     boolean removeInventoryItem(int index);
-    boolean isInventoryFull();
 
     int getMaxMainSlots();
     void setMaxMainSlots(int slots);
+    void resetMainInventory();
+    void resetAll();
 
     int getCoinCount();
     void setCoinCount(int count);
 
     List<ItemStack> getKeys();
+    void setKeys(List<ItemStack> list);
     boolean addKeyItem(ItemStack stack);
     ItemStack extractKeyItem(int index);
+    boolean removeKeyItem(int index);
 
     List<ItemStack> getDocuments();
+    void setDocuments(List<ItemStack> list);
     boolean addDocumentItem(ItemStack stack);
+    ItemStack getDocumentItem(int index);
     ItemStack extractDocumentItem(int index);
+    boolean removeDocumentItem(int index);
 
     ItemStack getEquipment(ScpEquipmentSlot slot);
     void setEquipment(ScpEquipmentSlot slot, ItemStack stack);
     ItemStack extractEquipment(ScpEquipmentSlot slot);
+    boolean clearEquipment(ScpEquipmentSlot slot);
 
     ItemStack getActiveUsable();
     void setActiveUsable(ItemStack stack);
     ItemStack extractActiveUsable();
+    boolean clearActiveUsable();
 
-    void resetAll();
     CompoundTag serializeNBT();
     void deserializeNBT(CompoundTag tag);
 
     default int getInventoryCount() {
         int count = 0;
         for (ItemStack stack : getInventory()) {
-            if (stack != null && !stack.isEmpty()) count++;
+            if (!stack.isEmpty()) {
+                count++;
+            }
         }
         return count;
     }
 
     default int getFreeMainSlots() {
-        return Math.max(0, getMaxMainSlots() - getInventoryCount());
+        return getMaxMainSlots() - getInventoryCount();
     }
 
     default boolean hasFreeMainSlots(int amount) {
@@ -66,13 +80,15 @@ public interface IScpInventory {
     default int getKeyCount() {
         int count = 0;
         for (ItemStack stack : getKeys()) {
-            if (stack != null && !stack.isEmpty()) count++;
+            if (!stack.isEmpty()) {
+                count++;
+            }
         }
         return count;
     }
 
     default int getFreeKeySlots() {
-        return Math.max(0, MAX_KEY_COUNT - getKeyCount());
+        return MAX_KEY_COUNT - getKeyCount();
     }
 
     default boolean hasFreeKeySlots(int amount) {
@@ -84,9 +100,15 @@ public interface IScpInventory {
     }
 
     default String getItemType(int slot) {
-        if (!isValidMainSlot(slot)) return "Empty";
+        if (!isValidMainSlot(slot)) {
+            return "Empty";
+        }
+
         ItemStack stack = getInventoryItem(slot);
-        return stack == null || stack.isEmpty()
-                ? "Empty" : ScpItemClassifier.getDisplayType(stack);
+        if (stack.isEmpty()) {
+            return "Empty";
+        }
+
+        return ScpItemClassifier.getType(stack).getDisplayName();
     }
 }

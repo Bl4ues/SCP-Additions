@@ -5,25 +5,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.BrushItem;
-import net.minecraft.world.item.DiggerItem;
-import net.minecraft.world.item.FishingRodItem;
-import net.minecraft.world.item.FlintAndSteelItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.item.ShearsItem;
-import net.minecraft.world.item.ShieldItem;
-import net.minecraft.world.item.SpyglassItem;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.item.UseAnim;
 
-import java.util.Locale;
 import java.util.Optional;
 
-/** Item classification shared by pickup routing, UI and equipment actions. */
 public final class ScpItemClassifier {
+
     private ScpItemClassifier() {
     }
 
@@ -32,62 +20,27 @@ public final class ScpItemClassifier {
             return ScpItemType.MISCELLANEOUS;
         }
 
-        Optional<ScpItemType> configured = getConfiguredType(stack);
-        if (configured.isPresent()) {
-            return configured.get();
+        if (ScpPickupRouter.isCoinMirror(stack) || ScpPickupRouter.isHarmfulMirror(stack)) {
+            return ScpItemType.MISCELLANEOUS;
         }
 
-        if (isConfiguredCodex(stack)) {
+        Optional<CodexDocumentDefinition> codexDocument = getCodexDocument(stack);
+        if (codexDocument.isPresent()) {
             return ScpItemType.CODEX;
         }
 
-        ResourceLocation id = idOf(stack);
-        String path = id == null ? "" : id.getPath().toLowerCase(Locale.ROOT);
-
-        ScpItemType registryType = classifyRegistryPath(path);
-        if (registryType == ScpItemType.KEY || registryType == ScpItemType.COIN
-                || registryType == ScpItemType.AMMO) {
-            return registryType;
+        Optional<ScpItemType> configuredType = getConfiguredType(stack);
+        if (configuredType.isPresent()) {
+            ScpItemType type = configuredType.get();
+            return type == ScpItemType.COIN ? ScpItemType.MISCELLANEOUS : type;
         }
 
-        if (isDefaultConsumable(stack, path)) {
+        if (isDefaultConsumable(stack)) {
             return ScpItemType.CONSUMABLE;
         }
 
-        Item item = stack.getItem();
-        if (item instanceof ArmorItem armor) {
-            return fromVanillaEquipmentSlot(armor.getEquipmentSlot());
-        }
-
-        if (item instanceof SwordItem || item instanceof ProjectileWeaponItem
-                || item instanceof TridentItem) {
-            return ScpItemType.WEAPON;
-        }
-
-        // Vanilla and correctly implemented modded tools should remain available
-        // as active survival tools instead of being mistaken for weapons.
-        if (item instanceof DiggerItem || item instanceof FishingRodItem
-                || item instanceof ShearsItem || item instanceof FlintAndSteelItem
-                || item instanceof BrushItem || item instanceof ShieldItem
-                || item instanceof SpyglassItem) {
-            return ScpItemType.USABLE;
-        }
-
-        UseAnim animation = stack.getUseAnimation();
-        if (animation == UseAnim.BOW || animation == UseAnim.CROSSBOW
-                || animation == UseAnim.SPEAR) {
-            return ScpItemType.WEAPON;
-        }
-        if (animation == UseAnim.BLOCK || animation == UseAnim.SPYGLASS
-                || animation == UseAnim.TOOT_HORN || animation == UseAnim.BRUSH) {
-            return ScpItemType.USABLE;
-        }
-
-        // Name heuristics are deliberately last. They improve compatibility with
-        // lightweight mods whose items do not subclass the normal vanilla types,
-        // while every explicit JSON entry still wins before reaching this point.
-        if (registryType != ScpItemType.MISCELLANEOUS) {
-            return registryType;
+        if (stack.getItem() instanceof ArmorItem armorItem) {
+            return fromVanillaEquipmentSlot(armorItem.getEquipmentSlot());
         }
 
         return ScpItemType.MISCELLANEOUS;
@@ -102,15 +55,26 @@ public final class ScpItemClassifier {
     }
 
     public static boolean isCoin(ItemStack stack) {
-        return getType(stack) == ScpItemType.COIN;
+        return isMirroredMainItem(stack);
     }
 
-    public static boolean isKey(ItemStack stack) {
-        return getType(stack) == ScpItemType.KEY;
+    public static boolean isMirroredMainItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || ScpPickupRouter.isCoinMirror(stack) || ScpPickupRouter.isHarmfulMirror(stack)) {
+            return false;
+        }
+        ScpItemType type = getConfiguredType(stack).orElse(null);
+        return type == ScpItemType.COIN || type == ScpItemType.AMMO;
     }
 
-    public static boolean isCodex(ItemStack stack) {
-        return getType(stack) == ScpItemType.CODEX;
+    public static boolean isHarmful(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        ItemStack copy = stack.copy();
+        ScpPickupRouter.stripHarmfulMirror(copy);
+        ScpPickupRouter.stripNoMergeMarker(copy);
+        ScpPickupRouter.stripUsableSession(copy);
+        return getConfiguredType(copy).orElse(null) == ScpItemType.HARMFUL;
     }
 
     public static boolean isUsable(ItemStack stack) {
@@ -121,135 +85,125 @@ public final class ScpItemClassifier {
         return getType(stack) == ScpItemType.ACCESSORY_HAND;
     }
 
-    public static Optional<ScpItemType> getConfiguredType(ItemStack stack) {
-        ResourceLocation itemId = idOf(stack);
-        if (itemId == null) return Optional.empty();
-
+    public static Optional<ResourceLocation> getConfiguredCoinItemId() {
         for (String rawRule : ScpInventoryConfig.itemRules()) {
-            Optional<ConfiguredRule> parsed = parseRule(rawRule);
-            if (parsed.isPresent() && parsed.get().itemId().equals(itemId)) {
-                return Optional.of(parsed.get().type());
+            Optional<ConfiguredItemRule> rule = parseItemRule(rawRule);
+            if (rule.isPresent() && isMirroredMainType(rule.get().type())) {
+                return Optional.of(rule.get().itemId());
             }
         }
+
         return Optional.empty();
     }
 
-    private static ScpItemType classifyRegistryPath(String path) {
-        if (path == null || path.isBlank()) {
-            return ScpItemType.MISCELLANEOUS;
-        }
-
-        if ((path.contains("keycard") || path.contains("key_card")
-                || path.contains("access_card") || path.contains("credential"))
-                && !path.contains("reader")) {
-            return ScpItemType.KEY;
-        }
-        if (path.equals("coin") || path.endsWith("_coin")
-                || path.contains("currency_token")) {
-            return ScpItemType.COIN;
-        }
-        if (containsAny(path, "ammo", "ammunition", "bullet", "cartridge",
-                "magazine", "shell", "arrow", "crossbow_bolt")) {
-            return ScpItemType.AMMO;
-        }
-
-        if (containsAny(path, "helmet", "headgear", "gas_mask", "gasmask")) {
-            return ScpItemType.HEAD;
-        }
-        if (containsAny(path, "chestplate", "body_armor", "bodyarmour",
-                "ballistic_vest")) {
-            return ScpItemType.CHEST;
-        }
-        if (containsAny(path, "leggings", "leg_armor", "trousers")) {
-            return ScpItemType.LEGS;
-        }
-        if (containsAny(path, "boots", "footwear", "shoes")) {
-            return ScpItemType.FEET;
-        }
-        if (containsAny(path, "ring", "bracelet", "hand_accessory")) {
-            return ScpItemType.ACCESSORY_HAND;
-        }
-        if (containsAny(path, "accessory", "amulet", "charm", "necklace",
-                "trinket")) {
-            return ScpItemType.ACCESSORY;
-        }
-
-        if (containsAny(path, "gun", "pistol", "rifle", "shotgun",
-                "revolver", "smg", "carbine", "launcher", "weapon",
-                "sword", "blade", "knife", "dagger", "machete",
-                "spear", "katana", "baton", "fire_axe")) {
-            return ScpItemType.WEAPON;
-        }
-
-        if (containsAny(path, "pickaxe", "shovel", "wrench", "hammer",
-                "drill", "crowbar", "screwdriver", "shears", "fishing_rod",
-                "flashlight", "torch", "lantern", "radio", "scanner",
-                "detector", "geiger", "spray", "binocular", "spyglass",
-                "shield", "mop", "writable_book", "handbook", "tool")) {
-            return ScpItemType.USABLE;
-        }
-
-        if (containsAny(path, "medkit", "first_aid", "bandage", "medicine",
-                "panacea", "pill", "tablet", "syringe", "candy",
-                "ration", "food", "drink")) {
-            return ScpItemType.CONSUMABLE;
-        }
-
-        return ScpItemType.MISCELLANEOUS;
+    public static ItemStack getConfiguredCoinStack() {
+        return getConfiguredCoinItemId()
+                .flatMap(id -> BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new))
+                .orElse(ItemStack.EMPTY);
     }
 
-    private static boolean isConfiguredCodex(ItemStack stack) {
-        ResourceLocation itemId = idOf(stack);
-        if (itemId == null) return false;
-
-        for (String raw : ScpInventoryConfig.codexDocuments()) {
-            if (raw == null || raw.isBlank()) continue;
-            String trimmed = raw.trim();
-            String candidate = trimmed;
-            for (String part : trimmed.split(";|\\r?\\n")) {
-                String[] pair = part.split("=", 2);
-                if (pair.length == 2
-                        && pair[0].trim().equalsIgnoreCase("id")) {
-                    candidate = pair[1].trim();
-                    break;
-                }
+    public static boolean isConfiguredMirroredMainItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (stackId == null) {
+            return false;
+        }
+        for (String rawRule : ScpInventoryConfig.itemRules()) {
+            Optional<ConfiguredItemRule> rule = parseItemRule(rawRule);
+            if (rule.isPresent() && rule.get().itemId().equals(stackId) && isMirroredMainType(rule.get().type())) {
+                return true;
             }
-            ResourceLocation configured = ResourceLocation.tryParse(candidate);
-            if (itemId.equals(configured)) return true;
         }
         return false;
     }
 
-    private static boolean isDefaultConsumable(ItemStack stack, String path) {
-        if (stack.isEdible()) return true;
+    public static boolean isMirroredMainType(ScpItemType type) {
+        return type == ScpItemType.COIN || type == ScpItemType.AMMO;
+    }
+
+    public static String getCodexDisplayName(ItemStack stack) {
+        return getCodexDocument(stack)
+                .map(document -> document.getDisplayName(stack))
+                .orElseGet(() -> stack == null || stack.isEmpty() ? "Unknown Document" : stack.getHoverName().getString());
+    }
+
+    public static CodexDocumentDefinition getCodexDefinitionOrFallback(ItemStack stack) {
+        return getCodexDocument(stack).orElseGet(() -> CodexDocumentDefinition.fallback(stack));
+    }
+
+    public static Optional<CodexDocumentDefinition> getCodexDocument(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return Optional.empty();
+        }
+
+        for (String rawRule : ScpInventoryConfig.codexDocuments()) {
+            Optional<CodexDocumentDefinition> definition = CodexDocumentDefinition.parse(rawRule);
+            if (definition.isPresent() && definition.get().matches(stack)) {
+                return definition;
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static boolean isDefaultConsumable(ItemStack stack) {
+        if (stack.isEdible()) {
+            return true;
+        }
+
         UseAnim animation = stack.getUseAnimation();
-        if (animation == UseAnim.EAT || animation == UseAnim.DRINK) return true;
-        return path.equals("potion") || path.equals("splash_potion")
-                || path.equals("lingering_potion") || path.endsWith("_potion")
+        if (animation == UseAnim.EAT || animation == UseAnim.DRINK) {
+            return true;
+        }
+
+        ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (stackId == null) {
+            return false;
+        }
+
+        String path = stackId.getPath();
+        return path.equals("potion")
+                || path.equals("splash_potion")
+                || path.equals("lingering_potion")
+                || path.endsWith("_potion")
                 || path.contains("potion");
     }
 
-    private static boolean containsAny(String value, String... tokens) {
-        for (String token : tokens) {
-            if (value.contains(token)) return true;
+    private static Optional<ScpItemType> getConfiguredType(ItemStack stack) {
+        ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (stackId == null) {
+            return Optional.empty();
         }
-        return false;
+
+        for (String rawRule : ScpInventoryConfig.itemRules()) {
+            Optional<ConfiguredItemRule> rule = parseItemRule(rawRule);
+            if (rule.isPresent() && rule.get().itemId().equals(stackId)) {
+                return Optional.of(rule.get().type());
+            }
+        }
+
+        return Optional.empty();
     }
 
-    private static ResourceLocation idOf(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return null;
-        return BuiltInRegistries.ITEM.getKey(stack.getItem());
-    }
+    private static Optional<ConfiguredItemRule> parseItemRule(String rawRule) {
+        if (rawRule == null || rawRule.isBlank()) {
+            return Optional.empty();
+        }
 
-    private static Optional<ConfiguredRule> parseRule(String raw) {
-        if (raw == null || raw.isBlank()) return Optional.empty();
-        String[] parts = raw.split("\\|", 2);
-        if (parts.length != 2) return Optional.empty();
-        ResourceLocation id = ResourceLocation.tryParse(parts[0].trim());
-        Optional<ScpItemType> type = ScpItemType.fromConfigToken(
-                parts[1].trim().toUpperCase(Locale.ROOT));
-        if (id == null || type.isEmpty()) return Optional.empty();
-        return Optional.of(new ConfiguredRule(id, type.get()));
+        String[] parts = rawRule.split("\\|", 2);
+        if (parts.length != 2) {
+            return Optional.empty();
+        }
+
+        ResourceLocation configuredId = ResourceLocation.tryParse(parts[0].trim());
+        if (configuredId == null) {
+            return Optional.empty();
+        }
+
+        Optional<ScpItemType> type = ScpItemType.fromConfigToken(parts[1]);
+        return type.map(scpItemType -> new ConfiguredItemRule(configuredId, scpItemType));
     }
 
     private static ScpItemType fromVanillaEquipmentSlot(EquipmentSlot slot) {
@@ -262,6 +216,6 @@ public final class ScpItemClassifier {
         };
     }
 
-    private record ConfiguredRule(ResourceLocation itemId, ScpItemType type) {
+    private record ConfiguredItemRule(ResourceLocation itemId, ScpItemType type) {
     }
 }

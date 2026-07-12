@@ -27,7 +27,6 @@ import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
 import net.mcreator.scpadditions.facility.LeftDoorButtons;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
-import net.mcreator.scpadditions.inventory.ScpInventoryNetwork;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
@@ -78,7 +77,7 @@ public class ScpAdditionsMod {
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);
 		ScpAdditionsModMenus.REGISTRY.register(bus);
 		ScpEntityNetwork.register();
-		ScpInventoryNetwork.register();
+		com.bl4ues.scpinventory.network.ModNetwork.register();
 
 		ScpAdditionsModulesConfig.load();
 		ScpInventoryConfig.load();

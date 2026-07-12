@@ -1,0 +1,40 @@
+name: Vendor canonical SCP Inventory reference
+
+on:
+  push:
+    branches:
+      - integration/scp-additions-3.0
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    if: contains(github.event.head_commit.message, 'vendor canonical SCP Inventory reference')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Additions
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout canonical SCP Inventory export
+        uses: actions/checkout@v4
+        with:
+          repository: Bl4ues/SCPInventory
+          ref: integration/additions-3.0-export
+          path: _canonical_scpinventory
+      - name: Vendor immutable migration reference
+        run: |
+          rm -rf migration-reference/scpinventory-final
+          mkdir -p migration-reference/scpinventory-final
+          cp -a _canonical_scpinventory/migration-export/. migration-reference/scpinventory-final/
+          rm -rf _canonical_scpinventory
+          printf '%s\n' 'This directory is the canonical generated SCP Inventory export. Do not compile it directly.' > migration-reference/scpinventory-final/ADDitions_NOTE.txt
+      - name: Commit canonical reference
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add migration-reference/scpinventory-final
+          git commit -m "chore(inventory): import canonical final SCP Inventory sources"
+          git push origin HEAD:integration/scp-additions-3.0

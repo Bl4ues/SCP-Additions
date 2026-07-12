@@ -1,0 +1,26 @@
+Wrote config/scpinventory/context_interactions.json
+Wrote config/scpinventory/scpinventory.json
+Wrote config/scpadditions/294drinks.json
+Wrote config/scpadditions/914recipes.json
+Wrote config/scpadditions/modules.json
+Facility buttons and key ownership fixed
+Robotoized src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java: 1 draws, 2 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java: 1 draws, 1 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java: 9 draws, 6 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/gui/components/CodexPanel.java: 8 draws, 3 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/gui/components/ContextMenu.java: 0 draws, 0 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/gui/components/EquipmentPanel.java: 0 draws, 0 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/gui/components/ScrollableItemList.java: 0 draws, 0 widths
+Robotoized src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java: 7 draws, 2 widths
+Screwdriver context action and Roboto UI fixed
+Traceback (most recent call last):
+  File "/home/runner/work/SCP-Additions/SCP-Additions/scripts/requested_fix/patch_defaults.py", line 146, in <module>
+    patch_modules_defaults()
+  File "/home/runner/work/SCP-Additions/SCP-Additions/scripts/requested_fix/patch_defaults.py", line 99, in patch_modules_defaults
+    replace_once(
+  File "/home/runner/work/SCP-Additions/SCP-Additions/scripts/requested_fix/patch_common.py", line 19, in replace_once
+    raise RuntimeError(f"{path}: expected one replacement, found {count}\n--- OLD ---\n{old}")
+RuntimeError: src/main/java/net/mcreator/scpadditions/config/ScpAdditionsModulesConfig.java: expected one replacement, found 0
+--- OLD ---
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("modules.json");

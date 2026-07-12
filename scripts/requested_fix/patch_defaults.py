@@ -1,5 +1,6 @@
 from patch_common import ensure_import, replace_once
 
+
 def patch_context_defaults():
     path = "src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java"
     ensure_import(path, "import java.io.InputStream;\n", "import java.io.FileWriter;\n")
@@ -51,6 +52,7 @@ def patch_context_defaults():
 
     private static void saveRoot(JsonObject root) {""")
 
+
 def patch_inventory_defaults():
     path = "src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java"
     ensure_import(path, "import java.io.InputStream;\n", "import java.io.FileWriter;\n")
@@ -92,39 +94,41 @@ def patch_inventory_defaults():
 
         JsonObject root = new JsonObject();""")
 
+
 def patch_modules_defaults():
     path = "src/main/java/net/mcreator/scpadditions/config/ScpAdditionsModulesConfig.java"
     ensure_import(path, "import java.io.InputStream;\n", "import java.io.Writer;\n")
     ensure_import(path, "import java.nio.file.StandardCopyOption;\n", "import java.nio.file.StandardOpenOption;\n")
     replace_once(
         path,
-"""    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("modules.json");""",
-"""    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("modules.json");
-    private static final String BUNDLED_CONFIG = "config/scpadditions/modules.json";""")
+"""\tprivate static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+\tprivate static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("modules.json");""",
+"""\tprivate static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+\tprivate static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("modules.json");
+\tprivate static final String BUNDLED_CONFIG = "config/scpadditions/modules.json";""")
     replace_once(
         path,
-"""            Files.createDirectories(CONFIG_PATH.getParent());
-            if (Files.exists(CONFIG_PATH)) {""",
-"""            Files.createDirectories(CONFIG_PATH.getParent());
-            if (Files.notExists(CONFIG_PATH)) {
-                copyBundledConfig();
-            }
-            if (Files.exists(CONFIG_PATH)) {""")
+"""\t\t\tFiles.createDirectories(CONFIG_PATH.getParent());
+\t\t\tif (Files.exists(CONFIG_PATH)) {""",
+"""\t\t\tFiles.createDirectories(CONFIG_PATH.getParent());
+\t\t\tif (Files.notExists(CONFIG_PATH)) {
+\t\t\t\tcopyBundledConfig();
+\t\t\t}
+\t\t\tif (Files.exists(CONFIG_PATH)) {""")
     replace_once(
         path,
-"""    private static void writeConfig(Root config) throws IOException {""",
-"""    private static void copyBundledConfig() throws IOException {
-        try (InputStream stream = ScpAdditionsModulesConfig.class.getClassLoader()
-                .getResourceAsStream(BUNDLED_CONFIG)) {
-            if (stream != null) {
-                Files.copy(stream, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-    }
+"""\tprivate static void writeConfig(Root config) throws IOException {""",
+"""\tprivate static void copyBundledConfig() throws IOException {
+\t\ttry (InputStream stream = ScpAdditionsModulesConfig.class.getClassLoader()
+\t\t\t\t.getResourceAsStream(BUNDLED_CONFIG)) {
+\t\t\tif (stream != null) {
+\t\t\t\tFiles.copy(stream, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
+\t\t\t}
+\t\t}
+\t}
 
-    private static void writeConfig(Root config) throws IOException {""")
+\tprivate static void writeConfig(Root config) throws IOException {""")
+
 
 def patch_bootstrap():
     path = "src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java"
@@ -134,11 +138,12 @@ def patch_bootstrap():
         "import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;\n")
     replace_once(
         path,
-"""        ScpAdditionsModulesConfig.load();
-        Scp173TargetConfig.load();""",
-"""        ScpAdditionsModulesConfig.load();
-        ScpInventoryConfig.reload();
-        Scp173TargetConfig.load();""")
+"""\t\tScpAdditionsModulesConfig.load();
+\t\tScp173TargetConfig.load();""",
+"""\t\tScpAdditionsModulesConfig.load();
+\t\tScpInventoryConfig.reload();
+\t\tScp173TargetConfig.load();""")
+
 
 if __name__ == "__main__":
     patch_context_defaults()

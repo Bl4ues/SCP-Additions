@@ -24,7 +24,7 @@ public final class PlayerVitalsClient {
     public static void clientTick() {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (player == null) {
+        if (player == null || player.isCreative() || player.isSpectator()) {
             resetAll();
             return;
         }
@@ -52,11 +52,6 @@ public final class PlayerVitalsClient {
     }
 
     private static void updateStamina(Minecraft minecraft, LocalPlayer player) {
-        if (player.isCreative() || player.isSpectator()) {
-            resetStamina();
-            return;
-        }
-
         if (StaminaBlockerAccess.isBlocked(player)) {
             stamina = 0.0F;
             regenDelayTicks = REGEN_DELAY_TICKS;
@@ -132,6 +127,10 @@ public final class PlayerVitalsClient {
         return MAX_STAMINA <= 0.0F
                 ? 0.0F
                 : Math.max(0.0F, Math.min(1.0F, stamina / MAX_STAMINA));
+    }
+
+    public static boolean canSprint() {
+        return !VitalsModule.staminaEnabled() || stamina > 0.0F;
     }
 
     public static float getDamageFlashAlpha() {

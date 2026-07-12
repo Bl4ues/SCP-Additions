@@ -16,6 +16,8 @@ The largest SCP Additions update so far. SCP Inventory and SCP Unity Extra Block
 - Kept Kleiders Custom Renderer optional: it is required only to render SCP-914-selected player skins;
 - Added MoreMcmeta Emissive Textures as an optional client dependency for supported emissive facility textures;
 - Clarified that GeckoLib 4.4.9 or newer is required while Kleiders Custom Renderer and MoreMcmeta Emissive Textures are optional client enhancements;
+- Added the missing SCP-914 Coarse death message and Metamorphosis advancement title translations;
+- Restored the SCP-914 death sound when a setting-specific player outcome actually kills the player;
 
 ### Integrated SCP Inventory systems
 

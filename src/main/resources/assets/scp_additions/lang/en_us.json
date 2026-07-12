@@ -258,5 +258,7 @@
   "block.scp_additions.lv_4_right_reader_wrong": "Level 4 Keycard Reader (Right) Denied",
   "item.scp_additions.level_6_keycard": "Level 6 Keycard",
   "subtitles.stomach": "Stomach ache",
-  "item.scp_additions.carbon": "Cup of Carbon"
+  "item.scp_additions.carbon": "Cup of Carbon",
+  "death.attack.scp914coarse": "%s died from internal injuries after being \"refined\" by SCP-914 on the \"Coarse\" setting.",
+  "advancements.scp_914_metamorphosis.title": "Metamorphosis"
 }

@@ -34,6 +34,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 import java.util.Comparator;
@@ -195,7 +196,13 @@ public final class Scp914Processor {
                         entity.getDisplayName());
             }
         };
-        player.hurt(source, amount);
+        boolean wasAlive = player.isAlive();
+        boolean damaged = player.hurt(source, amount);
+        if (damaged && wasAlive && player.isDeadOrDying()) {
+            player.level().playSound(null, player.blockPosition(),
+                    ScpAdditionsModSounds.SCP914DEATH.get(),
+                    SoundSource.NEUTRAL, 1.0F, 1.0F);
+        }
     }
 
     private static void awardMetamorphosisAdvancement(ServerPlayer player) {

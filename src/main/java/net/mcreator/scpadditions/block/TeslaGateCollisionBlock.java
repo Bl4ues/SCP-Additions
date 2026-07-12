@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -97,13 +97,13 @@ public final class TeslaGateCollisionBlock extends Block implements SimpleWaterl
         }
 
         Direction right = state.getValue(FACING).getClockWise();
-        Direction inward = part.sideOffset() < 0 ? right : right.getOpposite();
-        VoxelShape vertical = verticalHalf(inward);
+        Direction outward = part.sideOffset() < 0 ? right.getOpposite() : right;
+        VoxelShape vertical = verticalHalf(outward);
         return part.yOffset() == 1 ? Shapes.or(vertical, TOP_SLAB) : vertical;
     }
 
-    private static VoxelShape verticalHalf(Direction inward) {
-        return switch (inward) {
+    private static VoxelShape verticalHalf(Direction outward) {
+        return switch (outward) {
             case EAST -> Block.box(8, 0, 0, 16, 16, 16);
             case WEST -> Block.box(0, 0, 0, 8, 16, 16);
             case SOUTH -> Block.box(0, 0, 8, 16, 16, 16);

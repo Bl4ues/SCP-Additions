@@ -74,7 +74,7 @@ public final class PlayerVitalsOverlay {
                     Math.round(health) + "/" + Math.round(maxHealth))
                     .withStyle(style -> style.withFont(ROBOTO_FONT));
             graphics.drawString(minecraft.font, healthText,
-                    BAR_X + 6, rowY + 2, TEXT, false);
+                    BAR_X + 6, rowY + 3, TEXT, false);
         }
     }
 

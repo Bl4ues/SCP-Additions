@@ -1,7 +1,9 @@
 package net.mcreator.scpadditions.inventory.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -27,6 +29,8 @@ public final class ScpInventoryClientEvents {
             return;
         }
 
+        ScpWorldPromptClient.tick();
+
         while (ScpInventoryKeybinds.OPEN.consumeClick()) {
             if (minecraft.screen == null) {
                 ScpAdditionsMod.PACKET_HANDLER.sendToServer(
@@ -34,5 +38,25 @@ public final class ScpInventoryClientEvents {
                 minecraft.setScreen(new ScpInventoryScreen());
             }
         }
+    }
+
+    /**
+     * Prevent vanilla block/item use when a configured world prompt owns the
+     * right click. Forge fires this once per hand, so only main hand sends the
+     * packet while both events are cancelled.
+     */
+    @SubscribeEvent
+    public static void onInteractionInput(
+            InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isUseItem()
+                || !ScpAdditionsModulesConfig.get().inventory.enabled
+                || !ScpWorldPromptClient.ownsRightClick()) {
+            return;
+        }
+        if (event.getHand() == InteractionHand.MAIN_HAND) {
+            ScpWorldPromptClient.triggerRightClick();
+        }
+        event.setSwingHand(false);
+        event.setCanceled(true);
     }
 }

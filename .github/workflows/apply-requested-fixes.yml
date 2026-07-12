@@ -1,11 +1,11 @@
 name: Apply requested integration fixes
 
 on:
-  push:
+  pull_request:
     branches:
       - integration/scp-additions-3.0
-    paths:
-      - .github/workflows/apply-requested-fixes.yml
+    types:
+      - opened
 
 permissions:
   contents: write
@@ -14,10 +14,10 @@ jobs:
   apply-and-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout integration branch
+      - name: Checkout temporary fix branch
         uses: actions/checkout@v4
         with:
-          ref: integration/scp-additions-3.0
+          ref: ${{ github.head_ref }}
 
       - name: Apply patches and build
         id: patch
@@ -60,12 +60,13 @@ jobs:
           rm -f .github/workflows/inspect-requested-fix-targets.yml
           rm -f migration-reference/requested-fix-targets.txt
           rm -f migration-reference/requested-fix-run.log
+          rm -f migration-reference/requested-fix-pr-trigger.txt
           rm -f .github/workflows/apply-requested-fixes.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix integrated panels, UI, keycards and defaults"
-          git push origin HEAD:integration/scp-additions-3.0
+          git push origin HEAD:${{ github.head_ref }}
 
       - name: Record failure diagnostics
         if: steps.patch.outputs.status != '0'
@@ -76,5 +77,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add migration-reference/requested-fix-run.log
           git commit -m "Record requested fix workflow failure"
-          git push origin HEAD:integration/scp-additions-3.0
+          git push origin HEAD:${{ github.head_ref }}
           exit 1

@@ -94,16 +94,49 @@ processResources {
             }
         }
 
+        // Facility registry IDs now live under scp_additions, while the original
+        // models and textures remain a read-only resource library in the legacy
+        // namespace. Duplicate only the registry-facing resource files.
+        def legacyAssets = file("$buildDir/resources/main/assets/scp_unity_extra_blocks")
+        def additionsAssets = file("$buildDir/resources/main/assets/scp_additions")
+        if (legacyAssets.exists()) {
+            copy {
+                from new File(legacyAssets, 'blockstates')
+                into new File(additionsAssets, 'blockstates')
+            }
+            copy {
+                from new File(legacyAssets, 'models/item')
+                into new File(additionsAssets, 'models/item')
+            }
+        }
+
         // Keep new 3.0 translation entries isolated from the generated legacy
         // language file, then merge both into the single locale Minecraft loads.
         def langDir = file("$buildDir/resources/main/assets/scp_additions/lang")
         def baseLangFile = new File(langDir, 'en_us.json')
         def langPatchFile = file('src/main/resources/assets/scp_additions/lang/en_us_3_0.json')
-        if (baseLangFile.exists() && langPatchFile.exists()) {
+        def legacyLangFile = file('src/main/resources/assets/scp_unity_extra_blocks/lang/en_us.json')
+        if (baseLangFile.exists()) {
             def parser = new groovy.json.JsonSlurper()
             def baseLang = parser.parse(baseLangFile)
-            def langPatch = parser.parse(langPatchFile)
-            langPatch.each { key, value -> baseLang[key] = value }
+
+            if (legacyLangFile.exists()) {
+                def legacyLang = parser.parse(legacyLangFile)
+                legacyLang.each { key, value ->
+                    if (key.startsWith('block.scp_unity_extra_blocks.')) {
+                        baseLang[key.replace('block.scp_unity_extra_blocks.', 'block.scp_additions.')] = value
+                    }
+                    if (key.startsWith('item.scp_unity_extra_blocks.')) {
+                        baseLang[key.replace('item.scp_unity_extra_blocks.', 'item.scp_additions.')] = value
+                    }
+                }
+            }
+
+            if (langPatchFile.exists()) {
+                def langPatch = parser.parse(langPatchFile)
+                langPatch.each { key, value -> baseLang[key] = value }
+            }
+
             def mergedLang = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(baseLang))
             baseLangFile.setText(mergedLang + System.lineSeparator(), 'UTF-8')
         }

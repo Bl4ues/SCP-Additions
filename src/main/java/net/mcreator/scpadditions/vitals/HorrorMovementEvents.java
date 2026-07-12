@@ -36,9 +36,6 @@ public final class HorrorMovementEvents {
         if (!VitalsModule.horrorMovementEnabled()
                 || player.isCreative() || player.isSpectator()) {
             HorrorMovementNetwork.clear(player);
-            if (player.isSprinting()) {
-                player.setSprinting(false);
-            }
             applyMovementSpeed(player, VANILLA_WALK_SPEED);
             return;
         }
@@ -65,7 +62,9 @@ public final class HorrorMovementEvents {
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             HorrorMovementNetwork.clear(player);
-            applyMovementSpeed(player, VitalsModule.horrorMovementEnabled()
+            boolean survivalHorrorMovement = VitalsModule.horrorMovementEnabled()
+                    && !player.isCreative() && !player.isSpectator();
+            applyMovementSpeed(player, survivalHorrorMovement
                     ? HORROR_WALK_SPEED : VANILLA_WALK_SPEED);
         }
     }

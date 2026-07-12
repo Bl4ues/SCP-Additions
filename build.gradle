@@ -100,11 +100,11 @@ processResources {
         def legacyAssets = file("$buildDir/resources/main/assets/scp_unity_extra_blocks")
         def additionsAssets = file("$buildDir/resources/main/assets/scp_additions")
         if (legacyAssets.exists()) {
-            copy {
+            project.copy {
                 from new File(legacyAssets, 'blockstates')
                 into new File(additionsAssets, 'blockstates')
             }
-            copy {
+            project.copy {
                 from new File(legacyAssets, 'models/item')
                 into new File(additionsAssets, 'models/item')
             }

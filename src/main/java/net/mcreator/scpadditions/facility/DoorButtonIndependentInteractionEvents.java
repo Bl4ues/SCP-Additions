@@ -16,9 +16,13 @@ import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
- * Replaces the standalone Unity button's paired state machine with a local one.
- * Each placed button opens, closes, emits redstone and drops independently,
- * even when another button happens to exist directly across the wall.
+ * Keeps Unity door-button pairing optional and manual.
+ *
+ * Placement never creates a mirrored counterpart. However, when another
+ * functional Unity button already exists in the original opposite position,
+ * the integrated DoorButtonBlock logic is allowed to synchronize both buttons
+ * through CLOSED, OPENING, OPEN and CLOSING. Without a matching counterpart,
+ * only the clicked button changes state.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DoorButtonIndependentInteractionEvents {
@@ -54,33 +58,44 @@ public final class DoorButtonIndependentInteractionEvents {
             return;
         }
 
-        event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
-
-        if (!(event.getLevel() instanceof ServerLevel level)
-                || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
             return;
         }
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        setIndependentState(level, pos, facing, transition.get());
+        BlockPos counterpartPos = pos.relative(facing.getOpposite(), 2);
+        BlockState counterpart = event.getLevel().getBlockState(counterpartPos);
+
+        // A manually placed functional counterpart exists exactly where the old
+        // mirrored placement used to put it. Let DoorButtonBlock#use execute its
+        // original pair-aware state machine, which updates both sides together.
+        if (isFunctionalButton(counterpart.getBlock())) {
+            return;
+        }
+
+        // No matching counterpart: suppress the legacy pair logic and animate
+        // only this button. Any mirror that DoorButtonBlock#onPlace attempts to
+        // recreate during the state replacement is removed immediately.
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
+
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            return;
+        }
+
+        setSingleState(level, pos, facing, transition.get());
 
         ScpAdditionsMod.queueServerWork(TRANSITION_TICKS, () -> {
             BlockState current = level.getBlockState(pos);
             if (current.getBlock() == transition.get()
                     && current.hasProperty(HorizontalDirectionalBlock.FACING)) {
                 Direction currentFacing = current.getValue(HorizontalDirectionalBlock.FACING);
-                setIndependentState(level, pos, currentFacing, endpoint.get());
+                setSingleState(level, pos, currentFacing, endpoint.get());
             }
         });
     }
 
-    /**
-     * DoorButtonBlock#onPlace still contains the legacy mirrored-placement code.
-     * Preserve a pre-existing independent opposite button, but remove any new
-     * counterpart that onPlace creates as a side effect of this state change.
-     */
-    private static void setIndependentState(ServerLevel level, BlockPos pos,
+    private static void setSingleState(ServerLevel level, BlockPos pos,
             Direction facing, Block target) {
         BlockPos legacyCounterpartPos = pos.relative(facing.getOpposite(), 2);
         BlockState counterpartBefore = level.getBlockState(legacyCounterpartPos);
@@ -88,19 +103,24 @@ public final class DoorButtonIndependentInteractionEvents {
         level.setBlock(pos, target.defaultBlockState()
                 .setValue(HorizontalDirectionalBlock.FACING, facing), Block.UPDATE_ALL);
 
-        if (!isDoorButton(counterpartBefore.getBlock())) {
+        // Preserve any manually placed button that was already opposite. Remove
+        // only a new counterpart created as a side effect of the legacy onPlace.
+        if (!isAnyDoorButton(counterpartBefore.getBlock())) {
             BlockState counterpartAfter = level.getBlockState(legacyCounterpartPos);
-            if (isDoorButton(counterpartAfter.getBlock())) {
+            if (isAnyDoorButton(counterpartAfter.getBlock())) {
                 level.removeBlock(legacyCounterpartPos, false);
             }
         }
     }
 
-    private static boolean isDoorButton(Block block) {
-        return block == FacilityModule.BUTTON_LOCKED.get()
-                || block == FacilityModule.BUTTON_CLOSED.get()
+    private static boolean isFunctionalButton(Block block) {
+        return block == FacilityModule.BUTTON_CLOSED.get()
                 || block == FacilityModule.BUTTON_OPENING.get()
                 || block == FacilityModule.BUTTON_OPEN.get()
                 || block == FacilityModule.BUTTON_CLOSING.get();
+    }
+
+    private static boolean isAnyDoorButton(Block block) {
+        return block == FacilityModule.BUTTON_LOCKED.get() || isFunctionalButton(block);
     }
 }

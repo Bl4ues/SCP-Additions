@@ -66,8 +66,20 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] custom fonts load
 - [ ] HUD scales correctly at common GUI scales
 - [ ] disabling inventory prevents replacement behavior cleanly
-- [ ] disabling HUD removes only visual overlays
-- [ ] disabling stamina restores vanilla movement behavior immediately
+- [ ] `hud.enabled=true` and `custom_health_enabled=true` render the custom health bar
+- [ ] custom health HUD cancels only vanilla player hearts, not armor, hunger, air or mount health
+- [ ] `custom_health_enabled=false` restores vanilla hearts and removes only the custom health row
+- [ ] `hud.enabled=false` restores vanilla hearts and hides both custom rows without disabling stamina gameplay
+- [ ] stamina drains from 100 to 0 over approximately five seconds of moving sprint
+- [ ] stamina waits 20 ticks after sprint expenditure before regenerating
+- [ ] stamina regenerates from 0 to 100 over approximately five seconds
+- [ ] holding sprint while exhausted does not allow regeneration or repeated sprint bursts
+- [ ] server enforcement prevents a client from continuing to sprint at zero stamina
+- [ ] the eight-tick exhausted sprint lock matches the standalone behavior
+- [ ] disabling stamina immediately restores vanilla sprint behavior and hides the stamina row
+- [ ] configured `NO_STAMINA` hand and armor items force stamina to zero
+- [ ] future SCP Inventory equipment can register a blocker source without changing stamina code
+- [ ] health damage flash lasts and fades according to the original one-second timing
 
 ## Keycards and shared item access
 

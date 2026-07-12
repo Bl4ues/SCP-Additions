@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,6 +23,10 @@ public final class FacilityBlockEvents {
 
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
+        if (!(event.getLevel() instanceof Level level)) {
+            return;
+        }
+
         BlockState state = event.getState();
         Block block = state.getBlock();
 
@@ -30,12 +35,12 @@ public final class FacilityBlockEvents {
         // directly must still return exactly one wall light outside creative.
         if (block == FacilityModule.WALLLIGHT_2.get()) {
             if (!event.getPlayer().isCreative()) {
-                Block.popResource(event.getLevel(), event.getPos(),
+                Block.popResource(level, event.getPos(),
                         new ItemStack(FacilityModule.WALLLIGHT.get()));
             }
             BlockPos lower = event.getPos().below();
-            if (event.getLevel().getBlockState(lower).is(FacilityModule.WALLLIGHT.get())) {
-                event.getLevel().destroyBlock(lower, false);
+            if (level.getBlockState(lower).is(FacilityModule.WALLLIGHT.get())) {
+                level.destroyBlock(lower, false);
             }
             return;
         }
@@ -46,8 +51,8 @@ public final class FacilityBlockEvents {
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         BlockPos counterpart = event.getPos().relative(facing.getOpposite(), 2);
-        if (isDoorButton(event.getLevel().getBlockState(counterpart).getBlock())) {
-            event.getLevel().destroyBlock(counterpart, false);
+        if (isDoorButton(level.getBlockState(counterpart).getBlock())) {
+            level.destroyBlock(counterpart, false);
         }
     }
 

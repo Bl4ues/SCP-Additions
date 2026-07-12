@@ -3,9 +3,8 @@ package net.mcreator.scpadditions.vitals;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 /**
- * Centralized feature-gate helpers for the integrated health and stamina
- * systems. Keeping rendering and gameplay checks here prevents the individual
- * handlers from drifting into different toggle semantics.
+ * Centralized feature-gate helpers for the integrated health, stamina and
+ * survival-horror movement systems.
  */
 public final class VitalsModule {
     private VitalsModule() {
@@ -25,6 +24,11 @@ public final class VitalsModule {
     /** Server/client stamina drain, regeneration and sprint enforcement. */
     public static boolean staminaEnabled() {
         return ScpAdditionsModulesConfig.get().vitals.staminaEnabled;
+    }
+
+    /** Slower walking and slightly faster committed sprinting. */
+    public static boolean horrorMovementEnabled() {
+        return ScpAdditionsModulesConfig.get().vitals.horrorMovementEnabled;
     }
 
     /** Stamina bar visibility is independent from stamina gameplay. */

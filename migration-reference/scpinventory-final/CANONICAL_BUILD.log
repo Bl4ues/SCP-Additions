@@ -31,30 +31,16 @@ Executing steps
  > Running 'listLibraries'
  > Running 'rename'
 Stopping at requested step: /home/runner/.gradle/caches/forge_gradle/mcp_repo/de/oceanlabs/mcp/mcp_config/1.20.1-20230612.114412/joined/rename/output.jar
-[09:10:52] [main/INFO]: Writing debug log file accesstransform.log
-[09:10:52] [main/INFO]: Access Transformer processor running version 8.2.14
-[09:10:52] [main/INFO]: Command line arguments [--inJar, /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-injected.jar, --outJar, /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar, --logFile, accesstransform.log, --atFile, /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg, --atFile, /home/runner/work/SCP-Additions/SCP-Additions/build/_atJar_4/parent_at.cfg]
-[09:10:52] [main/INFO]: Reading from /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-injected.jar
-[09:10:52] [main/INFO]: Writing to /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar
-[09:10:52] [main/INFO]: Transformer file /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg
-[09:10:52] [main/INFO]: Transformer file /home/runner/work/SCP-Additions/SCP-Additions/build/_atJar_4/parent_at.cfg
-[09:10:52] [main/WARN]: Found existing output jar /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar, overwriting
-[09:10:55] [main/INFO]: JAR transformation complete /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar
+[09:18:07] [main/INFO]: Writing debug log file accesstransform.log
+[09:18:07] [main/INFO]: Access Transformer processor running version 8.2.14
+[09:18:07] [main/INFO]: Command line arguments [--inJar, /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-injected.jar, --outJar, /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar, --logFile, accesstransform.log, --atFile, /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg, --atFile, /home/runner/work/SCP-Additions/SCP-Additions/build/_atJar_4/parent_at.cfg]
+[09:18:07] [main/INFO]: Reading from /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-injected.jar
+[09:18:07] [main/INFO]: Writing to /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar
+[09:18:07] [main/INFO]: Transformer file /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg
+[09:18:07] [main/INFO]: Transformer file /home/runner/work/SCP-Additions/SCP-Additions/build/_atJar_4/parent_at.cfg
+[09:18:07] [main/WARN]: Found existing output jar /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar, overwriting
+[09:18:11] [main/INFO]: JAR transformation complete /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar
 Creating SRG -> MCP TSRG
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:4: error: package com.bl4ues.scpinventory.entity does not exist
-import com.bl4ues.scpinventory.entity.AbstractScp131Entity;
-                                     ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java:4: error: package com.bl4ues.scpinventory.entity does not exist
-import com.bl4ues.scpinventory.entity.AbstractScp131Entity;
-                                     ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:3: error: cannot find symbol
-import com.bl4ues.scpinventory.client.PlayerVitalsClient;
-                                     ^
-  symbol:   class PlayerVitalsClient
-  location: package com.bl4ues.scpinventory.client
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:3: error: package com.bl4ues.scpinventory.debug does not exist
-import com.bl4ues.scpinventory.debug.ScpInventoryDebug;
-                                    ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:139: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
             id = new ResourceLocation(idText);
                  ^
@@ -73,11 +59,6 @@ import com.bl4ues.scpinventory.debug.ScpInventoryDebug;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:17: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
             new ResourceLocation("scpinventory", "scp_inventory");
             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:80: error: cannot find symbol
-        if (entity instanceof AbstractScp131Entity scp131 && scp131.isFollowingPlayer(player)) {
-                              ^
-  symbol:   class AbstractScp131Entity
-  location: class ContextInteractPacket
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:17: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
             new ResourceLocation(ScpInventoryMod.MODID, "main"),
             ^
@@ -99,21 +80,6 @@ import com.bl4ues.scpinventory.debug.ScpInventoryDebug;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptIcons.java:105: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
         return new ResourceLocation(text);
                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java:221: error: cannot find symbol
-            if (entity instanceof AbstractScp131Entity scp131 && scp131.isFollowing()) {
-                                  ^
-  symbol:   class AbstractScp131Entity
-  location: class ContextPromptClient
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:357: error: cannot find symbol
-        renderStat(g, "Stamina", Math.round(PlayerVitalsClient.getStamina()) + "/" + Math.round(PlayerVitalsClient.getMaxStamina()), statX, statY + 152);
-                                            ^
-  symbol:   variable PlayerVitalsClient
-  location: class StatusPanel
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:357: error: cannot find symbol
-        renderStat(g, "Stamina", Math.round(PlayerVitalsClient.getStamina()) + "/" + Math.round(PlayerVitalsClient.getMaxStamina()), statX, statY + 152);
-                                                                                                ^
-  symbol:   variable PlayerVitalsClient
-  location: class StatusPanel
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:42: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
     private static final ResourceLocation BACKGROUND = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventory_background.png");
                                                        ^
@@ -147,201 +113,6 @@ import com.bl4ues.scpinventory.debug.ScpInventoryDebug;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java:26: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
     private static final ResourceLocation PICKUP_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/pickup.png");
                                                         ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:48: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:49: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:67: error: cannot find symbol
-                ScpInventoryDebug.stack(stack),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:68: error: cannot find symbol
-                ScpInventoryDebug.stack(stored),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:69: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:70: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:83: error: cannot find symbol
-                    ScpInventoryDebug.stack(stack),
-                    ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:84: error: cannot find symbol
-                    ScpInventoryDebug.stack(activeUsable),
-                    ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:85: error: cannot find symbol
-                    ScpInventoryDebug.caller());
-                    ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:90: error: cannot find symbol
-                    ScpInventoryDebug.stack(stack),
-                    ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:91: error: cannot find symbol
-                    ScpInventoryDebug.stack(activeUsable),
-                    ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:92: error: cannot find symbol
-                    ScpInventoryDebug.caller());
-                    ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:113: error: cannot find symbol
-                ScpInventoryDebug.stack(stack),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:117: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:118: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:137: error: cannot find symbol
-                ScpInventoryDebug.stack(stack),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:138: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:139: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:151: error: cannot find symbol
-                ScpInventoryDebug.stack(previous),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:152: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:153: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:304: error: cannot find symbol
-                ScpInventoryDebug.stack(previous),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:305: error: cannot find symbol
-                ScpInventoryDebug.stack(stack),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:306: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:307: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:316: error: cannot find symbol
-                ScpInventoryDebug.stack(stack),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:317: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:324: error: cannot find symbol
-            debugUsable("clearActiveUsable ignored empty caller={}", ScpInventoryDebug.caller());
-                                                                     ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:328: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:329: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:339: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:340: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:380: error: cannot find symbol
-                ScpInventoryDebug.stack(activeUsable),
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:381: error: cannot find symbol
-                ScpInventoryDebug.caller());
-                ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:475: error: cannot find symbol
-                        ScpInventoryDebug.stack(stack),
-                        ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:476: error: cannot find symbol
-                        ScpInventoryDebug.stack(activeUsable),
-                        ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:477: error: cannot find symbol
-                        ScpInventoryDebug.caller());
-                        ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:494: error: cannot find symbol
-        if (ScpInventoryDebug.USABLE_DEBUG) {
-            ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:495: error: cannot find symbol
-            ScpInventoryDebug.usable(message, args);
-            ^
-  symbol:   variable ScpInventoryDebug
-  location: class ScpInventory
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/handler/Scp294DrinkHandler.java:59: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
 			MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation(effectTag.getString("id")));
 			                                                        ^
@@ -578,11 +349,11 @@ Note: Recompile with -Xlint:deprecation for details.
 Note: Some input files additionally use or override a deprecated API that is marked for removal.
 Note: Some input files use unchecked or unsafe operations.
 Note: Recompile with -Xlint:unchecked for details.
-48 errors
+1 error
 100 warnings
 
 > Task :compileJava FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1783847310773.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1783847779890.json
 
 FAILURE: Build failed with an exception.
 
@@ -787,5 +558,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 2m 50s
+BUILD FAILED in 2m 22s
 2 actionable tasks: 2 executed

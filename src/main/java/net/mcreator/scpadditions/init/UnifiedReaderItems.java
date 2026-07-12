@@ -2,63 +2,50 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.item.OffsetKeycardReaderItem;
 
+import java.util.List;
+
 public final class UnifiedReaderItems {
     public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<Item> LEVEL_1_READER = reader(
-            "level_1_keycard_reader",
-            ScpAdditionsModBlocks.LEFT_READER,
-            ScpAdditionsModBlocks.RIGHT_READER,
-            ScpAdditionsModItems.RIGHT_READER
-    );
-    public static final RegistryObject<Item> LEVEL_2_READER = reader(
-            "level_2_keycard_reader",
-            ScpAdditionsModBlocks.LV_2_LEFT_READER,
-            ScpAdditionsModBlocks.LV_2_RIGHT_READER,
-            ScpAdditionsModItems.LV_2_RIGHT_READER
-    );
-    public static final RegistryObject<Item> LEVEL_3_READER = reader(
-            "level_3_keycard_reader",
-            ScpAdditionsModBlocks.LV_3_LEFT_READER,
-            ScpAdditionsModBlocks.LV_3_RIGHT_READER,
-            ScpAdditionsModItems.LV_3_RIGHT_READER
-    );
-    public static final RegistryObject<Item> LEVEL_4_READER = reader(
-            "level_4_keycard_reader",
-            ScpAdditionsModBlocks.LV_4_LEFT_READER,
-            ScpAdditionsModBlocks.LV_4_RIGHT_READER,
-            ScpAdditionsModItems.LV_4_RIGHT_READER
-    );
-    public static final RegistryObject<Item> LEVEL_5_READER = reader(
-            "level_5_keycard_reader",
-            ScpAdditionsModBlocks.LV_5_LEFT_READER,
-            ScpAdditionsModBlocks.LV_5_RIGHT_READER,
-            ScpAdditionsModItems.LV_5_RIGHT_READER
-    );
-    public static final RegistryObject<Item> LEVEL_6_READER = reader(
-            "level_6_keycard_reader",
-            ScpAdditionsModBlocks.LV_6_LEFT_READER,
-            ScpAdditionsModBlocks.LV_6_RIGHT_READER,
-            ScpAdditionsModItems.LV_6_RIGHT_READER
-    );
+    /**
+     * The only public reader item. It always places a level 1 reader; its level
+     * is changed in-world with the screwdriver configuration screen.
+     */
+    public static final RegistryObject<Item> KEYCARD_READER = REGISTRY.register("keycard_reader",
+            () -> new OffsetKeycardReaderItem(
+                    ScpAdditionsModBlocks.LEFT_READER.get(),
+                    ScpAdditionsModBlocks.RIGHT_READER,
+                    () -> (BlockItem) ScpAdditionsModItems.RIGHT_READER.get(),
+                    List.of(
+                            ScpAdditionsModBlocks.LEFT_READER,
+                            ScpAdditionsModBlocks.RIGHT_READER,
+                            ScpAdditionsModBlocks.LV_2_LEFT_READER,
+                            ScpAdditionsModBlocks.LV_2_RIGHT_READER,
+                            ScpAdditionsModBlocks.LV_3_LEFT_READER,
+                            ScpAdditionsModBlocks.LV_3_RIGHT_READER,
+                            ScpAdditionsModBlocks.LV_4_LEFT_READER,
+                            ScpAdditionsModBlocks.LV_4_RIGHT_READER,
+                            ScpAdditionsModBlocks.LV_5_LEFT_READER,
+                            ScpAdditionsModBlocks.LV_5_RIGHT_READER,
+                            ScpAdditionsModBlocks.LV_6_LEFT_READER,
+                            ScpAdditionsModBlocks.LV_6_RIGHT_READER
+                    ),
+                    new Item.Properties()
+            ));
+
+    /**
+     * Texture/model intentionally deferred. Shift-right-clicking a reader with
+     * this item opens the access-level configuration screen.
+     */
+    public static final RegistryObject<Item> SCREWDRIVER = REGISTRY.register("screwdriver",
+            () -> new Item(new Item.Properties().stacksTo(1)));
 
     private UnifiedReaderItems() {
-    }
-
-    private static RegistryObject<Item> reader(String id, RegistryObject<Block> leftBlock,
-            RegistryObject<Block> rightBlock, RegistryObject<Item> legacyRightItem) {
-        return REGISTRY.register(id, () -> new OffsetKeycardReaderItem(
-                leftBlock.get(),
-                rightBlock,
-                () -> (BlockItem) legacyRightItem.get(),
-                new Item.Properties()
-        ));
     }
 }

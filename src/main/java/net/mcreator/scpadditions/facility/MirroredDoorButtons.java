@@ -2,10 +2,15 @@ package net.mcreator.scpadditions.facility;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
@@ -15,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -36,6 +42,8 @@ import java.util.List;
  * right-offset model depending on the half of the wall that was clicked.
  */
 public final class MirroredDoorButtons {
+    private static final int TRANSITION_TICKS = 21;
+
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
 
@@ -143,6 +151,40 @@ public final class MirroredDoorButtons {
         }
 
         @Override
+        public InteractionResult use(BlockState blockState, Level level, BlockPos pos,
+                Player player, InteractionHand hand, BlockHitResult hit) {
+            if (state != State.CLOSED && state != State.OPEN) {
+                return InteractionResult.PASS;
+            }
+            if (!level.isClientSide && level instanceof ServerLevel server) {
+                DoorButtonIndependentInteractionEvents.activateButton(server, pos);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+
+        @Override
+        public void onPlace(BlockState blockState, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
+            super.onPlace(blockState, level, pos, oldState, moving);
+            if (!level.isClientSide
+                    && (state == State.OPENING || state == State.CLOSING)) {
+                level.scheduleTick(pos, this, TRANSITION_TICKS);
+            }
+        }
+
+        @Override
+        public void tick(BlockState blockState, ServerLevel level,
+                BlockPos pos, RandomSource random) {
+            State endpoint = state == State.OPENING ? State.OPEN
+                    : state == State.CLOSING ? State.CLOSED : null;
+            if (endpoint == null || level.getBlockState(pos).getBlock() != this) {
+                return;
+            }
+            level.setBlock(pos, blockFor(endpoint).defaultBlockState()
+                    .setValue(FACING, blockState.getValue(FACING)), Block.UPDATE_ALL);
+        }
+
+        @Override
         public boolean isSignalSource(BlockState blockState) {
             return state == State.OPENING || state == State.OPEN;
         }
@@ -151,6 +193,12 @@ public final class MirroredDoorButtons {
         public int getSignal(BlockState blockState, BlockGetter level,
                 BlockPos pos, Direction direction) {
             return isSignalSource(blockState) ? 15 : 0;
+        }
+
+        @Override
+        public int getDirectSignal(BlockState blockState, BlockGetter level,
+                BlockPos pos, Direction direction) {
+            return getSignal(blockState, level, pos, direction);
         }
 
         @Override

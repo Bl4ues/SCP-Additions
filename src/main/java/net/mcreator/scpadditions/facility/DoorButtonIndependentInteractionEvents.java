@@ -14,6 +14,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Optional manual pairing for Unity door buttons.
  *
@@ -24,6 +28,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DoorButtonIndependentInteractionEvents {
     private static final int TRANSITION_TICKS = 21;
+    private static final int HEAVY_DOOR_TRANSITION_TICKS = 24;
 
     private DoorButtonIndependentInteractionEvents() {
     }
@@ -96,6 +101,60 @@ public final class DoorButtonIndependentInteractionEvents {
             }
         });
         return true;
+    }
+
+    /**
+     * Synchronizes only panels that can physically feed the selected heavy-door
+     * controller or its upper redstone relay. This prevents a nearby unrelated
+     * door from having its display changed by SCP-079.
+     *
+     * @return number of functional panels that were synchronized
+     */
+    public static int synchronizeDoorPanels(ServerLevel level, BlockPos doorPos,
+            boolean opening) {
+        if (level == null || doorPos == null) {
+            return 0;
+        }
+
+        Set<BlockPos> panelPositions = new LinkedHashSet<>();
+        for (int yOffset = 0; yOffset <= 2; yOffset++) {
+            BlockPos probe = doorPos.above(yOffset);
+            for (Direction direction : Direction.values()) {
+                BlockPos candidate = probe.relative(direction);
+                BlockState candidateState = level.getBlockState(candidate);
+                if (isFunctional(candidateState.getBlock())
+                        && candidateState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                    panelPositions.add(candidate.immutable());
+                }
+            }
+        }
+
+        if (panelPositions.isEmpty()) {
+            return 0;
+        }
+
+        Phase transition = opening ? Phase.OPENING : Phase.CLOSING;
+        Phase endpoint = opening ? Phase.OPEN : Phase.CLOSED;
+        List<BlockPos> stablePositions = List.copyOf(panelPositions);
+
+        for (BlockPos panelPos : stablePositions) {
+            BlockState panelState = level.getBlockState(panelPos);
+            if (!isFunctional(panelState.getBlock())
+                    || !panelState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                continue;
+            }
+            setState(level, panelPos,
+                    panelState.getValue(HorizontalDirectionalBlock.FACING),
+                    MirroredDoorButtons.isAny(panelState.getBlock()),
+                    transition);
+        }
+
+        ScpAdditionsMod.queueServerWork(HEAVY_DOOR_TRANSITION_TICKS, () -> {
+            for (BlockPos panelPos : stablePositions) {
+                completeTransition(level, panelPos, endpoint);
+            }
+        });
+        return stablePositions.size();
     }
 
     private static void completeTransition(ServerLevel level, BlockPos pos, Phase endpoint) {

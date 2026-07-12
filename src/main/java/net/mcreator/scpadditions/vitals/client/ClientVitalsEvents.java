@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.vitals.client;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
@@ -24,7 +26,9 @@ public final class ClientVitalsEvents {
 
     @SubscribeEvent
     public static void beforeOverlay(RenderGuiOverlayEvent.Pre event) {
-        if (VitalsModule.healthHudEnabled()
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player != null && !player.isCreative() && !player.isSpectator()
+                && VitalsModule.healthHudEnabled()
                 && event.getOverlay().id().equals(VanillaGuiOverlay.PLAYER_HEALTH.id())) {
             event.setCanceled(true);
         }

@@ -18,6 +18,14 @@ public final class ScpInventoryNetwork {
                 ScpInventorySyncPacket::encode,
                 ScpInventorySyncPacket::decode,
                 ScpInventorySyncPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpInventoryRequestSyncPacket.class,
+                ScpInventoryRequestSyncPacket::encode,
+                ScpInventoryRequestSyncPacket::decode,
+                ScpInventoryRequestSyncPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpInventoryFullPacket.class,
+                ScpInventoryFullPacket::encode,
+                ScpInventoryFullPacket::decode,
+                ScpInventoryFullPacket::handle);
     }
 
     public static void sync(ServerPlayer player) {
@@ -26,5 +34,12 @@ public final class ScpInventoryNetwork {
                 ScpAdditionsMod.PACKET_HANDLER.send(
                         PacketDistributor.PLAYER.with(() -> player),
                         new ScpInventorySyncPacket(inventory.serializeNBT())));
+    }
+
+    public static void notifyFull(ServerPlayer player) {
+        if (player == null || player.isCreative() || player.isSpectator()) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new ScpInventoryFullPacket());
     }
 }

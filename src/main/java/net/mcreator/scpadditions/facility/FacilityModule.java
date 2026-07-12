@@ -175,10 +175,8 @@ public final class FacilityModule {
             CreativeModeTab.builder()
                     .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
                     .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
-                    .displayItems((parameters, output) -> {
-                        UBlocksModule.creativeItems().forEach(item -> output.accept(item.get()));
-                        CREATIVE_ITEMS.forEach(item -> output.accept(item.get()));
-                    })
+                    .displayItems((parameters, output) ->
+                            creativeItemsInDisplayOrder().forEach(item -> output.accept(item.get())))
                     .withSearchBar()
                     .build());
 
@@ -198,6 +196,62 @@ public final class FacilityModule {
 
     public static RegistryObject<Item> itemByPath(String path) {
         return ITEMS_BY_PATH.get(path);
+    }
+
+    /**
+     * Stable, curated order for the public facility tab. Registration order is
+     * intentionally not used here because animation states and compatibility
+     * entries are interleaved with the public endpoints.
+     */
+    private static List<RegistryObject<Item>> creativeItemsInDisplayOrder() {
+        List<RegistryObject<Item>> ordered = new ArrayList<>();
+
+        // Frequently used facility props.
+        addFacilityCreativeItem(ordered, "walllight");
+        addFacilityCreativeItem(ordered, "heater");
+        addFacilityCreativeItem(ordered, "sign_support");
+        addFacilityCreativeItem(ordered, "tv");
+        addFacilityCreativeItem(ordered, "trashbin");
+
+        // Public closed endpoints for every door family, preserving the
+        // original family order from this module.
+        addFacilityCreativeItem(ordered, "default_door");
+        addFacilityCreativeItem(ordered, "yellow_closed");
+        addFacilityCreativeItem(ordered, "black_closed");
+        addFacilityCreativeItem(ordered, "normal_door");
+        addFacilityCreativeItem(ordered, "left_log_door");
+        addFacilityCreativeItem(ordered, "right_log_door");
+        addFacilityCreativeItem(ordered, "office_door");
+        addFacilityCreativeItem(ordered, "bath_door");
+        addFacilityCreativeItem(ordered, "ws_dclosed");
+
+        // Main SL1 navigation and wall-detail pieces.
+        addUBlockCreativeItem(ordered, "sl_1_floor_detail_small");
+        addUBlockCreativeItem(ordered, "sl_1_floor_detail_big");
+        addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_bot");
+        addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_mid");
+        addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_top");
+        addUBlockCreativeItem(ordered, "sl_1_wall_detail_2");
+
+        // Preserve the relative order of everything else and suppress entries
+        // already placed above.
+        UBlocksModule.creativeItems().forEach(item -> addUnique(ordered, item));
+        CREATIVE_ITEMS.forEach(item -> addUnique(ordered, item));
+        return ordered;
+    }
+
+    private static void addFacilityCreativeItem(List<RegistryObject<Item>> ordered, String path) {
+        RegistryObject<Item> item = ITEMS_BY_PATH.get(path);
+        if (item != null) addUnique(ordered, item);
+    }
+
+    private static void addUBlockCreativeItem(List<RegistryObject<Item>> ordered, String path) {
+        RegistryObject<Item> item = UBlocksModule.itemByPath(path);
+        if (item != null) addUnique(ordered, item);
+    }
+
+    private static void addUnique(List<RegistryObject<Item>> ordered, RegistryObject<Item> item) {
+        if (!ordered.contains(item)) ordered.add(item);
     }
 
     private static RegistryObject<SoundEvent> sound(String path) {

@@ -74,8 +74,6 @@ public final class UBlocksModule {
     public static final RegistryObject<Block> SL_2_WALL_TOP = structure("sl_2_wall_top");
 
     // Props.
-    public static final RegistryObject<Block> BENCH = directional(
-            "bench", DirectionalShape.BENCH, SoundType.METAL);
     public static final RegistryObject<Block> VENT_OPEN = directional(
             "vent_open", DirectionalShape.VENT, SoundType.METAL);
 
@@ -182,8 +180,7 @@ public final class UBlocksModule {
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return shape == DirectionalShape.BENCH
-                    ? shape.outline(state.getValue(FACING)) : Shapes.empty();
+            return Shapes.empty();
         }
 
         @Override
@@ -193,16 +190,12 @@ public final class UBlocksModule {
     }
 
     private enum DirectionalShape {
-        BENCH,
         FLOOR_DECAL,
         WALL_DECOR,
         VENT;
 
         private VoxelShape outline(Direction facing) {
             return switch (this) {
-                case BENCH -> facing.getAxis() == Direction.Axis.X
-                        ? Block.box(2.0D, 0.0D, 0.0D, 14.0D, 9.0D, 16.0D)
-                        : Block.box(0.0D, 0.0D, 2.0D, 16.0D, 9.0D, 14.0D);
                 case FLOOR_DECAL -> Block.box(0.0D, 0.0D, 0.0D, 16.0D, 0.5D, 16.0D);
                 case WALL_DECOR, VENT -> switch (facing) {
                     case NORTH -> Block.box(0.0D, 0.0D, 14.5D, 16.0D, 16.0D, 16.0D);

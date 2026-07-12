@@ -15,6 +15,10 @@ public final class ScpInventoryClientModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+        event.registerAboveAll("scp_world_prompts",
+                (gui, graphics, partialTick, width, height) ->
+                        ScpWorldPromptClient.render(graphics, width, height,
+                                partialTick));
         event.registerAboveAll("scp_inventory_full",
                 (gui, graphics, partialTick, width, height) ->
                         ClientScpInventoryFullOverlay.render(graphics));

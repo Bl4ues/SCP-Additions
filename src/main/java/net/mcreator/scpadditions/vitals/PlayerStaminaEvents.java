@@ -129,6 +129,18 @@ public final class PlayerStaminaEvents {
         clear(event.getEntity().getUUID());
     }
 
+    public static boolean canSprint(ServerPlayer player) {
+        if (player == null || !VitalsModule.staminaEnabled()
+                || player.isCreative() || player.isSpectator()) {
+            return true;
+        }
+
+        UUID id = player.getUUID();
+        return STAMINA.getOrDefault(id, MAX_STAMINA) > 0.0F
+                && SPRINT_LOCK.getOrDefault(id, 0) <= 0
+                && !StaminaBlockerAccess.isBlocked(player);
+    }
+
     private static boolean isMovingHorizontally(ServerPlayer player) {
         Vec3 movement = player.getDeltaMovement();
         return (movement.x * movement.x + movement.z * movement.z)

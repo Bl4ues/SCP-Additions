@@ -70,6 +70,8 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] custom health HUD cancels only vanilla player hearts, not armor, hunger, air or mount health
 - [ ] `custom_health_enabled=false` restores vanilla hearts and removes only the custom health row
 - [ ] `hud.enabled=false` restores vanilla hearts and hides both custom rows without disabling stamina gameplay
+- [ ] creative and spectator modes never render custom health or stamina rows
+- [ ] changing to creative resets client stamina state without interfering with creative sprint
 - [ ] stamina drains from 100 to 0 over approximately five seconds of moving sprint
 - [ ] stamina waits 20 ticks after sprint expenditure before regenerating
 - [ ] stamina regenerates from 0 to 100 over approximately five seconds
@@ -80,6 +82,12 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] configured `NO_STAMINA` hand and armor items force stamina to zero
 - [ ] future SCP Inventory equipment can register a blocker source without changing stamina code
 - [ ] health damage flash lasts and fades according to the original one-second timing
+- [ ] `horror_movement_enabled=true` applies base walk speed `0.055` in survival
+- [ ] committed sprint input applies base speed `0.110` before the vanilla sprint multiplier
+- [ ] exhausted stamina prevents the horror movement controller from re-enabling sprint
+- [ ] creative and spectator retain vanilla movement speed and sprint behavior
+- [ ] `horror_movement_enabled=false` restores base movement speed `0.100`
+- [ ] logout and respawn clear stale horror-sprint input state
 
 ## Keycards and shared item access
 
@@ -144,7 +152,14 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] Tesla Gate and Tesla Recharge inactive states render alpha as translucent, not black
 - [ ] door collision changes correctly across all animation states
 - [ ] doors cannot become permanently desynchronized
-- [ ] preferred Unity buttons operate doors correctly
+- [ ] original and mirrored Unity buttons both operate doors independently
+- [ ] clicking the right half of the supporting block places a functional left-side mirrored button
+- [ ] manually paired original/mirrored buttons preserve their own geometry through every state
+- [ ] mirrored buttons emit both weak and direct redstone while opening/open
+- [ ] redstone heavy-door opening reaches the fully open endpoint in exactly 24 ticks (1.2 seconds)
+- [ ] redstone heavy-door closing reaches the fully closed endpoint in exactly 24 ticks (1.2 seconds)
+- [ ] default, yellow and black heavy doors share the same exact timing
+- [ ] direct-use wooden door timings remain unchanged
 - [ ] legacy Additions buttons still load in old worlds
 - [ ] keycard readers still use Additions clearance levels
 

@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /** Client-only state and renderer for an authoritative blocked-pickup notice. */
-final class ClientScpInventoryFullOverlay {
+public final class ClientScpInventoryFullOverlay {
     private static final ResourceLocation ICON = new ResourceLocation(
             "scpinventory", "textures/gui/inventoryfull.png");
     private static final ResourceLocation ROBOTO = new ResourceLocation(
@@ -31,7 +31,7 @@ final class ClientScpInventoryFullOverlay {
     private ClientScpInventoryFullOverlay() {
     }
 
-    static void show() {
+    public static void show() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.player.isCreative()
                 || minecraft.player.isSpectator()) {
@@ -42,7 +42,7 @@ final class ClientScpInventoryFullOverlay {
         visibleUntil = now + VISIBLE_DURATION_MS;
     }
 
-    static void render(GuiGraphics graphics) {
+    public static void render(GuiGraphics graphics) {
         Minecraft minecraft = Minecraft.getInstance();
         long now = System.currentTimeMillis();
         if (minecraft.player == null || minecraft.player.isCreative()

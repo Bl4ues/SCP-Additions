@@ -24,6 +24,7 @@ import net.mcreator.scpadditions.entity.Scp131Sounds;
 import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.entity.Scp173TargetConfig;
 import net.mcreator.scpadditions.facility.FacilityModule;
+import net.mcreator.scpadditions.facility.UBlocksModule;
 import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
 import net.mcreator.scpadditions.facility.LeftDoorButtons;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
@@ -69,6 +70,7 @@ public class ScpAdditionsMod {
 		ScpAdditionsModEntities.REGISTRY.register(bus);
 
 		ScpAdditionsModTabs.REGISTRY.register(bus);
+		UBlocksModule.register(bus);
 		FacilityModule.register(bus);
 		MirroredDoorButtons.register(bus);
 		LeftDoorButtons.register(bus);

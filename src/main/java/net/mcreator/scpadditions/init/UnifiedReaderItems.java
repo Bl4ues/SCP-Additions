@@ -42,7 +42,7 @@ public final class UnifiedReaderItems {
             ));
 
     /**
-     * Texture/model intentionally deferred. Shift-right-clicking a reader with
+     * Shift-right-clicking a reader with
      * this item opens the access-level configuration screen.
      */
     public static final RegistryObject<Item> SCREWDRIVER = REGISTRY.register("screwdriver",

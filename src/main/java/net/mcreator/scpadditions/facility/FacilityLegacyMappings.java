@@ -28,9 +28,25 @@ public final class FacilityLegacyMappings {
             }
         }
 
+        for (MissingMappingsEvent.Mapping<Block> mapping :
+                event.getMappings(ForgeRegistries.Keys.BLOCKS, UBlocksModule.LEGACY_MODID)) {
+            RegistryObject<Block> replacement = UBlocksModule.blockByPath(mapping.getKey().getPath());
+            if (replacement != null && replacement.isPresent()) {
+                mapping.remap(replacement.get());
+            }
+        }
+
         for (MissingMappingsEvent.Mapping<Item> mapping :
                 event.getMappings(ForgeRegistries.Keys.ITEMS, FacilityModule.LEGACY_MODID)) {
             RegistryObject<Item> replacement = FacilityModule.itemByPath(mapping.getKey().getPath());
+            if (replacement != null && replacement.isPresent()) {
+                mapping.remap(replacement.get());
+            }
+        }
+
+        for (MissingMappingsEvent.Mapping<Item> mapping :
+                event.getMappings(ForgeRegistries.Keys.ITEMS, UBlocksModule.LEGACY_MODID)) {
+            RegistryObject<Item> replacement = UBlocksModule.itemByPath(mapping.getKey().getPath());
             if (replacement != null && replacement.isPresent()) {
                 mapping.remap(replacement.get());
             }

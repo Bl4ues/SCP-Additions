@@ -188,6 +188,21 @@ processResources {
             }
         }
 
+        // SCP UBlocks follows the same consolidation rule: registry-facing
+        // blockstates and item models are copied into scp_additions, while the
+        // original namespace remains the library for block/custom models and textures.
+        def ublocksAssets = file("$buildDir/resources/main/assets/scp_ublocks")
+        if (ublocksAssets.exists()) {
+            project.copy {
+                from new File(ublocksAssets, 'blockstates')
+                into new File(additionsAssets, 'blockstates')
+            }
+            project.copy {
+                from new File(ublocksAssets, 'models/item')
+                into new File(additionsAssets, 'models/item')
+            }
+        }
+
         // Copy loot tables, recipes and other namespace-owned data into the new
         // namespace. Also rewrite tag entries under data/minecraft so mineable
         // and tool tags point to the migrated registry IDs.
@@ -217,6 +232,7 @@ processResources {
         def baseLangFile = new File(langDir, 'en_us.json')
         def langPatchFile = file('src/main/resources/assets/scp_additions/lang/en_us_3_0.json')
         def legacyLangFile = file('src/main/resources/assets/scp_unity_extra_blocks/lang/en_us.json')
+        def ublocksLangFile = file('src/main/resources/assets/scp_ublocks/lang/en_us.json')
         if (baseLangFile.exists()) {
             def baseLang = parser.parse(baseLangFile)
 
@@ -228,6 +244,18 @@ processResources {
                     }
                     if (key.startsWith('item.scp_unity_extra_blocks.')) {
                         baseLang[key.replace('item.scp_unity_extra_blocks.', 'item.scp_additions.')] = value
+                    }
+                }
+            }
+
+            if (ublocksLangFile.exists()) {
+                def ublocksLang = parser.parse(ublocksLangFile)
+                ublocksLang.each { key, value ->
+                    if (key.startsWith('block.scp_ublocks.')) {
+                        baseLang[key.replace('block.scp_ublocks.', 'block.scp_additions.')] = value
+                    }
+                    if (key.startsWith('item.scp_ublocks.')) {
+                        baseLang[key.replace('item.scp_ublocks.', 'item.scp_additions.')] = value
                     }
                 }
             }
@@ -256,7 +284,7 @@ processResources {
         // The source recordings are intentionally kept untouched. Double the
         // effective volume of every sound entry from all integrated namespaces
         // in the processed JAR so the entire mod can be evaluated consistently.
-        ['scp_additions', 'scpinventory', 'scp_unity_extra_blocks'].each { namespace ->
+        ['scp_additions', 'scpinventory', 'scp_unity_extra_blocks', 'scp_ublocks'].each { namespace ->
             File soundsFile = file("$buildDir/resources/main/assets/${namespace}/sounds.json")
             if (!soundsFile.exists()) return
 

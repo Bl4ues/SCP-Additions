@@ -38,7 +38,8 @@ public final class PlayerVitalsOverlay {
             int screenHeight, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (player == null || minecraft.screen != null || minecraft.options.hideGui
+        if (player == null || player.isCreative() || player.isSpectator()
+                || minecraft.screen != null || minecraft.options.hideGui
                 || !VitalsModule.anyHudEnabled()) {
             return;
         }

@@ -1,0 +1,11 @@
+{
+  "page": {
+    "subtitle": "subtitles.page",
+    "sounds": [
+      {
+        "name": "scp_ublocks:page",
+        "stream": false
+      }
+    ]
+  }
+}

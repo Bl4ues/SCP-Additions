@@ -16,9 +16,22 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
+import net.mcreator.scpadditions.entity.Scp131Sounds;
+import net.mcreator.scpadditions.entity.Scp173Sounds;
+import net.mcreator.scpadditions.entity.Scp173TargetConfig;
+import net.mcreator.scpadditions.facility.FacilityModule;
+import net.mcreator.scpadditions.facility.UBlocksModule;
+import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
+import net.mcreator.scpadditions.facility.LeftDoorButtons;
+import net.mcreator.scpadditions.facility.MirroredDoorButtons;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
+import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
+import net.mcreator.scpadditions.init.Scp131Items;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
@@ -27,6 +40,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
+import net.mcreator.scpadditions.init.UnifiedReaderItems;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -46,18 +60,31 @@ public class ScpAdditionsMod {
 		MinecraftForge.EVENT_BUS.register(this);
 		IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 		ScpAdditionsModSounds.REGISTRY.register(bus);
+		Scp131Sounds.REGISTRY.register(bus);
+		Scp173Sounds.REGISTRY.register(bus);
 		ScpAdditionsModBlocks.REGISTRY.register(bus);
 		ScpAdditionsModBlockEntities.REGISTRY.register(bus);
 		ScpAdditionsModItems.REGISTRY.register(bus);
+		UnifiedReaderItems.REGISTRY.register(bus);
+		Scp131Items.REGISTRY.register(bus);
 		ScpAdditionsModEntities.REGISTRY.register(bus);
 
 		ScpAdditionsModTabs.REGISTRY.register(bus);
-
+		UBlocksModule.register(bus);
+		FacilityModule.register(bus);
+		MirroredDoorButtons.register(bus);
+		LeftDoorButtons.register(bus);
+		HeavyDoorPowerRelay.register(bus);
 		StructureFeature.REGISTRY.register(bus);
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);
-
 		ScpAdditionsModMenus.REGISTRY.register(bus);
+		ScpEntityNetwork.register();
+		com.bl4ues.scpinventory.network.ModNetwork.register();
 
+		ScpAdditionsModulesConfig.load();
+		ScpInventoryConfig.reload();
+		Scp173TargetConfig.load();
+		StaminaItemEffectConfig.load();
 		Scp294DrinkManager.loadFromConfig();
 		Scp914RecipeManager.loadFromConfig();
 	}
@@ -83,8 +110,7 @@ public class ScpAdditionsMod {
 			List<AbstractMap.SimpleEntry<Runnable, Integer>> actions = new ArrayList<>();
 			workQueue.forEach(work -> {
 				work.setValue(work.getValue() - 1);
-				if (work.getValue() == 0)
-					actions.add(work);
+				if (work.getValue() == 0) actions.add(work);
 			});
 			actions.forEach(e -> e.getKey().run());
 			workQueue.removeAll(actions);

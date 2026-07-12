@@ -1,0 +1,9 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/left_log_1",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/logdoor",
+    "particle": "scp_unity_extra_blocks:block/logdoor",
+    "1": "scp_unity_extra_blocks:block/logisticsdoor"
+  },
+  "render_type": "translucent"
+}

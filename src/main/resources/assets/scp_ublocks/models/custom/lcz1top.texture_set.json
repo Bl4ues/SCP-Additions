@@ -1,0 +1,8 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:texture_set": {
+    "color": "lcz1top",
+    "metalness_emissive_roughness": "lcz1top_mer",
+    "heightmap": "lcz1top_height"
+  }
+}

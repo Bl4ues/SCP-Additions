@@ -1,0 +1,10 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/trash",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/trashpic",
+    "particle": "scp_unity_extra_blocks:block/trashpic",
+    "0": "scp_unity_extra_blocks:block/trash",
+    "1": "scp_unity_extra_blocks:block/trashbin"
+  },
+  "render_type": "translucent"
+}

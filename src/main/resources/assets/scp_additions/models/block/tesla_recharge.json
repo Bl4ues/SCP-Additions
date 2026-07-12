@@ -4,7 +4,7 @@
     "all": "scp_additions:block/tesla",
     "particle": "scp_additions:block/tesla",
     "3": "scp_additions:block/warning",
-    "4": "scp_additions:block/teslagate"
+    "4": "scp_additions:block/teslagate2"
   },
-  "render_type": "cutout"
+  "render_type": "translucent"
 }

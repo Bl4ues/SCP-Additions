@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_unity_extra_blocks:block/skyroom_block",
+    "up": "scp_unity_extra_blocks:block/skyroom_block",
+    "north": "scp_unity_extra_blocks:block/skyroom_top",
+    "east": "scp_unity_extra_blocks:block/skyroom_top",
+    "south": "scp_unity_extra_blocks:block/skyroom_top",
+    "west": "scp_unity_extra_blocks:block/skyroom_top",
+    "particle": "scp_unity_extra_blocks:block/skyroom_block"
+  },
+  "render_type": "solid"
+}

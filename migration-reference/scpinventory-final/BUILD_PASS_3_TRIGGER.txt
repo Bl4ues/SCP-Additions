@@ -1,0 +1,1 @@
+final canonical compile after bootstrap adapter

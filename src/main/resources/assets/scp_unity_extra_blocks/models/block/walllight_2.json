@@ -1,0 +1,9 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/wall_light_2",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/wall_light",
+    "particle": "scp_unity_extra_blocks:block/wall_light",
+    "0": "scp_unity_extra_blocks:block/wall_light"
+  },
+  "render_type": "solid"
+}

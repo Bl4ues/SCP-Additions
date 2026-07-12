@@ -1,0 +1,9 @@
+{
+  "parent": "scp_ublocks:custom/sl1_wall_detail_top",
+  "textures": {
+    "all": "scp_ublocks:block/lcz1top",
+    "particle": "scp_ublocks:block/lcz1top",
+    "0": "scp_ublocks:block/lcz1top"
+  },
+  "render_type": "solid"
+}

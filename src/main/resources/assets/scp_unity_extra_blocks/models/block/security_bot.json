@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_unity_extra_blocks:block/security_top",
+    "up": "scp_unity_extra_blocks:block/security_top",
+    "north": "scp_unity_extra_blocks:block/security_bot",
+    "east": "scp_unity_extra_blocks:block/security_bot",
+    "south": "scp_unity_extra_blocks:block/security_bot",
+    "west": "scp_unity_extra_blocks:block/security_bot",
+    "particle": "scp_unity_extra_blocks:block/security_top"
+  },
+  "render_type": "solid"
+}

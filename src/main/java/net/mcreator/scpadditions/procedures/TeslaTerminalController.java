@@ -2,28 +2,19 @@ package net.mcreator.scpadditions.procedures;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
+import net.mcreator.scpadditions.integration.PlayerItemAccess;
 
 public final class TeslaTerminalController {
 	private TeslaTerminalController() {
 	}
 
 	public static boolean hasSecurityCredentials(Player player) {
-		if (player == null) {
-			return false;
-		}
-		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-			ItemStack stack = player.getInventory().getItem(i);
-			if (stack.is(ScpAdditionsModItems.SECURITY_CREDENTIALS.get())) {
-				return true;
-			}
-		}
-		return false;
+		return PlayerItemAccess.has(player, stack -> stack.is(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
 	}
 
 	public static void enableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {

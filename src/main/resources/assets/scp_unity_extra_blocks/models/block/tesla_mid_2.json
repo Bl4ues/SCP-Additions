@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_unity_extra_blocks:block/default",
+    "up": "scp_unity_extra_blocks:block/default",
+    "north": "scp_unity_extra_blocks:block/tesla_mid_2",
+    "east": "scp_unity_extra_blocks:block/tesla_mid_2",
+    "south": "scp_unity_extra_blocks:block/tesla_mid_2",
+    "west": "scp_unity_extra_blocks:block/tesla_mid_2",
+    "particle": "scp_unity_extra_blocks:block/default"
+  },
+  "render_type": "solid"
+}

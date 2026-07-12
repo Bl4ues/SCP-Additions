@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -42,7 +41,10 @@ public class SCP079SystemControlBlock extends Block implements SimpleWaterlogged
 	@Override
 	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
-		list.add(Component.literal("Activate it with redstone to give control to SCP-079."));
+		list.add(Component.literal("Power with redstone to grant SCP-079 control of the facility."));
+		list.add(Component.literal("It may open doors for threats or occasionally close an open door ahead of a player."));
+		list.add(Component.literal("Heavy doors require a functional button, keycard reader, or connected legacy Facility Pulse Node."));
+		list.add(Component.literal("Locked buttons and doors without a valid control interface cannot be manipulated."));
 	}
 
 	@Override
@@ -93,8 +95,33 @@ public class SCP079SystemControlBlock extends Block implements SimpleWaterlogged
 	}
 
 	@Override
-	public void neighborChanged(BlockState blockstate, Level world, BlockPos pos, Block neighborBlock, BlockPos fromPos, boolean moving) {
+	public void onPlace(BlockState state, Level world, BlockPos pos,
+			BlockState oldState, boolean moving) {
+		super.onPlace(state, world, pos, oldState, moving);
+		if (!world.isClientSide && state.getBlock() != oldState.getBlock()) {
+			updateFacilityControl(world, pos);
+		}
+	}
+
+	@Override
+	public void neighborChanged(BlockState blockstate, Level world, BlockPos pos,
+			Block neighborBlock, BlockPos fromPos, boolean moving) {
 		super.neighborChanged(blockstate, world, pos, neighborBlock, fromPos, moving);
+		if (!world.isClientSide) {
+			updateFacilityControl(world, pos);
+		}
+	}
+
+	@Override
+	public void onRemove(BlockState state, Level world, BlockPos pos,
+			BlockState newState, boolean moving) {
+		if (!world.isClientSide && state.getBlock() != newState.getBlock()) {
+			SCP079SystemControlOffProcedure.execute(world);
+		}
+		super.onRemove(state, world, pos, newState, moving);
+	}
+
+	private static void updateFacilityControl(Level world, BlockPos pos) {
 		if (world.getBestNeighborSignal(pos) > 0) {
 			SCP079SystemControlPProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
 		} else {

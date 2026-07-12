@@ -1,0 +1,2902 @@
+{
+  "_comment": "Context interaction prompts for SCP Inventory. Copy entries from examples into interactions and adjust anchor.position as a local 0..1 block coordinate. position [0.5,0.5,0.05] means centered on the front face before rotation.",
+  "interactions": [
+    {
+      "type": "block",
+      "id": "minecraft:oak_door",
+      "range": 2.8,
+      "priority": 30,
+      "action": "Open",
+      "name": "Door",
+      "icon": "hand",
+      "anchor": {
+        "position": [
+          0.813,
+          0.082,
+          0.213
+        ],
+        "rotateWith": "auto"
+      },
+      "click": {
+        "face": "front"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Door",
+        "showAction": true,
+        "showName": true
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:lever",
+      "range": 2.25,
+      "priority": 30,
+      "action": "Use",
+      "name": "Lever",
+      "anchor": {
+        "position": [
+          0.512,
+          0.375,
+          0.512
+        ],
+        "rotateWith": "auto"
+      },
+      "click": {
+        "face": "front"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Lever",
+        "showAction": true,
+        "showName": true
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:chest",
+      "range": 2.6,
+      "priority": 70,
+      "action": "Open",
+      "name": "Chest",
+      "anchor": {
+        "position": [
+          0.5,
+          0.58,
+          0.08
+        ],
+        "rotateWith": "auto"
+      },
+      "click": {
+        "face": "front"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:bell",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Ring",
+        "nameMode": "manual",
+        "name": "Bell",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.489,
+          0.65,
+          0.519
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:oak_trapdoor",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Oak Trapdoor",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.098,
+          0.188,
+          0.494
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:brewing_stand",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Brewing Stand",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:crafting_table",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Crafting Table",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1.0,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:furnace",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Furnace",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          1.0,
+          0.157,
+          0.493
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:stonecutter",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Stonecutter",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.488,
+          0.563,
+          0.485
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:hopper",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Hopper",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "minecraft:anvil",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Anvil",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.525,
+          1.0,
+          0.505
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_roff",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Button (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.089,
+          0.18,
+          0.859
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_loff",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Button (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.127,
+          0.152,
+          0.859
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_lon",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Button (Left) ON",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:normal_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Normal Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.148,
+          1.064,
+          0.206
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Normal Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.012,
+          1.078,
+          1.011
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:left_log_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Left Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.091,
+          1.069,
+          0.177
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:left_log_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.019,
+          1.085,
+          1.063
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:right_log_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Right Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.899,
+          1.069,
+          0.183
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:right_log_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Right Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.002,
+          1.069,
+          1.073
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:office_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Office Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.06,
+          1.078,
+          0.22
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:office_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Office Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.999,
+          1.131,
+          1.172
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:bath_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Bathroom Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.173,
+          1.032,
+          0.206
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:bath_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Bathroom Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.984,
+          1.091,
+          -0.555
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:ws_dclosed",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Workshop Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.903,
+          1.032,
+          0.156
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:ws_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Workshop Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.001,
+          1.032,
+          1.188
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:right_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 1 Keycard Reader (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.116,
+          0.177,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_2_right_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 2 Keycard Reader (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.142,
+          0.12,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_3_right_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 3 Keycard Reader (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.137,
+          0.075,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_4_right_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 4 Keycard Reader (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.146,
+          0.051,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_5_right_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 5 Keycard Reader (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.144,
+          0.101,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_6_right_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 6 Keycard Reader (Right)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.138,
+          0.13,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_6_left_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 6 Keycard Reader (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.172,
+          0.108,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_5_left_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 5 Keycard Reader (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.163,
+          0.124,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_4_left_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 4 Keycard Reader (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.131,
+          0.135,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_3_left_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 3 Keycard Reader (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.159,
+          0.085,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:lv_2_left_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 2 Keycard Reader (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.136,
+          0.15,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_294",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "SCP-294",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.586,
+          1.292,
+          0.0
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_330",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Take Candy",
+        "nameMode": "manual",
+        "name": "SCP-330",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.49,
+          0.125,
+          0.419
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_426",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Touch",
+        "nameMode": "manual",
+        "name": "SCP-426",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.502,
+          0.294,
+          0.178
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_902_closed",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "SCP-902",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.531,
+          0.468,
+          0.25
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_902_open",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Close",
+        "nameMode": "manual",
+        "name": "SCP-902",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.491,
+          0.65,
+          0.812
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_914_key_wind",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Wind",
+        "nameMode": "manual",
+        "name": "Key",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.491,
+          0.872,
+          0.813
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_914dial_1to_1",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Dial",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.499,
+          0.302,
+          0.813
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_1176",
+      "range": 1.75,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Drink",
+        "nameMode": "manual",
+        "name": "SCP-1176-1",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.872,
+          0.219,
+          -0.725
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpo:scp_458",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "SCP-458",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.511,
+          0.063,
+          0.509
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "zombie_plague:canister",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Canister",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.495,
+          1.087,
+          -0.012
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "zombie_plague:canister_open",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Close",
+        "nameMode": "manual",
+        "name": "Canister",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.53,
+          1.338,
+          0.865
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_914dial_coarse",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Dial",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.499,
+          0.302,
+          0.813
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_914dial_rough",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Dial",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.499,
+          0.305,
+          0.813
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_914dial_fine",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Dial",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.499,
+          0.305,
+          0.813
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:scp_914dial_very_fine",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Dial",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.515,
+          0.285,
+          0.813
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "panacea:panacea_container_5",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-500",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.494,
+          0.5,
+          0.513
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "panacea:panacea_container_4",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-500",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.497,
+          0.5,
+          0.504
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "panacea:panacea_container_3",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-500",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.491,
+          0.5,
+          0.527
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "panacea:panacea_container_2",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-500",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.491,
+          0.5,
+          0.521
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "panacea:panacea_container_0",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-500",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.494,
+          0.5,
+          0.526
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "a_bad_composition:iron_box",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Iron Box",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "a_bad_composition:iron_box_with_scp_012",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Containment Box",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "a_bad_composition:iron_box_open_with_scp_012",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Iron Box",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "computercraft:computer_advanced",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Terminal",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.45,
+          0.25,
+          -1.2
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:button_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Door Button Open",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.156,
+          -0.058,
+          0.887
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_unity_extra_blocks:button_closed",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Door Button Closed",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.154,
+          -0.073,
+          0.887
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:grate_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Grate Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.973,
+          1.033,
+          0.125
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:opened_grate_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Opened Grate Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.188,
+          1.025,
+          0.878
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "create:depot",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Depot",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.518,
+          0.813,
+          0.46
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:lever",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Lever",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.493,
+          1.0,
+          0.296
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:powered_lever",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Turn",
+        "nameMode": "manual",
+        "name": "Lever",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.502,
+          1.0,
+          0.507
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:locker_1x",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Locker",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.338,
+          1.027,
+          0.375
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:tall_lockers_bottom",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Locker",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.408,
+          1.034,
+          0.375
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scpfr:crate",
+      "range": 1.5,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Crate",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.499,
+          0.65,
+          0.541
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "sp:monitor",
+      "range": 1.5,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Monitor",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.507,
+          0.49,
+          0.188
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "oleng:red_cage",
+      "range": 1.0,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Pull",
+        "nameMode": "manual",
+        "name": "Red Cage",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.484,
+          1.217,
+          0.125
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:tesla_terminal_block",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Terminal",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.517,
+          0.261,
+          0.0
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "management_wanted:bathroom_stall",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Open",
+        "nameMode": "manual",
+        "name": "Stall",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          1.132,
+          1.279,
+          0.0
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "back"
+      }
+    },
+    {
+      "type": "block",
+      "id": "management_wanted:bathroom_stall_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Close",
+        "nameMode": "manual",
+        "name": "Stall",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          -0.35,
+          1.35,
+          -1.45
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "scpinventory:scp_131_a",
+      "range": 2.25,
+      "priority": 25,
+      "useItem": "hand",
+      "text": {
+        "action": "Make SCP-131 follow you",
+        "nameMode": "manual",
+        "name": "SCP-131-A",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "scpinventory:scp_131_b",
+      "range": 2.25,
+      "priority": 25,
+      "useItem": "hand",
+      "text": {
+        "action": "Make SCP-131 follow you",
+        "nameMode": "manual",
+        "name": "SCP-131-B",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "gas_mask:scp_1499",
+      "range": 2.25,
+      "priority": 25,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-1499",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "encyclopedia_of_common_diseases:scp_1025",
+      "range": 2.25,
+      "priority": 25,
+      "useItem": "hand",
+      "text": {
+        "action": "Take",
+        "nameMode": "manual",
+        "name": "SCP-1025",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:left_reader",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "card",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Level 1 Keycard Reader (Left)",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.124,
+          0.136,
+          0.85
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_closed",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Door Button Closed",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.157,
+          0.03,
+          0.888
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_closed_left",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "block.scp_additions.button_close",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.175,
+          0.005,
+          0.88
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_open_left",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "block.scp_additions.button_open_",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          1.175,
+          0.011,
+          0.906
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:normal_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Normal Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.204,
+          1.08,
+          0.197
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:door_open",
+      "range": 2.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Normal Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.972,
+          1.118,
+          1.003
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:left_log_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Left Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.137,
+          1.077,
+          0.197
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:right_log_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Right Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.836,
+          1.096,
+          0.147
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:left_log_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.974,
+          1.106,
+          1.103
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:right_log_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Right Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.058,
+          0.978,
+          1.003
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:office_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Office Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.036,
+          0.949,
+          0.197
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:office_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Office Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.992,
+          1.033,
+          1.103
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:bath_door",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Bathroom Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.258,
+          1.062,
+          0.147
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:ws_dclosed",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Workshop Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.865,
+          1.076,
+          0.197
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:bath_door_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Bathroom Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.944,
+          1.09,
+          -0.603
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:ws_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Workshop Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.018,
+          1.102,
+          1.103
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_additions:button_open",
+      "range": 1.25,
+      "priority": 30,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Door Button Open",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          -0.19,
+          0.033,
+          0.888
+        ],
+        "rotateWith": "auto"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "scp_additions:scp_131_b",
+      "range": 2.25,
+      "priority": 25,
+      "useItem": "hand",
+      "text": {
+        "action": "Make SCP-131 follow you",
+        "nameMode": "manual",
+        "name": "SCP-131-B",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "scp_additions:scp_131_a",
+      "range": 2.25,
+      "priority": 25,
+      "useItem": "hand",
+      "text": {
+        "action": "Make SCP-131 follow you",
+        "nameMode": "manual",
+        "name": "SCP-131-A",
+        "showAction": true,
+        "showName": true
+      },
+      "anchor": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "front"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "type": "block",
+      "id": "minecraft:stone_button",
+      "range": 2.25,
+      "action": "Use",
+      "name": "Button",
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.05
+        ],
+        "rotateWith": "auto"
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "minecraft:villager",
+      "range": 2.0,
+      "action": "Talk",
+      "nameMode": "auto"
+    }
+  ]
+}

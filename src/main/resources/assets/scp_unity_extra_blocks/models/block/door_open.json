@@ -1,0 +1,9 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/d_door_open",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/door",
+    "particle": "scp_unity_extra_blocks:block/door",
+    "0": "scp_unity_extra_blocks:block/normal_door"
+  },
+  "render_type": "translucent"
+}

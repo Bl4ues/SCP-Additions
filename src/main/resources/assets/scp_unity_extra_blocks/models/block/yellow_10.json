@@ -1,0 +1,11 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/yellow_10",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/yellow_texture",
+    "particle": "scp_unity_extra_blocks:block/yellow_texture",
+    "0": "scp_unity_extra_blocks:block/doorframe",
+    "1": "scp_unity_extra_blocks:block/knob_yellow",
+    "2": "scp_unity_extra_blocks:block/yellow_door"
+  },
+  "render_type": "cutout"
+}

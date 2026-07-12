@@ -1,0 +1,22 @@
+{
+  "block.scp_ublocks.sl_1_floor_detail_small": "SL1 Small Floor Arrow",
+  "block.scp_ublocks.sl_1_wall_top": "SL1 wall top",
+  "block.scp_ublocks.sl_1_floor_detail_big": "SL1 Big Floor Arrow",
+  "item_group.scp_ublocks.scp_ublocks": "SCP Unity blocks",
+  "death.attack.cardiac": "%1$s died after a cardiac arrest.",
+  "block.scp_ublocks.sl_1_wall_detail_1_mid": "SL1 Middle Wall Detail ",
+  "block.scp_ublocks.sl_1_wall_detail_1_top": "SL1 Top Wall Detail ",
+  "block.scp_ublocks.sl_2_wall_top": "SL2 wall top",
+  "block.scp_ublocks.bench": "Bench",
+  "block.scp_ublocks.sl_1_floor_2": "SL1 floor block 2",
+  "block.scp_ublocks.sl_1_floor_1": "SL1 floor block 1",
+  "subtitles.page": "Page flipping",
+  "block.scp_ublocks.sl_2_wall_mid": "SL2 wall middle",
+  "block.scp_ublocks.sl_1_wall_detail_2": "SL1 Pillar Wall Detail ",
+  "block.scp_ublocks.sl_2_wall_bot": "SL2 wall bottom",
+  "block.scp_ublocks.sl_1_wall_detail_1_bot": "SL1 Bottom Wall Detail ",
+  "block.scp_ublocks.sl1_wall_bot": "SL1 wall bottom",
+  "block.scp_ublocks.sl_2_floor": "SL2 floor",
+  "block.scp_ublocks.sl1_wall_mid": "SL1 wall middle",
+  "block.scp_ublocks.vent_open": "Vent"
+}

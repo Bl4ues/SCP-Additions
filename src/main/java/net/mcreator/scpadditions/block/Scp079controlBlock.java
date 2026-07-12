@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -43,6 +42,8 @@ public class Scp079controlBlock extends Block implements SimpleWaterloggedBlock 
 	@Override
 	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
+		list.add(Component.literal("Active Facility Pulse Node: currently emitting redstone under SCP-079 control."));
+		list.add(Component.literal("It returns to its inactive state when Facility Control is disabled."));
 	}
 
 	@Override

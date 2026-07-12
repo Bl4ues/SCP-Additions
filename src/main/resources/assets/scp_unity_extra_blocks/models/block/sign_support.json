@@ -1,0 +1,10 @@
+{
+  "parent": "scp_unity_extra_blocks:custom/sign_support",
+  "textures": {
+    "all": "scp_unity_extra_blocks:block/glass",
+    "particle": "scp_unity_extra_blocks:block/glass",
+    "1": "scp_unity_extra_blocks:block/glass",
+    "2": "scp_unity_extra_blocks:block/metal"
+  },
+  "render_type": "translucent"
+}

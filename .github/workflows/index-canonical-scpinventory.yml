@@ -1,0 +1,31 @@
+name: Index canonical SCP Inventory sources
+
+on:
+  push:
+    branches:
+      - integration/scp-additions-3.0
+
+permissions:
+  contents: write
+
+jobs:
+  index:
+    if: contains(github.event.head_commit.message, 'index canonical SCP Inventory sources')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate canonical file index
+        run: |
+          find migration-reference/scpinventory-final/java/com/bl4ues/scpinventory -type f \
+            | sed 's#migration-reference/scpinventory-final/java/##' \
+            | sort > migration-reference/scpinventory-final/FILELIST.txt
+      - name: Commit index
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add migration-reference/scpinventory-final/FILELIST.txt
+          git commit -m "chore(inventory): index canonical final sources"
+          git push origin HEAD:integration/scp-additions-3.0

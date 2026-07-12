@@ -1,18 +1,36 @@
 modLoader="javafml"
 loaderVersion="[47,)"
-license="Creative Commons Sharealike 3.0"
+license="Creative Commons Attribution-ShareAlike 3.0"
 
 [[mods]]
 modId="scp_additions"
-version="2.0.2"
+version="3.0.0"
 displayName="SCP Additions"
 authors="Bl4ues"
+description='''
+SCP Additions 3.0 — Mega SCP Unity Update.
+Combines the existing SCP Additions content with the SCP Inventory gameplay systems and SCP Unity-inspired facility content.
+'''
 
 [[dependencies.scp_additions]]
     modId="minecraft"
     mandatory=true
     versionRange="[1.20.1]"
     ordering="NONE"
+    side="BOTH"
+
+[[dependencies.scp_additions]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47.4.10,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.scp_additions]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="[4.4.9,)"
+    ordering="AFTER"
     side="BOTH"
 
 [[dependencies.scp_additions]]

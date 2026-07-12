@@ -27,6 +27,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
 	private static final int TEX_W = 1410;
 	private static final int TEX_H = 1080;
+	private static final ResourceLocation ROBOTO_FONT = new ResourceLocation("scpinventory", "roboto");
 	private static final ResourceLocation SCREEN_ON = screen("1");
 	private static final ResourceLocation SCREEN_STANDBY_DISABLE = screen("2");
 	private static final ResourceLocation SCREEN_OFF = screen("3");
@@ -118,7 +119,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(1278, 77, 0);
 		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
-		guiGraphics.drawString(this.font, Component.literal(text), 0, 0, color, false);
+		guiGraphics.drawString(this.font, Component.literal(text).withStyle(style -> style.withFont(ROBOTO_FONT)), 0, 0, color, false);
 		guiGraphics.pose().popPose();
 	}
 

@@ -1,0 +1,23 @@
+{
+  "inventory": {
+    "enabled": true
+  },
+  "interactions": {
+    "enabled": true
+  },
+  "hud": {
+    "enabled": true
+  },
+  "vitals": {
+    "custom_health_enabled": true,
+    "stamina_enabled": true,
+    "horror_movement_enabled": true
+  },
+  "blink": {
+    "enabled": true
+  },
+  "scp_173": {
+    "natural_spawn_enabled": true,
+    "enabled": true
+  }
+}

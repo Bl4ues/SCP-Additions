@@ -13,6 +13,8 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -22,10 +24,8 @@ import java.util.function.Supplier;
 
 /**
  * One public item for every legacy left/right keycard-reader block variant.
- *
- * Readers still use the old offset logical block because it carries the
- * redstone implementation. The item shifts that logical block so the visible
- * reader appears exactly on the half of the wall the player clicked.
+ * The clicked wall face, not player yaw, defines both orientation and which
+ * lateral half was selected.
  */
 public final class OffsetKeycardReaderItem extends BlockItem {
     private final Supplier<? extends Block> rightPlacementBlock;
@@ -45,53 +45,62 @@ public final class OffsetKeycardReaderItem extends BlockItem {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (context.getPlayer() == null || context.getClickedFace().getAxis() == Direction.Axis.Y) {
+        if (context.getPlayer() == null
+                || context.getClickedFace().getAxis() == Direction.Axis.Y) {
             return InteractionResult.FAIL;
         }
 
         BlockPlaceContext originalPlacement = new BlockPlaceContext(context);
         BlockPos visualPosition = originalPlacement.getClickedPos();
 
-        // Matches the FACING value used by the existing reader block classes.
-        Direction readerFacing = context.getPlayer().getDirection().getOpposite();
+        Direction readerFacing = context.getClickedFace();
         Direction screenLeft = readerFacing.getClockWise();
 
         Vec3 clickedBlockCenter = Vec3.atCenterOf(context.getClickedPos());
         Vec3 offsetFromCenter = context.getClickLocation().subtract(clickedBlockCenter);
         double leftCoordinate = offsetFromCenter.x * screenLeft.getStepX()
                 + offsetFromCenter.z * screenLeft.getStepZ();
-
         boolean clickedLeftHalf = leftCoordinate >= 0.0D;
 
-        // Right model is offset right from its logical block, so its logical
-        // block goes left. The left model follows the inverse rule.
-        Direction logicalShift = clickedLeftHalf ? screenLeft : screenLeft.getOpposite();
+        // Preserve the existing model-to-logical-anchor mapping; only the basis
+        // used to evaluate left/right has changed from player yaw to wall face.
+        Direction logicalShift = clickedLeftHalf
+                ? screenLeft : screenLeft.getOpposite();
         BlockPos logicalPosition = visualPosition.relative(logicalShift);
 
         BlockHitResult shiftedHit = new BlockHitResult(
                 Vec3.atCenterOf(logicalPosition),
-                context.getClickedFace(),
+                readerFacing,
                 logicalPosition,
-                false
-        );
+                false);
         BlockPlaceContext shiftedPlacement = new BlockPlaceContext(
                 context.getLevel(),
                 context.getPlayer(),
                 context.getHand(),
                 context.getItemInHand(),
-                shiftedHit
-        );
+                shiftedHit);
 
-        // Never let BlockPlaceContext silently move the logical block one more
-        // block forward when the intended anchor is occupied.
         if (!shiftedPlacement.getClickedPos().equals(logicalPosition)) {
             return InteractionResult.FAIL;
         }
 
-        if (clickedLeftHalf) {
-            return rightPlacementItem.get().place(shiftedPlacement);
+        InteractionResult result = clickedLeftHalf
+                ? rightPlacementItem.get().place(shiftedPlacement)
+                : super.place(shiftedPlacement);
+
+        // The legacy block classes still derive FACING from player yaw. Correct
+        // the placed state immediately so diagonal placement cannot rotate it.
+        if (!context.getLevel().isClientSide && result.consumesAction()) {
+            BlockState placed = context.getLevel().getBlockState(logicalPosition);
+            if (placed.hasProperty(HorizontalDirectionalBlock.FACING)
+                    && placed.getValue(HorizontalDirectionalBlock.FACING) != readerFacing) {
+                context.getLevel().setBlock(logicalPosition,
+                        placed.setValue(HorizontalDirectionalBlock.FACING, readerFacing),
+                        Block.UPDATE_ALL);
+            }
         }
-        return super.place(shiftedPlacement);
+
+        return result;
     }
 
     @Override
@@ -100,17 +109,17 @@ public final class OffsetKeycardReaderItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Level level,
+            List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.scp_additions.keycard_reader_placement").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.scp_additions.keycard_reader_configure").withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.scp_additions.keycard_reader_placement")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.scp_additions.keycard_reader_configure")
+                .withStyle(ChatFormatting.DARK_GRAY));
     }
 
-    /**
-     * Make Block#asItem resolve every normal reader level and side to the one
-     * public item. Accept/wrong states already drop their corresponding normal
-     * block, so they inherit this mapping too.
-     */
     @Override
     public void registerBlocks(Map<Block, Item> blockToItemMap, Item item) {
         super.registerBlocks(blockToItemMap, item);

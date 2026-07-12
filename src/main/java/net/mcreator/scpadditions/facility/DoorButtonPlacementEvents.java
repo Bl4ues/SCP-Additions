@@ -8,6 +8,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -19,8 +21,11 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 /**
  * Gives both public SCP Unity door-button items the same placement UX as the
  * unified keycard reader. The visible model is offset from its logical block;
- * the clicked half decides whether the logical anchor stays in place or moves
- * one block so the model appears on the requested side.
+ * the clicked half decides where that one logical button is anchored.
+ *
+ * The standalone Unity implementation also created a mirrored counterpart on
+ * the opposite side of the wall. That behavior is intentionally removed here:
+ * every placement creates exactly one independent button.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DoorButtonPlacementEvents {
@@ -58,9 +63,9 @@ public final class DoorButtonPlacementEvents {
                 + offsetFromCenter.z * screenLeft.getStepZ();
         boolean clickedLeftHalf = leftCoordinate >= 0.0D;
 
-        // The Unity button uses the same right-offset geometry as the old right
-        // reader. Moving the logical anchor left pulls the model into the clicked
-        // block; leaving it in place exposes it on the opposite edge.
+        // The Unity model is offset from its logical block. Shift only the
+        // logical anchor required to make the one visible button land on the
+        // half that was clicked.
         BlockPos logicalPosition = clickedLeftHalf
                 ? visualPosition.relative(screenLeft)
                 : visualPosition;
@@ -83,8 +88,32 @@ public final class DoorButtonPlacementEvents {
             return;
         }
 
+        // DoorButtonBlock#onPlace from the original Unity implementation still
+        // attempts to create a mirrored counterpart. Snapshot that position so
+        // we remove only a counterpart created by this placement, never a button
+        // that was already there independently.
+        BlockPos legacyCounterpartPos = logicalPosition.relative(buttonFacing.getOpposite(), 2);
+        BlockState counterpartBefore = player.level().getBlockState(legacyCounterpartPos);
+
         InteractionResult result = blockItem.place(shiftedPlacement);
+
+        if (!player.level().isClientSide && result.consumesAction()
+                && !isDoorButton(counterpartBefore.getBlock())) {
+            BlockState counterpartAfter = player.level().getBlockState(legacyCounterpartPos);
+            if (isDoorButton(counterpartAfter.getBlock())) {
+                player.level().removeBlock(legacyCounterpartPos, false);
+            }
+        }
+
         event.setCanceled(true);
         event.setCancellationResult(result);
+    }
+
+    private static boolean isDoorButton(Block block) {
+        return block == FacilityModule.BUTTON_LOCKED.get()
+                || block == FacilityModule.BUTTON_CLOSED.get()
+                || block == FacilityModule.BUTTON_OPENING.get()
+                || block == FacilityModule.BUTTON_OPEN.get()
+                || block == FacilityModule.BUTTON_CLOSING.get();
     }
 }

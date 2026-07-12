@@ -1,0 +1,620 @@
+Downloading https://services.gradle.org/distributions/gradle-8.8-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%..............70%.............80%.............90%.............100%
+
+Welcome to Gradle 8.8!
+
+Here are the highlights of this release:
+ - Running Gradle on Java 22
+ - Configurable Gradle daemon JVM
+ - Improved IDE performance for large projects
+
+For more details see https://docs.gradle.org/8.8/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :clean
+
+> Task :compileJava
+Setting up MCP environment
+Initializing steps
+Executing steps
+ > Running 'downloadManifest'
+ > Running 'downloadJson'
+ > Running 'downloadClient'
+ > Running 'downloadServer'
+ > Running 'extractServer'
+ > Running 'downloadClientMappings'
+ > Running 'mergeMappings'
+ > Running 'stripClient'
+ > Running 'stripServer'
+ > Running 'merge'
+ > Running 'listLibraries'
+ > Running 'rename'
+Stopping at requested step: /home/runner/.gradle/caches/forge_gradle/mcp_repo/de/oceanlabs/mcp/mcp_config/1.20.1-20230612.114412/joined/rename/output.jar
+[09:22:03] [main/INFO]: Writing debug log file accesstransform.log
+[09:22:03] [main/INFO]: Access Transformer processor running version 8.2.14
+[09:22:03] [main/INFO]: Command line arguments [--inJar, /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-injected.jar, --outJar, /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar, --logFile, accesstransform.log, --atFile, /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg, --atFile, /home/runner/work/SCP-Additions/SCP-Additions/build/_atJar_4/parent_at.cfg]
+[09:22:03] [main/INFO]: Reading from /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-injected.jar
+[09:22:03] [main/INFO]: Writing to /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar
+[09:22:03] [main/INFO]: Transformer file /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg
+[09:22:03] [main/INFO]: Transformer file /home/runner/work/SCP-Additions/SCP-Additions/build/_atJar_4/parent_at.cfg
+[09:22:03] [main/WARN]: Found existing output jar /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar, overwriting
+[09:22:07] [main/INFO]: JAR transformation complete /home/runner/work/SCP-Additions/SCP-Additions/build/fg_cache/net/minecraftforge/forge/1.20.1-47.4.10_mapped_official_1.20.1/forge-1.20.1-47.4.10_mapped_official_1.20.1.jar
+Creating SRG -> MCP TSRG
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:139: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+            id = new ResourceLocation(idText);
+                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:80: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+            id = new ResourceLocation(idText);
+                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:135: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+            id = new ResourceLocation(idText);
+                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:342: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+            return new ResourceLocation(idText);
+                   ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:71: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+        ResourceLocation itemId = stack == null || stack.isEmpty() ? new ResourceLocation("minecraft", "air") : BuiltInRegistries.ITEM.getKey(stack.getItem());
+                                                                     ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:17: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation("scpinventory", "scp_inventory");
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:17: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation(ScpInventoryMod.MODID, "main"),
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryFullOverlay.java:17: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation("scpinventory", "textures/gui/inventoryfull.png");
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryFullOverlay.java:19: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation("scpinventory", "textures/gui/131logo.png");
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptIcons.java:17: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    public static final ResourceLocation DEFAULT_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/pickup.png");
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptIcons.java:18: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    public static final ResourceLocation CARD_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/card.png");
+                                                     ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptIcons.java:86: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+                ResourceLocation id = new ResourceLocation(idText);
+                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextPromptIcons.java:105: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+        return new ResourceLocation(text);
+               ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:42: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation BACKGROUND = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventory_background.png");
+                                                       ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:43: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation INVENTORY_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventoryicon.png");
+                                                           ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:44: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation INVENTORY_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventoryicon_selected.png");
+                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:45: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation STATUS_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/statusicon.png");
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:46: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation STATUS_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/statusicon_selected.png");
+                                                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:47: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation CODEX_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/codexicon.png");
+                                                       ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:48: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation CODEX_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/codexicon_selected.png");
+                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:49: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation HEALTH_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/health.png");
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ScpFonts.java:9: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    public static final ResourceLocation ROBOTO = new ResourceLocation(ScpInventoryMod.MODID, "roboto");
+                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ScpFonts.java:10: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    public static final ResourceLocation MONTSERRAT = new ResourceLocation(ScpInventoryMod.MODID, "montserrat");
+                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java:26: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+    private static final ResourceLocation PICKUP_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/pickup.png");
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/handler/Scp294DrinkHandler.java:59: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+			MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation(effectTag.getString("id")));
+			                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModScreens.java:29: warning: [removal] setRenderLayer(Block,RenderType) in ItemBlockRenderTypes has been deprecated and marked for removal
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_GATE.get(), RenderType.translucent());
+			                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModScreens.java:30: warning: [removal] setRenderLayer(Block,RenderType) in ItemBlockRenderTypes has been deprecated and marked for removal
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_RECHARGE.get(), RenderType.translucent());
+			                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModScreens.java:31: warning: [removal] setRenderLayer(Block,RenderType) in ItemBlockRenderTypes has been deprecated and marked for removal
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE.get(), RenderType.cutout());
+			                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModScreens.java:32: warning: [removal] setRenderLayer(Block,RenderType) in ItemBlockRenderTypes has been deprecated and marked for removal
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());
+			                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModScreens.java:33: warning: [removal] setRenderLayer(Block,RenderType) in ItemBlockRenderTypes has been deprecated and marked for removal
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_3.get(), RenderType.cutout());
+			                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModScreens.java:34: warning: [removal] setRenderLayer(Block,RenderType) in ItemBlockRenderTypes has been deprecated and marked for removal
+			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_4.get(), RenderType.cutout());
+			                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:43: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:18: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TESLAACTIVATE = REGISTRY.register("teslaactivate", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "teslaactivate")));
+	                                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:19: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> OVERCHARGE = REGISTRY.register("overcharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "overcharge")));
+	                                                                                                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:20: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TESLAREADY = REGISTRY.register("teslaready", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "teslaready")));
+	                                                                                                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:21: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TESLARECHARGE = REGISTRY.register("teslarecharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "teslarecharge")));
+	                                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:22: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> CLICK = REGISTRY.register("click", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "click")));
+	                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:23: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> CLICK_1 = REGISTRY.register("click_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "click_1")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:24: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> CLICK_2 = REGISTRY.register("click_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "click_2")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:25: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SELECT = REGISTRY.register("select", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "select")));
+	                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:26: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> POPUP = REGISTRY.register("popup", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "popup")));
+	                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:27: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TURNINGON = REGISTRY.register("turningon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "turningon")));
+	                                                                                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:28: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TURNINGOFF = REGISTRY.register("turningoff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "turningoff")));
+	                                                                                                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:29: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> OVERRIDEON = REGISTRY.register("overrideon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "overrideon")));
+	                                                                                                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:30: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TERMINALLOOP = REGISTRY.register("terminalloop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalloop")));
+	                                                                                                                                          ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:31: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TERMINALON = REGISTRY.register("terminalon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalon")));
+	                                                                                                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:32: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> TERMINALOFF = REGISTRY.register("terminaloff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminaloff")));
+	                                                                                                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:33: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP079_1 = REGISTRY.register("scp079_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp079_1")));
+	                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:34: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> CANDYEAT = REGISTRY.register("candyeat", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "candyeat")));
+	                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:35: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> CANDY = REGISTRY.register("candy", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "candy")));
+	                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:36: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP330DEATH = REGISTRY.register("scp330death", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp330death")));
+	                                                                                                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:37: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP1176 = REGISTRY.register("scp1176", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp1176")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:38: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP902 = REGISTRY.register("scp902", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp902")));
+	                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:39: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP902CLOSING = REGISTRY.register("scp902closing", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp902closing")));
+	                                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:40: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP902OPENING = REGISTRY.register("scp902opening", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp902opening")));
+	                                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:41: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP079_2 = REGISTRY.register("scp079_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp079_2")));
+	                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:42: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> BUTTON = REGISTRY.register("button", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "button")));
+	                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:43: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914DOORCLOSE = REGISTRY.register("scp914doorclose", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914doorclose")));
+	                                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:44: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914DOOROPEN = REGISTRY.register("scp914dooropen", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914dooropen")));
+	                                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:45: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914KEY = REGISTRY.register("scp914key", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914key")));
+	                                                                                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:46: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914REFINING = REGISTRY.register("scp914refining", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914refining")));
+	                                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:47: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914DIAL = REGISTRY.register("scp914dial", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914dial")));
+	                                                                                                                                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:48: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914INSIDE = REGISTRY.register("scp914inside", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914inside")));
+	                                                                                                                                          ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:49: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP914DEATH = REGISTRY.register("scp914death", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914death")));
+	                                                                                                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:50: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP059BOX = REGISTRY.register("scp059box", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp059box")));
+	                                                                                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:51: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> GEIGER2 = REGISTRY.register("geiger2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger2")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:52: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> GEIGER1 = REGISTRY.register("geiger1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger1")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:53: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP059_1 = REGISTRY.register("scp059_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp059_1")));
+	                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:54: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> GEIGER3 = REGISTRY.register("geiger3", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger3")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:55: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SPRAY = REGISTRY.register("spray", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "spray")));
+	                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:56: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> DECONTAMINATION = REGISTRY.register("decontamination", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "decontamination")));
+	                                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:57: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> DOOROPEN = REGISTRY.register("dooropen", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "dooropen")));
+	                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:58: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> DOORCLOSING = REGISTRY.register("doorclosing", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "doorclosing")));
+	                                                                                                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:59: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> ACCESSGRANTED = REGISTRY.register("accessgranted", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "accessgranted")));
+	                                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:60: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> ACCESSDENIED = REGISTRY.register("accessdenied", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "accessdenied")));
+	                                                                                                                                          ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:61: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294ENTER = REGISTRY.register("scp294enter", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294enter")));
+	                                                                                                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:62: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294POURING = REGISTRY.register("scp294pouring", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294pouring")));
+	                                                                                                                                            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:63: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294EMPTYCUP = REGISTRY.register("scp294emptycup", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294emptycup")));
+	                                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:64: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294OUTOFRANGE = REGISTRY.register("scp294outofrange", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294outofrange")));
+	                                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:65: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294ON = REGISTRY.register("scp294on", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294on")));
+	                                                                                                                                  ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:66: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294OFF = REGISTRY.register("scp294off", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294off")));
+	                                                                                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:67: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> SCP294COINSLOT = REGISTRY.register("scp294coinslot", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp294coinslot")));
+	                                                                                                                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:68: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> HEARTBEAT = REGISTRY.register("heartbeat", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "heartbeat")));
+	                                                                                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:69: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> NUCLEAR = REGISTRY.register("nuclear", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "nuclear")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:70: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> GRAVITONS = REGISTRY.register("gravitons", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "gravitons")));
+	                                                                                                                                    ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModSounds.java:71: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+	public static final RegistryObject<SoundEvent> STOMACH = REGISTRY.register("stomach", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "stomach")));
+	                                                                                                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/PlayerVitalsOverlay.java:14: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation("scpinventory", "textures/gui/stamina.png");
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/PlayerVitalsOverlay.java:16: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation("scpinventory", "textures/gui/healthlogo.png");
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/PlayerVitalsOverlay.java:18: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation("scpinventory", "roboto");
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:25: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            new ResourceLocation(ScpAdditionsMod.MODID, "horror_movement"),
+            ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:153: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+		ResourceLocation id = new ResourceLocation(tag.getString("Name"));
+		                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/Scp173Sounds.java:24: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+        ResourceLocation id = new ResourceLocation(ScpAdditionsMod.MODID, name);
+                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/Scp131Sounds.java:18: warning: [removal] ResourceLocation(String,String) in ResourceLocation has been deprecated and marked for removal
+            SoundEvent.createVariableRangeEvent(new ResourceLocation(ScpAdditionsMod.MODID, "eye_pod_voice")));
+                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:183: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+		ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(json, "id"));
+		                      ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:207: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+			inputs.add(new ItemIngredient(new ResourceLocation(GsonHelper.getAsString(input, "item")), Math.max(1, GsonHelper.getAsInt(input, "count", 1))));
+			                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:213: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+				inputs.add(new ItemIngredient(new ResourceLocation(GsonHelper.getAsString(input, "item")), Math.max(1, GsonHelper.getAsInt(input, "count", 1))));
+				                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:225: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+				inputs.add(new EntityIngredient(new ResourceLocation(GsonHelper.getAsString(input, "entity")), Math.max(1, GsonHelper.getAsInt(input, "count", 1)), GsonHelper.getAsBoolean(input, "consume", true)));
+				                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:235: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+			outputs.add(new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
+			                           ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:241: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+				outputs.add(new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
+				                           ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java:253: warning: [removal] ResourceLocation(String) in ResourceLocation has been deprecated and marked for removal
+				outputs.add(new WeightedItemOutput(Math.max(1, GsonHelper.getAsInt(output, "weight", 1)), new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1)))));
+				                                                                                                         ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:83: error: load() has private access in ScpInventoryConfig
+		ScpInventoryConfig.load();
+		                  ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files additionally use or override a deprecated API that is marked for removal.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 error
+100 warnings
+
+> Task :compileJava FAILED
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1783848004339.json
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compileJava'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:282)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:116)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:264)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:128)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler error output for details.
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:61)
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:41)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.delegateAndHandleErrors(NormalizingJavaCompiler.java:98)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:38)
+	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:38)
+	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:46)
+	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:36)
+	at org.gradle.jvm.toolchain.internal.DefaultToolchainJavaCompiler.execute(DefaultToolchainJavaCompiler.java:57)
+	at org.gradle.api.tasks.compile.JavaCompile.lambda$createToolchainCompiler$3(JavaCompile.java:202)
+	at org.gradle.api.internal.tasks.compile.CleaningJavaCompiler.execute(CleaningJavaCompiler.java:53)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalCompilerFactory.lambda$createRebuildAllCompiler$0(IncrementalCompilerFactory.java:52)
+	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:70)
+	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:44)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:66)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:64)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:48)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler.execute(CompileJavaBuildOperationReportingCompiler.java:48)
+	at org.gradle.api.tasks.compile.JavaCompile.performCompilation(JavaCompile.java:220)
+	at org.gradle.api.tasks.compile.JavaCompile.performIncrementalCompilation(JavaCompile.java:161)
+	at org.gradle.api.tasks.compile.JavaCompile.compile(JavaCompile.java:146)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.doExecute(IncrementalTaskAction.java:45)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.execute(IncrementalTaskAction.java:26)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:41)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:74)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:67)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:45)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+	at org.gradle.internal.Either$Right.fold(Either.java:175)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:76)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:54)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:54)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:106)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:55)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:116)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:264)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:128)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2m 33s
+2 actionable tasks: 2 executed

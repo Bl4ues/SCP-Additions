@@ -1,0 +1,1 @@
+This directory is the canonical generated SCP Inventory export. Do not compile it directly.

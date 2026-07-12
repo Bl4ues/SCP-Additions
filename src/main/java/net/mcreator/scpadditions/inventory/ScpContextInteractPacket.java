@@ -43,18 +43,10 @@ public final class ScpContextInteractPacket {
     }
 
     public static ScpContextInteractPacket decode(FriendlyByteBuf buffer) {
-        return new ScpContextInteractPacket(buffer.readBlockPosAfterBoolean(), 0, false);
-    }
-
-    private static ScpContextInteractPacket decodeCompat(FriendlyByteBuf buffer) {
         boolean entityTarget = buffer.readBoolean();
         BlockPos blockPos = buffer.readBlockPos();
         int entityId = buffer.readVarInt();
         return new ScpContextInteractPacket(blockPos, entityId, entityTarget);
-    }
-
-    public static ScpContextInteractPacket read(FriendlyByteBuf buffer) {
-        return decodeCompat(buffer);
     }
 
     public static void handle(ScpContextInteractPacket message,

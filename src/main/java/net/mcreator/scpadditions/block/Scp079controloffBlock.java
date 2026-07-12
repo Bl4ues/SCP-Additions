@@ -43,8 +43,8 @@ public class Scp079controloffBlock extends Block implements SimpleWaterloggedBlo
 	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
 		list.add(Component.literal("Place beside a redstone device to let SCP-079 pulse it while Facility Control is active."));
-		list.add(Component.literal("This legacy node is intentionally indiscriminate: use it for lights, alarms, traps or machinery."));
-		list.add(Component.literal("Heavy doors use SCP-079's separate contextual sabotage system instead."));
+		list.add(Component.literal("For heavy doors, this acts as the legacy fallback when no functional button or keycard reader is connected."));
+		list.add(Component.literal("It is intentionally indiscriminate and can also control lights, alarms, traps or machinery."));
 	}
 
 	@Override

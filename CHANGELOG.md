@@ -1,5 +1,105 @@
 # Changelog
 
+## SCP Additions 3.0.0 — Mega SCP Unity Update
+
+The largest SCP Additions update so far. SCP Inventory and SCP Unity Extra Blocks have been consolidated into SCP Additions as internal systems, so only one mod file is required.
+
+### Integrated SCP Inventory systems
+
+- Added the full SCP Inventory interface with dedicated storage for general items, equipment, keycards, ammunition, weapons, documents, and currency;
+- Added configurable item classification and pickup routing, including custom-only keycard and currency storage;
+- Added equipment slots, shift-click equipment handling, context menus, item actions, dropping, moving, and usable-item sessions;
+- Added Codex and Status panels with configurable document entries and item information;
+- Added custom pickup prompts, inventory-full feedback, contextual interaction prompts, and configurable interaction icons;
+- Added localized Roboto font rendering throughout the SCP Inventory and interaction interfaces without replacing Minecraft's global font;
+- Added server-authoritative inventory synchronization, persistence, death handling, logout handling, and duplication safeguards;
+- Added compatibility access services so keycard readers, Tesla terminals, and other systems can detect items stored in the custom inventory;
+- Added configurable custom health and stamina HUDs;
+- Added horror-style movement behavior, sprint stamina consumption, regeneration delay, exhausted sprint lock, and configurable stamina-blocking items;
+- Added configurable modules for inventory, HUD, custom health, stamina, horror movement, blink, and SCP-173 behavior;
+
+### Blink and visual systems
+
+- Added automatic blinking with configurable timing;
+- Added a manual hold-to-blink keybind;
+- Added blink meter, vignette, blackout, and post-blink screen effects;
+- Added synchronized server-side eye state used by SCP-173 and other observers;
+- Added the Eye Sore effect, which accelerates blink drain;
+- Added SCP-173 threat confirmation, reveal feedback, and temporary paranoia retention;
+
+### SCP-173
+
+- Added a fully functional SCP-173 entity with GeckoLib model and animation support;
+- Added observation checks for players, configured mobs, raiders, and SCP-131;
+- Added sampled line-of-sight checks that correctly handle transparent and solid blocks;
+- Added deterministic snap movement, direct pursuit, path fallback, and side-step fallback behavior;
+- Added immediate movement reevaluation when observers blink or close their eyes;
+- Added contact-only neck snap damage and a dedicated death message;
+- Added configurable natural spawning, isolated routine-spawn behavior, inactivity until first observation, and unseen despawning;
+- Added target recovery after player respawn and isolated post-kill despawning;
+- Added frozen air and water behavior while observed;
+- Added movement scrape, rattle, scare, horror, death, and neck-snap sounds;
+- Added 1730 health, strong armor, toughness, knockback resistance, and custom durability rules;
+
+### SCP-131-A and SCP-131-B
+
+- Added SCP-131-A and SCP-131-B as spawnable entities;
+- Added GeckoLib models, animations, translucent rendering, and glowing eye layers;
+- Added idle voice sounds and custom SCP-styled interaction notices;
+- Added right-click following behavior;
+- Added a physical G-key hold action to stop owned SCP-131 followers;
+- Added persistent following ownership across save and reload;
+- Added SCP-131-B following nearby idle SCP-131-A entities;
+- Added SCP-131 observation behavior against SCP-173;
+
+### SCP Unity facility content
+
+- Integrated the SCP Unity Extra Blocks architectural set into SCP Additions;
+- Added Tesla, Archival, Office, Skyroom, and Security structural blocks;
+- Added Alarm Lamps, Wall Lights, Heaters, Sign Supports, TVs, Trashbins, and other facility props;
+- Added animated Default, Yellow, Black, Normal, Logistics, Office, Bathroom, and Workshop door families;
+- Added family-specific opening and closing animations, timing, sounds, drops, collision behavior, and direct or redstone activation rules;
+- Added a unified SCP Unity Blocks creative tab with a curated block order;
+- Added functional door buttons with mirrored left and right models;
+- Updated paired button behavior so an existing opposite panel synchronizes without automatically creating a second panel behind the wall;
+- Fixed left button selection geometry and multiple door/button synchronization issues;
+- Added legacy mapping from SCP Unity Extra Blocks registry IDs to their SCP Additions equivalents;
+- Preserved intermediate door animation states for saved-world compatibility while hiding them from the creative tab;
+- Added Sector 1 and Sector 2 floors, walls, directional floor arrows, wall details, and an open ventilation model from the SCP UBlocks assets;
+- Added legacy mapping from `scp_ublocks` block and item IDs to their SCP Additions equivalents;
+
+### Keycards, readers, and tools
+
+- Integrated keycards with the custom inventory without maintaining duplicate vanilla mirror stacks;
+- Fixed survival keycard jitter caused by repeated mirror synchronization;
+- Updated shared inventory checks so readers detect custom-only keycards directly;
+- Added a screwdriver texture and item model;
+- Added crouch-and-screwdriver reader configuration through both direct interaction and the custom contextual interaction system;
+- Preserved six keycard clearance levels and higher-level access to lower-level readers;
+
+### Configuration and data
+
+- Added `config/scpadditions/modules.json` for gameplay module controls;
+- Added `config/scpinventory/scpinventory.json` for inventory, HUD, stamina, movement, blink, and item behavior;
+- Added `config/scpinventory/context_interactions.json` for contextual block and entity interactions;
+- Added expanded default SCP-294 drink definitions;
+- Added expanded default SCP-914 item and entity recipes;
+- Added first-run copying of bundled default configuration files;
+- Existing local configuration files are not overwritten automatically;
+- Kept SCP-294 currency handling exclusive to either the custom inventory or vanilla inventory, depending on the selected inventory mode;
+
+### Compatibility and technical changes
+
+- SCP Additions is now the only Forge mod entrypoint and the only required SCP Additions project JAR;
+- SCP Inventory and SCP Unity Extra Blocks are included internally and must not be installed separately;
+- Updated the mod version to 3.0.0;
+- Added GeckoLib 4.4.9 or newer as a required dependency;
+- Updated the minimum Forge version to 47.4.10;
+- Preserved existing published SCP Additions registry IDs for old-world compatibility;
+- Added compatibility mappings for migrated facility content;
+- Added extensive configuration defaults, migration documentation, and build validation;
+- Fixed multiple item duplication, pickup routing, keycard synchronization, usable-session, interface, rendering, button, door, font, and configuration-generation issues.
+
 ## SCP Additions 2.0.2
 
 Hotfix update for the 2.0.1 hotfix.

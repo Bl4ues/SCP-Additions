@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_ublocks:block/sl_1_wall_detail_1_mid"
+    },
+    "facing=east": {
+      "model": "scp_ublocks:block/sl_1_wall_detail_1_mid",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_ublocks:block/sl_1_wall_detail_1_mid",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_ublocks:block/sl_1_wall_detail_1_mid",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:texture_set": {
+    "color": "sl1_wall_detail",
+    "metalness_emissive_roughness": "sl1_wall_detail_mer",
+    "heightmap": "sl1_wall_detail_height"
+  }
+}

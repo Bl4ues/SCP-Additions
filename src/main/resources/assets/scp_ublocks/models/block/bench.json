@@ -1,0 +1,9 @@
+{
+  "parent": "scp_ublocks:custom/bench",
+  "textures": {
+    "all": "scp_ublocks:block/bench",
+    "particle": "scp_ublocks:block/bench",
+    "1": "scp_ublocks:block/bench"
+  },
+  "render_type": "cutout"
+}

@@ -1,0 +1,9 @@
+{
+  "parent": "scp_ublocks:custom/vent_grate_open",
+  "textures": {
+    "all": "scp_ublocks:block/vent_grate",
+    "particle": "scp_ublocks:block/vent_grate",
+    "0": "scp_ublocks:block/vent_grate"
+  },
+  "render_type": "cutout"
+}

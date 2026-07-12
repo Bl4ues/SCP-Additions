@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_ublocks:block/unity_sector_2_top",
+    "up": "scp_ublocks:block/unity_sector_2_top",
+    "north": "scp_ublocks:block/unity_sector_2_mid",
+    "east": "scp_ublocks:block/unity_sector_2_mid",
+    "south": "scp_ublocks:block/unity_sector_2_mid",
+    "west": "scp_ublocks:block/unity_sector_2_mid",
+    "particle": "scp_ublocks:block/unity_sector_2_top"
+  },
+  "render_type": "solid"
+}

@@ -42,8 +42,9 @@ public class SCP079SystemControlBlock extends Block implements SimpleWaterlogged
 	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
 		list.add(Component.literal("Power with redstone to grant SCP-079 control of the facility."));
-		list.add(Component.literal("While active, SCP-079 may occasionally sabotage heavy doors around pursued players."));
-		list.add(Component.literal("Local Facility Pulse Nodes remain available for lights, alarms and other redstone devices."));
+		list.add(Component.literal("It may open doors for threats or occasionally close an open door ahead of a player."));
+		list.add(Component.literal("Heavy doors require a functional button, keycard reader, or connected legacy Facility Pulse Node."));
+		list.add(Component.literal("Locked buttons and doors without a valid control interface cannot be manipulated."));
 	}
 
 	@Override

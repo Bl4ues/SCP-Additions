@@ -1,23 +1,52 @@
 [CmdletBinding()]
-param()
+param(
+    [string]$FfmpegRoot
+)
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
-if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
-    throw @'
-ffmpeg was not found in PATH.
-Install it with:
+function Resolve-FfmpegTool {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
 
-    winget install --id Gyan.FFmpeg -e
+    $command = Get-Command $Name -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Path
+    }
 
-Open a new PowerShell window afterwards and run this script again.
-'@
+    $candidateRoots = @(
+        $FfmpegRoot,
+        $env:FFMPEG_HOME,
+        'C:\ffmpeg-8.0.1-essentials_build',
+        'C:\ffmpeg'
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    foreach ($root in $candidateRoots) {
+        foreach ($relativePath in @("$Name.exe", "bin\$Name.exe")) {
+            $candidate = Join-Path $root $relativePath
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                return (Resolve-Path -LiteralPath $candidate).Path
+            }
+        }
+    }
+
+    throw @"
+$Name was not found in PATH or in the known FFmpeg folders.
+Run the script with the extracted FFmpeg folder explicitly:
+
+    .\scripts\finalize-ui-and-scp173-audio.ps1 -FfmpegRoot "C:\ffmpeg-8.0.1-essentials_build"
+"@
 }
-if (-not (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
-    throw 'ffprobe was not found in PATH. It is installed together with ffmpeg.'
-}
+
+$ffmpegExe = Resolve-FfmpegTool -Name 'ffmpeg'
+$ffprobeExe = Resolve-FfmpegTool -Name 'ffprobe'
+
+Write-Host "Using ffmpeg:  $ffmpegExe"
+Write-Host "Using ffprobe: $ffprobeExe"
 
 # Minecraft/OpenAL can spatialize mono sounds. Stereo sound effects remain
 # listener-centered even when level.playSound is given the entity coordinates.
@@ -29,7 +58,7 @@ if ($files.Count -eq 0) {
 
 $converted = 0
 foreach ($file in $files) {
-    $channels = (& ffprobe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $file.FullName).Trim()
+    $channels = (& $ffprobeExe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $file.FullName).Trim()
     if ($LASTEXITCODE -ne 0) {
         throw "ffprobe failed for $($file.Name)"
     }
@@ -40,12 +69,12 @@ foreach ($file in $files) {
 
     $temporary = Join-Path $file.DirectoryName ($file.BaseName + '.mono.ogg')
     try {
-        & ffmpeg -hide_banner -loglevel error -y -i $file.FullName -ac 1 -c:a libvorbis -q:a 6 $temporary
+        & $ffmpegExe -hide_banner -loglevel error -y -i $file.FullName -ac 1 -c:a libvorbis -q:a 6 $temporary
         if ($LASTEXITCODE -ne 0 -or -not (Test-Path $temporary)) {
             throw "ffmpeg failed for $($file.Name)"
         }
 
-        $resultChannels = (& ffprobe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $temporary).Trim()
+        $resultChannels = (& $ffprobeExe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $temporary).Trim()
         if ($LASTEXITCODE -ne 0 -or $resultChannels -ne '1') {
             throw "Converted file is not mono: $($file.Name)"
         }
@@ -59,6 +88,6 @@ foreach ($file in $files) {
     }
 }
 
-Write-Host ""
+Write-Host ''
 Write-Host "Converted scrape files: $converted"
 Write-Host 'Run git status --short, then commit and push the five OGG changes.'

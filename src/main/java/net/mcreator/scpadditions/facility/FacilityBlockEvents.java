@@ -14,9 +14,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
  * Break-time cleanup for facility multiblocks and manually assembled Unity
- * button pairs. Buttons are never created as mirrored pairs automatically, but
- * matching buttons placed in the original opposite position still behave as a
- * linked pair.
+ * button pairs. Original and mirrored visual variants are equivalent here.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilityBlockEvents {
@@ -32,9 +30,6 @@ public final class FacilityBlockEvents {
         BlockState state = event.getState();
         Block block = state.getBlock();
 
-        // The upper wall-light block normally has no loot table because breaking
-        // the lower half already drops the public item. Breaking the upper half
-        // directly must still return exactly one wall light outside creative.
         if (block == FacilityModule.WALLLIGHT_2.get()) {
             if (!event.getPlayer().isCreative()) {
                 Block.popResource(level, event.getPos(),
@@ -51,7 +46,7 @@ public final class FacilityBlockEvents {
             return;
         }
 
-        boolean locked = block == FacilityModule.BUTTON_LOCKED.get();
+        boolean locked = isLockedButton(block);
         boolean functional = isFunctionalButton(block);
         if (!locked && !functional) {
             return;
@@ -59,21 +54,30 @@ public final class FacilityBlockEvents {
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         BlockPos counterpartPos = event.getPos().relative(facing.getOpposite(), 2);
-        Block counterpart = level.getBlockState(counterpartPos).getBlock();
+        BlockState counterpartState = level.getBlockState(counterpartPos);
+        Block counterpart = counterpartState.getBlock();
 
-        boolean matchingCounterpart = locked
-                ? counterpart == FacilityModule.BUTTON_LOCKED.get()
-                : isFunctionalButton(counterpart);
+        boolean correctlyFacing = counterpartState.hasProperty(HorizontalDirectionalBlock.FACING)
+                && counterpartState.getValue(HorizontalDirectionalBlock.FACING) == facing.getOpposite();
+        boolean matchingCounterpart = correctlyFacing && (locked
+                ? isLockedButton(counterpart)
+                : isFunctionalButton(counterpart));
 
         if (matchingCounterpart) {
             level.destroyBlock(counterpartPos, false);
         }
     }
 
+    private static boolean isLockedButton(Block block) {
+        return block == FacilityModule.BUTTON_LOCKED.get()
+                || MirroredDoorButtons.isLocked(block);
+    }
+
     private static boolean isFunctionalButton(Block block) {
         return block == FacilityModule.BUTTON_CLOSED.get()
                 || block == FacilityModule.BUTTON_OPENING.get()
                 || block == FacilityModule.BUTTON_OPEN.get()
-                || block == FacilityModule.BUTTON_CLOSING.get();
+                || block == FacilityModule.BUTTON_CLOSING.get()
+                || MirroredDoorButtons.isFunctional(block);
     }
 }

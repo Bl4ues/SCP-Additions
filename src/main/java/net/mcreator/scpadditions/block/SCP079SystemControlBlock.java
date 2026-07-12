@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -42,7 +41,9 @@ public class SCP079SystemControlBlock extends Block implements SimpleWaterlogged
 	@Override
 	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
-		list.add(Component.literal("Activate it with redstone to give control to SCP-079."));
+		list.add(Component.literal("Power with redstone to grant SCP-079 control of the facility."));
+		list.add(Component.literal("While active, SCP-079 may occasionally sabotage heavy doors around pursued players."));
+		list.add(Component.literal("Local Facility Pulse Nodes remain available for lights, alarms and other redstone devices."));
 	}
 
 	@Override

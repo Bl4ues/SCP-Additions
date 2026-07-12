@@ -68,6 +68,12 @@ processResources {
     // The integrated mod must use Roboto only through explicitly styled UI text.
     exclude 'assets/minecraft/font/default.json'
 
+    // Left/right reader items are legacy compatibility entries. Only the six
+    // click-aligned unified reader recipes are shipped in the 3.0 artifact.
+    exclude 'data/scp_additions/recipes/lv_*_kr_right.json'
+    exclude 'data/scp_additions/recipes/lv_*_lto_r.json'
+    exclude 'data/scp_additions/recipes/lv_*_rto_l.json'
+
     from('config') {
         into 'config'
     }

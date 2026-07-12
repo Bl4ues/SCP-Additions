@@ -34,6 +34,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
+import net.mcreator.scpadditions.init.UnifiedReaderItems;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -58,6 +59,7 @@ public class ScpAdditionsMod {
 		ScpAdditionsModBlocks.REGISTRY.register(bus);
 		ScpAdditionsModBlockEntities.REGISTRY.register(bus);
 		ScpAdditionsModItems.REGISTRY.register(bus);
+		UnifiedReaderItems.REGISTRY.register(bus);
 		Scp131Items.REGISTRY.register(bus);
 		ScpAdditionsModEntities.REGISTRY.register(bus);
 

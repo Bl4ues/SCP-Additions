@@ -1,20 +1,18 @@
 package net.mcreator.scpadditions.facility;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
- * Break-time cleanup for the few facility blocks that occupy or create a
- * second logical position. Counterparts are removed without a second drop.
+ * Break-time cleanup for facility blocks that genuinely occupy a second
+ * structural position. Unity door buttons are deliberately independent and
+ * never remove another button when broken.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilityBlockEvents {
@@ -27,8 +25,7 @@ public final class FacilityBlockEvents {
             return;
         }
 
-        BlockState state = event.getState();
-        Block block = state.getBlock();
+        Block block = event.getState().getBlock();
 
         // The upper wall-light block normally has no loot table because breaking
         // the lower half already drops the public item. Breaking the upper half
@@ -42,25 +39,6 @@ public final class FacilityBlockEvents {
             if (level.getBlockState(lower).is(FacilityModule.WALLLIGHT.get())) {
                 level.destroyBlock(lower, false);
             }
-            return;
         }
-
-        if (!isDoorButton(block) || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return;
-        }
-
-        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        BlockPos counterpart = event.getPos().relative(facing.getOpposite(), 2);
-        if (isDoorButton(level.getBlockState(counterpart).getBlock())) {
-            level.destroyBlock(counterpart, false);
-        }
-    }
-
-    private static boolean isDoorButton(Block block) {
-        return block == FacilityModule.BUTTON_LOCKED.get()
-                || block == FacilityModule.BUTTON_CLOSED.get()
-                || block == FacilityModule.BUTTON_OPENING.get()
-                || block == FacilityModule.BUTTON_OPEN.get()
-                || block == FacilityModule.BUTTON_CLOSING.get();
     }
 }

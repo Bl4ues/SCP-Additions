@@ -96,7 +96,7 @@ public final class PickupPromptClient {
         int pickupY = iconY + 22;
         int itemY = pickupY + 32;
 
-        int itemWidth = Math.round(mc.font.width(target.getItem().getHoverName().getString()) * ITEM_TEXT_SCALE);
+        int itemWidth = Math.round(mc.font.width(ScpFonts.roboto(target.getItem().getHoverName().getString())) * ITEM_TEXT_SCALE);
         if (textX + itemWidth > screenWidth - 8) {
             textX = Math.max(8, screenWidth - itemWidth - 8);
             iconX = Math.max(6, textX - ICON_SIZE - 4);
@@ -227,7 +227,7 @@ public final class PickupPromptClient {
         pose.pushPose();
         pose.translate(x, y, 0.0F);
         pose.scale(scale, scale, 1.0F);
-        g.drawString(mc.font, text, 0, 0, color, true);
+        g.drawString(mc.font, ScpFonts.roboto(text), 0, 0, color, true);
         pose.popPose();
     }
 

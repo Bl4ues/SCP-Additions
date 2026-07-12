@@ -2,6 +2,7 @@ package com.bl4ues.scpinventory.network;
 
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 import net.mcreator.scpadditions.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -111,6 +112,11 @@ public class ContextInteractPacket {
         ContextInteractionRegistry.Rule rule = rules.get(0);
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);
         if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
+            return;
+        }
+
+        if (KeycardReaderInteractionEvents.tryOpenConfiguration(player, pos)) {
+            player.swing(InteractionHand.MAIN_HAND, true);
             return;
         }
 

@@ -10,6 +10,9 @@ import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -22,6 +25,7 @@ public final class ScpInventoryConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File("config/scpinventory/scpinventory.json");
+    private static final String BUNDLED_CONFIG = "config/scpinventory/scpinventory.json";
 
     private static final List<String> DEFAULT_ITEM_RULES = List.of(
             "minecraft:flint|COIN",
@@ -137,8 +141,6 @@ public final class ScpInventoryConfig {
             }
             if (!CONFIG_FILE.exists()) {
                 writeDefaultConfig();
-                loaded = true;
-                return;
             }
 
             JsonObject root = JsonParser.parseReader(new FileReader(CONFIG_FILE)).getAsJsonObject();
@@ -296,6 +298,14 @@ public final class ScpInventoryConfig {
     }
 
     private static void writeDefaultConfig() throws Exception {
+        try (InputStream stream = ScpInventoryConfig.class.getClassLoader()
+                .getResourceAsStream(BUNDLED_CONFIG)) {
+            if (stream != null) {
+                Files.copy(stream, CONFIG_FILE.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                return;
+            }
+        }
+
         JsonObject root = new JsonObject();
         root.addProperty("_comment", "SCP Inventory configuration. This replaces scpinventory-common.toml with readable vertical JSON lists.");
 

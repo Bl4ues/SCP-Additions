@@ -306,7 +306,7 @@ public final class ContextPromptClient {
         pose.pushPose();
         pose.translate(x, y, 0.0F);
         pose.scale(scale, scale, 1.0F);
-        g.drawString(mc.font, text, 0, 0, color, true);
+        g.drawString(mc.font, ScpFonts.roboto(text), 0, 0, color, true);
         pose.popPose();
     }
 
@@ -325,10 +325,10 @@ public final class ContextPromptClient {
         private int maxTextWidth(Minecraft mc) {
             int width = 0;
             if (showAction) {
-                width = Math.max(width, Math.round(mc.font.width(action) * ACTION_TEXT_SCALE));
+                width = Math.max(width, Math.round(mc.font.width(ScpFonts.roboto(action)) * ACTION_TEXT_SCALE));
             }
             if (showName) {
-                width = Math.max(width, Math.round(mc.font.width(name) * NAME_TEXT_SCALE));
+                width = Math.max(width, Math.round(mc.font.width(ScpFonts.roboto(name)) * NAME_TEXT_SCALE));
             }
             return width;
         }

@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.client.gui;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
@@ -326,10 +328,10 @@ public class ScpInventoryScreen extends Screen {
 
     private void drawRightAlignedCount(GuiGraphics g, int current, String suffix) {
         String currentText = Integer.toString(current);
-        int totalWidth = minecraft.font.width(currentText) + minecraft.font.width(suffix);
+        int totalWidth = minecraft.font.width(ScpFonts.roboto(currentText)) + minecraft.font.width(ScpFonts.roboto(suffix));
         int x = listX + listWidth - totalWidth;
-        g.drawString(minecraft.font, currentText, x, titleY, uiColor(TEXT_WHITE), false);
-        g.drawString(minecraft.font, suffix, x + minecraft.font.width(currentText), titleY, uiColor(TEXT_GRAY), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(currentText), x, titleY, uiColor(TEXT_WHITE), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(suffix), x + minecraft.font.width(ScpFonts.roboto(currentText)), titleY, uiColor(TEXT_GRAY), false);
     }
 
     private void renderTabs(GuiGraphics g) {
@@ -364,8 +366,8 @@ public class ScpInventoryScreen extends Screen {
             if (dropPreviewRenderAlpha >= DROP_PREVIEW_SOLID_ITEM_ALPHA_THRESHOLD) g.renderItem(stack, iconX + 4, iconY + 4);
         }
         Component itemName = stack.isEmpty() ? Component.literal("None") : stack.getHoverName();
-        g.drawString(minecraft.font, slot.getDisplayName(), textX, rowY + 7, uiColor(TEXT_WHITE), false);
-        g.drawString(minecraft.font, itemName, textX, rowY + 20, uiColor(stack.isEmpty() ? TEXT_GRAY : TEXT_WHITE), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(slot.getDisplayName()), textX, rowY + 7, uiColor(TEXT_WHITE), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(itemName), textX, rowY + 20, uiColor(stack.isEmpty() ? TEXT_GRAY : TEXT_WHITE), false);
         int lineY = rowY + EQUIPMENT_ROW_HEIGHT - 1;
         g.fill(equipmentX, lineY, equipmentX + equipmentWidth, lineY + 1, uiColor(EQUIPMENT_LINE_GRAY));
     }
@@ -402,9 +404,9 @@ public class ScpInventoryScreen extends Screen {
 
     private void drawNavigationButton(GuiGraphics g, int x, int y, String label, ResourceLocation icon, boolean active) {
         int iconX = x + (NAV_BUTTON_WIDTH - NAV_ICON_SIZE) / 2;
-        int textX = x + (NAV_BUTTON_WIDTH - minecraft.font.width(label)) / 2;
+        int textX = x + (NAV_BUTTON_WIDTH - minecraft.font.width(ScpFonts.roboto(label))) / 2;
         blitFullIcon(g, icon, iconX, y, NAV_ICON_SIZE, NAV_ICON_SIZE);
-        g.drawString(minecraft.font, label, textX, y + NAV_ICON_SIZE + 6, uiColor(active ? TEXT_WHITE : TEXT_GRAY), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(label), textX, y + NAV_ICON_SIZE + 6, uiColor(active ? TEXT_WHITE : TEXT_GRAY), false);
     }
 
     private void blitFullIcon(GuiGraphics g, ResourceLocation icon, int x, int y, int width, int height) {
@@ -431,19 +433,19 @@ public class ScpInventoryScreen extends Screen {
         g.pose().pushPose();
         g.pose().translate(x, y, 0.0F);
         g.pose().scale(scale, scale, 1.0F);
-        g.drawString(minecraft.font, text, 0, 0, uiColor(color), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(text), 0, 0, uiColor(color), false);
         g.pose().popPose();
     }
 
     private void drawTab(GuiGraphics g, int x, int y, int w, String label, boolean active) {
         g.fill(x, y, x + w, y + TAB_HEIGHT, uiColor(active ? TAB_ACTIVE : TAB_INACTIVE));
-        g.drawString(minecraft.font, label, x + (w - minecraft.font.width(label)) / 2, y + 5, uiColor(active ? TEXT_SELECTED : TEXT_WHITE), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(label), x + (w - minecraft.font.width(ScpFonts.roboto(label))) / 2, y + 5, uiColor(active ? TEXT_SELECTED : TEXT_WHITE), false);
     }
 
     private void drawSectionTitle(GuiGraphics g, int x, int y, String suffix) {
         String prefix = "://INVENTORY_";
-        g.drawString(minecraft.font, prefix, x, y, uiColor(TEXT_GRAY), false);
-        g.drawString(minecraft.font, suffix, x + minecraft.font.width(prefix), y, uiColor(TEXT_WHITE), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(prefix), x, y, uiColor(TEXT_GRAY), false);
+        g.drawString(minecraft.font, ScpFonts.roboto(suffix), x + minecraft.font.width(ScpFonts.roboto(prefix)), y, uiColor(TEXT_WHITE), false);
     }
 
     private int uiColor(int color) {

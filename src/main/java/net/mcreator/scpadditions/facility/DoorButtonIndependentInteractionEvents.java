@@ -167,23 +167,10 @@ public final class DoorButtonIndependentInteractionEvents {
 
     private static void setState(ServerLevel level, BlockPos pos,
             Direction facing, boolean leftGeometry, Phase targetPhase) {
-        BlockPos legacyCounterpartPos = pos.relative(facing.getOpposite(), 2);
-        BlockState counterpartBefore = level.getBlockState(legacyCounterpartPos);
-
         Block target = blockFor(targetPhase, leftGeometry);
         level.setBlock(pos, target.defaultBlockState()
                 .setValue(HorizontalDirectionalBlock.FACING, facing), Block.UPDATE_ALL);
         level.updateNeighborsAt(pos, target);
-
-        // Base right-side Unity states still contain the old auto-pair hook.
-        BlockState counterpartAfter = level.getBlockState(legacyCounterpartPos);
-        if (isAnyButton(counterpartBefore.getBlock())) {
-            if (!counterpartAfter.equals(counterpartBefore)) {
-                level.setBlock(legacyCounterpartPos, counterpartBefore, Block.UPDATE_ALL);
-            }
-        } else if (isAnyButton(counterpartAfter.getBlock())) {
-            level.removeBlock(legacyCounterpartPos, false);
-        }
     }
 
     private static Block blockFor(Phase phase, boolean leftGeometry) {

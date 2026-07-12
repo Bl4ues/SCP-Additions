@@ -17,7 +17,7 @@
     "enabled": true
   },
   "scp_173": {
-    "enabled": true,
-    "natural_spawn_enabled": true
+    "natural_spawn_enabled": true,
+    "enabled": true
   }
 }

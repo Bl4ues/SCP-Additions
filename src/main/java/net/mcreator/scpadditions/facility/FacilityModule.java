@@ -924,13 +924,6 @@ public final class FacilityModule {
             super.onPlace(state, level, pos, oldState, moving);
             if (level.isClientSide) return;
 
-            Direction facing = state.getValue(FACING);
-            BlockPos pairPos = pos.relative(facing.getOpposite(), 2);
-            BlockState pairState = level.getBlockState(pairPos);
-            if (!isDoorButton(pairState.getBlock()) && pairState.canBeReplaced()) {
-                level.setBlock(pairPos, buttonFor(buttonState).get().defaultBlockState()
-                        .setValue(FACING, facing.getOpposite()), Block.UPDATE_ALL);
-            }
             if (buttonState == ButtonState.OPENING || buttonState == ButtonState.CLOSING) {
                 level.scheduleTick(pos, this, 22);
             }
@@ -943,9 +936,7 @@ public final class FacilityModule {
                 return InteractionResult.PASS;
             }
             if (!level.isClientSide && level instanceof ServerLevel server) {
-                setButtonPair(server, pos,
-                        buttonState == ButtonState.CLOSED
-                                ? ButtonState.OPENING : ButtonState.CLOSING);
+                DoorButtonIndependentInteractionEvents.activateButton(server, pos);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }

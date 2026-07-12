@@ -1,0 +1,217 @@
+{
+  "item_rules": [
+    {
+      "id": "scp_additions:level_1_keycard",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:level_2_keycard",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:level_3_keycard",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:level_4_keycard",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:level_5_keycard",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:level_6_keycard",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:security_credentials",
+      "type": "KEY"
+    },
+    {
+      "id": "scp_additions:coin",
+      "type": "COIN"
+    },
+    {
+      "id": "scp_additions:scp_572",
+      "type": "WEAPON"
+    },
+    {
+      "id": "scp_additions:geiger_1",
+      "type": "USABLE"
+    },
+    {
+      "id": "scp_additions:geiger_2",
+      "type": "USABLE"
+    },
+    {
+      "id": "scp_additions:geiger_3",
+      "type": "USABLE"
+    },
+    {
+      "id": "scp_additions:spray",
+      "type": "USABLE"
+    },
+    {
+      "id": "scp_additions:screwdriver",
+      "type": "USABLE"
+    },
+    {
+      "id": "encyclopedia_of_common_diseases:encyclopedia_of_common_diseases",
+      "type": "USABLE"
+    },
+    {
+      "id": "management_wanted:fire_axe",
+      "type": "WEAPON"
+    },
+    {
+      "id": "management_wanted:knife",
+      "type": "WEAPON"
+    },
+    {
+      "id": "management_wanted:pizza_cutter",
+      "type": "WEAPON"
+    },
+    {
+      "id": "gas_mask:gas_mask_helmet",
+      "type": "HEAD"
+    },
+    {
+      "id": "scpfr:medkit",
+      "type": "CONSUMABLE"
+    },
+    {
+      "id": "scpfr:scp_207",
+      "type": "CONSUMABLE"
+    },
+    {
+      "id": "panacea:panacea",
+      "type": "CONSUMABLE"
+    },
+    {
+      "id": "scpo:mop",
+      "type": "USABLE"
+    },
+    {
+      "id": "scpo:scp_714",
+      "type": "ACCESSORYHAND"
+    },
+    {
+      "id": "scpo:scp_420_j",
+      "type": "USABLE"
+    },
+    {
+      "id": "scpo:scp_1079",
+      "type": "USABLE"
+    },
+    {
+      "id": "scpo:scp_1079_candy",
+      "type": "CONSUMABLE"
+    },
+    {
+      "id": "scpo:scp_178_helmet",
+      "type": "HEAD"
+    },
+    {
+      "id": "scpo:scp_500_bottle",
+      "type": "USABLE"
+    },
+    {
+      "id": "scpo:money",
+      "type": "MISCELLANEOUS"
+    },
+    {
+      "id": "minecraft:arrow",
+      "type": "AMMO"
+    },
+    {
+      "id": "minecraft:spectral_arrow",
+      "type": "AMMO"
+    },
+    {
+      "id": "minecraft:tipped_arrow",
+      "type": "AMMO"
+    },
+    {
+      "id": "minecraft:bow",
+      "type": "WEAPON"
+    },
+    {
+      "id": "minecraft:crossbow",
+      "type": "WEAPON"
+    },
+    {
+      "id": "minecraft:trident",
+      "type": "WEAPON"
+    },
+    {
+      "id": "minecraft:fishing_rod",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:spyglass",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:shield",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:goat_horn",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:ender_pearl",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:snowball",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:egg",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:writable_book",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:flint_and_steel",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:shears",
+      "type": "USABLE"
+    },
+    {
+      "id": "minecraft:brush",
+      "type": "USABLE"
+    }
+  ],
+  "item_effects": [
+    {
+      "id": "scpo:scp_714",
+      "effects": [
+        "NO_STAMINA"
+      ]
+    }
+  ],
+  "hidden_status_effects": [
+    "minecraft:bad_omen",
+    "scpo:pestilence",
+    "scpinventory:eye_sore",
+    "scp_additions:eye_sore"
+  ],
+  "codex_documents": [],
+  "_comment": "SCP Inventory configuration. Explicit rules override automatic survival-compatible classification.",
+  "scp_173_targets": [
+    "minecraft:villager",
+    "minecraft:iron_golem",
+    "minecraft:enderman",
+    "minecraft:zombie",
+    "minecraft:skeleton",
+    "minecraft:pillager",
+    "#minecraft:raiders"
+  ]
+}

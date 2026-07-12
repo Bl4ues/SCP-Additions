@@ -17,9 +17,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,7 +55,6 @@ public class VanillaMirrorSyncHandler {
             changed |= routeVanillaInventoryToCustom(player, inventory);
             changed |= syncEquippedMainMirror(player, inventory, ScpEquipmentSlot.WEAPON);
             changed |= syncEquippedMainMirror(player, inventory, ScpEquipmentSlot.ACCESSORY);
-            changed |= syncKeys(player, inventory);
 
             if (changed) {
                 player.getInventory().setChanged();
@@ -110,10 +107,6 @@ public class VanillaMirrorSyncHandler {
             }
 
             ScpItemType type = ScpItemClassifier.getType(stack);
-            if (type == ScpItemType.KEY) {
-                continue;
-            }
-
             ScpEquipmentSlot preservedSlot = getPreservedMirrorSlot(type);
             if (preservedSlot != null && isPreservedEquipmentMirror(inventory, preservedSlot, stack)) {
                 changed |= syncEquipmentFromMirror(inventory, preservedSlot, stack);
@@ -234,57 +227,6 @@ public class VanillaMirrorSyncHandler {
             }
         }
         return -1;
-    }
-
-    private static boolean syncKeys(ServerPlayer player, IScpInventory inventory) {
-        List<ItemStack> vanillaKeys = getVanillaKeys(player);
-        List<ItemStack> customKeys = inventory.getKeys();
-
-        if (sameKeyList(vanillaKeys, customKeys)) {
-            return false;
-        }
-
-        inventory.setKeys(vanillaKeys);
-        return true;
-    }
-
-    private static List<ItemStack> getVanillaKeys(ServerPlayer player) {
-        List<ItemStack> keys = new ArrayList<>();
-        Inventory vanillaInventory = player.getInventory();
-
-        for (int i = VANILLA_HOTBAR_START; i < VANILLA_MAIN_END_EXCLUSIVE && i < vanillaInventory.items.size(); i++) {
-            ItemStack stack = vanillaInventory.items.get(i);
-            if (!stack.isEmpty() && ScpItemClassifier.getType(stack) == ScpItemType.KEY) {
-                int amount = Math.min(stack.getCount(), IScpInventory.MAX_KEY_COUNT - keys.size());
-                for (int j = 0; j < amount; j++) {
-                    ItemStack singleKey = stack.copy();
-                    singleKey.setCount(1);
-                    keys.add(singleKey);
-                }
-            }
-
-            if (keys.size() >= IScpInventory.MAX_KEY_COUNT) {
-                break;
-            }
-        }
-
-        return keys;
-    }
-
-    private static boolean sameKeyList(List<ItemStack> vanillaKeys, List<ItemStack> customKeys) {
-        if (vanillaKeys.size() != customKeys.size()) {
-            return false;
-        }
-
-        for (int i = 0; i < vanillaKeys.size(); i++) {
-            ItemStack left = vanillaKeys.get(i);
-            ItemStack right = customKeys.get(i);
-            if (!ItemStack.isSameItemSameTags(left, right)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static void showInventoryFullThrottled(ServerPlayer player) {

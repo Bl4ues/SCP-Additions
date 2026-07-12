@@ -17,6 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.entity.Scp131Sounds;
@@ -79,6 +80,7 @@ public class ScpAdditionsMod {
 		com.bl4ues.scpinventory.network.ModNetwork.register();
 
 		ScpAdditionsModulesConfig.load();
+		ScpInventoryConfig.reload();
 		Scp173TargetConfig.load();
 		StaminaItemEffectConfig.load();
 		Scp294DrinkManager.loadFromConfig();

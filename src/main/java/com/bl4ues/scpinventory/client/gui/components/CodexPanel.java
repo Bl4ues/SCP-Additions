@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.client.gui.components;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.client.ClientInventoryBridge;
 import com.bl4ues.scpinventory.item.CodexDocumentDefinition;
@@ -316,14 +318,14 @@ public class CodexPanel {
 
     private void renderCategoryRow(GuiGraphics g, DisplayRow row, int rowY) {
         g.fill(x - 1, rowY, x + listWidth - 22, rowY + ROW_HEIGHT, CATEGORY_BACKGROUND);
-        g.drawString(mc.font, row.category, x + 12, rowY + 7, TEXT_WHITE, false);
-        g.drawString(mc.font, collapsedCategories.contains(row.category) ? ">" : "v", x + listWidth - 44, rowY + 7, TEXT_GRAY, false);
+        g.drawString(mc.font, ScpFonts.roboto(row.category), x + 12, rowY + 7, TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(collapsedCategories.contains(row.category) ? ">" : "v"), x + listWidth - 44, rowY + 7, TEXT_GRAY, false);
     }
 
     private void renderDocumentRow(GuiGraphics g, DisplayRow row, int rowY) {
         boolean selected = row.documentIndex == selectedIndex;
         if (selected) g.fill(x + 6, rowY, x + listWidth - 36, rowY + ROW_HEIGHT, SELECTED_BACKGROUND);
-        g.drawString(mc.font, row.name, x + 26, rowY + 7, selected ? TEXT_SELECTED : TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(row.name), x + 26, rowY + 7, selected ? TEXT_SELECTED : TEXT_WHITE, false);
     }
 
     private void renderDocumentDetails(GuiGraphics g, int mouseX, int mouseY) {
@@ -371,7 +373,7 @@ public class CodexPanel {
         for (int i = 0; i < visibleLines + 2; i++) {
             int index = textScrollOffset + i;
             if (index >= lines.size()) break;
-            g.drawString(mc.font, lines.get(index), textX, drawY, TEXT_BODY, false);
+            g.drawString(mc.font, ScpFonts.roboto(lines.get(index)), textX, drawY, TEXT_BODY, false);
             drawY += lineHeight;
         }
         g.disableScissor();
@@ -426,7 +428,7 @@ public class CodexPanel {
 
     private void drawButton(GuiGraphics g, int x, int y, int width, int height, String label, boolean hovered) {
         g.fill(x, y, x + width, y + height, hovered ? BUTTON_BACKGROUND_HOVERED : BUTTON_BACKGROUND);
-        g.drawString(mc.font, label, x + (width - mc.font.width(label)) / 2, y + 3, TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(label), x + (width - mc.font.width(ScpFonts.roboto(label))) / 2, y + 3, TEXT_WHITE, false);
     }
 
     private List<DisplayRow> buildRows() {
@@ -457,7 +459,7 @@ public class CodexPanel {
             String current = "";
             for (String word : paragraph.trim().split("\\s+")) {
                 String candidate = current.isBlank() ? word : current + " " + word;
-                if (mc.font.width(candidate) <= width || current.isBlank()) current = candidate;
+                if (mc.font.width(ScpFonts.roboto(candidate)) <= width || current.isBlank()) current = candidate;
                 else {
                     lines.add(current);
                     current = word;
@@ -563,8 +565,8 @@ public class CodexPanel {
     private boolean isMouseInside(double mouseX, double mouseY, int x, int y, int width, int height) { return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height; }
     private int[] fitRect(int sourceWidth, int sourceHeight, int maxWidth, int maxHeight) { float scale = Math.min(maxWidth / (float) sourceWidth, maxHeight / (float) sourceHeight); return new int[]{Math.max(1, Math.round(sourceWidth * scale)), Math.max(1, Math.round(sourceHeight * scale))}; }
     private void setTextureFiltering(ResourceLocation texture, boolean blur) { if (mc != null) mc.getTextureManager().getTexture(texture).setFilter(blur, false); }
-    private void drawSectionTitle(GuiGraphics g, int x, int y, String suffix) { String prefix = "://CODEX_"; g.drawString(mc.font, prefix, x, y, TEXT_GRAY, false); g.drawString(mc.font, suffix, x + mc.font.width(prefix), y, TEXT_WHITE, false); }
-    private void drawScaledPageString(GuiGraphics g, String text, float x, float y, int color, float scale) { g.pose().pushPose(); g.pose().translate(x, y, 0.0F); g.pose().scale(scale, scale, 1.0F); g.drawString(mc.font, text, 0, 0, color, false); g.pose().popPose(); }
+    private void drawSectionTitle(GuiGraphics g, int x, int y, String suffix) { String prefix = "://CODEX_"; g.drawString(mc.font, ScpFonts.roboto(prefix), x, y, TEXT_GRAY, false); g.drawString(mc.font, ScpFonts.roboto(suffix), x + mc.font.width(ScpFonts.roboto(prefix)), y, TEXT_WHITE, false); }
+    private void drawScaledPageString(GuiGraphics g, String text, float x, float y, int color, float scale) { g.pose().pushPose(); g.pose().translate(x, y, 0.0F); g.pose().scale(scale, scale, 1.0F); g.drawString(mc.font, ScpFonts.roboto(text), 0, 0, color, false); g.pose().popPose(); }
     private static int guessPanelHeight(int panelY) { Minecraft minecraft = Minecraft.getInstance(); if (minecraft == null || minecraft.getWindow() == null) return ROW_HEIGHT * 12; return Math.max(ROW_HEIGHT * 9, minecraft.getWindow().getGuiScaledHeight() - panelY - 160); }
 
     private static class DisplayRow {

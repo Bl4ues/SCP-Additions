@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.keycard;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -15,6 +16,27 @@ import net.mcreator.scpadditions.network.ScpEntityNetwork;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class KeycardReaderInteractionEvents {
     private KeycardReaderInteractionEvents() {
+    }
+
+    public static boolean tryOpenConfiguration(ServerPlayer player, BlockPos pos) {
+        if (player == null || pos == null || !player.isShiftKeyDown()) {
+            return false;
+        }
+
+        boolean hasScrewdriver = player.getMainHandItem().is(UnifiedReaderItems.SCREWDRIVER.get())
+                || player.getOffhandItem().is(UnifiedReaderItems.SCREWDRIVER.get());
+        if (!hasScrewdriver) {
+            return false;
+        }
+
+        KeycardReaderLevels.ReaderDescriptor descriptor = KeycardReaderLevels.describe(
+                player.level().getBlockState(pos));
+        if (descriptor == null) {
+            return false;
+        }
+
+        ScpEntityNetwork.openKeycardReaderScreen(player, pos, descriptor.level());
+        return true;
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

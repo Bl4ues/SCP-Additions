@@ -31,6 +31,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +42,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = "scp_additions")
 public final class ContextConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final String BUNDLED_CONFIG = "config/scpinventory/context_interactions.json";
     private static final double SELECT_REACH = 6.0D;
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
     private static final Map<UUID, PendingSelection> PENDING = new HashMap<>();
@@ -521,6 +525,9 @@ public final class ContextConfigManager {
             File file = configFile();
             if (!file.exists()) {
                 file.getParentFile().mkdirs();
+                copyBundledConfig(file);
+            }
+            if (!file.exists()) {
                 JsonObject root = new JsonObject();
                 root.addProperty("_comment", "Context interaction prompts for SCP Inventory. Edited in-game with /scpinventory context or config/scpinventory/context_interactions.json.");
                 root.add("interactions", new JsonArray());
@@ -536,6 +543,17 @@ public final class ContextConfigManager {
             JsonObject root = new JsonObject();
             root.add("interactions", new JsonArray());
             return root;
+        }
+    }
+
+    private static void copyBundledConfig(File file) {
+        try (InputStream stream = ContextConfigManager.class.getClassLoader()
+                .getResourceAsStream(BUNDLED_CONFIG)) {
+            if (stream != null) {
+                Files.copy(stream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception exception) {
+            ScpInventoryMod.LOGGER.error("Failed to copy bundled context interaction defaults", exception);
         }
     }
 

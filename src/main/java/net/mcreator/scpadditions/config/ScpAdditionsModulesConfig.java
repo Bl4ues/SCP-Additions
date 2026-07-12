@@ -10,14 +10,17 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
 
 public final class ScpAdditionsModulesConfig {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("modules.json");
+	private static final String BUNDLED_CONFIG = "config/scpadditions/modules.json";
 	private static volatile Root current = Root.defaults();
 
 	private ScpAdditionsModulesConfig() {
@@ -27,6 +30,9 @@ public final class ScpAdditionsModulesConfig {
 		Root loaded = Root.defaults();
 		try {
 			Files.createDirectories(CONFIG_PATH.getParent());
+			if (Files.notExists(CONFIG_PATH)) {
+				copyBundledConfig();
+			}
 			if (Files.exists(CONFIG_PATH)) {
 				try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
 					Root parsed = GSON.fromJson(reader, Root.class);
@@ -39,6 +45,15 @@ public final class ScpAdditionsModulesConfig {
 		}
 		current = loaded;
 		ScpAdditionsMod.LOGGER.info("Loaded SCP Additions module configuration from {}", CONFIG_PATH);
+	}
+
+	private static void copyBundledConfig() throws IOException {
+		try (InputStream stream = ScpAdditionsModulesConfig.class.getClassLoader()
+				.getResourceAsStream(BUNDLED_CONFIG)) {
+			if (stream != null) {
+				Files.copy(stream, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
+			}
+		}
 	}
 
 	private static void writeConfig(Root config) throws IOException {

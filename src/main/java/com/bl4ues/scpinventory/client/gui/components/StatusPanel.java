@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.client.gui.components;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
+
 import net.mcreator.scpadditions.vitals.client.PlayerVitalsClient;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.minecraft.client.Minecraft;
@@ -157,7 +159,7 @@ public class StatusPanel {
 
     private void drawConditionTab(GuiGraphics g, int x, int y, String label, boolean active) {
         g.fill(x, y, x + TAB_WIDTH, y + TAB_HEIGHT, active ? TAB_ACTIVE : TAB_INACTIVE);
-        g.drawString(mc.font, label, x + (TAB_WIDTH - mc.font.width(label)) / 2, y + 5, active ? TEXT_SELECTED : TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(label), x + (TAB_WIDTH - mc.font.width(ScpFonts.roboto(label))) / 2, y + 5, active ? TEXT_SELECTED : TEXT_WHITE, false);
     }
 
     private boolean clickConditionTab(double mouseX, double mouseY) {
@@ -239,8 +241,8 @@ public class StatusPanel {
         String name = effect.getEffect().getDisplayName().getString() + getAmplifierSuffix(effect);
         String duration = formatDuration(effect.getDuration());
         int textX = iconX + CONDITION_ICON_SIZE + 10;
-        g.drawString(mc.font, name, textX, y + 7, TEXT_WHITE, false);
-        g.drawString(mc.font, duration, textX, y + 20, TEXT_GRAY, false);
+        g.drawString(mc.font, ScpFonts.roboto(name), textX, y + 7, TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(duration), textX, y + 20, TEXT_GRAY, false);
 
         int barWidth = Math.max(90, Math.min(150, width / 3));
         int barX = x + width - barWidth - 14;
@@ -308,8 +310,8 @@ public class StatusPanel {
 
     private void drawSectionTitle(GuiGraphics g, int x, int y, String label) {
         String prefix = "://STATUS_";
-        g.drawString(mc.font, prefix, x, y, TEXT_GRAY, false);
-        g.drawString(mc.font, label, x + mc.font.width(prefix), y, TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(prefix), x, y, TEXT_GRAY, false);
+        g.drawString(mc.font, ScpFonts.roboto(label), x + mc.font.width(ScpFonts.roboto(prefix)), y, TEXT_WHITE, false);
     }
 
     private int getConditionScrollbarThumbHeight(int totalRows, int visibleRows) {
@@ -374,8 +376,8 @@ public class StatusPanel {
     }
 
     private void renderStat(GuiGraphics g, String label, String value, int x, int y) {
-        g.drawString(mc.font, label, x, y, TEXT_GRAY, false);
-        g.drawString(mc.font, value, x, y + 12, TEXT_WHITE, false);
+        g.drawString(mc.font, ScpFonts.roboto(label), x, y, TEXT_GRAY, false);
+        g.drawString(mc.font, ScpFonts.roboto(value), x, y + 12, TEXT_WHITE, false);
         g.fill(x, y + 31, x + 64, y + 32, LINE_GRAY);
     }
 

@@ -144,10 +144,10 @@ public final class LeftDoorButtons {
         public VoxelShape getShape(BlockState blockState, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
             return switch (blockState.getValue(FACING)) {
-                case NORTH -> Block.box(14.80D, -0.70D, -1.80D, 20.20D, 5.00D, 0.10D);
-                case EAST -> Block.box(15.90D, -0.70D, 14.80D, 17.80D, 5.00D, 20.20D);
-                case SOUTH -> Block.box(-4.20D, -0.70D, 15.90D, 1.20D, 5.00D, 17.80D);
-                case WEST -> Block.box(-1.80D, -0.70D, -4.20D, 0.10D, 5.00D, 1.20D);
+                case NORTH -> Block.box(16.9D, -2.66D, 14.2D, 20.2D, 2.64D, 16.0D);
+                case EAST -> Block.box(0.0D, -2.66D, 16.9D, 1.8D, 2.64D, 20.2D);
+                case SOUTH -> Block.box(-4.2D, -2.66D, 0.0D, -0.9D, 2.64D, 1.8D);
+                case WEST -> Block.box(14.2D, -2.66D, -4.2D, 16.0D, 2.64D, -0.9D);
                 default -> Shapes.empty();
             };
         }

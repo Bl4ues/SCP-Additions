@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,15 @@ public final class OffsetKeycardReaderItem extends BlockItem {
             return rightItem.get().place(shiftedPlacement);
         }
         return super.place(shiftedPlacement);
+    }
+
+    @Override
+    public String getDescriptionId() {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(this);
+        if (id == null) {
+            return super.getDescriptionId();
+        }
+        return "item." + id.getNamespace() + "." + id.getPath();
     }
 
     @Override

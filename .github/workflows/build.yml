@@ -3,9 +3,11 @@ name: Build
 on:
   push:
     branches:
+      - master
       - integration/scp-additions-3.0
   pull_request:
     branches:
+      - master
       - integration/scp-additions-3.0
 
 permissions:

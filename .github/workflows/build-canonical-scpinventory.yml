@@ -1,0 +1,39 @@
+name: Build canonical SCP Inventory port
+
+on:
+  push:
+    branches:
+      - integration/scp-additions-3.0
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: contains(github.event.head_commit.message, 'build canonical SCP Inventory port')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build and capture diagnostics
+        run: |
+          chmod +x gradlew
+          set +e
+          ./gradlew clean build --stacktrace > migration-reference/scpinventory-final/CANONICAL_BUILD.log 2>&1
+          status=$?
+          printf '%s\n' "$status" > migration-reference/scpinventory-final/CANONICAL_BUILD_STATUS.txt
+          exit 0
+      - name: Commit diagnostics
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add migration-reference/scpinventory-final/CANONICAL_BUILD.log migration-reference/scpinventory-final/CANONICAL_BUILD_STATUS.txt
+          git commit -m "chore(inventory): record canonical port build diagnostics"
+          git push origin HEAD:integration/scp-additions-3.0

@@ -1,6 +1,7 @@
 package com.bl4ues.scpinventory.capability;
 
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
+import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
@@ -45,4 +46,47 @@ public interface IScpInventory {
     void resetAll();
     CompoundTag serializeNBT();
     void deserializeNBT(CompoundTag tag);
+
+    default int getInventoryCount() {
+        int count = 0;
+        for (ItemStack stack : getInventory()) {
+            if (stack != null && !stack.isEmpty()) count++;
+        }
+        return count;
+    }
+
+    default int getFreeMainSlots() {
+        return Math.max(0, getMaxMainSlots() - getInventoryCount());
+    }
+
+    default boolean hasFreeMainSlots(int amount) {
+        return amount > 0 && getFreeMainSlots() >= amount;
+    }
+
+    default int getKeyCount() {
+        int count = 0;
+        for (ItemStack stack : getKeys()) {
+            if (stack != null && !stack.isEmpty()) count++;
+        }
+        return count;
+    }
+
+    default int getFreeKeySlots() {
+        return Math.max(0, MAX_KEY_COUNT - getKeyCount());
+    }
+
+    default boolean hasFreeKeySlots(int amount) {
+        return amount > 0 && getFreeKeySlots() >= amount;
+    }
+
+    default boolean isValidMainSlot(int slot) {
+        return slot >= 0 && slot < getMaxMainSlots();
+    }
+
+    default String getItemType(int slot) {
+        if (!isValidMainSlot(slot)) return "Empty";
+        ItemStack stack = getInventoryItem(slot);
+        return stack == null || stack.isEmpty()
+                ? "Empty" : ScpItemClassifier.getDisplayType(stack);
+    }
 }

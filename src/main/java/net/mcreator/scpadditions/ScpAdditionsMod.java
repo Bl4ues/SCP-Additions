@@ -24,6 +24,7 @@ import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.entity.Scp173TargetConfig;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
+import net.mcreator.scpadditions.facility.LeftDoorButtons;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
@@ -69,6 +70,7 @@ public class ScpAdditionsMod {
 		ScpAdditionsModTabs.REGISTRY.register(bus);
 		FacilityModule.register(bus);
 		MirroredDoorButtons.register(bus);
+		LeftDoorButtons.register(bus);
 		HeavyDoorPowerRelay.register(bus);
 		StructureFeature.REGISTRY.register(bus);
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);

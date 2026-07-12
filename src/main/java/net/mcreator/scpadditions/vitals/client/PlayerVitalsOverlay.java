@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.vitals.VitalsModule;
 
@@ -13,6 +14,8 @@ public final class PlayerVitalsOverlay {
             new ResourceLocation("scpinventory", "textures/gui/stamina.png");
     private static final ResourceLocation HEALTH_ICON =
             new ResourceLocation("scpinventory", "textures/gui/healthlogo.png");
+    private static final ResourceLocation ROBOTO_FONT =
+            new ResourceLocation("scpinventory", "roboto");
 
     private static final int ICON_SOURCE_SIZE = 128;
     private static final int ICON_SIZE = 17;
@@ -67,7 +70,9 @@ public final class PlayerVitalsOverlay {
                     healthRatio, healthDark, healthColor,
                     PlayerVitalsClient.getDamageFlashAlpha());
 
-            String healthText = Math.round(health) + "/" + Math.round(maxHealth);
+            Component healthText = Component.literal(
+                    Math.round(health) + "/" + Math.round(maxHealth))
+                    .withStyle(style -> style.withFont(ROBOTO_FONT));
             graphics.drawString(minecraft.font, healthText,
                     BAR_X + 6, rowY + 1, TEXT, false);
         }

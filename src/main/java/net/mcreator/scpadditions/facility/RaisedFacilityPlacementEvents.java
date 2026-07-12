@@ -56,6 +56,12 @@ public final class RaisedFacilityPlacementEvents {
                 stack,
                 raisedHit);
 
+        if (!raisedContext.getClickedPos().equals(raisedTarget)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+            return;
+        }
+
         InteractionResult result = blockItem.place(raisedContext);
         event.setCanceled(true);
         event.setCancellationResult(result);

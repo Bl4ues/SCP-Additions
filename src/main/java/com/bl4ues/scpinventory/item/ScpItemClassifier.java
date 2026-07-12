@@ -26,6 +26,10 @@ public final class ScpItemClassifier {
             return configured.get();
         }
 
+        if (isImplicitKey(stack)) {
+            return ScpItemType.KEY;
+        }
+
         if (isConfiguredCodex(stack)) {
             return ScpItemType.CODEX;
         }
@@ -72,6 +76,15 @@ public final class ScpItemClassifier {
             }
         }
         return Optional.empty();
+    }
+
+    private static boolean isImplicitKey(ItemStack stack) {
+        ResourceLocation id = idOf(stack);
+        if (id == null) return false;
+        String path = id.getPath();
+        if (path.equals("security_credentials")) return true;
+        return (path.equals("keycard") || path.endsWith("_keycard"))
+                && !path.contains("reader");
     }
 
     private static boolean isConfiguredCodex(ItemStack stack) {

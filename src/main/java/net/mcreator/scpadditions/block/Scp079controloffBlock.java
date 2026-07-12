@@ -1,4 +1,3 @@
-
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -43,7 +42,9 @@ public class Scp079controloffBlock extends Block implements SimpleWaterloggedBlo
 	@Override
 	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, world, list, flag);
-		list.add(Component.literal("Place it directly at redstone activated blocks like doors to make it possible for SCP-079 to control it."));
+		list.add(Component.literal("Place beside a redstone device to let SCP-079 pulse it while Facility Control is active."));
+		list.add(Component.literal("This legacy node is intentionally indiscriminate: use it for lights, alarms, traps or machinery."));
+		list.add(Component.literal("Heavy doors use SCP-079's separate contextual sabotage system instead."));
 	}
 
 	@Override

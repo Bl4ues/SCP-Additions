@@ -79,6 +79,11 @@ processResources {
     exclude 'data/scp_additions/recipes/lv_5_kr_left.json'
     exclude 'data/scp_additions/recipes/lv_6_kr_left.json'
 
+    // The original Additions left/right buttons are retained only as hidden
+    // registry compatibility. The Unity door button is the sole public recipe.
+    exclude 'data/scp_additions/recipes/button_left_swap.json'
+    exclude 'data/scp_additions/recipes/button_right_swap.json'
+
     from('config') {
         into 'config'
     }

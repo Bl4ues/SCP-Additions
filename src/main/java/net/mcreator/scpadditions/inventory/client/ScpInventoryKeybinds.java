@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -14,8 +15,16 @@ import org.lwjgl.glfw.GLFW;
 public final class ScpInventoryKeybinds {
     public static final KeyMapping OPEN = new KeyMapping(
             "key.scp_additions.scp_inventory",
+            KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_I,
+            GLFW.GLFW_KEY_TAB,
+            "key.categories.scp_additions");
+
+    public static final KeyMapping CONTEXT_INTERACT = new KeyMapping(
+            "key.scp_additions.context_interact",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_E,
             "key.categories.scp_additions");
 
     private ScpInventoryKeybinds() {
@@ -24,5 +33,6 @@ public final class ScpInventoryKeybinds {
     @SubscribeEvent
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(OPEN);
+        event.register(CONTEXT_INTERACT);
     }
 }

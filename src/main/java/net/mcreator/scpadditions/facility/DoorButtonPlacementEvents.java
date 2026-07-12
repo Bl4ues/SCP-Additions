@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -66,8 +67,6 @@ public final class DoorButtonPlacementEvents {
 
         InteractionResult result;
         if (clickedLeftHalf) {
-            // The original model extends toward the selected visual position, so
-            // its logical anchor remains one block to screen-left.
             BlockPos logicalPosition = visualPosition.relative(screenLeft);
             BlockHitResult shiftedHit = new BlockHitResult(
                     Vec3.atCenterOf(logicalPosition),
@@ -97,11 +96,9 @@ public final class DoorButtonPlacementEvents {
                 }
             }
         } else {
-            // The right side needs mirrored geometry rather than the same model
-            // moved to another block. Its logical anchor is already correct.
             BlockPos logicalPosition = visualPosition;
-            result = placeMirrored(player.level(), player, stack, logicalPosition,
-                    buttonFacing, locked, hit.getDirection());
+            result = placeMirrored(player.level(), player, event.getHand(), stack,
+                    logicalPosition, buttonFacing, locked, hit.getDirection());
         }
 
         event.setCanceled(true);
@@ -109,14 +106,14 @@ public final class DoorButtonPlacementEvents {
     }
 
     private static InteractionResult placeMirrored(Level level, Player player,
-            ItemStack stack, BlockPos pos, Direction facing, boolean locked,
-            Direction clickedFace) {
+            InteractionHand hand, ItemStack stack, BlockPos pos, Direction facing,
+            boolean locked, Direction clickedFace) {
         if (!player.mayUseItemAt(pos, clickedFace, stack)) {
             return InteractionResult.FAIL;
         }
 
         BlockPlaceContext context = new BlockPlaceContext(
-                level, player, player.getUsedItemHand(), stack,
+                level, player, hand, stack,
                 new BlockHitResult(Vec3.atCenterOf(pos), clickedFace, pos, false));
         if (!level.getBlockState(pos).canBeReplaced(context)) {
             return InteractionResult.FAIL;

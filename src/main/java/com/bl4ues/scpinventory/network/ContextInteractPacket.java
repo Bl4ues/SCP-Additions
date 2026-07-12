@@ -1,7 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
-import com.bl4ues.scpinventory.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;

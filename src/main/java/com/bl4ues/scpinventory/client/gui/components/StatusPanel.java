@@ -1,6 +1,6 @@
 package com.bl4ues.scpinventory.client.gui.components;
 
-import com.bl4ues.scpinventory.client.PlayerVitalsClient;
+import net.mcreator.scpadditions.vitals.client.PlayerVitalsClient;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

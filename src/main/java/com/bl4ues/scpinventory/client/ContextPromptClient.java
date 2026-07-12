@@ -1,7 +1,7 @@
 package com.bl4ues.scpinventory.client;
 
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
-import com.bl4ues.scpinventory.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import com.bl4ues.scpinventory.network.ContextInteractPacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;

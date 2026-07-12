@@ -48,46 +48,123 @@ $ffprobeExe = Resolve-FfmpegTool -Name 'ffprobe'
 Write-Host "Using ffmpeg:  $ffmpegExe"
 Write-Host "Using ffprobe: $ffprobeExe"
 
-# Minecraft/OpenAL can spatialize mono sounds. Stereo sound effects remain
-# listener-centered even when level.playSound is given the entity coordinates.
-$soundDir = Join-Path $repoRoot 'src\main\resources\assets\scpinventory\sounds'
-$files = Get-ChildItem -Path $soundDir -Filter 'stone_scrap_*.ogg' -File | Sort-Object Name
-if ($files.Count -eq 0) {
-    throw "No stone_scrap_*.ogg files were found in $soundDir"
+# Minecraft/OpenAL spatializes mono effects. Stereo effects remain centered on
+# the listener even when level.playSound is called with block/entity coordinates.
+$relativePositionalSounds = @(
+    # SCP Unity heavy/manual doors
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\closing.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\open.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\default_open.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\default_close.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\bathroom_open.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\bathroom_close.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\office_open.ogg',
+    'src\main\resources\assets\scp_unity_extra_blocks\sounds\office_close.ogg',
+
+    # Tesla Gate and terminal machinery
+    'src\main\resources\assets\scp_additions\sounds\teslaactivate.ogg',
+    'src\main\resources\assets\scp_additions\sounds\overcharge.ogg',
+    'src\main\resources\assets\scp_additions\sounds\teslaready.ogg',
+    'src\main\resources\assets\scp_additions\sounds\teslarecharge.ogg',
+    'src\main\resources\assets\scp_additions\sounds\turningon.ogg',
+    'src\main\resources\assets\scp_additions\sounds\turningoff.ogg',
+    'src\main\resources\assets\scp_additions\sounds\overrideon.ogg',
+    'src\main\resources\assets\scp_additions\sounds\terminalloop.ogg',
+    'src\main\resources\assets\scp_additions\sounds\terminalon.ogg',
+    'src\main\resources\assets\scp_additions\sounds\terminaloff.ogg',
+
+    # Additions doors and containment machinery
+    'src\main\resources\assets\scp_additions\sounds\dooropen.ogg',
+    'src\main\resources\assets\scp_additions\sounds\doorclose.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp902opening.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp902closing.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp059box.ogg',
+    'src\main\resources\assets\scp_additions\sounds\decontamination.ogg',
+    'src\main\resources\assets\scp_additions\sounds\spray.ogg',
+    'src\main\resources\assets\scp_additions\sounds\button.ogg',
+
+    # SCP-914 machinery
+    'src\main\resources\assets\scp_additions\sounds\scp914doorclose.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp914dooropen.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp914key.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp914refining.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp914dial.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp914inside.ogg',
+
+    # SCP-294 machine sounds
+    'src\main\resources\assets\scp_additions\sounds\scp294enter.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp294pouring.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp294emptycup.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp294outofrange.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp294on.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp294off.ogg',
+    'src\main\resources\assets\scp_additions\sounds\scp294coinslot.ogg'
+)
+
+$files = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+foreach ($relativePath in $relativePositionalSounds) {
+    $fullPath = Join-Path $repoRoot $relativePath
+    if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
+        $files.Add((Get-Item -LiteralPath $fullPath))
+    }
 }
 
-$converted = 0
-foreach ($file in $files) {
-    $channels = (& $ffprobeExe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $file.FullName).Trim()
+$stoneScrapeDir = Join-Path $repoRoot 'src\main\resources\assets\scpinventory\sounds'
+if (Test-Path -LiteralPath $stoneScrapeDir -PathType Container) {
+    Get-ChildItem -LiteralPath $stoneScrapeDir -Filter 'stone_scrap_*.ogg' -File |
+        Sort-Object Name |
+        ForEach-Object { $files.Add($_) }
+}
+
+$files = $files | Sort-Object FullName -Unique
+if ($files.Count -eq 0) {
+    throw 'No positional OGG files were found. Verify that the repository assets are present.'
+}
+
+function Convert-ToPositionalMono {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.FileInfo]$File
+    )
+
+    $channels = (& $ffprobeExe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $File.FullName).Trim()
     if ($LASTEXITCODE -ne 0) {
-        throw "ffprobe failed for $($file.Name)"
+        throw "ffprobe failed for $($File.FullName)"
     }
     if ($channels -eq '1') {
-        Write-Host "Already mono: $($file.Name)"
-        continue
+        Write-Host "Already mono: $($File.Name)"
+        return $false
     }
 
-    $temporary = Join-Path $file.DirectoryName ($file.BaseName + '.mono.ogg')
+    $temporary = Join-Path $File.DirectoryName ($File.BaseName + '.mono.ogg')
     try {
-        & $ffmpegExe -hide_banner -loglevel error -y -i $file.FullName -ac 1 -c:a libvorbis -q:a 6 $temporary
-        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $temporary)) {
-            throw "ffmpeg failed for $($file.Name)"
+        & $ffmpegExe -hide_banner -loglevel error -y -i $File.FullName -ac 1 -c:a libvorbis -q:a 6 $temporary
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $temporary)) {
+            throw "ffmpeg failed for $($File.FullName)"
         }
 
         $resultChannels = (& $ffprobeExe -v error -select_streams a:0 -show_entries stream=channels -of 'csv=p=0' -- $temporary).Trim()
         if ($LASTEXITCODE -ne 0 -or $resultChannels -ne '1') {
-            throw "Converted file is not mono: $($file.Name)"
+            throw "Converted file is not mono: $($File.FullName)"
         }
 
-        Move-Item -Force $temporary $file.FullName
-        $converted++
-        Write-Host "Converted to positional mono: $($file.Name)"
+        Move-Item -Force -LiteralPath $temporary -Destination $File.FullName
+        Write-Host "Converted to positional mono: $($File.FullName)"
+        return $true
     }
     finally {
-        Remove-Item $temporary -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
+    }
+}
+
+$converted = 0
+foreach ($file in $files) {
+    if (Convert-ToPositionalMono -File $file) {
+        $converted++
     }
 }
 
 Write-Host ''
-Write-Host "Converted scrape files: $converted"
-Write-Host 'Run git status --short, then commit and push the five OGG changes.'
+Write-Host "Positional files checked: $($files.Count)"
+Write-Host "Files converted this run: $converted"
+Write-Host 'Run git status --short, then commit every modified OGG file.'

@@ -12,17 +12,14 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
- * Keeps Unity door-button pairing optional and manual.
+ * Optional manual pairing for Unity door buttons.
  *
- * Placement never creates a mirrored counterpart. However, when another
- * functional Unity button already exists in the original opposite position,
- * the integrated DoorButtonBlock logic is allowed to synchronize both buttons
- * through CLOSED, OPENING, OPEN and CLOSING. Without a matching counterpart,
- * only the clicked button changes state.
+ * Placement never creates a counterpart. If another functional button already
+ * exists exactly two blocks through the wall, both preserve their own original
+ * or mirrored geometry while changing state together.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DoorButtonIndependentInteractionEvents {
@@ -34,9 +31,6 @@ public final class DoorButtonIndependentInteractionEvents {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         ItemStack held = event.getEntity().getItemInHand(event.getHand());
-
-        // Let the dedicated smart-placement handler own clicks performed while
-        // either public button item is held.
         if (held.is(FacilityModule.itemByPath("button_closed").get())
                 || held.is(FacilityModule.itemByPath("button_locked").get())) {
             return;
@@ -44,38 +38,24 @@ public final class DoorButtonIndependentInteractionEvents {
 
         BlockPos pos = event.getPos();
         BlockState state = event.getLevel().getBlockState(pos);
-        Block block = state.getBlock();
-
-        RegistryObject<Block> transition;
-        RegistryObject<Block> endpoint;
-        if (block == FacilityModule.BUTTON_CLOSED.get()) {
-            transition = FacilityModule.BUTTON_OPENING;
-            endpoint = FacilityModule.BUTTON_OPEN;
-        } else if (block == FacilityModule.BUTTON_OPEN.get()) {
-            transition = FacilityModule.BUTTON_CLOSING;
-            endpoint = FacilityModule.BUTTON_CLOSED;
-        } else {
+        Phase phase = phaseOf(state.getBlock());
+        if (phase != Phase.CLOSED && phase != Phase.OPEN) {
             return;
         }
-
         if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
             return;
         }
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         BlockPos counterpartPos = pos.relative(facing.getOpposite(), 2);
-        BlockState counterpart = event.getLevel().getBlockState(counterpartPos);
+        BlockState counterpartState = event.getLevel().getBlockState(counterpartPos);
+        boolean linked = isFunctional(counterpartState.getBlock())
+                && counterpartState.hasProperty(HorizontalDirectionalBlock.FACING)
+                && counterpartState.getValue(HorizontalDirectionalBlock.FACING) == facing.getOpposite();
 
-        // A manually placed functional counterpart exists exactly where the old
-        // mirrored placement used to put it. Let DoorButtonBlock#use execute its
-        // original pair-aware state machine, which updates both sides together.
-        if (isFunctionalButton(counterpart.getBlock())) {
-            return;
-        }
+        Phase transition = phase == Phase.CLOSED ? Phase.OPENING : Phase.CLOSING;
+        Phase endpoint = phase == Phase.CLOSED ? Phase.OPEN : Phase.CLOSED;
 
-        // No matching counterpart: suppress the legacy pair logic and animate
-        // only this button. Any mirror that DoorButtonBlock#onPlace attempts to
-        // recreate during the state replacement is removed immediately.
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
 
@@ -83,44 +63,109 @@ public final class DoorButtonIndependentInteractionEvents {
             return;
         }
 
-        setSingleState(level, pos, facing, transition.get());
+        boolean clickedMirrored = MirroredDoorButtons.isAny(state.getBlock());
+        boolean counterpartMirrored = linked && MirroredDoorButtons.isAny(counterpartState.getBlock());
+        Direction counterpartFacing = linked
+                ? counterpartState.getValue(HorizontalDirectionalBlock.FACING)
+                : facing.getOpposite();
+
+        setState(level, pos, facing, clickedMirrored, transition);
+        if (linked) {
+            setState(level, counterpartPos, counterpartFacing, counterpartMirrored, transition);
+        }
 
         ScpAdditionsMod.queueServerWork(TRANSITION_TICKS, () -> {
-            BlockState current = level.getBlockState(pos);
-            if (current.getBlock() == transition.get()
-                    && current.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                Direction currentFacing = current.getValue(HorizontalDirectionalBlock.FACING);
-                setSingleState(level, pos, currentFacing, endpoint.get());
+            completeTransition(level, pos, endpoint);
+            if (linked) {
+                completeTransition(level, counterpartPos, endpoint);
             }
         });
     }
 
-    private static void setSingleState(ServerLevel level, BlockPos pos,
-            Direction facing, Block target) {
+    private static void completeTransition(ServerLevel level, BlockPos pos, Phase endpoint) {
+        BlockState current = level.getBlockState(pos);
+        Phase currentPhase = phaseOf(current.getBlock());
+        if ((endpoint == Phase.OPEN && currentPhase != Phase.OPENING)
+                || (endpoint == Phase.CLOSED && currentPhase != Phase.CLOSING)
+                || !current.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return;
+        }
+
+        setState(level, pos,
+                current.getValue(HorizontalDirectionalBlock.FACING),
+                MirroredDoorButtons.isAny(current.getBlock()),
+                endpoint);
+    }
+
+    private static void setState(ServerLevel level, BlockPos pos,
+            Direction facing, boolean mirrored, Phase targetPhase) {
         BlockPos legacyCounterpartPos = pos.relative(facing.getOpposite(), 2);
         BlockState counterpartBefore = level.getBlockState(legacyCounterpartPos);
 
+        Block target = blockFor(targetPhase, mirrored);
         level.setBlock(pos, target.defaultBlockState()
                 .setValue(HorizontalDirectionalBlock.FACING, facing), Block.UPDATE_ALL);
 
-        // Preserve any manually placed button that was already opposite. Remove
-        // only a new counterpart created as a side effect of the legacy onPlace.
-        if (!isAnyDoorButton(counterpartBefore.getBlock())) {
-            BlockState counterpartAfter = level.getBlockState(legacyCounterpartPos);
-            if (isAnyDoorButton(counterpartAfter.getBlock())) {
-                level.removeBlock(legacyCounterpartPos, false);
+        // Base Unity states still contain the old auto-mirroring onPlace hook.
+        // Restore an existing manually placed counterpart exactly as it was, or
+        // remove only a new counterpart created as that legacy side effect.
+        BlockState counterpartAfter = level.getBlockState(legacyCounterpartPos);
+        if (isAnyButton(counterpartBefore.getBlock())) {
+            if (!counterpartAfter.equals(counterpartBefore)) {
+                level.setBlock(legacyCounterpartPos, counterpartBefore, Block.UPDATE_ALL);
             }
+        } else if (isAnyButton(counterpartAfter.getBlock())) {
+            level.removeBlock(legacyCounterpartPos, false);
         }
     }
 
-    private static boolean isFunctionalButton(Block block) {
-        return block == FacilityModule.BUTTON_CLOSED.get()
-                || block == FacilityModule.BUTTON_OPENING.get()
-                || block == FacilityModule.BUTTON_OPEN.get()
-                || block == FacilityModule.BUTTON_CLOSING.get();
+    private static Block blockFor(Phase phase, boolean mirrored) {
+        if (mirrored) {
+            return switch (phase) {
+                case LOCKED -> MirroredDoorButtons.BUTTON_LOCKED.get();
+                case CLOSED -> MirroredDoorButtons.BUTTON_CLOSED.get();
+                case OPENING -> MirroredDoorButtons.BUTTON_OPENING.get();
+                case OPEN -> MirroredDoorButtons.BUTTON_OPEN.get();
+                case CLOSING -> MirroredDoorButtons.BUTTON_CLOSING.get();
+            };
+        }
+        return switch (phase) {
+            case LOCKED -> FacilityModule.BUTTON_LOCKED.get();
+            case CLOSED -> FacilityModule.BUTTON_CLOSED.get();
+            case OPENING -> FacilityModule.BUTTON_OPENING.get();
+            case OPEN -> FacilityModule.BUTTON_OPEN.get();
+            case CLOSING -> FacilityModule.BUTTON_CLOSING.get();
+        };
     }
 
-    private static boolean isAnyDoorButton(Block block) {
-        return block == FacilityModule.BUTTON_LOCKED.get() || isFunctionalButton(block);
+    private static Phase phaseOf(Block block) {
+        if (block == FacilityModule.BUTTON_LOCKED.get()
+                || block == MirroredDoorButtons.BUTTON_LOCKED.get()) return Phase.LOCKED;
+        if (block == FacilityModule.BUTTON_CLOSED.get()
+                || block == MirroredDoorButtons.BUTTON_CLOSED.get()) return Phase.CLOSED;
+        if (block == FacilityModule.BUTTON_OPENING.get()
+                || block == MirroredDoorButtons.BUTTON_OPENING.get()) return Phase.OPENING;
+        if (block == FacilityModule.BUTTON_OPEN.get()
+                || block == MirroredDoorButtons.BUTTON_OPEN.get()) return Phase.OPEN;
+        if (block == FacilityModule.BUTTON_CLOSING.get()
+                || block == MirroredDoorButtons.BUTTON_CLOSING.get()) return Phase.CLOSING;
+        return null;
+    }
+
+    private static boolean isFunctional(Block block) {
+        Phase phase = phaseOf(block);
+        return phase != null && phase != Phase.LOCKED;
+    }
+
+    private static boolean isAnyButton(Block block) {
+        return phaseOf(block) != null;
+    }
+
+    private enum Phase {
+        LOCKED,
+        CLOSED,
+        OPENING,
+        OPEN,
+        CLOSING
     }
 }

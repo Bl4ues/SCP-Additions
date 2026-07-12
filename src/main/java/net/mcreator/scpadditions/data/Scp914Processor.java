@@ -198,7 +198,7 @@ public final class Scp914Processor {
         };
         boolean wasAlive = player.isAlive();
         boolean damaged = player.hurt(source, amount);
-        if (damaged && wasAlive && player.isDeadOrDying()) {
+        if (damaged && wasAlive && player.isDeadOrDying() && !"scp914coarse".equals(translationKey)) {
             player.level().playSound(null, player.blockPosition(),
                     ScpAdditionsModSounds.SCP914DEATH.get(),
                     SoundSource.NEUTRAL, 1.0F, 1.0F);

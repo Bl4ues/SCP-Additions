@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,7 +16,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.Scp173Entity;
-import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -75,7 +73,7 @@ public final class Scp173SpawnEvents {
             BlockPos pos = findLocalSpawnPosition(level, x, playerY, z);
             if (pos == null) pos = findSurfaceSpawnPosition(level, x, z);
             if (pos != null) {
-                spawn173(level, pos, player, random);
+                spawn173(level, pos, player);
                 return;
             }
         }
@@ -130,7 +128,7 @@ public final class Scp173SpawnEvents {
         return level.noCollision(box);
     }
 
-    private static void spawn173(ServerLevel level, BlockPos pos, ServerPlayer player, RandomSource random) {
+    private static void spawn173(ServerLevel level, BlockPos pos, ServerPlayer player) {
         Scp173Entity scp173 = ScpAdditionsModEntities.SCP_173.get().create(level);
         if (scp173 == null) return;
         double x = pos.getX() + 0.5D, y = pos.getY(), z = pos.getZ() + 0.5D;
@@ -139,7 +137,5 @@ public final class Scp173SpawnEvents {
         scp173.moveTo(x, y, z, yaw, 0.0F);
         scp173.markRoutineSpawn();
         level.addFreshEntity(scp173);
-        level.playSound(null, x, y + 0.6D, z, Scp173Sounds.RATTLE.get(), SoundSource.HOSTILE,
-                0.72F, 0.96F + random.nextFloat() * 0.08F);
     }
 }

@@ -1,5 +1,21 @@
 # Changelog
 
+## SCP Additions 3.0.1 — Door, SCP-173, and Audio Hotfix
+
+- Replaced the generic centered hitbox used by every manual facility door with family-specific closed and open shapes ported from SCP Unity Extra Blocks;
+- Corrected manual-door collision alignment for the Normal, Logistics, Office, Bathroom, and Workshop door families in every horizontal orientation;
+- Made manual door transitions passable while closed endpoints remain solid, and explicitly exposed open/closed pathfinding state to mobs;
+- Corrected SCP-173 visibility checks so closed facility doors block observation instead of being treated as transparent merely because their models use `noOcclusion`;
+- Kept sight possible through the actual window openings of the Normal manual door and Office door while their solid panels and frames continue to block vision;
+- Strengthened line-of-sight checks for solid and shaped blocks while preserving visibility through glass, panes, leaves, and genuine openings;
+- Removed the immediate natural-spawn rattle so SCP-173 does not announce itself before the player actually sees it;
+- Kept the initial SCP-173 scare and blink HUD activation gated behind confirmed player vision and proximity;
+- Prevented the SCP-914 death sound from playing for Coarse outcomes, whose lethal result represents delayed internal bleeding rather than an immediate machine kill;
+- Added the new `enter.ogg` UI sound, played once for the joining player on every world login;
+- Increased all SCP Additions sound definitions to 300% of their previous volume except Tesla Gate sounds and the terminal click/select sounds;
+- Updated the mod version to 3.0.1.
+
+
 ## SCP Additions 3.0.0 — Mega SCP Unity Update
 
 The largest SCP Additions update so far. SCP Inventory and SCP Unity Extra Blocks have been consolidated into SCP Additions as internal systems, so only one mod file is required.

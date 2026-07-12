@@ -24,6 +24,8 @@ public final class ScpEntityNetwork {
                 BlinkInputStatePacket::encode, BlinkInputStatePacket::decode, BlinkInputStatePacket::handle);
         ScpAdditionsMod.addNetworkMessage(ScareSoundPacket.class,
                 ScareSoundPacket::encode, ScareSoundPacket::decode, ScareSoundPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(EnterSoundPacket.class,
+                EnterSoundPacket::encode, EnterSoundPacket::decode, EnterSoundPacket::handle);
         ScpAdditionsMod.addNetworkMessage(KeycardReaderOpenScreenPacket.class,
                 KeycardReaderOpenScreenPacket::encode, KeycardReaderOpenScreenPacket::decode,
                 KeycardReaderOpenScreenPacket::handle);
@@ -45,6 +47,11 @@ public final class ScpEntityNetwork {
     public static void playScare(ServerPlayer player) {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new ScareSoundPacket());
+    }
+
+    public static void playEnterSound(ServerPlayer player) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new EnterSoundPacket());
     }
 
     public static void openKeycardReaderScreen(ServerPlayer player, BlockPos pos, int level) {

@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -196,6 +197,19 @@ public final class FacilityModule {
 
     public static RegistryObject<Item> itemByPath(String path) {
         return ITEMS_BY_PATH.get(path);
+    }
+
+    public static boolean isFacilityDoor(BlockState state) {
+        return state != null && state.getBlock() instanceof AnimatedDoorBlock;
+    }
+
+    public static boolean isDoorPassable(BlockState state) {
+        return state != null && state.getBlock() instanceof AnimatedDoorBlock door && door.passable();
+    }
+
+    public static boolean isWindowedDoor(BlockState state) {
+        if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)) return false;
+        return "normal".equals(door.familyId) || "office".equals(door.familyId);
     }
 
     /**
@@ -809,6 +823,7 @@ public final class FacilityModule {
 
         private boolean passable() {
             DoorFamily family = family();
+            if (family.directUse()) return stage != DoorStage.CLOSED;
             return switch (stage) {
                 case OPEN -> true;
                 case CLOSED -> false;
@@ -817,16 +832,39 @@ public final class FacilityModule {
             };
         }
 
+        private boolean manualDoorUsesOpenShape() {
+            DoorFamily family = family();
+            return switch (stage) {
+                case CLOSED -> false;
+                case OPEN -> true;
+                case OPENING -> frame * 2 >= Math.max(1, family.opening().size() - 1);
+                case CLOSING -> frame * 2 < Math.max(1, family.closing().size() - 1);
+            };
+        }
+
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return heavyDoorShape(state.getValue(FACING));
+            Direction facing = state.getValue(FACING);
+            return family().directUse()
+                    ? FacilityDoorShapes.shape(familyId, manualDoorUsesOpenShape(), facing)
+                    : heavyDoorShape(facing);
         }
 
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return passable() ? Shapes.empty() : heavyDoorShape(state.getValue(FACING));
+            if (passable()) return Shapes.empty();
+            Direction facing = state.getValue(FACING);
+            return family().directUse()
+                    ? FacilityDoorShapes.shape(familyId, false, facing)
+                    : heavyDoorShape(facing);
+        }
+
+        @Override
+        public boolean isPathfindable(BlockState state, BlockGetter level,
+                BlockPos pos, PathComputationType type) {
+            return passable();
         }
 
         @Override

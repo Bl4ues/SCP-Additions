@@ -47,6 +47,7 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> SCP914DIAL = REGISTRY.register("scp914dial", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914dial")));
 	public static final RegistryObject<SoundEvent> SCP914INSIDE = REGISTRY.register("scp914inside", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914inside")));
 	public static final RegistryObject<SoundEvent> SCP914DEATH = REGISTRY.register("scp914death", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914death")));
+	public static final RegistryObject<SoundEvent> ENTER = REGISTRY.register("enter", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "enter")));
 	public static final RegistryObject<SoundEvent> SCP059BOX = REGISTRY.register("scp059box", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp059box")));
 	public static final RegistryObject<SoundEvent> GEIGER2 = REGISTRY.register("geiger2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger2")));
 	public static final RegistryObject<SoundEvent> GEIGER1 = REGISTRY.register("geiger1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger1")));

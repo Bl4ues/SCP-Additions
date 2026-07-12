@@ -4,11 +4,11 @@ license="Creative Commons Attribution-ShareAlike 3.0"
 
 [[mods]]
 modId="scp_additions"
-version="3.0.0"
+version="3.0.1"
 displayName="SCP Additions"
 authors="Bl4ues"
 description='''
-SCP Additions 3.0 — Mega SCP Unity Update.
+SCP Additions 3.0.1 — Door, SCP-173, and Audio Hotfix.
 Combines the existing SCP Additions content with the SCP Inventory gameplay systems and SCP Unity-inspired facility content.
 '''
 

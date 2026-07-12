@@ -1,71 +1,732 @@
 {
-  "teslaactivate": { "subtitle": "subtitles.teslaactivate", "sounds": [{ "name": "scp_additions:teslaactivate", "stream": false }] },
-  "overcharge": { "subtitle": "subtitles.overcharge", "sounds": [{ "name": "scp_additions:overcharge", "stream": false }] },
-  "teslaready": { "subtitle": "subtitles.teslaready", "sounds": [{ "name": "scp_additions:teslaready", "stream": false }] },
-  "teslarecharge": { "subtitle": "subtitles.teslarecharge", "sounds": [{ "name": "scp_additions:teslarecharge", "stream": false }] },
-  "click": { "subtitle": "subtitles.click", "sounds": [{ "name": "scp_additions:click", "stream": false }] },
-  "click_1": { "subtitle": "subtitles.click_1", "sounds": [{ "name": "scp_additions:click_1", "stream": false }] },
-  "click_2": { "subtitle": "subtitles.click_2", "sounds": [{ "name": "scp_additions:click_2", "stream": false }] },
-  "select": { "subtitle": "subtitles.select", "sounds": [{ "name": "scp_additions:select", "stream": false }] },
-  "popup": { "subtitle": "subtitles.popup", "sounds": [{ "name": "scp_additions:popup", "stream": false }] },
-  "turningon": { "subtitle": "subtitles.turningon", "sounds": [{ "name": "scp_additions:turningon", "stream": false }] },
-  "turningoff": { "subtitle": "subtitles.turningoff", "sounds": [{ "name": "scp_additions:turningoff", "stream": false }] },
-  "overrideon": { "subtitle": "subtitles.overrideon", "sounds": [{ "name": "scp_additions:overrideon", "stream": false }] },
-  "terminalloop": { "subtitle": "subtitles.terminalloop", "sounds": [{ "name": "scp_additions:terminalloop", "stream": false }] },
-  "terminalon": { "subtitle": "subtitles.terminalon", "sounds": [{ "name": "scp_additions:terminalon", "stream": false }] },
-  "terminaloff": { "subtitle": "subtitles.terminaloff", "sounds": [{ "name": "scp_additions:terminaloff", "stream": false }] },
-  "scp079_1": { "subtitle": "subtitles.scp079_1", "sounds": [{ "name": "scp_additions:079_1", "stream": false }] },
-  "candyeat": { "subtitle": "subtitles.candyeat", "sounds": [{ "name": "scp_additions:candyeat", "stream": false }] },
-  "candy": { "subtitle": "subtitles.candy", "sounds": [{ "name": "scp_additions:candy", "stream": false }] },
-  "scp330death": { "subtitle": "subtitles.scp330death", "sounds": [{ "name": "scp_additions:330death", "stream": false }] },
-  "scp1176": { "subtitle": "subtitles.scp1176", "sounds": [{ "name": "scp_additions:scp1176", "stream": true }] },
-  "scp902": { "subtitle": "subtitles.scp902", "sounds": [{ "name": "scp_additions:scp902", "stream": false }] },
-  "scp902closing": { "subtitle": "subtitles.scp902closing", "sounds": [{ "name": "scp_additions:scp902closing", "stream": false }] },
-  "scp902opening": { "subtitle": "subtitles.scp902opening", "sounds": [{ "name": "scp_additions:scp902opening", "stream": false }] },
-  "scp079_2": { "subtitle": "subtitles.scp079_2", "sounds": [{ "name": "scp_additions:079_2", "stream": false }] },
-  "button": { "subtitle": "subtitles.button", "sounds": [{ "name": "scp_additions:button", "stream": false }] },
-  "scp914doorclose": { "subtitle": "subtitles.scp914doorclose", "sounds": [{ "name": "scp_additions:scp914doorclose", "stream": false }] },
-  "scp914dooropen": { "subtitle": "subtitles.scp914dooropen", "sounds": [{ "name": "scp_additions:scp914dooropen", "stream": false }] },
-  "scp914key": { "subtitle": "subtitles.scp914key", "sounds": [{ "name": "scp_additions:scp914key", "stream": false }] },
-  "scp914refining": { "subtitle": "subtitles.scp914refining", "sounds": [{ "name": "scp_additions:scp914refining", "stream": false }] },
-  "scp914dial": { "subtitle": "subtitles.scp914dial", "sounds": [{ "name": "scp_additions:scp914dial", "stream": false }] },
-  "scp914inside": { "subtitle": "subtitles.scp914inside", "sounds": [{ "name": "scp_additions:scp914inside", "stream": false }] },
-  "scp914death": { "subtitle": "subtitles.scp914death", "sounds": [{ "name": "scp_additions:scp914death", "stream": false }] },
-  "scp059box": { "subtitle": "subtitles.scp059box", "sounds": [{ "name": "scp_additions:scp059box", "stream": false }] },
-  "geiger2": { "subtitle": "subtitles.geiger2", "sounds": [{ "name": "scp_additions:geiger2", "stream": false }] },
-  "geiger1": { "subtitle": "subtitles.geiger1", "sounds": [{ "name": "scp_additions:geiger1", "stream": false }] },
-  "scp059_1": { "subtitle": "subtitles.scp059_1", "sounds": [{ "name": "scp_additions:scp059_1", "stream": false }] },
-  "geiger3": { "subtitle": "subtitles.geiger3", "sounds": [{ "name": "scp_additions:geiger3", "stream": false }] },
-  "spray": { "subtitle": "subtitles.spray", "sounds": [{ "name": "scp_additions:spray", "stream": false }] },
-  "decontamination": { "subtitle": "subtitles.decontamination", "sounds": [{ "name": "scp_additions:decontamination", "stream": false }] },
-  "dooropen": { "subtitle": "subtitles.dooropen", "sounds": [{ "name": "scp_additions:dooropen", "stream": false }] },
-  "doorclosing": { "subtitle": "subtitles.doorclosing", "sounds": [{ "name": "scp_additions:doorclose", "stream": false }] },
-  "accessgranted": { "subtitle": "subtitles.accessgranted", "sounds": [{ "name": "scp_additions:accessgranted", "stream": false }] },
-  "accessdenied": { "subtitle": "subtitles.accessdenied", "sounds": [{ "name": "scp_additions:accessdenied", "stream": false }] },
-  "scp294enter": { "subtitle": "subtitles.scp294enter", "sounds": [{ "name": "scp_additions:scp294enter", "stream": false }] },
-  "scp294pouring": { "subtitle": "subtitles.scp294pouring", "sounds": [{ "name": "scp_additions:scp294pouring", "stream": false }] },
-  "scp294emptycup": { "subtitle": "subtitles.scp294emptycup", "sounds": [{ "name": "scp_additions:scp294emptycup", "stream": false }] },
-  "scp294outofrange": { "subtitle": "subtitles.scp294outofrange", "sounds": [{ "name": "scp_additions:scp294outofrange", "stream": false }] },
-  "scp294on": { "subtitle": "subtitles.scp294on", "sounds": [{ "name": "scp_additions:scp294on", "stream": false }] },
-  "scp294off": { "subtitle": "subtitles.scp294off", "sounds": [{ "name": "scp_additions:scp294off", "stream": false }] },
-  "scp294coinslot": { "subtitle": "subtitles.scp294coinslot", "sounds": [{ "name": "scp_additions:scp294coinslot", "stream": false }] },
-  "heartbeat": { "subtitle": "subtitles.heartbeat", "sounds": [{ "name": "scp_additions:heartbeat", "stream": false }] },
-  "nuclear": { "subtitle": "subtitles.nuclear", "sounds": [{ "name": "scp_additions:nuclear", "stream": false }] },
-  "gravitons": { "subtitle": "subtitles.gravitons", "sounds": [{ "name": "scp_additions:gravitons", "stream": false }] },
-  "eye_pod_voice": { "sounds": ["scpinventory:noise_1", "scpinventory:noise_2", "scpinventory:noise_3", "scpinventory:noise_4", "scpinventory:noise_5", "scpinventory:noise_6", "scpinventory:noise_7", "scpinventory:noise_8", "scpinventory:noise_9"] },
-  "scare": { "sounds": ["scpinventory:scare"] },
-  "horror": { "sounds": ["scpinventory:horror"] },
-  "statue_death": { "sounds": ["scpinventory:statue_death"] },
-  "stone_scrap": { "sounds": ["scpinventory:stone_scrap_1", "scpinventory:stone_scrap_2", "scpinventory:stone_scrap_3", "scpinventory:stone_scrap_4", "scpinventory:stone_scrap_5"] },
-  "neck_snap": { "sounds": ["scpinventory:neck_snap"] },
-  "rattle": { "sounds": ["scpinventory:rattle1", "scpinventory:rattle2", "scpinventory:rattle3"] },
-  "stomach": { "subtitle": "subtitles.stomach", "sounds": [{ "name": "scp_additions:stomach", "stream": false }] },
-  "unity_door_opening": { "subtitle": "subtitles.scp_additions.unity_door_opening", "sounds": [{ "name": "scp_unity_extra_blocks:open", "stream": false }] },
-  "unity_door_closing": { "subtitle": "subtitles.scp_additions.unity_door_closing", "sounds": [{ "name": "scp_unity_extra_blocks:closing", "stream": false }] },
-  "unity_door_open": { "subtitle": "subtitles.scp_additions.unity_door_open", "sounds": [{ "name": "scp_unity_extra_blocks:default_open", "stream": false }] },
-  "unity_door_close": { "subtitle": "subtitles.scp_additions.unity_door_close", "sounds": [{ "name": "scp_unity_extra_blocks:default_close", "stream": false }] },
-  "unity_bath_open": { "sounds": [{ "name": "scp_unity_extra_blocks:bathroom_open", "stream": false }] },
-  "unity_bath_close": { "sounds": [{ "name": "scp_unity_extra_blocks:bathroom_close", "stream": false }] },
-  "unity_office_open": { "sounds": [{ "name": "scp_unity_extra_blocks:office_open", "stream": false }] },
-  "unity_office_close": { "sounds": [{ "name": "scp_unity_extra_blocks:office_close", "stream": false }] }
+  "teslaactivate": {
+    "subtitle": "subtitles.teslaactivate",
+    "sounds": [
+      {
+        "name": "scp_additions:teslaactivate",
+        "stream": false
+      }
+    ]
+  },
+  "overcharge": {
+    "subtitle": "subtitles.overcharge",
+    "sounds": [
+      {
+        "name": "scp_additions:overcharge",
+        "stream": false
+      }
+    ]
+  },
+  "teslaready": {
+    "subtitle": "subtitles.teslaready",
+    "sounds": [
+      {
+        "name": "scp_additions:teslaready",
+        "stream": false
+      }
+    ]
+  },
+  "teslarecharge": {
+    "subtitle": "subtitles.teslarecharge",
+    "sounds": [
+      {
+        "name": "scp_additions:teslarecharge",
+        "stream": false
+      }
+    ]
+  },
+  "click": {
+    "subtitle": "subtitles.click",
+    "sounds": [
+      {
+        "name": "scp_additions:click",
+        "stream": false
+      }
+    ]
+  },
+  "click_1": {
+    "subtitle": "subtitles.click_1",
+    "sounds": [
+      {
+        "name": "scp_additions:click_1",
+        "stream": false
+      }
+    ]
+  },
+  "click_2": {
+    "subtitle": "subtitles.click_2",
+    "sounds": [
+      {
+        "name": "scp_additions:click_2",
+        "stream": false
+      }
+    ]
+  },
+  "select": {
+    "subtitle": "subtitles.select",
+    "sounds": [
+      {
+        "name": "scp_additions:select",
+        "stream": false
+      }
+    ]
+  },
+  "popup": {
+    "subtitle": "subtitles.popup",
+    "sounds": [
+      {
+        "name": "scp_additions:popup",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "turningon": {
+    "subtitle": "subtitles.turningon",
+    "sounds": [
+      {
+        "name": "scp_additions:turningon",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "turningoff": {
+    "subtitle": "subtitles.turningoff",
+    "sounds": [
+      {
+        "name": "scp_additions:turningoff",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "overrideon": {
+    "subtitle": "subtitles.overrideon",
+    "sounds": [
+      {
+        "name": "scp_additions:overrideon",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "terminalloop": {
+    "subtitle": "subtitles.terminalloop",
+    "sounds": [
+      {
+        "name": "scp_additions:terminalloop",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "terminalon": {
+    "subtitle": "subtitles.terminalon",
+    "sounds": [
+      {
+        "name": "scp_additions:terminalon",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "terminaloff": {
+    "subtitle": "subtitles.terminaloff",
+    "sounds": [
+      {
+        "name": "scp_additions:terminaloff",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp079_1": {
+    "subtitle": "subtitles.scp079_1",
+    "sounds": [
+      {
+        "name": "scp_additions:079_1",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "candyeat": {
+    "subtitle": "subtitles.candyeat",
+    "sounds": [
+      {
+        "name": "scp_additions:candyeat",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "candy": {
+    "subtitle": "subtitles.candy",
+    "sounds": [
+      {
+        "name": "scp_additions:candy",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp330death": {
+    "subtitle": "subtitles.scp330death",
+    "sounds": [
+      {
+        "name": "scp_additions:330death",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp1176": {
+    "subtitle": "subtitles.scp1176",
+    "sounds": [
+      {
+        "name": "scp_additions:scp1176",
+        "stream": true,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp902": {
+    "subtitle": "subtitles.scp902",
+    "sounds": [
+      {
+        "name": "scp_additions:scp902",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp902closing": {
+    "subtitle": "subtitles.scp902closing",
+    "sounds": [
+      {
+        "name": "scp_additions:scp902closing",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp902opening": {
+    "subtitle": "subtitles.scp902opening",
+    "sounds": [
+      {
+        "name": "scp_additions:scp902opening",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp079_2": {
+    "subtitle": "subtitles.scp079_2",
+    "sounds": [
+      {
+        "name": "scp_additions:079_2",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "button": {
+    "subtitle": "subtitles.button",
+    "sounds": [
+      {
+        "name": "scp_additions:button",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914doorclose": {
+    "subtitle": "subtitles.scp914doorclose",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914doorclose",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914dooropen": {
+    "subtitle": "subtitles.scp914dooropen",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914dooropen",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914key": {
+    "subtitle": "subtitles.scp914key",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914key",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914refining": {
+    "subtitle": "subtitles.scp914refining",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914refining",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914dial": {
+    "subtitle": "subtitles.scp914dial",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914dial",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914inside": {
+    "subtitle": "subtitles.scp914inside",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914inside",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp914death": {
+    "subtitle": "subtitles.scp914death",
+    "sounds": [
+      {
+        "name": "scp_additions:scp914death",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp059box": {
+    "subtitle": "subtitles.scp059box",
+    "sounds": [
+      {
+        "name": "scp_additions:scp059box",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "geiger2": {
+    "subtitle": "subtitles.geiger2",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger2",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "geiger1": {
+    "subtitle": "subtitles.geiger1",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger1",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp059_1": {
+    "subtitle": "subtitles.scp059_1",
+    "sounds": [
+      {
+        "name": "scp_additions:scp059_1",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "geiger3": {
+    "subtitle": "subtitles.geiger3",
+    "sounds": [
+      {
+        "name": "scp_additions:geiger3",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "spray": {
+    "subtitle": "subtitles.spray",
+    "sounds": [
+      {
+        "name": "scp_additions:spray",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "decontamination": {
+    "subtitle": "subtitles.decontamination",
+    "sounds": [
+      {
+        "name": "scp_additions:decontamination",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "dooropen": {
+    "subtitle": "subtitles.dooropen",
+    "sounds": [
+      {
+        "name": "scp_additions:dooropen",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "doorclosing": {
+    "subtitle": "subtitles.doorclosing",
+    "sounds": [
+      {
+        "name": "scp_additions:doorclose",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "accessgranted": {
+    "subtitle": "subtitles.accessgranted",
+    "sounds": [
+      {
+        "name": "scp_additions:accessgranted",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "accessdenied": {
+    "subtitle": "subtitles.accessdenied",
+    "sounds": [
+      {
+        "name": "scp_additions:accessdenied",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294enter": {
+    "subtitle": "subtitles.scp294enter",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294enter",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294pouring": {
+    "subtitle": "subtitles.scp294pouring",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294pouring",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294emptycup": {
+    "subtitle": "subtitles.scp294emptycup",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294emptycup",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294outofrange": {
+    "subtitle": "subtitles.scp294outofrange",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294outofrange",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294on": {
+    "subtitle": "subtitles.scp294on",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294on",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294off": {
+    "subtitle": "subtitles.scp294off",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294off",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "scp294coinslot": {
+    "subtitle": "subtitles.scp294coinslot",
+    "sounds": [
+      {
+        "name": "scp_additions:scp294coinslot",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "heartbeat": {
+    "subtitle": "subtitles.heartbeat",
+    "sounds": [
+      {
+        "name": "scp_additions:heartbeat",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "nuclear": {
+    "subtitle": "subtitles.nuclear",
+    "sounds": [
+      {
+        "name": "scp_additions:nuclear",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "gravitons": {
+    "subtitle": "subtitles.gravitons",
+    "sounds": [
+      {
+        "name": "scp_additions:gravitons",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "eye_pod_voice": {
+    "sounds": [
+      {
+        "name": "scpinventory:noise_1",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_2",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_3",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_4",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_5",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_6",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_7",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_8",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:noise_9",
+        "volume": 3.0
+      }
+    ]
+  },
+  "scare": {
+    "sounds": [
+      {
+        "name": "scpinventory:scare",
+        "volume": 3.0
+      }
+    ]
+  },
+  "horror": {
+    "sounds": [
+      {
+        "name": "scpinventory:horror",
+        "volume": 3.0
+      }
+    ]
+  },
+  "statue_death": {
+    "sounds": [
+      {
+        "name": "scpinventory:statue_death",
+        "volume": 3.0
+      }
+    ]
+  },
+  "stone_scrap": {
+    "sounds": [
+      {
+        "name": "scpinventory:stone_scrap_1",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:stone_scrap_2",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:stone_scrap_3",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:stone_scrap_4",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:stone_scrap_5",
+        "volume": 3.0
+      }
+    ]
+  },
+  "neck_snap": {
+    "sounds": [
+      {
+        "name": "scpinventory:neck_snap",
+        "volume": 3.0
+      }
+    ]
+  },
+  "rattle": {
+    "sounds": [
+      {
+        "name": "scpinventory:rattle1",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:rattle2",
+        "volume": 3.0
+      },
+      {
+        "name": "scpinventory:rattle3",
+        "volume": 3.0
+      }
+    ]
+  },
+  "stomach": {
+    "subtitle": "subtitles.stomach",
+    "sounds": [
+      {
+        "name": "scp_additions:stomach",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_door_opening": {
+    "subtitle": "subtitles.scp_additions.unity_door_opening",
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:open",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_door_closing": {
+    "subtitle": "subtitles.scp_additions.unity_door_closing",
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:closing",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_door_open": {
+    "subtitle": "subtitles.scp_additions.unity_door_open",
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:default_open",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_door_close": {
+    "subtitle": "subtitles.scp_additions.unity_door_close",
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:default_close",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_bath_open": {
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:bathroom_open",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_bath_close": {
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:bathroom_close",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_office_open": {
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:office_open",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "unity_office_close": {
+    "sounds": [
+      {
+        "name": "scp_unity_extra_blocks:office_close",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  },
+  "enter": {
+    "subtitle": "subtitles.enter",
+    "sounds": [
+      {
+        "name": "scp_additions:enter",
+        "stream": false,
+        "volume": 3.0
+      }
+    ]
+  }
 }

@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -25,13 +26,18 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HalfTransparentBlock;
+import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.BlinkClient;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.facility.FacilityModule;
 
 public class Scp173Entity extends BlinkWatcherEntity {
     private static final EntityDataAccessor<Boolean> SCRAPING = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
@@ -383,13 +389,38 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private boolean hasVisualLineOfSightThroughTransparentBlocks(Vec3 start, Vec3 end) {
         double distance = start.distanceTo(end);
         int steps = Math.max(1, (int) Math.ceil(distance / LINE_OF_SIGHT_STEP));
+        BlockPos previous = null;
         for (int i = 1; i < steps; i++) {
             Vec3 point = start.lerp(end, i / (double) steps);
             BlockPos pos = BlockPos.containing(point);
+            if (pos.equals(previous)) continue;
+            previous = pos;
+
             BlockState state = level().getBlockState(pos);
-            if (!state.isAir() && state.canOcclude()) return false;
+            if (state.isAir()) continue;
+
+            if (FacilityModule.isFacilityDoor(state)) {
+                if (FacilityModule.isDoorPassable(state)) continue;
+                if (!FacilityModule.isWindowedDoor(state)) return false;
+
+                VoxelShape doorShape = state.getCollisionShape(level(), pos, CollisionContext.empty());
+                if (!doorShape.isEmpty() && doorShape.clip(start, end, pos) != null) return false;
+                continue;
+            }
+
+            if (isVisionTransparent(state)) continue;
+
+            VoxelShape collision = state.getCollisionShape(level(), pos, CollisionContext.empty());
+            if (!collision.isEmpty() && collision.clip(start, end, pos) != null) return false;
+            if (collision.isEmpty() && state.canOcclude()) return false;
         }
         return true;
+    }
+
+    private boolean isVisionTransparent(BlockState state) {
+        return state.getBlock() instanceof HalfTransparentBlock
+                || state.getBlock() instanceof IronBarsBlock
+                || state.is(BlockTags.LEAVES);
     }
 
     private void freezeClientAtObservedPosition() {

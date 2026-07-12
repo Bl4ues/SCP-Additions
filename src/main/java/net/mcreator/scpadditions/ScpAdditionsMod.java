@@ -26,6 +26,7 @@ import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
+import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.Scp131Items;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
@@ -76,6 +77,7 @@ public class ScpAdditionsMod {
 
 		ScpAdditionsModulesConfig.load();
 		Scp173TargetConfig.load();
+		StaminaItemEffectConfig.load();
 		Scp294DrinkManager.loadFromConfig();
 		Scp914RecipeManager.loadFromConfig();
 	}

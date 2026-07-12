@@ -13,7 +13,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
  * Migrates worlds and inventories created by the standalone SCP Unity Extra
  * Blocks mod to the consolidated scp_additions registry IDs.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilityLegacyMappings {
     private FacilityLegacyMappings() {
     }

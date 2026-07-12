@@ -6,7 +6,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
@@ -24,10 +23,9 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
- * Gives both public SCP Unity door-button items the same placement UX as the
- * unified keycard reader. The clicked half chooses between the original offset
- * model and a true mirrored internal model; placement never creates the old
- * automatic counterpart on the other side of the wall.
+ * Places one public Unity button item as either the original right-side model
+ * or the authored left-side model. Both the orientation and the left/right test
+ * are derived from the wall face that was clicked, never from player yaw.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DoorButtonPlacementEvents {
@@ -45,8 +43,8 @@ public final class DoorButtonPlacementEvents {
         }
 
         BlockHitResult hit = event.getHitVec();
-        if (hit.getDirection().getAxis() == Direction.Axis.Y
-                || !(stack.getItem() instanceof BlockItem blockItem)) {
+        Direction clickedFace = hit.getDirection();
+        if (clickedFace.getAxis() == Direction.Axis.Y) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
             return;
@@ -56,77 +54,69 @@ public final class DoorButtonPlacementEvents {
                 new UseOnContext(player, event.getHand(), hit));
         BlockPos visualPosition = originalPlacement.getClickedPos();
 
-        Direction buttonFacing = player.getDirection().getOpposite();
-        Direction screenLeft = buttonFacing.getClockWise();
-
+        // Looking straight at the selected face, clockwise from its outward
+        // normal is screen-left. This remains stable even when the player looks
+        // diagonally or turns immediately before placing the panel.
+        Direction screenLeft = clickedFace.getClockWise();
         Vec3 clickedCenter = Vec3.atCenterOf(hit.getBlockPos());
         Vec3 offsetFromCenter = hit.getLocation().subtract(clickedCenter);
         double leftCoordinate = offsetFromCenter.x * screenLeft.getStepX()
                 + offsetFromCenter.z * screenLeft.getStepZ();
         boolean clickedLeftHalf = leftCoordinate >= 0.0D;
 
-        InteractionResult result;
+        BlockPos logicalPosition;
+        Block target;
         if (clickedLeftHalf) {
-            BlockPos logicalPosition = visualPosition.relative(screenLeft);
-            BlockHitResult shiftedHit = new BlockHitResult(
-                    Vec3.atCenterOf(logicalPosition),
-                    hit.getDirection(),
-                    logicalPosition,
-                    false);
-            BlockPlaceContext shiftedPlacement = new BlockPlaceContext(
-                    player.level(), player, event.getHand(), stack, shiftedHit);
-
-            if (!shiftedPlacement.getClickedPos().equals(logicalPosition)) {
-                event.setCanceled(true);
-                event.setCancellationResult(InteractionResult.FAIL);
-                return;
-            }
-
-            BlockPos legacyCounterpartPos = logicalPosition.relative(
-                    buttonFacing.getOpposite(), 2);
-            BlockState counterpartBefore = player.level().getBlockState(legacyCounterpartPos);
-
-            result = blockItem.place(shiftedPlacement);
-
-            if (!player.level().isClientSide && result.consumesAction()
-                    && !isAnyDoorButton(counterpartBefore.getBlock())) {
-                BlockState counterpartAfter = player.level().getBlockState(legacyCounterpartPos);
-                if (isAnyDoorButton(counterpartAfter.getBlock())) {
-                    player.level().removeBlock(legacyCounterpartPos, false);
-                }
-            }
+            // Original model is visually offset to the right of the doorway and
+            // therefore keeps its logical anchor one block to screen-left.
+            logicalPosition = visualPosition.relative(screenLeft);
+            target = locked ? FacilityModule.BUTTON_LOCKED.get()
+                    : FacilityModule.BUTTON_CLOSED.get();
         } else {
-            BlockPos logicalPosition = visualPosition;
-            result = placeMirrored(player.level(), player, event.getHand(), stack,
-                    logicalPosition, buttonFacing, locked, hit.getDirection());
+            // The supplied model is already authored for the opposite side.
+            logicalPosition = visualPosition;
+            target = locked ? LeftDoorButtons.BUTTON_LOCKED.get()
+                    : LeftDoorButtons.BUTTON_CLOSED.get();
         }
 
+        InteractionResult result = placeButton(player.level(), player, event.getHand(),
+                stack, logicalPosition, clickedFace, target);
         event.setCanceled(true);
         event.setCancellationResult(result);
     }
 
-    private static InteractionResult placeMirrored(Level level, Player player,
-            InteractionHand hand, ItemStack stack, BlockPos pos, Direction facing,
-            boolean locked, Direction clickedFace) {
-        if (!player.mayUseItemAt(pos, clickedFace, stack)) {
+    private static InteractionResult placeButton(Level level, Player player,
+            InteractionHand hand, ItemStack stack, BlockPos pos,
+            Direction facing, Block target) {
+        if (!player.mayUseItemAt(pos, facing, stack)) {
             return InteractionResult.FAIL;
         }
 
         BlockPlaceContext context = new BlockPlaceContext(
                 level, player, hand, stack,
-                new BlockHitResult(Vec3.atCenterOf(pos), clickedFace, pos, false));
+                new BlockHitResult(Vec3.atCenterOf(pos), facing, pos, false));
         if (!level.getBlockState(pos).canBeReplaced(context)) {
             return InteractionResult.FAIL;
         }
 
         if (!level.isClientSide) {
-            Block target = locked
-                    ? MirroredDoorButtons.BUTTON_LOCKED.get()
-                    : MirroredDoorButtons.BUTTON_CLOSED.get();
+            BlockPos legacyCounterpartPos = pos.relative(facing.getOpposite(), 2);
+            BlockState counterpartBefore = level.getBlockState(legacyCounterpartPos);
+
             BlockState placed = target.defaultBlockState()
                     .setValue(HorizontalDirectionalBlock.FACING, facing);
             if (!level.setBlock(pos, placed, Block.UPDATE_ALL)) {
                 return InteractionResult.FAIL;
+            }
+
+            // Base Unity states still contain the old automatic counterpart
+            // hook. Keep a manually placed panel, but remove only a panel that
+            // was generated as a side effect of this placement.
+            if (!isAnyDoorButton(counterpartBefore.getBlock())) {
+                BlockState counterpartAfter = level.getBlockState(legacyCounterpartPos);
+                if (isAnyDoorButton(counterpartAfter.getBlock())) {
+                    level.removeBlock(legacyCounterpartPos, false);
+                }
             }
 
             SoundType sound = placed.getSoundType(level, pos, player);
@@ -147,6 +137,7 @@ public final class DoorButtonPlacementEvents {
                 || block == FacilityModule.BUTTON_OPENING.get()
                 || block == FacilityModule.BUTTON_OPEN.get()
                 || block == FacilityModule.BUTTON_CLOSING.get()
+                || LeftDoorButtons.isAny(block)
                 || MirroredDoorButtons.isAny(block);
     }
 }

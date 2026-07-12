@@ -15,10 +15,18 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 /** Server-authoritative pickup routing and capability synchronization. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ScpInventoryRuntimeEvents {
+    private static final long FULL_NOTICE_COOLDOWN_TICKS = 70L;
+    private static final Map<UUID, Long> LAST_FULL_NOTICE =
+            new ConcurrentHashMap<>();
+
     private ScpInventoryRuntimeEvents() {
     }
 
@@ -42,10 +50,12 @@ public final class ScpInventoryRuntimeEvents {
         // the ground when the relevant SCP storage section is full.
         event.setCanceled(true);
 
+        int requested = groundStack.getCount();
         final int[] accepted = {0};
         player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
                 accepted[0] = ScpPickupRouter.accept(inventory, player, groundStack));
         if (accepted[0] <= 0) {
+            notifyFullIfReady(player);
             return;
         }
 
@@ -65,6 +75,19 @@ public final class ScpInventoryRuntimeEvents {
         }
 
         ScpInventoryNetwork.sync(player);
+        if (accepted[0] < requested) {
+            notifyFullIfReady(player);
+        }
+    }
+
+    private static void notifyFullIfReady(ServerPlayer player) {
+        long now = player.level().getGameTime();
+        long last = LAST_FULL_NOTICE.getOrDefault(player.getUUID(), Long.MIN_VALUE / 2L);
+        if (now - last < FULL_NOTICE_COOLDOWN_TICKS) {
+            return;
+        }
+        LAST_FULL_NOTICE.put(player.getUUID(), now);
+        ScpInventoryNetwork.notifyFull(player);
     }
 
     @SubscribeEvent
@@ -86,5 +109,10 @@ public final class ScpInventoryRuntimeEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             ScpAdditionsMod.queueServerWork(1, () -> ScpInventoryNetwork.sync(player));
         }
+    }
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        LAST_FULL_NOTICE.remove(event.getEntity().getUUID());
     }
 }

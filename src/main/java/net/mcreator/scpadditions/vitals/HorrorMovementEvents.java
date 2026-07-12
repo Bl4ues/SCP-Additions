@@ -1,0 +1,88 @@
+package net.mcreator.scpadditions.vitals;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.ScpAdditionsMod;
+
+/**
+ * Server-authoritative port of SCP Inventory's horror movement controller.
+ * Walking is deliberately slow, while a committed sprint is slightly faster
+ * than vanilla sprinting after Minecraft applies its normal sprint multiplier.
+ */
+@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+public final class HorrorMovementEvents {
+    private static final double VANILLA_WALK_SPEED = 0.100D;
+    private static final double HORROR_WALK_SPEED = 0.055D;
+    private static final double HORROR_SPRINT_BASE_SPEED = 0.110D;
+    private static final double EPSILON = 0.0001D;
+
+    private HorrorMovementEvents() {
+    }
+
+    @SubscribeEvent(priority = EventPriority.NORMAL)
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END
+                || event.player.level().isClientSide
+                || !(event.player instanceof ServerPlayer player)) {
+            return;
+        }
+
+        if (!VitalsModule.horrorMovementEnabled()
+                || player.isCreative() || player.isSpectator()) {
+            HorrorMovementNetwork.clear(player);
+            if (player.isSprinting()) {
+                player.setSprinting(false);
+            }
+            applyMovementSpeed(player, VANILLA_WALK_SPEED);
+            return;
+        }
+
+        boolean sprinting = HorrorMovementNetwork.isSprintRequested(player)
+                && canUseHorrorSprint(player)
+                && PlayerStaminaEvents.canSprint(player);
+
+        if (player.isSprinting() != sprinting) {
+            player.setSprinting(sprinting);
+        }
+        applyMovementSpeed(player,
+                sprinting ? HORROR_SPRINT_BASE_SPEED : HORROR_WALK_SPEED);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            HorrorMovementNetwork.clear(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            HorrorMovementNetwork.clear(player);
+            applyMovementSpeed(player, VitalsModule.horrorMovementEnabled()
+                    ? HORROR_WALK_SPEED : VANILLA_WALK_SPEED);
+        }
+    }
+
+    private static boolean canUseHorrorSprint(ServerPlayer player) {
+        return !player.isCrouching()
+                && !player.isPassenger()
+                && !player.isFallFlying()
+                && !player.getAbilities().flying
+                && player.getFoodData().getFoodLevel() > 6;
+    }
+
+    private static void applyMovementSpeed(ServerPlayer player, double speed) {
+        AttributeInstance movementSpeed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (movementSpeed != null
+                && Math.abs(movementSpeed.getBaseValue() - speed) > EPSILON) {
+            movementSpeed.setBaseValue(speed);
+        }
+    }
+}

@@ -11,8 +11,8 @@ import net.minecraft.util.Mth;
 public final class ClientScpInventoryFullOverlay {
     private static final ResourceLocation ICON = new ResourceLocation(
             "scpinventory", "textures/gui/inventoryfull.png");
-    private static final ResourceLocation ROBOTO = new ResourceLocation(
-            "scpinventory", "roboto");
+    private static final ResourceLocation MONTSERRAT = new ResourceLocation(
+            "scpinventory", "montserrat");
 
     private static final long VISIBLE_DURATION_MS = 4000L;
     private static final long FADE_IN_MS = 150L;
@@ -54,7 +54,7 @@ public final class ClientScpInventoryFullOverlay {
         float alpha = fadeAlpha(now - shownAt, visibleUntil - now);
         Component message = Component.translatable(
                 "overlay.scp_additions.scp_inventory_full")
-                .withStyle(style -> style.withFont(ROBOTO));
+                .withStyle(style -> style.withFont(MONTSERRAT));
         int textWidth = minecraft.font.width(message);
         int width = 18 + ICON_SIZE + 18 + textWidth + 28;
         int borderColor = withAlpha(BORDER, alpha);

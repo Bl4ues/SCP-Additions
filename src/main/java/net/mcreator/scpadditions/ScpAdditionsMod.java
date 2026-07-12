@@ -16,6 +16,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
+import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
@@ -26,6 +27,7 @@ import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
 import net.mcreator.scpadditions.facility.LeftDoorButtons;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
+import net.mcreator.scpadditions.inventory.ScpInventoryNetwork;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
@@ -76,8 +78,10 @@ public class ScpAdditionsMod {
 		ScpAdditionsModMobEffects.REGISTRY.register(bus);
 		ScpAdditionsModMenus.REGISTRY.register(bus);
 		ScpEntityNetwork.register();
+		ScpInventoryNetwork.register();
 
 		ScpAdditionsModulesConfig.load();
+		ScpInventoryConfig.load();
 		Scp173TargetConfig.load();
 		StaminaItemEffectConfig.load();
 		Scp294DrinkManager.loadFromConfig();

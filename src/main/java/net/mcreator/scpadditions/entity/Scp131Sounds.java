@@ -12,11 +12,11 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
  * continuing to use audio files from the migrated scpinventory resource pack.
  */
 public final class Scp131Sounds {
-    public static final DeferredRegister<SoundEvent> REGISTRY = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, ScpAdditionsMod.MODID);
+	public static final DeferredRegister<SoundEvent> REGISTRY = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<SoundEvent> EYE_POD_VOICE = REGISTRY.register("eye_pod_voice", () ->
-            SoundEvent.createVariableRangeEvent(new ResourceLocation(ScpAdditionsMod.MODID, "eye_pod_voice")));
+	public static final RegistryObject<SoundEvent> EYE_POD_VOICE = REGISTRY.register("eye_pod_voice", () ->
+			SoundEvent.createVariableRangeEvent(new ResourceLocation(ScpAdditionsMod.MODID, "eye_pod_voice")));
 
-    private Scp131Sounds() {
-    }
+	private Scp131Sounds() {
+	}
 }

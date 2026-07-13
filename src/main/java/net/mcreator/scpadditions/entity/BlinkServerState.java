@@ -8,7 +8,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class BlinkServerState {
     private static final Map<UUID, Integer> CLOSED_UNTIL_TICK = new ConcurrentHashMap<>();
-    private static final int CLOSED_STALE_TICKS = 2;
+    // The client refreshes a closed blink every two ticks. A two-tick timeout
+    // could expire between heartbeats because of ordinary packet scheduling,
+    // briefly reopening the eyes on the server and freezing SCP-173 early.
+    // Six ticks tolerate that jitter; the explicit open packet still clears
+    // the state immediately when the visual blink ends.
+    private static final int CLOSED_STALE_TICKS = 6;
 
     private BlinkServerState() {
     }

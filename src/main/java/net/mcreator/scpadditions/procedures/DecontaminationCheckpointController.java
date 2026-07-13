@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import java.util.List;
@@ -31,15 +32,15 @@ public final class DecontaminationCheckpointController {
     private static final int PROCESSING_TICKS = 100;
     private static final int PARTICLE_INTERVAL_TICKS = 5;
     private static final int PARTICLE_BURSTS = PROCESSING_TICKS / PARTICLE_INTERVAL_TICKS + 1;
-    private static final int PARTICLES_PER_VENT = 3;
-    private static final int GAS_PARTICLES_PER_VENT = 6;
+    private static final int PARTICLES_PER_VENT = 1;
+    private static final int GAS_PARTICLES_PER_BURST = 8;
+    private static final int GAS_FILL_TICKS = 35;
 
     // Exact usable grille rectangles from models/custom/deconclosed.json.
     // The model's unrotated coordinates are used by the NORTH blockstate.
     private static final double VENT_MIN_X = 11.1D;
     private static final double VENT_MAX_X = 21.0D;
     private static final double VENT_SURFACE_Y = -15.25D;
-    private static final double CHAMBER_MODEL_CENTER_Z = 8.0D;
     private static final double[][] VENT_Z_RANGES = {
             {-9.7D, -0.4D},
             {16.3D, 25.6D}
@@ -98,11 +99,13 @@ public final class DecontaminationCheckpointController {
                 decontaminate(level, player);
             }
             for (int burst = 0; burst < PARTICLE_BURSTS; burst++) {
+                int burstIndex = burst;
                 int delay = burst * PARTICLE_INTERVAL_TICKS;
                 ScpAdditionsMod.queueServerWork(delay, () -> {
                     BlockState current = level.getBlockState(pos);
                     if (current.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) {
                         emitFloorVentParticles(level, pos, current);
+                        emitChamberGas(level, pos, current, burstIndex);
                     }
                 });
             }
@@ -202,9 +205,9 @@ public final class DecontaminationCheckpointController {
                 double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
                 Vec3 origin = modelPointToWorld(pos, facing, modelX, VENT_SURFACE_Y, modelZ);
 
-                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.018D;
-                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.018D;
-                double velocityY = 0.055D + level.random.nextDouble() * 0.025D;
+                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.012D;
+                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.012D;
+                double velocityY = 0.035D + level.random.nextDouble() * 0.020D;
                 Vec3 velocity = rotateModelVector(facing, localVelocityX, velocityY, localVelocityZ);
 
                 // A zero-count particle packet uses the offsets as one particle's
@@ -214,33 +217,30 @@ public final class DecontaminationCheckpointController {
                         0, velocity.x, velocity.y, velocity.z, 1.0D);
             }
         }
-
-        emitRisingVentGas(level, pos, facing);
     }
 
-    private static void emitRisingVentGas(ServerLevel level, BlockPos pos, Direction facing) {
-        for (double[] zRange : VENT_Z_RANGES) {
-            for (int particle = 0; particle < GAS_PARTICLES_PER_VENT; particle++) {
-                double modelX = Mth.lerp(level.random.nextDouble(), VENT_MIN_X, VENT_MAX_X);
-                double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
-                double modelY = VENT_SURFACE_Y + level.random.nextDouble() * 0.8D;
-                Vec3 origin = modelPointToWorld(pos, facing, modelX, modelY, modelZ);
+    private static void emitChamberGas(ServerLevel level, BlockPos pos, BlockState state, int burstIndex) {
+        AABB chamber = chamberBox(pos, facing(state));
+        double horizontalInset = 0.10D;
+        double bottom = chamber.minY + 0.10D;
+        double ceiling = chamber.maxY - 0.12D;
+        double elapsedTicks = (burstIndex + 1) * PARTICLE_INTERVAL_TICKS;
+        double fillProgress = Mth.clamp(elapsedTicks / GAS_FILL_TICKS, 0.12D, 1.0D);
+        double filledTop = Mth.lerp(fillProgress, bottom + 0.08D, ceiling);
 
-                // These clouds still originate at the grilles, but rise much
-                // faster and drift inward. The two plumes meet in the chamber
-                // instead of accumulating as two opaque piles on the floor.
-                double inwardDirection = Math.signum(CHAMBER_MODEL_CENTER_Z - modelZ);
-                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.075D;
-                double localVelocityZ = inwardDirection * (0.050D + level.random.nextDouble() * 0.030D)
-                        + (level.random.nextDouble() - 0.5D) * 0.018D;
-                double velocityY = 0.105D + level.random.nextDouble() * 0.050D;
-                Vec3 velocity = rotateModelVector(
-                        facing, localVelocityX, velocityY, localVelocityZ);
+        for (int particle = 0; particle < GAS_PARTICLES_PER_BURST; particle++) {
+            double x = Mth.lerp(level.random.nextDouble(),
+                    chamber.minX + horizontalInset, chamber.maxX - horizontalInset);
+            double z = Mth.lerp(level.random.nextDouble(),
+                    chamber.minZ + horizontalInset, chamber.maxZ - horizontalInset);
+            double heightSample = Math.pow(level.random.nextDouble(), 0.72D);
+            double y = Mth.lerp(heightSample, bottom, filledTop);
 
-                level.sendParticles(ParticleTypes.CLOUD,
-                        origin.x, origin.y, origin.z,
-                        0, velocity.x, velocity.y, velocity.z, 1.0D);
-            }
+            double velocityX = (level.random.nextDouble() - 0.5D) * 0.008D;
+            double velocityY = 0.0015D + level.random.nextDouble() * 0.0045D;
+            double velocityZ = (level.random.nextDouble() - 0.5D) * 0.008D;
+            level.sendParticles(ScpAdditionsModParticleTypes.DECONTAMINATION_GAS.get(),
+                    x, y, z, 0, velocityX, velocityY, velocityZ, 1.0D);
         }
     }
 

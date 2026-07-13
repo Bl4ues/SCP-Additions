@@ -39,6 +39,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.init.ScpAdditionsModMenus;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
+import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
@@ -69,6 +70,7 @@ public class ScpAdditionsMod {
 		UnifiedReaderItems.REGISTRY.register(bus);
 		Scp131Items.REGISTRY.register(bus);
 		ScpAdditionsModEntities.REGISTRY.register(bus);
+		ScpAdditionsModParticleTypes.REGISTRY.register(bus);
 
 		ScpAdditionsModTabs.REGISTRY.register(bus);
 		UBlocksModule.register(bus);

@@ -23,6 +23,7 @@ import net.mcreator.scpadditions.data.Scp294ActionExecutor;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
+import net.mcreator.scpadditions.integration.PlayerCurrencyAccess;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 import java.util.Map;
@@ -37,7 +38,8 @@ public class Scp294drinkGiveProcedure {
 		playSound(world, x, y, z, new ResourceLocation("scp_additions:scp294enter"));
 
 		Slot coinSlot = getCoinSlot(player);
-		if (coinSlot == null || coinSlot.getItem().getItem() != ScpAdditionsModItems.COIN.get()) {
+		if (coinSlot == null || !PlayerCurrencyAccess.isCurrency(
+				player, coinSlot.getItem(), ScpAdditionsModItems.COIN.get())) {
 			return;
 		}
 
@@ -83,16 +85,13 @@ public class Scp294drinkGiveProcedure {
 			return;
 		}
 
-		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-			ItemStack stack = player.getInventory().getItem(i);
-			if (stack.getItem() == ScpAdditionsModItems.COIN.get()) {
-				ItemStack coin = stack.split(1);
-				coinSlot.set(coin);
-				coinSlot.setChanged();
-				player.containerMenu.broadcastChanges();
-				return;
-			}
+		ItemStack coin = PlayerCurrencyAccess.extractOne(player, ScpAdditionsModItems.COIN.get());
+		if (coin.isEmpty()) {
+			return;
 		}
+		coinSlot.set(coin);
+		coinSlot.setChanged();
+		player.containerMenu.broadcastChanges();
 	}
 
 	private static Slot getCoinSlot(Player player) {

@@ -31,6 +31,17 @@ public final class DecontaminationCheckpointController {
     private static final int PROCESSING_TICKS = 100;
     private static final int PARTICLE_BURSTS = 12;
     private static final int PARTICLE_INTERVAL_TICKS = 5;
+    private static final int PARTICLES_PER_VENT = 9;
+
+    // Exact usable grille rectangles from models/custom/deconclosed.json.
+    // The model's unrotated coordinates are used by the NORTH blockstate.
+    private static final double VENT_MIN_X = 11.1D;
+    private static final double VENT_MAX_X = 21.0D;
+    private static final double VENT_SURFACE_Y = -15.25D;
+    private static final double[][] VENT_Z_RANGES = {
+            {-9.7D, -0.4D},
+            {16.3D, 25.6D}
+    };
 
     private static final Set<CheckpointKey> LATCHED_UNTIL_EXIT = ConcurrentHashMap.newKeySet();
     private static final Set<CheckpointKey> PROCESSING = ConcurrentHashMap.newKeySet();
@@ -89,7 +100,7 @@ public final class DecontaminationCheckpointController {
                 ScpAdditionsMod.queueServerWork(delay, () -> {
                     BlockState current = level.getBlockState(pos);
                     if (current.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) {
-                        emitFixedNozzleParticles(level, pos, current);
+                        emitFloorVentParticles(level, pos, current);
                     }
                 });
             }
@@ -181,30 +192,63 @@ public final class DecontaminationCheckpointController {
         };
     }
 
-    private static void emitFixedNozzleParticles(ServerLevel level, BlockPos pos, BlockState state) {
+    private static void emitFloorVentParticles(ServerLevel level, BlockPos pos, BlockState state) {
         Direction facing = facing(state);
-        AABB chamber = chamberBox(pos, facing);
-        double y = chamber.maxY - 0.18D;
-        double[] fractions = {0.22D, 0.50D, 0.78D};
+        for (double[] zRange : VENT_Z_RANGES) {
+            for (int particle = 0; particle < PARTICLES_PER_VENT; particle++) {
+                double modelX = Mth.lerp(level.random.nextDouble(), VENT_MIN_X, VENT_MAX_X);
+                double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
+                Vec3 origin = modelPointToWorld(pos, facing, modelX, VENT_SURFACE_Y, modelZ);
 
-        if (facing.getAxis() == Direction.Axis.Z) {
-            for (double fraction : fractions) {
-                double z = Mth.lerp(fraction, chamber.minZ, chamber.maxZ);
-                emit(level, chamber.minX + 0.03D, y, z);
-                emit(level, chamber.maxX - 0.03D, y, z);
-            }
-        } else {
-            for (double fraction : fractions) {
-                double x = Mth.lerp(fraction, chamber.minX, chamber.maxX);
-                emit(level, x, y, chamber.minZ + 0.03D);
-                emit(level, x, y, chamber.maxZ - 0.03D);
+                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.018D;
+                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.018D;
+                double velocityY = 0.025D + level.random.nextDouble() * 0.015D;
+                Vec3 velocity = rotateModelVector(facing, localVelocityX, velocityY, localVelocityZ);
+
+                // A zero-count particle packet uses the offsets as one particle's
+                // velocity, which gives the vapor a consistent upward bias.
+                level.sendParticles(ParticleTypes.CLOUD,
+                        origin.x, origin.y, origin.z,
+                        0, velocity.x, velocity.y, velocity.z, 1.0D);
             }
         }
     }
 
-    private static void emit(ServerLevel level, double x, double y, double z) {
-        level.sendParticles(ParticleTypes.CLOUD, x, y, z,
-                6, 0.055D, 0.045D, 0.055D, 0.025D);
+    private static Vec3 modelPointToWorld(BlockPos pos, Direction facing,
+            double modelX, double modelY, double modelZ) {
+        double rotatedX;
+        double rotatedZ;
+        switch (facing) {
+            case EAST -> {
+                rotatedX = 16.0D - modelZ;
+                rotatedZ = modelX;
+            }
+            case SOUTH -> {
+                rotatedX = 16.0D - modelX;
+                rotatedZ = 16.0D - modelZ;
+            }
+            case WEST -> {
+                rotatedX = modelZ;
+                rotatedZ = 16.0D - modelX;
+            }
+            default -> {
+                rotatedX = modelX;
+                rotatedZ = modelZ;
+            }
+        }
+        return new Vec3(
+                pos.getX() + rotatedX / 16.0D,
+                pos.getY() + modelY / 16.0D,
+                pos.getZ() + rotatedZ / 16.0D);
+    }
+
+    private static Vec3 rotateModelVector(Direction facing, double x, double y, double z) {
+        return switch (facing) {
+            case EAST -> new Vec3(-z, y, x);
+            case SOUTH -> new Vec3(-x, y, -z);
+            case WEST -> new Vec3(z, y, -x);
+            default -> new Vec3(x, y, z);
+        };
     }
 
     private static Vec3 chamberCenter(BlockPos pos, BlockState state) {

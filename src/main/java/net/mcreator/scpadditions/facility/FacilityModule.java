@@ -209,7 +209,24 @@ public final class FacilityModule {
 
     public static boolean isWindowedDoor(BlockState state) {
         if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)) return false;
-        return "normal".equals(door.familyId) || "office".equals(door.familyId);
+        return "office".equals(door.familyId);
+    }
+
+    /**
+     * Visual blocking is deliberately independent from render occlusion and
+     * path collision. Open/passable frames do not block sight; closed frames
+     * use model-derived geometry, including the Normal door's opaque inset.
+     */
+    public static VoxelShape doorVisualOcclusionShape(BlockState state) {
+        if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)
+                || door.passable()) {
+            return Shapes.empty();
+        }
+
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        return door.family().directUse()
+                ? FacilityDoorShapes.visualOcclusionShape(door.familyId, facing)
+                : heavyDoorShape(facing);
     }
 
     /**

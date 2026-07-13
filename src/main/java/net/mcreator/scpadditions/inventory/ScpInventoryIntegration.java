@@ -18,6 +18,11 @@ public final class ScpInventoryIntegration {
     private static final PlayerCurrencyAccess.CurrencyBackend CURRENCY_BACKEND =
             new PlayerCurrencyAccess.CurrencyBackend() {
                 @Override
+                public boolean accepts(ItemStack stack, Item currency) {
+                    return ScpInventoryAccess.acceptsCurrency(stack, currency);
+                }
+
+                @Override
                 public int count(net.minecraft.world.entity.player.Player player,
                         Item currency) {
                     return ScpInventoryAccess.countCurrency(player, currency);
@@ -28,6 +33,12 @@ public final class ScpInventoryIntegration {
                         net.minecraft.world.entity.player.Player player,
                         Item currency) {
                     return ScpInventoryAccess.extractCurrency(player, currency);
+                }
+
+                @Override
+                public int insert(net.minecraft.world.entity.player.Player player,
+                        ItemStack stack) {
+                    return ScpInventoryAccess.insertCurrency(player, stack);
                 }
             };
 

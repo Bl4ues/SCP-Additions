@@ -11,6 +11,8 @@ import net.minecraft.world.item.UseAnim;
 import java.util.Optional;
 
 public final class ScpItemClassifier {
+    private static final ResourceLocation CANONICAL_SCP_ADDITIONS_COIN =
+            new ResourceLocation("scp_additions", "coin");
 
     private ScpItemClassifier() {
     }
@@ -21,6 +23,10 @@ public final class ScpItemClassifier {
         }
 
         if (ScpPickupRouter.isCoinMirror(stack) || ScpPickupRouter.isHarmfulMirror(stack)) {
+            return ScpItemType.MISCELLANEOUS;
+        }
+
+        if (isCanonicalScpAdditionsCoin(stack)) {
             return ScpItemType.MISCELLANEOUS;
         }
 
@@ -57,12 +63,16 @@ public final class ScpItemClassifier {
     public static boolean isCoin(ItemStack stack) {
         return stack != null && !stack.isEmpty()
                 && !ScpPickupRouter.isCoinMirror(stack)
-                && getConfiguredType(stack).orElse(null) == ScpItemType.COIN;
+                && (isCanonicalScpAdditionsCoin(stack)
+                        || getConfiguredType(stack).orElse(null) == ScpItemType.COIN);
     }
 
     public static boolean isMirroredMainItem(ItemStack stack) {
         if (stack == null || stack.isEmpty() || ScpPickupRouter.isCoinMirror(stack) || ScpPickupRouter.isHarmfulMirror(stack)) {
             return false;
+        }
+        if (isCanonicalScpAdditionsCoin(stack)) {
+            return true;
         }
         ScpItemType type = getConfiguredType(stack).orElse(null);
         return type == ScpItemType.COIN || type == ScpItemType.AMMO;
@@ -187,6 +197,14 @@ public final class ScpItemClassifier {
         }
 
         return Optional.empty();
+    }
+
+    private static boolean isCanonicalScpAdditionsCoin(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        return CANONICAL_SCP_ADDITIONS_COIN.equals(
+                BuiltInRegistries.ITEM.getKey(stack.getItem()));
     }
 
     private static Optional<ConfiguredItemRule> parseItemRule(String rawRule) {

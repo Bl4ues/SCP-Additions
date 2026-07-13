@@ -27,6 +27,7 @@ import net.mcreator.scpadditions.procedures.Scp294CoinSlot2Procedure;
 import net.mcreator.scpadditions.network.Scp294GuiSlotMessage;
 import net.mcreator.scpadditions.init.ScpAdditionsModMenus;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
+import net.mcreator.scpadditions.integration.PlayerCurrencyAccess;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.function.Supplier;
@@ -245,6 +246,11 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 	public void removed(Player playerIn) {
 		super.removed(playerIn);
 		Scp294CoinSlot2Procedure.execute(world);
+		if (!playerIn.level().isClientSide) {
+			ItemStack escrowedCurrency = internal.extractItem(
+					0, internal.getStackInSlot(0).getCount(), false);
+			PlayerCurrencyAccess.refund(playerIn, escrowedCurrency);
+		}
 		if (!bound && playerIn instanceof ServerPlayer serverPlayer) {
 			if (!serverPlayer.isAlive() || serverPlayer.hasDisconnected()) {
 				for (int j = 0; j < internal.getSlots(); ++j) {

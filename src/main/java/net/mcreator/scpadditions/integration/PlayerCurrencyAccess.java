@@ -21,6 +21,11 @@ import java.util.Objects;
 public final class PlayerCurrencyAccess {
 	private static final CurrencyBackend EMPTY_BACKEND = new CurrencyBackend() {
 		@Override
+		public boolean accepts(ItemStack stack, Item currency) {
+			return false;
+		}
+
+		@Override
 		public int count(Player player, Item currency) {
 			return 0;
 		}
@@ -28,6 +33,11 @@ public final class PlayerCurrencyAccess {
 		@Override
 		public ItemStack extractOne(Player player, Item currency) {
 			return ItemStack.EMPTY;
+		}
+
+		@Override
+		public int insert(Player player, ItemStack stack) {
+			return 0;
 		}
 	};
 
@@ -63,6 +73,14 @@ public final class PlayerCurrencyAccess {
 		return count(player, currency) > 0;
 	}
 
+	public static boolean isCurrency(Player player, ItemStack stack, Item currency) {
+		if (player == null || stack == null || stack.isEmpty() || currency == null) {
+			return false;
+		}
+		return stack.is(currency)
+				|| (usesCustomInventory() && customInventoryBackend.accepts(stack, currency));
+	}
+
 	public static ItemStack extractOne(Player player, Item currency) {
 		if (player == null || currency == null) {
 			return ItemStack.EMPTY;
@@ -79,6 +97,26 @@ public final class PlayerCurrencyAccess {
 		ItemStack single = extracted.copy();
 		single.setCount(1);
 		return single;
+	}
+
+	/**
+	 * Returns escrowed currency to the currently authoritative inventory. Any
+	 * remainder is dropped once rather than mirrored into the other backend.
+	 */
+	public static void refund(Player player, ItemStack stack) {
+		if (player == null || stack == null || stack.isEmpty()) {
+			return;
+		}
+
+		ItemStack remainder = stack.copy();
+		int requested = remainder.getCount();
+		int inserted = usesCustomInventory()
+				? customInventoryBackend.insert(player, remainder)
+				: insertVanilla(player, remainder);
+		remainder.shrink(Math.max(0, Math.min(requested, inserted)));
+		if (!remainder.isEmpty()) {
+			player.drop(remainder, false);
+		}
 	}
 
 	private static int countVanilla(Player player, Item currency) {
@@ -102,9 +140,21 @@ public final class PlayerCurrencyAccess {
 		return ItemStack.EMPTY;
 	}
 
+	private static int insertVanilla(Player player, ItemStack stack) {
+		ItemStack inserting = stack.copy();
+		int before = inserting.getCount();
+		player.getInventory().add(inserting);
+		player.getInventory().setChanged();
+		return before - inserting.getCount();
+	}
+
 	public interface CurrencyBackend {
+		boolean accepts(ItemStack stack, Item currency);
+
 		int count(Player player, Item currency);
 
 		ItemStack extractOne(Player player, Item currency);
+
+		int insert(Player player, ItemStack stack);
 	}
 }

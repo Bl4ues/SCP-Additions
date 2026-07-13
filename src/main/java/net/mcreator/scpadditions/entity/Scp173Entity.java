@@ -414,16 +414,13 @@ public class Scp173Entity extends BlinkWatcherEntity {
             previous = pos;
 
             BlockState state = level().getBlockState(pos);
-            if (state.isAir()) continue;
+            // Facility doors are single registered blocks with two-block-tall
+            // models. A ray through their upper half visits the air block above
+            // the registered state, so inspect both that cell and the base below.
+            if (blocksFacilityDoorVision(pos, start, end)
+                    || blocksFacilityDoorVision(pos.below(), start, end)) return false;
 
-            if (FacilityModule.isFacilityDoor(state)) {
-                if (FacilityModule.isDoorPassable(state)) continue;
-                if (!FacilityModule.isWindowedDoor(state)) return false;
-
-                VoxelShape doorShape = state.getCollisionShape(level(), pos, CollisionContext.empty());
-                if (!doorShape.isEmpty() && doorShape.clip(start, end, pos) != null) return false;
-                continue;
-            }
+            if (state.isAir() || FacilityModule.isFacilityDoor(state)) continue;
 
             if (isVisionTransparent(state)) continue;
 
@@ -432,6 +429,14 @@ public class Scp173Entity extends BlinkWatcherEntity {
             if (collision.isEmpty() && state.canOcclude()) return false;
         }
         return true;
+    }
+
+    private boolean blocksFacilityDoorVision(BlockPos pos, Vec3 start, Vec3 end) {
+        BlockState state = level().getBlockState(pos);
+        if (!FacilityModule.isFacilityDoor(state)) return false;
+
+        VoxelShape visualShape = FacilityModule.doorVisualOcclusionShape(state);
+        return !visualShape.isEmpty() && visualShape.clip(start, end, pos) != null;
     }
 
     private boolean isVisionTransparent(BlockState state) {

@@ -88,7 +88,7 @@
       {
         "name": "scp_additions:turningon",
         "stream": false,
-        "volume": 9.0
+        "volume": 27.0
       }
     ]
   },
@@ -98,7 +98,7 @@
       {
         "name": "scp_additions:turningoff",
         "stream": false,
-        "volume": 9.0
+        "volume": 27.0
       }
     ]
   },
@@ -108,7 +108,7 @@
       {
         "name": "scp_additions:overrideon",
         "stream": false,
-        "volume": 9.0
+        "volume": 27.0
       }
     ]
   },
@@ -726,7 +726,7 @@
       {
         "name": "scp_additions:enter",
         "stream": false,
-        "volume": 9.0
+        "volume": 27.0
       }
     ]
   },

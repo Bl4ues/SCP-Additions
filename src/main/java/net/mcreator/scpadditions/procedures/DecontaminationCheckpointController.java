@@ -31,14 +31,15 @@ public final class DecontaminationCheckpointController {
     private static final int PROCESSING_TICKS = 100;
     private static final int PARTICLE_INTERVAL_TICKS = 5;
     private static final int PARTICLE_BURSTS = PROCESSING_TICKS / PARTICLE_INTERVAL_TICKS + 1;
-    private static final int PARTICLES_PER_VENT = 14;
-    private static final int GAS_PARTICLES_PER_VENT = 5;
+    private static final int PARTICLES_PER_VENT = 3;
+    private static final int GAS_PARTICLES_PER_VENT = 6;
 
     // Exact usable grille rectangles from models/custom/deconclosed.json.
     // The model's unrotated coordinates are used by the NORTH blockstate.
     private static final double VENT_MIN_X = 11.1D;
     private static final double VENT_MAX_X = 21.0D;
     private static final double VENT_SURFACE_Y = -15.25D;
+    private static final double CHAMBER_MODEL_CENTER_Z = 8.0D;
     private static final double[][] VENT_Z_RANGES = {
             {-9.7D, -0.4D},
             {16.3D, 25.6D}
@@ -201,9 +202,9 @@ public final class DecontaminationCheckpointController {
                 double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
                 Vec3 origin = modelPointToWorld(pos, facing, modelX, VENT_SURFACE_Y, modelZ);
 
-                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.028D;
-                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.028D;
-                double velocityY = 0.09D + level.random.nextDouble() * 0.04D;
+                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.018D;
+                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.018D;
+                double velocityY = 0.055D + level.random.nextDouble() * 0.025D;
                 Vec3 velocity = rotateModelVector(facing, localVelocityX, velocityY, localVelocityZ);
 
                 // A zero-count particle packet uses the offsets as one particle's
@@ -222,14 +223,17 @@ public final class DecontaminationCheckpointController {
             for (int particle = 0; particle < GAS_PARTICLES_PER_VENT; particle++) {
                 double modelX = Mth.lerp(level.random.nextDouble(), VENT_MIN_X, VENT_MAX_X);
                 double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
-                Vec3 origin = modelPointToWorld(pos, facing, modelX, VENT_SURFACE_Y, modelZ);
+                double modelY = VENT_SURFACE_Y + level.random.nextDouble() * 0.8D;
+                Vec3 origin = modelPointToWorld(pos, facing, modelX, modelY, modelZ);
 
-                // A slower, wider plume accumulates into a continuous gas layer.
-                // It still originates at the grilles, so no particles pop into
-                // existence in the middle or upper part of the chamber.
-                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.050D;
-                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.050D;
-                double velocityY = 0.040D + level.random.nextDouble() * 0.025D;
+                // These clouds still originate at the grilles, but rise much
+                // faster and drift inward. The two plumes meet in the chamber
+                // instead of accumulating as two opaque piles on the floor.
+                double inwardDirection = Math.signum(CHAMBER_MODEL_CENTER_Z - modelZ);
+                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.075D;
+                double localVelocityZ = inwardDirection * (0.050D + level.random.nextDouble() * 0.030D)
+                        + (level.random.nextDouble() - 0.5D) * 0.018D;
+                double velocityY = 0.105D + level.random.nextDouble() * 0.050D;
                 Vec3 velocity = rotateModelVector(
                         facing, localVelocityX, velocityY, localVelocityZ);
 

@@ -35,7 +35,19 @@ jobs:
 
       - name: Apply 3.0.1 correction set
         if: github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
-        run: python3 scripts/apply_3_0_1_audio_inventory_decon_fix.py
+        run: |
+          set +e
+          python3 scripts/apply_3_0_1_audio_inventory_decon_fix.py > correction-apply.log 2>&1
+          status=$?
+          cat correction-apply.log
+          exit $status
+
+      - name: Upload correction diagnostics
+        if: failure() && github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
+        uses: actions/upload-artifact@v4
+        with:
+          name: correction-apply-diagnostics
+          path: correction-apply.log
 
       - name: Validate 3.0.1 correction set
         if: github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
@@ -88,6 +100,7 @@ jobs:
           rm -f scripts/apply_3_0_1_audio_inventory_decon_fix.py
           rm -f .github/workflows/apply-3.0.1-audio-inventory-decon.yml
           rm -f docs/.validation-trigger*
+          rm -f correction-apply.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A

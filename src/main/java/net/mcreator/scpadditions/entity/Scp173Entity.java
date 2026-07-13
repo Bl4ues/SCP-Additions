@@ -71,11 +71,14 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private static final double DESPAWN_DISTANCE = 20.0D;
     private static final double DESPAWN_DISTANCE_SQR = DESPAWN_DISTANCE * DESPAWN_DISTANCE;
     private static final int ROUTINE_DESPAWN_UNSEEN_TICKS = 400;
+    private static final int OBSERVATION_GRACE_TICKS = 3;
     private static final int ATTACK_COOLDOWN_TICKS = 20;
     private static final float NECK_SNAP_DAMAGE = 200.0F;
 
     private FrozenPose clientObservedVisualLock;
+    private LivingEntity lastObservationGraceObserver;
     private int lastSeenOrCloseTick;
+    private int observationGraceUntilTick = Integer.MIN_VALUE;
     private int nextAttackTick;
     private double frozenFallSpeed;
 
@@ -100,6 +103,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
         AABB area = player.getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
         for (Scp173Entity scp173 : player.serverLevel().getEntitiesOfClass(Scp173Entity.class, area,
                 entity -> entity.isAlive() && entity.distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR)) {
+            // A confirmed blink releases only this player's recent-observation
+            // grace; any other current observer still freezes the statue.
+            if (closed) scp173.clearObservationGrace(player);
             Entity target = scp173.getTarget();
             if (target != null && target != player) continue;
             if (!scp173.isActivated() && !scp173.isObservedBy(player)) continue;
@@ -186,8 +192,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
         }
 
         LivingEntity observer = findObservingEntity();
+        if (observer != null) rememberObservation(observer);
         if (observer instanceof Player) lastSeenOrCloseTick = tickCount;
-        if (observer != null) {
+        if (observer != null || hasObservationGrace()) {
             restorePose(preTickPose);
             stopAndLock(preTickPose);
             handleRoutineDespawn();
@@ -520,7 +527,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private void reactImmediatelyToTarget(LivingEntity target) {
         FrozenPose preActionPose = capturePose();
-        if (findObservingEntity() != null) {
+        if (isObservationLocked()) {
             restorePose(preActionPose);
             stopAndLock(preActionPose);
         } else chaseImmediately(target, preActionPose);
@@ -528,7 +535,45 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private void freezeImmediatelyIfObserved() {
         FrozenPose pose = capturePose();
-        if (findObservingEntity() != null) stopAndLock(pose);
+        if (isObservationLocked()) stopAndLock(pose);
+    }
+
+    /**
+     * Observation is a single server-authoritative decision shared by movement
+     * and attack. A tiny grace period absorbs one-tick view/packet jitter so a
+     * watched statue cannot exploit a transient failed ray at contact range.
+     */
+    private boolean isObservationLocked() {
+        LivingEntity observer = findObservingEntity();
+        if (observer != null) {
+            rememberObservation(observer);
+            return true;
+        }
+        return hasObservationGrace();
+    }
+
+    private void rememberObservation(LivingEntity observer) {
+        lastObservationGraceObserver = observer;
+        observationGraceUntilTick = tickCount + OBSERVATION_GRACE_TICKS;
+    }
+
+    private boolean hasObservationGrace() {
+        LivingEntity observer = lastObservationGraceObserver;
+        if (observer == null || tickCount > observationGraceUntilTick || !isValidObserver(observer)) {
+            lastObservationGraceObserver = null;
+            observationGraceUntilTick = Integer.MIN_VALUE;
+            return false;
+        }
+        if (observer instanceof Player player && BlinkServerState.isBlinkClosed(player)) return false;
+        return true;
+    }
+
+    private void clearObservationGrace(Player player) {
+        LivingEntity observer = lastObservationGraceObserver;
+        if (player != null && observer != null && observer.getUUID().equals(player.getUUID())) {
+            lastObservationGraceObserver = null;
+            observationGraceUntilTick = Integer.MIN_VALUE;
+        }
     }
 
     private void stopAndLock(FrozenPose pose) {
@@ -646,7 +691,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
         return getBoundingBox().maxY >= target.getBoundingBox().minY && getBoundingBox().minY <= target.getBoundingBox().maxY;
     }
     private boolean canSnapTarget(LivingEntity target) {
-        return isActivated() && isValidTargetEntity(target) && tickCount >= nextAttackTick && isInSnapRange(target) && findObservingEntity() == null;
+        return isActivated() && isValidTargetEntity(target) && tickCount >= nextAttackTick
+                && isInSnapRange(target) && !isObservationLocked();
     }
     private boolean snapTargetNeck(LivingEntity target) {
         nextAttackTick = tickCount + ATTACK_COOLDOWN_TICKS;

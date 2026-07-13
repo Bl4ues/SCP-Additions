@@ -104,9 +104,12 @@ public class Scp173Entity extends BlinkWatcherEntity {
     public void markRoutineSpawn() {
         entityData.set(ROUTINE_SPAWN, true);
         setActivated(false);
+        setNoAi(true);
+        entityData.set(SCRAPING, false);
         setPersistenceRequired();
         lastSeenOrCloseTick = tickCount;
         setTarget(null);
+        getNavigation().stop();
     }
 
     @Override
@@ -149,12 +152,21 @@ public class Scp173Entity extends BlinkWatcherEntity {
             return;
         }
         if (!isActivated()) {
+            // Natural spawns remain inert until a non-creative player actually sees them.
+            // No-AI prevents target selection/navigation during super.tick(), while the
+            // explicit target and scraping reset also protects worlds saved before 3.0.1.
+            setNoAi(true);
+            setTarget(null);
+            getNavigation().stop();
+            entityData.set(SCRAPING, false);
             super.tick();
-            LivingEntity observer = findObservingEntity();
+
+            Player observer = findObservingPlayer();
             if (observer != null) {
                 setActivated(true);
+                setNoAi(false);
                 setTarget(observer);
-                if (observer instanceof Player) lastSeenOrCloseTick = tickCount;
+                lastSeenOrCloseTick = tickCount;
             }
             restorePose(preTickPose);
             stopAndLock(preTickPose);
@@ -229,6 +241,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
         setActivated(tag.getBoolean("Activated"));
         entityData.set(ROUTINE_SPAWN, tag.getBoolean("RoutineSpawn"));
         lastSeenOrCloseTick = tag.getInt("LastSeenOrCloseTick");
+        if (!isActivated()) {
+            setNoAi(true);
+            setTarget(null);
+            entityData.set(SCRAPING, false);
+        }
     }
 
     public boolean isScraping() { return entityData.get(SCRAPING); }

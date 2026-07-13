@@ -8,7 +8,9 @@
 - Corrected SCP-173 visibility checks so closed facility doors block observation instead of being treated as transparent merely because their models use `noOcclusion`;
 - Kept sight possible through the actual window openings of the Normal manual door and Office door while their solid panels and frames continue to block vision;
 - Strengthened line-of-sight checks for solid and shaped blocks while preserving visibility through glass, panes, leaves, and genuine openings;
-- Removed the immediate natural-spawn rattle so SCP-173 does not announce itself before the player actually sees it;
+- Restored the intended rattle sound when SCP-173 naturally spawns;
+- Prevented naturally spawned SCP-173 from selecting targets, navigating, moving, or producing dragging sounds before a non-creative player actually sees it;
+- Restricted the initial activation to confirmed player observation, while other configured observers can still freeze SCP-173 normally after activation;
 - Kept the initial SCP-173 scare and blink HUD activation gated behind confirmed player vision and proximity;
 - Prevented the SCP-914 death sound from playing for Coarse outcomes, whose lethal result represents delayed internal bleeding rather than an immediate machine kill;
 - Added the new `enter.ogg` UI sound, played once for the joining player on every world login;

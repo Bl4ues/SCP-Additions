@@ -90,7 +90,19 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        run: ./gradlew clean build --stacktrace
+        run: |
+          set +e
+          ./gradlew clean build --stacktrace > correction-build.log 2>&1
+          status=$?
+          tail -n 250 correction-build.log
+          exit $status
+
+      - name: Upload build diagnostics
+        if: failure() && github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
+        uses: actions/upload-artifact@v4
+        with:
+          name: correction-build-diagnostics
+          path: correction-build.log
 
       - name: Commit verified 3.0.1 correction
         if: github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
@@ -100,7 +112,7 @@ jobs:
           rm -f scripts/apply_3_0_1_audio_inventory_decon_fix.py
           rm -f .github/workflows/apply-3.0.1-audio-inventory-decon.yml
           rm -f docs/.validation-trigger*
-          rm -f correction-apply.log
+          rm -f correction-apply.log correction-build.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A

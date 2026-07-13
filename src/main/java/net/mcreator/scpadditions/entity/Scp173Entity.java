@@ -60,9 +60,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
     // every visible screen edge remains safe at any configured field of view.
     private static final double OBSERVED_DOT_THRESHOLD = 0.0D;
     private static final double DIRECT_STEP_PER_TICK = 1.20D;
-    // A normal blink remains closed for roughly six to seven effective server
-    // ticks. This rate advances SCP-173 approximately six blocks per blink.
+    // Per-tick motion controls how smoothly the statue advances. Automatic
+    // blinks also have a hard total-distance budget below, so packet timing can
+    // never turn one blink into additional movement steps.
     private static final double BLINK_STEP_PER_TICK = 0.95D;
+    private static final double AUTOMATIC_BLINK_TRAVEL_DISTANCE = 6.0D;
     private static final double STOP_DISTANCE = 0.72D;
     private static final double PATH_NODE_REACHED_DISTANCE_SQR = 0.55D * 0.55D;
     private static final double FROZEN_AIR_GRAVITY = 0.08D;
@@ -88,6 +90,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private boolean lastReportedClientObservation;
     private int nextClientObservationReportTick;
     private final Map<UUID, Integer> clientObservationUntilTicks = new HashMap<>();
+    private final Map<UUID, Double> automaticBlinkTravelRemaining = new HashMap<>();
     private LivingEntity lastObservationGraceObserver;
     private int lastSeenOrCloseTick;
     private int observationGraceUntilTick = Integer.MIN_VALUE;
@@ -109,7 +112,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
                 .add(Attributes.ATTACK_DAMAGE, 0.0D);
     }
 
-    public static void reactToBlinkState(ServerPlayer player, boolean closed) {
+    public static void reactToBlinkState(ServerPlayer player, boolean closed, boolean manual) {
         if (player == null || player.level().isClientSide || player.isCreative() || player.isSpectator()
                 || !ScpAdditionsModulesConfig.get().scp173.enabled) return;
         AABB area = player.getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
@@ -126,6 +129,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
             if (!scp173.isActivated() && !scp173.isObservedBy(player)) continue;
             scp173.setActivated(true);
             scp173.setTarget(player);
+            if (closed) scp173.beginBlinkMovement(player, manual);
+            else scp173.endBlinkMovement(player);
             // Closing the eyes must not grant an extra movement step outside
             // the normal entity tick. Opening them may freeze the statue at its
             // current position immediately, without advancing it again.
@@ -687,6 +692,16 @@ public class Scp173Entity extends BlinkWatcherEntity {
         if (player != null) clientObservationUntilTicks.remove(player.getUUID());
     }
 
+    private void beginBlinkMovement(Player player, boolean manual) {
+        if (player == null) return;
+        if (manual) automaticBlinkTravelRemaining.remove(player.getUUID());
+        else automaticBlinkTravelRemaining.put(player.getUUID(), AUTOMATIC_BLINK_TRAVEL_DISTANCE);
+    }
+
+    private void endBlinkMovement(Player player) {
+        if (player != null) automaticBlinkTravelRemaining.remove(player.getUUID());
+    }
+
     private void stopAndLock(FrozenPose pose) {
         restorePose(pose);
         setManualYaw(pose.yRot());
@@ -726,14 +741,36 @@ public class Scp173Entity extends BlinkWatcherEntity {
         }
         entityData.set(SCRAPING, true);
         faceTarget(target);
-        boolean blinkClosed = target instanceof Player player && BlinkServerState.isBlinkClosed(player);
+        Player blinkPlayer = target instanceof Player player ? player : null;
+        boolean blinkClosed = blinkPlayer != null && BlinkServerState.isBlinkClosed(blinkPlayer);
+        boolean manualBlink = blinkClosed && BlinkServerState.isManualBlink(blinkPlayer);
         double maxStep = blinkClosed ? BLINK_STEP_PER_TICK : DIRECT_STEP_PER_TICK;
+        if (blinkClosed && !manualBlink) {
+            double remaining = automaticBlinkTravelRemaining.computeIfAbsent(
+                    blinkPlayer.getUUID(), ignored -> AUTOMATIC_BLINK_TRAVEL_DISTANCE);
+            maxStep = Math.min(maxStep, remaining);
+            if (maxStep <= 0.001D) {
+                stopAndLock(preTickPose);
+                return;
+            }
+        }
         Vec3 step = chooseChaseStep(target, horizontal, distance, maxStep);
-        if (step.lengthSqr() > 0.000001D) snapMove(step);
+        if (step.lengthSqr() > 0.000001D) {
+            snapMove(step);
+            if (blinkClosed && !manualBlink) consumeAutomaticBlinkTravel(blinkPlayer, step.length());
+        }
         getNavigation().stop();
         applyHeavyWaterSinking();
         hardStopLocalMovement();
         trySnapAttack(target);
+    }
+
+    private void consumeAutomaticBlinkTravel(Player player, double distance) {
+        if (player == null || distance <= 0.0D) return;
+        UUID playerId = player.getUUID();
+        double remaining = automaticBlinkTravelRemaining.getOrDefault(
+                playerId, AUTOMATIC_BLINK_TRAVEL_DISTANCE);
+        automaticBlinkTravelRemaining.put(playerId, Math.max(0.0D, remaining - distance));
     }
 
     private Vec3 chooseChaseStep(LivingEntity target, Vec3 directHorizontal, double distance, double maxStep) {

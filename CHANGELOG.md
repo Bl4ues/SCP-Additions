@@ -25,7 +25,7 @@ This hotfix finalizes the post-3.0 integration corrections for facility doors, S
 - Restricted initial activation, jumpscare feedback, and blink HUD threat confirmation to current visual contact and proximity;
 - Unified movement and neck-snap checks behind one observation lock, added direct confirmation of what is visible anywhere on the player's screen, and prevented brief view or position differences between client and server from allowing movement while watched;
 - Kept SCP-173's visible and real positions synchronized, required genuine physical contact for a neck snap, and prevented attacks against an observing player;
-- Calibrated a standard blink to approximately six blocks of movement, kept the full blink continuous, removed the extra blink step, and prevented normal pathfinding from adding unintended movement;
+- Limited every automatic blink to six blocks of total movement regardless of packet timing, kept manual hold-to-blink movement continuous, and removed extra movement from blink transitions and normal pathfinding;
 - Preserved configured non-player observers, including SCP-131, after the first valid player activation.
 
 ### Decontamination Checkpoint

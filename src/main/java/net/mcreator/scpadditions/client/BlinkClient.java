@@ -201,7 +201,8 @@ public final class BlinkClient {
         if (!force && closed == lastSyncedClosed && (!closed || blinkSyncTicks < 2)) return;
         blinkSyncTicks = 0;
         lastSyncedClosed = closed;
-        ScpAdditionsMod.PACKET_HANDLER.sendToServer(new BlinkInputStatePacket(closed));
+        boolean manual = closed && Scp173Keybinds.BLINK.isDown();
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(new BlinkInputStatePacket(closed, manual));
     }
 
     private static void drawVignettePass(GuiGraphics graphics, int width, int height, float alpha) {

@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class BlinkServerState {
-    private static final Map<UUID, Integer> CLOSED_UNTIL_TICK = new ConcurrentHashMap<>();
+    private static final Map<UUID, BlinkState> BLINK_STATES = new ConcurrentHashMap<>();
     // The client refreshes a closed blink every two ticks. A two-tick timeout
     // could expire between heartbeats because of ordinary packet scheduling,
     // briefly reopening the eyes on the server and freezing SCP-173 early.
@@ -18,15 +18,16 @@ public final class BlinkServerState {
     private BlinkServerState() {
     }
 
-    public static boolean setBlinkClosed(Player player, boolean closed) {
+    public static boolean setBlinkClosed(Player player, boolean closed, boolean manual) {
         if (player == null) {
             return false;
         }
         boolean previous = isBlinkClosed(player);
         if (closed) {
-            CLOSED_UNTIL_TICK.put(player.getUUID(), player.tickCount + CLOSED_STALE_TICKS);
+            BLINK_STATES.put(player.getUUID(), new BlinkState(
+                    player.tickCount + CLOSED_STALE_TICKS, manual));
         } else {
-            CLOSED_UNTIL_TICK.remove(player.getUUID());
+            BLINK_STATES.remove(player.getUUID());
         }
         return previous != closed;
     }
@@ -35,14 +36,22 @@ public final class BlinkServerState {
         if (player == null) {
             return false;
         }
-        Integer until = CLOSED_UNTIL_TICK.get(player.getUUID());
-        if (until == null) {
+        BlinkState state = BLINK_STATES.get(player.getUUID());
+        if (state == null) {
             return false;
         }
-        if (until < player.tickCount) {
-            CLOSED_UNTIL_TICK.remove(player.getUUID());
+        if (state.untilTick() < player.tickCount) {
+            BLINK_STATES.remove(player.getUUID());
             return false;
         }
         return true;
     }
+
+    public static boolean isManualBlink(Player player) {
+        if (!isBlinkClosed(player)) return false;
+        BlinkState state = BLINK_STATES.get(player.getUUID());
+        return state != null && state.manual();
+    }
+
+    private record BlinkState(int untilTick, boolean manual) { }
 }

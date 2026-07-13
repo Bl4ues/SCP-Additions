@@ -20,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
+import net.mcreator.scpadditions.procedures.TeslaTerminalController;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -360,16 +361,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private boolean hasCredentialsItem() {
-		if (entity == null) {
-			return false;
-		}
-		for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
-			ItemStack stack = entity.getInventory().getItem(i);
-			if (stack.is(ScpAdditionsModItems.SECURITY_CREDENTIALS.get())) {
-				return true;
-			}
-		}
-		return false;
+		return TeslaTerminalController.hasSecurityCredentials(entity);
 	}
 
 	private void playRandomClick() {

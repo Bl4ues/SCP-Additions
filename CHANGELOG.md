@@ -14,7 +14,13 @@
 - Kept the initial SCP-173 scare and blink HUD activation gated behind confirmed player vision and proximity;
 - Prevented the SCP-914 death sound from playing for Coarse outcomes, whose lethal result represents delayed internal bleeding rather than an immediate machine kill;
 - Added the new `enter.ogg` UI sound, played once for the joining player on every world login;
-- Increased all SCP Additions sound definitions to 300% of their previous volume except Tesla Gate sounds and the terminal click/select sounds;
+- Rebalanced the 3.0.1 audio mix: increased the entry sting and terminal power/override cues, reduced SCP-902 ticking, terminal ambience, doors, SCP-914 refining, decontamination, and SCP-173 movement, and restored louder SCP-131 idle/movement loops;
+- Fixed Tesla Gate Terminal authentication so Security Credentials stored in the SCP Inventory Keys section are recognized, with a matching server-side authorization check;
+- Fixed custom-inventory coins being deleted by obsolete vanilla mirror reconciliation and ensured loose configured coins are routed into SCP Inventory for SCP-294;
+- Fixed equipped WEAPON items returning to SCP Inventory after one durability-changing hit;
+- Reworked Decontamination Checkpoint detection around the model's actual interior bounds instead of a generic proximity cube;
+- Reworked Decontamination Checkpoint particles to emit from fixed structure nozzles rather than following players;
+- Added per-checkpoint latching, single-session output, and non-repeating reload transitions to prevent repeated sounds, particles, and processing while a player remains inside;
 - Updated the mod version to 3.0.1.
 
 

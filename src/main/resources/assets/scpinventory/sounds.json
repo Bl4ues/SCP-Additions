@@ -16,11 +16,26 @@
   },
   "stone_scrap": {
     "sounds": [
-      "scpinventory:stone_scrap_1",
-      "scpinventory:stone_scrap_2",
-      "scpinventory:stone_scrap_3",
-      "scpinventory:stone_scrap_4",
-      "scpinventory:stone_scrap_5"
+      {
+        "name": "scpinventory:stone_scrap_1",
+        "volume": 0.75
+      },
+      {
+        "name": "scpinventory:stone_scrap_2",
+        "volume": 0.75
+      },
+      {
+        "name": "scpinventory:stone_scrap_3",
+        "volume": 0.75
+      },
+      {
+        "name": "scpinventory:stone_scrap_4",
+        "volume": 0.75
+      },
+      {
+        "name": "scpinventory:stone_scrap_5",
+        "volume": 0.75
+      }
     ]
   },
   "stone_drag": {
@@ -42,12 +57,18 @@
   },
   "eye_pod_idle": {
     "sounds": [
-      "scpinventory:idle"
+      {
+        "name": "scpinventory:idle",
+        "volume": 3.0
+      }
     ]
   },
   "eye_pod_move": {
     "sounds": [
-      "scpinventory:walk"
+      {
+        "name": "scpinventory:walk",
+        "volume": 3.0
+      }
     ]
   },
   "eye_pod_voice": {

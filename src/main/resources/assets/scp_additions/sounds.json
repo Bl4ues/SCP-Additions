@@ -13,7 +13,8 @@
     "sounds": [
       {
         "name": "scp_additions:overcharge",
-        "stream": false
+        "stream": false,
+        "volume": 2.0
       }
     ]
   },
@@ -87,7 +88,7 @@
       {
         "name": "scp_additions:turningon",
         "stream": false,
-        "volume": 3.0
+        "volume": 9.0
       }
     ]
   },
@@ -97,7 +98,7 @@
       {
         "name": "scp_additions:turningoff",
         "stream": false,
-        "volume": 3.0
+        "volume": 9.0
       }
     ]
   },
@@ -107,7 +108,7 @@
       {
         "name": "scp_additions:overrideon",
         "stream": false,
-        "volume": 3.0
+        "volume": 9.0
       }
     ]
   },
@@ -117,7 +118,7 @@
       {
         "name": "scp_additions:terminalloop",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -197,7 +198,7 @@
       {
         "name": "scp_additions:scp902",
         "stream": false,
-        "volume": 3.0
+        "volume": 1.0
       }
     ]
   },
@@ -247,7 +248,7 @@
       {
         "name": "scp_additions:scp914doorclose",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -257,7 +258,7 @@
       {
         "name": "scp_additions:scp914dooropen",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -277,7 +278,7 @@
       {
         "name": "scp_additions:scp914refining",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -377,7 +378,7 @@
       {
         "name": "scp_additions:decontamination",
         "stream": false,
-        "volume": 3.0
+        "volume": 1.5
       }
     ]
   },
@@ -387,7 +388,7 @@
       {
         "name": "scp_additions:dooropen",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -397,7 +398,7 @@
       {
         "name": "scp_additions:doorclose",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -589,23 +590,23 @@
     "sounds": [
       {
         "name": "scpinventory:stone_scrap_1",
-        "volume": 3.0
+        "volume": 0.75
       },
       {
         "name": "scpinventory:stone_scrap_2",
-        "volume": 3.0
+        "volume": 0.75
       },
       {
         "name": "scpinventory:stone_scrap_3",
-        "volume": 3.0
+        "volume": 0.75
       },
       {
         "name": "scpinventory:stone_scrap_4",
-        "volume": 3.0
+        "volume": 0.75
       },
       {
         "name": "scpinventory:stone_scrap_5",
-        "volume": 3.0
+        "volume": 0.75
       }
     ]
   },
@@ -649,7 +650,7 @@
       {
         "name": "scp_unity_extra_blocks:open",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -659,7 +660,7 @@
       {
         "name": "scp_unity_extra_blocks:closing",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -669,7 +670,7 @@
       {
         "name": "scp_unity_extra_blocks:default_open",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -679,7 +680,7 @@
       {
         "name": "scp_unity_extra_blocks:default_close",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -688,7 +689,7 @@
       {
         "name": "scp_unity_extra_blocks:bathroom_open",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -697,7 +698,7 @@
       {
         "name": "scp_unity_extra_blocks:bathroom_close",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -706,7 +707,7 @@
       {
         "name": "scp_unity_extra_blocks:office_open",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -715,7 +716,7 @@
       {
         "name": "scp_unity_extra_blocks:office_close",
         "stream": false,
-        "volume": 3.0
+        "volume": 2.25
       }
     ]
   },
@@ -725,6 +726,22 @@
       {
         "name": "scp_additions:enter",
         "stream": false,
+        "volume": 9.0
+      }
+    ]
+  },
+  "eye_pod_idle": {
+    "sounds": [
+      {
+        "name": "scpinventory:idle",
+        "volume": 3.0
+      }
+    ]
+  },
+  "eye_pod_move": {
+    "sounds": [
+      {
+        "name": "scpinventory:walk",
         "volume": 3.0
       }
     ]

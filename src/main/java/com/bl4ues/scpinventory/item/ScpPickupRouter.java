@@ -66,21 +66,11 @@ public final class ScpPickupRouter {
             return false;
         }
 
-        if (isCarryingConfiguredCoin(player)) {
-            return false;
-        }
-
+        // With the SCP Inventory enabled, real coins belong exclusively to the
+        // capability. Legacy vanilla mirror stacks are cleanup data only and
+        // must never be allowed to delete authoritative custom-inventory coins.
         boolean changed = sanitizeStoredCoinMirrors(inventory);
-        changed |= removePlainConfiguredCoins(player.getInventory());
-
-        int customCoins = countCustomCoins(inventory);
-        int mirrorCoins = countCoinMirrors(player.getInventory());
-
-        if (mirrorCoins < customCoins) {
-            changed |= removeCustomCoins(inventory, customCoins - mirrorCoins) > 0;
-        } else if (mirrorCoins > customCoins) {
-            changed |= removeCoinMirrors(player.getInventory(), mirrorCoins - customCoins) > 0;
-        }
+        changed |= removeAllCoinMirrors(player.getInventory());
 
         if (changed) {
             syncVanillaInventory(player);
@@ -147,32 +137,9 @@ public final class ScpPickupRouter {
             return false;
         }
 
-        if (isCarryingConfiguredCoin(player)) {
-            return false;
-        }
-
-        Inventory vanillaInventory = player.getInventory();
-        boolean changed = removeAllCoinMirrors(vanillaInventory);
-        changed |= removePlainConfiguredCoins(vanillaInventory);
-
-        int amount = countCustomCoins(inventory);
-        int end = Math.min(VANILLA_MAIN_END_EXCLUSIVE, vanillaInventory.items.size());
-        ItemStack template = ScpItemClassifier.getConfiguredCoinStack();
-
-        for (int i = end - 1; i >= VANILLA_MAIN_START && amount > 0 && !template.isEmpty(); i--) {
-            if (!vanillaInventory.items.get(i).isEmpty()) {
-                continue;
-            }
-
-            ItemStack mirror = template.copy();
-            mirror.setCount(1);
-            markCoinMirror(mirror);
-            vanillaInventory.items.set(i, mirror);
-            vanillaInventory.setChanged();
-            amount--;
-            changed = true;
-        }
-
+        // Kept as a compatibility entrypoint: 3.0 currency is intentionally
+        // custom-inventory-only, so synchronization means removing stale mirrors.
+        boolean changed = removeAllCoinMirrors(player.getInventory());
         if (changed) {
             syncVanillaInventory(player);
         }

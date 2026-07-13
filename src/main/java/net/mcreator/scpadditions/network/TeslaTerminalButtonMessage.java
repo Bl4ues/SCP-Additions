@@ -65,6 +65,9 @@ public class TeslaTerminalButtonMessage {
 		// security measure to prevent arbitrary chunk generation
 		if (!world.hasChunkAt(new BlockPos(x, y, z)))
 			return;
+		if (buttonID != 2 && !TeslaTerminalController.hasSecurityCredentials(entity)) {
+			return;
+		}
 		if (buttonID == 0) {
 			TeslaTerminalController.enableTeslaGates(world, x, y, z, entity);
 		}

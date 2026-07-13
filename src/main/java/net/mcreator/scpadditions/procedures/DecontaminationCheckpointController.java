@@ -88,6 +88,11 @@ public final class DecontaminationCheckpointController {
         BlockState state = level.getBlockState(pos);
         if (!state.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) return;
 
+        // Unlike queued server work, scheduled block ticks are saved with the
+        // world. This guarantees that a checkpoint which is closed while the
+        // server stops will still reopen after the world is loaded again.
+        level.scheduleTick(pos, ScpAdditionsModBlocks.DECON_CLOSED.get(), PROCESSING_TICKS);
+
         CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
         if (!PROCESSING.add(key)) return;
 
@@ -111,19 +116,21 @@ public final class DecontaminationCheckpointController {
             }
         }
 
-        ScpAdditionsMod.queueServerWork(PROCESSING_TICKS, () -> {
-            try {
-                BlockState current = level.getBlockState(pos);
-                if (!current.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) return;
+    }
 
-                level.playSound(null, BlockPos.containing(chamberCenter(pos, current)), ScpAdditionsModSounds.DOOROPEN.get(),
-                        SoundSource.BLOCKS, 1.0F, 1.0F);
-                level.setBlock(pos, copyCommonState(
-                        ScpAdditionsModBlocks.DECON_OPEN_RELOAD.get().defaultBlockState(), current), 3);
-            } finally {
-                PROCESSING.remove(key);
-            }
-        });
+    public static void finishClosed(ServerLevel level, BlockPos pos) {
+        CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
+        try {
+            BlockState current = level.getBlockState(pos);
+            if (!current.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) return;
+
+            level.playSound(null, BlockPos.containing(chamberCenter(pos, current)), ScpAdditionsModSounds.DOOROPEN.get(),
+                    SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.setBlock(pos, copyCommonState(
+                    ScpAdditionsModBlocks.DECON_OPEN_RELOAD.get().defaultBlockState(), current), 3);
+        } finally {
+            PROCESSING.remove(key);
+        }
     }
 
     public static void finishReload(LevelAccessor world, double x, double y, double z) {

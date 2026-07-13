@@ -30,11 +30,14 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.RandomSource;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.procedures.DeconClosedBlockAddedProcedure;
+import net.mcreator.scpadditions.procedures.DecontaminationCheckpointController;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 import java.util.List;
@@ -141,5 +144,11 @@ public class DeconClosedBlock extends Block implements SimpleWaterloggedBlock {
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
 		super.onPlace(blockstate, world, pos, oldState, moving);
 		DeconClosedBlockAddedProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
+	}
+
+	@Override
+	public void tick(BlockState blockstate, ServerLevel world, BlockPos pos, RandomSource random) {
+		super.tick(blockstate, world, pos, random);
+		DecontaminationCheckpointController.finishClosed(world, pos);
 	}
 }

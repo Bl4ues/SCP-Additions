@@ -214,14 +214,12 @@ public final class FacilityModule {
 
     /**
      * Visual blocking is deliberately independent from render occlusion and
-     * path collision. Every animation frame remains visually transparent so an
-     * observed SCP-173 cannot exploit the closing animation; only the fully
-     * closed endpoint uses the model-derived opaque geometry.
+     * path collision. Animation frames on the open side of the midpoint allow
+     * observation; frames on the closed side use the model-derived geometry.
      */
     public static VoxelShape doorVisualOcclusionShape(BlockState state) {
         if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)
-                || door.stage == DoorStage.OPENING || door.stage == DoorStage.CLOSING
-                || door.passable()) {
+                || door.usesOpenVisualState()) {
             return Shapes.empty();
         }
 
@@ -851,7 +849,7 @@ public final class FacilityModule {
             };
         }
 
-        private boolean manualDoorUsesOpenShape() {
+        private boolean usesOpenVisualState() {
             DoorFamily family = family();
             return switch (stage) {
                 case CLOSED -> false;
@@ -866,7 +864,7 @@ public final class FacilityModule {
                 BlockPos pos, CollisionContext context) {
             Direction facing = state.getValue(FACING);
             return family().directUse()
-                    ? FacilityDoorShapes.shape(familyId, manualDoorUsesOpenShape(), facing)
+                    ? FacilityDoorShapes.shape(familyId, usesOpenVisualState(), facing)
                     : heavyDoorShape(facing);
         }
 

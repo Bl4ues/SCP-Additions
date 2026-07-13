@@ -1,32 +1,59 @@
 # Changelog
 
-## SCP Additions 3.0.1 — Door, SCP-173, and Audio Hotfix
+## SCP Additions 3.0.1 — Final Hotfix
 
-- Replaced the generic centered hitbox used by every manual facility door with family-specific closed and open shapes ported from SCP Unity Extra Blocks;
-- Corrected manual-door collision alignment for the Normal, Logistics, Office, Bathroom, and Workshop door families in every horizontal orientation;
-- Made manual door transitions passable while closed endpoints remain solid, and explicitly exposed open/closed pathfinding state to mobs;
-- Corrected SCP-173 visibility checks so the full two-block-tall geometry of closed facility doors blocks observation instead of being treated as transparent merely because their models use `noOcclusion`;
-- Treated the Normal manual door's dark inset as an opaque decorative panel while preserving sight only through the Office door's actual window opening;
-- Strengthened line-of-sight checks for solid and shaped blocks while preserving visibility through glass, panes, leaves, and genuine openings;
-- Restored the intended rattle sound when SCP-173 naturally spawns;
-- Prevented naturally spawned SCP-173 from selecting targets, navigating, moving, or producing dragging sounds before a non-creative player actually sees it;
-- Restricted the initial activation to confirmed player observation, while other configured observers can still freeze SCP-173 normally after activation;
-- Kept the initial SCP-173 scare and blink HUD activation gated behind confirmed player vision and proximity;
+This hotfix finalizes the post-3.0 integration corrections for facility doors, SCP-173, decontamination, audio, SCP Inventory interoperability, and legacy Tesla Gates.
+
+### Facility doors and SCP-173 line of sight
+
+- Replaced the generic centered hitbox used by manual facility doors with family-specific closed and open shapes ported from SCP Unity Extra Blocks;
+- Corrected collision alignment for the Normal, Logistics, Office, Bathroom, and Workshop door families in every horizontal orientation;
+- Kept closed endpoints solid, made appropriate open and transitional states pathfindable, and preserved mob navigation through genuinely open doorways;
+- Added dedicated two-block-tall visual-occlusion geometry instead of inferring sight from `noOcclusion`, render flags, or incomplete collision boxes;
+- Treated the Normal door's dark inset as opaque while preserving sight through the Office door's actual window and through genuine glass, panes, leaves, and openings;
+- Replaced sampled generic block checks with exact collision and visual-shape raycasts so solid walls and shaped blocks reliably hide SCP-173;
+- Synchronized observation with door animation timing: the half of each animation nearest the open state allows sight, while the half nearest the closed state blocks it;
+- Converted all eight Facility door opening and closing cues from stereo to mono so block-position panning, distance, and 3D attenuation work correctly.
+
+### SCP-173 activation and blink behavior
+
+- Restored the intended rattle cue for natural SCP-173 spawns;
+- Made every newly created SCP-173 begin inactive, including entities created with spawn eggs or commands;
+- Prevented creative and spectator players from activating SCP-173 through observation or blink-state updates;
+- Added a persisted survival-observation confirmation marker and safely reset legacy entities that had been saved as active without one;
+- Prevented inactive SCP-173 instances from selecting targets, navigating, moving, or producing scraping sounds before genuine player observation;
+- Restricted initial activation, jumpscare feedback, and blink HUD threat confirmation to current visual contact and proximity;
+- Preserved configured non-player observers, including SCP-131, after the first valid player activation.
+
+### Decontamination Checkpoint
+
+- Rebuilt player detection around the checkpoint model's real rotated interior instead of a generic proximity cube;
+- Added per-checkpoint entry latching, one processing sequence per visit, and reliable reactivation only after every player exits;
+- Prevented duplicated sounds, processing, particle schedules, and reload transitions while a player remains inside;
+- Moved decontamination vapor to the exact two floor-grille rectangles in every horizontal orientation;
+- Sustained particle emission through the complete five-second processing cycle;
+- Kept the defined floor plumes and added slower, wider `CLOUD` vapor from the same grilles so gas fills the chamber smoothly without particles appearing in mid-air.
+
+### Audio and presentation
+
+- Added the final `enter.ogg` sting and play it once for the joining player on each world login without replaying it for dimension travel;
+- Finalized the requested audio balance for entry, terminal power and override cues, SCP-902, terminal ambience, doors, SCP-914, decontamination, and SCP-173 movement;
+- Restored independently tracked positional idle and movement loops for SCP-131 without duplicating stopped or unloaded sounds;
+- Added the missing English `Playing Card` display name;
+- Moved Playing Card, Credit Card, Pieces of Paper, Coin, and Paper Cup out of Spawn Eggs and to the end of the SCP Additions Misc creative tab.
+
+### SCP Inventory and item integration
+
+- Fixed Tesla Gate Terminal authentication so Security Credentials stored in the SCP Inventory Keys section are accepted, with matching server-side validation;
+- Finalized SCP-294 currency ownership so canonical and configured coins enter SCP Inventory, exactly one escrowed coin is consumed per drink, and unused currency returns without vanilla mirrors or deletion;
+- Fixed equipped WEAPON items returning to SCP Inventory after a single durability-changing hit.
+
+### SCP-079, Tesla Gates, and SCP-914
+
+- Added a randomized five-to-ten-second SCP-079 facility evaluation cooldown instead of rerolling door control every second for every nearby player;
+- Added safe automatic recovery for legacy Tesla Gates saved in an interrupted shock or recharge frame, including recovery while the terminal system is disabled;
 - Prevented the SCP-914 death sound from playing for Coarse outcomes, whose lethal result represents delayed internal bleeding rather than an immediate machine kill;
-- Added the new `enter.ogg` UI sound, played once for the joining player on every world login;
-- Finalized the 3.0.1 audio mix by raising the entry sting and terminal power-on, power-off, and override-start cues to 27.0 while preserving the approved values for all other sounds;
-- Fixed Tesla Gate Terminal authentication so Security Credentials stored in the SCP Inventory Keys section are recognized, with a matching server-side authorization check;
-- Finalized SCP-294 currency handling so the canonical coin is recognized even with stale configs, configured coins route into SCP Inventory, payments consume exactly one escrowed coin, and unused coins refund to the authoritative backend without vanilla mirrors;
-- Fixed equipped WEAPON items returning to SCP Inventory after one durability-changing hit;
-- Reworked Decontamination Checkpoint detection around the model's actual interior bounds instead of a generic proximity cube;
-- Reworked Decontamination Checkpoint particles to retain the two accurate floor-vent plumes while lightly filling the complete chamber volume through the full five-second cycle;
-- Added per-checkpoint latching, single-session output, and non-repeating reload transitions to prevent repeated sounds, particles, and processing while a player remains inside;
-- Added the missing English display name for the Playing Card;
-- Prevented creative players and legacy spawn-egg state from pre-activating SCP-173, while keeping every heavy-door animation frame transparent to its observation check;
-- Added a five-to-ten-second SCP-079 evaluation cooldown instead of rerolling door control every second;
-- Converted Facility door cues to positional mono audio and moved the five miscellaneous paper/card/currency items out of Spawn Eggs to the end of SCP Additions Misc;
-- Added safe recovery for legacy Tesla Gates saved in an interrupted shock or recharge animation frame;
-- Updated the mod version to 3.0.1.
+- Updated the release version and metadata to 3.0.1.
 
 
 ## SCP Additions 3.0.0 — Mega SCP Unity Update

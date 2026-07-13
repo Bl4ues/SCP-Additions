@@ -32,7 +32,7 @@ public final class DecontaminationCheckpointController {
     private static final int PARTICLE_INTERVAL_TICKS = 5;
     private static final int PARTICLE_BURSTS = PROCESSING_TICKS / PARTICLE_INTERVAL_TICKS + 1;
     private static final int PARTICLES_PER_VENT = 14;
-    private static final int CHAMBER_FILL_PARTICLES_PER_BURST = 12;
+    private static final int GAS_PARTICLES_PER_VENT = 5;
 
     // Exact usable grille rectangles from models/custom/deconclosed.json.
     // The model's unrotated coordinates are used by the NORTH blockstate.
@@ -214,28 +214,29 @@ public final class DecontaminationCheckpointController {
             }
         }
 
-        emitChamberFillParticles(level, pos, facing);
+        emitRisingVentGas(level, pos, facing);
     }
 
-    private static void emitChamberFillParticles(ServerLevel level, BlockPos pos, Direction facing) {
-        AABB chamber = chamberBox(pos, facing);
-        double horizontalInset = 0.16D;
-        double bottomInset = 0.20D;
-        double topInset = 0.14D;
+    private static void emitRisingVentGas(ServerLevel level, BlockPos pos, Direction facing) {
+        for (double[] zRange : VENT_Z_RANGES) {
+            for (int particle = 0; particle < GAS_PARTICLES_PER_VENT; particle++) {
+                double modelX = Mth.lerp(level.random.nextDouble(), VENT_MIN_X, VENT_MAX_X);
+                double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
+                Vec3 origin = modelPointToWorld(pos, facing, modelX, VENT_SURFACE_Y, modelZ);
 
-        for (int particle = 0; particle < CHAMBER_FILL_PARTICLES_PER_BURST; particle++) {
-            double x = Mth.lerp(level.random.nextDouble(),
-                    chamber.minX + horizontalInset, chamber.maxX - horizontalInset);
-            double y = Mth.lerp(level.random.nextDouble(),
-                    chamber.minY + bottomInset, chamber.maxY - topInset);
-            double z = Mth.lerp(level.random.nextDouble(),
-                    chamber.minZ + horizontalInset, chamber.maxZ - horizontalInset);
-            double velocityX = (level.random.nextDouble() - 0.5D) * 0.012D;
-            double velocityY = 0.006D + level.random.nextDouble() * 0.012D;
-            double velocityZ = (level.random.nextDouble() - 0.5D) * 0.012D;
+                // A slower, wider plume accumulates into a continuous gas layer.
+                // It still originates at the grilles, so no particles pop into
+                // existence in the middle or upper part of the chamber.
+                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.050D;
+                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.050D;
+                double velocityY = 0.040D + level.random.nextDouble() * 0.025D;
+                Vec3 velocity = rotateModelVector(
+                        facing, localVelocityX, velocityY, localVelocityZ);
 
-            level.sendParticles(ParticleTypes.CLOUD,
-                    x, y, z, 0, velocityX, velocityY, velocityZ, 1.0D);
+                level.sendParticles(ParticleTypes.CLOUD,
+                        origin.x, origin.y, origin.z,
+                        0, velocity.x, velocity.y, velocity.z, 1.0D);
+            }
         }
     }
 

@@ -209,7 +209,7 @@ public final class FacilityModule {
 
     public static boolean isWindowedDoor(BlockState state) {
         if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)) return false;
-        return "office".equals(door.familyId);
+        return "normal".equals(door.familyId) || "office".equals(door.familyId);
     }
 
     /**

@@ -10,7 +10,7 @@ This hotfix finalizes the post-3.0 integration corrections for facility doors, S
 - Corrected collision alignment for the Normal, Logistics, Office, Bathroom, and Workshop door families in every horizontal orientation;
 - Kept closed endpoints solid, made appropriate open and transitional states pathfindable, and preserved mob navigation through genuinely open doorways;
 - Added dedicated two-block-tall visual-occlusion geometry instead of inferring sight from `noOcclusion`, render flags, or incomplete collision boxes;
-- Treated the Normal door's dark inset as opaque while preserving sight through the Office door's actual window and through genuine glass, panes, leaves, and openings;
+- Preserved sight through the actual windows in both the Normal and Office doors, as well as through genuine glass, panes, leaves, and openings;
 - Replaced sampled generic block checks with exact collision and visual-shape raycasts so solid walls and shaped blocks reliably hide SCP-173;
 - Synchronized observation with door animation timing: the half of each animation nearest the open state allows sight, while the half nearest the closed state blocks it;
 - Converted all eight Facility door opening and closing cues from stereo to mono so block-position panning, distance, and 3D attenuation work correctly.

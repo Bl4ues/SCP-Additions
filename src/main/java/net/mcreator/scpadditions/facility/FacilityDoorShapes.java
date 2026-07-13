@@ -39,24 +39,12 @@ final class FacilityDoorShapes {
     }
 
     /**
-     * Geometry used specifically for sight rays. The Normal door's dark inset
-     * is a decorative translucent-texture panel, not a view-through window, so
-     * it fills the only gap left by that family's collision shape. The Office
-     * door keeps its real window opening through the unmodified closed shape.
+     * Geometry used specifically for sight rays. Both the Normal and Office
+     * doors keep the real window openings already present in their closed
+     * model-derived shapes; only the surrounding frames block observation.
      */
     static VoxelShape visualOcclusionShape(String familyId, Direction facing) {
-        VoxelShape result = shape(familyId, false, facing);
-        if (!"normal".equals(familyId)) {
-            return result;
-        }
-
-        double[] panel = rotate(new double[] {
-                5.25D, 17.0D, 12.5D,
-                10.75D, 26.25D, 13.5D
-        }, facing);
-        return Shapes.or(result, Block.box(
-                panel[0], panel[1], panel[2],
-                panel[3], panel[4], panel[5]));
+        return shape(familyId, false, facing);
     }
 
     private static double[] rotate(double[] box, Direction facing) {

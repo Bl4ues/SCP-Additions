@@ -82,7 +82,7 @@ jobs:
           assert maintenance.index('reconcileWeaponHand(player, inventory)') < maintenance.index('collectConfiguredVanillaItems(player, inventory')
           assert 'chamber.contains(player.getBoundingBox().getCenter())' in decon
           assert 'emitFixedNozzleParticles' in decon
-          assert 'LATCHE' in decon and 'PROCESSING' in decon
+          assert 'LATCHED_UNTIL_EXIT' in decon and 'PROCESSING' in decon
           assert 'world.scheduleTick(pos, this, 20)' not in reload_block
 
           for path in Path('.').rglob('*.json'):
@@ -99,6 +99,7 @@ jobs:
         run: |
           rm -f scripts/apply_3_0_1_audio_inventory_decon_fix.py
           rm -f .github/workflows/apply-3.0.1-audio-inventory-decon.yml
+          rm -f docs/.validation-trigger*
 
       - name: Commit verified correction
         run: |

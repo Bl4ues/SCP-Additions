@@ -22,6 +22,8 @@ public final class ScpEntityNetwork {
                 BlinkStatePacket::encode, BlinkStatePacket::decode, BlinkStatePacket::handle);
         ScpAdditionsMod.addNetworkMessage(BlinkInputStatePacket.class,
                 BlinkInputStatePacket::encode, BlinkInputStatePacket::decode, BlinkInputStatePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(Scp173ObservationPacket.class,
+                Scp173ObservationPacket::encode, Scp173ObservationPacket::decode, Scp173ObservationPacket::handle);
         ScpAdditionsMod.addNetworkMessage(ScareSoundPacket.class,
                 ScareSoundPacket::encode, ScareSoundPacket::decode, ScareSoundPacket::handle);
         ScpAdditionsMod.addNetworkMessage(EnterSoundPacket.class,

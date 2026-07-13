@@ -23,8 +23,9 @@ This hotfix finalizes the post-3.0 integration corrections for facility doors, S
 - Added a persisted survival-observation confirmation marker and safely reset legacy entities that had been saved as active without one;
 - Prevented inactive SCP-173 instances from selecting targets, navigating, moving, or producing scraping sounds before genuine player observation;
 - Restricted initial activation, jumpscare feedback, and blink HUD threat confirmation to current visual contact and proximity;
-- Unified movement and neck-snap checks behind one server observation lock, with a short grace period preventing single-tick line-of-sight jitter from letting SCP-173 move or attack while watched;
-- Limited a standard eight-tick blink to approximately 4.4 blocks of SCP-173 movement, kept the full blink continuous on the server, removed the extra packet-triggered step, and prevented vanilla navigation from adding movement on top of the authoritative snap step;
+- Unified movement and neck-snap checks behind one observation lock, added direct confirmation of what is visible anywhere on the player's screen, and prevented brief view or position differences between client and server from allowing movement while watched;
+- Kept SCP-173's visible and real positions synchronized, required genuine physical contact for a neck snap, and prevented attacks against an observing player;
+- Calibrated a standard blink to approximately six blocks of movement, kept the full blink continuous, removed the extra blink step, and prevented normal pathfinding from adding unintended movement;
 - Preserved configured non-player observers, including SCP-131, after the first valid player activation.
 
 ### Decontamination Checkpoint

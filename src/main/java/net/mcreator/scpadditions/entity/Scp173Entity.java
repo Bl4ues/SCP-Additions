@@ -40,6 +40,12 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.BlinkClient;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.facility.FacilityModule;
+import net.mcreator.scpadditions.network.Scp173ObservationPacket;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
 
 public class Scp173Entity extends BlinkWatcherEntity {
     private static final EntityDataAccessor<Boolean> SCRAPING = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
@@ -49,14 +55,15 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private static final ResourceKey<DamageType> NECK_SNAP_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE,
             new ResourceLocation(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
-    private static final double OBSERVED_DOT_THRESHOLD = 0.50D;
+    // The client camera is authoritative for whether SCP-173 is on screen. A
+    // zero threshold deliberately covers the complete forward hemisphere so
+    // every visible screen edge remains safe at any configured field of view.
+    private static final double OBSERVED_DOT_THRESHOLD = 0.0D;
     private static final double DIRECT_STEP_PER_TICK = 1.20D;
-    // A normal blink keeps the eyes closed for eight client ticks. At 0.55
-    // blocks per server tick, one blink advances SCP-173 by about 4.4 blocks
-    // instead of the previous 9.6 blocks (plus a packet-triggered extra step).
-    private static final double BLINK_STEP_PER_TICK = 0.55D;
+    // A normal blink remains closed for roughly six to seven effective server
+    // ticks. This rate advances SCP-173 approximately six blocks per blink.
+    private static final double BLINK_STEP_PER_TICK = 0.95D;
     private static final double STOP_DISTANCE = 0.72D;
-    private static final double ATTACK_CONTACT_EXPAND = 0.08D;
     private static final double PATH_NODE_REACHED_DISTANCE_SQR = 0.55D * 0.55D;
     private static final double FROZEN_AIR_GRAVITY = 0.08D;
     private static final double FROZEN_WATER_GRAVITY = 0.045D;
@@ -72,10 +79,15 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private static final double DESPAWN_DISTANCE_SQR = DESPAWN_DISTANCE * DESPAWN_DISTANCE;
     private static final int ROUTINE_DESPAWN_UNSEEN_TICKS = 400;
     private static final int OBSERVATION_GRACE_TICKS = 3;
+    private static final int CLIENT_OBSERVATION_HEARTBEAT_TICKS = 4;
+    private static final int CLIENT_OBSERVATION_TIMEOUT_TICKS = 8;
     private static final int ATTACK_COOLDOWN_TICKS = 20;
     private static final float NECK_SNAP_DAMAGE = 200.0F;
 
     private FrozenPose clientObservedVisualLock;
+    private boolean lastReportedClientObservation;
+    private int nextClientObservationReportTick;
+    private final Map<UUID, Integer> clientObservationUntilTicks = new HashMap<>();
     private LivingEntity lastObservationGraceObserver;
     private int lastSeenOrCloseTick;
     private int observationGraceUntilTick = Integer.MIN_VALUE;
@@ -105,7 +117,10 @@ public class Scp173Entity extends BlinkWatcherEntity {
                 entity -> entity.isAlive() && entity.distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR)) {
             // A confirmed blink releases only this player's recent-observation
             // grace; any other current observer still freezes the statue.
-            if (closed) scp173.clearObservationGrace(player);
+            if (closed) {
+                scp173.clearObservationGrace(player);
+                scp173.clearClientObservation(player);
+            }
             Entity target = scp173.getTarget();
             if (target != null && target != player) continue;
             if (!scp173.isActivated() && !scp173.isObservedBy(player)) continue;
@@ -150,10 +165,13 @@ public class Scp173Entity extends BlinkWatcherEntity {
         if (level().isClientSide) {
             super.tick();
             if (!ScpAdditionsModulesConfig.get().scp173.enabled) {
+                reportClientObservation(false);
                 hardStopLocalMovement();
                 return;
             }
-            if (isClientObservedByLocalPlayer()) {
+            boolean observed = isClientObservedByLocalPlayer();
+            reportClientObservation(observed);
+            if (observed) {
                 freezeClientAtObservedPosition();
                 return;
             }
@@ -194,7 +212,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
         LivingEntity observer = findObservingEntity();
         if (observer != null) rememberObservation(observer);
         if (observer instanceof Player) lastSeenOrCloseTick = tickCount;
-        if (observer != null || hasObservationGrace()) {
+        if (observer != null || hasObservationGrace() || hasClientObservationLock()) {
             restorePose(preTickPose);
             stopAndLock(preTickPose);
             handleRoutineDespawn();
@@ -218,7 +236,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int increments, boolean teleport) {
         if (isClientObservedByLocalPlayer()) {
-            freezeClientAtObservedPosition();
+            // Observation freezes future movement, but it must never discard an
+            // authoritative server position. Discarding it left a harmless
+            // client statue behind while an invisible server hitbox advanced.
+            clientObservedVisualLock = new FrozenPose(x, y, z, 0.0F, entityData.get(MANUAL_YAW));
+            restorePose(clientObservedVisualLock);
             return;
         }
         if (!isScraping()) {
@@ -278,7 +300,37 @@ public class Scp173Entity extends BlinkWatcherEntity {
     public boolean isScraping() { return entityData.get(SCRAPING); }
     public boolean isActivated() { return entityData.get(ACTIVATED); }
     public boolean isRoutineSpawn() { return entityData.get(ROUTINE_SPAWN); }
-    public boolean isObservedBy(Player player) { return shouldFreezeFor(player); }
+    public boolean isObservedBy(Player player) {
+        return shouldFreezeFor(player) || hasClientObservationLock(player);
+    }
+
+    /**
+     * Receives the local camera's exact on-screen result. The server still owns
+     * movement and attacks; this short-lived signal only adds a safety lock for
+     * view-angle or interpolation differences between client and server.
+     */
+    public void updateClientObservation(ServerPlayer player, boolean visible) {
+        if (level().isClientSide || player == null) return;
+        UUID playerId = player.getUUID();
+        boolean accepted = visible && isValidTargetPlayer(player)
+                && distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR
+                && !BlinkServerState.isBlinkClosed(player);
+        if (!accepted) {
+            clientObservationUntilTicks.remove(playerId);
+            return;
+        }
+
+        clientObservationUntilTicks.put(playerId, tickCount + CLIENT_OBSERVATION_TIMEOUT_TICKS);
+        rememberObservation(player);
+        lastSeenOrCloseTick = tickCount;
+        if (!isActivated()) {
+            setActivated(true);
+            setNoAi(false);
+            setTarget(player);
+        } else if (!isValidTargetEntity(getTarget())) {
+            setTarget(player);
+        }
+    }
 
     @Override
     public boolean doHurtTarget(Entity entity) {
@@ -387,20 +439,28 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private void handleRoutineDespawn() {
         if (!isRoutineSpawn() || level().isClientSide) return;
-        if (findObservingPlayer() != null || hasClosePlayer()) return;
+        if (findObservingPlayer() != null || hasClientObservationLock() || hasClosePlayer()) return;
         if (tickCount - lastSeenOrCloseTick >= ROUTINE_DESPAWN_UNSEEN_TICKS) discard();
     }
 
     private boolean isClientObservedByLocalPlayer() {
         if (!level().isClientSide) return false;
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        if (mc.player == null || mc.player.isCreative() || mc.player.isSpectator() || BlinkClient.isBlinkClosedLocally()) return false;
-        return isObservedGeometry(mc.player);
+        if (mc.player == null || mc.level == null || mc.player.isCreative() || mc.player.isSpectator()
+                || BlinkClient.isBlinkClosedLocally()) return false;
+        net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 eye = camera.getPosition();
+        Vec3 look = Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).normalize();
+        return isObservedGeometry(eye, look);
     }
 
     private boolean isObservedGeometry(LivingEntity observer) {
         Vec3 eye = observer.getEyePosition(1.0F);
         Vec3 look = observer.getViewVector(1.0F).normalize();
+        return isObservedGeometry(eye, look);
+    }
+
+    private boolean isObservedGeometry(Vec3 eye, Vec3 look) {
         AABB box = getBoundingBox();
         double minX = box.minX + VISIBILITY_EPSILON, midX = (box.minX + box.maxX) * 0.5D, maxX = box.maxX - VISIBILITY_EPSILON;
         double minY = box.minY + VISIBILITY_EPSILON, midY = (box.minY + box.maxY) * 0.5D, maxY = box.maxY - VISIBILITY_EPSILON;
@@ -420,6 +480,16 @@ public class Scp173Entity extends BlinkWatcherEntity {
                 || isVisibleSample(eye, look, new Vec3(maxX, minY, maxZ))
                 || isVisibleSample(eye, look, new Vec3(maxX, maxY, minZ))
                 || isVisibleSample(eye, look, new Vec3(maxX, maxY, maxZ));
+    }
+
+    private void reportClientObservation(boolean observed) {
+        if (!level().isClientSide) return;
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.getConnection() == null || mc.player == null || mc.level == null) return;
+        if (observed == lastReportedClientObservation && tickCount < nextClientObservationReportTick) return;
+        lastReportedClientObservation = observed;
+        nextClientObservationReportTick = tickCount + CLIENT_OBSERVATION_HEARTBEAT_TICKS;
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp173ObservationPacket(getId(), observed));
     }
 
     private boolean isVisibleSample(Vec3 eye, Vec3 look, Vec3 point) {
@@ -549,7 +619,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
             rememberObservation(observer);
             return true;
         }
-        return hasObservationGrace();
+        return hasObservationGrace() || hasClientObservationLock();
     }
 
     private void rememberObservation(LivingEntity observer) {
@@ -574,6 +644,47 @@ public class Scp173Entity extends BlinkWatcherEntity {
             lastObservationGraceObserver = null;
             observationGraceUntilTick = Integer.MIN_VALUE;
         }
+    }
+
+    private boolean hasClientObservationLock() {
+        if (level().isClientSide || clientObservationUntilTicks.isEmpty()) return false;
+        boolean observed = false;
+        Iterator<Map.Entry<UUID, Integer>> iterator = clientObservationUntilTicks.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, Integer> entry = iterator.next();
+            Player player = findPlayer(entry.getKey());
+            if (entry.getValue() < tickCount || !isValidTargetPlayer(player)
+                    || BlinkServerState.isBlinkClosed(player)
+                    || distanceToSqr(player) > IMMEDIATE_REACTION_RANGE_SQR) {
+                iterator.remove();
+                continue;
+            }
+            observed = true;
+        }
+        return observed;
+    }
+
+    private boolean hasClientObservationLock(Player player) {
+        if (level().isClientSide || player == null) return false;
+        Integer untilTick = clientObservationUntilTicks.get(player.getUUID());
+        if (untilTick == null) return false;
+        if (untilTick < tickCount || !isValidTargetPlayer(player) || BlinkServerState.isBlinkClosed(player)
+                || distanceToSqr(player) > IMMEDIATE_REACTION_RANGE_SQR) {
+            clientObservationUntilTicks.remove(player.getUUID());
+            return false;
+        }
+        return true;
+    }
+
+    private Player findPlayer(UUID playerId) {
+        for (Player player : level().players()) {
+            if (player.getUUID().equals(playerId)) return player;
+        }
+        return null;
+    }
+
+    private void clearClientObservation(Player player) {
+        if (player != null) clientObservationUntilTicks.remove(player.getUUID());
     }
 
     private void stopAndLock(FrozenPose pose) {
@@ -684,11 +795,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private boolean trySnapAttack(LivingEntity target) { return canSnapTarget(target) && snapTargetNeck(target); }
     private boolean isInSnapRange(LivingEntity target) {
-        return target != null && hasVerticalAttackOverlap(target)
-                && getBoundingBox().inflate(ATTACK_CONTACT_EXPAND, 0.12D, ATTACK_CONTACT_EXPAND).intersects(target.getBoundingBox());
-    }
-    private boolean hasVerticalAttackOverlap(LivingEntity target) {
-        return getBoundingBox().maxY >= target.getBoundingBox().minY && getBoundingBox().minY <= target.getBoundingBox().maxY;
+        if (target == null || !getBoundingBox().intersects(target.getBoundingBox())) return false;
+        double dx = getX() - target.getX();
+        double dz = getZ() - target.getZ();
+        double contactRadius = (getBbWidth() + target.getBbWidth()) * 0.5D;
+        return dx * dx + dz * dz < contactRadius * contactRadius;
     }
     private boolean canSnapTarget(LivingEntity target) {
         return isActivated() && isValidTargetEntity(target) && tickCount >= nextAttackTick

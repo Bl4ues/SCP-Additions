@@ -42,6 +42,10 @@ jobs:
           cat correction-apply.log
           exit $status
 
+      - name: Apply decontamination compile correction
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
+        run: python3 scripts/fix_decon_sound_compile.py
+
       - name: Upload correction diagnostics
         if: failure() && github.event_name == 'pull_request' && github.head_ref == 'fix/3.0.1-audio-inventory-decon'
         uses: actions/upload-artifact@v4
@@ -81,6 +85,7 @@ jobs:
           assert maintenance.index('reconcileWeaponHand(player, inventory)') < maintenance.index('collectConfiguredVanillaItems(player, inventory')
           assert 'chamber.contains(player.getBoundingBox().getCenter())' in decon
           assert 'emitFixedNozzleParticles' in decon
+          assert 'BlockPos.containing(chamberCenter' in decon
           for path in Path('.').rglob('*.json'):
               json.loads(path.read_text(encoding='utf-8'))
           print('3.0.1 correction validation passed')
@@ -110,6 +115,7 @@ jobs:
           git fetch origin master
           git checkout origin/master -- .github/workflows/build.yml
           rm -f scripts/apply_3_0_1_audio_inventory_decon_fix.py
+          rm -f scripts/fix_decon_sound_compile.py
           rm -f .github/workflows/apply-3.0.1-audio-inventory-decon.yml
           rm -f docs/.validation-trigger*
           rm -f correction-apply.log correction-build.log

@@ -92,7 +92,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     public static void reactToBlinkState(ServerPlayer player, boolean closed) {
-        if (player == null || player.level().isClientSide || !ScpAdditionsModulesConfig.get().scp173.enabled) return;
+        if (player == null || player.level().isClientSide || player.isCreative() || player.isSpectator()
+                || !ScpAdditionsModulesConfig.get().scp173.enabled) return;
         AABB area = player.getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
         for (Scp173Entity scp173 : player.serverLevel().getEntitiesOfClass(Scp173Entity.class, area,
                 entity -> entity.isAlive() && entity.distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR)) {
@@ -121,7 +122,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
         super.defineSynchedData();
         entityData.define(SCRAPING, false);
         entityData.define(MANUAL_YAW, 0.0F);
-        entityData.define(ACTIVATED, true);
+        entityData.define(ACTIVATED, false);
         entityData.define(ROUTINE_SPAWN, false);
     }
 
@@ -235,6 +236,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("Activated", isActivated());
+        tag.putBoolean("ActivationConfirmed", isActivated());
         tag.putBoolean("RoutineSpawn", isRoutineSpawn());
         tag.putInt("LastSeenOrCloseTick", lastSeenOrCloseTick);
     }
@@ -242,7 +244,12 @@ public class Scp173Entity extends BlinkWatcherEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        setActivated(tag.getBoolean("Activated"));
+        // Older saves could persist an entity that started active merely because
+        // it came from a spawn egg. Require the new confirmation marker so those
+        // statues return to waiting for genuine survival-player observation.
+        boolean activationConfirmed = tag.contains("ActivationConfirmed")
+                && tag.getBoolean("ActivationConfirmed");
+        setActivated(activationConfirmed && tag.getBoolean("Activated"));
         entityData.set(ROUTINE_SPAWN, tag.getBoolean("RoutineSpawn"));
         lastSeenOrCloseTick = tag.getInt("LastSeenOrCloseTick");
         if (!isActivated()) {

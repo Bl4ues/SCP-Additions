@@ -37,6 +37,11 @@ public class ScpAdditionsModTabs {
 				tabData.accept(ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
+				tabData.accept(ScpAdditionsModItems.PLAYING_CARD.get());
+				tabData.accept(ScpAdditionsModItems.CREDIT_CARD.get());
+				tabData.accept(ScpAdditionsModItems.PIECES_OF_PAPER.get());
+				tabData.accept(ScpAdditionsModItems.COIN.get());
+				tabData.accept(ScpAdditionsModItems.EMPTY_CUP.get());
 			}).withSearchBar().build());
 	public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS = REGISTRY.register("sc_padditions_sc_ps",
 			() -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_sc_ps")).icon(() -> new ItemStack(ScpAdditionsModBlocks.SCP_1176.get())).displayItems((parameters, tabData) -> {
@@ -73,13 +78,6 @@ public class ScpAdditionsModTabs {
 					iterator.remove();
 				}
 			}
-		}
-		if (tabData.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
-			tabData.accept(ScpAdditionsModItems.PLAYING_CARD.get());
-			tabData.accept(ScpAdditionsModItems.CREDIT_CARD.get());
-			tabData.accept(ScpAdditionsModItems.PIECES_OF_PAPER.get());
-			tabData.accept(ScpAdditionsModItems.COIN.get());
-			tabData.accept(ScpAdditionsModItems.EMPTY_CUP.get());
 		}
 		if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
 			tabData.accept(ScpAdditionsModItems.SCP_330_RED_CANDY.get());

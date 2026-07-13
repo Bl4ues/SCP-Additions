@@ -214,11 +214,13 @@ public final class FacilityModule {
 
     /**
      * Visual blocking is deliberately independent from render occlusion and
-     * path collision. Open/passable frames do not block sight; closed frames
-     * use model-derived geometry, including the Normal door's opaque inset.
+     * path collision. Every animation frame remains visually transparent so an
+     * observed SCP-173 cannot exploit the closing animation; only the fully
+     * closed endpoint uses the model-derived opaque geometry.
      */
     public static VoxelShape doorVisualOcclusionShape(BlockState state) {
         if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)
+                || door.stage == DoorStage.OPENING || door.stage == DoorStage.CLOSING
                 || door.passable()) {
             return Shapes.empty();
         }

@@ -6,6 +6,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
+import net.mcreator.scpadditions.block.TeslaGateStructure;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
+
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -20,6 +23,17 @@ public final class TeslaGateTransitionHelper {
 			return false;
 		}
 		world.setBlock(pos, copyProperties(currentState, nextBlock.get().defaultBlockState()), 3);
+		return true;
+	}
+
+	public static boolean resetStuckController(LevelAccessor world, BlockPos pos) {
+		BlockState currentState = world.getBlockState(pos);
+		if (!TeslaGateStructure.isController(currentState)
+				|| currentState.is(ScpAdditionsModBlocks.TESLA_GATE.get())) {
+			return false;
+		}
+		world.setBlock(pos, copyProperties(currentState,
+				ScpAdditionsModBlocks.TESLA_GATE.get().defaultBlockState()), 3);
 		return true;
 	}
 

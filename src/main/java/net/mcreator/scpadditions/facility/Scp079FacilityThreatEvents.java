@@ -44,12 +44,16 @@ public final class Scp079FacilityThreatEvents {
     private static final int DOOR_COOLDOWN_TICKS = 600;
     private static final int MIN_GLOBAL_COOLDOWN_TICKS = 160;
     private static final int GLOBAL_COOLDOWN_VARIANCE_TICKS = 140;
+    private static final int MIN_EVALUATION_COOLDOWN_TICKS = 100;
+    private static final int EVALUATION_COOLDOWN_VARIANCE_TICKS = 100;
 
     private static final float CLOSE_AHEAD_CHANCE = 0.20F;
     private static final float UNPROVOKED_CLOSE_CHANCE = 0.03F;
     private static final float OPEN_FOR_THREAT_CHANCE = 0.30F;
 
     private static final Map<ResourceKey<Level>, Long> NEXT_ACTION_TIME =
+            new ConcurrentHashMap<>();
+    private static final Map<ResourceKey<Level>, Long> NEXT_EVALUATION_TIME =
             new ConcurrentHashMap<>();
     private static final Map<DoorKey, Long> DOOR_COOLDOWNS =
             new ConcurrentHashMap<>();
@@ -78,12 +82,19 @@ public final class Scp079FacilityThreatEvents {
         if (NEXT_ACTION_TIME.getOrDefault(level.dimension(), 0L) > gameTime) {
             return;
         }
+        if (NEXT_EVALUATION_TIME.getOrDefault(level.dimension(), 0L) > gameTime) {
+            return;
+        }
+
+        RandomSource random = level.getRandom();
+        NEXT_EVALUATION_TIME.put(level.dimension(), gameTime
+                + MIN_EVALUATION_COOLDOWN_TICKS
+                + random.nextInt(EVALUATION_COOLDOWN_VARIANCE_TICKS + 1));
 
         if (gameTime % 600L == 0L) {
             DOOR_COOLDOWNS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
         }
 
-        RandomSource random = level.getRandom();
         List<Mob> pursuers = level.getEntitiesOfClass(Mob.class,
                 player.getBoundingBox().inflate(PURSUER_SEARCH_RADIUS),
                 mob -> mob.isAlive() && mob.getTarget() == player).stream()

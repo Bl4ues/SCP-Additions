@@ -19,9 +19,13 @@
 - Finalized SCP-294 currency handling so the canonical coin is recognized even with stale configs, configured coins route into SCP Inventory, payments consume exactly one escrowed coin, and unused coins refund to the authoritative backend without vanilla mirrors;
 - Fixed equipped WEAPON items returning to SCP Inventory after one durability-changing hit;
 - Reworked Decontamination Checkpoint detection around the model's actual interior bounds instead of a generic proximity cube;
-- Reworked Decontamination Checkpoint particles to rise from the exact two floor-vent rectangles in every horizontal orientation, filling the chamber through the full five-second cycle rather than following players;
+- Reworked Decontamination Checkpoint particles to retain the two accurate floor-vent plumes while lightly filling the complete chamber volume through the full five-second cycle;
 - Added per-checkpoint latching, single-session output, and non-repeating reload transitions to prevent repeated sounds, particles, and processing while a player remains inside;
 - Added the missing English display name for the Playing Card;
+- Prevented creative players and legacy spawn-egg state from pre-activating SCP-173, while keeping every heavy-door animation frame transparent to its observation check;
+- Added a five-to-ten-second SCP-079 evaluation cooldown instead of rerolling door control every second;
+- Converted Facility door cues to positional mono audio and moved the five miscellaneous paper/card/currency items out of Spawn Eggs to the end of SCP Additions Misc;
+- Added safe recovery for legacy Tesla Gates saved in an interrupted shock or recharge animation frame;
 - Updated the mod version to 3.0.1.
 
 

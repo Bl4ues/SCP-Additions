@@ -140,8 +140,9 @@ public class DeconOpenReloadBlock extends Block implements SimpleWaterloggedBloc
 	@Override
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
 		super.onPlace(blockstate, world, pos, oldState, moving);
-		world.scheduleTick(pos, this, 20);
-		DeconOpenReloadBlockAddedProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
+		if (!world.isClientSide()) {
+			world.scheduleTick(pos, this, 40);
+		}
 	}
 
 	@Override
@@ -151,6 +152,5 @@ public class DeconOpenReloadBlock extends Block implements SimpleWaterloggedBloc
 		int y = pos.getY();
 		int z = pos.getZ();
 		DeconOpenReloadBlockAddedProcedure.execute(world, x, y, z);
-		world.scheduleTick(pos, this, 20);
 	}
 }

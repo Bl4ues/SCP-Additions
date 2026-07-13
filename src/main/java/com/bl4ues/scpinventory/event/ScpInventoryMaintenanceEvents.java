@@ -421,10 +421,16 @@ public final class ScpInventoryMaintenanceEvents {
                 changed |= ScpPickupRouter.reconcileCoinMirrors(player, inventory);
                 changed |= ScpPickupRouter.reconcileHarmfulMirrors(player, inventory);
                 changed |= maintainUsableSession(player, inventory);
+                // Equipment mirrors must be reconciled before the generic collector.
+                // A weapon hit changes durability NBT; collecting first interpreted
+                // that legitimate mirror as a newly acquired WEAPON after one hit.
+                changed |= reconcileAccessoryHand(player, inventory);
+                changed |= reconcileWeaponHand(player, inventory);
                 changed |= collectConfiguredVanillaItems(player, inventory, ACTIVE_USABLE_SLOTS.getOrDefault(player.getUUID(), -1));
+            } else {
+                changed |= reconcileAccessoryHand(player, inventory);
+                changed |= reconcileWeaponHand(player, inventory);
             }
-            changed |= reconcileAccessoryHand(player, inventory);
-            changed |= reconcileWeaponHand(player, inventory);
             if (changed) {
                 ModNetwork.syncTo(player, inventory);
             }
@@ -562,6 +568,9 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
+        if (ScpItemClassifier.isCoin(stack)) {
+            return true;
+        }
         ScpItemType type = ScpItemClassifier.getType(stack);
         return type != ScpItemType.MISCELLANEOUS && type != ScpItemType.USABLE;
     }

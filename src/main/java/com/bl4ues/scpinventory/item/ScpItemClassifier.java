@@ -55,7 +55,9 @@ public final class ScpItemClassifier {
     }
 
     public static boolean isCoin(ItemStack stack) {
-        return isMirroredMainItem(stack);
+        return stack != null && !stack.isEmpty()
+                && !ScpPickupRouter.isCoinMirror(stack)
+                && getConfiguredType(stack).orElse(null) == ScpItemType.COIN;
     }
 
     public static boolean isMirroredMainItem(ItemStack stack) {
@@ -88,7 +90,7 @@ public final class ScpItemClassifier {
     public static Optional<ResourceLocation> getConfiguredCoinItemId() {
         for (String rawRule : ScpInventoryConfig.itemRules()) {
             Optional<ConfiguredItemRule> rule = parseItemRule(rawRule);
-            if (rule.isPresent() && isMirroredMainType(rule.get().type())) {
+            if (rule.isPresent() && rule.get().type() == ScpItemType.COIN) {
                 return Optional.of(rule.get().itemId());
             }
         }

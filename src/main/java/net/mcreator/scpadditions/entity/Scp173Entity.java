@@ -51,7 +51,10 @@ public class Scp173Entity extends BlinkWatcherEntity {
             new ResourceLocation(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
     private static final double OBSERVED_DOT_THRESHOLD = 0.50D;
     private static final double DIRECT_STEP_PER_TICK = 1.20D;
-    private static final double BLINK_STEP_PER_TICK = 1.20D;
+    // A normal blink keeps the eyes closed for eight client ticks. At 0.55
+    // blocks per server tick, one blink advances SCP-173 by about 4.4 blocks
+    // instead of the previous 9.6 blocks (plus a packet-triggered extra step).
+    private static final double BLINK_STEP_PER_TICK = 0.55D;
     private static final double STOP_DISTANCE = 0.72D;
     private static final double ATTACK_CONTACT_EXPAND = 0.08D;
     private static final double PATH_NODE_REACHED_DISTANCE_SQR = 0.55D * 0.55D;
@@ -69,13 +72,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private static final double DESPAWN_DISTANCE_SQR = DESPAWN_DISTANCE * DESPAWN_DISTANCE;
     private static final int ROUTINE_DESPAWN_UNSEEN_TICKS = 400;
     private static final int ATTACK_COOLDOWN_TICKS = 20;
-    private static final int PATH_RECALCULATE_INTERVAL_TICKS = 8;
     private static final float NECK_SNAP_DAMAGE = 200.0F;
 
     private FrozenPose clientObservedVisualLock;
     private int lastSeenOrCloseTick;
     private int nextAttackTick;
-    private int nextPathRecalculationTick;
     private double frozenFallSpeed;
 
     public Scp173Entity(EntityType<? extends Scp173Entity> type, Level level) {
@@ -87,7 +88,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
         return Zombie.createAttributes()
                 .add(Attributes.MAX_HEALTH, 80.0D)
                 .add(Attributes.FOLLOW_RANGE, 48.0D)
-                .add(Attributes.MOVEMENT_SPEED, 1.20D)
+                // Snap movement is authoritative, but keep vanilla movement at
+                // the same safe rate so navigation can never bypass the cap.
+                .add(Attributes.MOVEMENT_SPEED, BLINK_STEP_PER_TICK)
                 .add(Attributes.ATTACK_DAMAGE, 0.0D);
     }
 
@@ -102,7 +105,10 @@ public class Scp173Entity extends BlinkWatcherEntity {
             if (!scp173.isActivated() && !scp173.isObservedBy(player)) continue;
             scp173.setActivated(true);
             scp173.setTarget(player);
-            scp173.reactImmediatelyToTarget(player);
+            // Closing the eyes must not grant an extra movement step outside
+            // the normal entity tick. Opening them may freeze the statue at its
+            // current position immediately, without advancing it again.
+            if (!closed) scp173.freezeImmediatelyIfObserved();
         }
     }
 
@@ -188,6 +194,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
             return;
         }
 
+        // Navigation is used only to calculate a detour below. It must never
+        // execute its own movement in addition to the authoritative snap step.
+        getNavigation().stop();
         super.tick();
         LivingEntity target = resolveTarget();
         if (target != null) {
@@ -517,6 +526,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
         } else chaseImmediately(target, preActionPose);
     }
 
+    private void freezeImmediatelyIfObserved() {
+        FrozenPose pose = capturePose();
+        if (findObservingEntity() != null) stopAndLock(pose);
+    }
+
     private void stopAndLock(FrozenPose pose) {
         restorePose(pose);
         setManualYaw(pose.yRot());
@@ -559,7 +573,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
         boolean blinkClosed = target instanceof Player player && BlinkServerState.isBlinkClosed(player);
         double maxStep = blinkClosed ? BLINK_STEP_PER_TICK : DIRECT_STEP_PER_TICK;
         Vec3 step = chooseChaseStep(target, horizontal, distance, maxStep);
-        if (step.lengthSqr() > 0.000001D) snapMove(step); else getNavigation().moveTo(target, 1.25D);
+        if (step.lengthSqr() > 0.000001D) snapMove(step);
+        getNavigation().stop();
         applyHeavyWaterSinking();
         hardStopLocalMovement();
         trySnapAttack(target);
@@ -576,12 +591,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     private Vec3 pathStepToward(LivingEntity target, double stepDistance) {
-        if (tickCount >= nextPathRecalculationTick || getNavigation().getPath() == null || getNavigation().isDone()) {
-            Path path = getNavigation().createPath(target, 0);
-            if (path != null) getNavigation().moveTo(path, 1.25D);
-            nextPathRecalculationTick = tickCount + PATH_RECALCULATE_INTERVAL_TICKS;
-        }
-        Path path = getNavigation().getPath();
+        // The path is a direction source only. Do not install it into active
+        // navigation, which would add vanilla motion on the following tick.
+        Path path = getNavigation().createPath(target, 0);
         if (path == null || path.isDone()) return Vec3.ZERO;
         Vec3 next = path.getNextEntityPos(this);
         Vec3 horizontal = new Vec3(next.x - getX(), 0.0D, next.z - getZ());

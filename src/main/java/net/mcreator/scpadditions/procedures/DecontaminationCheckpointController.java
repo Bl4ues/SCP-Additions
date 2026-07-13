@@ -29,9 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class DecontaminationCheckpointController {
     private static final int CLOSE_DELAY_TICKS = 3;
     private static final int PROCESSING_TICKS = 100;
-    private static final int PARTICLE_BURSTS = 12;
     private static final int PARTICLE_INTERVAL_TICKS = 5;
-    private static final int PARTICLES_PER_VENT = 9;
+    private static final int PARTICLE_BURSTS = PROCESSING_TICKS / PARTICLE_INTERVAL_TICKS + 1;
+    private static final int PARTICLES_PER_VENT = 14;
 
     // Exact usable grille rectangles from models/custom/deconclosed.json.
     // The model's unrotated coordinates are used by the NORTH blockstate.
@@ -200,9 +200,9 @@ public final class DecontaminationCheckpointController {
                 double modelZ = Mth.lerp(level.random.nextDouble(), zRange[0], zRange[1]);
                 Vec3 origin = modelPointToWorld(pos, facing, modelX, VENT_SURFACE_Y, modelZ);
 
-                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.018D;
-                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.018D;
-                double velocityY = 0.025D + level.random.nextDouble() * 0.015D;
+                double localVelocityX = (level.random.nextDouble() - 0.5D) * 0.028D;
+                double localVelocityZ = (level.random.nextDouble() - 0.5D) * 0.028D;
+                double velocityY = 0.09D + level.random.nextDouble() * 0.04D;
                 Vec3 velocity = rotateModelVector(facing, localVelocityX, velocityY, localVelocityZ);
 
                 // A zero-count particle packet uses the offsets as one particle's

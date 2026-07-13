@@ -25,14 +25,16 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.BlinkClient;
@@ -47,7 +49,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private static final ResourceKey<DamageType> NECK_SNAP_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE,
             new ResourceLocation(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
-    private static final double OBSERVED_DOT_THRESHOLD = 0.08D;
+    private static final double OBSERVED_DOT_THRESHOLD = 0.50D;
     private static final double DIRECT_STEP_PER_TICK = 1.20D;
     private static final double BLINK_STEP_PER_TICK = 1.20D;
     private static final double STOP_DISTANCE = 0.72D;
@@ -59,6 +61,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private static final double FROZEN_MAX_WATER_SINK_SPEED = -0.32D;
     private static final double LINE_OF_SIGHT_STEP = 0.25D;
     private static final double VISIBILITY_EPSILON = 0.03D;
+    private static final double RAY_ADVANCE_EPSILON = 0.01D;
+    private static final int MAX_TRANSPARENT_RAY_HITS = 64;
     private static final double IMMEDIATE_REACTION_RANGE = 48.0D;
     private static final double IMMEDIATE_REACTION_RANGE_SQR = IMMEDIATE_REACTION_RANGE * IMMEDIATE_REACTION_RANGE;
     private static final double DESPAWN_DISTANCE = 20.0D;
@@ -404,6 +408,16 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     private boolean hasVisualLineOfSightThroughTransparentBlocks(Vec3 start, Vec3 end) {
+        if (blocksFacilityDoorVisionAlongRay(start, end)) return false;
+
+        // Use Minecraft's exact voxel ray traversal for ordinary blocks. Running
+        // both collision and visual shapes keeps solid walls authoritative while
+        // also catching opaque decorative blocks that do not have collision.
+        return hasTransparentAwareLineOfSight(start, end, ClipContext.Block.COLLIDER)
+                && hasTransparentAwareLineOfSight(start, end, ClipContext.Block.VISUAL);
+    }
+
+    private boolean blocksFacilityDoorVisionAlongRay(Vec3 start, Vec3 end) {
         double distance = start.distanceTo(end);
         int steps = Math.max(1, (int) Math.ceil(distance / LINE_OF_SIGHT_STEP));
         BlockPos previous = null;
@@ -413,22 +427,56 @@ public class Scp173Entity extends BlinkWatcherEntity {
             if (pos.equals(previous)) continue;
             previous = pos;
 
-            BlockState state = level().getBlockState(pos);
             // Facility doors are single registered blocks with two-block-tall
             // models. A ray through their upper half visits the air block above
             // the registered state, so inspect both that cell and the base below.
             if (blocksFacilityDoorVision(pos, start, end)
-                    || blocksFacilityDoorVision(pos.below(), start, end)) return false;
-
-            if (state.isAir() || FacilityModule.isFacilityDoor(state)) continue;
-
-            if (isVisionTransparent(state)) continue;
-
-            VoxelShape collision = state.getCollisionShape(level(), pos, CollisionContext.empty());
-            if (!collision.isEmpty() && collision.clip(start, end, pos) != null) return false;
-            if (collision.isEmpty() && state.canOcclude()) return false;
+                    || blocksFacilityDoorVision(pos.below(), start, end)) return true;
         }
-        return true;
+        return false;
+    }
+
+    private boolean hasTransparentAwareLineOfSight(Vec3 start, Vec3 end, ClipContext.Block shapeMode) {
+        Vec3 direction = end.subtract(start).normalize();
+        Vec3 cursor = start;
+
+        for (int hitCount = 0; hitCount < MAX_TRANSPARENT_RAY_HITS; hitCount++) {
+            if (cursor.distanceToSqr(end) <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) return true;
+
+            BlockHitResult hit = level().clip(new ClipContext(
+                    cursor, end, shapeMode, ClipContext.Fluid.NONE, this));
+            if (hit.getType() == HitResult.Type.MISS) return true;
+
+            BlockPos hitPos = hit.getBlockPos();
+            BlockState hitState = level().getBlockState(hitPos);
+            // Facility doors use a dedicated model-accurate visual shape above.
+            // Real glass, panes and leaves remain intentionally transparent.
+            if (!FacilityModule.isFacilityDoor(hitState) && !isVisionTransparent(hitState)) return false;
+
+            Vec3 advanced = advancePastBlock(hit.getLocation(), direction, hitPos);
+            if (advanced.distanceToSqr(cursor) <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) return false;
+            cursor = advanced;
+        }
+
+        // Fail closed if an unusually dense transparent-block ray exceeds the
+        // safety bound instead of accidentally activating SCP-173 through it.
+        return false;
+    }
+
+    private static Vec3 advancePastBlock(Vec3 point, Vec3 direction, BlockPos pos) {
+        double distance = Math.min(
+                distanceToExit(point.x, direction.x, pos.getX(), pos.getX() + 1.0D),
+                Math.min(
+                        distanceToExit(point.y, direction.y, pos.getY(), pos.getY() + 1.0D),
+                        distanceToExit(point.z, direction.z, pos.getZ(), pos.getZ() + 1.0D)));
+        if (!Double.isFinite(distance)) return point.add(direction.scale(RAY_ADVANCE_EPSILON));
+        return point.add(direction.scale(Math.max(RAY_ADVANCE_EPSILON, distance + RAY_ADVANCE_EPSILON)));
+    }
+
+    private static double distanceToExit(double coordinate, double direction, double min, double max) {
+        if (direction > 1.0E-7D) return Math.max(0.0D, (max - coordinate) / direction);
+        if (direction < -1.0E-7D) return Math.max(0.0D, (min - coordinate) / direction);
+        return Double.POSITIVE_INFINITY;
     }
 
     private boolean blocksFacilityDoorVision(BlockPos pos, Vec3 start, Vec3 end) {

@@ -19,9 +19,9 @@
 - Finalized SCP-294 currency handling so the canonical coin is recognized even with stale configs, configured coins route into SCP Inventory, payments consume exactly one escrowed coin, and unused coins refund to the authoritative backend without vanilla mirrors;
 - Fixed equipped WEAPON items returning to SCP Inventory after one durability-changing hit;
 - Reworked Decontamination Checkpoint detection around the model's actual interior bounds instead of a generic proximity cube;
-- Reworked Decontamination Checkpoint particles to rise from the exact two floor-vent rectangles in every horizontal orientation rather than following players;
+- Reworked Decontamination Checkpoint particles to rise from the exact two floor-vent rectangles in every horizontal orientation, filling the chamber through the full five-second cycle rather than following players;
 - Added per-checkpoint latching, single-session output, and non-repeating reload transitions to prevent repeated sounds, particles, and processing while a player remains inside;
-- Added the missing English display name for the SCP Additions Playing Card;
+- Added the missing English display name for the Playing Card;
 - Updated the mod version to 3.0.1.
 
 

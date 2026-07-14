@@ -31,6 +31,7 @@ public final class Scp173ClientModEvents {
     @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(Scp173Keybinds.BLINK);
+        event.register(Scp131Keybinds.DISMISS);
     }
 
     @SubscribeEvent

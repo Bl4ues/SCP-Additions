@@ -32,7 +32,7 @@ public final class Scp131NoticeOverlay {
     private static boolean active;
     private static long shownAt;
     private static long visibleUntil;
-    private static String currentText = "SCP-131 has started following you. Hold G to dismiss";
+    private static Component currentText = Component.empty();
 
     private Scp131NoticeOverlay() {
     }
@@ -40,8 +40,9 @@ public final class Scp131NoticeOverlay {
     public static void show(boolean following) {
         long now = System.currentTimeMillis();
         currentText = following
-                ? "SCP-131 has started following you. Hold G to dismiss"
-                : "SCP-131 has stopped following you";
+                ? Component.translatable("notice.scp_additions.scp_131.following",
+                        Scp131Keybinds.DISMISS.getTranslatedKeyMessage())
+                : Component.translatable("notice.scp_additions.scp_131.stopped");
         active = true;
         shownAt = now;
         visibleUntil = now + VISIBLE_DURATION;

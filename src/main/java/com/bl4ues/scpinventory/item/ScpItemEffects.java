@@ -21,35 +21,55 @@ public final class ScpItemEffects {
         return hasEffect(stack, ItemEffect.NO_STAMINA);
     }
 
+    public static boolean hasProtectedEyesModifier(ItemStack stack) {
+        return hasEffect(stack, ItemEffect.PROTECTED_EYES);
+    }
+
     public static boolean hasNoStaminaModifierEquipped(Player player) {
+        return hasEffectEquipped(player, ItemEffect.NO_STAMINA);
+    }
+
+    public static boolean hasProtectedEyesModifierEquipped(Player player) {
+        return hasEffectEquipped(player, ItemEffect.PROTECTED_EYES);
+    }
+
+    private static boolean hasEffectEquipped(Player player, ItemEffect effect) {
         if (player == null) {
             return false;
         }
 
-        if (hasNoStaminaModifier(player.getMainHandItem()) || hasNoStaminaModifier(player.getOffhandItem())) {
+        if (hasEffect(player.getMainHandItem(), effect) || hasEffect(player.getOffhandItem(), effect)) {
             return true;
         }
 
         for (ItemStack armorStack : player.getArmorSlots()) {
-            if (hasNoStaminaModifier(armorStack)) {
+            if (hasEffect(armorStack, effect)) {
                 return true;
             }
         }
 
         AtomicBoolean hasEffect = new AtomicBoolean(false);
         player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
-                hasEffect.set(hasNoStaminaModifierEquipped(inventory))
+                hasEffect.set(hasEffectEquipped(inventory, effect))
         );
         return hasEffect.get();
     }
 
     public static boolean hasNoStaminaModifierEquipped(IScpInventory inventory) {
+        return hasEffectEquipped(inventory, ItemEffect.NO_STAMINA);
+    }
+
+    public static boolean hasProtectedEyesModifierEquipped(IScpInventory inventory) {
+        return hasEffectEquipped(inventory, ItemEffect.PROTECTED_EYES);
+    }
+
+    private static boolean hasEffectEquipped(IScpInventory inventory, ItemEffect effect) {
         if (inventory == null) {
             return false;
         }
 
         for (ScpEquipmentSlot slot : ScpEquipmentSlot.values()) {
-            if (hasNoStaminaModifier(inventory.getEquipment(slot))) {
+            if (hasEffect(inventory.getEquipment(slot), effect)) {
                 return true;
             }
         }
@@ -57,21 +77,29 @@ public final class ScpItemEffects {
     }
 
     public static boolean hasNoStaminaModifierEquipped(Player player, IScpInventory inventory) {
+        return hasEffectEquipped(player, inventory, ItemEffect.NO_STAMINA);
+    }
+
+    public static boolean hasProtectedEyesModifierEquipped(Player player, IScpInventory inventory) {
+        return hasEffectEquipped(player, inventory, ItemEffect.PROTECTED_EYES);
+    }
+
+    private static boolean hasEffectEquipped(Player player, IScpInventory inventory, ItemEffect effect) {
         if (player == null) {
             return false;
         }
 
-        if (hasNoStaminaModifier(player.getMainHandItem()) || hasNoStaminaModifier(player.getOffhandItem())) {
+        if (hasEffect(player.getMainHandItem(), effect) || hasEffect(player.getOffhandItem(), effect)) {
             return true;
         }
 
         for (ItemStack armorStack : player.getArmorSlots()) {
-            if (hasNoStaminaModifier(armorStack)) {
+            if (hasEffect(armorStack, effect)) {
                 return true;
             }
         }
 
-        return hasNoStaminaModifierEquipped(inventory);
+        return hasEffectEquipped(inventory, effect);
     }
 
     private static boolean hasEffect(ItemStack stack, ItemEffect effect) {
@@ -113,7 +141,8 @@ public final class ScpItemEffects {
     }
 
     private enum ItemEffect {
-        NO_STAMINA;
+        NO_STAMINA,
+        PROTECTED_EYES;
 
         private static Optional<ItemEffect> fromConfigToken(String token) {
             if (token == null || token.isBlank()) {
@@ -123,6 +152,7 @@ public final class ScpItemEffects {
             String normalized = token.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
             return switch (normalized) {
                 case "NO_STAMINA", "ZERO_STAMINA", "DISABLE_STAMINA", "STAMINA_DISABLED" -> Optional.of(NO_STAMINA);
+                case "PROTECTED_EYES", "EYE_PROTECTION", "PROTECT_EYES" -> Optional.of(PROTECTED_EYES);
                 default -> Optional.empty();
             };
         }

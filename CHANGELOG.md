@@ -8,6 +8,18 @@
 - Added an option to hide and disable custom interactions in Creative;
 - Inventory-full and SCP-131 notices now appear in Creative.
 
+## Controls and guidance
+
+- SCP-131 followers now use a configurable dismissal key, with notices showing the selected key;
+- Manual blink now uses `B` by default instead of the jump key;
+- The first SCP-173 activation in a world now explains how to blink manually using the selected key.
+
+## Eye effects and decontamination
+
+- Decontamination Checkpoints now cause Eye Sore for 30 seconds;
+- Added Lubricated Eye, which prevents Eye Sore, doubles the blink interval, and turns the blink bar blue;
+- Added the `PROTECTED_EYES` item effect for eye-protecting equipment.
+
 # SCP Additions 3.0.2 — Stability Hotfix
 
 ## Facility doors

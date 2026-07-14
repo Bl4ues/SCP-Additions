@@ -24,4 +24,9 @@ public final class ScpFonts {
     public static MutableComponent montserrat(String text) {
         return Component.literal(text == null ? "" : text).withStyle(style -> style.withFont(MONTSERRAT));
     }
+
+    public static MutableComponent montserrat(Component component) {
+        return Component.empty().append(component == null ? Component.empty() : component)
+                .withStyle(style -> style.withFont(MONTSERRAT));
+    }
 }

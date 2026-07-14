@@ -23,6 +23,7 @@ public final class ItemConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File("config/scpinventory/scpinventory.json");
     private static final String NO_STAMINA = "NO_STAMINA";
+    private static final String PROTECTED_EYES = "PROTECTED_EYES";
 
     private ItemConfigManager() {
     }
@@ -39,11 +40,13 @@ public final class ItemConfigManager {
             type = "MISCELLANEOUS";
         }
         boolean noStamina = hasItemEffect(root, idText, NO_STAMINA);
+        boolean protectedEyes = hasItemEffect(root, idText, PROTECTED_EYES);
         ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new ItemConfigOpenPacket(idText, existing, type, noStamina));
+                new ItemConfigOpenPacket(idText, existing, type, noStamina, protectedEyes));
     }
 
-    public static void saveRule(ServerPlayer player, String idText, String type, boolean noStamina) {
+    public static void saveRule(ServerPlayer player, String idText, String type,
+            boolean noStamina, boolean protectedEyes) {
         if (player == null || !isValidId(idText)) {
             return;
         }
@@ -58,6 +61,7 @@ public final class ItemConfigManager {
         rules.add(rule);
 
         setItemEffect(root, idText, NO_STAMINA, noStamina);
+        setItemEffect(root, idText, PROTECTED_EYES, protectedEyes);
         saveRoot(root);
         ScpInventoryConfig.reload();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Saved item rule for ").withStyle(ChatFormatting.GREEN)

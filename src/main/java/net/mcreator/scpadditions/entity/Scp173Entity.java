@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class Scp173Entity extends BlinkWatcherEntity {
+    private static final String BLINK_TUTORIAL_SHOWN_TAG = "Scp173BlinkTutorialShown";
     private static final EntityDataAccessor<Boolean> SCRAPING = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> MANUAL_YAW = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> ACTIVATED = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
@@ -127,7 +129,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
             Entity target = scp173.getTarget();
             if (target != null && target != player) continue;
             if (!scp173.isActivated() && !scp173.isObservedBy(player)) continue;
-            scp173.setActivated(true);
+            scp173.activateFor(player);
             scp173.setTarget(player);
             if (closed) scp173.beginBlinkMovement(player, manual);
             else scp173.endBlinkMovement(player);
@@ -203,8 +205,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
             Player observer = findObservingPlayer();
             if (observer != null) {
-                setActivated(true);
-                setNoAi(false);
+                activateFor(observer);
                 setTarget(observer);
                 lastSeenOrCloseTick = tickCount;
             }
@@ -329,8 +330,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
         rememberObservation(player);
         lastSeenOrCloseTick = tickCount;
         if (!isActivated()) {
-            setActivated(true);
-            setNoAi(false);
+            activateFor(player);
             setTarget(player);
         } else if (!isValidTargetEntity(getTarget())) {
             setTarget(player);
@@ -356,6 +356,28 @@ public class Scp173Entity extends BlinkWatcherEntity {
     @Override protected boolean isSunSensitive() { return false; }
 
     private void setActivated(boolean value) { entityData.set(ACTIVATED, value); }
+
+    private void activateFor(Player observer) {
+        boolean newlyActivated = !isActivated();
+        setActivated(true);
+        setNoAi(false);
+        if (newlyActivated && observer instanceof ServerPlayer serverPlayer) {
+            showBlinkTutorialOnce(serverPlayer);
+        }
+    }
+
+    private static void showBlinkTutorialOnce(ServerPlayer player) {
+        if (!ScpAdditionsModulesConfig.get().blink.enabled) return;
+        CompoundTag persistentData = player.getPersistentData();
+        CompoundTag persisted = persistentData.getCompound(Player.PERSISTED_NBT_TAG);
+        if (persisted.getBoolean(BLINK_TUTORIAL_SHOWN_TAG)) return;
+
+        persisted.putBoolean(BLINK_TUTORIAL_SHOWN_TAG, true);
+        persistentData.put(Player.PERSISTED_NBT_TAG, persisted);
+        player.displayClientMessage(Component.translatable(
+                "message.scp_additions.scp_173_blink_hint",
+                Component.keybind("key.scpinventory.blink")), true);
+    }
 
     private boolean shouldFreezeFor(LivingEntity observer) {
         if (!isValidObserver(observer)) return false;

@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 
 public class ItemConfigScreen extends Screen {
     private static final int PANEL_W = 270;
-    private static final int PANEL_H = 210;
+    private static final int PANEL_H = 250;
     private static final int MARGIN = 10;
     private static final ScpItemType[] TYPES = ScpItemType.values();
 
@@ -21,8 +21,10 @@ public class ItemConfigScreen extends Screen {
     private final boolean existing;
     private ScpItemType type;
     private boolean noStamina;
+    private boolean protectedEyes;
     private Button typeButton;
     private Button staminaButton;
+    private Button protectedEyesButton;
     private Button forgetButton;
     private boolean confirmForget;
 
@@ -32,6 +34,7 @@ public class ItemConfigScreen extends Screen {
         this.existing = packet.existing();
         this.type = parseType(packet.type());
         this.noStamina = packet.noStamina();
+        this.protectedEyes = packet.protectedEyes();
     }
 
     @Override
@@ -52,6 +55,12 @@ public class ItemConfigScreen extends Screen {
             b.setMessage(Component.literal(staminaText()));
         }).bounds(x, y, PANEL_W - 24, 20).build());
 
+        y += 30;
+        protectedEyesButton = addRenderableWidget(Button.builder(Component.literal(protectedEyesText()), b -> {
+            protectedEyes = !protectedEyes;
+            b.setMessage(Component.literal(protectedEyesText()));
+        }).bounds(x, y, PANEL_W - 24, 20).build());
+
         int bottomY = top + PANEL_H - 30;
         forgetButton = addRenderableWidget(Button.builder(Component.literal("Forget"), b -> forgetRule()).bounds(left + 12, bottomY, 68, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Save"), b -> save()).bounds(left + PANEL_W - 154, bottomY, 68, 20).build());
@@ -68,10 +77,11 @@ public class ItemConfigScreen extends Screen {
         g.drawString(font, (existing ? "Editing " : "New ") + compact(itemId, 32), left + 12, top + 30, 0xFFB5C7FF, false);
         g.drawString(font, "Item category", left + 12, top + 48, 0xFFB7B7B7, false);
         g.drawString(font, "Effects", left + 12, top + 84, 0xFFB7B7B7, false);
-        g.drawString(font, "Type writes item_rules[].", left + 12, top + 120, 0xFF999999, false);
-        g.drawString(font, "No Stamina writes item_effects[].", left + 12, top + 134, 0xFF999999, false);
-        g.drawString(font, "Use CODEX for document items.", left + 12, top + 148, 0xFF88DDEE, false);
-        g.drawString(font, "Forget asks twice, then removes this item.", left + 12, top + 162, 0xFFFF9D9D, false);
+        g.drawString(font, "Type writes item_rules[].", left + 12, top + 148, 0xFF999999, false);
+        g.drawString(font, "Effects write item_effects[].", left + 12, top + 162, 0xFF999999, false);
+        g.drawString(font, "Protected Eyes blocks external eye irritation.", left + 12, top + 176, 0xFF999999, false);
+        g.drawString(font, "Use CODEX for document items.", left + 12, top + 190, 0xFF88DDEE, false);
+        g.drawString(font, "Forget asks twice, then removes this item.", left + 12, top + 204, 0xFFFF9D9D, false);
         super.render(g, mouseX, mouseY, partialTick);
     }
 
@@ -81,7 +91,8 @@ public class ItemConfigScreen extends Screen {
     }
 
     private void save() {
-        ModNetwork.CHANNEL.sendToServer(new ItemConfigSavePacket(itemId, type.name(), noStamina));
+        ModNetwork.CHANNEL.sendToServer(new ItemConfigSavePacket(
+                itemId, type.name(), noStamina, protectedEyes));
         Minecraft.getInstance().setScreen(null);
     }
 
@@ -103,6 +114,10 @@ public class ItemConfigScreen extends Screen {
 
     private String staminaText() {
         return noStamina ? "No Stamina: On" : "No Stamina: Off";
+    }
+
+    private String protectedEyesText() {
+        return protectedEyes ? "Protected Eyes: On" : "Protected Eyes: Off";
     }
 
     private int panelLeft() {

@@ -1,6 +1,5 @@
 package net.mcreator.scpadditions.client;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -9,7 +8,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.Scp131StopPacket;
-import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp131ClientEvents {
@@ -28,7 +26,7 @@ public final class Scp131ClientEvents {
         boolean down = false;
         if (player != null && minecraft.level != null && minecraft.screen == null
                 && !player.isSpectator()) {
-            down = InputConstants.isKeyDown(minecraft.getWindow().getWindow(), GLFW.GLFW_KEY_G);
+            down = Scp131Keybinds.DISMISS.isDown();
         }
         if (!down) {
             heldTicks = 0;

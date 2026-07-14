@@ -40,8 +40,8 @@ The registered keybinds can be changed in Minecraft's Controls menu unless noted
 | `Tab` | Open the SCP Inventory. |
 | `E` | Use the focused contextual interaction. Rules may also accept right-click. |
 | `K` | Open the item editor for a hovered inventory item, or the interaction editor for the block/entity being viewed. |
-| Hold `Space` | Keep the player's eyes closed for a manual blink. |
-| Hold `G` for one second | Dismiss owned SCP-131 followers within 64 blocks. This control is currently fixed rather than remappable. |
+| Press or hold `B` | Blink manually or keep the player's eyes closed. |
+| Hold **Dismiss SCP-131** for one second (`G` by default) | Dismiss owned SCP-131 followers within 64 blocks. |
 
 ## System reference
 
@@ -72,7 +72,7 @@ The interaction itself is validated again on the server before the block or enti
 Pressing `K` is the recommended editing workflow:
 
 - look at a block or entity to edit its prompt visually;
-- hover an item in the SCP or vanilla inventory to edit its category and `NO_STAMINA` behavior;
+- hover an item in the SCP or vanilla inventory to edit its category, `NO_STAMINA`, and `PROTECTED_EYES` behavior;
 - save from the editor to write the JSON and refresh the relevant runtime registry.
 
 The block editor also supports precise anchor movement with the arrow keys, `Page Up`/`Page Down`, and the mouse wheel. `Shift` changes the step to `0.10`, `Ctrl` changes it to `0.01`, and the normal step is `0.05`.
@@ -83,7 +83,7 @@ The custom HUD can replace vanilla hearts and add SCP Unity-style health, stamin
 
 The survival movement module slows ordinary walking and makes sprinting a committed, stamina-limited action. Stamina has drain, regeneration delay, and an exhausted sprint lock. Items marked with `NO_STAMINA` block sprinting while held, worn, or equipped in the SCP Inventory.
 
-Blinking is synchronized with the server. It supports automatic blinks, manual hold-to-blink, blackout and vignette effects, and the **Eye Sore** effect, which drains the blink meter faster.
+Blinking is synchronized with the server. It supports automatic blinks, manual press- or hold-to-blink, blackout and vignette effects, and the **Eye Sore** effect, which drains the blink meter faster. **Lubricated Eye** removes and prevents Eye Sore, doubles the blink interval, and changes the blink bar to blue while active.
 
 ### SCP-173
 
@@ -120,7 +120,7 @@ Manually spawned SCP-173 entities are not marked as routine spawns and are not g
 
 ![SCP-131-A and SCP-131-B](https://cdn.modrinth.com/data/cached_images/1728c75e5be1fb6c08d6856afea58db71c01aad9.jpeg)
 
-Right-clicking an SCP-131 starts nearby SCP-131 entities following the same player. Ownership persists through save/reload, distant followers can return to their owner, and holding `G` dismisses the player's group. Idle variants can also follow one another.
+Right-clicking an SCP-131 starts nearby SCP-131 entities following the same player. Ownership persists through save/reload, distant followers can return to their owner, and holding the configurable **Dismiss SCP-131** key (`G` by default) dismisses the player's group. Idle variants can also follow one another.
 
 SCP-131 scans for nearby SCP-173 entities, moves to a useful viewing position, and acts as a configured observer while it has line of sight.
 
@@ -146,7 +146,7 @@ The system evaluates opportunities every 5–10 seconds, waits 8–15 seconds af
 
 ### Decontamination Checkpoint
 
-The checkpoint detects players only inside its modeled chamber. It closes once per visit, removes all active status effects, plays a five-second decontamination cycle, fills the chamber with gas, and reopens. The reopening uses a saved block tick, so stopping the server or leaving the world while it is closed does not leave it locked permanently.
+The checkpoint detects players only inside its modeled chamber. It closes once per visit, removes active status effects, applies **Eye Sore** for 30 seconds, plays a five-second decontamination cycle, fills the chamber with gas, and reopens. An active **Lubricated Eye** effect is preserved and prevents the irritation; items marked `PROTECTED_EYES` also block it. The reopening uses a saved block tick, so stopping the server or leaving the world while it is closed does not leave it locked permanently.
 
 With `deconCheckpoint` enabled, processing also sets the player's respawn position.
 
@@ -234,7 +234,7 @@ The main sections in `scpinventory.json` are:
 | Section | Meaning |
 | --- | --- |
 | `item_rules` | Maps an item registry ID to an SCP Inventory category. |
-| `item_effects` | Applies special inventory-aware behavior; currently `NO_STAMINA`. |
+| `item_effects` | Applies inventory-aware behavior: `NO_STAMINA` or `PROTECTED_EYES`. |
 | `hidden_status_effects` | Hides matching effects from the Status panel without removing the gameplay effect. |
 | `codex_documents` | Defines item-backed documents and their page resources. |
 | `scp_173_targets` | Adds non-player entity IDs or `#namespace:tag` entries as SCP-173 targets and observers. |
@@ -251,7 +251,8 @@ Example:
     { "id": "example:helmet", "type": "HEAD" }
   ],
   "item_effects": [
-    { "id": "example:heavy_armor", "effects": ["NO_STAMINA"] }
+    { "id": "example:heavy_armor", "effects": ["NO_STAMINA"] },
+    { "id": "example:gas_mask", "effects": ["PROTECTED_EYES"] }
   ],
   "hidden_status_effects": [
     "minecraft:bad_omen"

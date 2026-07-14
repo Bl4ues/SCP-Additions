@@ -8,8 +8,10 @@ import net.minecraft.world.effect.MobEffect;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.EyeSoreEffect;
+import net.mcreator.scpadditions.effect.LubricatedEyeEffect;
 
 public class ScpAdditionsModMobEffects {
 	public static final DeferredRegister<MobEffect> REGISTRY = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, ScpAdditionsMod.MODID);
 	public static final RegistryObject<MobEffect> EYE_SORE = REGISTRY.register("eye_sore", EyeSoreEffect::new);
+	public static final RegistryObject<MobEffect> LUBRICATED_EYE = REGISTRY.register("lubricated_eye", LubricatedEyeEffect::new);
 }

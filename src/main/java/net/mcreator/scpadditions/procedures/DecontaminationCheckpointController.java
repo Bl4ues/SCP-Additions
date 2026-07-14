@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,8 +19,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.effect.EyeProtectionAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
@@ -35,6 +38,7 @@ public final class DecontaminationCheckpointController {
     private static final int PARTICLES_PER_VENT = 1;
     private static final int GAS_PARTICLES_PER_BURST = 8;
     private static final int GAS_FILL_TICKS = 35;
+    private static final int EYE_SORE_DURATION_TICKS = 30 * 20;
 
     // Exact usable grille rectangles from models/custom/deconclosed.json.
     // The model's unrotated coordinates are used by the NORTH blockstate.
@@ -143,7 +147,12 @@ public final class DecontaminationCheckpointController {
     }
 
     private static void decontaminate(ServerLevel level, ServerPlayer player) {
+        MobEffectInstance lubricatedEye = player.getEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get());
         player.removeAllEffects();
+        if (lubricatedEye != null) {
+            player.addEffect(new MobEffectInstance(lubricatedEye));
+        }
+        EyeProtectionAccess.applyExternalEyeSore(player, EYE_SORE_DURATION_TICKS);
 
         if (level.getGameRules().getBoolean(ScpAdditionsModGameRules.DECONCHECKPOINT)) {
             player.setRespawnPosition(player.level().dimension(), player.blockPosition(),

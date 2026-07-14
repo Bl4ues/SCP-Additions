@@ -16,7 +16,8 @@ public final class BlinkClient {
     private static final ResourceLocation VIGNETTE = new ResourceLocation("scpinventory", "textures/gui/vignette.png");
     private static final int VIGNETTE_SOURCE_WIDTH = 1920;
     private static final int VIGNETTE_SOURCE_HEIGHT = 1080;
-    private static final int BLINK_INTERVAL_TICKS = 200;
+    private static final int BASE_BLINK_INTERVAL_TICKS = 200;
+    private static final int LUBRICATED_BLINK_INTERVAL_TICKS = BASE_BLINK_INTERVAL_TICKS * 2;
     private static final int BLINK_DARK_TICKS = 6;
     private static final int POST_BLINK_COVER_TICKS = 2;
     private static final int SCARE_SOUND_COOLDOWN_TICKS = 120;
@@ -32,9 +33,14 @@ public final class BlinkClient {
     private static final int EYE_SORE_BORDER = 0xAA8E2727;
     private static final int EYE_SORE_LEFT = 0xDDBB2525;
     private static final int EYE_SORE_RIGHT = 0xFFFF7070;
+    private static final int LUBRICATED_TRACK_DARK = 0xAA071D2A;
+    private static final int LUBRICATED_BORDER = 0xAA2C83B8;
+    private static final int LUBRICATED_LEFT = 0xDD3B9EDB;
+    private static final int LUBRICATED_RIGHT = 0xFF8BD8FF;
 
     private static boolean active;
-    private static int timerTicks = BLINK_INTERVAL_TICKS;
+    private static int timerTicks = BASE_BLINK_INTERVAL_TICKS;
+    private static int currentIntervalTicks = BASE_BLINK_INTERVAL_TICKS;
     private static int darkTicks;
     private static int postBlinkCoverTicks;
     private static int scareSoundCooldownTicks;
@@ -53,7 +59,8 @@ public final class BlinkClient {
         if (active == value) return;
         active = value;
         if (active) {
-            timerTicks = BLINK_INTERVAL_TICKS;
+            currentIntervalTicks = getBlinkIntervalTicks(Minecraft.getInstance());
+            timerTicks = currentIntervalTicks;
             blinkDrainRemainder = 0.0F;
             fadeOutTicks = 0;
             visualAlpha = 1.0F;
@@ -94,6 +101,7 @@ public final class BlinkClient {
         }
         updateVisualFade();
         if (mc.isPaused()) return;
+        updateBlinkInterval(mc);
         if (!active) {
             syncBlinkClosed(false, false);
             return;
@@ -113,7 +121,7 @@ public final class BlinkClient {
             postBlinkCoverTicks--;
             syncBlinkClosed(true, false);
             if (postBlinkCoverTicks <= 0) {
-                timerTicks = BLINK_INTERVAL_TICKS;
+                timerTicks = currentIntervalTicks;
                 blinkDrainRemainder = 0.0F;
                 syncBlinkClosed(false, true);
             }
@@ -171,6 +179,25 @@ public final class BlinkClient {
         return mc != null && mc.player != null && mc.player.hasEffect(ScpAdditionsModMobEffects.EYE_SORE.get());
     }
 
+    private static boolean hasLubricatedEye(Minecraft mc) {
+        return mc != null && mc.player != null
+                && mc.player.hasEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get());
+    }
+
+    private static int getBlinkIntervalTicks(Minecraft mc) {
+        return hasLubricatedEye(mc) ? LUBRICATED_BLINK_INTERVAL_TICKS : BASE_BLINK_INTERVAL_TICKS;
+    }
+
+    private static void updateBlinkInterval(Minecraft mc) {
+        int nextInterval = getBlinkIntervalTicks(mc);
+        if (nextInterval == currentIntervalTicks) return;
+        if (timerTicks > 0 && darkTicks <= 0 && postBlinkCoverTicks <= 0) {
+            timerTicks = Math.max(0, Math.min(nextInterval,
+                    Math.round(timerTicks * (nextInterval / (float) currentIntervalTicks))));
+        }
+        currentIntervalTicks = nextInterval;
+    }
+
     private static int getBlinkDrainTicks(Minecraft mc) {
         blinkDrainRemainder += hasEyeSore(mc) ? EYE_SORE_BLINK_DRAIN_MULTIPLIER : 1.0F;
         int wholeTicks = (int) blinkDrainRemainder;
@@ -186,7 +213,7 @@ public final class BlinkClient {
     private static void holdBlinkClosed() {
         if (darkTicks <= 0 && postBlinkCoverTicks <= 0) darkTicks = BLINK_DARK_TICKS;
         postBlinkCoverTicks = 0;
-        timerTicks = BLINK_INTERVAL_TICKS;
+        timerTicks = currentIntervalTicks;
         blinkDrainRemainder = 0.0F;
     }
 
@@ -219,18 +246,20 @@ public final class BlinkClient {
         int barWidth = 300, barHeight = 10;
         int x = (width - barWidth) / 2, y = height - 86;
         int iconSize = 20;
-        float fill = Math.max(0.0F, Math.min(1.0F, timerTicks / (float) BLINK_INTERVAL_TICKS));
-        boolean eyeSore = hasEyeSore(Minecraft.getInstance());
+        float fill = Math.max(0.0F, Math.min(1.0F, timerTicks / (float) currentIntervalTicks));
+        boolean lubricatedEye = hasLubricatedEye(Minecraft.getInstance());
+        boolean eyeSore = !lubricatedEye && hasEyeSore(Minecraft.getInstance());
         drawIcon(graphics, x - iconSize - 6, y - 5, iconSize, alpha);
-        drawBar(graphics, x, y, barWidth, barHeight, fill, alpha, eyeSore);
+        drawBar(graphics, x, y, barWidth, barHeight, fill, alpha, eyeSore, lubricatedEye);
     }
 
-    private static void drawBar(GuiGraphics graphics, int x, int y, int width, int height, float ratio, float alpha, boolean eyeSore) {
+    private static void drawBar(GuiGraphics graphics, int x, int y, int width, int height,
+            float ratio, float alpha, boolean eyeSore, boolean lubricatedEye) {
         int right = x + width, bottom = y + height;
-        int trackDark = eyeSore ? EYE_SORE_TRACK_DARK : TRACK_DARK;
-        int border = eyeSore ? EYE_SORE_BORDER : BORDER;
-        int left = eyeSore ? EYE_SORE_LEFT : BLINK_LEFT;
-        int rightColor = eyeSore ? EYE_SORE_RIGHT : BLINK_RIGHT;
+        int trackDark = lubricatedEye ? LUBRICATED_TRACK_DARK : eyeSore ? EYE_SORE_TRACK_DARK : TRACK_DARK;
+        int border = lubricatedEye ? LUBRICATED_BORDER : eyeSore ? EYE_SORE_BORDER : BORDER;
+        int left = lubricatedEye ? LUBRICATED_LEFT : eyeSore ? EYE_SORE_LEFT : BLINK_LEFT;
+        int rightColor = lubricatedEye ? LUBRICATED_RIGHT : eyeSore ? EYE_SORE_RIGHT : BLINK_RIGHT;
         graphics.fill(x, y, right, bottom, applyAlpha(TRACK, alpha));
         graphics.fill(x + 1, y + 1, right - 1, bottom - 1, applyAlpha(trackDark, alpha));
         int fillWidth = Math.max(0, Math.min(width - 2, Math.round((width - 2) * ratio)));

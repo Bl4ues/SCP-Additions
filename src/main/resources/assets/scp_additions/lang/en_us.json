@@ -262,5 +262,8 @@
   "item.scp_additions.carbon": "Cup of Carbon",
   "death.attack.scp914coarse": "%s died from internal injuries after being \"refined\" by SCP-914 on the \"Coarse\" setting.",
   "advancements.scp_914_metamorphosis.title": "Metamorphosis",
-  "subtitles.enter": "Entering the facility"
+  "subtitles.enter": "Entering the facility",
+  "message.scp_additions.scp_173_blink_hint": "Press or hold %s to blink manually",
+  "effect.scp_additions.eye_sore": "Eye Sore",
+  "effect.scp_additions.lubricated_eye": "Lubricated Eye"
 }

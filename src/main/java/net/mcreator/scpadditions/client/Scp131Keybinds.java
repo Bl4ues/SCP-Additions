@@ -5,15 +5,15 @@ import net.minecraft.client.KeyMapping;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
-public final class Scp173Keybinds {
-    public static final KeyMapping BLINK = new KeyMapping(
-            "key.scpinventory.blink",
+public final class Scp131Keybinds {
+    public static final KeyMapping DISMISS = new KeyMapping(
+            "key.scpinventory.scp_131_dismiss",
             KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_B,
+            GLFW.GLFW_KEY_G,
             "key.categories.scpinventory"
     );
 
-    private Scp173Keybinds() {
+    private Scp131Keybinds() {
     }
 }

@@ -11,12 +11,15 @@ public class ItemConfigOpenPacket {
     private final boolean existing;
     private final String type;
     private final boolean noStamina;
+    private final boolean protectedEyes;
 
-    public ItemConfigOpenPacket(String itemId, boolean existing, String type, boolean noStamina) {
+    public ItemConfigOpenPacket(String itemId, boolean existing, String type,
+            boolean noStamina, boolean protectedEyes) {
         this.itemId = itemId == null ? "" : itemId;
         this.existing = existing;
         this.type = type == null ? "MISCELLANEOUS" : type;
         this.noStamina = noStamina;
+        this.protectedEyes = protectedEyes;
     }
 
     public static void encode(ItemConfigOpenPacket msg, FriendlyByteBuf buf) {
@@ -24,10 +27,12 @@ public class ItemConfigOpenPacket {
         buf.writeBoolean(msg.existing);
         buf.writeUtf(msg.type);
         buf.writeBoolean(msg.noStamina);
+        buf.writeBoolean(msg.protectedEyes);
     }
 
     public static ItemConfigOpenPacket decode(FriendlyByteBuf buf) {
-        return new ItemConfigOpenPacket(buf.readUtf(), buf.readBoolean(), buf.readUtf(), buf.readBoolean());
+        return new ItemConfigOpenPacket(buf.readUtf(), buf.readBoolean(), buf.readUtf(),
+                buf.readBoolean(), buf.readBoolean());
     }
 
     public static void handle(ItemConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
@@ -49,5 +54,9 @@ public class ItemConfigOpenPacket {
 
     public boolean noStamina() {
         return noStamina;
+    }
+
+    public boolean protectedEyes() {
+        return protectedEyes;
     }
 }

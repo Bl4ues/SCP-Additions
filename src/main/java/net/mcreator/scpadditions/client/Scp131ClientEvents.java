@@ -27,7 +27,7 @@ public final class Scp131ClientEvents {
         LocalPlayer player = minecraft.player;
         boolean down = false;
         if (player != null && minecraft.level != null && minecraft.screen == null
-                && !player.isCreative() && !player.isSpectator()) {
+                && !player.isSpectator()) {
             down = InputConstants.isKeyDown(minecraft.getWindow().getWindow(), GLFW.GLFW_KEY_G);
         }
         if (!down) {

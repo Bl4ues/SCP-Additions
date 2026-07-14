@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
@@ -67,9 +68,17 @@ public final class ScpAdditionsModulesConfig {
 		return current;
 	}
 
+	public static boolean customInteractionsEnabledFor(Player player) {
+		Interactions settings = current.interactions;
+		return player != null
+				&& !player.isSpectator()
+				&& settings.enabled
+				&& (!player.isCreative() || !settings.disableInCreative);
+	}
+
 	public static final class Root {
 		public Toggle inventory = new Toggle();
-		public Toggle interactions = new Toggle();
+		public Interactions interactions = new Interactions();
 		public Toggle hud = new Toggle();
 		public Vitals vitals = new Vitals();
 		public Toggle blink = new Toggle();
@@ -83,7 +92,7 @@ public final class ScpAdditionsModulesConfig {
 
 		private Root normalize() {
 			if (inventory == null) inventory = new Toggle();
-			if (interactions == null) interactions = new Toggle();
+			if (interactions == null) interactions = new Interactions();
 			if (hud == null) hud = new Toggle();
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();
@@ -94,6 +103,11 @@ public final class ScpAdditionsModulesConfig {
 
 	public static class Toggle {
 		public boolean enabled = true;
+	}
+
+	public static final class Interactions extends Toggle {
+		@SerializedName("disable_in_creative")
+		public boolean disableInCreative = false;
 	}
 
 	public static final class Vitals {

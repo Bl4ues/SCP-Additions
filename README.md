@@ -207,7 +207,10 @@ All time values named `*_ticks` and effect durations are Minecraft ticks; 20 tic
 ```json
 {
   "inventory": { "enabled": true },
-  "interactions": { "enabled": true },
+  "interactions": {
+    "enabled": true,
+    "disable_in_creative": false
+  },
   "hud": { "enabled": true },
   "vitals": {
     "custom_health_enabled": true,
@@ -222,7 +225,7 @@ All time values named `*_ticks` and effect durations are Minecraft ticks; 20 tic
 }
 ```
 
-`hud.enabled` controls custom vitals rendering. It does not by itself disable stamina gameplay. `scp_173.enabled` disables SCP-173 behavior as a whole, while `natural_spawn_enabled` keeps the entity functional but stops the routine spawn cycle.
+`hud.enabled` controls custom vitals rendering. It does not by itself disable stamina gameplay. `interactions.disable_in_creative` hides and disables contextual interaction prompts for Creative players when set to `true`; they remain available by default. Spectator players never receive these interactions. `scp_173.enabled` disables SCP-173 behavior as a whole, while `natural_spawn_enabled` keeps the entity functional but stops the routine spawn cycle.
 
 ### Inventory, item, Status, Codex, and SCP-173 rules
 

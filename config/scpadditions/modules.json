@@ -3,7 +3,8 @@
     "enabled": true
   },
   "interactions": {
-    "enabled": true
+    "enabled": true,
+    "disable_in_creative": false
   },
   "hud": {
     "enabled": true

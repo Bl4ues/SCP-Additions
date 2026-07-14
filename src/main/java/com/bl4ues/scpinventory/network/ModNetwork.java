@@ -60,7 +60,7 @@ public final class ModNetwork {
     }
 
     public static void showInventoryFull(ServerPlayer player) {
-        if (player != null && !player.isCreative() && !player.isSpectator()) {
+        if (player != null && !player.isSpectator()) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new InventoryFullPacket());
         }
     }

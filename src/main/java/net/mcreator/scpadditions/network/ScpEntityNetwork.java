@@ -37,7 +37,7 @@ public final class ScpEntityNetwork {
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {
-        if (player == null || player.isCreative() || player.isSpectator()) return;
+        if (player == null || player.isSpectator()) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new Scp131NoticePacket(following));
     }
 

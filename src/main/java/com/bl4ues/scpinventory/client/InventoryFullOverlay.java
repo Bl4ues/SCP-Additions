@@ -52,7 +52,11 @@ public class InventoryFullOverlay {
     }
 
     public static void show() {
-        if (!hasRecentBlockedPickupAttempt()) {
+        show(false);
+    }
+
+    public static void show(boolean force) {
+        if (!force && !hasRecentBlockedPickupAttempt()) {
             return;
         }
         long now = System.currentTimeMillis();

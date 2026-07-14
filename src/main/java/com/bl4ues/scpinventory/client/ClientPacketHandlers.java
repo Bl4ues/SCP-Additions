@@ -16,11 +16,11 @@ public final class ClientPacketHandlers {
 
     public static void showInventoryFullOverlay() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player != null && (minecraft.player.isCreative() || minecraft.player.isSpectator())) {
+        if (minecraft.player != null && minecraft.player.isSpectator()) {
             InventoryFullOverlay.hide();
             return;
         }
-        InventoryFullOverlay.show();
+        InventoryFullOverlay.show(minecraft.player != null && minecraft.player.isCreative());
     }
 
 

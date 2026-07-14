@@ -1,6 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
 import net.minecraft.core.BlockPos;
@@ -57,7 +58,7 @@ public class ContextInteractPacket {
     public static void handle(ContextInteractPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player == null || player.isSpectator()) {
+            if (!ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)) {
                 return;
             }
             if (msg.entityTarget) {

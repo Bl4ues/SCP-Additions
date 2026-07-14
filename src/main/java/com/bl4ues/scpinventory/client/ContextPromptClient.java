@@ -1,10 +1,11 @@
 package com.bl4ues.scpinventory.client;
 
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
-import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import com.bl4ues.scpinventory.network.ContextInteractPacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -45,7 +46,8 @@ public final class ContextPromptClient {
     public static void clientTick() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || mc.screen != null || player.isCreative() || player.isSpectator()) {
+        if (player == null || mc.level == null || mc.screen != null
+                || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)) {
             clear();
             useWasDown = false;
             cooldownTicks = 0;
@@ -83,7 +85,9 @@ public final class ContextPromptClient {
     public static boolean hasRightClickTarget() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || mc.screen != null || player.isCreative() || player.isSpectator() || PickupPromptClient.hasActiveTarget()) {
+        if (player == null || mc.level == null || mc.screen != null
+                || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)
+                || PickupPromptClient.hasActiveTarget()) {
             return false;
         }
         if (target == null || !target.isAlive(mc)) {

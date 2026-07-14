@@ -41,7 +41,7 @@ The registered keybinds can be changed in Minecraft's Controls menu unless noted
 | `E` | Use the focused contextual interaction. Rules may also accept right-click. |
 | `K` | Open the item editor for a hovered inventory item, or the interaction editor for the block/entity being viewed. |
 | Press or hold `B` | Blink manually or keep the player's eyes closed. |
-| Hold **Dismiss SCP-131** for one second (`G` by default) | Dismiss owned SCP-131 followers within 64 blocks. |
+| Hold `G` for one second | Dismiss owned SCP-131 followers within 64 blocks. |
 
 ## System reference
 

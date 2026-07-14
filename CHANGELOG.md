@@ -1,5 +1,13 @@
 # Changelog
 
+# SCP Additions 3.0.3 — Quality of Life Update
+
+## Creative mode
+
+- Custom interaction prompts now appear and work in Creative by default;
+- Added an option to hide and disable custom interactions in Creative;
+- Inventory-full and SCP-131 notices now appear in Creative.
+
 # SCP Additions 3.0.2 — Stability Hotfix
 
 ## Facility doors

@@ -4,11 +4,11 @@ license="Creative Commons Attribution-ShareAlike 3.0"
 
 [[mods]]
 modId="scp_additions"
-version="3.0.2"
+version="3.0.3"
 displayName="SCP Additions"
 authors="Bl4ues"
 description='''
-SCP Additions 3.0.2 — Stability Hotfix.
+SCP Additions 3.0.3 — Quality of Life Update.
 Combines the existing SCP Additions content with the SCP Inventory gameplay systems and SCP Unity-inspired facility content.
 '''
 

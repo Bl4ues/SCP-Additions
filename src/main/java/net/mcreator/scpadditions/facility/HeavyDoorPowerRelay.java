@@ -13,6 +13,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -121,6 +124,8 @@ public final class HeavyDoorPowerRelay {
     }
 
     private static final class RelayBlock extends Block {
+        private static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+
         private RelayBlock() {
             super(BlockBehaviour.Properties.of()
                     .strength(-1.0F, 3_600_000.0F)
@@ -128,6 +133,7 @@ public final class HeavyDoorPowerRelay {
                     .noOcclusion()
                     .noLootTable()
                     .isRedstoneConductor((state, level, pos) -> false));
+            registerDefaultState(stateDefinition.any().setValue(POWERED, false));
         }
 
         @Override
@@ -155,7 +161,7 @@ public final class HeavyDoorPowerRelay {
         @Override
         public int getSignal(BlockState state, BlockGetter getter,
                 BlockPos pos, Direction direction) {
-            return getter instanceof Level level && hasExternalPower(level, pos) ? 15 : 0;
+            return state.getValue(POWERED) ? 15 : 0;
         }
 
         @Override
@@ -175,8 +181,17 @@ public final class HeavyDoorPowerRelay {
                 return;
             }
 
-            level.updateNeighborsAt(pos, this);
+            boolean powered = hasExternalPower(level, pos);
+            if (state.getValue(POWERED) != powered) {
+                level.setBlock(pos, state.setValue(POWERED, powered), Block.UPDATE_CLIENTS);
+                level.updateNeighborsAt(pos, this);
+            }
             level.scheduleTick(pos, this, 2);
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(POWERED);
         }
 
         @Override
@@ -201,6 +216,9 @@ public final class HeavyDoorPowerRelay {
                     continue;
                 }
                 BlockState neighbor = level.getBlockState(neighborPos);
+                if (neighbor.is(RELAY.get())) {
+                    continue;
+                }
                 Direction towardProbe = direction.getOpposite();
                 if (neighbor.getSignal(level, neighborPos, towardProbe) > 0
                         || neighbor.getDirectSignal(level, neighborPos, towardProbe) > 0) {

@@ -1,5 +1,11 @@
 # Changelog
 
+# SCP Additions 3.0.2 — Stability Hotfix
+
+## Facility doors
+
+- Fixed a crash when placing or loading redstone-powered facility doors directly beside one another.
+
 # SCP Additions 3.0.1 — Hotfix
 
 ## Additions

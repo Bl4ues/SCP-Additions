@@ -499,8 +499,8 @@ These commands operate on a player editing session. For normal use, `K` and the 
 | `/scpinventory context set action <text>` | Set the action label. |
 | `/scpinventory context set name <text>` | Set the manual display name. |
 | `/scpinventory context set range <0.25..64>` | Set prompt reach. |
-| `/scpinventory context input <both|e|right_click>` | Choose accepted input. `key`, `rightclick`, and `mouse` are also accepted aliases. |
-| `/scpinventory context item <hand|card>` | Select the prompt item mode. |
+| `/scpinventory context input <mode>` | Choose `both`, `e`, or `right_click`. `key`, `rightclick`, and `mouse` are also accepted aliases. |
+| `/scpinventory context item <mode>` | Select `hand` or `card` as the prompt item mode. |
 | `/scpinventory context clickface <face>` | Set `front`, `back`, `player`, a cardinal direction, `up`, or `down`. |
 | `/scpinventory context rotate <mode>` | Set `auto`, `facing`, `horizontal_facing`, `axis`, or `none`. |
 | `/scpinventory context anchor hit` | Move the anchor to the selected hit point. |

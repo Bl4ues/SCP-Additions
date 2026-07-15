@@ -24,7 +24,7 @@
 
 - The SCP Inventory now remembers its selected section, Codex document, and scrollbar positions until the player leaves the world;
 - Added an option to disable this interface memory;
-- Moved the Mellified Man blood type display into the Status panel and removed the old inventory overlays;
+- Moved SCP-1176 blood type display into the Status panel and removed the old inventory overlays;
 - Added subtitles for all custom sounds.
 
 ## Configuration and building

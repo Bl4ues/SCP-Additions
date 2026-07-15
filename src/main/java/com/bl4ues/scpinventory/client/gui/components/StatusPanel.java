@@ -3,6 +3,7 @@ package com.bl4ues.scpinventory.client.gui.components;
 import com.bl4ues.scpinventory.client.ScpFonts;
 
 import net.mcreator.scpadditions.vitals.client.PlayerVitalsClient;
+import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -10,6 +11,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -365,6 +367,8 @@ public class StatusPanel {
         renderStat(g, "Toughness", formatAttribute(Attributes.ARMOR_TOUGHNESS), statX, statY + 76);
         renderStat(g, "Attack", formatAttribute(Attributes.ATTACK_DAMAGE), statX, statY + 114);
         renderStat(g, "Stamina", Math.round(PlayerVitalsClient.getStamina()) + "/" + Math.round(PlayerVitalsClient.getMaxStamina()), statX, statY + 152);
+        renderStat(g, Component.translatable("status.scp_additions.blood_type").getString(),
+                getBloodType(), statX, statY + 190);
     }
 
     private void drawFrame(GuiGraphics g, int x, int y, int w, int h) {
@@ -394,6 +398,25 @@ public class StatusPanel {
         double value = mc.player.getAttributeValue(attribute);
         if (attribute == Attributes.ATTACK_DAMAGE) value = Math.max(0.0D, value - 1.0D);
         return String.format(Locale.ROOT, value % 1.0D == 0.0D ? "%.0f" : "%.1f", value);
+    }
+
+    private String getBloodType() {
+        String unknown = Component.translatable("status.scp_additions.blood_type_unknown").getString();
+        if (mc.player == null) return unknown;
+        return mc.player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
+                .resolve()
+                .map(variables -> {
+                    if (variables.Oneg) return "O-";
+                    if (variables.Opos) return "O+";
+                    if (variables.Aneg) return "A-";
+                    if (variables.Apos) return "A+";
+                    if (variables.Bneg) return "B-";
+                    if (variables.Bpos) return "B+";
+                    if (variables.ABneg) return "AB-";
+                    if (variables.ABpos) return "AB+";
+                    return unknown;
+                })
+                .orElse(unknown);
     }
 
     private String getAmplifierSuffix(MobEffectInstance effect) {

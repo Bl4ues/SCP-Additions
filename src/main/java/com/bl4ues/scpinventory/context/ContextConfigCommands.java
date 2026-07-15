@@ -1,12 +1,13 @@
 package com.bl4ues.scpinventory.context;
 
-import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
 @Mod.EventBusSubscriber(modid = "scp_additions")
 public final class ContextConfigCommands {
@@ -17,6 +18,9 @@ public final class ContextConfigCommands {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("scpinventory")
                 .then(Commands.literal("context")
+                        .requires(source -> source.getEntity() instanceof ServerPlayer player
+                                ? ConfigCenterService.canEdit(player)
+                                : source.hasPermission(ConfigCenterService.REQUIRED_PERMISSION_LEVEL))
                         .then(Commands.literal("select")
                                 .executes(ctx -> {
                                     ContextConfigManager.selectLookedBlock(ctx.getSource().getPlayerOrException());

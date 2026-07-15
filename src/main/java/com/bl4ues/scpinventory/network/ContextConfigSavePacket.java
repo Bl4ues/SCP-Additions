@@ -7,6 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
+import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
 import java.util.function.Supplier;
 
@@ -84,17 +85,16 @@ public class ContextConfigSavePacket {
     public static void handle(ContextConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && !player.isSpectator()) {
-                boolean handledAsEntity = ContextEntityConfigManager.saveClientRuleIfEntitySession(player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
+            if (!ConfigCenterService.requireEdit(player)) return;
+            boolean handledAsEntity = ContextEntityConfigManager.saveClientRuleIfEntitySession(player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
+                    msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
+                    msg.anchorX, msg.anchorY, msg.anchorZ);
+            if (!handledAsEntity) {
+                ContextConfigManager.saveClientRule(player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
                         msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
                         msg.anchorX, msg.anchorY, msg.anchorZ);
-                if (!handledAsEntity) {
-                    ContextConfigManager.saveClientRule(player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
-                            msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
-                            msg.anchorX, msg.anchorY, msg.anchorZ);
-                }
-                ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ContextConfigReloadPacket());
             }
+            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ContextConfigReloadPacket());
         });
         ctx.get().setPacketHandled(true);
     }

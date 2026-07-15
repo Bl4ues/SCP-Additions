@@ -8,9 +8,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
+import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "2";
+    private static final String PROTOCOL_VERSION = "3";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -49,7 +50,8 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, ItemConfigOpenPacket.class, ItemConfigOpenPacket::encode, ItemConfigOpenPacket::decode, ItemConfigOpenPacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigSavePacket.class, ItemConfigSavePacket::encode, ItemConfigSavePacket::decode, ItemConfigSavePacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigReloadPacket.class, ItemConfigReloadPacket::encode, ItemConfigReloadPacket::decode, ItemConfigReloadPacket::handle);
-        CHANNEL.registerMessage(id, ItemConfigDeletePacket.class, ItemConfigDeletePacket::encode, ItemConfigDeletePacket::decode, ItemConfigDeletePacket::handle);
+        CHANNEL.registerMessage(id++, ItemConfigDeletePacket.class, ItemConfigDeletePacket::encode, ItemConfigDeletePacket::decode, ItemConfigDeletePacket::handle);
+        ConfigCenterNetwork.register(CHANNEL, id);
     }
 
     public static void syncTo(ServerPlayer player, IScpInventory inventory) {

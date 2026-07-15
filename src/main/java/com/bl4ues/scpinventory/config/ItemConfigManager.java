@@ -13,10 +13,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
+import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.Locale;
 
 public final class ItemConfigManager {
@@ -123,9 +123,8 @@ public final class ItemConfigManager {
             if (dir != null && !dir.exists()) {
                 dir.mkdirs();
             }
-            try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
-                GSON.toJson(root, writer);
-            }
+            ConfigFilePersistence.writeWithBackup(CONFIG_FILE.toPath(),
+                    GSON.toJson(root) + System.lineSeparator());
         } catch (Exception ex) {
             ex.printStackTrace();
         }

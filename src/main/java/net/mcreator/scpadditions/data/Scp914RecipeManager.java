@@ -20,6 +20,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -134,7 +136,15 @@ public final class Scp914RecipeManager {
 						if (json.has("enabled") && !GsonHelper.getAsBoolean(json, "enabled")) {
 							continue;
 						}
-						parsed.add(parseRecipe(json));
+						RecipeDefinition recipe = parseRecipe(json);
+						List<ResourceLocation> missing = unavailableRegistryEntries(recipe);
+						if (!missing.isEmpty()) {
+							ScpAdditionsMod.LOGGER.warn(
+									"Skipping SCP-914 recipe {} from {} because these registry IDs are unavailable: {}",
+									recipe.id(), path, missing);
+							continue;
+						}
+						parsed.add(recipe);
 					} catch (Exception exception) {
 						ScpAdditionsMod.LOGGER.error("Failed to load one SCP-914 recipe entry from {}", path, exception);
 					}
@@ -152,7 +162,28 @@ public final class Scp914RecipeManager {
 			return;
 		}
 		JsonElement json = JsonParser.parseString(content);
-		Files.writeString(path, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
+		ConfigFilePersistence.writeWithBackup(path,
+				GSON.toJson(json) + System.lineSeparator());
+	}
+
+	private static List<ResourceLocation> unavailableRegistryEntries(RecipeDefinition recipe) {
+		LinkedHashSet<ResourceLocation> missing = new LinkedHashSet<>();
+		for (ItemIngredient input : recipe.itemInputs()) {
+			if (!ForgeRegistries.ITEMS.containsKey(input.item())) missing.add(input.item());
+		}
+		for (ItemOutput output : recipe.itemOutputs()) {
+			if (!ForgeRegistries.ITEMS.containsKey(output.item())) missing.add(output.item());
+		}
+		for (WeightedItemOutput output : recipe.weightedItemOutputs()) {
+			if (!ForgeRegistries.ITEMS.containsKey(output.output().item())) missing.add(output.output().item());
+		}
+		for (EntityIngredient input : recipe.entityInputs()) {
+			if (!ForgeRegistries.ENTITY_TYPES.containsKey(input.entity())) missing.add(input.entity());
+		}
+		for (EntityOutput output : recipe.entityOutputs()) {
+			if (!ForgeRegistries.ENTITY_TYPES.containsKey(output.entity())) missing.add(output.entity());
+		}
+		return List.copyOf(missing);
 	}
 
 	private static MachineConfig readMachineConfig(JsonObject root) {

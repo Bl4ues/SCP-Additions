@@ -10,12 +10,10 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Writer;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardCopyOption;
 
 public final class ScpAdditionsModulesConfig {
@@ -58,10 +56,8 @@ public final class ScpAdditionsModulesConfig {
 	}
 
 	private static void writeConfig(Root config) throws IOException {
-		try (Writer writer = Files.newBufferedWriter(CONFIG_PATH, StandardCharsets.UTF_8,
-				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
-			GSON.toJson(config, writer);
-		}
+		ConfigFilePersistence.writeWithBackup(CONFIG_PATH,
+				GSON.toJson(config) + System.lineSeparator());
 	}
 
 	public static Root get() {

@@ -27,10 +27,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -570,9 +570,8 @@ public final class ContextConfigManager {
         try {
             File file = configFile();
             file.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(file)) {
-                GSON.toJson(root, writer);
-            }
+            ConfigFilePersistence.writeWithBackup(file.toPath(),
+                    GSON.toJson(root) + System.lineSeparator());
         } catch (Exception ex) {
             ex.printStackTrace();
         }

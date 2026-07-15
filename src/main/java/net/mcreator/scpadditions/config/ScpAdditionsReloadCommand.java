@@ -12,7 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -35,7 +34,6 @@ import java.util.stream.Stream;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ScpAdditionsReloadCommand {
-    private static final Set<String> REQUIRED_NAMESPACES = Set.of("minecraft", "scp_additions");
     private static final Path SCP_CONFIG = FMLPaths.CONFIGDIR.get().resolve("scpadditions");
     private static final Path INVENTORY_CONFIG = FMLPaths.CONFIGDIR.get().resolve("scpinventory");
 
@@ -50,10 +48,10 @@ public final class ScpAdditionsReloadCommand {
     }
 
     private static int reload(net.minecraft.commands.CommandSourceStack source) {
-        List<String> errors = validateAll();
-        if (!errors.isEmpty()) {
-            source.sendFailure(Component.literal("SCP Additions config reload cancelled: " + errors.size() + " problem(s) found."));
-            for (String error : errors) {
+        ValidationReport validation = validateAll();
+        if (!validation.errors().isEmpty()) {
+            source.sendFailure(Component.literal("SCP Additions config reload cancelled: " + validation.errors().size() + " problem(s) found."));
+            for (String error : validation.errors()) {
                 source.sendFailure(Component.literal("• " + error));
             }
             return 0;
@@ -69,6 +67,15 @@ public final class ScpAdditionsReloadCommand {
             ContextInteractionRegistry.reload();
             source.sendSuccess(() -> Component.literal("SCP Additions configurations reloaded successfully.")
                     .withStyle(ChatFormatting.GREEN), true);
+            if (!validation.warnings().isEmpty()) {
+                source.sendSuccess(() -> Component.literal(validation.warnings().size()
+                                + " unavailable config reference(s) were ignored:")
+                        .withStyle(ChatFormatting.YELLOW), false);
+                for (String warning : validation.warnings()) {
+                    source.sendSuccess(() -> Component.literal("• " + warning)
+                            .withStyle(ChatFormatting.YELLOW), false);
+                }
+            }
             return 1;
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error("Unexpected failure while reloading SCP Additions configurations", exception);
@@ -77,25 +84,26 @@ public final class ScpAdditionsReloadCommand {
         }
     }
 
-    private static List<String> validateAll() {
+    private static ValidationReport validateAll() {
         List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
         validateModules(SCP_CONFIG.resolve("modules.json"), errors);
-        validateInventory(INVENTORY_CONFIG.resolve("scpinventory.json"), errors);
-        validateContext(INVENTORY_CONFIG.resolve("context_interactions.json"), errors);
-        validate294(SCP_CONFIG.resolve("294drinks.json"), errors);
-        validate914(SCP_CONFIG.resolve("914recipes.json"), errors);
+        validateInventory(INVENTORY_CONFIG.resolve("scpinventory.json"), errors, warnings);
+        validateContext(INVENTORY_CONFIG.resolve("context_interactions.json"), errors, warnings);
+        validate294(SCP_CONFIG.resolve("294drinks.json"), errors, warnings);
+        validate914(SCP_CONFIG.resolve("914recipes.json"), errors, warnings);
 
         Path fragments = SCP_CONFIG.resolve("914recipes.d");
         if (Files.isDirectory(fragments)) {
             try (Stream<Path> files = Files.list(fragments)) {
                 files.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".json"))
                         .sorted(Comparator.comparing(path -> path.getFileName().toString()))
-                        .forEach(path -> validate914(path, errors));
+                        .forEach(path -> validate914(path, errors, warnings));
             } catch (Exception exception) {
                 errors.add(relative(fragments) + ": " + readable(exception));
             }
         }
-        return errors;
+        return new ValidationReport(List.copyOf(errors), List.copyOf(warnings));
     }
 
     private static void validateModules(Path path, List<String> errors) {
@@ -109,17 +117,17 @@ public final class ScpAdditionsReloadCommand {
         requireObjectIfPresent(root, "scp_173", path, errors);
     }
 
-    private static void validateInventory(Path path, List<String> errors) {
+    private static void validateInventory(Path path, List<String> errors, List<String> warnings) {
         JsonObject root = readObject(path, errors);
         if (root == null) return;
-        validateConfiguredIds(root, "item_rules", path, errors, "id", "item", ScpAdditionsReloadCommand::itemExists);
-        validateConfiguredIds(root, "item_effects", path, errors, "id", "item", ScpAdditionsReloadCommand::itemExists);
-        validateConfiguredIds(root, "codex_documents", path, errors, "id", "item", ScpAdditionsReloadCommand::itemExists);
-        validateSimpleIds(root, "hidden_status_effects", path, errors, ScpAdditionsReloadCommand::effectExists, false);
-        validateSimpleIds(root, "scp_173_targets", path, errors, ScpAdditionsReloadCommand::entityExists, true);
+        validateConfiguredIds(root, "item_rules", path, errors, warnings, "id", "item", ScpAdditionsReloadCommand::itemExists);
+        validateConfiguredIds(root, "item_effects", path, errors, warnings, "id", "item", ScpAdditionsReloadCommand::itemExists);
+        validateConfiguredIds(root, "codex_documents", path, errors, warnings, "id", "item", ScpAdditionsReloadCommand::itemExists);
+        validateSimpleIds(root, "hidden_status_effects", path, errors, warnings, ScpAdditionsReloadCommand::effectExists, false);
+        validateSimpleIds(root, "scp_173_targets", path, errors, warnings, ScpAdditionsReloadCommand::entityExists, true);
     }
 
-    private static void validateContext(Path path, List<String> errors) {
+    private static void validateContext(Path path, List<String> errors, List<String> warnings) {
         JsonObject root = readObject(path, errors);
         if (root == null || !root.has("interactions")) return;
         if (!root.get("interactions").isJsonArray()) {
@@ -140,12 +148,12 @@ public final class ScpAdditionsReloadCommand {
                     : "block".equals(type) ? ScpAdditionsReloadCommand::blockExists : ignored -> false;
             if (!"block".equals(type) && !"entity".equals(type)) {
                 errors.add(relative(path) + ": interactions[" + index + "].type must be block or entity");
-            } else validateId(path, "interactions[" + index + "].id", id, exists, false, errors);
+            } else validateId(path, "interactions[" + index + "].id", id, exists, false, errors, warnings);
             index++;
         }
     }
 
-    private static void validate294(Path path, List<String> errors) {
+    private static void validate294(Path path, List<String> errors, List<String> warnings) {
         JsonObject root = readObject(path, errors);
         if (root == null || !array(root, "drinks", path, errors)) return;
         int index = 0;
@@ -160,19 +168,19 @@ public final class ScpAdditionsReloadCommand {
                 index++;
                 continue;
             }
-            validateId(path, "drinks[" + index + "].id", string(drink, "id"), ignored -> true, false, errors);
+            validateId(path, "drinks[" + index + "].id", string(drink, "id"), ignored -> true, false, errors, warnings);
             JsonObject result = drink.has("result") && drink.get("result").isJsonObject() ? drink.getAsJsonObject("result") : null;
-            if (result != null && result.has("item")) validateId(path, "drinks[" + index + "].result.item", string(result, "item"), ScpAdditionsReloadCommand::itemExists, false, errors);
-            if (drink.has("sound")) validateId(path, "drinks[" + index + "].sound", string(drink, "sound"), ScpAdditionsReloadCommand::soundExists, false, errors);
-            validateObjectArrayIds(drink, "effects", "id", path, "drinks[" + index + "].effects", errors, ScpAdditionsReloadCommand::effectExists);
-            validate294Actions(drink, "actions", path, "drinks[" + index + "].actions", errors);
-            validate294Actions(drink, "drink_actions", path, "drinks[" + index + "].drink_actions", errors);
-            validate294Actions(drink, "dispense_actions", path, "drinks[" + index + "].dispense_actions", errors);
+            if (result != null && result.has("item")) validateId(path, "drinks[" + index + "].result.item", string(result, "item"), ScpAdditionsReloadCommand::itemExists, false, errors, warnings);
+            if (drink.has("sound")) validateId(path, "drinks[" + index + "].sound", string(drink, "sound"), ScpAdditionsReloadCommand::soundExists, false, errors, warnings);
+            validateObjectArrayIds(drink, "effects", "id", path, "drinks[" + index + "].effects", errors, warnings, ScpAdditionsReloadCommand::effectExists);
+            validate294Actions(drink, "actions", path, "drinks[" + index + "].actions", errors, warnings);
+            validate294Actions(drink, "drink_actions", path, "drinks[" + index + "].drink_actions", errors, warnings);
+            validate294Actions(drink, "dispense_actions", path, "drinks[" + index + "].dispense_actions", errors, warnings);
             index++;
         }
     }
 
-    private static void validate914(Path path, List<String> errors) {
+    private static void validate914(Path path, List<String> errors, List<String> warnings) {
         JsonObject root = readObject(path, errors);
         if (root == null || !array(root, "recipes", path, errors)) return;
         int index = 0;
@@ -187,18 +195,18 @@ public final class ScpAdditionsReloadCommand {
                 index++;
                 continue;
             }
-            validateId(path, "recipes[" + index + "].id", string(recipe, "id"), ignored -> true, false, errors);
+            validateId(path, "recipes[" + index + "].id", string(recipe, "id"), ignored -> true, false, errors, warnings);
             String setting = string(recipe, "setting");
             if (!Set.of("rough", "coarse", "1_to_1", "fine", "very_fine").contains(setting)) {
                 errors.add(relative(path) + ": recipes[" + index + "].setting has invalid value '" + setting + "'");
             }
-            validateObjectArrayIds(recipe, "item_inputs", "item", path, "recipes[" + index + "].item_inputs", errors, ScpAdditionsReloadCommand::itemExists);
-            validateObjectArrayIds(recipe, "item_outputs", "item", path, "recipes[" + index + "].item_outputs", errors, ScpAdditionsReloadCommand::itemExists);
-            validateObjectArrayIds(recipe, "weighted_item_outputs", "item", path, "recipes[" + index + "].weighted_item_outputs", errors, ScpAdditionsReloadCommand::itemExists);
-            validateObjectArrayIds(recipe, "entity_inputs", "entity", path, "recipes[" + index + "].entity_inputs", errors, ScpAdditionsReloadCommand::entityExists);
-            validateObjectArrayIds(recipe, "entity_outputs", "entity", path, "recipes[" + index + "].entity_outputs", errors, ScpAdditionsReloadCommand::entityExists);
-            if (recipe.has("input") && recipe.get("input").isJsonObject()) validateId(path, "recipes[" + index + "].input.item", string(recipe.getAsJsonObject("input"), "item"), ScpAdditionsReloadCommand::itemExists, false, errors);
-            if (recipe.has("output") && recipe.get("output").isJsonObject()) validateId(path, "recipes[" + index + "].output.item", string(recipe.getAsJsonObject("output"), "item"), ScpAdditionsReloadCommand::itemExists, false, errors);
+            validateObjectArrayIds(recipe, "item_inputs", "item", path, "recipes[" + index + "].item_inputs", errors, warnings, ScpAdditionsReloadCommand::itemExists);
+            validateObjectArrayIds(recipe, "item_outputs", "item", path, "recipes[" + index + "].item_outputs", errors, warnings, ScpAdditionsReloadCommand::itemExists);
+            validateObjectArrayIds(recipe, "weighted_item_outputs", "item", path, "recipes[" + index + "].weighted_item_outputs", errors, warnings, ScpAdditionsReloadCommand::itemExists);
+            validateObjectArrayIds(recipe, "entity_inputs", "entity", path, "recipes[" + index + "].entity_inputs", errors, warnings, ScpAdditionsReloadCommand::entityExists);
+            validateObjectArrayIds(recipe, "entity_outputs", "entity", path, "recipes[" + index + "].entity_outputs", errors, warnings, ScpAdditionsReloadCommand::entityExists);
+            if (recipe.has("input") && recipe.get("input").isJsonObject()) validateId(path, "recipes[" + index + "].input.item", string(recipe.getAsJsonObject("input"), "item"), ScpAdditionsReloadCommand::itemExists, false, errors, warnings);
+            if (recipe.has("output") && recipe.get("output").isJsonObject()) validateId(path, "recipes[" + index + "].output.item", string(recipe.getAsJsonObject("output"), "item"), ScpAdditionsReloadCommand::itemExists, false, errors, warnings);
             index++;
         }
     }
@@ -219,6 +227,7 @@ public final class ScpAdditionsReloadCommand {
     }
 
     private static void validateConfiguredIds(JsonObject root, String key, Path path, List<String> errors,
+                                              List<String> warnings,
                                               String firstKey, String secondKey, Predicate<ResourceLocation> exists) {
         if (!array(root, key, path, errors)) return;
         int index = 0;
@@ -226,25 +235,27 @@ public final class ScpAdditionsReloadCommand {
             String raw = element.isJsonObject() ? firstString(element.getAsJsonObject(), firstKey, secondKey)
                     : element.isJsonPrimitive() ? element.getAsString().split("[|;]", 2)[0].trim() : "";
             if (raw.startsWith("id=")) raw = raw.substring(3).trim();
-            validateId(path, key + "[" + index + "]", raw, exists, true, errors);
+            validateId(path, key + "[" + index + "]", raw, exists, true, errors, warnings);
             index++;
         }
     }
 
     private static void validateSimpleIds(JsonObject root, String key, Path path, List<String> errors,
+                                          List<String> warnings,
                                           Predicate<ResourceLocation> exists, boolean allowTag) {
         if (!array(root, key, path, errors)) return;
         int index = 0;
         for (JsonElement element : root.getAsJsonArray(key)) {
             String raw = element.isJsonPrimitive() ? element.getAsString()
                     : element.isJsonObject() ? firstString(element.getAsJsonObject(), "id", "entity", "effect", "tag") : "";
-            validateId(path, key + "[" + index + "]", raw, exists, allowTag, errors);
+            validateId(path, key + "[" + index + "]", raw, exists, allowTag, errors, warnings);
             index++;
         }
     }
 
     private static void validateObjectArrayIds(JsonObject root, String arrayKey, String idKey, Path path,
-                                               String label, List<String> errors, Predicate<ResourceLocation> exists) {
+                                               String label, List<String> errors, List<String> warnings,
+                                               Predicate<ResourceLocation> exists) {
         if (!root.has(arrayKey)) return;
         if (!root.get(arrayKey).isJsonArray()) {
             errors.add(relative(path) + ": " + label + " must be an array");
@@ -253,13 +264,13 @@ public final class ScpAdditionsReloadCommand {
         int index = 0;
         for (JsonElement element : root.getAsJsonArray(arrayKey)) {
             String raw = element.isJsonObject() ? string(element.getAsJsonObject(), idKey) : "";
-            validateId(path, label + "[" + index + "]." + idKey, raw, exists, false, errors);
+            validateId(path, label + "[" + index + "]." + idKey, raw, exists, false, errors, warnings);
             index++;
         }
     }
 
     private static void validate294Actions(JsonObject root, String arrayKey, Path path,
-                                           String label, List<String> errors) {
+                                           String label, List<String> errors, List<String> warnings) {
         if (!root.has(arrayKey)) return;
         if (!root.get(arrayKey).isJsonArray()) {
             errors.add(relative(path) + ": " + label + " must be an array");
@@ -276,11 +287,11 @@ public final class ScpAdditionsReloadCommand {
             String type = string(action, "type");
             if (("effect".equals(type) || "remove_effect".equals(type))) {
                 validateId(path, label + "[" + index + "].effect",
-                        firstString(action, "effect", "id"), ScpAdditionsReloadCommand::effectExists, false, errors);
+                        firstString(action, "effect", "id"), ScpAdditionsReloadCommand::effectExists, false, errors, warnings);
             }
             if ("sound".equals(type) || ("visual_explosion".equals(type) && action.has("sound"))) {
                 validateId(path, label + "[" + index + "].sound",
-                        string(action, "sound"), ScpAdditionsReloadCommand::soundExists, false, errors);
+                        string(action, "sound"), ScpAdditionsReloadCommand::soundExists, false, errors, warnings);
             }
             index++;
         }
@@ -301,13 +312,16 @@ public final class ScpAdditionsReloadCommand {
     }
 
     private static void validateId(Path path, String field, String raw, Predicate<ResourceLocation> exists,
-                                   boolean allowTag, List<String> errors) {
+                                   boolean allowTag, List<String> errors, List<String> warnings) {
         String value = raw == null ? "" : raw.trim();
         boolean tag = allowTag && value.startsWith("#");
         if (tag) value = value.substring(1);
         ResourceLocation id = ResourceLocation.tryParse(value);
         if (id == null) errors.add(relative(path) + ": " + field + " has invalid ID '" + raw + "'");
-        else if (!tag && !exists.test(id)) errors.add(relative(path) + ": " + field + " references missing ID '" + raw + "'");
+        else if (!tag && !exists.test(id)) {
+            String warning = relative(path) + ": " + field + " references unavailable ID '" + raw + "'";
+            if (!warnings.contains(warning)) warnings.add(warning);
+        }
     }
 
     private static boolean array(JsonObject root, String key, Path path, List<String> errors) {
@@ -330,17 +344,11 @@ public final class ScpAdditionsReloadCommand {
         return object.has(key) && object.get(key).isJsonPrimitive() ? object.get(key).getAsString().trim() : "";
     }
 
-    private static boolean itemExists(ResourceLocation id) { return existsOrOptional(id, ForgeRegistries.ITEMS.containsKey(id)); }
-    private static boolean blockExists(ResourceLocation id) { return existsOrOptional(id, ForgeRegistries.BLOCKS.containsKey(id)); }
-    private static boolean entityExists(ResourceLocation id) { return existsOrOptional(id, ForgeRegistries.ENTITY_TYPES.containsKey(id)); }
-    private static boolean effectExists(ResourceLocation id) { return existsOrOptional(id, ForgeRegistries.MOB_EFFECTS.containsKey(id)); }
-    private static boolean soundExists(ResourceLocation id) { return existsOrOptional(id, ForgeRegistries.SOUND_EVENTS.containsKey(id)); }
-
-    private static boolean existsOrOptional(ResourceLocation id, boolean exists) {
-        if (exists) return true;
-        String namespace = id.getNamespace();
-        return !REQUIRED_NAMESPACES.contains(namespace) && !ModList.get().isLoaded(namespace);
-    }
+    private static boolean itemExists(ResourceLocation id) { return ForgeRegistries.ITEMS.containsKey(id); }
+    private static boolean blockExists(ResourceLocation id) { return ForgeRegistries.BLOCKS.containsKey(id); }
+    private static boolean entityExists(ResourceLocation id) { return ForgeRegistries.ENTITY_TYPES.containsKey(id); }
+    private static boolean effectExists(ResourceLocation id) { return ForgeRegistries.MOB_EFFECTS.containsKey(id); }
+    private static boolean soundExists(ResourceLocation id) { return ForgeRegistries.SOUND_EVENTS.containsKey(id); }
 
     private static String relative(Path path) {
         Path config = FMLPaths.CONFIGDIR.get();
@@ -350,5 +358,8 @@ public final class ScpAdditionsReloadCommand {
     private static String readable(Exception exception) {
         String message = exception.getMessage();
         return message == null || message.isBlank() ? exception.getClass().getSimpleName() : message;
+    }
+
+    private record ValidationReport(List<String> errors, List<String> warnings) {
     }
 }

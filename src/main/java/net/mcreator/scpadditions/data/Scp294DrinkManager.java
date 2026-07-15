@@ -18,6 +18,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -157,7 +158,8 @@ public final class Scp294DrinkManager {
 		}
 
 		JsonElement json = JsonParser.parseString(content);
-		Files.writeString(CONFIG_PATH, GSON.toJson(json) + System.lineSeparator(), StandardCharsets.UTF_8);
+		ConfigFilePersistence.writeWithBackup(CONFIG_PATH,
+				GSON.toJson(json) + System.lineSeparator());
 	}
 
 	private static void readMatchingConfig(JsonObject root) {

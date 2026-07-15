@@ -1,6 +1,6 @@
 name: Apply Config Center Documentation
 
-# One-shot exact documentation update; triggered after registration on master.
+# Registered on master; this synchronization performs the exact documentation update.
 on:
   pull_request:
     branches:

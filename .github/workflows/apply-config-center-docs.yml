@@ -1,6 +1,6 @@
 name: Apply Config Center Documentation
 
-# One-shot exact documentation update.
+# Clean rollout branch synchronized from the registered master workflow.
 on:
   pull_request:
     branches:

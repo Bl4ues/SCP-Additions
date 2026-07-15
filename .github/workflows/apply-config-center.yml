@@ -35,12 +35,36 @@ jobs:
         run: git diff --check
 
       - name: Build
-        run: ./gradlew clean build --stacktrace
-
-      - name: Commit compiled implementation to rollout branch
+        id: build
         shell: bash
         run: |
-          rm -rf .github/config-center-payload .github/workflows/apply-config-center.yml
+          set +e
+          ./gradlew clean build --stacktrace 2>&1 | tee /tmp/config-center-build.log
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish concise build diagnostics
+        if: steps.build.outputs.status != '0'
+        shell: bash
+        run: |
+          {
+            echo "Configuration Center build diagnostics"
+            echo
+            grep -nE "(^| )error:|cannot find symbol|symbol:|location:|FAILURE:|What went wrong:|Execution failed" /tmp/config-center-build.log | tail -n 400
+          } > .github/config-center-build-errors.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/config-center-build-errors.txt
+          git commit -m "chore: capture config center build diagnostics" || true
+          git push origin HEAD:${{ github.head_ref }}
+          exit 1
+
+      - name: Commit compiled implementation to rollout branch
+        if: steps.build.outputs.status == '0'
+        shell: bash
+        run: |
+          rm -rf .github/config-center-payload .github/workflows/apply-config-center.yml .github/config-center-build-errors.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A

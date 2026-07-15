@@ -42,8 +42,8 @@ public final class UnifiedReaderItems {
             ));
 
     /**
-     * Shift-right-clicking a reader with
-     * this item opens the access-level configuration screen.
+     * Using a reader opens its configuration screen. Crouching copies its
+     * level, while Control-use applies the copied level to another reader.
      */
     public static final RegistryObject<Item> SCREWDRIVER = REGISTRY.register("screwdriver",
             () -> new Item(new Item.Properties().stacksTo(1)));

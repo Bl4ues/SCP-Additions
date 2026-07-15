@@ -20,6 +20,19 @@
 - Added Lubricated Eye, which prevents Eye Sore, doubles the blink interval, and turns the blink bar blue;
 - Added the `PROTECTED_EYES` item effect for eye-protecting equipment.
 
+## Interface and accessibility
+
+- The SCP Inventory now remembers its selected section, Codex document, and scrollbar positions until the player leaves the world;
+- Added an option to disable this interface memory;
+- Added subtitles for all custom sounds.
+
+## Configuration and building
+
+- Added `/scpadditions reload` to validate and reload configurations without restarting;
+- Invalid JSON and registry IDs now produce clear errors without partially applying the reload;
+- Screwdrivers can now copy a Keycard Reader level and quickly apply it to other readers;
+- Pick Block now returns public blocks instead of internal animation states.
+
 # SCP Additions 3.0.2 — Stability Hotfix
 
 ## Facility doors

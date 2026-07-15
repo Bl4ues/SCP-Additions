@@ -123,7 +123,7 @@ public class Lv3LeftReaderAcceptBlock extends Block implements SimpleWaterlogged
 
 	@Override
 	public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
-		return new ItemStack(ScpAdditionsModBlocks.LV_3_LEFT_READER.get());
+		return new ItemStack(net.mcreator.scpadditions.init.UnifiedReaderItems.KEYCARD_READER.get());
 	}
 
 	@Override

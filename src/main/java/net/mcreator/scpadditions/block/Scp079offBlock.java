@@ -132,6 +132,12 @@ public class Scp079offBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
+	public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
+			BlockGetter world, BlockPos pos, Player player) {
+		return new ItemStack(ScpAdditionsModBlocks.SCP_079ON.get());
+	}
+
+	@Override
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
 		super.onPlace(blockstate, world, pos, oldState, moving);
 		world.scheduleTick(pos, this, 20);

@@ -116,6 +116,14 @@ public class StatusPanel {
         return true;
     }
 
+    public int getConditionsScroll() { return conditionsScroll; }
+    public boolean isShowingPositiveConditions() { return conditionTab == ConditionTab.POSITIVE; }
+
+    public void restoreSessionState(int scroll, boolean positive) {
+        conditionTab = positive ? ConditionTab.POSITIVE : ConditionTab.NEGATIVE;
+        conditionsScroll = Math.max(0, scroll);
+    }
+
     private void renderConditions(GuiGraphics g) {
         renderConditionTabs(g);
         if (mc.player == null) return;

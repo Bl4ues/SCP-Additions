@@ -113,7 +113,7 @@ public class Lv2LeftReaderWrongBlock extends Block implements SimpleWaterloggedB
 
 	@Override
 	public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
-		return new ItemStack(ScpAdditionsModBlocks.LV_2_LEFT_READER.get());
+		return new ItemStack(net.mcreator.scpadditions.init.UnifiedReaderItems.KEYCARD_READER.get());
 	}
 
 	@Override

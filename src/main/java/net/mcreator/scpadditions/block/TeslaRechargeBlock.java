@@ -30,6 +30,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.HitResult;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.procedures.TeslaRechargeBlockAddedProcedure;
 
@@ -143,6 +144,12 @@ public class TeslaRechargeBlock extends Block implements SimpleWaterloggedBlock 
         return original.isEmpty()
                 ? Collections.singletonList(new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get()))
                 : original;
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level,
+            BlockPos pos, Player player) {
+        return new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get());
     }
 
     @Override

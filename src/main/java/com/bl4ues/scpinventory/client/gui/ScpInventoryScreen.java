@@ -21,6 +21,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public class ScpInventoryScreen extends Screen {
     private static final int TEXT_WHITE = 0xFFB2B3B3;
@@ -88,6 +89,17 @@ public class ScpInventoryScreen extends Screen {
     private boolean showingKeys;
     private ScreenMode mode = ScreenMode.INVENTORY;
 
+    private static ScreenMode rememberedMode = ScreenMode.INVENTORY;
+    private static boolean rememberedShowingKeys = false;
+    private static int rememberedInventoryScroll = 0;
+    private static int rememberedKeysScroll = 0;
+    private static int rememberedCodexSelection = -1;
+    private static int rememberedCodexScroll = 0;
+    private static int rememberedCodexTextScroll = 0;
+    private static boolean rememberedCodexText = false;
+    private static int rememberedStatusScroll = 0;
+    private static boolean rememberedPositiveStatus = true;
+
     private int rootX, rootY, rootWidth, rootHeight;
     private int titleY, tabY, navY;
     private int listPanelX, listPanelY, listPanelWidth, listPanelHeight;
@@ -118,6 +130,15 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     protected void init() {
+        if (itemList != null || codexPanel != null || statusPanel != null) captureSessionState();
+        if (rememberUiState()) {
+            mode = rememberedMode;
+            showingKeys = rememberedShowingKeys;
+        } else {
+            resetSessionState();
+            mode = ScreenMode.INVENTORY;
+            showingKeys = false;
+        }
         contextMenu = new ContextMenu();
         computeLayout();
 
@@ -144,6 +165,10 @@ public class ScpInventoryScreen extends Screen {
                     equipmentPanelX,
                     inv.getDocuments()
             );
+            if (rememberUiState()) {
+                codexPanel.restoreSessionState(rememberedCodexSelection, rememberedCodexScroll,
+                        rememberedCodexTextScroll, rememberedCodexText);
+            }
 
             int statusY = listPanelY;
             int statusPanelHeight = listPanelHeight;
@@ -160,6 +185,9 @@ public class ScpInventoryScreen extends Screen {
                     listPanelX,
                     equipmentPanelX
             );
+            if (rememberUiState()) {
+                statusPanel.restoreSessionState(rememberedStatusScroll, rememberedPositiveStatus);
+            }
         });
     }
 
@@ -212,6 +240,7 @@ public class ScpInventoryScreen extends Screen {
         itemList = showingKeys
                 ? new ScrollableItemList(listX, listY, listWidth, inventory.getKeys(), inventory, "Key")
                 : new ScrollableItemList(listX, listY, listWidth, inventory.getInventory(), inventory);
+        if (rememberUiState()) itemList.setScrollOffset(showingKeys ? rememberedKeysScroll : rememberedInventoryScroll);
     }
 
     @Override
@@ -729,6 +758,7 @@ public class ScpInventoryScreen extends Screen {
         int total = (tabWidth * 2) + gap;
         int startX = listPanelX + Math.max(0, (listPanelWidth - total) / 2);
         if (mouseX >= startX && mouseX <= startX + tabWidth) {
+            rememberCurrentItemScroll();
             showingKeys = false;
             contextIsKey = false;
             rebuildItemList();
@@ -736,6 +766,7 @@ public class ScpInventoryScreen extends Screen {
         }
         int keysX = startX + tabWidth + gap;
         if (mouseX >= keysX && mouseX <= keysX + tabWidth) {
+            rememberCurrentItemScroll();
             showingKeys = true;
             contextIsKey = false;
             rebuildItemList();
@@ -787,5 +818,52 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void removed() {
+        captureSessionState();
+        super.removed();
+    }
+
+    private static boolean rememberUiState() {
+        return ScpAdditionsModulesConfig.get().inventory.enabled
+                && ScpAdditionsModulesConfig.get().inventory.rememberUiState;
+    }
+
+    private void rememberCurrentItemScroll() {
+        if (!rememberUiState() || itemList == null) return;
+        if (showingKeys) rememberedKeysScroll = itemList.getScrollOffset();
+        else rememberedInventoryScroll = itemList.getScrollOffset();
+    }
+
+    private void captureSessionState() {
+        if (!rememberUiState()) return;
+        rememberedMode = mode;
+        rememberedShowingKeys = showingKeys;
+        rememberCurrentItemScroll();
+        if (codexPanel != null) {
+            rememberedCodexSelection = codexPanel.getSelectedIndex();
+            rememberedCodexScroll = codexPanel.getScrollOffset();
+            rememberedCodexTextScroll = codexPanel.getTextScrollOffset();
+            rememberedCodexText = codexPanel.isShowingText();
+        }
+        if (statusPanel != null) {
+            rememberedStatusScroll = statusPanel.getConditionsScroll();
+            rememberedPositiveStatus = statusPanel.isShowingPositiveConditions();
+        }
+    }
+
+    public static void resetSessionState() {
+        rememberedMode = ScreenMode.INVENTORY;
+        rememberedShowingKeys = false;
+        rememberedInventoryScroll = 0;
+        rememberedKeysScroll = 0;
+        rememberedCodexSelection = -1;
+        rememberedCodexScroll = 0;
+        rememberedCodexTextScroll = 0;
+        rememberedCodexText = false;
+        rememberedStatusScroll = 0;
+        rememberedPositiveStatus = true;
     }
 }

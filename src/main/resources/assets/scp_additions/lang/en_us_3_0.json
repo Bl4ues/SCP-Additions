@@ -11,7 +11,7 @@
   "item.scp_additions.keycard_reader": "Keycard Reader",
   "item.scp_additions.screwdriver": "Screwdriver",
   "tooltip.scp_additions.keycard_reader_placement": "Click the side where the reader should appear",
-  "tooltip.scp_additions.keycard_reader_configure": "Crouch and use a screwdriver to configure access level",
+  "tooltip.scp_additions.keycard_reader_configure": "Use to configure; crouch to copy; hold Control to apply",
   "tooltip.scp_additions.tesla_gate_primary": "Detects nearby entities and releases a lethal electrical discharge while enabled.",
   "tooltip.scp_additions.tesla_gate_secondary": "Controlled globally by a Tesla Gate Terminal; requires a clear 3x3 frame area.",
   "tooltip.scp_additions.scp079_relay_primary": "Place beside a redstone device to let SCP-079 pulse it while Facility Control is active.",

@@ -26,5 +26,15 @@
   "screen.scp_additions.scp_inventory": "SCP Inventory",
   "screen.scp_additions.scp_inventory.inventory": "INVENTORY",
   "screen.scp_additions.scp_inventory.keys": "KEYS",
-  "overlay.scp_additions.scp_inventory_full": "Your inventory is full"
+  "overlay.scp_additions.scp_inventory_full": "Your inventory is full",
+  "subtitles.scpinventory.scare": "A sudden noise erupts",
+  "subtitles.scpinventory.horror": "An ominous sound echoes",
+  "subtitles.scpinventory.statue_death": "SCP-173 attacks",
+  "subtitles.scpinventory.stone_scrap": "Stone scrapes",
+  "subtitles.scpinventory.stone_drag": "Stone drags",
+  "subtitles.scpinventory.neck_snap": "Neck snaps",
+  "subtitles.scpinventory.rattle": "Stone rattles",
+  "subtitles.scpinventory.eye_pod_idle": "SCP-131 murmurs",
+  "subtitles.scpinventory.eye_pod_move": "SCP-131 walks",
+  "subtitles.scpinventory.eye_pod_voice": "SCP-131 chirps"
 }

@@ -77,7 +77,7 @@ public final class ScpAdditionsModulesConfig {
 	}
 
 	public static final class Root {
-		public Toggle inventory = new Toggle();
+		public Inventory inventory = new Inventory();
 		public Interactions interactions = new Interactions();
 		public Toggle hud = new Toggle();
 		public Vitals vitals = new Vitals();
@@ -91,7 +91,7 @@ public final class ScpAdditionsModulesConfig {
 		}
 
 		private Root normalize() {
-			if (inventory == null) inventory = new Toggle();
+			if (inventory == null) inventory = new Inventory();
 			if (interactions == null) interactions = new Interactions();
 			if (hud == null) hud = new Toggle();
 			if (vitals == null) vitals = new Vitals();
@@ -108,6 +108,11 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Interactions extends Toggle {
 		@SerializedName("disable_in_creative")
 		public boolean disableInCreative = false;
+	}
+
+	public static final class Inventory extends Toggle {
+		@SerializedName("remember_ui_state")
+		public boolean rememberUiState = true;
 	}
 
 	public static final class Vitals {

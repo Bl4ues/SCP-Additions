@@ -2206,7 +2206,7 @@
     },
     {
       "type": "entity",
-      "id": "scpinventory:scp_131_a",
+      "id": "scp_additions:scp_131_a",
       "range": 2.25,
       "priority": 25,
       "useItem": "hand",
@@ -2235,7 +2235,7 @@
     },
     {
       "type": "entity",
-      "id": "scpinventory:scp_131_b",
+      "id": "scp_additions:scp_131_b",
       "range": 2.25,
       "priority": 25,
       "useItem": "hand",

@@ -1,6 +1,7 @@
 {
   "inventory": {
-    "enabled": true
+    "enabled": true,
+    "remember_ui_state": true
   },
   "interactions": {
     "enabled": true,

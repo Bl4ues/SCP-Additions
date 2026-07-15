@@ -383,4 +383,13 @@ public class ScrollableItemList {
                 && mouseY >= y
                 && mouseY <= y + getScrollbarHeight();
     }
+
+    public int getScrollOffset() {
+        return scrollOffset;
+    }
+
+    public void setScrollOffset(int offset) {
+        scrollOffset = offset;
+        clampScroll(rebuildNonEmptySlots().size());
+    }
 }

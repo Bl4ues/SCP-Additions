@@ -34,6 +34,9 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.addNetworkMessage(KeycardReaderSetLevelPacket.class,
                 KeycardReaderSetLevelPacket::encode, KeycardReaderSetLevelPacket::decode,
                 KeycardReaderSetLevelPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(KeycardReaderApplySavedLevelPacket.class,
+                KeycardReaderApplySavedLevelPacket::encode, KeycardReaderApplySavedLevelPacket::decode,
+                KeycardReaderApplySavedLevelPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {

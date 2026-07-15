@@ -141,6 +141,12 @@ public class ButtonRonBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
+	public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
+			BlockGetter world, BlockPos pos, Player player) {
+		return new ItemStack(net.mcreator.scpadditions.facility.FacilityModule.BUTTON_CLOSED.get());
+	}
+
+	@Override
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
 		super.onPlace(blockstate, world, pos, oldState, moving);
 		world.scheduleTick(pos, this, 110);

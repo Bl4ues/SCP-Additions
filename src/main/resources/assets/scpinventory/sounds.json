@@ -1,20 +1,24 @@
 {
   "scare": {
+    "subtitle": "subtitles.scpinventory.scare",
     "sounds": [
       "scpinventory:scare"
     ]
   },
   "horror": {
+    "subtitle": "subtitles.scpinventory.horror",
     "sounds": [
       "scpinventory:horror"
     ]
   },
   "statue_death": {
+    "subtitle": "subtitles.scpinventory.statue_death",
     "sounds": [
       "scpinventory:statue_death"
     ]
   },
   "stone_scrap": {
+    "subtitle": "subtitles.scpinventory.stone_scrap",
     "sounds": [
       {
         "name": "scpinventory:stone_scrap_1",
@@ -39,16 +43,19 @@
     ]
   },
   "stone_drag": {
+    "subtitle": "subtitles.scpinventory.stone_drag",
     "sounds": [
       "scpinventory:stone_drag"
     ]
   },
   "neck_snap": {
+    "subtitle": "subtitles.scpinventory.neck_snap",
     "sounds": [
       "scpinventory:neck_snap"
     ]
   },
   "rattle": {
+    "subtitle": "subtitles.scpinventory.rattle",
     "sounds": [
       "scpinventory:rattle1",
       "scpinventory:rattle2",
@@ -56,6 +63,7 @@
     ]
   },
   "eye_pod_idle": {
+    "subtitle": "subtitles.scpinventory.eye_pod_idle",
     "sounds": [
       {
         "name": "scpinventory:idle",
@@ -64,6 +72,7 @@
     ]
   },
   "eye_pod_move": {
+    "subtitle": "subtitles.scpinventory.eye_pod_move",
     "sounds": [
       {
         "name": "scpinventory:walk",
@@ -72,6 +81,7 @@
     ]
   },
   "eye_pod_voice": {
+    "subtitle": "subtitles.scpinventory.eye_pod_voice",
     "sounds": [
       "scpinventory:noise_1",
       "scpinventory:noise_2",

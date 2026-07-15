@@ -118,6 +118,12 @@ public class Lv5LeftReaderBlock extends Block implements SimpleWaterloggedBlock 
 	}
 
 	@Override
+	public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
+			BlockGetter world, BlockPos pos, Player player) {
+		return new ItemStack(net.mcreator.scpadditions.init.UnifiedReaderItems.KEYCARD_READER.get());
+	}
+
+	@Override
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
 		super.use(blockstate, world, pos, entity, hand, hit);
 		int x = pos.getX();

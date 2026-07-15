@@ -108,6 +108,23 @@ public class CodexPanel {
         return expandedImage;
     }
 
+    public int getSelectedIndex() { return selectedIndex; }
+    public int getScrollOffset() { return scrollOffset; }
+    public int getTextScrollOffset() { return textScrollOffset; }
+    public boolean isShowingText() { return showingText; }
+
+    public void restoreSessionState(int selectedIndex, int scrollOffset, int textScrollOffset, boolean showingText) {
+        this.selectedIndex = selectedIndex;
+        this.scrollOffset = scrollOffset;
+        this.textScrollOffset = textScrollOffset;
+        this.showingText = showingText;
+        this.expandedImage = false;
+        normalizeSelection();
+        clampScroll(buildRows().size());
+        clampTextScroll();
+        if (!isValidSelectedDocument()) this.showingText = false;
+    }
+
     public void render(GuiGraphics g, int mouseX, int mouseY) {
         drawSectionTitle(g, listTitleX, titleY, "CLASSIFICATION");
         drawSectionTitle(g, detailTitleX, titleY, "DOCUMENT");

@@ -35,6 +35,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.HitResult;
 
 import net.mcreator.scpadditions.procedures.Scp902OpenOnBlockRightClickedProcedure;
 import net.mcreator.scpadditions.procedures.Scp902ClosedUpdateTickProcedure;
@@ -121,6 +122,11 @@ public class Scp902OpenBlock extends Block implements SimpleWaterloggedBlock {
 		if (!dropsOriginal.isEmpty())
 			return dropsOriginal;
 		return Collections.singletonList(new ItemStack(ScpAdditionsModBlocks.SCP_902_CLOSED.get()));
+	}
+
+	@Override
+	public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
+		return new ItemStack(ScpAdditionsModBlocks.SCP_902_CLOSED.get());
 	}
 
 	@Override

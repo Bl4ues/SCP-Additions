@@ -130,7 +130,7 @@ The facility set includes animated Default, Yellow, Black, Normal, Logistics, Of
 
 Button panels can synchronize with an opposite panel already present on the other side of a wall. Intermediate animation states remain registered for saved-world compatibility, but only public endpoints appear in the creative inventory.
 
-There is one public **Keycard Reader** item. Placement uses the clicked wall face and the clicked half to select the visible left/right model. It starts at Level 1; crouch and interact with the reader while holding a **Screwdriver** in either hand to select Levels 1–6. A higher-level keycard satisfies its own level and every lower level, and readers search both vanilla storage and the SCP Inventory.
+There is one public **Keycard Reader** item. Placement uses the clicked wall face and the clicked half to select the visible left/right model. It starts at Level 1. With a **Screwdriver** in either hand, interact normally to select Levels 1–6, crouch-interact to copy a reader's level, and hold `Ctrl` while interacting to apply that saved level to another reader. A higher-level keycard satisfies its own level and every lower level, and readers search both vanilla storage and the SCP Inventory.
 
 ### Tesla Gates and terminal
 
@@ -190,12 +190,12 @@ The repository contains the complete defaults:
 
 | File | Purpose | Applying changes |
 | --- | --- | --- |
-| [`config/scpadditions/modules.json`](config/scpadditions/modules.json) | Enables or disables gameplay modules. | Restart the game/server. |
-| [`config/scpinventory/scpinventory.json`](config/scpinventory/scpinventory.json) | Item routing, stamina blockers, Status filters, Codex entries, and SCP-173 entity targets. | The `K` item editor saves and reloads its changes immediately; restart after manual edits for a reliable full reload. |
-| [`config/scpinventory/context_interactions.json`](config/scpinventory/context_interactions.json) | Block/entity prompt rules. | The editor applies saves immediately; after manual edits use `/scpinventory context reload`. |
-| [`config/scpadditions/294drinks.json`](config/scpadditions/294drinks.json) | SCP-294 matching and drink definitions. | Restart the game/server. |
-| [`config/scpadditions/914recipes.json`](config/scpadditions/914recipes.json) | SCP-914 machine geometry/timing and main recipe list. | Restart the game/server. |
-| [`config/scpadditions/914recipes.d/*.json`](config/scpadditions/914recipes.d/entities.json) | Additional SCP-914 recipe fragments. | Restart the game/server. |
+| [`config/scpadditions/modules.json`](config/scpadditions/modules.json) | Enables or disables gameplay modules. | `/scpadditions reload` |
+| [`config/scpinventory/scpinventory.json`](config/scpinventory/scpinventory.json) | Item routing, stamina blockers, Status filters, Codex entries, and SCP-173 entity targets. | The `K` item editor applies its own saves immediately; use `/scpadditions reload` after manual edits. |
+| [`config/scpinventory/context_interactions.json`](config/scpinventory/context_interactions.json) | Block/entity prompt rules. | The editor applies saves immediately; use `/scpadditions reload` or `/scpinventory context reload` after manual edits. |
+| [`config/scpadditions/294drinks.json`](config/scpadditions/294drinks.json) | SCP-294 matching and drink definitions. | `/scpadditions reload` |
+| [`config/scpadditions/914recipes.json`](config/scpadditions/914recipes.json) | SCP-914 machine geometry/timing and main recipe list. | `/scpadditions reload` |
+| [`config/scpadditions/914recipes.d/*.json`](config/scpadditions/914recipes.d/entities.json) | Additional SCP-914 recipe fragments. | `/scpadditions reload` |
 | `config/scpadditions/scp914_skins/*.png` | SCP-914 1:1 player-skin pool. | The directory is scanned when 1:1 chooses a skin. |
 
 All time values named `*_ticks` and effect durations are Minecraft ticks; 20 ticks equal one second.
@@ -206,7 +206,10 @@ All time values named `*_ticks` and effect durations are Minecraft ticks; 20 tic
 
 ```json
 {
-  "inventory": { "enabled": true },
+  "inventory": {
+    "enabled": true,
+    "remember_ui_state": true
+  },
   "interactions": {
     "enabled": true,
     "disable_in_creative": false
@@ -225,7 +228,7 @@ All time values named `*_ticks` and effect durations are Minecraft ticks; 20 tic
 }
 ```
 
-`hud.enabled` controls custom vitals rendering. It does not by itself disable stamina gameplay. `interactions.disable_in_creative` hides and disables contextual interaction prompts for Creative players when set to `true`; they remain available by default. Spectator players never receive these interactions. `scp_173.enabled` disables SCP-173 behavior as a whole, while `natural_spawn_enabled` keeps the entity functional but stops the routine spawn cycle.
+`inventory.remember_ui_state` preserves the selected Inventory/Status/Codex view, Codex document, and scrollbar positions while the player remains in the current world. It resets when leaving or re-entering a world. `hud.enabled` controls custom vitals rendering. It does not by itself disable stamina gameplay. `interactions.disable_in_creative` hides and disables contextual interaction prompts for Creative players when set to `true`; they remain available by default. Spectator players never receive these interactions. `scp_173.enabled` disables SCP-173 behavior as a whole, while `natural_spawn_enabled` keeps the entity functional but stops the routine spawn cycle.
 
 ### Inventory, item, Status, Codex, and SCP-173 rules
 
@@ -470,6 +473,12 @@ Examples:
 ```
 
 ## Commands
+
+`/scpadditions reload` requires operator permission. It validates all supported configuration files before applying anything; malformed JSON and invalid or missing registry IDs are reported with their file and field, and a failed validation leaves the active configuration unchanged.
+
+| Command | Effect |
+| --- | --- |
+| `/scpadditions reload` | Validate and reload module, inventory, interaction, SCP-294, and SCP-914 configuration without restarting. |
 
 ### Inventory administration
 

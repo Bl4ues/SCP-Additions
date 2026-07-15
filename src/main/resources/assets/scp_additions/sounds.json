@@ -523,6 +523,7 @@
     ]
   },
   "eye_pod_voice": {
+    "subtitle": "subtitles.scp_additions.eye_pod_voice",
     "sounds": [
       {
         "name": "scpinventory:noise_1",
@@ -563,6 +564,7 @@
     ]
   },
   "scare": {
+    "subtitle": "subtitles.scp_additions.scare",
     "sounds": [
       {
         "name": "scpinventory:scare",
@@ -571,6 +573,7 @@
     ]
   },
   "horror": {
+    "subtitle": "subtitles.scp_additions.horror",
     "sounds": [
       {
         "name": "scpinventory:horror",
@@ -579,6 +582,7 @@
     ]
   },
   "statue_death": {
+    "subtitle": "subtitles.scp_additions.statue_death",
     "sounds": [
       {
         "name": "scpinventory:statue_death",
@@ -587,6 +591,7 @@
     ]
   },
   "stone_scrap": {
+    "subtitle": "subtitles.scp_additions.stone_scrap",
     "sounds": [
       {
         "name": "scpinventory:stone_scrap_1",
@@ -611,6 +616,7 @@
     ]
   },
   "neck_snap": {
+    "subtitle": "subtitles.scp_additions.neck_snap",
     "sounds": [
       {
         "name": "scpinventory:neck_snap",
@@ -619,6 +625,7 @@
     ]
   },
   "rattle": {
+    "subtitle": "subtitles.scp_additions.rattle",
     "sounds": [
       {
         "name": "scpinventory:rattle1",
@@ -685,6 +692,7 @@
     ]
   },
   "unity_bath_open": {
+    "subtitle": "subtitles.scp_additions.unity_bath_open",
     "sounds": [
       {
         "name": "scp_unity_extra_blocks:bathroom_open",
@@ -694,6 +702,7 @@
     ]
   },
   "unity_bath_close": {
+    "subtitle": "subtitles.scp_additions.unity_bath_close",
     "sounds": [
       {
         "name": "scp_unity_extra_blocks:bathroom_close",
@@ -703,6 +712,7 @@
     ]
   },
   "unity_office_open": {
+    "subtitle": "subtitles.scp_additions.unity_office_open",
     "sounds": [
       {
         "name": "scp_unity_extra_blocks:office_open",
@@ -712,6 +722,7 @@
     ]
   },
   "unity_office_close": {
+    "subtitle": "subtitles.scp_additions.unity_office_close",
     "sounds": [
       {
         "name": "scp_unity_extra_blocks:office_close",
@@ -731,6 +742,7 @@
     ]
   },
   "eye_pod_idle": {
+    "subtitle": "subtitles.scp_additions.eye_pod_idle",
     "sounds": [
       {
         "name": "scpinventory:idle",
@@ -739,6 +751,7 @@
     ]
   },
   "eye_pod_move": {
+    "subtitle": "subtitles.scp_additions.eye_pod_move",
     "sounds": [
       {
         "name": "scpinventory:walk",

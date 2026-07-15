@@ -30,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.HitResult;
 
 import net.mcreator.scpadditions.procedures.TeslaActive3BProcedure;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
@@ -122,6 +123,11 @@ public class TeslaActive3Block extends Block implements SimpleWaterloggedBlock {
 		if (!dropsOriginal.isEmpty())
 			return dropsOriginal;
 		return Collections.singletonList(new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get()));
+	}
+
+	@Override
+	public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
+		return new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get());
 	}
 
 	@Override

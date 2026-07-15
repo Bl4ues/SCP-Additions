@@ -37,22 +37,6 @@
       "type": "WEAPON"
     },
     {
-      "id": "scp_additions:geiger_1",
-      "type": "USABLE"
-    },
-    {
-      "id": "scp_additions:geiger_2",
-      "type": "USABLE"
-    },
-    {
-      "id": "scp_additions:geiger_3",
-      "type": "USABLE"
-    },
-    {
-      "id": "scp_additions:spray",
-      "type": "USABLE"
-    },
-    {
       "id": "scp_additions:screwdriver",
       "type": "USABLE"
     },
@@ -200,7 +184,6 @@
   "hidden_status_effects": [
     "minecraft:bad_omen",
     "scpo:pestilence",
-    "scpinventory:eye_sore",
     "scp_additions:eye_sore"
   ],
   "codex_documents": [],

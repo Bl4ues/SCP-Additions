@@ -239,8 +239,8 @@
       "id": "scp_additions:scp_131_a_fine_to_b_pair",
       "enabled": true,
       "setting": "fine",
-      "entity_inputs": [{ "entity": "scpinventory:scp_131_a", "count": 1, "consume": true }],
-      "entity_outputs": [{ "entity": "scpinventory:scp_131_a", "count": 1 }, { "entity": "scpinventory:scp_131_b", "count": 1 }],
+      "entity_inputs": [{ "entity": "scp_additions:scp_131_a", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "scp_additions:scp_131_a", "count": 1 }, { "entity": "scp_additions:scp_131_b", "count": 1 }],
       "chance": 0.5,
       "copy_input_nbt": false
     },
@@ -248,8 +248,8 @@
       "id": "scp_additions:scp_131_b_fine_to_a_pair",
       "enabled": true,
       "setting": "fine",
-      "entity_inputs": [{ "entity": "scpinventory:scp_131_b", "count": 1, "consume": true }],
-      "entity_outputs": [{ "entity": "scpinventory:scp_131_a", "count": 1 }, { "entity": "scpinventory:scp_131_b", "count": 1 }],
+      "entity_inputs": [{ "entity": "scp_additions:scp_131_b", "count": 1, "consume": true }],
+      "entity_outputs": [{ "entity": "scp_additions:scp_131_a", "count": 1 }, { "entity": "scp_additions:scp_131_b", "count": 1 }],
       "chance": 0.5,
       "copy_input_nbt": false
     },

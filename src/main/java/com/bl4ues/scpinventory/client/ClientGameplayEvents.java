@@ -1,5 +1,6 @@
 package com.bl4ues.scpinventory.client;
 
+import net.mcreator.scpadditions.client.Scp1176MusicClient;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -16,6 +17,7 @@ public final class ClientGameplayEvents {
             PickupPromptClient.clientTick();
             ContextPromptClient.clientTick();
             StatusEffectTimelineClient.clientTick();
+            Scp1176MusicClient.clientTick();
         }
     }
 }

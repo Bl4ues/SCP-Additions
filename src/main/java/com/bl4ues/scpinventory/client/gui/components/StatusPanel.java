@@ -350,13 +350,15 @@ public class StatusPanel {
         if (mc.player == null) return;
 
         int previewX = parametersX + Math.round(parametersWidth * 0.20F);
-        int previewY = parametersY + Math.round(parametersHeight * 0.13F);
+        int previewY = parametersY + Math.round(parametersHeight * 0.20F);
         int previewW = Math.max(72, Math.min(120, Math.round(parametersWidth * 0.32F)));
         int previewH = Math.max(130, Math.min(190, Math.round(parametersHeight * 0.64F)));
 
         g.fill(previewX, previewY, previewX + previewW, previewY + previewH, PREVIEW_BACKGROUND_INNER);
         drawFrame(g, previewX, previewY, previewW, previewH);
-        InventoryScreen.renderEntityInInventoryFollowsMouse(g, previewX + previewW / 2, previewY + previewH - 18, 54, previewX + previewW / 2 - mouseX, previewY + 32 - mouseY, mc.player);
+        int playerPreviewY = previewY + previewH - 36;
+        InventoryScreen.renderEntityInInventoryFollowsMouse(g, previewX + previewW / 2, playerPreviewY, 54,
+                previewX + previewW / 2 - mouseX, previewY + 32 - mouseY, mc.player);
 
         int statX = parametersX + Math.round(parametersWidth * 0.64F);
         int statY = previewY + 20;

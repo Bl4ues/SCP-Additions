@@ -1,5 +1,6 @@
 name: Apply Config Center Documentation
 
+# One-shot exact documentation update.
 on:
   pull_request:
     branches:

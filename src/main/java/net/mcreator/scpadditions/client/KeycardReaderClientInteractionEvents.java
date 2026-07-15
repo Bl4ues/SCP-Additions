@@ -13,6 +13,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 import net.mcreator.scpadditions.keycard.KeycardReaderLevels;
 import net.mcreator.scpadditions.network.KeycardReaderApplySavedLevelPacket;
+import net.mcreator.scpadditions.network.KeycardReaderCopyLevelPacket;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class KeycardReaderClientInteractionEvents {
@@ -21,7 +22,10 @@ public final class KeycardReaderClientInteractionEvents {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRightClickReader(PlayerInteractEvent.RightClickBlock event) {
-        if (event.getHand() != InteractionHand.MAIN_HAND || !Screen.hasControlDown()) return;
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+        boolean applySavedLevel = Screen.hasControlDown();
+        boolean copyCurrentLevel = Screen.hasShiftDown();
+        if (!applySavedLevel && !copyCurrentLevel) return;
         boolean hasScrewdriver = event.getEntity().getMainHandItem().is(UnifiedReaderItems.SCREWDRIVER.get())
                 || event.getEntity().getOffhandItem().is(UnifiedReaderItems.SCREWDRIVER.get());
         if (!hasScrewdriver || KeycardReaderLevels.describe(event.getLevel().getBlockState(event.getPos())) == null) return;
@@ -30,6 +34,10 @@ public final class KeycardReaderClientInteractionEvents {
         event.setUseItem(Event.Result.DENY);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
-        ScpAdditionsMod.PACKET_HANDLER.sendToServer(new KeycardReaderApplySavedLevelPacket(event.getPos()));
+        if (applySavedLevel) {
+            ScpAdditionsMod.PACKET_HANDLER.sendToServer(new KeycardReaderApplySavedLevelPacket(event.getPos()));
+        } else {
+            ScpAdditionsMod.PACKET_HANDLER.sendToServer(new KeycardReaderCopyLevelPacket(event.getPos()));
+        }
     }
 }

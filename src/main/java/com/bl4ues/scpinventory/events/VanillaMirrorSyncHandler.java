@@ -97,6 +97,13 @@ public class VanillaMirrorSyncHandler {
     }
 
     private static boolean routeVanillaInventoryToCustom(ServerPlayer player, IScpInventory inventory) {
+        // Creative mode keeps Minecraft's normal pickup/inventory behavior. Trying
+        // to route those stacks through the SCP inventory would always be rejected
+        // by ScpPickupRouter and repeatedly produce a false "inventory full" notice.
+        if (player.isCreative()) {
+            return false;
+        }
+
         boolean changed = false;
         Inventory vanillaInventory = player.getInventory();
 

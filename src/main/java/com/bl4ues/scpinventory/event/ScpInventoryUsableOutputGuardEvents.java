@@ -65,7 +65,10 @@ public final class ScpInventoryUsableOutputGuardEvents {
             return;
         }
         if (current.isEmpty()) {
-            clearSession(id);
+            // The main maintenance pass owns consumed/vanished usable cleanup.
+            // Clearing only these reflected maps here left the capability copy
+            // alive, causing consumed items such as spawn eggs to be mirrored
+            // back into the player's hand on the next pass.
             return;
         }
 

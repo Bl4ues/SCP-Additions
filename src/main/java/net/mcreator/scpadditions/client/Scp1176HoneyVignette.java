@@ -15,12 +15,12 @@ public final class Scp1176HoneyVignette {
             new ResourceLocation("scpinventory", "textures/gui/vignette.png");
     private static final int VIGNETTE_SOURCE_WIDTH = 1920;
     private static final int VIGNETTE_SOURCE_HEIGHT = 1080;
-    private static final float PULSE_PERIOD_TICKS = 120.0F;
-    private static final float MAX_EXPANSION_RATIO = 0.075F;
-    private static final float BASE_ALPHA = 0.18F;
-    private static final int EDGE_STEPS = 24;
+    private static final float PULSE_PERIOD_TICKS = 160.0F;
+    private static final float MAX_EXPANSION_RATIO = 0.045F;
+    private static final int MAX_VISIBLE_EDGE = 46;
+    private static final float BASE_ALPHA = 0.25F;
     private static final int DEEP_HONEY = 0x9A5A14;
-    private static final int LIGHT_HONEY = 0xE7B84D;
+    private static final int UNITY_GOLD = 0xE1A704;
 
     private Scp1176HoneyVignette() {
     }
@@ -34,7 +34,7 @@ public final class Scp1176HoneyVignette {
 
         float age = mc.player.tickCount + partialTick;
         drawPulse(graphics, width, height, phase(age), 1.0F);
-        drawPulse(graphics, width, height, phase(age + PULSE_PERIOD_TICKS * 0.5F), 0.72F);
+        drawPulse(graphics, width, height, phase(age + PULSE_PERIOD_TICKS * 0.5F), 0.68F);
     }
 
     private static float phase(float ticks) {
@@ -49,44 +49,58 @@ public final class Scp1176HoneyVignette {
         float alpha = envelope * envelope * BASE_ALPHA * strength;
         if (alpha <= 0.002F) return;
 
-        float easedProgress = 1.0F - (1.0F - progress) * (1.0F - progress);
+        float easedProgress = smoothStep(progress);
         int expansion = Math.round(Math.min(width, height) * MAX_EXPANSION_RATIO * easedProgress);
+        int visibleEdge = Math.max(0, Math.round(MAX_VISIBLE_EDGE * (1.0F - easedProgress)));
+
+        drawExpandedVignette(graphics, width, height, expansion, alpha * 0.22F);
+        if (visibleEdge > 0) {
+            drawHoneyEdgeGlow(graphics, width, height, visibleEdge, alpha);
+        }
+    }
+
+    private static void drawExpandedVignette(GuiGraphics graphics, int width, int height,
+                                             int expansion, float alpha) {
         int left = -expansion;
         int top = -expansion;
-        int right = width + expansion;
-        int bottom = height + expansion;
+        int drawWidth = width + expansion * 2;
+        int drawHeight = height + expansion * 2;
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor(1.0F, 0.82F, 0.42F, alpha * 0.30F);
-        graphics.blit(VIGNETTE, left, top, right - left, bottom - top,
+        RenderSystem.setShaderColor(1.0F, 0.82F, 0.42F, alpha);
+        graphics.blit(VIGNETTE, left, top, drawWidth, drawHeight,
                 0.0F, 0.0F, VIGNETTE_SOURCE_WIDTH, VIGNETTE_SOURCE_HEIGHT,
                 VIGNETTE_SOURCE_WIDTH, VIGNETTE_SOURCE_HEIGHT);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
-
-        drawHoneyEdgeGlow(graphics, left, top, right, bottom, alpha);
     }
 
-    private static void drawHoneyEdgeGlow(GuiGraphics graphics, int left, int top,
-                                           int right, int bottom, float alpha) {
-        for (int i = 0; i < EDGE_STEPS; i++) {
-            float t = i / (float) (EDGE_STEPS - 1);
+    private static void drawHoneyEdgeGlow(GuiGraphics graphics, int width, int height,
+                                           int thickness, float alpha) {
+        int steps = Math.max(1, thickness);
+        for (int i = 0; i < steps; i++) {
+            float t = steps <= 1 ? 1.0F : i / (float) (steps - 1);
             float falloff = (1.0F - t) * (1.0F - t);
-            float stripAlpha = alpha * 0.58F * falloff;
-            int color = withAlpha(lerpRgb(DEEP_HONEY, LIGHT_HONEY, t * 0.72F), stripAlpha);
+            float stripAlpha = alpha * 0.72F * falloff;
+            int color = withAlpha(lerpRgb(DEEP_HONEY, UNITY_GOLD, Math.min(1.0F, t * 0.82F)), stripAlpha);
 
-            int x1 = left + i;
-            int y1 = top + i;
-            int x2 = right - i;
-            int y2 = bottom - i;
-            if (x1 >= x2 || y1 >= y2) break;
+            int left = i;
+            int top = i;
+            int right = width - i;
+            int bottom = height - i;
+            if (left >= right || top >= bottom) break;
 
-            graphics.fill(x1, y1, x2, y1 + 1, color);
-            graphics.fill(x1, y2 - 1, x2, y2, color);
-            graphics.fill(x1, y1 + 1, x1 + 1, y2 - 1, color);
-            graphics.fill(x2 - 1, y1 + 1, x2, y2 - 1, color);
+            graphics.fill(left, top, right, top + 1, color);
+            graphics.fill(left, bottom - 1, right, bottom, color);
+            graphics.fill(left, top + 1, left + 1, bottom - 1, color);
+            graphics.fill(right - 1, top + 1, right, bottom - 1, color);
         }
+    }
+
+    private static float smoothStep(float value) {
+        float clamped = Math.max(0.0F, Math.min(1.0F, value));
+        return clamped * clamped * (3.0F - 2.0F * clamped);
     }
 
     private static int withAlpha(int rgb, float alpha) {

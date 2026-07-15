@@ -15,6 +15,7 @@ public final class ClientGameplayEvents {
         if (event.phase == TickEvent.Phase.START) {
             PickupPromptClient.clientTick();
             ContextPromptClient.clientTick();
+            StatusEffectTimelineClient.clientTick();
         }
     }
 }

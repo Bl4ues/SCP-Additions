@@ -1,17 +1,18 @@
 package com.bl4ues.scpinventory.client.gui.components;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
-
-import net.mcreator.scpadditions.vitals.client.PlayerVitalsClient;
-import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
+import com.bl4ues.scpinventory.client.StatusEffectTimelineClient;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
+import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
+import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
+import net.mcreator.scpadditions.vitals.client.PlayerVitalsClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -58,8 +59,6 @@ public class StatusPanel {
     private final int parametersWidth;
     private final int parametersHeight;
     private final int titleY;
-    private final int conditionsTitleX;
-    private final int parametersTitleX;
 
     private int conditionsScroll = 0;
     private boolean conditionsScrollbarDragging = false;
@@ -77,13 +76,11 @@ public class StatusPanel {
         this.parametersWidth = parametersWidth;
         this.parametersHeight = parametersHeight;
         this.titleY = titleY;
-        this.conditionsTitleX = conditionsTitleX;
-        this.parametersTitleX = parametersTitleX;
     }
 
     public void render(GuiGraphics g, int mouseX, int mouseY) {
-        drawSectionTitle(g, conditionsTitleX, titleY, "CONDITIONS");
-        drawSectionTitle(g, parametersTitleX, titleY, "PARAMETERS");
+        drawSectionTitleCentered(g, conditionsX, conditionsWidth, titleY, "CONDITIONS");
+        drawSectionTitleCentered(g, parametersX, parametersWidth, titleY, "PARAMETERS");
         renderConditions(g);
         renderParameters(g, mouseX, mouseY);
     }
@@ -213,6 +210,7 @@ public class StatusPanel {
     }
 
     private boolean isHiddenEffect(MobEffectInstance effect) {
+        if (effect.getEffect() == ScpAdditionsModMobEffects.SCP_1176_HONEYED.get()) return true;
         ResourceLocation id = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect());
         if (id == null) return false;
         String idString = id.toString();
@@ -254,12 +252,13 @@ public class StatusPanel {
         g.drawString(mc.font, ScpFonts.roboto(name), textX, y + 7, TEXT_WHITE, false);
         g.drawString(mc.font, ScpFonts.roboto(duration), textX, y + 20, TEXT_GRAY, false);
 
+        float ratio = getDurationRatio(effect);
         int barWidth = Math.max(90, Math.min(150, width / 3));
         int barX = x + width - barWidth - 14;
         int barY = y + 19;
         g.fill(barX, barY, barX + barWidth, barY + 3, BAR_BACKGROUND);
-        int fill = Math.max(2, Math.min(barWidth, Math.round(barWidth * getDurationRatio(effect))));
-        g.fill(barX, barY, barX + fill, barY + 3, getConditionBarColor(effect));
+        int fill = Math.max(1, Math.min(barWidth, Math.round(barWidth * ratio)));
+        g.fill(barX, barY, barX + fill, barY + 3, getConditionBarColor(ratio));
     }
 
     private void drawIconFrame(GuiGraphics g, int x, int y) {
@@ -318,10 +317,13 @@ public class StatusPanel {
         conditionsScroll = Math.max(0, Math.min(maxScroll, (int) Math.round(ratio * maxScroll)));
     }
 
-    private void drawSectionTitle(GuiGraphics g, int x, int y, String label) {
-        String prefix = "://STATUS_";
-        g.drawString(mc.font, ScpFonts.roboto(prefix), x, y, TEXT_GRAY, false);
-        g.drawString(mc.font, ScpFonts.roboto(label), x + mc.font.width(ScpFonts.roboto(prefix)), y, TEXT_WHITE, false);
+    private void drawSectionTitleCentered(GuiGraphics g, int panelX, int panelWidth, int y, String label) {
+        Component prefix = ScpFonts.roboto("://STATUS_");
+        Component value = ScpFonts.roboto(label);
+        int textWidth = mc.font.width(prefix) + mc.font.width(value);
+        int x = panelX + Math.max(0, (panelWidth - textWidth) / 2);
+        g.drawString(mc.font, prefix, x, y, TEXT_GRAY, false);
+        g.drawString(mc.font, value, x + mc.font.width(prefix), y, TEXT_WHITE, false);
     }
 
     private int getConditionScrollbarThumbHeight(int totalRows, int visibleRows) {
@@ -341,18 +343,14 @@ public class StatusPanel {
     }
 
     private float getDurationRatio(MobEffectInstance effect) {
-        int duration = effect.getDuration();
-        if (duration < 0 || duration > 20 * 60 * 60 * 24) {
-            return 1.0F;
-        }
-        return Math.max(0.0F, Math.min(1.0F, duration / (20.0F * 60.0F * 5.0F)));
+        return StatusEffectTimelineClient.getRemainingRatio(effect);
     }
 
     private void renderParameters(GuiGraphics g, int mouseX, int mouseY) {
         if (mc.player == null) return;
 
         int previewX = parametersX + Math.round(parametersWidth * 0.20F);
-        int previewY = parametersY + Math.round(parametersHeight * 0.20F);
+        int previewY = parametersY + Math.round(parametersHeight * 0.13F);
         int previewW = Math.max(72, Math.min(120, Math.round(parametersWidth * 0.32F)));
         int previewH = Math.max(130, Math.min(190, Math.round(parametersHeight * 0.64F)));
 
@@ -440,10 +438,9 @@ public class StatusPanel {
         return Integer.toString(number + 1);
     }
 
-    private int getConditionBarColor(MobEffectInstance effect) {
-        MobEffectCategory category = effect.getEffect().getCategory();
-        if (category == MobEffectCategory.HARMFUL) return BAR_BAD;
-        if (effect.getDuration() < 20 * 30) return BAR_WARN;
+    private int getConditionBarColor(float ratio) {
+        if (ratio <= 0.25F) return BAR_BAD;
+        if (ratio <= 0.55F) return BAR_WARN;
         return BAR_GOOD;
     }
 

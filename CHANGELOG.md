@@ -17,7 +17,7 @@
 ## Eye effects and decontamination
 
 - Decontamination Checkpoints now cause Eye Sore for 30 seconds;
-- Added Lubricated Eye, which prevents Eye Sore, doubles the blink interval, and turns the blink bar blue;
+- Added Lubricated Eye, which prevents Eye Sore and doubles the blink interval;
 - Added the `PROTECTED_EYES` item effect for eye-protecting equipment.
 
 ## Interface and accessibility

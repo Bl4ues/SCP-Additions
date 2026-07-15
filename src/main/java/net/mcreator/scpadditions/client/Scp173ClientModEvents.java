@@ -19,7 +19,10 @@ public final class Scp173ClientModEvents {
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("blink_vignette_overlay",
-                (gui, graphics, partialTick, width, height) -> BlinkClient.renderVignette(graphics, width, height));
+                (gui, graphics, partialTick, width, height) -> {
+                    BlinkClient.renderVignette(graphics, width, height);
+                    Scp1176HoneyVignette.render(graphics, width, height, partialTick);
+                });
         event.registerAboveAll("blink_blackout_overlay",
                 (gui, graphics, partialTick, width, height) -> BlinkClient.renderBlackout(graphics, width, height));
         event.registerAboveAll("blink_meter_overlay",

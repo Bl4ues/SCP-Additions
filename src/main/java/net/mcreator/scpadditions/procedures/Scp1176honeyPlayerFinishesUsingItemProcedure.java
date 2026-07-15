@@ -18,6 +18,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
+import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 public class Scp1176honeyPlayerFinishesUsingItemProcedure {
@@ -25,8 +26,10 @@ public class Scp1176honeyPlayerFinishesUsingItemProcedure {
 		if (entity == null)
 			return;
 		if ((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
-			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide()) {
 				_entity.addEffect(new MobEffectInstance(MobEffects.SATURATION, 12000, 10, false, false));
+				_entity.addEffect(new MobEffectInstance(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get(), 12000, 0, false, false, false));
+			}
 			if (entity instanceof LivingEntity _entity)
 				_entity.removeEffect(MobEffects.POISON);
 		} else {
@@ -37,14 +40,13 @@ public class Scp1176honeyPlayerFinishesUsingItemProcedure {
 					_level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp1176")), SoundSource.MUSIC, 1, 1, false);
 				}
 			}
-			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide()) {
 				_entity.addEffect(new MobEffectInstance(MobEffects.POISON, 1360, 10, false, false));
-			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
 				_entity.addEffect(new MobEffectInstance(MobEffects.HUNGER, 1360, 1, false, false));
-			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
 				_entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 1360, 1, false, false));
-			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
 				_entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1360, 3, false, false));
+				_entity.addEffect(new MobEffectInstance(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get(), 1360, 0, false, false, false));
+			}
 			ScpAdditionsMod.queueServerWork(1360, () -> {
 				if (entity instanceof LivingEntity _entity)
 					_entity.hurt(new DamageSource(_entity.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {

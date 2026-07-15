@@ -108,7 +108,7 @@ public final class Scp914Processor {
                 .toList();
 
         Optional<Scp914RecipeManager.RecipeMatch> match =
-                Scp914RecipeManager.findRecipe(setting, itemInputs, entityInputs);
+                Scp914RecipeBridge.findRecipe(level, setting, itemInputs, entityInputs);
         return new ProcessingContext(match, players, intakeCenter, outputCenter);
     }
 

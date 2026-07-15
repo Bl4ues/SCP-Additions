@@ -22,7 +22,6 @@ import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -45,7 +44,8 @@ public final class TeslaGatePulseHelper {
 		}
 
 		final Vec3 center = new Vec3(x, y, z);
-		List<Entity> entities = world.getEntitiesOfClass(Entity.class, new AABB(center, center).inflate(pulseRadius), e -> true).stream().sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(center))).toList();
+		List<Entity> entities = world.getEntitiesOfClass(Entity.class,
+				new AABB(center, center).inflate(pulseRadius), e -> true);
 		for (Entity entity : entities) {
 			if (entity instanceof LivingEntity living) {
 				living.hurt(new DamageSource(living.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DamageTypes.GENERIC)) {

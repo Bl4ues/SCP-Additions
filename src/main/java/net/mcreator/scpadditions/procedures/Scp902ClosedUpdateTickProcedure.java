@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
 
 import java.util.List;
-import java.util.Comparator;
 
 public class Scp902ClosedUpdateTickProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z) {
@@ -27,7 +26,7 @@ public class Scp902ClosedUpdateTickProcedure {
 		}
 		{
 			final Vec3 _center = new Vec3(x, y, z);
-			List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(5 / 2d), e -> true).stream().sorted(Comparator.comparingDouble(_entcnd -> _entcnd.distanceToSqr(_center))).toList();
+			List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(5 / 2d), e -> true);
 			for (Entity entityiterator : _entfound) {
 				if (Math.random() < 0.01) {
 					if (entityiterator instanceof Player _player && !_player.level().isClientSide())

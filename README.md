@@ -49,7 +49,7 @@ The registered keybinds can be changed in Minecraft's Controls menu unless noted
 
 ![SCP Inventory](https://cdn.modrinth.com/data/cached_images/5111fa210e13cf68f8c6ba5872024d74b67c3eda.jpeg)
 
-The SCP Inventory is server-authoritative and stored as a player capability. Its default limits are 12 main-item slots and 12 key slots; the main-item limit can be changed per player from 1 to 128 with commands.
+The SCP Inventory is server-authoritative and stored as a player capability. Its default limits are 12 main-item slots, 12 key slots, and 999 units of currency; the main-item limit can be changed per player from 1 to 128 with commands.
 
 Items are routed by category:
 

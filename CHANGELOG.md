@@ -33,6 +33,13 @@
 - Screwdrivers can now copy a Keycard Reader level and quickly apply it to other readers;
 - Pick Block now returns public blocks instead of internal animation states.
 
+## Performance and polish
+
+- Interaction prompts now update more efficiently, stay steadier between nearby targets, and no longer appear through solid blocks;
+- Reduced unnecessary background checks from Tesla Gates and SCP-131 sounds;
+- Reduced repeated processing in SCP-079, SCP-1176, SCP-294, and SCP-902 systems;
+- Simplified the blood type display without changing its appearance or behavior.
+
 # SCP Additions 3.0.2 — Stability Hotfix
 
 ## Facility doors

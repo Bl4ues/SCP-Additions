@@ -20,6 +20,7 @@ import java.util.Set;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp131LoopSoundEvents {
     private static final double RANGE = 64.0D;
+    private static final int SCAN_INTERVAL_TICKS = 4;
     private static final double MOVEMENT_EPSILON_SQR = 0.0025D * 0.0025D;
     private static final Map<Integer, Scp131LoopSound> IDLE = new HashMap<>();
     private static final Map<Integer, Scp131LoopSound> MOVING = new HashMap<>();
@@ -37,6 +38,7 @@ public final class Scp131LoopSoundEvents {
             stopEverything();
             return;
         }
+        if (minecraft.player.tickCount % SCAN_INTERVAL_TICKS != 0) return;
 
         Set<Integer> seen = new HashSet<>();
         AABB area = minecraft.player.getBoundingBox().inflate(RANGE);

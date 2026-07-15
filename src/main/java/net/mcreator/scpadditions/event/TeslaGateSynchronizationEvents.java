@@ -15,7 +15,6 @@ import net.mcreator.scpadditions.block.TeslaGateStructure;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.procedures.TeslaGateTransitionHelper;
-import net.mcreator.scpadditions.procedures.TeslaGateUpdateTickProcedure;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -77,9 +76,11 @@ public final class TeslaGateSynchronizationEvents {
                         TRANSITION_OBSERVATIONS.remove(key);
                         if (!enabled && !override) continue;
 
-                        TeslaGateUpdateTickProcedure.execute(level,
-                                pos.getX(), pos.getY(), pos.getZ());
-                        level.scheduleTick(pos, state.getBlock(), 10);
+                        // Reattach the controller's saved scheduled-tick loop. The
+                        // normal block tick performs detection; running it here as
+                        // well made every nearby gate query entities twice on scan
+                        // seconds.
+                        level.scheduleTick(pos, state.getBlock(), 1);
                     }
                 }
             }

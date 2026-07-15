@@ -21,7 +21,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,9 +96,7 @@ public final class Scp079FacilityThreatEvents {
 
         List<Mob> pursuers = level.getEntitiesOfClass(Mob.class,
                 player.getBoundingBox().inflate(PURSUER_SEARCH_RADIUS),
-                mob -> mob.isAlive() && mob.getTarget() == player).stream()
-                .sorted(Comparator.comparingDouble(player::distanceToSqr))
-                .toList();
+                mob -> mob.isAlive() && mob.getTarget() == player);
 
         if (!pursuers.isEmpty()) {
             DoorMatch doorAhead = findOpenDoorAhead(level, player, pursuers,

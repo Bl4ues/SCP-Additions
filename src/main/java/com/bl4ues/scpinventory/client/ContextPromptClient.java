@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -35,6 +36,7 @@ public final class ContextPromptClient {
     private static final float ACTION_TEXT_SCALE = 1.55F;
     private static final float NAME_TEXT_SCALE = 1.85F;
     private static final double MAX_CONTEXT_REACH = 6.0D;
+    private static final double TARGET_STICKINESS_BONUS = 0.045D;
     private static final int CLICK_COOLDOWN_TICKS = 5;
 
     private static ContextTarget target;
@@ -99,7 +101,6 @@ public final class ContextPromptClient {
     }
 
     public static void render(GuiGraphics g, int screenWidth, int screenHeight, float partialTick) {
-        clientTick();
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.screen != null || mc.options.hideGui || PickupPromptClient.hasActiveTarget() || target == null || !target.isAlive(mc)) {
             return;
@@ -194,7 +195,8 @@ public final class ContextPromptClient {
             for (ContextInteractionRegistry.Rule rule : rules) {
                 Vec3 anchor = rule.resolveBlockAnchor(pos, state);
                 double score = scorePoint(anchor, eye, look, rule.range(), directBlockHit, rule.priority());
-                if (score < bestScore) {
+                if (isCurrentBlockTarget(pos)) score -= TARGET_STICKINESS_BONUS;
+                if (score < bestScore && hasBlockLineOfSight(player, eye, anchor, pos, directBlockHit)) {
                     bestScore = score;
                     String name = rule.showName() ? rule.blockName(state) : "";
                     boolean shouldShowName = rule.showName() && !name.isEmpty();
@@ -237,7 +239,8 @@ public final class ContextPromptClient {
             for (ContextInteractionRegistry.Rule rule : rules) {
                 Vec3 anchor = rule.resolveEntityAnchor(entity);
                 double score = scorePoint(anchor, eye, look, rule.range(), directEntityHit, rule.priority());
-                if (score < bestScore) {
+                if (isCurrentEntityTarget(entity.getId())) score -= TARGET_STICKINESS_BONUS;
+                if (score < bestScore && hasEntityLineOfSight(player, eye, anchor, directEntityHit)) {
                     bestScore = score;
                     String name = rule.showName() ? rule.entityName(entity) : "";
                     boolean shouldShowName = rule.showName() && !name.isEmpty();
@@ -248,6 +251,31 @@ public final class ContextPromptClient {
             }
         }
         return best;
+    }
+
+    private static boolean isCurrentBlockTarget(BlockPos pos) {
+        return target != null && !target.entity() && target.pos().equals(pos);
+    }
+
+    private static boolean isCurrentEntityTarget(int entityId) {
+        return target != null && target.entity() && target.entityId() == entityId;
+    }
+
+    private static boolean hasBlockLineOfSight(LocalPlayer player, Vec3 eye, Vec3 anchor,
+            BlockPos targetPos, boolean directHit) {
+        if (directHit) return true;
+        BlockHitResult obstruction = player.level().clip(new ClipContext(
+                eye, anchor, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        return obstruction.getType() == HitResult.Type.MISS
+                || obstruction.getBlockPos().equals(targetPos);
+    }
+
+    private static boolean hasEntityLineOfSight(LocalPlayer player, Vec3 eye, Vec3 anchor,
+            boolean directHit) {
+        if (directHit) return true;
+        BlockHitResult obstruction = player.level().clip(new ClipContext(
+                eye, anchor, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        return obstruction.getType() == HitResult.Type.MISS;
     }
 
     private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look, double reach, boolean directHit, int priority) {

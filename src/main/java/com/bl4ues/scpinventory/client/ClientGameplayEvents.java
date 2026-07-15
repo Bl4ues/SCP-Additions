@@ -14,6 +14,7 @@ public final class ClientGameplayEvents {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             PickupPromptClient.clientTick();
+            ContextPromptClient.clientTick();
         }
     }
 }

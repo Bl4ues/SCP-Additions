@@ -34,6 +34,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.procedures.TeslaGateUpdateTickProcedure;
+import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
 import java.util.Collections;
 import java.util.List;
@@ -206,6 +207,9 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         TeslaGateUpdateTickProcedure.execute(level, pos.getX(), pos.getY(), pos.getZ());
-        level.scheduleTick(pos, this, 10);
+        if (level.getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON)
+                || level.getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE)) {
+            level.scheduleTick(pos, this, 10);
+        }
     }
 }

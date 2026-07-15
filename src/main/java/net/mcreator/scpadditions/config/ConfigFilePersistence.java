@@ -23,6 +23,21 @@ public final class ConfigFilePersistence {
                     StandardCopyOption.COPY_ATTRIBUTES);
         }
 
+        writeAtomically(absoluteTarget, content);
+    }
+
+    /**
+     * Restores a previously captured file without replacing the known-good {@code .bak} copy.
+     * Intended only for transactional rollback after a failed configuration save.
+     */
+    public static void restoreWithoutBackup(Path target, String content) throws IOException {
+        writeAtomically(target.toAbsolutePath().normalize(), content);
+    }
+
+    private static void writeAtomically(Path absoluteTarget, String content) throws IOException {
+        Path parent = absoluteTarget.getParent();
+        if (parent != null) Files.createDirectories(parent);
+
         Path temporary = Files.createTempFile(parent, absoluteTarget.getFileName().toString(), ".tmp");
         try {
             Files.writeString(temporary, content, StandardCharsets.UTF_8);

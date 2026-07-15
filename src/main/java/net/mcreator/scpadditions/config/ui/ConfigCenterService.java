@@ -82,16 +82,12 @@ public final class ConfigCenterService {
 
         Files.createDirectories(RECIPE_FRAGMENTS);
         try (Stream<Path> stream = Files.list(RECIPE_FRAGMENTS)) {
-            stream.filter(Files::isRegularFile)
-                    .filter(path -> SAFE_FRAGMENT.matcher(path.getFileName().toString()).matches())
-                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
-                    .forEach(path -> {
-                        try {
-                            files.add(RECIPE_PREFIX + path.getFileName(), readObject(path, defaultRecipes(false)));
-                        } catch (IOException exception) {
-                            ScpAdditionsMod.LOGGER.warn("Could not include SCP-914 fragment {} in config snapshot", path, exception);
-                        }
-                    });
+            for (Path path : stream.filter(Files::isRegularFile)
+                    .filter(candidate -> SAFE_FRAGMENT.matcher(candidate.getFileName().toString()).matches())
+                    .sorted(Comparator.comparing(candidate -> candidate.getFileName().toString()))
+                    .toList()) {
+                files.add(RECIPE_PREFIX + path.getFileName(), readObject(path, defaultRecipes(false)));
+            }
         }
         return files;
     }
@@ -175,7 +171,7 @@ public final class ConfigCenterService {
     private static void rollback(Map<Path, String> oldContents) throws IOException {
         for (Map.Entry<Path, String> entry : oldContents.entrySet()) {
             if (entry.getValue() == null) Files.deleteIfExists(entry.getKey());
-            else ConfigFilePersistence.writeWithBackup(entry.getKey(), entry.getValue());
+            else ConfigFilePersistence.restoreWithoutBackup(entry.getKey(), entry.getValue());
         }
     }
 
@@ -197,12 +193,17 @@ public final class ConfigCenterService {
     private static JsonObject readObject(Path path, JsonObject fallback) throws IOException {
         Files.createDirectories(path.getParent());
         if (Files.notExists(path)) return fallback.deepCopy();
+
         try {
             JsonElement parsed = JsonParser.parseString(Files.readString(path, StandardCharsets.UTF_8));
-            return parsed.isJsonObject() ? parsed.getAsJsonObject() : fallback.deepCopy();
+            if (!parsed.isJsonObject()) {
+                throw new IOException("Configuration root must be a JSON object: " + path);
+            }
+            return parsed.getAsJsonObject();
+        } catch (IOException exception) {
+            throw exception;
         } catch (Exception exception) {
-            ScpAdditionsMod.LOGGER.warn("Could not parse {} for the configuration center", path, exception);
-            return fallback.deepCopy();
+            throw new IOException("Invalid JSON in " + path + ": " + readable(exception), exception);
         }
     }
 
@@ -369,7 +370,7 @@ public final class ConfigCenterService {
     private static void validateId(String raw, String label, List<String> errors, List<String> warnings, boolean allowMissing) {
         if (raw == null || raw.isBlank()) { errors.add(label + " is required"); return; }
         try { new ResourceLocation(raw.trim()); }
-        catch (Exception exception) { errors.add(label + " has invalid resource id '" + raw + "'"); return; }
+        catch (Exception exception) { errors.add(label + " has invalid resource id '" + raw + "'"); }
     }
 
     private static boolean requireArray(JsonObject root, String key, List<String> errors) {

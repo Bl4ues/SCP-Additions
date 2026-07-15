@@ -2,17 +2,43 @@ package com.bl4ues.scpinventory.item;
 
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.EggItem;
+import net.minecraft.world.item.EnderpearlItem;
+import net.minecraft.world.item.ExperienceBottleItem;
+import net.minecraft.world.item.FireworkRocketItem;
+import net.minecraft.world.item.FishingRodItem;
+import net.minecraft.world.item.FlintAndSteelItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.SnowballItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.level.Level;
 
+import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ScpItemClassifier {
     private static final ResourceLocation CANONICAL_SCP_ADDITIONS_COIN =
             new ResourceLocation("scp_additions", "coin");
+    private static final TagKey<Item> AUTO_WEAPON = itemTag("auto_weapon");
+    private static final TagKey<Item> AUTO_USABLE = itemTag("auto_usable");
+    private static final TagKey<Item> AUTO_MISCELLANEOUS = itemTag("auto_miscellaneous");
+    private static final Map<Class<?>, Boolean> AIR_USE_OVERRIDES = new ConcurrentHashMap<>();
 
     private ScpItemClassifier() {
     }
@@ -41,12 +67,30 @@ public final class ScpItemClassifier {
             return type == ScpItemType.COIN ? ScpItemType.MISCELLANEOUS : type;
         }
 
+        if (stack.is(AUTO_MISCELLANEOUS)) {
+            return ScpItemType.MISCELLANEOUS;
+        }
+        if (stack.is(AUTO_WEAPON)) {
+            return ScpItemType.WEAPON;
+        }
+        if (stack.is(AUTO_USABLE)) {
+            return ScpItemType.USABLE;
+        }
+
         if (isDefaultConsumable(stack)) {
             return ScpItemType.CONSUMABLE;
         }
 
         if (stack.getItem() instanceof ArmorItem armorItem) {
             return fromVanillaEquipmentSlot(armorItem.getEquipmentSlot());
+        }
+
+        if (isDefaultWeapon(stack)) {
+            return ScpItemType.WEAPON;
+        }
+
+        if (isDefaultUsable(stack)) {
+            return ScpItemType.USABLE;
         }
 
         return ScpItemType.MISCELLANEOUS;
@@ -183,6 +227,58 @@ public final class ScpItemClassifier {
                 || path.contains("potion");
     }
 
+    private static boolean isDefaultWeapon(ItemStack stack) {
+        Item item = stack.getItem();
+        if (item instanceof SwordItem || item instanceof ProjectileWeaponItem || item instanceof TridentItem) {
+            return true;
+        }
+
+        UseAnim animation = stack.getUseAnimation();
+        return animation == UseAnim.BOW
+                || animation == UseAnim.CROSSBOW
+                || animation == UseAnim.SPEAR;
+    }
+
+    private static boolean isDefaultUsable(ItemStack stack) {
+        Item item = stack.getItem();
+        if (item instanceof BlockItem) {
+            return false;
+        }
+
+        UseAnim animation = stack.getUseAnimation();
+        if (animation == UseAnim.BLOCK
+                || animation == UseAnim.SPYGLASS
+                || animation == UseAnim.TOOT_HORN
+                || animation == UseAnim.BRUSH) {
+            return true;
+        }
+
+        if (item instanceof FishingRodItem
+                || item instanceof FlintAndSteelItem
+                || item instanceof ShearsItem
+                || item instanceof BucketItem
+                || item instanceof EnderpearlItem
+                || item instanceof SnowballItem
+                || item instanceof EggItem
+                || item instanceof ExperienceBottleItem
+                || item instanceof FireworkRocketItem) {
+            return true;
+        }
+
+        return overridesAirUse(item);
+    }
+
+    private static boolean overridesAirUse(Item item) {
+        return AIR_USE_OVERRIDES.computeIfAbsent(item.getClass(), itemClass -> {
+            try {
+                Method use = itemClass.getMethod("use", Level.class, Player.class, InteractionHand.class);
+                return use.getDeclaringClass() != Item.class;
+            } catch (ReflectiveOperationException exception) {
+                return false;
+            }
+        });
+    }
+
     private static Optional<ScpItemType> getConfiguredType(ItemStack stack) {
         ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (stackId == null) {
@@ -234,6 +330,10 @@ public final class ScpItemClassifier {
             case FEET -> ScpItemType.FEET;
             default -> ScpItemType.MISCELLANEOUS;
         };
+    }
+
+    private static TagKey<Item> itemTag(String path) {
+        return TagKey.create(Registries.ITEM, new ResourceLocation("scp_additions", path));
     }
 
     private record ConfiguredItemRule(ResourceLocation itemId, ScpItemType type) {

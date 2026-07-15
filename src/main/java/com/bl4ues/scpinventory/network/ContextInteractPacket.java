@@ -14,6 +14,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
@@ -75,7 +76,7 @@ public class ContextInteractPacket {
                 return;
             }
             if (msg.entityTarget) {
-                handleEntityInteraction(player, msg.entityId);
+                handleEntityInteraction(player, msg.entityId, msg.shiftDown);
             } else {
                 handleBlockInteraction(player, msg.blockPos, msg.shiftDown, msg.controlDown);
             }
@@ -83,7 +84,7 @@ public class ContextInteractPacket {
         ctx.get().setPacketHandled(true);
     }
 
-    private static void handleEntityInteraction(ServerPlayer player, int entityId) {
+    private static void handleEntityInteraction(ServerPlayer player, int entityId, boolean shiftDown) {
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
@@ -107,7 +108,14 @@ public class ContextInteractPacket {
             return;
         }
 
-        InteractionResult result = entity.interact(player, InteractionHand.MAIN_HAND);
+        boolean previousShift = player.isShiftKeyDown();
+        InteractionResult result;
+        player.setShiftKeyDown(shiftDown);
+        try {
+            result = entity.interact(player, InteractionHand.MAIN_HAND);
+        } finally {
+            player.setShiftKeyDown(previousShift);
+        }
         if (result.consumesAction()) {
             player.swing(InteractionHand.MAIN_HAND, true);
         }
@@ -138,7 +146,18 @@ public class ContextInteractPacket {
         boolean doorBefore = isDoorWithOpenState(state);
         boolean wasOpen = doorBefore && state.getValue(BlockStateProperties.OPEN);
         BlockHitResult hit = new BlockHitResult(anchor, rule.resolveClickFace(state, player), pos, false);
-        InteractionResult result = state.use(level, player, InteractionHand.MAIN_HAND, hit);
+        ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
+        boolean previousShift = player.isShiftKeyDown();
+        InteractionResult result;
+        player.setShiftKeyDown(shiftDown);
+        try {
+            // Follow the normal server-side right-click path so Forge block hooks,
+            // BlockState#use and the held item's useOn method all receive prompts.
+            result = player.gameMode.useItemOn(player, level, heldItem,
+                    InteractionHand.MAIN_HAND, hit);
+        } finally {
+            player.setShiftKeyDown(previousShift);
+        }
         if (result.consumesAction()) {
             player.swing(InteractionHand.MAIN_HAND, true);
             playDoorSoundForUser(player, level, pos, state, doorBefore, wasOpen);

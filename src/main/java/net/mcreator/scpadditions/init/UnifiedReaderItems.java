@@ -8,6 +8,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.item.OffsetKeycardReaderItem;
+import net.mcreator.scpadditions.item.ScrewdriverItem;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -46,7 +47,7 @@ public final class UnifiedReaderItems {
      * level, while Control-use applies the copied level to another reader.
      */
     public static final RegistryObject<Item> SCREWDRIVER = REGISTRY.register("screwdriver",
-            () -> new Item(new Item.Properties().stacksTo(1)));
+            () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
     private UnifiedReaderItems() {
     }

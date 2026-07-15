@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -75,7 +76,8 @@ public final class ContextPromptClient {
             boolean rightClickAccepted = usePressedThisTick && target.allowRightClick();
             boolean contextKeyAccepted = contextPressedThisTick && target.allowE();
             if (rightClickAccepted || contextKeyAccepted) {
-                ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(target.pos(), target.entityId(), target.entity()));
+                ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(target.pos(), target.entityId(),
+                        target.entity(), Screen.hasShiftDown(), Screen.hasControlDown()));
                 cooldownTicks = CLICK_COOLDOWN_TICKS;
                 clear();
             }

@@ -31,28 +31,41 @@ public class ContextInteractPacket {
     private final BlockPos blockPos;
     private final int entityId;
     private final boolean entityTarget;
+    private final boolean shiftDown;
+    private final boolean controlDown;
 
     public ContextInteractPacket(BlockPos blockPos) {
-        this(blockPos, 0, false);
+        this(blockPos, 0, false, false, false);
     }
 
     public ContextInteractPacket(BlockPos blockPos, int entityId, boolean entityTarget) {
+        this(blockPos, entityId, entityTarget, false, false);
+    }
+
+    public ContextInteractPacket(BlockPos blockPos, int entityId, boolean entityTarget,
+            boolean shiftDown, boolean controlDown) {
         this.blockPos = blockPos == null ? BlockPos.ZERO : blockPos;
         this.entityId = entityId;
         this.entityTarget = entityTarget;
+        this.shiftDown = shiftDown;
+        this.controlDown = controlDown;
     }
 
     public static void encode(ContextInteractPacket msg, FriendlyByteBuf buf) {
         buf.writeBoolean(msg.entityTarget);
         buf.writeBlockPos(msg.blockPos);
         buf.writeInt(msg.entityId);
+        buf.writeBoolean(msg.shiftDown);
+        buf.writeBoolean(msg.controlDown);
     }
 
     public static ContextInteractPacket decode(FriendlyByteBuf buf) {
         boolean entityTarget = buf.readBoolean();
         BlockPos blockPos = buf.readBlockPos();
         int entityId = buf.readInt();
-        return new ContextInteractPacket(blockPos, entityId, entityTarget);
+        boolean shiftDown = buf.readBoolean();
+        boolean controlDown = buf.readBoolean();
+        return new ContextInteractPacket(blockPos, entityId, entityTarget, shiftDown, controlDown);
     }
 
     public static void handle(ContextInteractPacket msg, Supplier<NetworkEvent.Context> ctx) {
@@ -64,7 +77,7 @@ public class ContextInteractPacket {
             if (msg.entityTarget) {
                 handleEntityInteraction(player, msg.entityId);
             } else {
-                handleBlockInteraction(player, msg.blockPos);
+                handleBlockInteraction(player, msg.blockPos, msg.shiftDown, msg.controlDown);
             }
         });
         ctx.get().setPacketHandled(true);
@@ -100,7 +113,8 @@ public class ContextInteractPacket {
         }
     }
 
-    private static void handleBlockInteraction(ServerPlayer player, BlockPos pos) {
+    private static void handleBlockInteraction(ServerPlayer player, BlockPos pos,
+            boolean shiftDown, boolean controlDown) {
         Level level = player.level();
         if (!level.isLoaded(pos)) {
             return;
@@ -116,7 +130,7 @@ public class ContextInteractPacket {
             return;
         }
 
-        if (KeycardReaderInteractionEvents.tryOpenConfiguration(player, pos)) {
+        if (KeycardReaderInteractionEvents.tryHandleInteraction(player, pos, shiftDown, controlDown)) {
             player.swing(InteractionHand.MAIN_HAND, true);
             return;
         }

@@ -29,13 +29,17 @@ public final class KeycardReaderInteractionEvents {
     }
 
     public static boolean tryOpenConfiguration(ServerPlayer player, BlockPos pos) {
+        return tryHandleInteraction(player, pos, false, false);
+    }
+
+    public static boolean tryHandleInteraction(ServerPlayer player, BlockPos pos,
+            boolean shiftDown, boolean controlDown) {
         if (player == null || pos == null) {
             return false;
         }
 
-        boolean hasScrewdriver = player.getMainHandItem().is(UnifiedReaderItems.SCREWDRIVER.get())
-                || player.getOffhandItem().is(UnifiedReaderItems.SCREWDRIVER.get());
-        if (!hasScrewdriver) {
+        ItemStack screwdriver = screwdriver(player);
+        if (screwdriver.isEmpty()) {
             return false;
         }
 
@@ -45,7 +49,26 @@ public final class KeycardReaderInteractionEvents {
             return false;
         }
 
-        ScpEntityNetwork.openKeycardReaderScreen(player, pos, descriptor.level());
+        if (controlDown) {
+            int savedLevel = screwdriver.hasTag() ? screwdriver.getTag().getInt(SAVED_LEVEL_TAG) : 0;
+            if (savedLevel < 1 || savedLevel > 6) {
+                player.displayClientMessage(Component.translatable(
+                        "message.scp_additions.keycard_reader_no_saved_level")
+                        .withStyle(ChatFormatting.RED), true);
+            } else if (descriptor.level() == savedLevel
+                    || KeycardReaderLevels.replaceLevel(player.level(), pos, savedLevel)) {
+                player.displayClientMessage(Component.translatable(
+                        "message.scp_additions.keycard_reader_level_applied", savedLevel)
+                        .withStyle(ChatFormatting.GREEN), true);
+            }
+        } else if (shiftDown) {
+            screwdriver.getOrCreateTag().putInt(SAVED_LEVEL_TAG, descriptor.level());
+            player.displayClientMessage(Component.translatable(
+                    "message.scp_additions.keycard_reader_level_copied", descriptor.level())
+                    .withStyle(ChatFormatting.GREEN), true);
+        } else {
+            ScpEntityNetwork.openKeycardReaderScreen(player, pos, descriptor.level());
+        }
         return true;
     }
 
@@ -78,15 +101,7 @@ public final class KeycardReaderInteractionEvents {
 
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             if (consumeSuppressedInteraction(serverPlayer, event.getPos())) return;
-            if (serverPlayer.isShiftKeyDown()) {
-                ItemStack screwdriver = screwdriver(serverPlayer);
-                screwdriver.getOrCreateTag().putInt(SAVED_LEVEL_TAG, descriptor.level());
-                serverPlayer.displayClientMessage(Component.translatable(
-                        "message.scp_additions.keycard_reader_level_copied", descriptor.level())
-                        .withStyle(ChatFormatting.GREEN), true);
-            } else {
-                ScpEntityNetwork.openKeycardReaderScreen(serverPlayer, event.getPos(), descriptor.level());
-            }
+            tryHandleInteraction(serverPlayer, event.getPos(), serverPlayer.isShiftKeyDown(), false);
         }
     }
 

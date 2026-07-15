@@ -1,5 +1,6 @@
 name: Apply Config Center
 
+# One-shot rollout: expands the reviewed payload, builds it, then removes itself.
 on:
   push:
     paths:

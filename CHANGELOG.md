@@ -24,13 +24,19 @@
 
 - The SCP Inventory now remembers its selected section, Codex document, and scrollbar positions until the player leaves the world;
 - Added an option to disable this interface memory;
+- Moved the Mellified Man blood type display into the Status panel and removed the old inventory overlays;
 - Added subtitles for all custom sounds.
 
 ## Configuration and building
 
 - Added `/scpadditions reload` to validate and reload configurations without restarting;
-- Invalid JSON and registry IDs now produce clear errors without partially applying the reload;
+- Invalid JSON and malformed IDs now produce clear errors without partially applying the reload;
+- Missing optional mod entries are now reported and ignored while valid configuration entries continue loading;
+- SCP-914 now skips only recipes whose items or entities are unavailable instead of keeping unusable recipes;
+- Configuration saves now preserve the previous file as a `.bak` backup;
 - Screwdrivers can now copy a Keycard Reader level and quickly apply it to other readers;
+- Screwdrivers now show their controls and copied Reader level in their tooltip;
+- Context prompts now use the normal block and held-item interaction path, including crouch interactions;
 - Pick Block now returns public blocks instead of internal animation states.
 
 ## Performance and polish
@@ -38,7 +44,6 @@
 - Interaction prompts now update more efficiently, stay steadier between nearby targets, and no longer appear through solid blocks;
 - Reduced unnecessary background checks from Tesla Gates and SCP-131 sounds;
 - Reduced repeated processing in SCP-079, SCP-1176, SCP-294, and SCP-902 systems;
-- Simplified the blood type display without changing its appearance or behavior.
 
 # SCP Additions 3.0.2 — Stability Hotfix
 

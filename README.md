@@ -59,7 +59,7 @@ Items are routed by category:
 
 Explicit rules in `scpinventory.json` take priority. Without a rule, edible/drinkable items are classified as consumables, vanilla armor uses its normal equipment slot, and remaining items are miscellaneous. `USABLE` items temporarily enter a controlled vanilla hotbar session so their normal right-click behavior can run, then return to SCP storage without leaving a duplicate behind.
 
-The **Status** panel displays active conditions except effects hidden by config. The **Codex** lists configured document items and can render a packaged page texture, a UTF-8 text resource, or both.
+The **Status** panel displays active conditions except effects hidden by config, core combat/vital parameters, and the blood type assigned by the Mellified Man system. The **Codex** lists configured document items and can render a packaged page texture, a UTF-8 text resource, or both.
 
 ### Contextual interactions
 
@@ -67,7 +67,7 @@ The **Status** panel displays active conditions except effects hidden by config.
 
 Context rules attach an SCP Unity-style prompt to a block or entity. Each rule defines its reach, text, icon, anchor position, accepted input, and the face used for the simulated interaction. Candidate prompts are scored by screen position, distance, direct targeting, and priority; a larger `priority` value gives a rule more preference.
 
-The interaction itself is validated again on the server before the block or entity receives it. Dropped items use a separate pickup prompt.
+The interaction itself is validated again on the server before the block or entity receives it. Block prompts follow the normal server-side right-click path, including Forge hooks, the block interaction, the held item's interaction, and the player's crouching state. Dropped items use a separate pickup prompt.
 
 Pressing `K` is the recommended editing workflow:
 
@@ -130,7 +130,7 @@ The facility set includes animated Default, Yellow, Black, Normal, Logistics, Of
 
 Button panels can synchronize with an opposite panel already present on the other side of a wall. Intermediate animation states remain registered for saved-world compatibility, but only public endpoints appear in the creative inventory.
 
-There is one public **Keycard Reader** item. Placement uses the clicked wall face and the clicked half to select the visible left/right model. It starts at Level 1. With a **Screwdriver** in either hand, interact normally to select Levels 1–6, crouch-interact to copy a reader's level, and hold `Ctrl` while interacting to apply that saved level to another reader. A higher-level keycard satisfies its own level and every lower level, and readers search both vanilla storage and the SCP Inventory.
+There is one public **Keycard Reader** item. Placement uses the clicked wall face and the clicked half to select the visible left/right model. It starts at Level 1. With a **Screwdriver** in either hand, interact normally to select Levels 1–6, crouch-interact to copy a reader's level, and hold `Ctrl` while interacting to apply that saved level to another reader. The Screwdriver tooltip shows these controls and its currently copied level. A higher-level keycard satisfies its own level and every lower level, and readers search both vanilla storage and the SCP Inventory.
 
 ### Tesla Gates and terminal
 
@@ -448,6 +448,8 @@ Recipe fields:
 
 Only the first complete recipe matching the selected setting is processed per cycle. Fragments append recipes; repeating an ID in a fragment does not override an earlier recipe. To replace an existing rule, edit/disable the earlier entry or ensure the desired recipe is encountered first.
 
+Recipes may reference content from optional mods. If an item or entity ID is unavailable, only that recipe is skipped; the log and `/scpadditions reload` identify the missing ID and the rest of the file remains active.
+
 ### SCP-914 1:1 skins
 
 On first launch, the mod creates `config/scpadditions/scp914_skins`, copies eleven bundled skins, and writes its own `README.txt`. Add any 64×64 or legacy 64×32 Minecraft skin PNG to the directory to include it in the random pool.
@@ -474,7 +476,9 @@ Examples:
 
 ## Commands
 
-`/scpadditions reload` requires operator permission. It validates all supported configuration files before applying anything; malformed JSON and invalid or missing registry IDs are reported with their file and field, and a failed validation leaves the active configuration unchanged.
+`/scpadditions reload` requires operator permission. It validates all supported configuration files before applying anything. Malformed JSON and malformed IDs cancel the reload and leave the active configuration unchanged. Well-formed IDs that are unavailable in the current modpack are reported as warnings and ignored, allowing valid entries to load.
+
+In-game configuration saves and automatic normalization preserve the previous version beside the edited file with a `.bak` suffix before replacing it.
 
 | Command | Effect |
 | --- | --- |

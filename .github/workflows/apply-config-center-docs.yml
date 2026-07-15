@@ -1,0 +1,123 @@
+name: Apply Config Center Documentation
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  apply-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout documentation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Update README and changelog
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+
+          old = """## Configuration
+
+Configuration files are created under the instance's `config` directory. Bundled defaults are copied only when a file does not already exist; updates do not replace an existing customized file. Back up a file before deleting it to regenerate the defaults shipped by the installed version.
+"""
+          new = """## Configuration
+
+### In-game configuration center
+
+SCP Additions includes a native configuration center. Open **Mods → SCP Additions → Config** while connected to a world, or use `/scpadditions config`. The screen edits the server-owned JSON configuration without requiring Configured or another menu mod.
+
+The integrated single-player owner and players with operator permission level 2 can use it. The client receives only a structured snapshot of supported settings; file selection, validation, writing, reload, and rollback remain server-authoritative. Saves are written atomically, preserve the previous file with a `.bak` suffix, and restore the previous configuration if the new state cannot be reloaded.
+
+The center contains dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes. Manual JSON editing remains supported for advanced or automated modpack workflows.
+
+Configuration files are created under the instance's `config` directory. Bundled defaults are copied only when a file does not already exist; updates do not replace an existing customized file. Back up a file before deleting it to regenerate the defaults shipped by the installed version.
+"""
+          if old not in text:
+              raise SystemExit('README configuration anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """### SCP-914 recipes
+
+The main file owns both the `machine` section and its recipes. Fragment files in `914recipes.d` add only recipes and are loaded afterward in filename order.
+"""
+          new = """### SCP-914 recipes
+
+The main file owns both the `machine` section and its recipes. Fragment files in `914recipes.d` add only recipes and are loaded afterward in filename order.
+
+The in-game recipe editor can search the item registry by translated name or resource ID, add any number of intake and output entries with `+`, adjust counts, select the required machine setting, duplicate or move recipes between files, and switch outputs between ordinary and weighted selection. Less common fields such as chance, input-NBT copying, action-bar text, and weighted output controls stay inside a compact collapsed **Additional recipe settings** section. New recipes are stored in `914recipes.d/in_game_editor.json` by default so the shipped main recipe library remains separate. Existing entity inputs, entity outputs, and unknown JSON fields are preserved when a recipe is edited.
+"""
+          if old not in text:
+              raise SystemExit('README SCP-914 anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """| Command | Effect |
+| --- | --- |
+| `/scpadditions reload` | Validate and reload module, inventory, interaction, SCP-294, and SCP-914 configuration without restarting. |
+"""
+          new = """| Command | Effect |
+| --- | --- |
+| `/scpadditions config` | Open the native configuration center for the integrated single-player owner or an operator with permission level 2. |
+| `/scpadditions reload` | Validate and reload module, inventory, interaction, SCP-294, and SCP-914 configuration without restarting. |
+"""
+          if old not in text:
+              raise SystemExit('README command table anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """### Context interaction editor
+
+These commands operate on a player editing session. For normal use, `K` and the visual GUI are faster.
+"""
+          new = """### Context interaction editor
+
+These commands operate on a player editing session and require operator permission level 2 or the integrated single-player owner. For normal use, `K` and the visual GUI are faster. The corresponding item and interaction editor packets enforce the same permission on the server, even when sent by a modified client.
+"""
+          if old not in text:
+              raise SystemExit('README context permission anchor not found')
+          text = text.replace(old, new, 1)
+          readme.write_text(text, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          old = """## Configuration and building
+
+- Added `/scpadditions reload` to validate and reload configurations without restarting;
+"""
+          new = """## Configuration and building
+
+- Added a native in-game configuration center accessible from the Forge mod list or `/scpadditions config`, without requiring an external configuration-menu mod;
+- Added dedicated visual editors for modules, inventory and equipment rules, Status filters, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
+- The SCP-914 editor supports searchable item selection, dynamic intake/output lists, setting selection, recipe duplication and file placement, weighted results, and a compact collapsed section for advanced fields;
+- New SCP-914 recipes created in-game are stored in `914recipes.d/in_game_editor.json` by default, while existing advanced and entity fields are preserved;
+- In-game saves are validated and applied on the server with atomic writes, `.bak` backups, runtime reload, and rollback if the new configuration cannot be applied;
+- Configuration editors and their network packets now require operator permission level 2 or the integrated single-player owner;
+- Added `/scpadditions reload` to validate and reload configurations without restarting;
+"""
+          if old not in text:
+              raise SystemExit('CHANGELOG configuration anchor not found')
+          text = text.replace(old, new, 1)
+          changelog.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Check formatting
+        run: git diff --check
+
+      - name: Commit documentation
+        shell: bash
+        run: |
+          rm .github/workflows/apply-config-center-docs.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: document native configuration center"
+          git push origin HEAD:${{ github.head_ref }}

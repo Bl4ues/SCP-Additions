@@ -1,6 +1,6 @@
 name: Apply Config Center Documentation
 
-# Clean rollout branch synchronized from the registered master workflow.
+# Final clean rollout: apply exact documentation replacements, then remove this workflow.
 on:
   pull_request:
     branches:

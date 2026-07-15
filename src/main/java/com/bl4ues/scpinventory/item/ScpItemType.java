@@ -8,6 +8,7 @@ public enum ScpItemType {
     HARMFUL("Miscellaneous"),
     CONSUMABLE("Consumable"),
     USABLE("Usable"),
+    PLACEABLE("Placeable"),
     KEY("Key"),
     CODEX("Document"),
     COIN("Coin"),
@@ -56,6 +57,7 @@ public enum ScpItemType {
             case "HARMFUL", "HARM", "HAZARD", "HAZARDOUS", "DANGEROUS", "CURSED" -> Optional.of(HARMFUL);
             case "CONSUMABLE", "CONSUME", "USE" -> Optional.of(CONSUMABLE);
             case "USABLE", "USEABLE", "NON_CONSUMABLE", "NONCONSUMABLE", "RIGHT_CLICK", "RIGHTCLICK" -> Optional.of(USABLE);
+            case "PLACEABLE", "PLACE", "BLOCK", "BUILDING" -> Optional.of(PLACEABLE);
             case "KEY", "KEYCARD", "KEYRING" -> Optional.of(KEY);
             case "CODEX", "DOCUMENT", "DOC" -> Optional.of(CODEX);
             case "COIN", "CURRENCY", "TOKEN", "MONEY" -> Optional.of(COIN);

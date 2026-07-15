@@ -53,6 +53,10 @@ public class ContextMenu {
             options.add(new MenuOption("USE", "Use Item"));
             options.add(new MenuOption("DROP", "Drop Item"));
             hintMode = HintMode.USABLE;
+        } else if ("Placeable".equals(type)) {
+            options.add(new MenuOption("USE", "Place Item"));
+            options.add(new MenuOption("DROP", "Drop Item"));
+            hintMode = HintMode.PLACEABLE;
         } else if (isEquipmentType(type)) {
             options.add(new MenuOption("EQUIP", "Equip Item"));
             options.add(new MenuOption("DROP", "Drop Item"));
@@ -166,6 +170,7 @@ public class ContextMenu {
         return switch (hintMode) {
             case EQUIP -> "You can double click or press Shift + Left Click to EQUIP this item";
             case USABLE -> "You can double click to USE this item";
+            case PLACEABLE -> "You can double click to PLACE this item";
             case CONSUME -> "You can double click to CONSUME this item";
             default -> "";
         };
@@ -222,5 +227,5 @@ public class ContextMenu {
     }
 
     private record MenuOption(String action, String label) {}
-    private enum HintMode { NONE, EQUIP, USABLE, CONSUME }
+    private enum HintMode { NONE, EQUIP, USABLE, PLACEABLE, CONSUME }
 }

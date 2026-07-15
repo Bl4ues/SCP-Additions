@@ -8,12 +8,15 @@ Explicit entries in `config/scpinventory/scpinventory.json` remain authoritative
 2. explicit `item_rules` entries;
 3. datapack override tags;
 4. consumable and armor detection;
-5. weapon and manually usable item detection;
-6. `MISCELLANEOUS` fallback.
+5. placeable block detection;
+6. weapon and manually usable item detection;
+7. `MISCELLANEOUS` fallback.
 
 Weapons are detected from standard sword, projectile-weapon, and trident classes, as well as bow, crossbow, and spear use animations. This also covers modded items that reuse the normal Minecraft weapon APIs.
 
 Usable items include standard right-click items, recognized use animations, and non-block item classes that override Minecraft's air-use method. The result is cached by item class, so reflection is not repeated during normal inventory rendering or routing.
+
+Items backed by Minecraft's `BlockItem` class are categorized as `PLACEABLE`. They use the same controlled hotbar session as manually usable items, but the inventory labels their action as placement instead of generic use. Explicit rules can still move individual blocks to another category.
 
 Modpacks and datapacks can override the fallback without adding one JSON rule per item:
 
@@ -21,7 +24,7 @@ Modpacks and datapacks can override the fallback without adding one JSON rule pe
 - `scp_additions:auto_usable` forces `USABLE`;
 - `scp_additions:auto_miscellaneous` disables automatic weapon/usable inference for the tagged item.
 
-An explicit `item_rules` entry always takes priority over these tags and heuristics.
+An explicit `item_rules` entry always takes priority over these tags and heuristics. `PLACEABLE`, `PLACE`, `BLOCK`, and `BUILDING` are accepted configuration tokens for the placeable category.
 
 ## SCP-914 intake wait
 

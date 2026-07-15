@@ -85,6 +85,10 @@ public final class ScpItemClassifier {
             return fromVanillaEquipmentSlot(armorItem.getEquipmentSlot());
         }
 
+        if (stack.getItem() instanceof BlockItem) {
+            return ScpItemType.PLACEABLE;
+        }
+
         if (isDefaultWeapon(stack)) {
             return ScpItemType.WEAPON;
         }
@@ -134,7 +138,8 @@ public final class ScpItemClassifier {
     }
 
     public static boolean isUsable(ItemStack stack) {
-        return getType(stack) == ScpItemType.USABLE;
+        ScpItemType type = getType(stack);
+        return type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE;
     }
 
     public static boolean isAccessoryHand(ItemStack stack) {

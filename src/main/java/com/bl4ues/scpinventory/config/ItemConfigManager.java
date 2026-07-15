@@ -307,6 +307,7 @@ public final class ItemConfigManager {
             case "HARMFUL", "HARM", "HAZARD", "HAZARDOUS", "DANGEROUS", "CURSED" -> "HARMFUL";
             case "CONSUMABLE", "CONSUME", "USE" -> "CONSUMABLE";
             case "USABLE", "USEABLE", "NON_CONSUMABLE", "NONCONSUMABLE", "RIGHT_CLICK", "RIGHTCLICK" -> "USABLE";
+            case "PLACEABLE", "PLACE", "BLOCK", "BUILDING" -> "PLACEABLE";
             case "KEY", "KEYCARD", "KEYRING" -> "KEY";
             case "CODEX", "DOCUMENT", "DOC" -> "CODEX";
             case "COIN", "CURRENCY", "TOKEN", "MONEY" -> "COIN";

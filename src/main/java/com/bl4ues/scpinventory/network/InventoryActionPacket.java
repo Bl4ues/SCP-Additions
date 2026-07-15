@@ -91,7 +91,7 @@ public class InventoryActionPacket {
             return;
         }
 
-        if (type == ScpItemType.USABLE) {
+        if (type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE) {
             useUsableSlot(player, inventory, slot);
         }
     }

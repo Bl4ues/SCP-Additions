@@ -51,7 +51,7 @@ public class MainUseActionPacket {
                 }
 
                 ScpItemType type = ScpItemClassifier.getType(stack);
-                if (type == ScpItemType.USABLE) {
+                if (type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE) {
                     ScpInventoryMaintenanceEvents.activateUsableSession(player, inventory, msg.slot);
                     return;
                 }

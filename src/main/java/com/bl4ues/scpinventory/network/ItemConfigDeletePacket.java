@@ -5,6 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
+import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
 import java.util.function.Supplier;
 
@@ -26,9 +27,7 @@ public class ItemConfigDeletePacket {
     public static void handle(ItemConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player == null || player.isSpectator()) {
-                return;
-            }
+            if (!ConfigCenterService.requireEdit(player)) return;
             ItemConfigManager.deleteRule(player, msg.itemId);
             ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
         });

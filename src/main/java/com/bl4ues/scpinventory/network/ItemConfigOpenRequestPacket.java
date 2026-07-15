@@ -4,6 +4,7 @@ import com.bl4ues.scpinventory.config.ItemConfigManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
 import java.util.function.Supplier;
 
@@ -25,7 +26,7 @@ public class ItemConfigOpenRequestPacket {
     public static void handle(ItemConfigOpenRequestPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && !player.isSpectator()) {
+            if (ConfigCenterService.requireEdit(player)) {
                 ItemConfigManager.openEditor(player, msg.itemId);
             }
         });

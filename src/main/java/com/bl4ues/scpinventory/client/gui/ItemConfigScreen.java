@@ -1,5 +1,6 @@
 package com.bl4ues.scpinventory.client.gui;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
 import com.bl4ues.scpinventory.item.ScpItemType;
 import com.bl4ues.scpinventory.network.ItemConfigDeletePacket;
 import com.bl4ues.scpinventory.network.ItemConfigOpenPacket;
@@ -9,12 +10,21 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 public class ItemConfigScreen extends Screen {
-    private static final int PANEL_W = 270;
-    private static final int PANEL_H = 250;
+    private static final int PANEL_W = 310;
+    private static final int PANEL_H = 270;
     private static final int MARGIN = 10;
+    private static final int NAVY = 0xF000071F;
+    private static final int NAVY_LIGHT = 0xE6141E42;
+    private static final int GOLD = 0xFFE1A704;
+    private static final int WHITE = 0xFFF7F8FC;
+    private static final int MUTED = 0xFFA9AFBA;
+    private static final int DANGER = 0xFFFF8F8F;
     private static final ScpItemType[] TYPES = ScpItemType.values();
 
     private final String itemId;
@@ -29,7 +39,7 @@ public class ItemConfigScreen extends Screen {
     private boolean confirmForget;
 
     public ItemConfigScreen(ItemConfigOpenPacket packet) {
-        super(Component.literal("SCP Item Config Editor"));
+        super(ScpFonts.roboto("SCP Item Config Editor"));
         this.itemId = packet.itemId();
         this.existing = packet.existing();
         this.type = parseType(packet.type());
@@ -41,47 +51,71 @@ public class ItemConfigScreen extends Screen {
     protected void init() {
         int left = panelLeft();
         int top = panelTop();
-        int x = left + 12;
-        int y = top + 58;
+        int x = left + 16;
+        int y = top + 78;
+        int width = PANEL_W - 32;
 
-        typeButton = addRenderableWidget(Button.builder(Component.literal(typeText()), b -> {
+        typeButton = addRenderableWidget(Button.builder(ScpFonts.roboto(typeText()), b -> {
             type = TYPES[(type.ordinal() + 1) % TYPES.length];
-            b.setMessage(Component.literal(typeText()));
-        }).bounds(x, y, PANEL_W - 24, 20).build());
+            b.setMessage(ScpFonts.roboto(typeText()));
+        }).bounds(x, y, width, 22).build());
 
-        y += 30;
-        staminaButton = addRenderableWidget(Button.builder(Component.literal(staminaText()), b -> {
+        y += 38;
+        staminaButton = addRenderableWidget(Button.builder(ScpFonts.roboto(staminaText()), b -> {
             noStamina = !noStamina;
-            b.setMessage(Component.literal(staminaText()));
-        }).bounds(x, y, PANEL_W - 24, 20).build());
+            b.setMessage(ScpFonts.roboto(staminaText()));
+        }).bounds(x, y, width, 22).build());
 
         y += 30;
-        protectedEyesButton = addRenderableWidget(Button.builder(Component.literal(protectedEyesText()), b -> {
+        protectedEyesButton = addRenderableWidget(Button.builder(ScpFonts.roboto(protectedEyesText()), b -> {
             protectedEyes = !protectedEyes;
-            b.setMessage(Component.literal(protectedEyesText()));
-        }).bounds(x, y, PANEL_W - 24, 20).build());
+            b.setMessage(ScpFonts.roboto(protectedEyesText()));
+        }).bounds(x, y, width, 22).build());
 
-        int bottomY = top + PANEL_H - 30;
-        forgetButton = addRenderableWidget(Button.builder(Component.literal("Forget"), b -> forgetRule()).bounds(left + 12, bottomY, 68, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Save"), b -> save()).bounds(left + PANEL_W - 154, bottomY, 68, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> onClose()).bounds(left + PANEL_W - 80, bottomY, 68, 20).build());
+        int bottomY = top + PANEL_H - 34;
+        forgetButton = addRenderableWidget(Button.builder(ScpFonts.roboto("Forget"), b -> forgetRule())
+                .bounds(left + 16, bottomY, 76, 22).build());
+        addRenderableWidget(Button.builder(ScpFonts.roboto("Save"), b -> save())
+                .bounds(left + PANEL_W - 172, bottomY, 76, 22).build());
+        addRenderableWidget(Button.builder(ScpFonts.roboto("Cancel"), b -> onClose())
+                .bounds(left + PANEL_W - 90, bottomY, 74, 22).build());
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        renderBackground(g);
         int left = panelLeft();
         int top = panelTop();
-        g.fill(left, top, left + PANEL_W, top + PANEL_H, 0xCC111317);
-        g.fill(left, top, left + PANEL_W, top + 24, 0xE525282D);
-        g.drawString(font, "SCP Item Config Editor", left + 12, top + 8, 0xFFE8E8E8, false);
-        g.drawString(font, (existing ? "Editing " : "New ") + compact(itemId, 32), left + 12, top + 30, 0xFFB5C7FF, false);
-        g.drawString(font, "Item category", left + 12, top + 48, 0xFFB7B7B7, false);
-        g.drawString(font, "Effects", left + 12, top + 84, 0xFFB7B7B7, false);
-        g.drawString(font, "Type writes item_rules[].", left + 12, top + 148, 0xFF999999, false);
-        g.drawString(font, "Effects write item_effects[].", left + 12, top + 162, 0xFF999999, false);
-        g.drawString(font, "Protected Eyes blocks external eye irritation.", left + 12, top + 176, 0xFF999999, false);
-        g.drawString(font, "Use CODEX for document items.", left + 12, top + 190, 0xFF88DDEE, false);
-        g.drawString(font, "Forget asks twice, then removes this item.", left + 12, top + 204, 0xFFFF9D9D, false);
+
+        g.fill(left, top, left + PANEL_W, top + PANEL_H, NAVY);
+        g.fill(left, top, left + PANEL_W, top + 31, NAVY_LIGHT);
+        g.fill(left, top + 30, left + PANEL_W, top + 33, GOLD);
+        g.fill(left, top, left + 1, top + PANEL_H, GOLD);
+        g.fill(left + PANEL_W - 1, top, left + PANEL_W, top + PANEL_H, GOLD);
+
+        g.drawString(font, ScpFonts.roboto("SCP ITEM CONFIGURATION"), left + 14, top + 11, WHITE, false);
+
+        ItemStack preview = getPreviewStack();
+        int iconX = left + 16;
+        int iconY = top + 43;
+        g.fill(iconX - 3, iconY - 3, iconX + 19, iconY + 19, NAVY_LIGHT);
+        g.fill(iconX - 3, iconY - 3, iconX + 19, iconY - 2, GOLD);
+        if (!preview.isEmpty()) g.renderItem(preview, iconX, iconY);
+
+        g.drawString(font, ScpFonts.roboto(existing ? "Editing explicit rule" : "Creating explicit rule"),
+                left + 46, top + 44, MUTED, false);
+        g.drawString(font, ScpFonts.roboto(compact(itemId, 42)), left + 46, top + 57, WHITE, false);
+
+        g.drawString(font, ScpFonts.roboto("CATEGORY"), left + 16, top + 69, GOLD, false);
+        g.drawString(font, ScpFonts.roboto("EQUIPMENT EFFECTS"), left + 16, top + 108, GOLD, false);
+
+        g.drawString(font, ScpFonts.roboto("Category controls storage, actions and equipment routing."),
+                left + 16, top + 177, MUTED, false);
+        g.drawString(font, ScpFonts.roboto("PLACEABLE is used automatically for blocks."),
+                left + 16, top + 190, MUTED, false);
+        g.drawString(font, ScpFonts.roboto("Forget removes the explicit rule and restores auto-detection."),
+                left + 16, top + 203, DANGER, false);
+
         super.render(g, mouseX, mouseY, partialTick);
     }
 
@@ -99,25 +133,29 @@ public class ItemConfigScreen extends Screen {
     private void forgetRule() {
         if (!confirmForget) {
             confirmForget = true;
-            if (forgetButton != null) {
-                forgetButton.setMessage(Component.literal("Confirm"));
-            }
+            if (forgetButton != null) forgetButton.setMessage(ScpFonts.roboto("Confirm"));
             return;
         }
         ModNetwork.CHANNEL.sendToServer(new ItemConfigDeletePacket(itemId));
         Minecraft.getInstance().setScreen(null);
     }
 
+    private ItemStack getPreviewStack() {
+        ResourceLocation id = ResourceLocation.tryParse(itemId);
+        if (id == null) return ItemStack.EMPTY;
+        return BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
+
     private String typeText() {
-        return "Type: " + type.name();
+        return "Category: " + type.getDisplayName();
     }
 
     private String staminaText() {
-        return noStamina ? "No Stamina: On" : "No Stamina: Off";
+        return noStamina ? "No Stamina: ON" : "No Stamina: OFF";
     }
 
     private String protectedEyesText() {
-        return protectedEyes ? "Protected Eyes: On" : "Protected Eyes: Off";
+        return protectedEyes ? "Protected Eyes: ON" : "Protected Eyes: OFF";
     }
 
     private int panelLeft() {
@@ -137,9 +175,7 @@ public class ItemConfigScreen extends Screen {
     }
 
     private static String compact(String text, int max) {
-        if (text == null || text.length() <= max) {
-            return text == null ? "" : text;
-        }
+        if (text == null || text.length() <= max) return text == null ? "" : text;
         return text.substring(0, Math.max(0, max - 3)) + "...";
     }
 }

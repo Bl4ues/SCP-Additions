@@ -30,6 +30,10 @@ source = source.replace(
     "    \"CHANGELOG.md\",\n    '''## Configuration center''',",
     "    \"CHANGELOG.md\",\n    '''## Native configuration center''',",
     1)
+source = source.replace(
+    r"builder.append('\n');",
+    r"builder.append('\\n');",
+    1)
 namespace = {"__file__": str(source_path), "__name__": "__main__"}
 exec(compile(source, str(source_path), "exec"), namespace)
 

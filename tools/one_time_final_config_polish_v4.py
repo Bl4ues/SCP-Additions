@@ -35,3 +35,5 @@ for temporary in [
 ]:
     if temporary.exists():
         temporary.unlink()
+
+# Rerun marker after preserving the user's direct CHANGELOG edit.

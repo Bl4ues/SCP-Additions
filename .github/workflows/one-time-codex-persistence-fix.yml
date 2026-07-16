@@ -30,7 +30,20 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Apply Codex persistence fix
-        run: python tools/fix_codex_persistence.py
+        shell: bash
+        run: |
+          set +e
+          python tools/fix_codex_persistence.py > codex-fix.log 2>&1
+          status=$?
+          cat codex-fix.log
+          if [ $status -ne 0 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add codex-fix.log
+            git commit -m "chore: capture Codex fix failure"
+            git push origin HEAD:master
+            exit $status
+          fi
 
       - name: Build
         run: |
@@ -43,6 +56,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -f tools/fix_codex_persistence.py
           rm -f .github/workflows/one-time-codex-persistence-fix.yml
+          rm -f codex-fix.log
           git add -A
           git commit -m "fix(codex): persist unique documents and world assets"
           git push origin HEAD:master

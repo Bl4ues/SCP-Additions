@@ -69,7 +69,14 @@ public final class Scp914Processor {
         setRefining(world, true);
 
         ScpAdditionsMod.queueServerWork(machineConfig.startDelayTicks(), () -> {
-            context.match().ifPresent(match -> applyRecipe(level, context.outputCenter(), match));
+            if (context.match().isPresent()) {
+                applyRecipe(level, context.outputCenter(), context.match().get());
+            } else {
+                // A player makes this a valid cycle even when the loose items do
+                // not resolve to a recipe. Once the machine starts, everything in
+                // the intake belongs to SCP-914 and must not remain behind.
+                consumeLooseItems(context.itemInputs());
+            }
             for (ServerPlayer player : context.players()) {
                 processPlayer(player, context.outputCenter(), setting);
             }
@@ -108,8 +115,8 @@ public final class Scp914Processor {
                 .toList();
 
         Optional<Scp914RecipeManager.RecipeMatch> match =
-                Scp914RecipeManager.findRecipe(setting, itemInputs, entityInputs);
-        return new ProcessingContext(match, players, intakeCenter, outputCenter);
+                Scp914RecipeBridge.findRecipe(level, setting, itemInputs, entityInputs);
+        return new ProcessingContext(match, players, itemInputs, intakeCenter, outputCenter);
     }
 
     private static Scp914RecipeManager.Offset normalizeLegacyRangeOffset(Scp914RecipeManager.Offset offset) {
@@ -280,6 +287,12 @@ public final class Scp914Processor {
         }
     }
 
+    private static void consumeLooseItems(List<ItemEntity> items) {
+        for (ItemEntity item : items) {
+            if (item != null && !item.isRemoved()) item.discard();
+        }
+    }
+
     private static void closeDoorsImmediately(ServerLevel level, BlockPos keyPos) {
         boolean closedAnyDoor = false;
         for (BlockPos pos : BlockPos.betweenClosed(
@@ -359,6 +372,7 @@ public final class Scp914Processor {
     private record ProcessingContext(
             Optional<Scp914RecipeManager.RecipeMatch> match,
             List<ServerPlayer> players,
+            List<ItemEntity> itemInputs,
             Vec3 intakeCenter,
             Vec3 outputCenter) {
     }

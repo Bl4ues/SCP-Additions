@@ -19,6 +19,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +47,9 @@ public final class ScpInventoryMaintenanceEvents {
     }
 
     public static boolean activateUsableSession(ServerPlayer player, IScpInventory inventory, int sourceSlot) {
-        if (player == null || inventory == null || player.isCreative() || player.isSpectator() || !inventory.isValidMainSlot(sourceSlot)) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled
+                || player == null || inventory == null || player.isCreative()
+                || player.isSpectator() || !inventory.isValidMainSlot(sourceSlot)) {
             return false;
         }
 
@@ -354,7 +357,8 @@ public final class ScpInventoryMaintenanceEvents {
 
     @SubscribeEvent
     public static void onItemToss(ItemTossEvent event) {
-        if (!(event.getPlayer() instanceof ServerPlayer player) || player.isCreative()) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled
+                || !(event.getPlayer() instanceof ServerPlayer player) || player.isCreative()) {
             return;
         }
 
@@ -407,6 +411,7 @@ public final class ScpInventoryMaintenanceEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END
                 || event.player.level().isClientSide
+                || !ScpAdditionsModulesConfig.get().inventory.enabled
                 || !(event.player instanceof ServerPlayer player)
                 || player.isSpectator()) {
             return;

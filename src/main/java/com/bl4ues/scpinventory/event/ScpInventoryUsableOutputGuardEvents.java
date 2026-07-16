@@ -13,6 +13,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -34,6 +35,7 @@ public final class ScpInventoryUsableOutputGuardEvents {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
         if (event.phase != TickEvent.Phase.END
                 || event.player.level().isClientSide
                 || !(event.player instanceof ServerPlayer player)

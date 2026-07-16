@@ -7,6 +7,10 @@
 - Added the SCP Additions logo to Forge's Mods list and replaced the update-specific metadata text with the full mod description used on the project pages.
 
 ## Configuration center
+- Fixed dedicated servers crashing during network registration because sound packets referenced client-only `SoundInstance` classes;
+- Fixed `inventory.enabled: false` still allowing background tick handlers and packets to move items into the SCP Inventory;
+- Removed a cut SCP-079 1.0 behavior that silently forced `teslaGateOn` back to `true`;
+- Expanded the closed Decontamination Checkpoint collision across the complete doorway to prevent escaping around its sides during a gas cycle;
 - Added a native configuration center available from **Mods → SCP Additions** and `/scpadditions config`;
 - Added dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
 - Added registry search, translated display names, item/entity icons, dynamic recipe inputs and outputs, a drink color picker, tooltips, and a unified SCP Unity-inspired interface using Roboto with a Montserrat main title;

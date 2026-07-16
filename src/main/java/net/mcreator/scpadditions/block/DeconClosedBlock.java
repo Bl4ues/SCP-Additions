@@ -151,4 +151,17 @@ public class DeconClosedBlock extends Block implements SimpleWaterloggedBlock {
 		super.tick(blockstate, world, pos, random);
 		DecontaminationCheckpointController.finishClosed(world, pos);
 	}
+
+    @Override
+        public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
+                CollisionContext context) {
+            Direction facing = state.hasProperty(FACING) ? state.getValue(FACING) : Direction.NORTH;
+            // The checkpoint model spans three blocks. A narrow model-derived shape
+            // left walkable seams beside the closed door, so use a continuous two-
+            // block-high barrier across the complete opening while the gas cycle is
+            // active.
+            return facing.getAxis() == Direction.Axis.Z
+                    ? Block.box(-16.0D, 0.0D, 6.0D, 32.0D, 32.0D, 10.0D)
+                    : Block.box(6.0D, 0.0D, -16.0D, 10.0D, 32.0D, 32.0D);
+        }
 }

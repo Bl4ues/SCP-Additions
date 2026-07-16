@@ -115,6 +115,32 @@ public final class ScpAdditionsReloadCommand {
         requireObjectIfPresent(root, "vitals", path, errors);
         requireObjectIfPresent(root, "blink", path, errors);
         requireObjectIfPresent(root, "scp_173", path, errors);
+        validateBooleanMember(root, "inventory", "enabled", path, errors);
+        validateBooleanMember(root, "inventory", "remember_ui_state", path, errors);
+        rejectUnknownMember(root, "inventory", "disabled", path, errors,
+                "Use inventory.enabled: false instead of inventory.disabled.");
+    }
+
+    private static void validateBooleanMember(JsonObject root, String objectKey,
+                                              String memberKey, Path path,
+                                              List<String> errors) {
+        if (!root.has(objectKey) || !root.get(objectKey).isJsonObject()) return;
+        JsonObject object = root.getAsJsonObject(objectKey);
+        if (object.has(memberKey) && (!object.get(memberKey).isJsonPrimitive()
+                || !object.get(memberKey).getAsJsonPrimitive().isBoolean())) {
+            errors.add(relative(path) + ": " + objectKey + "." + memberKey
+                    + " must be true or false");
+        }
+    }
+
+    private static void rejectUnknownMember(JsonObject root, String objectKey,
+                                            String memberKey, Path path,
+                                            List<String> errors, String help) {
+        if (!root.has(objectKey) || !root.get(objectKey).isJsonObject()) return;
+        if (root.getAsJsonObject(objectKey).has(memberKey)) {
+            errors.add(relative(path) + ": unknown field " + objectKey + "."
+                    + memberKey + ". " + help);
+        }
     }
 
     private static void validateInventory(Path path, List<String> errors, List<String> warnings) {

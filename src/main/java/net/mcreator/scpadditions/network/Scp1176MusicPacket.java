@@ -1,14 +1,10 @@
 package net.mcreator.scpadditions.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-import net.mcreator.scpadditions.client.Scp1176MusicClient;
 
 import java.util.function.Supplier;
 
-/** Plays the SCP-1176 music head-relative for only the affected player. */
 public final class Scp1176MusicPacket {
     public static void encode(Scp1176MusicPacket message, FriendlyByteBuf buffer) {
     }
@@ -17,10 +13,10 @@ public final class Scp1176MusicPacket {
         return new Scp1176MusicPacket();
     }
 
-    public static void handle(Scp1176MusicPacket message, Supplier<NetworkEvent.Context> supplier) {
+    public static void handle(Scp1176MusicPacket message,
+                              Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> Scp1176MusicClient::play));
+        context.enqueueWork(() -> ClientPacketExecutor.run("playScp1176Music"));
         context.setPacketHandled(true);
     }
 }

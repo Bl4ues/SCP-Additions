@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,10 @@ public class VanillaMirrorSyncHandler {
         }
 
         if (!(event.player instanceof ServerPlayer player)) {
+            return;
+        }
+
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled) {
             return;
         }
 

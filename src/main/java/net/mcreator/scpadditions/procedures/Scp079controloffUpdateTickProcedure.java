@@ -27,7 +27,6 @@ public class Scp079controloffUpdateTickProcedure {
 				}
 				world.setBlock(_bp, _bs, 3);
 			}
-			world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, world.getServer());
 		}
 	}
 }

@@ -9,6 +9,7 @@ import com.bl4ues.scpinventory.item.ScpItemType;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;

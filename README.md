@@ -57,9 +57,9 @@ Items are routed by category:
 - keycards, ammunition, currency, and Codex documents;
 - head, chest, leg, foot, accessory, and weapon equipment.
 
-Explicit rules in `scpinventory.json` take priority. Without a rule, edible/drinkable items are classified as consumables, vanilla armor uses its normal equipment slot, and remaining items are miscellaneous. `USABLE` items temporarily enter a controlled vanilla hotbar session so their normal right-click behavior can run, then return to SCP storage without leaving a duplicate behind.
+Explicit rules in `scpinventory.json` always take priority. Without a rule, SCP Additions conservatively recognizes Codex documents, consumables, vanilla armor slots, placeable blocks, common melee/ranged weapons, and manually usable right-click items before falling back to miscellaneous. Datapacks can override the fallback with `scp_additions:auto_weapon`, `scp_additions:auto_usable`, and `scp_additions:auto_miscellaneous`; see [Automatic item classification](docs/AUTOMATIC_ITEM_CLASSIFICATION.md). `USABLE` and `PLACEABLE` items temporarily enter a controlled vanilla hotbar session so their normal right-click or placement behavior can run, then return to SCP storage unless the item was consumed.
 
-The **Status** panel displays active conditions except effects hidden by config, core combat/vital parameters, and the blood type assigned by the Mellified Man system. The **Codex** lists configured document items and can render a packaged page texture, a UTF-8 text resource, or both.
+The **Status** panel displays active conditions except effects hidden by config, core combat/vital parameters, and the blood type assigned by the Mellified Man system. The **Codex** lists configured document items and can render a packaged page texture, a UTF-8 text resource, or both. New Codex entries created through the configuration center currently start with `minecraft:paper` as a temporary default until dedicated document items are introduced in a future update; this is only an initial value and can be changed to any registered item.
 
 ### Contextual interactions
 
@@ -158,7 +158,7 @@ A drink definition controls the output item, delay, sound, coin use, cup color, 
 
 ### SCP-914
 
-SCP-914 scans a configurable intake area relative to its winding key. Dropped items and non-player entities use the JSON recipe engine. The first complete recipe for the selected setting is chosen, its inputs are reserved, and outputs are placed at the configured output position after the start delay.
+SCP-914 scans a configurable intake area relative to its winding key. Explicit JSON recipes are authoritative and are checked before any inferred behavior. When no explicit recipe matches, the machine can derive conservative transformations from registered crafting recipes and material relationships, allowing broader vanilla and modded integration without overriding modpack-defined results. Once a cycle starts, the complete intake is consumed. If the machine is wound with no valid intake, it waits for up to 40 ticks (two seconds), allowing a solo player to enter before the attempt is abandoned.
 
 Players are deliberately handled outside the JSON recipes:
 
@@ -183,6 +183,8 @@ The **SCP-914 Assembly Kit** places the complete machine structure and refuses p
 The SCP Unity-inspired creative inventory contains Sector 1 and Sector 2 floors and walls, directional floor markings, wall details, ventilation pieces, containment and office structures, lights, heaters, sign supports, televisions, trash bins, terminals, doors, buttons, and other facility props. Supported lights use optional MoreMcmeta emissive overlays.
 
 ## Configuration
+
+SCP Additions includes a native, server-authoritative configuration center. While connected to a world, open **Mods → SCP Additions → Config** or run `/scpadditions config`. The integrated single-player owner and operators with permission level 2 or higher can edit modules, inventory/equipment rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes with validation, automatic `.bak` backups, rollback, and runtime reload. See the [Configuration Center guide](docs/CONFIGURATION_CENTER.md) for the complete workflow.
 
 Configuration files are created under the instance's `config` directory. Bundled defaults are copied only when a file does not already exist; updates do not replace an existing customized file. Back up a file before deleting it to regenerate the defaults shipped by the installed version.
 

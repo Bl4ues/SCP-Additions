@@ -35,6 +35,12 @@ The center includes dedicated editors for:
 
 Manual JSON editing remains supported for advanced, automated, or version-controlled modpack workflows.
 
+## Codex documents
+
+The Codex editor creates a new definition with `minecraft:paper` as its current default item ID. This is intentionally temporary until dedicated document items are introduced in a future update. It is not a restriction: the item ID can be changed to any registered vanilla or modded item before the configuration is saved. Existing Codex definitions keep their configured item IDs.
+
+Codex entries may use a packaged image resource, a UTF-8 text resource, or both. Advanced NBT conditions and image dimensions are preserved when an entry is edited.
+
 ## SCP-914 recipe editor
 
 The SCP-914 editor is designed around the common intake → setting → output workflow.

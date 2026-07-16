@@ -2,6 +2,15 @@
 
 # SCP Additions 3.0.3 — Quality of Life Update
 
+## Native configuration center
+
+- Added a native, server-authoritative configuration center available from **Mods → SCP Additions → Config** and `/scpadditions config`;
+- Added dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
+- Added registry search, translated display names, item/entity icons, dynamic recipe inputs and outputs, a drink color picker, tooltips, and a unified SCP Unity-inspired interface using Roboto with a Montserrat main title;
+- Added validation, automatic `.bak` backups, transactional rollback, runtime reload, malformed-JSON rejection, and Windows-resilient file replacement;
+- Restricted configuration writes and legacy editor packets to the integrated owner or players with operator permission level 2 or higher;
+- New Codex entries currently use `minecraft:paper` as a temporary default item until dedicated document items are implemented in a future update. This default can be changed to any registered item before saving.
+
 ## Creative mode
 
 - Custom interaction prompts now appear and work in Creative by default;
@@ -25,7 +34,29 @@
 - The SCP Inventory now remembers its selected section, Codex document, and scrollbar positions until the player leaves the world;
 - Added an option to disable this interface memory;
 - Moved SCP-1176 blood type display into the Status panel and removed the old inventory overlays;
+- Centered and polished the Status parameter layout while moving only the rendered player preview inside its original frame;
+- Status-effect duration bars now begin full when an effect is applied and drain proportionally to that effect's actual remaining duration;
+- Added a subtle outward-pulsing amber vignette for both positive and negative SCP-1176 honey outcomes;
+- Hid SCP-1176's internal synchronization marker from the vanilla effect list and custom Conditions panel;
+- Made SCP-1176's negative-result music follow the affected player's head and stop immediately on death or disconnect;
 - Added subtitles for all custom sounds.
+
+## Automatic item classification
+
+- Added conservative automatic recognition for placeable blocks, common melee/ranged weapons, and manually usable right-click items, including compatible modded subclasses;
+- Explicit `item_rules` remain authoritative over all automatic detection;
+- Added datapack override tags for forcing `WEAPON`, `USABLE`, or miscellaneous fallback behavior;
+- Consumed usable items such as spawn eggs no longer return to the player's hand after their controlled-use session.
+
+## SCP-914 integration and defaults
+
+- Added a two-second pending activation window when no valid intake is present, allowing solo players to wind the key and enter the machine;
+- Existing valid recipes and players in the intake still start immediately, and repeated key use cannot queue duplicate pending cycles;
+- Added a material-aware fallback resolver that can infer transformations from registered crafting recipes and related item tiers when no explicit recipe matches;
+- Explicit JSON recipes remain fully authoritative and always take priority over inferred transformations;
+- Once an SCP-914 cycle starts, every item in the intake is consumed even when only part of the intake contributed to the selected result;
+- Trimmed generic vanilla transformations from the bundled defaults so the fallback resolver handles broad behavior while explicit defaults remain focused on SCP Additions content and special entity transformations;
+- Reduced the bundled SCP-914 1:1 skin pool to five selected defaults and renumbered them consistently as `skin1.png` through `skin5.png`.
 
 ## Configuration and building
 
@@ -33,7 +64,8 @@
 - Invalid JSON and malformed IDs now produce clear errors without partially applying the reload;
 - Missing optional mod entries are now reported and ignored while valid configuration entries continue loading;
 - SCP-914 now skips only recipes whose items or entities are unavailable instead of keeping unusable recipes;
-- Configuration saves now preserve the previous file as a `.bak` backup;
+- Configuration saves now preserve the previous file as a `.bak` backup and retry/fallback safely when Windows temporarily blocks atomic replacement;
+- Fixed block interaction anchors edited with `K` not being persisted or reloaded reliably;
 - Screwdrivers can now copy a Keycard Reader level and quickly apply it to other readers;
 - Screwdrivers now show their controls and copied Reader level in their tooltip;
 - Context prompts now use the normal block and held-item interaction path, including crouch interactions;

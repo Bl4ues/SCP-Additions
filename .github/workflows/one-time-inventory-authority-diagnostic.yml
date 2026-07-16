@@ -1,0 +1,84 @@
+name: One-time inventory authority diagnostic retry
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/inventory_authority_retry_trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply-build-server-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Apply, build and test
+        shell: bash
+        run: |
+          set +e
+          : > /tmp/inventory-authority.log
+          echo '=== APPLY PATCH ===' >> /tmp/inventory-authority.log
+          python tools/apply_inventory_module_authority_fix.py >> /tmp/inventory-authority.log 2>&1
+          status=$?
+          if [ $status -eq 0 ]; then
+            echo '=== CLEAN BUILD ===' >> /tmp/inventory-authority.log
+            chmod +x gradlew
+            ./gradlew clean build --stacktrace >> /tmp/inventory-authority.log 2>&1
+            status=$?
+          fi
+          if [ $status -eq 0 ]; then
+            echo '=== DEDICATED SERVER ===' >> /tmp/inventory-authority.log
+            mkdir -p run
+            printf 'eula=true\n' > run/eula.txt
+            timeout 180s ./gradlew runServer --stacktrace >> /tmp/inventory-authority.log 2>&1
+            server_status=$?
+            if grep -q "Attempted to load class .* for invalid dist DEDICATED_SERVER" /tmp/inventory-authority.log; then
+              status=1
+            elif grep -q "has failed to load correctly" /tmp/inventory-authority.log; then
+              status=1
+            elif grep -q "Done (" /tmp/inventory-authority.log || grep -q "For help, type" /tmp/inventory-authority.log; then
+              status=0
+            else
+              status=$server_status
+              [ $status -eq 124 ] && status=1
+            fi
+          fi
+
+          tail -n 240 /tmp/inventory-authority.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ $status -ne 0 ]; then
+            git reset --hard HEAD
+            cp /tmp/inventory-authority.log inventory-authority-failure.log
+            git add inventory-authority-failure.log
+            git commit -m "chore: capture inventory authority failure"
+            git push origin HEAD:master
+            exit $status
+          fi
+
+          rm -f tools/apply_inventory_module_authority_fix.py
+          rm -f tools/inventory_authority_trigger.txt
+          rm -f tools/inventory_authority_retry_trigger.txt
+          rm -f .github/workflows/one-time-inventory-authority-fix.yml
+          rm -f .github/workflows/one-time-inventory-authority-diagnostic.yml
+          rm -f inventory-authority-failure.log
+          git add -A
+          git commit -m "fix(inventory): make module disable server-authoritative"
+          git push origin HEAD:master

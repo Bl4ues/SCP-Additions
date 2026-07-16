@@ -90,7 +90,7 @@ public final class UnityConfigurationUiEvents {
                 editBox.setTextColor(WHITE);
                 editBox.setTextColorUneditable(MUTED);
             }
-            if (listener instanceof AbstractButton button && !(button instanceof AbstractSliderButton)) {
+            if (listener instanceof AbstractButton button) {
                 Component current = button.getMessage();
                 if (current != null && !current.getString().isBlank()) {
                     BUTTON_LABELS.put(button, ScpFonts.roboto(current));
@@ -116,7 +116,7 @@ public final class UnityConfigurationUiEvents {
         renderKnownHeader(graphics, screen);
         renderKnownBodyText(graphics, screen);
         for (GuiEventListener listener : screen.children()) {
-            if (!(listener instanceof AbstractButton button) || button instanceof AbstractSliderButton || !button.visible) continue;
+            if (!(listener instanceof AbstractButton button) || !button.visible) continue;
             Component label = labelFor(button);
             String plain = label.getString();
             drawButton(graphics, font, button, label, mouseX, mouseY);
@@ -139,7 +139,7 @@ public final class UnityConfigurationUiEvents {
 
         // Restore labels after rendering so narration and button callbacks still see them.
         for (GuiEventListener listener : screen.children()) {
-            if (listener instanceof AbstractButton button && !(button instanceof AbstractSliderButton)) {
+            if (listener instanceof AbstractButton button) {
                 Component label = BUTTON_LABELS.get(button);
                 if (label != null) button.setMessage(label);
             }

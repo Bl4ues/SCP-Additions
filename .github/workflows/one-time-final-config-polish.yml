@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - tools/one_time_final_config_polish_v4.py
+      - tools/one_time_final_config_polish_v5.marker
 
 permissions:
   contents: write
@@ -29,22 +29,41 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Make Gradle wrapper executable
-        run: chmod +x gradlew
-
-      - name: Apply visual polish
-        run: python tools/one_time_final_config_polish.py
-
-      - name: Apply world-backed Codex patch
-        run: python tools/one_time_final_config_polish_v4.py
-
-      - name: Build
-        run: ./gradlew clean build --stacktrace
-
-      - name: Commit generated changes
+      - name: Apply, build, and report
+        shell: bash
         run: |
+          set +e
+          chmod +x gradlew
+          : > /tmp/final-polish.log
+
+          python tools/one_time_final_config_polish.py >> /tmp/final-polish.log 2>&1
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            python tools/one_time_final_config_polish_v4.py >> /tmp/final-polish.log 2>&1
+            status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
+            ./gradlew clean build --stacktrace >> /tmp/final-polish.log 2>&1
+            status=$?
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$status" -ne 0 ]; then
+            git restore .github/workflows/one-time-final-config-polish.yml 2>/dev/null || true
+            git restore tools/one_time_final_config_polish.py 2>/dev/null || true
+            git restore tools/one_time_final_config_polish_v2.py 2>/dev/null || true
+            git restore tools/one_time_final_config_polish_v3.py 2>/dev/null || true
+            git restore tools/one_time_final_config_polish_v4.py 2>/dev/null || true
+            cp /tmp/final-polish.log tools/final_polish_failure.log
+            git add tools/final_polish_failure.log
+            git commit -m "chore: record final polish failure"
+            git push origin HEAD:master
+            exit "$status"
+          fi
+
+          rm -f tools/one_time_final_config_polish_v5.marker
           git add -A
           git commit -m "feat(config): finish codex assets and recipe previews"
           git push origin HEAD:master

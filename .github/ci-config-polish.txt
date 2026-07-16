@@ -1,0 +1,1 @@
+Temporary marker for configuration UI and Windows persistence CI verification.

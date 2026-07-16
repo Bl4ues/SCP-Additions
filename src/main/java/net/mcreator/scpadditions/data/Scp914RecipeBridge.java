@@ -13,8 +13,8 @@ import java.util.Optional;
 
 /**
  * Selects between explicit JSON recipes and inferred crafting behavior.
- * Explicit definitions remain authoritative when they consume at least as much
- * of the intake; a complete inferred recipe may beat a partial explicit match.
+ * Explicit definitions are always authoritative; inferred recipes are only a
+ * fallback when no configured recipe matches the selected setting and intake.
  */
 public final class Scp914RecipeBridge {
     private Scp914RecipeBridge() {
@@ -28,9 +28,8 @@ public final class Scp914RecipeBridge {
         Optional<Scp914RecipeManager.RecipeMatch> selected = selectForSetting(
                 level, setting, itemEntities, entities);
 
-        // Very Fine may reuse a valid Fine transformation when no dedicated
-        // Very Fine path exists. This keeps curated Fine integrations useful
-        // while still allowing explicit Very Fine recipes to override them.
+        // Very Fine may reuse a valid Fine transformation only when no explicit
+        // or inferred Very Fine transformation exists.
         if (selected.isEmpty() && setting == Scp914RecipeManager.Setting.VERY_FINE) {
             selected = selectForSetting(level, Scp914RecipeManager.Setting.FINE,
                     itemEntities, entities);
@@ -46,22 +45,15 @@ public final class Scp914RecipeBridge {
             List<Entity> entities) {
         Optional<Scp914RecipeManager.RecipeMatch> explicit =
                 Scp914RecipeManager.findRecipe(setting, itemEntities, entities);
-
-        Optional<Scp914GenericRecipeResolver.GenericMatch> generic = Optional.empty();
-        if (entities == null || entities.isEmpty()) {
-            generic = Scp914GenericRecipeResolver.find(level, setting, itemEntities);
-        }
-
-        if (explicit.isPresent() && generic.isPresent()) {
-            int explicitUse = explicit.get().itemUses().stream()
-                    .mapToInt(Scp914RecipeManager.ItemUse::count).sum();
-            if (generic.get().matchedInputCount() > explicitUse) {
-                return convert(setting, generic.get());
-            }
+        if (explicit.isPresent()) {
             return explicit;
         }
-        if (explicit.isPresent()) return explicit;
-        return generic.flatMap(match -> convert(setting, match));
+
+        if (entities != null && !entities.isEmpty()) {
+            return Optional.empty();
+        }
+        return Scp914GenericRecipeResolver.find(level, setting, itemEntities)
+                .flatMap(match -> convert(setting, match));
     }
 
     private static Optional<Scp914RecipeManager.RecipeMatch> convert(

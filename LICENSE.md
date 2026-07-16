@@ -29,6 +29,6 @@ SCP Unity is the primary visual and mechanical inspiration for SCP Additions. SC
 
 ## Disclaimer
 
-SCP Additions is an unofficial fan project. It is not affiliated with or endorsed by Mojang, Microsoft, the SCP Wiki staff, Aerie Gaming Studios, or Nixon Interactive
+SCP Additions is an unofficial fan project. It is not affiliated with or endorsed by Mojang, Microsoft, the SCP Wiki staff, or Aerie Gaming Studios.
 
 Third-party libraries and optional integrations remain subject to their own licenses.

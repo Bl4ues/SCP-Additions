@@ -1,0 +1,31 @@
+name: One-time default config legacy audit
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/audit_default_configs.py
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Audit bundled default configurations
+        run: python tools/audit_default_configs.py
+
+      - name: Commit audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/default_config_cleanup_report.json
+          git commit -m "chore: audit legacy default config entries"
+          git push origin HEAD:master

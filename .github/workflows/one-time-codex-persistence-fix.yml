@@ -33,6 +33,8 @@ jobs:
         shell: bash
         run: |
           set +e
+          sed -i 's/## Native configuration center/## Configuration center/' tools/fix_codex_persistence.py
+          rm -f codex-fix.log
           python tools/fix_codex_persistence.py > codex-fix.log 2>&1
           status=$?
           cat codex-fix.log

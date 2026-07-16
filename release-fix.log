@@ -1,4 +1,4 @@
 Traceback (most recent call last):
-  File "/home/runner/work/SCP-Additions/SCP-Additions/tools/apply_release_blockers_fix.py", line 244, in <module>
-    raise RuntimeError(f"{packet_name}: sender guard could not be inserted")
-RuntimeError: InventoryActionPacket.java: sender guard could not be inserted
+  File "/home/runner/work/SCP-Additions/SCP-Additions/tools/apply_release_blockers_fix.py", line 290, in <module>
+    raise RuntimeError("DeconClosedBlock collision method not found")
+RuntimeError: DeconClosedBlock collision method not found

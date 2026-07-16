@@ -1,0 +1,524 @@
+{
+  "scanned_file_count": 6,
+  "scanned_files": [
+    "config/scpadditions/294drinks.json",
+    "config/scpadditions/914recipes.d/entities.json",
+    "config/scpadditions/914recipes.json",
+    "config/scpadditions/modules.json",
+    "config/scpinventory/context_interactions.json",
+    "config/scpinventory/scpinventory.json"
+  ],
+  "legacy_entry_count": 14,
+  "legacy_entries": [
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[14]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:normal_door",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Normal Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.148,
+            1.064,
+            0.206
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[15]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:door_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Normal Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            1.012,
+            1.078,
+            1.011
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[16]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:left_log_door",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Left Logistics Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.091,
+            1.069,
+            0.177
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[17]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:left_log_door_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Logistics Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            1.019,
+            1.085,
+            1.063
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[18]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:right_log_door",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Right Logistics Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.899,
+            1.069,
+            0.183
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[19]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:right_log_door_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Right Logistics Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            -0.002,
+            1.069,
+            1.073
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[20]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:office_door",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Office Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.06,
+            1.078,
+            0.22
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[21]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:office_door_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Office Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.999,
+            1.131,
+            1.172
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[22]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:bath_door",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Bathroom Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.173,
+            1.032,
+            0.206
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[23]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:bath_door_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Bathroom Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.984,
+            1.091,
+            -0.555
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[24]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:ws_dclosed",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Workshop Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            0.903,
+            1.032,
+            0.156
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[25]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:ws_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Workshop Door",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            -0.001,
+            1.032,
+            1.188
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "front"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[61]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:button_open",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Door Button Open",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            -0.156,
+            -0.058,
+            0.887
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "player"
+        }
+      }
+    },
+    {
+      "file": "config/scpinventory/context_interactions.json",
+      "path": "$.interactions[62]",
+      "reasons": [
+        "legacy namespace scp_unity_extra_blocks"
+      ],
+      "entry": {
+        "type": "block",
+        "id": "scp_unity_extra_blocks:button_closed",
+        "range": 1.25,
+        "priority": 30,
+        "useItem": "hand",
+        "text": {
+          "action": "Use",
+          "nameMode": "manual",
+          "name": "Door Button Closed",
+          "showAction": true,
+          "showName": false
+        },
+        "anchor": {
+          "position": [
+            -0.154,
+            -0.073,
+            0.887
+          ],
+          "rotateWith": "auto"
+        },
+        "input": {
+          "allowE": true,
+          "allowRightClick": true
+        },
+        "click": {
+          "face": "player"
+        }
+      }
+    }
+  ],
+  "preserved_scpo_reference_count": 11,
+  "preserved_scpo_references_by_file": {
+    "config/scpinventory/context_interactions.json": 1,
+    "config/scpinventory/scpinventory.json": 10
+  },
+  "parse_errors": []
+}

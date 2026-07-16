@@ -13,6 +13,7 @@ import java.util.Optional;
 
 public final class CodexDocumentDefinition {
 
+    public static final String UNIQUE_TAG = "ScpCodexId";
     private static final int DEFAULT_IMAGE_WIDTH = 1279;
     private static final int DEFAULT_IMAGE_HEIGHT = 1920;
 
@@ -21,6 +22,10 @@ public final class CodexDocumentDefinition {
     private final String displayName;
     private final ResourceLocation imageLocation;
     private final ResourceLocation textLocation;
+    private final String worldImageKey;
+    private final String worldTextKey;
+    private final String matchMode;
+    private final String codexId;
     private final int imageWidth;
     private final int imageHeight;
     private final String creator;
@@ -29,66 +34,73 @@ public final class CodexDocumentDefinition {
     private final String nbtKey;
     private final String nbtValue;
 
-    private CodexDocumentDefinition(ResourceLocation itemId, String category, String displayName, ResourceLocation imageLocation, ResourceLocation textLocation, int imageWidth, int imageHeight, String creator, String timestamp, String uuid, String nbtKey, String nbtValue) {
+    private CodexDocumentDefinition(ResourceLocation itemId, String category,
+                                    String displayName, ResourceLocation imageLocation,
+                                    ResourceLocation textLocation, String worldImageKey,
+                                    String worldTextKey, String matchMode, String codexId,
+                                    int imageWidth, int imageHeight, String creator,
+                                    String timestamp, String uuid, String nbtKey,
+                                    String nbtValue) {
         this.itemId = itemId;
         this.category = cleanOrDefault(category, "Documents");
         this.displayName = displayName == null ? "" : displayName.trim();
         this.imageLocation = imageLocation;
         this.textLocation = textLocation;
+        this.worldImageKey = clean(worldImageKey);
+        this.worldTextKey = clean(worldTextKey);
+        this.matchMode = "unique".equalsIgnoreCase(matchMode) ? "unique" : "item";
+        this.codexId = clean(codexId);
         this.imageWidth = Math.max(1, imageWidth);
         this.imageHeight = Math.max(1, imageHeight);
-        this.creator = creator == null ? "" : creator.trim();
-        this.timestamp = timestamp == null ? "" : timestamp.trim();
-        this.uuid = uuid == null ? "" : uuid.trim();
-        this.nbtKey = nbtKey == null ? "" : nbtKey.trim();
-        this.nbtValue = nbtValue == null ? "" : nbtValue.trim();
+        this.creator = clean(creator);
+        this.timestamp = clean(timestamp);
+        this.uuid = clean(uuid);
+        this.nbtKey = clean(nbtKey);
+        this.nbtValue = clean(nbtValue);
     }
 
     public static Optional<CodexDocumentDefinition> parse(String rawRule) {
-        if (rawRule == null || rawRule.isBlank()) {
-            return Optional.empty();
-        }
-
+        if (rawRule == null || rawRule.isBlank()) return Optional.empty();
         String raw = rawRule.trim();
-
-        if (raw.contains("=")) {
-            return parseKeyValueFormat(raw);
-        }
-
-        if (raw.contains("|")) {
-            return parsePipeFormat(raw);
-        }
-
+        if (raw.contains("=")) return parseKeyValueFormat(raw);
+        if (raw.contains("|")) return parsePipeFormat(raw);
         ResourceLocation itemId = ResourceLocation.tryParse(raw);
-        if (itemId == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new CodexDocumentDefinition(itemId, "Documents", "", null, null, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, "", "", "", "", ""));
+        if (itemId == null) return Optional.empty();
+        return Optional.of(new CodexDocumentDefinition(itemId, "Documents", "",
+                null, null, "", "", "item", "",
+                DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT,
+                "", "", "", "", ""));
     }
 
     public static CodexDocumentDefinition fallback(ItemStack stack) {
-        ResourceLocation itemId = stack == null || stack.isEmpty() ? new ResourceLocation("minecraft", "air") : BuiltInRegistries.ITEM.getKey(stack.getItem());
-        String name = stack == null || stack.isEmpty() ? "Unknown Document" : stack.getHoverName().getString();
-        return new CodexDocumentDefinition(itemId, "Documents", name, null, null, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, "", "", "", "", "");
+        ResourceLocation itemId = stack == null || stack.isEmpty()
+                ? new ResourceLocation("minecraft", "air")
+                : BuiltInRegistries.ITEM.getKey(stack.getItem());
+        String name = stack == null || stack.isEmpty()
+                ? "Unknown Document" : stack.getHoverName().getString();
+        return new CodexDocumentDefinition(itemId, "Documents", name,
+                null, null, "", "", "item", "",
+                DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT,
+                "", "", "", "", "");
     }
 
     private static Optional<CodexDocumentDefinition> parsePipeFormat(String raw) {
         String[] parts = raw.split("\\|", -1);
-        if (parts.length == 0 || parts[0].isBlank()) {
-            return Optional.empty();
-        }
-
+        if (parts.length == 0 || parts[0].isBlank()) return Optional.empty();
         ResourceLocation itemId = ResourceLocation.tryParse(parts[0].trim());
-        if (itemId == null) {
-            return Optional.empty();
-        }
-
+        if (itemId == null) return Optional.empty();
         if (parts.length >= 6) {
-            return Optional.of(new CodexDocumentDefinition(itemId, getPart(parts, 1), getPart(parts, 2), parseLocation(getPart(parts, 3)), parseLocation(getPart(parts, 4)), parseInt(getPart(parts, 8), DEFAULT_IMAGE_WIDTH), parseInt(getPart(parts, 9), DEFAULT_IMAGE_HEIGHT), getPart(parts, 5), getPart(parts, 6), getPart(parts, 7), "", ""));
+            return Optional.of(new CodexDocumentDefinition(itemId, getPart(parts, 1),
+                    getPart(parts, 2), parseLocation(getPart(parts, 3)),
+                    parseLocation(getPart(parts, 4)), "", "", "item", "",
+                    parseInt(getPart(parts, 8), DEFAULT_IMAGE_WIDTH),
+                    parseInt(getPart(parts, 9), DEFAULT_IMAGE_HEIGHT),
+                    getPart(parts, 5), getPart(parts, 6), getPart(parts, 7), "", ""));
         }
-
-        return Optional.of(new CodexDocumentDefinition(itemId, "Documents", getPart(parts, 1), null, null, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, getPart(parts, 2), getPart(parts, 3), getPart(parts, 4), "", ""));
+        return Optional.of(new CodexDocumentDefinition(itemId, "Documents",
+                getPart(parts, 1), null, null, "", "", "item", "",
+                DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT,
+                getPart(parts, 2), getPart(parts, 3), getPart(parts, 4), "", ""));
     }
 
     private static Optional<CodexDocumentDefinition> parseKeyValueFormat(String raw) {
@@ -99,45 +111,51 @@ public final class CodexDocumentDefinition {
                 values.put(pair[0].trim().toLowerCase(Locale.ROOT), pair[1].trim());
             }
         }
-
         String id = values.get("id");
-        if (id == null || id.isBlank()) {
-            return Optional.empty();
-        }
-
+        if (id == null || id.isBlank()) return Optional.empty();
         ResourceLocation itemId = ResourceLocation.tryParse(id);
-        if (itemId == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new CodexDocumentDefinition(itemId, firstPresent(values, "category", "type", "section"), firstPresent(values, "name", "display_name", "title"), parseLocation(firstPresent(values, "image", "texture", "photo")), parseLocation(firstPresent(values, "text", "transcript", "transcription")), parseInt(firstPresent(values, "image_width", "width"), DEFAULT_IMAGE_WIDTH), parseInt(firstPresent(values, "image_height", "height"), DEFAULT_IMAGE_HEIGHT), values.getOrDefault("creator", ""), values.getOrDefault("timestamp", ""), values.getOrDefault("uuid", ""), firstPresent(values, "nbt_key", "tag_key"), firstPresent(values, "nbt_value", "tag_value")));
+        if (itemId == null) return Optional.empty();
+        return Optional.of(new CodexDocumentDefinition(itemId,
+                firstPresent(values, "category", "type", "section"),
+                firstPresent(values, "name", "display_name", "title"),
+                parseLocation(firstPresent(values, "image", "texture", "photo")),
+                parseLocation(firstPresent(values, "text", "transcript", "transcription")),
+                values.getOrDefault("world_image", ""),
+                values.getOrDefault("world_text", ""),
+                values.getOrDefault("match_mode", "item"),
+                values.getOrDefault("codex_id", ""),
+                parseInt(firstPresent(values, "image_width", "width"), DEFAULT_IMAGE_WIDTH),
+                parseInt(firstPresent(values, "image_height", "height"), DEFAULT_IMAGE_HEIGHT),
+                values.getOrDefault("creator", ""),
+                values.getOrDefault("timestamp", ""),
+                values.getOrDefault("uuid", ""),
+                firstPresent(values, "nbt_key", "tag_key"),
+                firstPresent(values, "nbt_value", "tag_value")));
     }
 
     public boolean matches(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return false;
-        }
-
+        if (stack == null || stack.isEmpty()) return false;
         ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (!itemId.equals(stackId)) {
-            return false;
-        }
-
+        if (!itemId.equals(stackId)) return false;
         CompoundTag tag = stack.getTag();
+        if (isUnique()) {
+            if (codexId.isBlank() || tag == null || !tag.contains(UNIQUE_TAG, Tag.TAG_STRING)
+                    || !codexId.equals(tag.getString(UNIQUE_TAG))) return false;
+        }
         return matchesTagValue(tag, "creator", creator)
                 && matchesTagValue(tag, "timestamp", timestamp)
                 && matchesTagValue(tag, "uuid", uuid)
                 && matchesTagValue(tag, nbtKey, nbtValue);
     }
 
-    public String getCategory() {
-        return category;
-    }
+    public String getCategory() { return category; }
+    public boolean isUnique() { return "unique".equals(matchMode); }
+    public String getCodexId() { return codexId; }
+    public String getWorldImageKey() { return worldImageKey; }
+    public String getWorldTextKey() { return worldTextKey; }
 
     public String getDisplayName(ItemStack fallbackStack) {
-        if (!displayName.isBlank()) {
-            return displayName;
-        }
+        if (!displayName.isBlank()) return displayName;
         if (fallbackStack != null && !fallbackStack.isEmpty()) {
             return fallbackStack.getHoverName().getString();
         }
@@ -152,56 +170,40 @@ public final class CodexDocumentDefinition {
         return Optional.ofNullable(textLocation);
     }
 
-    public int getImageWidth() {
-        return imageWidth;
-    }
-
-    public int getImageHeight() {
-        return imageHeight;
-    }
+    public int getImageWidth() { return imageWidth; }
+    public int getImageHeight() { return imageHeight; }
 
     public String getStableId(ItemStack fallbackStack) {
-        return category + "|" + getDisplayName(fallbackStack) + "|" + itemId + "|" + creator + "|" + timestamp + "|" + uuid;
+        return category + "|" + getDisplayName(fallbackStack) + "|" + itemId
+                + "|" + creator + "|" + timestamp + "|" + uuid
+                + "|" + matchMode + "|" + codexId
+                + "|" + worldImageKey + "|" + worldTextKey;
     }
 
     private static boolean matchesTagValue(CompoundTag tag, String key, String expected) {
-        if (key == null || key.isBlank() || expected == null || expected.isBlank()) {
-            return true;
-        }
-        if (tag == null || !tag.contains(key)) {
-            return false;
-        }
+        if (key == null || key.isBlank() || expected == null || expected.isBlank()) return true;
+        if (tag == null || !tag.contains(key)) return false;
         Tag actual = tag.get(key);
-        if (actual == null) {
-            return false;
-        }
-        return normalize(actual.getAsString()).equals(normalize(expected)) || normalize(actual.toString()).equals(normalize(expected));
+        if (actual == null) return false;
+        return normalize(actual.getAsString()).equals(normalize(expected))
+                || normalize(actual.toString()).equals(normalize(expected));
     }
 
     private static ResourceLocation parseLocation(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
+        if (value == null || value.isBlank()) return null;
         return ResourceLocation.tryParse(value.trim());
     }
 
     private static int parseInt(String value, int fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
-        }
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ignored) {
-            return fallback;
-        }
+        if (value == null || value.isBlank()) return fallback;
+        try { return Integer.parseInt(value.trim()); }
+        catch (NumberFormatException ignored) { return fallback; }
     }
 
     private static String firstPresent(Map<String, String> values, String... keys) {
         for (String key : keys) {
             String value = values.get(key);
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
+            if (value != null && !value.isBlank()) return value;
         }
         return "";
     }
@@ -211,13 +213,15 @@ public final class CodexDocumentDefinition {
     }
 
     private static String cleanOrDefault(String value, String fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
-        }
-        return value.trim();
+        return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private static String clean(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private static String normalize(String value) {
-        return value == null ? "" : value.replace(" ", "").replace("[", "").replace("]", "").replace("\"", "").trim().toLowerCase(Locale.ROOT);
+        return value == null ? "" : value.replace(" ", "").replace("[", "")
+                .replace("]", "").replace("\"", "").trim().toLowerCase(Locale.ROOT);
     }
 }

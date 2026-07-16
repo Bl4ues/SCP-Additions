@@ -7,6 +7,7 @@ import com.bl4ues.scpinventory.client.ClientInventoryBridge;
 import com.bl4ues.scpinventory.item.CodexDocumentDefinition;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import com.bl4ues.scpinventory.network.DocumentActionPacket;
+import net.mcreator.scpadditions.client.CodexAssetClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -52,7 +53,6 @@ public class CodexPanel {
     private static final int DETAIL_PAD_BOTTOM = 4;
     private static final int DRAG_ICON_FRAME_SIZE = 24;
     private static final double DRAG_THRESHOLD = 4.0D;
-
     private final Minecraft mc = Minecraft.getInstance();
     private final ContextMenu contextMenu = new ContextMenu();
     private final int x;
@@ -398,7 +398,9 @@ public class CodexPanel {
     }
 
     private void drawDocumentImage(GuiGraphics g, ItemStack document, CodexDocumentDefinition definition, int areaX, int areaY, int areaWidth, int areaHeight) {
-        ResourceLocation image = definition.getImageLocation().orElse(null);
+        ResourceLocation image = CodexAssetClient.getTexture(
+                        definition.getWorldImageKey())
+                .orElseGet(() -> definition.getImageLocation().orElse(null));
         if (image != null) {
             int[] fitted = fitRect(definition.getImageWidth(), definition.getImageHeight(), areaWidth, areaHeight);
             int imageX = areaX + (areaWidth - fitted[0]) / 2;
@@ -556,15 +558,24 @@ public class CodexPanel {
     private int getListScrollbarX() { return x + listWidth - 14; }
     private int getListScrollbarHeight() { return getVisibleRows() * ROW_HEIGHT; }
     private Optional<String> readText(CodexDocumentDefinition definition) {
+        Optional<String> worldText = CodexAssetClient.getText(
+                definition.getWorldTextKey());
+        if (worldText.isPresent()) return worldText;
         ResourceLocation textLocation = definition.getTextLocation().orElse(null);
         if (textLocation == null || mc == null) return Optional.empty();
         return mc.getResourceManager().getResource(textLocation).flatMap(resource -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.open(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    resource.open(), StandardCharsets.UTF_8))) {
                 StringBuilder builder = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) { if (builder.length() > 0) builder.append('\n'); builder.append(line); }
+                while ((line = reader.readLine()) != null) {
+                    if (builder.length() > 0) builder.append('\n');
+                    builder.append(line);
+                }
                 return Optional.of(builder.toString());
-            } catch (IOException ignored) { return Optional.empty(); }
+            } catch (IOException ignored) {
+                return Optional.empty();
+            }
         });
     }
 

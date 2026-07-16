@@ -7,9 +7,9 @@ modId="scp_additions"
 version="3.0.3"
 displayName="SCP Additions"
 authors="Bl4ues"
+logoFile="logo.png"
 description='''
-SCP Additions 3.0.3 — Quality of Life Update.
-Combines the existing SCP Additions content with the SCP Inventory gameplay systems and SCP Unity-inspired facility content.
+SCP Additions is an SCP survival horror and facility-building mod for Minecraft 1.20.1. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
 '''
 
 [[dependencies.scp_additions]]

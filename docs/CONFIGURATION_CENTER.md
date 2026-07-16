@@ -39,7 +39,7 @@ Manual JSON editing remains supported for advanced, automated, or version-contro
 
 The Codex editor creates a new definition with `minecraft:paper` as its current default item ID. This is intentionally temporary until dedicated document items are introduced in a future update. It is not a restriction: the item ID can be changed to any registered vanilla or modded item before the configuration is saved. Existing Codex definitions keep their configured item IDs.
 
-Codex entries may use a packaged image resource, a UTF-8 text resource, or both. Advanced NBT conditions and image dimensions are preserved when an entry is edited.
+Codex entries may use a packaged image resource, a UTF-8 text resource, or both. The editor also provides **Import PNG**, which opens a drag-and-drop area, and **Write Text**, which accepts direct multiline UTF-8 input. Both are saved as normal files under the active world's `scp_additions/codex_assets` folder; the server-authoritative JSON keeps only safe relative references, and clients request the files on demand. Packaged resources remain available for modpacks that prefer resource packs. **Match Mode** may target every copy of the selected item or a uniquely generated NBT-tagged document; **Give Test Item** creates the latter with its configured display name. Advanced NBT conditions and image dimensions are preserved when an entry is edited.
 
 ## SCP-914 recipe editor
 

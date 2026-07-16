@@ -143,11 +143,11 @@ public class ContextConfigScreen extends Screen {
         int left = panelLeft();
         int top = panelTop();
         g.fill(left, top, left + PANEL_W, top + PANEL_H, 0xCC111317);
-        g.fill(left, top, left + PANEL_W, top + 24, 0xE525282D);
-        g.drawString(font, "Context Interaction Editor", left + 12, top + 8, 0xFFE8E8E8, false);
-        g.drawString(font, (existing ? "Editing " : "New ") + compact(blockId, 30), left + 12, top + 28, 0xFFB5C7FF, false);
+        g.fill(left, top, left + PANEL_W, top + 34, 0xE525282D);
+        g.drawString(font, "Context Interaction Editor", left + 12, top + 7, 0xFFE8E8E8, false);
+        g.drawString(font, (existing ? "Editing " : "New ") + compact(blockId, 30), left + 12, top + 21, 0xFFB5C7FF, false);
 
-        g.drawString(font, "Action", left + 12, top + 35, 0xFFB7B7B7, false);
+        g.drawString(font, "Action", left + 12, top + 36, 0xFFB7B7B7, false);
         g.drawString(font, "Name / Display", left + 12, top + 71, 0xFFB7B7B7, false);
         g.drawString(font, "Range / Input / Item", left + 12, top + 107, 0xFFB7B7B7, false);
         g.drawString(font, "Anchor tools", left + 12, top + 142, 0xFFB7B7B7, false);

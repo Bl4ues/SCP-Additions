@@ -253,6 +253,10 @@ public final class ScpInventoryConfig {
             putIfPresent(fields, obj, "name");
             putIfPresent(fields, obj, "image");
             putIfPresent(fields, obj, "text");
+            putIfPresent(fields, obj, "world_image");
+            putIfPresent(fields, obj, "world_text");
+            putIfPresent(fields, obj, "match_mode");
+            putIfPresent(fields, obj, "codex_id");
             putIfPresent(fields, obj, "image_width");
             putIfPresent(fields, obj, "image_height");
             putIfPresent(fields, obj, "creator");

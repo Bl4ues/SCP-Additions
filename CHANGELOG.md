@@ -2,14 +2,20 @@
 
 # SCP Additions 3.0.3 — Quality of Life Update
 
-## Native configuration center
+## Mod presentation
+
+- Added the SCP Additions logo to Forge's Mods list and replaced the update-specific metadata text with the full mod description used on the project pages.
+
+## Configuration center
 
 - Added a native configuration center available from **Mods → SCP Additions** and `/scpadditions config`;
 - Added dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
 - Added registry search, translated display names, item/entity icons, dynamic recipe inputs and outputs, a drink color picker, tooltips, and a unified SCP Unity-inspired interface using Roboto with a Montserrat main title;
 - Added validation, automatic `.bak` backups, transactional rollback, runtime reload, malformed-JSON rejection, and Windows-resilient file replacement;
 - Restricted configuration writes and legacy editor packets to the integrated owner or players with operator permission level 2 or higher;
-- New Codex entries currently use `minecraft:paper` as a temporary default item until dedicated document items are implemented in a future update. This default can be changed to any registered item before saving.
+- New Codex entries currently use `minecraft:paper` as a temporary default item until dedicated document items are implemented in a future update. This default can be changed to any registered item before saving;
+- Added direct Codex text editing and PNG drag-and-drop import. Imported assets are stored as real files in the current world's `scp_additions/codex_assets` folder and sent to clients on demand; JSON definitions contain only compact references, while packaged resources remain supported;
+- Added optional unique-item matching for Codex definitions. Unique documents use an NBT identifier, retain the configured display name and can be generated with the editor's **Give Test Item** action, avoiding every ordinary copy of the base item becoming the same document.
 
 ## Creative mode
 
@@ -56,7 +62,8 @@
 - Explicit JSON recipes remain fully authoritative and always take priority over inferred transformations;
 - Once an SCP-914 cycle starts, every item in the intake is consumed even when only part of the intake contributed to the selected result;
 - Trimmed generic vanilla transformations from the bundled defaults so the fallback resolver handles broad behavior while explicit defaults remain focused on SCP Additions content and special entity transformations;
-- Reduced the bundled SCP-914 1:1 skin pool to five selected defaults and renumbered them consistently as `skin1.png` through `skin5.png`.
+- Reduced the bundled SCP-914 1:1 skin pool to five selected defaults and renumbered them consistently as `skin1.png` through `skin5.png`;
+- SCP-914 recipe summaries now reuse SCP-294's configured cup colors and render cached, non-ticking miniature previews for visible living-entity inputs and outputs, with a safe fallback icon for unsupported entity types.
 
 ## Configuration and building
 
@@ -66,6 +73,7 @@
 - SCP-914 now skips only recipes whose items or entities are unavailable instead of keeping unusable recipes;
 - Configuration saves now preserve the previous file as a `.bak` backup and retry/fallback safely when Windows temporarily blocks atomic replacement;
 - Fixed block interaction anchors edited with `K` not being persisted or reloaded reliably;
+- Fixed the target identifier in the `K` interaction editor overlapping the Action label and field;
 - Screwdrivers can now copy a Keycard Reader level and quickly apply it to other readers;
 - Screwdrivers now show their controls and copied Reader level in their tooltip;
 - Context prompts now use the normal block and held-item interaction path, including crouch interactions;

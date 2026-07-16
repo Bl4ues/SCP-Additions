@@ -252,6 +252,33 @@ public final class ConfigCenterService {
         validateObjectIds(root, "item_rules", "id", errors, warnings, true);
         validateObjectIds(root, "item_effects", "id", errors, warnings, true);
         validateObjectIds(root, "codex_documents", "id", errors, warnings, true);
+        if (root.has("codex_documents") && root.get("codex_documents").isJsonArray()) {
+            int index = 0;
+            for (JsonElement element : root.getAsJsonArray("codex_documents")) {
+                if (element.isJsonObject()) {
+                    JsonObject document = element.getAsJsonObject();
+                    String mode = string(document, "match_mode");
+                    if (!mode.isBlank() && !"item".equals(mode) && !"unique".equals(mode)) {
+                        errors.add("codex_documents[" + index + "].match_mode must be item or unique");
+                    }
+                    if ("unique".equals(mode)) {
+                        String codexId = string(document, "codex_id");
+                        if (codexId.isBlank() || codexId.length() > 128
+                                || !codexId.matches("[A-Za-z0-9._:-]+")) {
+                            errors.add("codex_documents[" + index + "].codex_id is invalid");
+                        }
+                    }
+                    for (String assetKey : List.of("world_image", "world_text")) {
+                        String value = string(document, assetKey);
+                        if (!value.isBlank() && !CodexAssetStorage.isSafeKey(value)) {
+                            errors.add("codex_documents[" + index + "]." + assetKey
+                                    + " is not a safe world asset key");
+                        }
+                    }
+                }
+                index++;
+            }
+        }
         validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);
         validateSimpleIds(root, "scp_173_targets", errors, warnings, true);
     }

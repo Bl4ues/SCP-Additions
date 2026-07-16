@@ -15,9 +15,16 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -35,6 +42,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -79,6 +87,8 @@ public final class UnityConfigurationUiEvents {
             "Allows the configurable natural spawn system.");
     private static final Map<String, String> TOOLTIPS = buildTooltips();
     private static final Map<AbstractButton, Component> BUTTON_LABELS = new WeakHashMap<>();
+    private static final Map<ResourceLocation, LivingEntity> ENTITY_PREVIEWS = new HashMap<>();
+    private static ClientLevel entityPreviewLevel;
 
     private UnityConfigurationUiEvents() {
     }
@@ -303,6 +313,12 @@ public final class UnityConfigurationUiEvents {
         if (spec == null) return;
         Font font = Minecraft.getInstance().font;
         String name = screen.getClass().getSimpleName();
+        if (screen instanceof ContextConfigScreen) {
+            graphics.fill(spec.x(), spec.y(), spec.x() + spec.width(), spec.y() + 34, HEADER);
+            graphics.drawString(font, ScpFonts.roboto(screen.getTitle()),
+                    spec.x() + 12, spec.y() + 7, WHITE, false);
+            return;
+        }
         if ("HomeScreen".equals(name)) {
             graphics.fill(spec.x(), spec.y(), spec.x() + spec.width(), spec.y() + 44, HEADER);
             int titleX = spec.x() + 14;
@@ -521,8 +537,15 @@ public final class UnityConfigurationUiEvents {
         double anchorX = numberField(screen, "anchorX", 0.5D);
         double anchorY = numberField(screen, "anchorY", 0.5D);
         double anchorZ = numberField(screen, "anchorZ", 0.5D);
+
+        graphics.fill(spec.x() + 8, spec.y() + 18, spec.x() + spec.width() - 8,
+                spec.y() + 34, HEADER);
+        graphics.drawString(font, ScpFonts.roboto(
+                        (Boolean.TRUE.equals(existing) ? "Editing " : "New ")
+                                + compact(blockId, 34)),
+                spec.x() + 12, spec.y() + 21, PALE_GOLD, false);
+
         String[] lines = {
-                (Boolean.TRUE.equals(existing) ? "Editing " : "New ") + compact(blockId, 30),
                 "Action",
                 "Name / Display",
                 "Range / Input / Item",
@@ -534,8 +557,8 @@ public final class UnityConfigurationUiEvents {
                 "Rotate mode previews the final in-world anchor.",
                 "Forget asks twice, then removes this rule."
         };
-        int[] ys = {28, 35, 71, 107, 142, 242, 254, 270, 282, 296, 310};
-        int[] colors = {PALE_GOLD, MUTED, MUTED, MUTED, MUTED, PALE_GOLD,
+        int[] ys = {36, 71, 107, 142, 242, 254, 270, 282, 296, 310};
+        int[] colors = {MUTED, MUTED, MUTED, MUTED, PALE_GOLD,
                 PALE_GOLD, MUTED, MUTED, 0xFF88DDEE, DANGER};
         for (int i = 0; i < lines.length; i++) {
             coverTextLine(graphics, spec.x() + 8, spec.y() + ys[i] - 3,
@@ -559,7 +582,7 @@ public final class UnityConfigurationUiEvents {
             case "ItemRuleDetailScreen" -> { w = Math.min(430, screen.width - 20); h = 280; y = Math.max(10, (screen.height - h) / 2); }
             case "IdListScreen" -> { w = Math.min(600, screen.width - 18); h = Math.min(380, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "CodexListScreen" -> { w = Math.min(650, screen.width - 18); h = Math.min(390, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
-            case "CodexDetailScreen" -> { w = Math.min(670, screen.width - 16); h = Math.min(430, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
+            case "CodexDetailScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(470, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "ItemPickerScreen" -> { w = Math.min(680, screen.width - 16); h = Math.min(410, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "ContextListScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(410, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "ContextDetailScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(450, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
@@ -673,13 +696,12 @@ public final class UnityConfigurationUiEvents {
             drawSummaryCard(graphics, x, rowY, rowRight, rowY + 20,
                     mouseX, mouseY);
 
-            ItemStack input = firstRecipeItem(recipe, "item_inputs");
-            ItemStack output = firstRecipeItem(recipe, "item_outputs");
-            if (output.isEmpty()) output = firstRecipeItem(recipe, "weighted_item_outputs");
-            if (!input.isEmpty()) graphics.renderItem(input, x + 7, rowY + 2);
+            RecipePreview input = firstRecipePreview(screen, recipe, true);
+            RecipePreview output = firstRecipePreview(screen, recipe, false);
+            renderRecipePreview(graphics, input, x + 7, rowY + 2);
             graphics.drawString(font, ScpFonts.roboto("→"), x + 26, rowY + 6,
                     PALE_GOLD, false);
-            if (!output.isEmpty()) graphics.renderItem(output, x + 38, rowY + 2);
+            renderRecipePreview(graphics, output, x + 38, rowY + 2);
 
             String setting = settingLabel(string(recipe, "setting", "?"));
             int badgeWidth = Math.min(112,
@@ -839,16 +861,99 @@ public final class UnityConfigurationUiEvents {
                 spec.y() + spec.height() - 17, color, false);
     }
 
-    private static ItemStack firstRecipeItem(JsonObject recipe, String key) {
-        if (recipe == null || !recipe.has(key) || !recipe.get(key).isJsonArray()) {
-            return ItemStack.EMPTY;
+    private static RecipePreview firstRecipePreview(Screen screen, JsonObject recipe,
+                                                    boolean intake) {
+        List<String> itemKeys = intake
+                ? List.of("item_inputs")
+                : List.of("item_outputs", "weighted_item_outputs");
+        for (String key : itemKeys) {
+            if (!recipe.has(key) || !recipe.get(key).isJsonArray()) continue;
+            for (JsonElement element : recipe.getAsJsonArray(key)) {
+                if (!element.isJsonObject()) continue;
+                String itemId = string(element.getAsJsonObject(), "item", "");
+                if (!itemId.isBlank()) {
+                    return new RecipePreview(recipeItemPreview(screen, itemId), null);
+                }
+            }
         }
-        for (JsonElement element : recipe.getAsJsonArray(key)) {
-            if (!element.isJsonObject()) continue;
-            ItemStack stack = itemStack(string(element.getAsJsonObject(), "item", ""));
-            if (!stack.isEmpty()) return stack;
+
+        String entityKey = intake ? "entity_inputs" : "entity_outputs";
+        if (recipe.has(entityKey) && recipe.get(entityKey).isJsonArray()) {
+            for (JsonElement element : recipe.getAsJsonArray(entityKey)) {
+                if (!element.isJsonObject()) continue;
+                ResourceLocation entityId = ResourceLocation.tryParse(
+                        string(element.getAsJsonObject(), "entity", ""));
+                if (entityId != null) return new RecipePreview(ItemStack.EMPTY, entityId);
+            }
         }
-        return ItemStack.EMPTY;
+        return new RecipePreview(ItemStack.EMPTY, null);
+    }
+
+    private static ItemStack recipeItemPreview(Screen screen, String itemId) {
+        JsonObject files = readStaticField(screen.getClass().getDeclaringClass(),
+                "files", JsonObject.class);
+        JsonObject drinkRoot = childObject(files, "294");
+        if (drinkRoot != null && drinkRoot.has("drinks")
+                && drinkRoot.get("drinks").isJsonArray()) {
+            for (JsonElement element : drinkRoot.getAsJsonArray("drinks")) {
+                if (!element.isJsonObject()) continue;
+                JsonObject drink = element.getAsJsonObject();
+                JsonObject result = childObject(drink, "result");
+                if (result != null && itemId.equals(string(result, "item", ""))) {
+                    return coloredCup(string(drink, "cup_color", "#FFFFFF"));
+                }
+            }
+        }
+        return itemStack(itemId);
+    }
+
+    private static void renderRecipePreview(GuiGraphics graphics, RecipePreview preview,
+                                            int x, int y) {
+        if (preview == null) return;
+        if (!preview.item().isEmpty()) {
+            graphics.renderItem(preview.item(), x, y);
+            return;
+        }
+        if (preview.entityId() == null) return;
+        if (!renderEntityPreview(graphics, preview.entityId(), x, y)) {
+            graphics.renderItem(new ItemStack(Items.SPAWNER), x, y);
+        }
+    }
+
+    private static boolean renderEntityPreview(GuiGraphics graphics, ResourceLocation id,
+                                               int x, int y) {
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        if (level == null) return false;
+        if (entityPreviewLevel != level) {
+            ENTITY_PREVIEWS.clear();
+            entityPreviewLevel = level;
+        }
+
+        LivingEntity living = ENTITY_PREVIEWS.computeIfAbsent(id, key -> {
+            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(key);
+            if (type == null) return null;
+            Entity entity = type.create(level);
+            if (!(entity instanceof LivingEntity created)) return null;
+            if (created instanceof Mob mob) mob.setNoAi(true);
+            created.setYRot(25.0F);
+            created.setXRot(0.0F);
+            return created;
+        });
+        if (living == null) return false;
+
+        float size = Math.max(0.45F, Math.max(living.getBbWidth(), living.getBbHeight()));
+        int scale = Mth.clamp(Math.round(12.0F / size), 5, 13);
+        try {
+            graphics.enableScissor(x - 1, y - 1, x + 18, y + 19);
+            InventoryScreen.renderEntityInInventoryFollowsMouse(graphics,
+                    x + 8, y + 17, scale, 0.0F, 0.0F, living);
+            graphics.disableScissor();
+            return true;
+        } catch (Throwable ignored) {
+            graphics.disableScissor();
+            return false;
+        }
     }
 
     private static String summarizeRecipeSide(JsonObject recipe, boolean intake) {
@@ -973,7 +1078,9 @@ public final class UnityConfigurationUiEvents {
     private static boolean isConfigurationScreen(Screen screen) {
         if (screen == null) return false;
         if (screen instanceof ItemConfigScreen || screen instanceof ContextConfigScreen
-                || screen instanceof UnityColorPickerScreen) return true;
+                || screen instanceof UnityColorPickerScreen
+                || screen instanceof CodexImageDropScreen
+                || screen instanceof CodexTextEditorScreen) return true;
         return screen.getClass().getName()
                 .startsWith("net.mcreator.scpadditions.config.ui.ConfigCenterClient$");
     }
@@ -1055,6 +1162,12 @@ public final class UnityConfigurationUiEvents {
         values.put("+ entity", "Create a contextual interaction for an entity.");
         values.put("+ paper document", "Create a Codex definition using minecraft:paper as its temporary item.");
         values.put("pick color", "Choose the cup color with synchronized RGB sliders and hexadecimal input.");
+        values.put("import png", "Upload a PNG into this world's Codex asset folder.");
+        values.put("replace png", "Replace the PNG reference with another world asset.");
+        values.put("write text", "Write UTF-8 text and save it in this world's Codex asset folder.");
+        values.put("edit text", "Edit the text file referenced by this Codex definition.");
+        values.put("match mode", "Choose whether any matching item or only a generated NBT-tagged item opens this document.");
+        values.put("give test item", "Give yourself a uniquely tagged and named test document item.");
         values.put("copy", "Create an independent copy of this entry for faster editing.");
         values.put("additional recipe settings", "Show less common chance, NBT, action-bar and weighted-output options.");
         values.put("machine", "Edit the intake, output, radius and timing shared by every SCP-914 recipe.");
@@ -1234,6 +1347,9 @@ public final class UnityConfigurationUiEvents {
         } catch (NumberFormatException ignored) {
             return fallback;
         }
+    }
+
+    private record RecipePreview(ItemStack item, ResourceLocation entityId) {
     }
 
     private record PanelSpec(int x, int y, int width, int height) {

@@ -26,6 +26,9 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.client.CodexAssetClient;
+import net.mcreator.scpadditions.client.CodexImageDropScreen;
+import net.mcreator.scpadditions.client.CodexTextEditorScreen;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -898,38 +901,87 @@ public final class ConfigCenterClient {
         private EditBox nbtKeyBox;
         private EditBox nbtValueBox;
         private boolean advanced;
+        private boolean uniqueMode;
 
         private CodexDetailScreen(Screen parent, JsonObject document) {
             super(parent, "Codex Document");
             this.document = document;
             this.edit = document.deepCopy();
-            this.advanced = edit.has("image_width") || edit.has("image_height") || edit.has("nbt_key") || edit.has("nbt_value");
+            this.advanced = edit.has("image_width") || edit.has("image_height")
+                    || edit.has("nbt_key") || edit.has("nbt_value");
+            this.uniqueMode = "unique".equalsIgnoreCase(
+                    string(edit, "match_mode", "item"));
         }
 
         @Override
         protected void init() {
-            int w = Math.min(670, width - 16);
+            int w = Math.min(700, width - 16);
             int x = left(width, w) + 14;
-            int y = Math.max(8, (height - Math.min(430, height - 16)) / 2) + 47;
+            int y = Math.max(8, (height - Math.min(470, height - 16)) / 2) + 47;
             int fieldW = w - 28;
             idBox = field(x, y, fieldW, "Item ID", string(edit, "id", "")); y += 31;
-            categoryBox = field(x, y, fieldW, "Category", string(edit, "category", "Documents")); y += 31;
-            nameBox = field(x, y, fieldW, "Display name", string(edit, "name", "")); y += 31;
-            imageBox = field(x, y, fieldW, "Packaged image resource", string(edit, "image", "")); y += 31;
-            textBox = field(x, y, fieldW, "UTF-8 text resource", string(edit, "text", "")); y += 32;
-            addRenderableWidget(Button.builder(Component.literal((advanced ? "▼" : "▶") + " Additional conditions and image sizing"), b -> { sync(); advanced = !advanced; rebuild(); })
-                    .bounds(x, y, fieldW, 20).build());
+            categoryBox = field(x, y, fieldW, "Category",
+                    string(edit, "category", "Documents")); y += 31;
+            nameBox = field(x, y, fieldW, "Display name",
+                    string(edit, "name", "")); y += 31;
+
+            addRenderableWidget(Button.builder(Component.literal(uniqueMode
+                            ? "Match Mode: Unique Generated Item"
+                            : "Match Mode: Any Matching Item"), b -> {
+                        sync();
+                        uniqueMode = !uniqueMode;
+                        if (uniqueMode && string(edit, "codex_id", "").isBlank()) {
+                            edit.addProperty("codex_id", java.util.UUID.randomUUID().toString());
+                        }
+                        rebuild();
+                    }).bounds(x, y, fieldW, 20).build());
+            y += 27;
+
+            int resourceW = fieldW - 124;
+            imageBox = field(x, y, resourceW, "Packaged image resource",
+                    string(edit, "image", ""));
+            addRenderableWidget(Button.builder(Component.literal(
+                            edit.has("world_image") ? "Replace PNG" : "Import PNG"),
+                    b -> openImageImporter())
+                    .bounds(x + resourceW + 6, y, 118, 20).build());
+            y += 31;
+            textBox = field(x, y, resourceW, "Packaged UTF-8 text resource",
+                    string(edit, "text", ""));
+            addRenderableWidget(Button.builder(Component.literal(
+                            edit.has("world_text") ? "Edit Text" : "Write Text"),
+                    b -> openTextEditor())
+                    .bounds(x + resourceW + 6, y, 118, 20).build());
+            y += 32;
+
+            addRenderableWidget(Button.builder(Component.literal(
+                            (advanced ? "▼" : "▶")
+                                    + " Additional conditions and image sizing"), b -> {
+                        sync(); advanced = !advanced; rebuild();
+                    }).bounds(x, y, fieldW, 20).build());
             y += 26;
             if (advanced) {
                 int half = (fieldW - 6) / 2;
-                imageWidthBox = field(x, y, half, "Image width", string(edit, "image_width", ""));
-                imageHeightBox = field(x + half + 6, y, half, "Image height", string(edit, "image_height", "")); y += 31;
-                nbtKeyBox = field(x, y, half, "NBT key", string(edit, "nbt_key", ""));
-                nbtValueBox = field(x + half + 6, y, half, "NBT value", string(edit, "nbt_value", "")); y += 33;
+                imageWidthBox = field(x, y, half, "Image width",
+                        string(edit, "image_width", ""));
+                imageHeightBox = field(x + half + 6, y, half, "Image height",
+                        string(edit, "image_height", "")); y += 31;
+                nbtKeyBox = field(x, y, half, "NBT key",
+                        string(edit, "nbt_key", ""));
+                nbtValueBox = field(x + half + 6, y, half, "NBT value",
+                        string(edit, "nbt_value", "")); y += 33;
             }
+
             int buttonY = Math.min(height - 30, y + 4);
-            addRenderableWidget(Button.builder(Component.literal("Save Document"), b -> save()).bounds(x, buttonY, (fieldW - 6) / 2, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> goBack()).bounds(x + (fieldW - 6) / 2 + 6, buttonY, (fieldW - 6) / 2, 20).build());
+            int third = (fieldW - 12) / 3;
+            addRenderableWidget(Button.builder(Component.literal("Save Document"),
+                    b -> save()).bounds(x, buttonY, third, 20).build());
+            Button give = addRenderableWidget(Button.builder(
+                    Component.literal("Give Test Item"), b -> giveTestItem())
+                    .bounds(x + third + 6, buttonY, third, 20).build());
+            give.active = uniqueMode;
+            addRenderableWidget(Button.builder(Component.literal("Cancel"),
+                    b -> goBack()).bounds(x + (third + 6) * 2,
+                    buttonY, third, 20).build());
         }
 
         private EditBox field(int x, int y, int width, String hint, String value) {
@@ -948,6 +1000,11 @@ public final class ConfigCenterClient {
             setOrRemove(edit, "name", nameBox.getValue());
             setOrRemove(edit, "image", imageBox.getValue());
             setOrRemove(edit, "text", textBox.getValue());
+            edit.addProperty("match_mode", uniqueMode ? "unique" : "item");
+            if (uniqueMode && string(edit, "codex_id", "").isBlank()) {
+                edit.addProperty("codex_id", java.util.UUID.randomUUID().toString());
+            }
+            if (!uniqueMode) edit.remove("codex_id");
             if (advanced && imageWidthBox != null) {
                 setNumberOrRemove(edit, "image_width", imageWidthBox.getValue());
                 setNumberOrRemove(edit, "image_height", imageHeightBox.getValue());
@@ -956,27 +1013,73 @@ public final class ConfigCenterClient {
             }
         }
 
+        private void openImageImporter() {
+            sync();
+            Minecraft.getInstance().setScreen(new CodexImageDropScreen(this,
+                    edit.has("world_image"), imported -> {
+                        edit.addProperty("world_image", imported.key());
+                        edit.addProperty("image_width", imported.width());
+                        edit.addProperty("image_height", imported.height());
+                        Minecraft.getInstance().setScreen(this);
+                        rebuild();
+                    }, () -> {
+                        edit.remove("world_image");
+                        Minecraft.getInstance().setScreen(this);
+                        rebuild();
+                    }));
+        }
+
+        private void openTextEditor() {
+            sync();
+            Minecraft.getInstance().setScreen(new CodexTextEditorScreen(this,
+                    string(edit, "world_text", ""), key -> {
+                        if (key == null || key.isBlank()) edit.remove("world_text");
+                        else edit.addProperty("world_text", key);
+                        Minecraft.getInstance().setScreen(this);
+                        rebuild();
+                    }));
+        }
+
+        private void giveTestItem() {
+            sync();
+            if (!uniqueMode) return;
+            String id = string(edit, "id", "");
+            try { new ResourceLocation(id); }
+            catch (Exception ignored) { idBox.setTextColor(BAD); return; }
+            CodexAssetClient.giveDocument(id, string(edit, "codex_id", ""),
+                    string(edit, "name", "Document"));
+        }
+
         private void save() {
             sync();
             String id = string(edit, "id", "");
             try { new ResourceLocation(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             for (String key : new ArrayList<>(document.keySet())) document.remove(key);
-            for (Map.Entry<String, JsonElement> entry : edit.entrySet()) document.add(entry.getKey(), entry.getValue().deepCopy());
+            for (Map.Entry<String, JsonElement> entry : edit.entrySet()) {
+                document.add(entry.getKey(), entry.getValue().deepCopy());
+            }
             goBack();
         }
 
         private void rebuild() { clearWidgets(); init(); }
 
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+                           float partialTick) {
             renderBackground(graphics);
-            int w = Math.min(670, width - 16);
-            int h = Math.min(430, height - 16);
+            int w = Math.min(700, width - 16);
+            int h = Math.min(470, height - 16);
             int x = left(width, w);
             int y = Math.max(8, (height - h) / 2);
             panel(graphics, x, y, w, h, screenTitle, font);
-            graphics.drawString(font, "Leave either image or text empty when the document uses only one representation.", x + 14, y + 31, MUTED, false);
+            String imageState = edit.has("world_image")
+                    ? "World PNG attached" : "No world PNG";
+            String textState = edit.has("world_text")
+                    ? "world text attached" : "no world text";
+            graphics.drawString(font, imageState + " · " + textState
+                            + " · packaged resources remain optional fallbacks.",
+                    x + 14, y + 31, MUTED, false);
             super.render(graphics, mouseX, mouseY, partialTick);
         }
     }

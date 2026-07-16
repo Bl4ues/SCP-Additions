@@ -361,7 +361,7 @@ public class StatusPanel {
                 previewX + previewW / 2 - mouseX, previewY + 32 - mouseY, mc.player);
 
         int statX = parametersX + Math.round(parametersWidth * 0.64F);
-        int statY = previewY + 20;
+        int statY = parametersY + Math.round(parametersHeight * 0.13F) + 20;
         renderStat(g, "Max Health", Integer.toString(Math.round(mc.player.getMaxHealth())), statX, statY);
         renderStat(g, "Armor", Integer.toString(mc.player.getArmorValue()), statX, statY + 38);
         renderStat(g, "Toughness", formatAttribute(Attributes.ARMOR_TOUGHNESS), statX, statY + 76);

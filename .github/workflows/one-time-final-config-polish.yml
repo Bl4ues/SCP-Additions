@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - tools/one_time_final_config_polish.py
+      - tools/one_time_final_config_polish_v2.py
 
 permissions:
   contents: write
@@ -32,8 +32,11 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Apply final polish
+      - name: Apply visual polish
         run: python tools/one_time_final_config_polish.py
+
+      - name: Replace embedded assets with world storage
+        run: python tools/one_time_final_config_polish_v2.py
 
       - name: Build
         run: ./gradlew clean build --stacktrace

@@ -26,14 +26,17 @@ replacement = """replace_once(
 """
 
 source = source[:start] + replacement + source[end:]
+source = source.replace(
+    "    \"CHANGELOG.md\",\n    '''## Configuration center''',",
+    "    \"CHANGELOG.md\",\n    '''## Native configuration center''',",
+    1)
 namespace = {"__file__": str(source_path), "__name__": "__main__"}
 exec(compile(source, str(source_path), "exec"), namespace)
 
 for temporary in [
     ROOT / "tools/one_time_final_config_polish_v3.py",
+    ROOT / "tools/final_polish_failure.log",
     Path(__file__),
 ]:
     if temporary.exists():
         temporary.unlink()
-
-# Rerun marker after preserving the user's direct CHANGELOG edit.

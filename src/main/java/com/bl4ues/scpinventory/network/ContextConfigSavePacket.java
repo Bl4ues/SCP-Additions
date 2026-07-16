@@ -1,9 +1,11 @@
 package com.bl4ues.scpinventory.network;
 
-import com.bl4ues.scpinventory.context.ContextConfigManager;
+import com.bl4ues.scpinventory.context.ContextConfigSaveService;
 import com.bl4ues.scpinventory.context.ContextEntityConfigManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
@@ -86,16 +88,40 @@ public class ContextConfigSavePacket {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (!ConfigCenterService.requireEdit(player)) return;
-            boolean handledAsEntity = ContextEntityConfigManager.saveClientRuleIfEntitySession(player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
+
+            boolean handledAsEntity = ContextEntityConfigManager.saveClientRuleIfEntitySession(
+                    player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
                     msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
                     msg.anchorX, msg.anchorY, msg.anchorZ);
-            if (!handledAsEntity) {
-                ContextConfigManager.saveClientRule(player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
-                        msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
-                        msg.anchorX, msg.anchorY, msg.anchorZ);
+            if (handledAsEntity) {
+                ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                        new ContextConfigReloadPacket());
+                return;
             }
-            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ContextConfigReloadPacket());
+
+            ConfigCenterService.SaveResult result = ContextConfigSaveService.saveBlockRule(
+                    player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
+                    msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
+                    msg.anchorX, msg.anchorY, msg.anchorZ);
+            if (!result.success()) {
+                player.sendSystemMessage(Component.literal(
+                        "[SCP Inventory] Could not save context interaction: " + result.message())
+                        .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            player.sendSystemMessage(Component.literal(
+                    "[SCP Inventory] Saved context interaction for " + msg.blockId
+                            + " at anchor [" + round(msg.anchorX) + ", "
+                            + round(msg.anchorY) + ", " + round(msg.anchorZ) + "]")
+                    .withStyle(ChatFormatting.GREEN));
+            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                    new ContextConfigReloadPacket());
         });
         ctx.get().setPacketHandled(true);
+    }
+
+    private static double round(double value) {
+        return Math.round(value * 1000.0D) / 1000.0D;
     }
 }

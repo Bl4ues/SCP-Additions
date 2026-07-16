@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - tools/one_time_final_config_polish_v2.py
+      - tools/one_time_final_config_polish_v3.py
 
 permissions:
   contents: write
@@ -35,8 +35,8 @@ jobs:
       - name: Apply visual polish
         run: python tools/one_time_final_config_polish.py
 
-      - name: Replace embedded assets with world storage
-        run: python tools/one_time_final_config_polish_v2.py
+      - name: Apply repaired world-backed Codex patch
+        run: python tools/one_time_final_config_polish_v3.py
 
       - name: Build
         run: ./gradlew clean build --stacktrace

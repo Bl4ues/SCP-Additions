@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/runner/work/SCP-Additions/SCP-Additions/tools/fix_codex_persistence.py", line 435, in <module>
+    raise RuntimeError("CHANGELOG: Native configuration center heading not found")
+RuntimeError: CHANGELOG: Native configuration center heading not found

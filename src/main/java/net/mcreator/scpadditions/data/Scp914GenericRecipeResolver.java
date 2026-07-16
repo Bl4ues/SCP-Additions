@@ -4,16 +4,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
@@ -200,14 +197,14 @@ public final class Scp914GenericRecipeResolver {
         Item item = input.getItem();
         List<ItemStack> components = new ArrayList<>();
 
-        if (item instanceof SwordItem && item instanceof TieredItem tiered) {
-            addRepeated(components, tierMaterial(tiered.getTier()), 2);
+        if (item instanceof SwordItem sword) {
+            addRepeated(components, tierMaterial(sword.getTier()), 2);
             addRepeated(components, new ItemStack(Items.STICK), 1);
             return components;
         }
-        if (item instanceof DiggerItem && item instanceof TieredItem tiered) {
+        if (item instanceof DiggerItem digger) {
             int materialCount = item instanceof ShovelItem ? 1 : item instanceof HoeItem ? 2 : 3;
-            addRepeated(components, tierMaterial(tiered.getTier()), materialCount);
+            addRepeated(components, tierMaterial(digger.getTier()), materialCount);
             addRepeated(components, new ItemStack(Items.STICK), 2);
             return components;
         }

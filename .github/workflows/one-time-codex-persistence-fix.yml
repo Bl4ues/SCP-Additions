@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - tools/fix_codex_persistence.py
+      - .github/workflows/one-time-codex-persistence-fix.yml
 
 permissions:
   contents: write

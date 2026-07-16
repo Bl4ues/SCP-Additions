@@ -75,4 +75,4 @@ Content relating to the SCP Foundation, including the SCP Foundation logo and SC
 
 SCP Unity is the main visual and mechanical inspiration for the project. Special thanks to [SCP: Overtime](https://modrinth.com/mod/scp-overtime) for inspiring the original creation of SCP Additions. Various facility assets were adapted from or inspired by SCP Unity-related blocks in its 1.16.5 version.
 
-SCP Additions is not an official Minecraft product and is not affiliated with Mojang, Microsoft, the SCP Wiki staff, Aerie Gaming Studios, or Nixon Interactive.
+SCP Additions is not an official Minecraft product and is not affiliated with Mojang, Microsoft, the SCP Wiki staff, Aerie Gaming Studios.

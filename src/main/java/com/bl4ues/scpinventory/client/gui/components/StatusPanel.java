@@ -59,6 +59,8 @@ public class StatusPanel {
     private final int parametersWidth;
     private final int parametersHeight;
     private final int titleY;
+    private final int conditionsTitleX;
+    private final int parametersTitleX;
 
     private int conditionsScroll = 0;
     private boolean conditionsScrollbarDragging = false;
@@ -76,11 +78,13 @@ public class StatusPanel {
         this.parametersWidth = parametersWidth;
         this.parametersHeight = parametersHeight;
         this.titleY = titleY;
+        this.conditionsTitleX = conditionsTitleX;
+        this.parametersTitleX = parametersTitleX;
     }
 
     public void render(GuiGraphics g, int mouseX, int mouseY) {
-        drawSectionTitleCentered(g, conditionsX, conditionsWidth, titleY, "CONDITIONS");
-        drawSectionTitleCentered(g, parametersX, parametersWidth, titleY, "PARAMETERS");
+        drawSectionTitle(g, conditionsTitleX, titleY, "CONDITIONS");
+        drawSectionTitle(g, parametersTitleX, titleY, "PARAMETERS");
         renderConditions(g);
         renderParameters(g, mouseX, mouseY);
     }
@@ -317,11 +321,9 @@ public class StatusPanel {
         conditionsScroll = Math.max(0, Math.min(maxScroll, (int) Math.round(ratio * maxScroll)));
     }
 
-    private void drawSectionTitleCentered(GuiGraphics g, int panelX, int panelWidth, int y, String label) {
+    private void drawSectionTitle(GuiGraphics g, int x, int y, String label) {
         Component prefix = ScpFonts.roboto("://STATUS_");
         Component value = ScpFonts.roboto(label);
-        int textWidth = mc.font.width(prefix) + mc.font.width(value);
-        int x = panelX + Math.max(0, (panelWidth - textWidth) / 2);
         g.drawString(mc.font, prefix, x, y, TEXT_GRAY, false);
         g.drawString(mc.font, value, x + mc.font.width(prefix), y, TEXT_WHITE, false);
     }

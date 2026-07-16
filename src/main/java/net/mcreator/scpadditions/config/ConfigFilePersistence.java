@@ -1,14 +1,18 @@
 package net.mcreator.scpadditions.config;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 
 /** Writes configuration files atomically and preserves the previous version as {@code .bak}. */
 public final class ConfigFilePersistence {
+    private static final int MOVE_ATTEMPTS = 6;
+
     private ConfigFilePersistence() {
     }
 
@@ -39,16 +43,61 @@ public final class ConfigFilePersistence {
         if (parent != null) Files.createDirectories(parent);
 
         Path temporary = Files.createTempFile(parent, absoluteTarget.getFileName().toString(), ".tmp");
+        IOException lastMoveFailure = null;
         try {
-            Files.writeString(temporary, content, StandardCharsets.UTF_8);
+            Files.writeString(temporary, content, StandardCharsets.UTF_8,
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
+                channel.force(true);
+            }
+
+            boolean atomicSupported = true;
+            for (int attempt = 0; attempt < MOVE_ATTEMPTS && atomicSupported; attempt++) {
+                try {
+                    Files.move(temporary, absoluteTarget, StandardCopyOption.ATOMIC_MOVE,
+                            StandardCopyOption.REPLACE_EXISTING);
+                    return;
+                } catch (AtomicMoveNotSupportedException exception) {
+                    atomicSupported = false;
+                    lastMoveFailure = exception;
+                } catch (IOException exception) {
+                    lastMoveFailure = exception;
+                    pauseBeforeRetry(attempt);
+                }
+            }
+
+            for (int attempt = 0; attempt < MOVE_ATTEMPTS; attempt++) {
+                try {
+                    Files.move(temporary, absoluteTarget, StandardCopyOption.REPLACE_EXISTING);
+                    return;
+                } catch (IOException exception) {
+                    lastMoveFailure = exception;
+                    pauseBeforeRetry(attempt);
+                }
+            }
+
+            // Windows may allow rewriting a file while refusing to replace its directory entry.
+            // The .bak copy already exists at this point, so this remains recoverable even though
+            // the final fallback is not atomic.
             try {
-                Files.move(temporary, absoluteTarget, StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException ignored) {
-                Files.move(temporary, absoluteTarget, StandardCopyOption.REPLACE_EXISTING);
+                Files.writeString(absoluteTarget, content, StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+                        StandardOpenOption.WRITE);
+            } catch (IOException directFailure) {
+                if (lastMoveFailure != null) directFailure.addSuppressed(lastMoveFailure);
+                throw directFailure;
             }
         } finally {
             Files.deleteIfExists(temporary);
+        }
+    }
+
+    private static void pauseBeforeRetry(int attempt) throws IOException {
+        try {
+            Thread.sleep(15L * (attempt + 1));
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while retrying configuration save", exception);
         }
     }
 }

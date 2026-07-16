@@ -10,6 +10,7 @@ import com.bl4ues.scpinventory.network.DocumentActionPacket;
 import net.mcreator.scpadditions.client.CodexAssetClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -412,7 +413,29 @@ public class CodexPanel {
             g.disableScissor();
             return;
         }
-        renderDebugDocumentPage(g, document, definition, areaX, areaY, areaWidth, areaHeight);
+        renderDocumentPlaceholder(g, definition, areaX, areaY, areaWidth, areaHeight);
+    }
+
+    private void renderDocumentPlaceholder(GuiGraphics g,
+                                           CodexDocumentDefinition definition,
+                                           int areaX, int areaY,
+                                           int areaWidth, int areaHeight) {
+        String worldKey = definition.getWorldImageKey();
+        String message;
+        if (!worldKey.isBlank()) {
+            if (CodexAssetClient.isMissing("png", worldKey)) {
+                message = "Document image unavailable";
+            } else {
+                message = "Loading document image...";
+            }
+        } else {
+            message = "No document image attached";
+        }
+        g.fill(areaX, areaY, areaX + areaWidth, areaY + areaHeight, 0x3320262B);
+        Component label = ScpFonts.roboto(message);
+        int labelX = areaX + Math.max(4, (areaWidth - mc.font.width(label)) / 2);
+        int labelY = areaY + Math.max(4, (areaHeight - 8) / 2);
+        g.drawString(mc.font, label, labelX, labelY, TEXT_GRAY, false);
     }
 
     private void renderDebugDocumentPage(GuiGraphics g, ItemStack document, CodexDocumentDefinition definition, int areaX, int areaY, int areaWidth, int areaHeight) {
@@ -558,9 +581,15 @@ public class CodexPanel {
     private int getListScrollbarX() { return x + listWidth - 14; }
     private int getListScrollbarHeight() { return getVisibleRows() * ROW_HEIGHT; }
     private Optional<String> readText(CodexDocumentDefinition definition) {
-        Optional<String> worldText = CodexAssetClient.getText(
-                definition.getWorldTextKey());
+        String worldKey = definition.getWorldTextKey();
+        Optional<String> worldText = CodexAssetClient.getText(worldKey);
         if (worldText.isPresent()) return worldText;
+        if (!worldKey.isBlank()) {
+            if (CodexAssetClient.isMissing("text", worldKey)) {
+                return Optional.of("The saved document text could not be loaded.");
+            }
+            return Optional.of("Loading document text...");
+        }
         ResourceLocation textLocation = definition.getTextLocation().orElse(null);
         if (textLocation == null || mc == null) return Optional.empty();
         return mc.getResourceManager().getResource(textLocation).flatMap(resource -> {

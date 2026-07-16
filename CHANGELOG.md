@@ -7,6 +7,10 @@
 - Added the SCP Additions logo to Forge's Mods list and replaced the update-specific metadata text with the full mod description used on the project pages.
 
 ## Configuration center
+- Fixed Codex documents created in the in-game editor not being persisted or listed after reopening the configuration center;
+- `Save Document` now validates, saves and reloads the inventory configuration immediately, while `Save & Give Test Item` waits for that reload before generating the unique item;
+- Unique generated Codex items are routed directly to the Documents area when the SCP Inventory module is enabled;
+- World-scoped Codex PNG/text assets now report loading, missing and empty states instead of displaying the old synthetic document page;
 
 - Added a native configuration center available from **Mods → SCP Additions** and `/scpadditions config`;
 - Added dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;

@@ -103,7 +103,6 @@ public final class UnityConfigurationUiEvents {
         String name = screen.getClass().getSimpleName();
         if ("DrinkDetailScreen".equals(name)) installDrinkColorPicker(event, screen);
         if ("ItemRuleDetailScreen".equals(name)) installPlaceableCategory(event, screen);
-        if ("CodexListScreen".equals(name)) installPaperDocumentDefault(event, screen);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

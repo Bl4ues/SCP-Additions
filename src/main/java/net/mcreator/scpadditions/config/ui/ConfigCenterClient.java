@@ -56,6 +56,8 @@ public final class ConfigCenterClient {
     private static Screen rootParent;
     private static JsonObject files = new JsonObject();
     private static String homeNotice = "";
+    private static boolean returnToCodexAfterSave;
+    private static PendingCodexGive pendingCodexGive;
 
     private ConfigCenterClient() {
     }
@@ -107,6 +109,10 @@ public final class ConfigCenterClient {
     }
 
     public static void onSaveResult(ConfigCenterNetwork.SaveResult result) {
+        PendingCodexGive give = pendingCodexGive;
+        boolean returnToCodex = returnToCodexAfterSave;
+        pendingCodexGive = null;
+        returnToCodexAfterSave = false;
         if (result.success()) {
             try {
                 JsonElement parsed = JsonParser.parseString(result.snapshot());
@@ -114,7 +120,16 @@ public final class ConfigCenterClient {
             } catch (Exception ignored) {
             }
             homeNotice = result.message();
-            Minecraft.getInstance().setScreen(new HomeScreen());
+            if (give != null) {
+                CodexAssetClient.giveDocument(give.itemId(), give.codexId(), give.displayName());
+            }
+            if (returnToCodex) {
+                HomeScreen home = new HomeScreen();
+                InventoryHubScreen hub = new InventoryHubScreen(home);
+                Minecraft.getInstance().setScreen(new CodexListScreen(hub, hub.working));
+            } else {
+                Minecraft.getInstance().setScreen(new HomeScreen());
+            }
         } else {
             Minecraft.getInstance().setScreen(new MessageScreen(new HomeScreen(), "Configuration Not Saved", result.message(), false));
         }
@@ -126,6 +141,15 @@ public final class ConfigCenterClient {
         Minecraft.getInstance().setScreen(new MessageScreen(new HomeScreen(), "Saving Configuration",
                 "Validating, writing backups, and reloading on the server...", true));
         ModNetwork.CHANNEL.sendToServer(new ConfigCenterNetwork.SaveRequest(GSON.toJson(payload)));
+    }
+
+    private static void submitCodex(JsonObject inventoryRoot, PendingCodexGive give) {
+        returnToCodexAfterSave = true;
+        pendingCodexGive = give;
+        submit(Map.of(ConfigCenterService.INVENTORY, inventoryRoot));
+    }
+
+    private record PendingCodexGive(String itemId, String codexId, String displayName) {
     }
 
     private static JsonObject file(String key, JsonObject fallback) {
@@ -808,16 +832,11 @@ public final class ConfigCenterClient {
             searchBox.setMaxLength(256);
             searchBox.setResponder(value -> { scroll = 0; rebuildRows(); });
             addRenderableWidget(searchBox);
-            addRenderableWidget(Button.builder(Component.literal("+ Add Document"), b -> openItemPicker(id -> {
-                JsonObject document = new JsonObject();
-                document.addProperty("id", id);
-                document.addProperty("category", "Documents");
-                document.addProperty("name", "New Document");
-                document.addProperty("image", "");
-                document.addProperty("text", "");
+            addRenderableWidget(Button.builder(Component.literal("+ Paper Document"), b -> {
+                JsonObject document = createDefaultCodexDocument();
                 array(root, "codex_documents").add(document);
-                Minecraft.getInstance().setScreen(new CodexDetailScreen(this, document));
-            }, this)).bounds(x + w - 130, y, 118, 20).build());
+                Minecraft.getInstance().setScreen(new CodexDetailScreen(this, root, document));
+            }).bounds(x + w - 130, y, 118, 20).build());
             rebuildRows();
         }
 
@@ -841,16 +860,11 @@ public final class ConfigCenterClient {
             int x = left(width, w) + 12;
             int top = Math.max(8, (height - Math.min(390, height - 16)) / 2) + 38;
             searchBox.setX(x); searchBox.setY(top); searchBox.setWidth(w - 142); addRenderableWidget(searchBox);
-            addRenderableWidget(Button.builder(Component.literal("+ Add Document"), b -> openItemPicker(id -> {
-                JsonObject document = new JsonObject();
-                document.addProperty("id", id);
-                document.addProperty("category", "Documents");
-                document.addProperty("name", "New Document");
-                document.addProperty("image", "");
-                document.addProperty("text", "");
+            addRenderableWidget(Button.builder(Component.literal("+ Paper Document"), b -> {
+                JsonObject document = createDefaultCodexDocument();
                 array(root, "codex_documents").add(document);
-                Minecraft.getInstance().setScreen(new CodexDetailScreen(this, document));
-            }, this)).bounds(x + w - 130, top, 118, 20).build());
+                Minecraft.getInstance().setScreen(new CodexDetailScreen(this, root, document));
+            }).bounds(x + w - 130, top, 118, 20).build());
             int listY = top + 30;
             int visible = Math.max(4, Math.min(10, (height - 128) / 24));
             scroll = Math.min(scroll, Math.max(0, filtered.size() - visible));
@@ -858,7 +872,7 @@ public final class ConfigCenterClient {
                 JsonObject document = filtered.get(i);
                 int row = i - scroll;
                 String label = string(document, "name", "Unnamed") + "  [" + string(document, "category", "Documents") + "]";
-                addRenderableWidget(Button.builder(Component.literal(compact(label, 62)), b -> Minecraft.getInstance().setScreen(new CodexDetailScreen(this, document)))
+                addRenderableWidget(Button.builder(Component.literal(compact(label, 62)), b -> Minecraft.getInstance().setScreen(new CodexDetailScreen(this, root, document)))
                         .bounds(x, listY + row * 24, w - 82, 20).build());
                 addRenderableWidget(Button.builder(Component.literal("X"), b -> { removeIdentity(array(root, "codex_documents"), document); rebuildRows(); })
                         .bounds(x + w - 74, listY + row * 24, 62, 20).build());
@@ -883,12 +897,23 @@ public final class ConfigCenterClient {
             int x = left(width, w);
             int y = Math.max(8, (height - h) / 2);
             panel(graphics, x, y, w, h, screenTitle, font);
-            graphics.drawString(font, "Image and text resource paths are preserved exactly as entered.", x + 12, y + h - 17, MUTED, false);
+            graphics.drawString(font, "Documents are saved to the server when Save Document is pressed.", x + 12, y + h - 17, MUTED, false);
             super.render(graphics, mouseX, mouseY, partialTick);
         }
     }
 
+    private static JsonObject createDefaultCodexDocument() {
+        JsonObject document = new JsonObject();
+        document.addProperty("id", "minecraft:paper");
+        document.addProperty("category", "Documents");
+        document.addProperty("name", "New Document");
+        document.addProperty("image", "");
+        document.addProperty("text", "");
+        return document;
+    }
+
     private static final class CodexDetailScreen extends ConfigScreen {
+        private final JsonObject root;
         private final JsonObject document;
         private final JsonObject edit;
         private EditBox idBox;
@@ -903,8 +928,9 @@ public final class ConfigCenterClient {
         private boolean advanced;
         private boolean uniqueMode;
 
-        private CodexDetailScreen(Screen parent, JsonObject document) {
+        private CodexDetailScreen(Screen parent, JsonObject root, JsonObject document) {
             super(parent, "Codex Document");
+            this.root = root;
             this.document = document;
             this.edit = document.deepCopy();
             this.advanced = edit.has("image_width") || edit.has("image_height")
@@ -976,7 +1002,7 @@ public final class ConfigCenterClient {
             addRenderableWidget(Button.builder(Component.literal("Save Document"),
                     b -> save()).bounds(x, buttonY, third, 20).build());
             Button give = addRenderableWidget(Button.builder(
-                    Component.literal("Give Test Item"), b -> giveTestItem())
+                    Component.literal("Save & Give Test Item"), b -> giveTestItem())
                     .bounds(x + third + 6, buttonY, third, 20).build());
             give.active = uniqueMode;
             addRenderableWidget(Button.builder(Component.literal("Cancel"),
@@ -1046,8 +1072,10 @@ public final class ConfigCenterClient {
             String id = string(edit, "id", "");
             try { new ResourceLocation(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
-            CodexAssetClient.giveDocument(id, string(edit, "codex_id", ""),
-                    string(edit, "name", "Document"));
+            persistDocument();
+            submitCodex(root, new PendingCodexGive(id,
+                    string(edit, "codex_id", ""),
+                    string(edit, "name", "Document")));
         }
 
         private void save() {
@@ -1055,11 +1083,16 @@ public final class ConfigCenterClient {
             String id = string(edit, "id", "");
             try { new ResourceLocation(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
+            persistDocument();
+            submitCodex(root, null);
+        }
+
+        private void persistDocument() {
             for (String key : new ArrayList<>(document.keySet())) document.remove(key);
             for (Map.Entry<String, JsonElement> entry : edit.entrySet()) {
                 document.add(entry.getKey(), entry.getValue().deepCopy());
             }
-            goBack();
+            if (parent instanceof CodexListScreen list) list.rebuildRows();
         }
 
         private void rebuild() { clearWidgets(); init(); }

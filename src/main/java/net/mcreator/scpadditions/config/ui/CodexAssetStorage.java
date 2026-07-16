@@ -1,6 +1,9 @@
 package net.mcreator.scpadditions.config.ui;
 
+import com.bl4ues.scpinventory.capability.ScpInventoryProvider;
 import com.bl4ues.scpinventory.item.CodexDocumentDefinition;
+import com.bl4ues.scpinventory.item.ScpItemClassifier;
+import com.bl4ues.scpinventory.network.ModNetwork;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -9,6 +12,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -101,6 +105,17 @@ public final class CodexAssetStorage {
         stack.getOrCreateTag().putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());
         if (displayName != null && !displayName.isBlank()) {
             stack.setHoverName(Component.literal(displayName.trim()));
+        }
+        if (ScpAdditionsModulesConfig.get().inventory.enabled
+                && ScpItemClassifier.getCodexDocument(stack).isPresent()) {
+            boolean[] stored = {false};
+            player.getCapability(ScpInventoryProvider.INSTANCE).ifPresent(inventory -> {
+                if (inventory.addDocumentItem(stack.copy())) {
+                    stored[0] = true;
+                    ModNetwork.syncTo(player, inventory);
+                }
+            });
+            if (stored[0]) return true;
         }
         if (!player.getInventory().add(stack)) player.drop(stack, false);
         return true;

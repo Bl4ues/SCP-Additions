@@ -21,6 +21,7 @@ public final class CodexAssetClient {
     private static final Map<String, byte[]> BYTES = new HashMap<>();
     private static final Map<String, ResourceLocation> TEXTURES = new HashMap<>();
     private static final Set<String> REQUESTED = new HashSet<>();
+    private static final Set<String> MISSING = new HashSet<>();
     private static final Map<String, PendingUpload> UPLOADS = new HashMap<>();
 
     private CodexAssetClient() {
@@ -41,8 +42,10 @@ public final class CodexAssetClient {
             if (pending.failure() != null) pending.failure().accept(result.message());
             return;
         }
-        BYTES.put(cacheKey(result.kind(), result.key()), pending.data());
-        REQUESTED.remove(cacheKey(result.kind(), result.key()));
+        String cache = cacheKey(result.kind(), result.key());
+        BYTES.put(cache, pending.data());
+        REQUESTED.remove(cache);
+        MISSING.remove(cache);
         if (pending.success() != null) pending.success().accept(result.key());
     }
 
@@ -53,6 +56,7 @@ public final class CodexAssetClient {
         if (existing != null) return Optional.of(existing);
         byte[] data = BYTES.get(cache);
         if (data == null) {
+            if (MISSING.contains(cache)) return Optional.empty();
             request("png", key);
             return Optional.empty();
         }
@@ -74,6 +78,7 @@ public final class CodexAssetClient {
         String cache = cacheKey("text", key);
         byte[] data = BYTES.get(cache);
         if (data == null) {
+            if (MISSING.contains(cache)) return Optional.empty();
             request("text", key);
             return Optional.empty();
         }
@@ -83,7 +88,22 @@ public final class CodexAssetClient {
     public static void onAssetData(ConfigCenterNetwork.AssetData data) {
         String cache = cacheKey(data.kind(), data.key());
         REQUESTED.remove(cache);
-        if (data.data().length > 0) BYTES.put(cache, data.data());
+        if (data.data().length > 0) {
+            BYTES.put(cache, data.data());
+            MISSING.remove(cache);
+        } else {
+            MISSING.add(cache);
+        }
+    }
+
+    public static boolean isPending(String kind, String key) {
+        return key != null && !key.isBlank()
+                && REQUESTED.contains(cacheKey(kind, key));
+    }
+
+    public static boolean isMissing(String kind, String key) {
+        return key != null && !key.isBlank()
+                && MISSING.contains(cacheKey(kind, key));
     }
 
     public static void giveDocument(String itemId, String codexId,

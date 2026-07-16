@@ -1,5 +1,9 @@
 # Changelog
 
+# SCP Additions 3.0.4 — Hotfix
+
+- Fixed a wrong centralized header position in the Status tab.
+
 # SCP Additions 3.0.3 — Quality of Life Update
 
 ## Mod presentation

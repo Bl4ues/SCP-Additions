@@ -4,7 +4,7 @@
 
 ## Mod presentation
 
-- Added the SCP Additions logo to Forge's Mods list and replaced the update-specific metadata text with the full mod description used on the project pages.
+- Added the SCP Additions logo to Forge's Mods list.
 
 ## Configuration center
 - Fixed dedicated servers crashing during network registration because sound packets referenced client-only `SoundInstance` classes;

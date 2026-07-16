@@ -4,7 +4,7 @@ license="Creative Commons Attribution-ShareAlike 3.0"
 
 [[mods]]
 modId="scp_additions"
-version="3.0.3"
+version="${mod_version}"
 displayName="SCP Additions"
 authors="Bl4ues"
 logoFile="logo.png"

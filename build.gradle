@@ -3,7 +3,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
 }
 
-version = '3.0.3'
+version = '3.0.4'
 group = 'com.bl4ues.scpadditions'
 archivesBaseName = 'scp_additions'
 
@@ -287,7 +287,6 @@ processResources {
         ['scp_additions', 'scpinventory', 'scp_unity_extra_blocks', 'scp_ublocks'].each { namespace ->
             File soundsFile = file("$buildDir/resources/main/assets/${namespace}/sounds.json")
             if (!soundsFile.exists()) return
-
             def definitions = parser.parse(soundsFile)
             definitions.each { eventName, eventDefinition ->
                 if (eventDefinition instanceof Map

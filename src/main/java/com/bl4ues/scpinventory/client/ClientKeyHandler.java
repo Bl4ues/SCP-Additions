@@ -2,7 +2,7 @@ package com.bl4ues.scpinventory.client;
 
 import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
 import net.minecraft.client.Minecraft;
-import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,7 +14,7 @@ public class ClientKeyHandler {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         if (Keybinds.OPEN_SCP_INVENTORY.consumeClick()
-                && ScpAdditionsModulesConfig.get().inventory.enabled) {
+                && InventoryModuleRuntimeState.isEnabledForClient()) {
             ClientNetwork.requestInventorySync();
             Minecraft.getInstance().setScreen(new ScpInventoryScreen());
         }

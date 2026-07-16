@@ -5,6 +5,7 @@ import com.bl4ues.scpinventory.client.ScpFonts;
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import com.bl4ues.scpinventory.client.ClientInventoryBridge;
 import com.bl4ues.scpinventory.client.gui.components.CodexPanel;
 import com.bl4ues.scpinventory.client.gui.components.ContextMenu;
@@ -241,6 +242,12 @@ public class ScpInventoryScreen extends Screen {
                 ? new ScrollableItemList(listX, listY, listWidth, inventory.getKeys(), inventory, "Key")
                 : new ScrollableItemList(listX, listY, listWidth, inventory.getInventory(), inventory);
         if (rememberUiState()) itemList.setScrollOffset(showingKeys ? rememberedKeysScroll : rememberedInventoryScroll);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!InventoryModuleRuntimeState.isEnabledForClient()) onClose();
     }
 
     @Override

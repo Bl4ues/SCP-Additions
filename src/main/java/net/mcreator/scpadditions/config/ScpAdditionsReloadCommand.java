@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.config;
 
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
+import com.bl4ues.scpinventory.network.ModNetwork;
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -65,6 +66,7 @@ public final class ScpAdditionsReloadCommand {
             Scp294DrinkManager.loadFromConfig();
             Scp914RecipeManager.loadFromConfig();
             ContextInteractionRegistry.reload();
+            ModNetwork.syncModuleState(source.getServer().getPlayerList().getPlayers());
             source.sendSuccess(() -> Component.literal("SCP Additions configurations reloaded successfully.")
                     .withStyle(ChatFormatting.GREEN), true);
             if (!validation.warnings().isEmpty()) {

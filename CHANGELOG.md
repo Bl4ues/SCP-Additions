@@ -8,7 +8,7 @@
 
 ## Configuration center
 - Fixed dedicated servers crashing during network registration because sound packets referenced client-only `SoundInstance` classes;
-- Fixed `inventory.enabled: false` still allowing background tick handlers and packets to move items into the SCP Inventory;
+- Fixed `inventory.enabled: false` still allowing background tick handlers and gameplay packets to move items into the SCP Inventory; the server now synchronizes this module state to clients, blocks stale actions, and closes the custom screen when disabled;
 - Removed a cut SCP-079 1.0 behavior that silently forced `teslaGateOn` back to `true`;
 - Expanded the closed Decontamination Checkpoint collision across the complete doorway to prevent escaping around its sides during a gas cycle;
 - Added a native configuration center available from **Mods → SCP Additions** and `/scpadditions config`;

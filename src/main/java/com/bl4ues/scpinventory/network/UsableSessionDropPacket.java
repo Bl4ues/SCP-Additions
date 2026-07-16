@@ -4,6 +4,7 @@ import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.function.Supplier;
 
@@ -25,6 +26,7 @@ public class UsableSessionDropPacket {
 
     public static void handle(UsableSessionDropPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
             ServerPlayer player = ctx.get().getSender();
             if (player == null) {
                 return;

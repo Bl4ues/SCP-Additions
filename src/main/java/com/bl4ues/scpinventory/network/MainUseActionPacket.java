@@ -36,6 +36,7 @@ public class MainUseActionPacket {
 
     public static void handle(MainUseActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 

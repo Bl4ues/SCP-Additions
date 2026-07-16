@@ -9,9 +9,10 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "3";
+    private static final String PROTOCOL_VERSION = "4";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -40,6 +41,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, UsableSessionReturnPacket.class, UsableSessionReturnPacket::encode, UsableSessionReturnPacket::decode, UsableSessionReturnPacket::handle);
         CHANNEL.registerMessage(id++, UsableSessionDropPacket.class, UsableSessionDropPacket::encode, UsableSessionDropPacket::decode, UsableSessionDropPacket::handle);
         CHANNEL.registerMessage(id++, MainUseActionPacket.class, MainUseActionPacket::encode, MainUseActionPacket::decode, MainUseActionPacket::handle);
+        CHANNEL.registerMessage(id++, InventoryModuleStatePacket.class, InventoryModuleStatePacket::encode, InventoryModuleStatePacket::decode, InventoryModuleStatePacket::handle);
         CHANNEL.registerMessage(id++, ContextInteractPacket.class, ContextInteractPacket::encode, ContextInteractPacket::decode, ContextInteractPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSelectPacket.class, ContextConfigSelectPacket::encode, ContextConfigSelectPacket::decode, ContextConfigSelectPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigOpenPacket.class, ContextConfigOpenPacket::encode, ContextConfigOpenPacket::decode, ContextConfigOpenPacket::handle);
@@ -55,13 +57,26 @@ public final class ModNetwork {
     }
 
     public static void syncTo(ServerPlayer player, IScpInventory inventory) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
         if (player != null && inventory != null) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                     new SyncInventoryPacket(inventory.serializeNBT()));
         }
     }
 
+    public static void syncModuleState(ServerPlayer player) {
+        if (player == null) return;
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                new InventoryModuleStatePacket(ScpAdditionsModulesConfig.get().inventory.enabled));
+    }
+
+    public static void syncModuleState(Iterable<ServerPlayer> players) {
+        if (players == null) return;
+        for (ServerPlayer player : players) syncModuleState(player);
+    }
+
     public static void showInventoryFull(ServerPlayer player) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
         if (player != null && !player.isSpectator()) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new InventoryFullPacket());
         }
@@ -74,6 +89,7 @@ public final class ModNetwork {
 
     public static void activateUsableItem(ServerPlayer player, int hotbarSlot,
             int sourceSlot, boolean continuousUse, ItemStack stack) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
         if (player != null && !player.isCreative() && !player.isSpectator()) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                     new UseHotbarItemPacket(hotbarSlot, sourceSlot, continuousUse, stack));

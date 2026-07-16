@@ -52,6 +52,7 @@ public class InventoryActionPacket {
 
     public static void handle(InventoryActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 

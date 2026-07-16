@@ -95,6 +95,10 @@ public final class ConfigCenterNetwork {
                 ServerPlayer player = context.getSender();
                 if (player == null) return;
                 ConfigCenterService.SaveResult result = ConfigCenterService.saveBatch(player, message.changes);
+                if (result.success()) {
+                    com.bl4ues.scpinventory.network.ModNetwork.syncModuleState(
+                            player.server.getPlayerList().getPlayers());
+                }
                 String snapshot = result.success() ? GSON.toJson(result.snapshot()) : "";
                 com.bl4ues.scpinventory.network.ModNetwork.CHANNEL.send(
                         PacketDistributor.PLAYER.with(() -> player),

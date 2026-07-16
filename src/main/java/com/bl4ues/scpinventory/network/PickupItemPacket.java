@@ -48,6 +48,7 @@ public class PickupItemPacket {
 
     public static void handle(PickupItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
             ServerPlayer player = ctx.get().getSender();
             if (player == null || player.isCreative() || player.isSpectator()) {
                 return;

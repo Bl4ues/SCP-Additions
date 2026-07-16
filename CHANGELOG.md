@@ -67,6 +67,8 @@
 
 ## Configuration and building
 
+- Removed stale bundled context-interaction rules that still targeted the old `scp_unity_extra_blocks` registry namespace; the migrated `scp_additions` rules and optional `scpo` compatibility remain unchanged;
+
 - Added `/scpadditions reload` to validate and reload configurations without restarting;
 - Invalid JSON and malformed IDs now produce clear errors without partially applying the reload;
 - Missing optional mod entries are now reported and ignored while valid configuration entries continue loading;

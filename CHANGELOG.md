@@ -4,7 +4,7 @@
 
 ## Native configuration center
 
-- Added a native, server-authoritative configuration center available from **Mods → SCP Additions → Config** and `/scpadditions config`;
+- Added a native configuration center available from **Mods → SCP Additions** and `/scpadditions config`;
 - Added dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
 - Added registry search, translated display names, item/entity icons, dynamic recipe inputs and outputs, a drink color picker, tooltips, and a unified SCP Unity-inspired interface using Roboto with a Montserrat main title;
 - Added validation, automatic `.bak` backups, transactional rollback, runtime reload, malformed-JSON rejection, and Windows-resilient file replacement;

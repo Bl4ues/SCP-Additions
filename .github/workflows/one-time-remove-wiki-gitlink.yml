@@ -1,0 +1,33 @@
+name: One-time remove Wiki gitlink
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/remove_wiki_gitlink_trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove accidental gitlink and temporary files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f wiki
+          rm -f .github/workflows/one-time-remove-wiki-gitlink.yml
+          rm -f tools/remove_wiki_gitlink_trigger.txt
+          git add -A
+          git commit -m "chore: remove accidental Wiki gitlink"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/Bl4ues/SCP-Additions.git" HEAD:master

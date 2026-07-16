@@ -46,6 +46,8 @@ jobs:
             git push origin HEAD:master
             exit $status
           fi
+          sed -i '/import net.minecraft.resources.ResourceLocation;/i import net.minecraft.network.chat.Component;' \
+            src/main/java/com/bl4ues/scpinventory/client/gui/components/CodexPanel.java
 
       - name: Build
         run: |

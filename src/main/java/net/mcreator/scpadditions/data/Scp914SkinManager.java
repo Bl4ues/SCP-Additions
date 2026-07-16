@@ -13,16 +13,22 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.stream.Stream;
 
 public final class Scp914SkinManager {
     private static final Path SKIN_DIRECTORY = FMLPaths.CONFIGDIR.get()
             .resolve("scpadditions")
             .resolve("scp914_skins");
-    private static final List<Integer> BUNDLED_SKIN_INDICES = List.of(4, 5, 7, 10, 11);
-    private static final Set<String> RETIRED_DEFAULT_NAMES = Set.of(
-            "skin1.png", "skin2.png", "skin3.png", "skin6.png", "skin8.png", "skin9.png");
+    private static final List<BundledSkin> BUNDLED_SKINS = List.of(
+            new BundledSkin("skin1.png", "skin4.png"),
+            new BundledSkin("skin2.png", "skin5.png"),
+            new BundledSkin("skin3.png", "skin7.png"),
+            new BundledSkin("skin4.png", "skin10.png"),
+            new BundledSkin("skin5.png", "skin11.png"));
+    private static final List<String> OLD_DEFAULT_NAMES = List.of(
+            "skin1.png", "skin2.png", "skin3.png", "skin4.png", "skin5.png",
+            "skin6.png", "skin7.png", "skin8.png", "skin9.png", "skin10.png",
+            "skin11.png");
     private static final String README = """
             SCP-914 1:1 custom skins
 
@@ -32,9 +38,8 @@ public final class Scp914SkinManager {
             When a player passes through SCP-914 on the 1:1 setting, one PNG
             from this directory is selected at random and stored on the player.
 
-            Bundled defaults: skin4.png, skin5.png, skin7.png, skin10.png, and
-            skin11.png. Retired legacy defaults 1, 2, 3, 6, 8, and 9 are ignored
-            even if an older installation previously copied them here.
+            Bundled defaults: skin1.png, skin2.png, skin3.png, skin4.png, and
+            skin5.png. Additional PNG files are treated as custom skins.
 
             Kleiders Custom Renderer is optional, but it must be installed on a
             client for the selected SCP-914 skin to be rendered.
@@ -50,9 +55,10 @@ public final class Scp914SkinManager {
     public static void initialize() {
         try {
             Files.createDirectories(SKIN_DIRECTORY);
+            migrateOldBundledLayout();
             copyBundledDefaults();
-            Path readme = SKIN_DIRECTORY.resolve("README.txt");
-            Files.writeString(readme, README, StandardCharsets.UTF_8);
+            Files.writeString(SKIN_DIRECTORY.resolve("README.txt"), README,
+                    StandardCharsets.UTF_8);
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error(
                     "Failed to initialize SCP-914 skin directory {}", SKIN_DIRECTORY,
@@ -85,8 +91,7 @@ public final class Scp914SkinManager {
 
         String safeName = Path.of(fileName).getFileName().toString();
         if (!safeName.equals(fileName)
-                || !safeName.toLowerCase(Locale.ROOT).endsWith(".png")
-                || isRetiredDefault(safeName)) {
+                || !safeName.toLowerCase(Locale.ROOT).endsWith(".png")) {
             return null;
         }
 
@@ -106,7 +111,6 @@ public final class Scp914SkinManager {
                     .filter(Files::isRegularFile)
                     .map(path -> path.getFileName().toString())
                     .filter(name -> name.toLowerCase(Locale.ROOT).endsWith(".png"))
-                    .filter(name -> !isRetiredDefault(name))
                     .sorted(String.CASE_INSENSITIVE_ORDER)
                     .toList();
         } catch (Exception exception) {
@@ -116,19 +120,39 @@ public final class Scp914SkinManager {
         }
     }
 
-    private static boolean isRetiredDefault(String name) {
-        return name != null && RETIRED_DEFAULT_NAMES.contains(name.toLowerCase(Locale.ROOT));
+    private static void migrateOldBundledLayout() {
+        Path readme = SKIN_DIRECTORY.resolve("README.txt");
+        boolean oldReadme = false;
+        try {
+            oldReadme = Files.isRegularFile(readme)
+                    && Files.readString(readme, StandardCharsets.UTF_8)
+                    .contains("Bundled defaults: skin4.png");
+        } catch (Exception ignored) {
+        }
+
+        boolean oldMarkers = Files.exists(SKIN_DIRECTORY.resolve("skin7.png"))
+                || Files.exists(SKIN_DIRECTORY.resolve("skin10.png"))
+                || Files.exists(SKIN_DIRECTORY.resolve("skin11.png"));
+        if (!oldReadme && !oldMarkers) return;
+
+        for (String name : OLD_DEFAULT_NAMES) {
+            try {
+                Files.deleteIfExists(SKIN_DIRECTORY.resolve(name));
+            } catch (Exception exception) {
+                ScpAdditionsMod.LOGGER.warn(
+                        "Failed to remove legacy bundled SCP-914 skin {}", name,
+                        exception);
+            }
+        }
     }
 
     private static void copyBundledDefaults() {
-        for (int index : BUNDLED_SKIN_INDICES) {
-            String fileName = "skin" + index + ".png";
-            Path target = SKIN_DIRECTORY.resolve(fileName);
-            if (Files.exists(target)) {
-                continue;
-            }
+        for (BundledSkin bundled : BUNDLED_SKINS) {
+            Path target = SKIN_DIRECTORY.resolve(bundled.exposedName());
+            if (Files.exists(target)) continue;
 
-            String resource = "assets/scp_additions/textures/entities/" + fileName;
+            String resource = "assets/scp_additions/textures/entities/"
+                    + bundled.resourceName();
             try (InputStream stream = Scp914SkinManager.class.getClassLoader()
                     .getResourceAsStream(resource)) {
                 if (stream != null) {
@@ -136,7 +160,8 @@ public final class Scp914SkinManager {
                 }
             } catch (Exception exception) {
                 ScpAdditionsMod.LOGGER.warn(
-                        "Failed to copy bundled SCP-914 skin {}", fileName, exception);
+                        "Failed to copy bundled SCP-914 skin {} as {}",
+                        bundled.resourceName(), bundled.exposedName(), exception);
             }
         }
     }
@@ -154,5 +179,8 @@ public final class Scp914SkinManager {
         variables.PlayerOn1to1_9 = false;
         variables.PlayerOn1to1_10 = false;
         variables.PlayerOn1to1_11 = false;
+    }
+
+    private record BundledSkin(String exposedName, String resourceName) {
     }
 }

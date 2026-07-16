@@ -7,18 +7,15 @@
 - Added the SCP Additions logo to Forge's Mods list and replaced the update-specific metadata text with the full mod description used on the project pages.
 
 ## Configuration center
-- Removed `CODEX` from generic item-category editors and config-token parsing; documents are now created exclusively through `codex_documents`, avoiding empty document entries;
-- Expanded world-scoped Codex image import from PNG-only to PNG/JPG/JPEG and raised the per-image limit from 900 KB to 2.5 MB;
-- Fixed Codex documents created in the in-game editor not being persisted or listed after reopening the configuration center;
-- `Save Document` now validates, saves and reloads the inventory configuration immediately, while `Save & Give Test Item` waits for that reload before generating the unique item;
-- Unique generated Codex items are routed directly to the Documents area when the SCP Inventory module is enabled;
-- World-scoped Codex PNG/text assets now report loading, missing and empty states instead of displaying the old synthetic document page;
-
 - Added a native configuration center available from **Mods → SCP Additions** and `/scpadditions config`;
 - Added dedicated editors for modules, item categories and equipment effects, hidden Status effects, SCP-173 targets, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
 - Added registry search, translated display names, item/entity icons, dynamic recipe inputs and outputs, a drink color picker, tooltips, and a unified SCP Unity-inspired interface using Roboto with a Montserrat main title;
 - Added validation, automatic `.bak` backups, transactional rollback, runtime reload, malformed-JSON rejection, and Windows-resilient file replacement;
 - Restricted configuration writes and legacy editor packets to the integrated owner or players with operator permission level 2 or higher;
+- Removed `CODEX` from generic item-category editors and config-token parsing; documents are now created exclusively through `codex_documents`, avoiding empty document entries;
+- Expanded world-scoped Codex image import from PNG-only to PNG/JPG/JPEG and raised the per-image limit from 900 KB to 2.5 MB;
+- Unique generated Codex items are routed directly to the Documents area when the SCP Inventory module is enabled;
+- World-scoped Codex PNG/text assets now report loading, missing and empty states instead of displaying the old synthetic document page;
 - New Codex entries currently use `minecraft:paper` as a temporary default item until dedicated document items are implemented in a future update. This default can be changed to any registered item before saving;
 - Added direct Codex text editing and PNG/JPG/JPEG drag-and-drop import. Imported assets are stored as real files in the current world's `scp_additions/codex_assets` folder and sent to clients on demand; JSON definitions contain only compact references, while packaged resources remain supported;
 - Added optional unique-item matching for Codex definitions. Unique documents use an NBT identifier, retain the configured display name and can be generated with the editor's **Give Test Item** action, avoiding every ordinary copy of the base item becoming the same document.
@@ -49,7 +46,6 @@
 - Centered and polished the Status parameter layout while moving only the rendered player preview inside its original frame;
 - Status-effect duration bars now begin full when an effect is applied and drain proportionally to that effect's actual remaining duration;
 - Added a subtle outward-pulsing amber vignette for both positive and negative SCP-1176 honey outcomes;
-- Hid SCP-1176's internal synchronization marker from the vanilla effect list and custom Conditions panel;
 - Made SCP-1176's negative-result music follow the affected player's head and stop immediately on death or disconnect;
 - Added subtitles for all custom sounds.
 
@@ -68,12 +64,9 @@
 - Explicit JSON recipes remain fully authoritative and always take priority over inferred transformations;
 - Once an SCP-914 cycle starts, every item in the intake is consumed even when only part of the intake contributed to the selected result;
 - Trimmed generic vanilla transformations from the bundled defaults so the fallback resolver handles broad behavior while explicit defaults remain focused on SCP Additions content and special entity transformations;
-- Reduced the bundled SCP-914 1:1 skin pool to five selected defaults and renumbered them consistently as `skin1.png` through `skin5.png`;
-- SCP-914 recipe summaries now reuse SCP-294's configured cup colors and render cached, non-ticking miniature previews for visible living-entity inputs and outputs, with a safe fallback icon for unsupported entity types.
+- Reduced the bundled SCP-914 1:1 skin pool to five selected defaults and renumbered them consistently as `skin1.png` through `skin5.png`.
 
 ## Configuration and building
-
-- Removed stale bundled context-interaction rules that still targeted the old `scp_unity_extra_blocks` registry namespace; the migrated `scp_additions` rules and optional `scpo` compatibility remain unchanged;
 
 - Added `/scpadditions reload` to validate and reload configurations without restarting;
 - Invalid JSON and malformed IDs now produce clear errors without partially applying the reload;

@@ -1,0 +1,9 @@
+Final configuration polish applied.
+Traceback (most recent call last):
+  File "/home/runner/work/SCP-Additions/SCP-Additions/tools/one_time_final_config_polish_v4.py", line 30, in <module>
+    exec(compile(source, str(source_path), "exec"), namespace)
+  File "/home/runner/work/SCP-Additions/SCP-Additions/tools/one_time_final_config_polish_v2.py", line 1646, in <module>
+    replace_once(
+  File "/home/runner/work/SCP-Additions/SCP-Additions/tools/one_time_final_config_polish_v2.py", line 21, in replace_once
+    raise RuntimeError(f"Expected one occurrence in {path}, found {count}: {old[:140]!r}")
+RuntimeError: Expected one occurrence in CHANGELOG.md, found 0: '## Configuration center'

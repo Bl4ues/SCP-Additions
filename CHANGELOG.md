@@ -7,6 +7,8 @@
 - Added the SCP Additions logo to Forge's Mods list and replaced the update-specific metadata text with the full mod description used on the project pages.
 
 ## Configuration center
+- Removed `CODEX` from generic item-category editors and config-token parsing; documents are now created exclusively through `codex_documents`, avoiding empty document entries;
+- Expanded world-scoped Codex image import from PNG-only to PNG/JPG/JPEG and raised the per-image limit from 900 KB to 2.5 MB;
 - Fixed Codex documents created in the in-game editor not being persisted or listed after reopening the configuration center;
 - `Save Document` now validates, saves and reloads the inventory configuration immediately, while `Save & Give Test Item` waits for that reload before generating the unique item;
 - Unique generated Codex items are routed directly to the Documents area when the SCP Inventory module is enabled;
@@ -18,7 +20,7 @@
 - Added validation, automatic `.bak` backups, transactional rollback, runtime reload, malformed-JSON rejection, and Windows-resilient file replacement;
 - Restricted configuration writes and legacy editor packets to the integrated owner or players with operator permission level 2 or higher;
 - New Codex entries currently use `minecraft:paper` as a temporary default item until dedicated document items are implemented in a future update. This default can be changed to any registered item before saving;
-- Added direct Codex text editing and PNG drag-and-drop import. Imported assets are stored as real files in the current world's `scp_additions/codex_assets` folder and sent to clients on demand; JSON definitions contain only compact references, while packaged resources remain supported;
+- Added direct Codex text editing and PNG/JPG/JPEG drag-and-drop import. Imported assets are stored as real files in the current world's `scp_additions/codex_assets` folder and sent to clients on demand; JSON definitions contain only compact references, while packaged resources remain supported;
 - Added optional unique-item matching for Codex definitions. Unique documents use an NBT identifier, retain the configured display name and can be generated with the editor's **Give Test Item** action, avoiding every ordinary copy of the base item becoming the same document.
 
 ## Creative mode

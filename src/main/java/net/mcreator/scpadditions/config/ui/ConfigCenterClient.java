@@ -462,7 +462,7 @@ public final class ConfigCenterClient {
     }
 
     private static final class ItemRulesScreen extends ConfigScreen {
-        private static final List<String> TYPES = List.of("MISCELLANEOUS", "CONSUMABLE", "USABLE", "HARMFUL", "KEY", "COIN", "AMMO", "HEAD", "CHEST", "LEGS", "FEET", "ACCESSORY", "ACCESSORYHAND", "WEAPON", "CODEX");
+        private static final List<String> TYPES = List.of("MISCELLANEOUS", "CONSUMABLE", "USABLE", "PLACEABLE", "HARMFUL", "KEY", "COIN", "AMMO", "HEAD", "CHEST", "LEGS", "FEET", "ACCESSORY", "ACCESSORYHAND", "WEAPON");
         private final JsonObject root;
         private final EditBox search;
         private int scroll;
@@ -471,6 +471,17 @@ public final class ConfigCenterClient {
         private ItemRulesScreen(Screen parent, JsonObject root) {
             super(parent, "Item Categories & Equipment Effects");
             this.root = root;
+            JsonArray rules = array(root, "item_rules");
+            for (int i = rules.size() - 1; i >= 0; i--) {
+                JsonElement element = rules.get(i);
+                if (!element.isJsonObject()) continue;
+                String configured = string(element.getAsJsonObject(), "type", "");
+                if ("CODEX".equalsIgnoreCase(configured)
+                        || "DOCUMENT".equalsIgnoreCase(configured)
+                        || "DOC".equalsIgnoreCase(configured)) {
+                    rules.remove(i);
+                }
+            }
             this.search = new EditBox(Minecraft.getInstance().font, 0, 0, 100, 20, Component.literal("Search"));
         }
 
@@ -1107,7 +1118,7 @@ public final class ConfigCenterClient {
             int y = Math.max(8, (height - h) / 2);
             panel(graphics, x, y, w, h, screenTitle, font);
             String imageState = edit.has("world_image")
-                    ? "World PNG attached" : "No world PNG";
+                    ? "World image attached" : "No world image";
             String textState = edit.has("world_text")
                     ? "world text attached" : "no world text";
             graphics.drawString(font, imageState + " · " + textState

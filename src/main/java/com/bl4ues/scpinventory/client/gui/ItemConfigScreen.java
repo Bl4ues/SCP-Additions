@@ -15,6 +15,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Arrays;
+
 public class ItemConfigScreen extends Screen {
     private static final int PANEL_W = 310;
     private static final int PANEL_H = 270;
@@ -27,7 +29,9 @@ public class ItemConfigScreen extends Screen {
     private static final int MUTED = 0xFFA9AFBA;
     private static final int SECTION = 0xFFD3D9E4;
     private static final int DANGER = 0xFFFF8F8F;
-    private static final ScpItemType[] TYPES = ScpItemType.values();
+    private static final ScpItemType[] TYPES = Arrays.stream(ScpItemType.values())
+            .filter(type -> type != ScpItemType.CODEX)
+            .toArray(ScpItemType[]::new);
 
     private final String itemId;
     private final boolean existing;
@@ -58,7 +62,8 @@ public class ItemConfigScreen extends Screen {
         int width = PANEL_W - 32;
 
         typeButton = addRenderableWidget(Button.builder(ScpFonts.roboto(typeText()), b -> {
-            type = TYPES[(type.ordinal() + 1) % TYPES.length];
+            int index = Arrays.asList(TYPES).indexOf(type);
+            type = TYPES[(Math.max(0, index) + 1) % TYPES.length];
             b.setMessage(ScpFonts.roboto(typeText()));
         }).bounds(x, y, width, 22).build());
 
@@ -177,7 +182,8 @@ public class ItemConfigScreen extends Screen {
 
     private static ScpItemType parseType(String value) {
         try {
-            return ScpItemType.valueOf(value == null ? "MISCELLANEOUS" : value.trim().toUpperCase());
+            ScpItemType parsed = ScpItemType.valueOf(value == null ? "MISCELLANEOUS" : value.trim().toUpperCase());
+            return parsed == ScpItemType.CODEX ? ScpItemType.MISCELLANEOUS : parsed;
         } catch (Exception ignored) {
             return ScpItemType.MISCELLANEOUS;
         }

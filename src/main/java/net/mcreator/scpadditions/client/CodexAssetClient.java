@@ -51,13 +51,13 @@ public final class CodexAssetClient {
 
     public static Optional<ResourceLocation> getTexture(String key) {
         if (key == null || key.isBlank()) return Optional.empty();
-        String cache = cacheKey("png", key);
+        String cache = cacheKey("image", key);
         ResourceLocation existing = TEXTURES.get(cache);
         if (existing != null) return Optional.of(existing);
         byte[] data = BYTES.get(cache);
         if (data == null) {
             if (MISSING.contains(cache)) return Optional.empty();
-            request("png", key);
+            request("image", key);
             return Optional.empty();
         }
         try {
@@ -119,7 +119,10 @@ public final class CodexAssetClient {
     }
 
     private static String cacheKey(String kind, String key) {
-        return (kind == null ? "" : kind) + ":" + (key == null ? "" : key);
+        String normalized = kind == null ? "" : kind.trim().toLowerCase(java.util.Locale.ROOT);
+        if ("png".equals(normalized) || "jpg".equals(normalized)
+                || "jpeg".equals(normalized)) normalized = "image";
+        return normalized + ":" + (key == null ? "" : key);
     }
 
     private record PendingUpload(String kind, byte[] data,

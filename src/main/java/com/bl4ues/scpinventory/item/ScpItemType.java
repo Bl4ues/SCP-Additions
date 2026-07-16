@@ -59,7 +59,6 @@ public enum ScpItemType {
             case "USABLE", "USEABLE", "NON_CONSUMABLE", "NONCONSUMABLE", "RIGHT_CLICK", "RIGHTCLICK" -> Optional.of(USABLE);
             case "PLACEABLE", "PLACE", "BLOCK", "BUILDING" -> Optional.of(PLACEABLE);
             case "KEY", "KEYCARD", "KEYRING" -> Optional.of(KEY);
-            case "CODEX", "DOCUMENT", "DOC" -> Optional.of(CODEX);
             case "COIN", "CURRENCY", "TOKEN", "MONEY" -> Optional.of(COIN);
             case "AMMO", "AMMUNITION", "BULLET", "BULLETS", "ROUND", "ROUNDS", "MAGAZINE", "MAG" -> Optional.of(AMMO);
             case "HEAD", "HELMET", "MASK" -> Optional.of(HEAD);

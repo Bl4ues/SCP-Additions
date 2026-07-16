@@ -27,11 +27,11 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 public final class CodexAssetStorage {
-    public static final int MAX_PNG_BYTES = 900_000;
+    public static final int MAX_IMAGE_BYTES = 2_500_000;
     public static final int MAX_TEXT_BYTES = 262_144;
-    public static final int MAX_TRANSFER_BYTES = MAX_PNG_BYTES;
+    public static final int MAX_TRANSFER_BYTES = Math.max(MAX_IMAGE_BYTES, MAX_TEXT_BYTES);
     private static final Pattern SAFE_KEY = Pattern.compile(
-            "(?:images|texts)/[0-9a-fA-F-]{36}\\.(?:png|txt)");
+            "(?:images/[0-9a-fA-F-]{36}\\.(?:png|jpe?g)|texts/[0-9a-fA-F-]{36}\\.txt)");
     private static final byte[] PNG_SIGNATURE = {
             (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
     };
@@ -47,21 +47,26 @@ public final class CodexAssetStorage {
         String normalized = normalizeKind(kind);
         if (normalized.isEmpty()) return UploadResult.failure("Unsupported Codex asset type.");
         byte[] data = bytes == null ? new byte[0] : bytes;
-        int limit = "png".equals(normalized) ? MAX_PNG_BYTES : MAX_TEXT_BYTES;
+        int limit = "image".equals(normalized) ? MAX_IMAGE_BYTES : MAX_TEXT_BYTES;
         if (data.length == 0 || data.length > limit) {
             return UploadResult.failure("Codex asset exceeds the allowed size.");
         }
-        if ("png".equals(normalized) && !hasPngSignature(data)) {
-            return UploadResult.failure("The uploaded image is not a PNG file.");
+
+        String extension;
+        if ("image".equals(normalized)) {
+            extension = detectImageExtension(data);
+            if (extension.isEmpty()) {
+                return UploadResult.failure("Only PNG and JPEG Codex images are supported.");
+            }
+        } else {
+            if (!isUtf8(data)) return UploadResult.failure("The uploaded text is not valid UTF-8.");
+            extension = ".txt";
         }
-        if ("text".equals(normalized) && !isUtf8(data)) {
-            return UploadResult.failure("The uploaded text is not valid UTF-8.");
-        }
+
         try {
             MinecraftServer server = player.getServer();
             if (server == null) return UploadResult.failure("No server world is available.");
-            String folder = "png".equals(normalized) ? "images" : "texts";
-            String extension = "png".equals(normalized) ? ".png" : ".txt";
+            String folder = "image".equals(normalized) ? "images" : "texts";
             String key = folder + "/" + UUID.randomUUID() + extension;
             Path target = resolve(server, key);
             Files.createDirectories(target.getParent());
@@ -131,7 +136,15 @@ public final class CodexAssetStorage {
 
     private static String normalizeKind(String kind) {
         String value = kind == null ? "" : kind.trim().toLowerCase(Locale.ROOT);
-        return "png".equals(value) || "text".equals(value) ? value : "";
+        if ("image".equals(value) || "png".equals(value)
+                || "jpg".equals(value) || "jpeg".equals(value)) return "image";
+        return "text".equals(value) ? "text" : "";
+    }
+
+    private static String detectImageExtension(byte[] bytes) {
+        if (hasPngSignature(bytes)) return ".png";
+        if (hasJpegSignature(bytes)) return ".jpg";
+        return "";
     }
 
     private static boolean hasPngSignature(byte[] bytes) {
@@ -142,6 +155,15 @@ public final class CodexAssetStorage {
         return true;
     }
 
+    private static boolean hasJpegSignature(byte[] bytes) {
+        return bytes.length >= 4
+                && (bytes[0] & 0xFF) == 0xFF
+                && (bytes[1] & 0xFF) == 0xD8
+                && (bytes[2] & 0xFF) == 0xFF
+                && (bytes[bytes.length - 2] & 0xFF) == 0xFF
+                && (bytes[bytes.length - 1] & 0xFF) == 0xD9;
+    }
+
     private static boolean isUtf8(byte[] bytes) {
         try {
             StandardCharsets.UTF_8.newDecoder()
@@ -149,15 +171,15 @@ public final class CodexAssetStorage {
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
                     .decode(ByteBuffer.wrap(bytes));
             return true;
-        } catch (CharacterCodingException ignored) {
+        } catch (CharacterCodingException exception) {
             return false;
         }
     }
 
-    private static String safeName(String value) {
-        if (value == null || value.isBlank()) return "asset";
-        String cleaned = value.replaceAll("[^A-Za-z0-9._ -]", "_");
-        return cleaned.length() <= 80 ? cleaned : cleaned.substring(0, 80);
+    private static String safeName(String name) {
+        if (name == null || name.isBlank()) return "asset";
+        String cleaned = name.replaceAll("[^A-Za-z0-9._ -]", "_").trim();
+        return cleaned.isBlank() ? "asset" : cleaned;
     }
 
     private static String readable(Throwable throwable) {
@@ -170,7 +192,6 @@ public final class CodexAssetStorage {
         public static UploadResult success(String key, String message) {
             return new UploadResult(true, key, message);
         }
-
         public static UploadResult failure(String message) {
             return new UploadResult(false, "", message);
         }

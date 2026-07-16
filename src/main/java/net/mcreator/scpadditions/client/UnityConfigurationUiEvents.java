@@ -72,7 +72,7 @@ public final class UnityConfigurationUiEvents {
     private static final List<String> ITEM_TYPES = List.of(
             "MISCELLANEOUS", "CONSUMABLE", "USABLE", "PLACEABLE", "HARMFUL",
             "KEY", "COIN", "AMMO", "HEAD", "CHEST", "LEGS", "FEET",
-            "ACCESSORY", "ACCESSORYHAND", "WEAPON", "CODEX");
+            "ACCESSORY", "ACCESSORYHAND", "WEAPON");
     private static final List<String> MODULE_DESCRIPTIONS = List.of(
             "Enables the custom survival-horror inventory.",
             "Remembers the selected panel, document and scroll positions until leaving the world.",
@@ -1159,7 +1159,7 @@ public final class UnityConfigurationUiEvents {
         values.put("+ recipe", "Create a new SCP-914 recipe in the in-game editor fragment.");
         values.put("+ block", "Create a contextual interaction for a block.");
         values.put("+ entity", "Create a contextual interaction for an entity.");
-        values.put("+ paper document", "Create a Codex definition using minecraft:paper as its temporary item.");
+        values.put("+ paper document", "Create a configured Codex definition. Documents cannot be assigned through generic item categories.");
         values.put("pick color", "Choose the cup color with synchronized RGB sliders and hexadecimal input.");
         values.put("import png", "Upload a PNG into this world's Codex asset folder.");
         values.put("replace png", "Replace the PNG reference with another world asset.");

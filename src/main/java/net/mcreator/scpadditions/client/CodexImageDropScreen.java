@@ -16,19 +16,19 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 public final class CodexImageDropScreen extends Screen {
-    private static final int MAX_PNG_BYTES = 900_000;
+    private static final int MAX_IMAGE_BYTES = 2_500_000;
     private final Screen parent;
     private final boolean hasWorldImage;
     private final Consumer<ImportedImage> callback;
     private final Runnable clearCallback;
-    private String status = "Drop one PNG file anywhere on this screen.";
+    private String status = "Drop one PNG, JPG, or JPEG file anywhere on this screen.";
     private int statusColor = 0xFFA9AFBA;
     private boolean uploading;
 
     public CodexImageDropScreen(Screen parent, boolean hasWorldImage,
                                 Consumer<ImportedImage> callback,
                                 Runnable clearCallback) {
-        super(ScpFonts.roboto("Import Codex PNG"));
+        super(ScpFonts.roboto("Import Codex Image"));
         this.parent = parent;
         this.hasWorldImage = hasWorldImage;
         this.callback = callback;
@@ -42,7 +42,7 @@ public final class CodexImageDropScreen extends Screen {
         int top = Math.max(12, (height - 240) / 2);
         int buttonWidth = (panelWidth - 56) / 2;
         Button remove = addRenderableWidget(Button.builder(
-                ScpFonts.roboto("Remove World PNG"), b -> {
+                ScpFonts.roboto("Remove World Image"), b -> {
                     if (clearCallback != null) clearCallback.run();
                 }).bounds(left + 20, top + 190, buttonWidth, 22).build());
         remove.active = hasWorldImage;
@@ -56,20 +56,22 @@ public final class CodexImageDropScreen extends Screen {
     public void onFilesDrop(List<Path> paths) {
         if (uploading) return;
         if (paths == null || paths.size() != 1) {
-            fail("Drop exactly one PNG file.");
+            fail("Drop exactly one image file.");
             return;
         }
         Path path = paths.get(0);
         String name = path.getFileName() == null ? "image.png"
                 : path.getFileName().toString();
-        if (!name.toLowerCase(Locale.ROOT).endsWith(".png")) {
-            fail("Only PNG files are accepted.");
+        String lowerName = name.toLowerCase(Locale.ROOT);
+        if (!lowerName.endsWith(".png") && !lowerName.endsWith(".jpg")
+                && !lowerName.endsWith(".jpeg")) {
+            fail("Only PNG, JPG, and JPEG files are accepted.");
             return;
         }
         try {
             byte[] bytes = Files.readAllBytes(path);
-            if (bytes.length == 0 || bytes.length > MAX_PNG_BYTES) {
-                fail("PNG must be between 1 byte and 900 KB.");
+            if (bytes.length == 0 || bytes.length > MAX_IMAGE_BYTES) {
+                fail("Image must be between 1 byte and 2.5 MB.");
                 return;
             }
             int imageWidth;
@@ -80,13 +82,13 @@ public final class CodexImageDropScreen extends Screen {
             }
             if (imageWidth < 1 || imageHeight < 1
                     || imageWidth > 4096 || imageHeight > 4096) {
-                fail("PNG dimensions must be between 1 and 4096 pixels.");
+                fail("Image dimensions must be between 1 and 4096 pixels.");
                 return;
             }
             uploading = true;
             status = "Uploading to this world...";
             statusColor = 0xFFE5D49A;
-            CodexAssetClient.upload("png", name, bytes, key -> {
+            CodexAssetClient.upload("image", name, bytes, key -> {
                 uploading = false;
                 if (callback != null) callback.accept(
                         new ImportedImage(key, imageWidth, imageHeight, name));
@@ -95,7 +97,7 @@ public final class CodexImageDropScreen extends Screen {
                 fail(message);
             });
         } catch (Exception exception) {
-            fail("Could not read that PNG: " + readable(exception));
+            fail("Could not read that image: " + readable(exception));
         }
     }
 
@@ -118,12 +120,12 @@ public final class CodexImageDropScreen extends Screen {
                 left + 18, top + 12, 0xFFF7F8FC, false);
         graphics.fill(left + 20, top + 52, left + panelWidth - 20,
                 top + 164, 0xFF081022);
-        Component drop = ScpFonts.roboto("DROP PNG HERE");
+        Component drop = ScpFonts.roboto("DROP PNG / JPG / JPEG HERE");
         graphics.drawString(font, drop,
                 left + (panelWidth - font.width(drop)) / 2,
                 top + 88, 0xFFE5D49A, false);
         Component limit = ScpFonts.roboto(
-                "Saved in this world · Maximum 900 KB · 4096 × 4096");
+                "Saved in this world · Maximum 2.5 MB · 4096 × 4096");
         graphics.drawString(font, limit,
                 left + (panelWidth - font.width(limit)) / 2,
                 top + 108, 0xFFA9AFBA, false);

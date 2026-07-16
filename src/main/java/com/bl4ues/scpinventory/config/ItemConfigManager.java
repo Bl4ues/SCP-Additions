@@ -309,7 +309,7 @@ public final class ItemConfigManager {
             case "USABLE", "USEABLE", "NON_CONSUMABLE", "NONCONSUMABLE", "RIGHT_CLICK", "RIGHTCLICK" -> "USABLE";
             case "PLACEABLE", "PLACE", "BLOCK", "BUILDING" -> "PLACEABLE";
             case "KEY", "KEYCARD", "KEYRING" -> "KEY";
-            case "CODEX", "DOCUMENT", "DOC" -> "CODEX";
+            case "CODEX", "DOCUMENT", "DOC" -> "MISCELLANEOUS";
             case "COIN", "CURRENCY", "TOKEN", "MONEY" -> "COIN";
             case "AMMO", "AMMUNITION", "BULLET", "BULLETS", "ROUND", "ROUNDS", "MAGAZINE", "MAG" -> "AMMO";
             case "HEAD", "HELMET", "MASK" -> "HEAD";

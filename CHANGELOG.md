@@ -4,8 +4,7 @@
 
 ## Facility floors
 
-- Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks, including straight edges, rounded corners, diagonal contacts, and live updates when nearby floors change;
-- Replaced rotated transition models with twelve dedicated orientation textures so normal and specular maps keep consistent PBR lighting across block boundaries;
+- Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks;
 - Added tooltips to both Sector 1 floor blocks explaining that they connect automatically;
 - Fixed the SL1 Small Floor Arrow and SL1 Big Floor Arrow disappearing or becoming visible only at specific angles by restoring translucent rendering and raising their decal geometry slightly above the supporting floor.
 
@@ -25,11 +24,11 @@
 ## Blink controls
 
 - Fixed manual blink input not responding before SCP-173 activated or while testing in Creative; manual blinking now works independently of the automatic encounter state, while Spectator remains excluded;
-- Removed an obsolete duplicate `key.scpinventory.blink` mapping. The 3.0.3 change from `Space` to `B` updated the SCP-173 mapping but left the older SCP Inventory mapping using the same identifier, allowing Minecraft to load or rebind one instance while gameplay checked the other.
+- Removed an obsolete duplicate `key.scpinventory.blink` mapping. The 3.0.3 change from `Space` to `B` updated the SCP-173 mapping but left the older SCP Inventory mapping using the same identifier, allowing Minecraft to load or rebind one instance while gameplay checked the other. I forgor 💀
 
 ## Technical changes
 
-- Unified the in-game mod version with the Gradle project version so future builds no longer require the version to be updated separately in `mods.toml`.
+- Unified the in-game mod version with the Gradle project version so future builds no longer require the version to be updated separately in `mods.toml`. Just so I don't forget to update the in-game version, again.
 
 # SCP Additions 3.0.4 — Hotfix
 

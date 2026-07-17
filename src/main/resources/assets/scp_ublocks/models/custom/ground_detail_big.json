@@ -1,5 +1,6 @@
 {
   "format_version": "1.9.0",
+  "ambientocclusion": false,
   "texture_size": [
     32,
     32
@@ -16,6 +17,7 @@
         0.5,
         8
       ],
+      "shade": false,
       "faces": {
         "up": {
           "uv": [

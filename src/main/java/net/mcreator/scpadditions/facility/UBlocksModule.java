@@ -2,11 +2,14 @@ package net.mcreator.scpadditions.facility;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
@@ -15,6 +18,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -46,9 +50,12 @@ public final class UBlocksModule {
     private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
     private static final List<RegistryObject<Block>> CUTOUT_BLOCKS = new ArrayList<>();
 
-    // Sector 1 structural set.
-    public static final RegistryObject<Block> SL_1_FLOOR_1 = structure("sl_1_floor_1");
-    public static final RegistryObject<Block> SL_1_FLOOR_2 = structure("sl_1_floor_2");
+    // Sector 1 structural set. Floor 1 is the static gray surface; Floor 2 owns
+    // the visual transition states rendered around neighboring gray tiles.
+    public static final RegistryObject<Block> SL_1_FLOOR_1 = registerBlock(
+            "sl_1_floor_1", GrayConnectedFloorBlock::new, false);
+    public static final RegistryObject<Block> SL_1_FLOOR_2 = registerBlock(
+            "sl_1_floor_2", BlueConnectedFloorBlock::new, false);
     public static final RegistryObject<Block> SL1_WALL_BOT = structure("sl1_wall_bot");
     public static final RegistryObject<Block> SL1_WALL_MID = structure("sl1_wall_mid");
     public static final RegistryObject<Block> SL_1_WALL_TOP = structure("sl_1_wall_top");
@@ -128,7 +135,7 @@ public final class UBlocksModule {
         return block;
     }
 
-    private static final class UBlockStructureBlock extends Block {
+    private static class UBlockStructureBlock extends Block {
         private UBlockStructureBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.STONE).strength(1.5F, 10.0F));
         }
@@ -137,6 +144,185 @@ public final class UBlocksModule {
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
             List<ItemStack> original = super.getDrops(state, builder);
             return original.isEmpty() ? Collections.singletonList(new ItemStack(this)) : original;
+        }
+    }
+
+    private abstract static class ConnectedFloorBlock extends UBlockStructureBlock {
+        private ConnectedFloorBlock() {
+            super();
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean movedByPiston) {
+            super.onPlace(state, level, pos, oldState, movedByPiston);
+            if (oldState.getBlock() != state.getBlock()) {
+                refreshBlueFloors(level, pos, state);
+            }
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean movedByPiston) {
+            if (state.getBlock() != newState.getBlock()) {
+                // onRemove runs before the replacement is fully visible through
+                // the level, so pass it explicitly while recalculating neighbors.
+                refreshBlueFloors(level, pos, newState);
+            }
+            super.onRemove(state, level, pos, newState, movedByPiston);
+        }
+    }
+
+    private static final class GrayConnectedFloorBlock extends ConnectedFloorBlock {
+        private GrayConnectedFloorBlock() {
+            super();
+        }
+    }
+
+    private static final class BlueConnectedFloorBlock extends ConnectedFloorBlock {
+        private static final EnumProperty<FloorTransition> TRANSITION =
+                EnumProperty.create("transition", FloorTransition.class);
+
+        private BlueConnectedFloorBlock() {
+            super();
+            registerDefaultState(stateDefinition.any().setValue(TRANSITION, FloorTransition.NONE));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(TRANSITION);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(TRANSITION,
+                    resolveTransition(context.getLevel(), context.getClickedPos(), null, null));
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction,
+                BlockState neighborState, LevelAccessor level, BlockPos currentPos,
+                BlockPos neighborPos) {
+            FloorTransition transition = resolveTransition(level, currentPos, neighborPos, neighborState);
+            return state.getValue(TRANSITION) == transition
+                    ? state
+                    : state.setValue(TRANSITION, transition);
+        }
+    }
+
+    private static void refreshBlueFloors(Level level, BlockPos changedPos,
+            BlockState replacementState) {
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                BlockPos target = changedPos.offset(x, 0, z);
+                BlockState targetState = target.equals(changedPos)
+                        ? replacementState
+                        : level.getBlockState(target);
+                if (!(targetState.getBlock() instanceof BlueConnectedFloorBlock)) {
+                    continue;
+                }
+
+                FloorTransition transition = resolveTransition(
+                        level, target, changedPos, replacementState);
+                if (targetState.getValue(BlueConnectedFloorBlock.TRANSITION) != transition) {
+                    level.setBlock(target,
+                            targetState.setValue(BlueConnectedFloorBlock.TRANSITION, transition),
+                            Block.UPDATE_CLIENTS);
+                }
+            }
+        }
+    }
+
+    private static FloorTransition resolveTransition(BlockGetter level, BlockPos pos,
+            BlockPos overriddenPos, BlockState overriddenState) {
+        boolean north = isGray(level, pos.north(), overriddenPos, overriddenState);
+        boolean east = isGray(level, pos.east(), overriddenPos, overriddenState);
+        boolean south = isGray(level, pos.south(), overriddenPos, overriddenState);
+        boolean west = isGray(level, pos.west(), overriddenPos, overriddenState);
+
+        int cardinalCount = count(north, east, south, west);
+        if (cardinalCount >= 3 || (north && south) || (east && west)) {
+            return FloorTransition.FULL;
+        }
+        if (north && west) return FloorTransition.INNER_NW;
+        if (north && east) return FloorTransition.INNER_NE;
+        if (south && east) return FloorTransition.INNER_SE;
+        if (south && west) return FloorTransition.INNER_SW;
+        if (north) return FloorTransition.EDGE_N;
+        if (east) return FloorTransition.EDGE_E;
+        if (south) return FloorTransition.EDGE_S;
+        if (west) return FloorTransition.EDGE_W;
+
+        boolean northWest = isGray(level, pos.north().west(), overriddenPos, overriddenState);
+        boolean northEast = isGray(level, pos.north().east(), overriddenPos, overriddenState);
+        boolean southEast = isGray(level, pos.south().east(), overriddenPos, overriddenState);
+        boolean southWest = isGray(level, pos.south().west(), overriddenPos, overriddenState);
+
+        int diagonalCount = count(northWest, northEast, southEast, southWest);
+        if (diagonalCount == 4) return FloorTransition.FULL;
+        if (diagonalCount == 3) {
+            if (!southEast) return FloorTransition.INNER_NW;
+            if (!southWest) return FloorTransition.INNER_NE;
+            if (!northWest) return FloorTransition.INNER_SE;
+            return FloorTransition.INNER_SW;
+        }
+        if (diagonalCount == 2) {
+            if (northWest && northEast) return FloorTransition.EDGE_N;
+            if (northEast && southEast) return FloorTransition.EDGE_E;
+            if (southEast && southWest) return FloorTransition.EDGE_S;
+            if (southWest && northWest) return FloorTransition.EDGE_W;
+            // Three source textures cannot express the two opposite-corner
+            // checkerboard cases without inventing a visual connection.
+            return FloorTransition.NONE;
+        }
+        if (northWest) return FloorTransition.CORNER_NW;
+        if (northEast) return FloorTransition.CORNER_NE;
+        if (southEast) return FloorTransition.CORNER_SE;
+        if (southWest) return FloorTransition.CORNER_SW;
+        return FloorTransition.NONE;
+    }
+
+    private static boolean isGray(BlockGetter level, BlockPos pos,
+            BlockPos overriddenPos, BlockState overriddenState) {
+        BlockState state = overriddenPos != null && overriddenPos.equals(pos)
+                ? overriddenState
+                : level.getBlockState(pos);
+        return state != null && state.getBlock() instanceof GrayConnectedFloorBlock;
+    }
+
+    private static int count(boolean... values) {
+        int result = 0;
+        for (boolean value : values) {
+            if (value) result++;
+        }
+        return result;
+    }
+
+    private enum FloorTransition implements StringRepresentable {
+        NONE("none"),
+        CORNER_SW("corner_sw"),
+        CORNER_NW("corner_nw"),
+        CORNER_NE("corner_ne"),
+        CORNER_SE("corner_se"),
+        EDGE_W("edge_w"),
+        EDGE_N("edge_n"),
+        EDGE_E("edge_e"),
+        EDGE_S("edge_s"),
+        INNER_NW("inner_nw"),
+        INNER_NE("inner_ne"),
+        INNER_SE("inner_se"),
+        INNER_SW("inner_sw"),
+        FULL("full");
+
+        private final String serializedName;
+
+        FloorTransition(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return serializedName;
         }
     }
 

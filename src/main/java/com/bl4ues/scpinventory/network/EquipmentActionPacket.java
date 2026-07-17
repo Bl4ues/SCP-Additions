@@ -49,15 +49,18 @@ public class EquipmentActionPacket {
             player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
                 switch (msg.action) {
                     case ACTION_UNEQUIP -> {
-                        ItemStack equipped = inventory.getEquipment(slot.get());
+                        ItemStack equipped = inventory.extractEquipment(slot.get());
                         if (equipped.isEmpty()) {
                             return;
                         }
 
-                        if (inventory.addInventoryItem(equipped)) {
-                            inventory.clearEquipment(slot.get());
-                            InventoryActionPacket.syncVanillaEquipmentSlot(player, slot.get(), ItemStack.EMPTY);
-                        } else {
+                        InventoryActionPacket.syncVanillaEquipmentSlot(
+                                player, slot.get(), ItemStack.EMPTY);
+                        if (!inventory.addInventoryItem(equipped)) {
+                            // Survival never uses vanilla storage as overflow for
+                            // SCP Inventory equipment. A full custom inventory
+                            // turns the unequipped stack into a world drop.
+                            player.drop(equipped, false);
                             ModNetwork.showInventoryFull(player);
                         }
                     }

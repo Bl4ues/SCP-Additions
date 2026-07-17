@@ -287,7 +287,7 @@
 
 # SCP Additions 2.0.1 — Hotfix
 
-## Hotfix update for the 2.0.0 hotfix.
+## Hotfix update for the 2.0.0 overhaul.
 
 - Fixed the missing Level 1 Keycard language entry;
 - Fixed Security Credentials not being detected by the Tesla Gate Terminal when the item had NBT data;

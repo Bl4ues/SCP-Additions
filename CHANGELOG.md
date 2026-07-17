@@ -2,6 +2,25 @@
 
 # SCP Additions 3.0.6 — In Development
 
+## SCP Inventory overflow
+
+- Changed Survival inventory routing so stacks that belong in the SCP Inventory are dropped into the world instead of remaining as an unintended vanilla-inventory fallback when the SCP Inventory cannot accept them;
+- Preserved controlled usable/placeable sessions and the vanilla mirrors required by equipped weapons, accessories, harmful items, and currency while applying the new overflow rule;
+- Moved the final vanilla-to-SCP routing pass to low event priority so durability and temporary-session synchronization can settle before overflow is evaluated.
+
+## Hazmat Suit groundwork
+
+- Added a reusable timed-equipment progress bar based on the Blink Bar presentation: centered, smaller, yellow, without an icon, and positioned above the Blink Bar;
+- Added server-to-client begin, synchronization, completion, and cancellation controls for timed equipment actions;
+- Reserved `scp_additions:hazmat_suit` as the public item and the removed legacy Hazmat armor IDs as hidden internal compatibility pieces;
+- Added complete-set detection for future Hazmat behavior, including eye protection and a reusable sealed-protection check;
+- Prepared matching server and client stamina logic for the complete Hazmat Suit to consume stamina twice as quickly and display the stamina bar in red;
+- Added a development asset contract covering the Blockbench rig, pivots, model hierarchy, file paths, textures, overlay, and sound names.
+
+## Development
+
+- Expanded the Java 17 Gradle build workflow to validate feature branches and retain successful compiled JARs as workflow artifacts.
+
 # SCP Additions 3.0.5 — Refinement Update
 
 ## Facility floors

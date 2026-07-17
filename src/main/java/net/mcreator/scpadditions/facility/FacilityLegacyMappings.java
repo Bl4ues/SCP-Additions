@@ -46,7 +46,7 @@ public final class FacilityLegacyMappings {
 
         for (MissingMappingsEvent.Mapping<Item> mapping :
                 event.getMappings(ForgeRegistries.Keys.ITEMS, UBlocksModule.LEGACY_MODID)) {
-            RegistryObject<Item> replacement = UBlocksModule.itemByPath(mapping.getKey().getPath());
+            RegistryObject<Item> replacement = UBlocksModule.registeredItemByPath(mapping.getKey().getPath());
             if (replacement != null && replacement.isPresent()) {
                 mapping.remap(replacement.get());
             }

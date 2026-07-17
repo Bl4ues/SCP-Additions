@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.vitals.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.vitals.StaminaBlockerAccess;
 import net.mcreator.scpadditions.vitals.VitalsModule;
 
@@ -67,7 +68,9 @@ public final class PlayerVitalsClient {
 
         if (tryingToSprintWhileMoving) {
             if (stamina > 0.0F) {
-                stamina = Math.max(0.0F, stamina - STAMINA_DRAIN_PER_TICK);
+                float drain = STAMINA_DRAIN_PER_TICK
+                        * HazmatSuitAccess.getStaminaDrainMultiplier(player);
+                stamina = Math.max(0.0F, stamina - drain);
             }
             regenDelayTicks = REGEN_DELAY_TICKS;
             if (stamina <= 0.0F) {

@@ -12,6 +12,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -19,6 +20,10 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp173SpawnEvents {
@@ -35,8 +40,21 @@ public final class Scp173SpawnEvents {
     private static final double AROUND_SIDE_SPREAD = 18.0D;
     private static final double ENTITY_HALF_WIDTH = 0.425D;
     private static final double ENTITY_HEIGHT = 1.95D;
+    private static final Map<UUID, Integer> NEXT_SPAWN_CHECK_TICKS = new HashMap<>();
 
     private Scp173SpawnEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            scheduleNextCheck(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        NEXT_SPAWN_CHECK_TICKS.remove(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
@@ -45,10 +63,30 @@ public final class Scp173SpawnEvents {
                 || !(event.player instanceof ServerPlayer player) || player.isCreative() || player.isSpectator()
                 || !ScpAdditionsModulesConfig.get().scp173.enabled
                 || !ScpAdditionsModulesConfig.get().scp173.naturalSpawnEnabled) return;
-        if (player.tickCount % SPAWN_CHECK_INTERVAL_TICKS != 0 || hasAnyScp173(player)) return;
+
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        int currentTick = server.getTickCount();
+        int nextCheckTick = NEXT_SPAWN_CHECK_TICKS.computeIfAbsent(
+                player.getUUID(), ignored -> currentTick + SPAWN_CHECK_INTERVAL_TICKS);
+        if (currentTick < nextCheckTick) return;
+
+        // Schedule the following interval before evaluating the current attempt,
+        // preserving the original five-minute cadence even when an SCP-173 is
+        // already loaded or the random chance fails.
+        NEXT_SPAWN_CHECK_TICKS.put(player.getUUID(), currentTick + SPAWN_CHECK_INTERVAL_TICKS);
+        if (hasAnyScp173(player)) return;
+
         RandomSource random = player.getRandom();
         if (random.nextInt(SPAWN_CHANCE_BOUND) != 0) return;
         trySpawnNearPlayer(player, random);
+    }
+
+    private static void scheduleNextCheck(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        NEXT_SPAWN_CHECK_TICKS.put(
+                player.getUUID(), server.getTickCount() + SPAWN_CHECK_INTERVAL_TICKS);
     }
 
     private static boolean hasAnyScp173(ServerPlayer player) {

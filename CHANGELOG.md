@@ -4,7 +4,12 @@
 
 ## Facility floors
 
-- Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks, including straight edges, rounded corners, diagonal contacts, and live updates when nearby floors change.
+- Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks, including straight edges, rounded corners, diagonal contacts, and live updates when nearby floors change;
+- Fixed the SL1 Small Floor Arrow and SL1 Big Floor Arrow disappearing or becoming visible only at specific angles by restoring translucent rendering and raising their decal geometry slightly above the supporting floor.
+
+## Presentation and naming
+
+- Standardized capitalization and removed inconsistent spacing from legacy SCP Unity block names, including Sector 1 and Sector 2 floors, walls, details, SCP-914 parts, and the Decontamination Checkpoint.
 
 ## Technical changes
 

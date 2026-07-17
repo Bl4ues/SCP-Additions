@@ -6,7 +6,7 @@
 
 - Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks;
 - Added tooltips to both Sector 1 floor blocks explaining that they connect automatically;
-- Fixed the SL1 Small Floor Arrow and SL1 Big Floor Arrow disappearing or becoming visible only at specific angles by restoring translucent rendering and raising their decal geometry slightly above the supporting floor.
+- Fixed the SL1 Small Floor Arrow and SL1 Big Floor Arrow disappearing or becoming visible only at specific angles in the vanilla renderer by using a single raised, unshaded cutout face instead of the angle-sensitive translucent decal pass.
 
 ## Facility building
 
@@ -24,7 +24,7 @@
 
 ## Blink controls
 
-- Fixed manual blink input not responding before SCP-173 activated or while testing in Creative; manual blinking now works independently of the automatic encounter state, while Spectator remains excluded;
+- Fixed manual blink input after the 3.0.3 keybind change and restored its intended activation rule: the key only closes the player's eyes while the Blink Bar is active;
 - Removed an obsolete duplicate `key.scpinventory.blink` mapping. The 3.0.3 change from `Space` to `B` updated the SCP-173 mapping but left the older SCP Inventory mapping using the same identifier, allowing Minecraft to load or rebind one instance while gameplay checked the other. I forgor 💀
 
 ## Technical changes
@@ -237,7 +237,6 @@
 * Added persistent following ownership across save and reload;
 * Added SCP-131-B following nearby idle SCP-131-A entities;
 * Added SCP-131 observation behavior against SCP-173;
-
 ## SCP Unity Facility content
 
 * Added Tesla, Archival, Office, Skyroom, and Security area blocks;

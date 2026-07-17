@@ -77,6 +77,7 @@ public final class BlinkClient {
 
     public static boolean isBlinkClosedLocally() {
         return ScpAdditionsModulesConfig.get().blink.enabled
+                && active
                 && (darkTicks > 0 || postBlinkCoverTicks > 0 || Scp173Keybinds.BLINK.isDown());
     }
 
@@ -109,8 +110,8 @@ public final class BlinkClient {
 
         boolean creative = mc.player.isCreative();
         if (creative) {
-            // Creative players are still excluded from automatic SCP-173
-            // activation, but the manual blink remains available for testing.
+            // Creative players remain excluded from automatic SCP-173 activation.
+            // Since the Blink Bar is inactive, manual blinking is unavailable too.
             setActive(false);
             visualAlpha = 0.0F;
             fadeOutTicks = 0;
@@ -120,10 +121,15 @@ public final class BlinkClient {
         }
 
         if (mc.isPaused()) return;
+        if (!active) {
+            syncBlinkClosed(false, false);
+            return;
+        }
+
         updateBlinkInterval(mc);
 
-        // Manual input is independent from the automatic SCP-173 activation
-        // state. This keeps the key usable before an encounter and in Creative.
+        // Manual blinking is part of the active encounter system and is only
+        // accepted while the Blink Bar is present.
         if (mc.screen == null && Scp173Keybinds.BLINK.isDown()) {
             holdBlinkClosed();
             syncBlinkClosed(true, false);
@@ -143,10 +149,6 @@ public final class BlinkClient {
                 blinkDrainRemainder = 0.0F;
                 syncBlinkClosed(false, true);
             }
-            return;
-        }
-        if (!active) {
-            syncBlinkClosed(false, false);
             return;
         }
         syncBlinkClosed(false, false);
@@ -250,7 +252,7 @@ public final class BlinkClient {
         if (!force && closed == lastSyncedClosed && (!closed || blinkSyncTicks < 2)) return;
         blinkSyncTicks = 0;
         lastSyncedClosed = closed;
-        boolean manual = closed && Scp173Keybinds.BLINK.isDown();
+        boolean manual = closed && active && Scp173Keybinds.BLINK.isDown();
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(new BlinkInputStatePacket(closed, manual));
     }
 

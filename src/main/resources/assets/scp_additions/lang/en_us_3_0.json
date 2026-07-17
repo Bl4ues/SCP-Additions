@@ -33,6 +33,7 @@
   "tooltip.scp_additions.heavy_door_secondary": "Accepts power at the base or either upper relay height.",
   "tooltip.scp_additions.tesla_terminal_primary": "Controls the global enabled state and manual override of all loaded Tesla Gates.",
   "tooltip.scp_additions.tesla_terminal_secondary": "Requires Security Credentials to access.",
+  "tooltip.scp_additions.sl1_connected_floors": "Connects automatically with the other SL1 Floor Block.",
   "screen.scp_additions.keycard_reader_config": "Keycard Reader Access Level",
   "screen.scp_additions.scp_inventory": "SCP Inventory",
   "screen.scp_additions.scp_inventory.inventory": "INVENTORY",

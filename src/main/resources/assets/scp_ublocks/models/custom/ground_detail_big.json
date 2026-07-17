@@ -26,7 +26,8 @@
             0,
             0
           ],
-          "texture": "#0"
+          "texture": "#0",
+          "tintindex": 0
         }
       }
     }

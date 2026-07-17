@@ -84,29 +84,47 @@ public final class BlinkClient {
         Minecraft mc = Minecraft.getInstance();
         if (!ScpAdditionsModulesConfig.get().blink.enabled) {
             setActive(false);
+            darkTicks = 0;
+            postBlinkCoverTicks = 0;
             visualAlpha = 0.0F;
-            syncBlinkClosed(false, false);
+            fadeOutTicks = 0;
+            blinkDrainRemainder = 0.0F;
+            syncBlinkClosed(false, true);
             return;
         }
         if (mc == null || !mc.isPaused()) {
             if (scareSoundCooldownTicks > 0) scareSoundCooldownTicks--;
             if (horrorSoundCooldownTicks > 0) horrorSoundCooldownTicks--;
         }
-        if (mc.player == null || mc.level == null || mc.player.isCreative() || mc.player.isSpectator()) {
+        if (mc.player == null || mc.level == null || mc.player.isSpectator()) {
+            setActive(false);
+            darkTicks = 0;
+            postBlinkCoverTicks = 0;
+            visualAlpha = 0.0F;
+            fadeOutTicks = 0;
+            blinkDrainRemainder = 0.0F;
+            syncBlinkClosed(false, false);
+            return;
+        }
+
+        boolean creative = mc.player.isCreative();
+        if (creative) {
+            // Creative players are still excluded from automatic SCP-173
+            // activation, but the manual blink remains available for testing.
             setActive(false);
             visualAlpha = 0.0F;
             fadeOutTicks = 0;
             blinkDrainRemainder = 0.0F;
-            return;
+        } else {
+            updateVisualFade();
         }
-        updateVisualFade();
+
         if (mc.isPaused()) return;
         updateBlinkInterval(mc);
-        if (!active) {
-            syncBlinkClosed(false, false);
-            return;
-        }
-        if (Scp173Keybinds.BLINK.isDown()) {
+
+        // Manual input is independent from the automatic SCP-173 activation
+        // state. This keeps the key usable before an encounter and in Creative.
+        if (mc.screen == null && Scp173Keybinds.BLINK.isDown()) {
             holdBlinkClosed();
             syncBlinkClosed(true, false);
             return;
@@ -125,6 +143,10 @@ public final class BlinkClient {
                 blinkDrainRemainder = 0.0F;
                 syncBlinkClosed(false, true);
             }
+            return;
+        }
+        if (!active) {
+            syncBlinkClosed(false, false);
             return;
         }
         syncBlinkClosed(false, false);

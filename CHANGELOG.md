@@ -11,6 +11,11 @@
 
 - Standardized capitalization and removed inconsistent spacing from legacy SCP Unity block names, including Sector 1 and Sector 2 floors, walls, details, SCP-914 parts, and the Decontamination Checkpoint.
 
+## Blink controls
+
+- Fixed manual blink input not responding before SCP-173 activated or while testing in Creative; manual blinking now works independently of the automatic encounter state, while Spectator remains excluded;
+- Removed an obsolete duplicate `key.scpinventory.blink` mapping. The 3.0.3 change from `Space` to `B` updated the SCP-173 mapping but left the older SCP Inventory mapping using the same identifier, allowing Minecraft to load or rebind one instance while gameplay checked the other.
+
 ## Technical changes
 
 - Unified the in-game mod version with the Gradle project version so future builds no longer require the version to be updated separately in `mods.toml`.
@@ -271,7 +276,7 @@
 
 # SCP Additions 2.0.1 — Hotfix
 
-## Hotfix update for the 2.0.0 overhaul.
+## Hotfix update for the 2.0.0 hotfix.
 
 - Fixed the missing Level 1 Keycard language entry;
 - Fixed Security Credentials not being detected by the Tesla Gate Terminal when the item had NBT data;

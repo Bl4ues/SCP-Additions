@@ -1,6 +1,5 @@
 package com.bl4ues.scpinventory.events;
 
-import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
@@ -14,6 +13,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
@@ -33,7 +33,7 @@ public class VanillaMirrorSyncHandler {
     private static final long FULL_MESSAGE_COOLDOWN_MS = 550L;
     private static final Map<UUID, Long> LAST_FULL_MESSAGE = new HashMap<>();
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) {
             return;
@@ -102,10 +102,9 @@ public class VanillaMirrorSyncHandler {
     }
 
     private static boolean routeVanillaInventoryToCustom(ServerPlayer player, IScpInventory inventory) {
-        // Creative mode keeps Minecraft's normal pickup/inventory behavior. Trying
-        // to route those stacks through the SCP inventory would always be rejected
-        // by ScpPickupRouter and repeatedly produce a false "inventory full" notice.
-        if (player.isCreative()) {
+        // Creative keeps normal Minecraft inventory behavior. Spectators are also
+        // excluded because they should never have survival routing applied.
+        if (player.isCreative() || player.isSpectator()) {
             return false;
         }
 
@@ -114,7 +113,7 @@ public class VanillaMirrorSyncHandler {
 
         for (int i = VANILLA_HOTBAR_START; i < VANILLA_MAIN_END_EXCLUSIVE && i < vanillaInventory.items.size(); i++) {
             ItemStack stack = vanillaInventory.items.get(i);
-            if (stack.isEmpty()) {
+            if (stack.isEmpty() || isManagedVanillaMirror(inventory, stack)) {
                 continue;
             }
 
@@ -127,47 +126,74 @@ public class VanillaMirrorSyncHandler {
             }
 
             int originalCount = stack.getCount();
-            int accepted = ScpPickupRouter.accept(inventory, player, stack);
-            if (accepted <= 0) {
-                showInventoryFullThrottled(player);
-                continue;
-            }
+            ItemStack routingStack = stack.copy();
+            int accepted = Math.max(0, Math.min(originalCount,
+                    ScpPickupRouter.accept(inventory, player, routingStack)));
+            int remaining = originalCount - accepted;
 
+            // Once a survival stack is eligible for SCP Inventory routing it must
+            // not remain as an accidental vanilla fallback. Accepted items move to
+            // the capability; any remainder is dropped into the world.
+            vanillaInventory.items.set(i, ItemStack.EMPTY);
             changed = true;
-            if (accepted >= originalCount) {
-                vanillaInventory.items.set(i, ItemStack.EMPTY);
-            } else {
-                stack.shrink(accepted);
-                vanillaInventory.items.set(i, stack);
-                showInventoryFullThrottled(player);
+
+            if (remaining > 0) {
+                ItemStack overflow = stack.copy();
+                overflow.setCount(remaining);
+                dropOverflowStack(player, overflow);
             }
         }
 
         return changed;
     }
 
-    private static boolean routeMirrorOverflow(ServerPlayer player, IScpInventory inventory, Inventory vanillaInventory, int slot, ItemStack stack) {
-        if (stack.getCount() <= 1) {
+    private static boolean isManagedVanillaMirror(IScpInventory inventory, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
             return false;
         }
-
-        ItemStack overflow = stack.copy();
-        overflow.setCount(stack.getCount() - 1);
-        int accepted = ScpPickupRouter.accept(inventory, player, overflow);
-        if (accepted <= 0) {
-            showInventoryFullThrottled(player);
-            return false;
+        if (ScpPickupRouter.isUsableSession(stack)
+                || ScpPickupRouter.isCoinMirror(stack)
+                || ScpPickupRouter.isHarmfulMirror(stack)) {
+            return true;
         }
 
-        int remainingOverflow = overflow.getCount() - accepted;
-        stack.setCount(1 + Math.max(0, remainingOverflow));
-        vanillaInventory.items.set(slot, stack);
+        ItemStack activeUsable = inventory == null ? ItemStack.EMPTY : inventory.getActiveUsable();
+        return stack.getCount() == 1
+                && !activeUsable.isEmpty()
+                && ItemStack.isSameItemSameTags(
+                        normalizeRouterComparable(stack),
+                        normalizeRouterComparable(activeUsable));
+    }
 
-        if (remainingOverflow > 0) {
-            showInventoryFullThrottled(player);
+    private static ItemStack normalizeRouterComparable(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack copy = stack.copy();
+        copy.setCount(1);
+        ScpPickupRouter.stripNoMergeMarker(copy);
+        ScpPickupRouter.stripUsableSession(copy);
+        ScpPickupRouter.stripCoinMirror(copy);
+        ScpPickupRouter.stripHarmfulMirror(copy);
+        return copy;
+    }
+
+    private static void dropOverflowStack(ServerPlayer player, ItemStack stack) {
+        if (player == null || stack == null || stack.isEmpty()) {
+            return;
         }
 
-        return true;
+        ItemStack dropped = stack.copy();
+        ScpPickupRouter.stripNoMergeMarker(dropped);
+        ScpPickupRouter.stripUsableSession(dropped);
+        ScpPickupRouter.stripCoinMirror(dropped);
+        ScpPickupRouter.stripHarmfulMirror(dropped);
+        if (dropped.isEmpty()) {
+            return;
+        }
+
+        player.drop(dropped, false);
+        showInventoryFullThrottled(player);
     }
 
     private static ScpEquipmentSlot getPreservedMirrorSlot(ScpItemType type) {
@@ -198,6 +224,31 @@ public class VanillaMirrorSyncHandler {
         return false;
     }
 
+    private static boolean routeMirrorOverflow(ServerPlayer player, IScpInventory inventory,
+            Inventory vanillaInventory, int slot, ItemStack stack) {
+        if (stack.getCount() <= 1) {
+            return false;
+        }
+
+        int overflowCount = stack.getCount() - 1;
+        ItemStack overflow = stack.copy();
+        overflow.setCount(overflowCount);
+        int accepted = Math.max(0, Math.min(overflowCount,
+                ScpPickupRouter.accept(inventory, player, overflow.copy())));
+        int remaining = overflowCount - accepted;
+
+        stack.setCount(1);
+        vanillaInventory.items.set(slot, stack);
+
+        if (remaining > 0) {
+            ItemStack dropped = overflow.copy();
+            dropped.setCount(remaining);
+            dropOverflowStack(player, dropped);
+        }
+
+        return true;
+    }
+
     private static boolean syncEquippedMainMirror(ServerPlayer player, IScpInventory inventory, ScpEquipmentSlot slot) {
         ItemStack equipped = inventory.getEquipment(slot);
         if (equipped.isEmpty()) {
@@ -226,15 +277,6 @@ public class VanillaMirrorSyncHandler {
             ItemStack normalizedCandidate = candidate.copy();
             normalizedCandidate.setCount(1);
             if (ItemStack.isSameItemSameTags(normalizedCandidate, normalizedExpected)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static int findFirstEmpty(Inventory inventory, int start, int endExclusive) {
-        for (int i = start; i < endExclusive && i < inventory.items.size(); i++) {
-            if (inventory.items.get(i).isEmpty()) {
                 return i;
             }
         }

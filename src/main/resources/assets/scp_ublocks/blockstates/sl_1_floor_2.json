@@ -7,46 +7,37 @@
       "model": "scp_ublocks:block/sl_1_floor_2_a1"
     },
     "transition=corner_nw": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a1",
-      "y": 90
+      "model": "scp_ublocks:block/sl_1_floor_2_a4"
     },
     "transition=corner_ne": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a1",
-      "y": 180
+      "model": "scp_ublocks:block/sl_1_floor_2_a7"
     },
     "transition=corner_se": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a1",
-      "y": 270
+      "model": "scp_ublocks:block/sl_1_floor_2_a10"
     },
     "transition=edge_w": {
       "model": "scp_ublocks:block/sl_1_floor_2_a2"
     },
     "transition=edge_n": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a2",
-      "y": 90
+      "model": "scp_ublocks:block/sl_1_floor_2_a5"
     },
     "transition=edge_e": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a2",
-      "y": 180
+      "model": "scp_ublocks:block/sl_1_floor_2_a8"
     },
     "transition=edge_s": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a2",
-      "y": 270
+      "model": "scp_ublocks:block/sl_1_floor_2_a11"
     },
     "transition=inner_nw": {
       "model": "scp_ublocks:block/sl_1_floor_2_a3"
     },
     "transition=inner_ne": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a3",
-      "y": 90
+      "model": "scp_ublocks:block/sl_1_floor_2_a6"
     },
     "transition=inner_se": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a3",
-      "y": 180
+      "model": "scp_ublocks:block/sl_1_floor_2_a9"
     },
     "transition=inner_sw": {
-      "model": "scp_ublocks:block/sl_1_floor_2_a3",
-      "y": 270
+      "model": "scp_ublocks:block/sl_1_floor_2_a12"
     },
     "transition=full": {
       "model": "scp_ublocks:block/sl_1_floor_1"

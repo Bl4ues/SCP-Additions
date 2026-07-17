@@ -1,5 +1,15 @@
 # Changelog
 
+# SCP Additions 3.0.5 — In Development
+
+## Facility floors
+
+- Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks, including straight edges, rounded corners, diagonal contacts, and live updates when nearby floors change.
+
+## Technical changes
+
+- Unified the in-game mod version with the Gradle project version so future builds no longer require the version to be updated separately in `mods.toml`.
+
 # SCP Additions 3.0.4 — Hotfix
 
 - Fixed a wrong centralized header position in the Status tab.

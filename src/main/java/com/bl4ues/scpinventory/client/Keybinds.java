@@ -30,12 +30,4 @@ public class Keybinds {
             GLFW.GLFW_KEY_K,
             "key.categories.scpinventory"
     );
-
-    public static final KeyMapping BLINK = new KeyMapping(
-            "key.scpinventory.blink",
-            KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_SPACE,
-            "key.categories.scpinventory"
-    );
 }

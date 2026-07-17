@@ -16,7 +16,7 @@
 
 ## SCP-173
 
-- Changed natural-spawn scheduling to begin a full interval when each player joins the server, preventing a spawn check from firing immediately because the player's accumulated tick counter happened to align with the old global modulo check.
+- Changed natural-spawn scheduling to begin a full interval when each player joins the server, preventing a spawn check from firing immediately because the player's accumulated tick counter happened to align with the old global check.
 
 ## Presentation and naming
 

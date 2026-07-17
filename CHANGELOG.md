@@ -29,7 +29,7 @@
 
 ## Technical changes
 
-- Unified the in-game mod version with the Gradle project version so future builds no longer require the version to be updated separately in `mods.toml`. Just so I don't forget to update the in-game version, again.
+- Unified the in-game mod version with the Gradle project version so future builds no longer require the version to be updated separately in `mods.toml`. Just so I don't forget to update the in-game version, _again_.
 
 # SCP Additions 3.0.4 — Hotfix
 

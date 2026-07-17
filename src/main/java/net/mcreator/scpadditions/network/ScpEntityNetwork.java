@@ -22,9 +22,6 @@ public final class ScpEntityNetwork {
                 BlinkStatePacket::encode, BlinkStatePacket::decode, BlinkStatePacket::handle);
         ScpAdditionsMod.addNetworkMessage(BlinkInputStatePacket.class,
                 BlinkInputStatePacket::encode, BlinkInputStatePacket::decode, BlinkInputStatePacket::handle);
-        ScpAdditionsMod.addNetworkMessage(EquipmentProgressPacket.class,
-                EquipmentProgressPacket::encode, EquipmentProgressPacket::decode,
-                EquipmentProgressPacket::handle);
         ScpAdditionsMod.addNetworkMessage(Scp173ObservationPacket.class,
                 Scp173ObservationPacket::encode, Scp173ObservationPacket::decode, Scp173ObservationPacket::handle);
         ScpAdditionsMod.addNetworkMessage(ScareSoundPacket.class,
@@ -45,6 +42,11 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.addNetworkMessage(KeycardReaderCopyLevelPacket.class,
                 KeycardReaderCopyLevelPacket::encode, KeycardReaderCopyLevelPacket::decode,
                 KeycardReaderCopyLevelPacket::handle);
+        // Append new packets after the established sequence so existing packet IDs
+        // stay stable for clients and servers built from earlier 3.0.x sources.
+        ScpAdditionsMod.addNetworkMessage(EquipmentProgressPacket.class,
+                EquipmentProgressPacket::encode, EquipmentProgressPacket::decode,
+                EquipmentProgressPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {

@@ -2,13 +2,13 @@
 
 # SCP Additions 3.0.6 — In Development
 
-# SCP Additions 3.0.5 — Facility Refinement Update
+# SCP Additions 3.0.5 — Refinement Update
 
 ## Facility floors
 
 - Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks;
 - Added tooltips to both Sector 1 floor blocks explaining that they connect automatically;
-- Reworked the vanilla fallback for the SL1 Small Floor Arrow and SL1 Big Floor Arrow to use a stable cutout pass with a muted gray-blue tint, preserving their faded-paint appearance without angle-dependent disappearance, and returned both decals to their original near-flush height so they no longer appear to float above the floor.
+- Reworked the vanilla fallback for the SL1 Small Floor Arrow and SL1 Big Floor Arrow to use a stable cutout pass with a muted gray-blue tint, preserving their faded-paint appearance without angle-dependent disappearance.
 
 ## Facility building
 

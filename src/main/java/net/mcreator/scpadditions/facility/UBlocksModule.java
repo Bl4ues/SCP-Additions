@@ -80,7 +80,7 @@ public final class UBlocksModule {
     public static final RegistryObject<Block> SL_1_WALL_DETAIL_1_TOP = directional(
             LEGACY_WALL_DETAIL_TOP, DirectionalShape.WALL_DECOR, SoundType.STONE);
     public static final RegistryObject<Block> SL_1_WALL_DETAIL_2 = directional(
-            "sl_1_wall_detail_2", DirectionalShape.WALL_DECOR, SoundType.STONE);
+            "sl_1_wall_detail_2", DirectionalShape.PILLAR, SoundType.STONE);
 
     // Sector 2 structural set.
     public static final RegistryObject<Block> SL_2_FLOOR = structure("sl_2_floor");
@@ -428,13 +428,13 @@ public final class UBlocksModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return DirectionalShape.WALL_DECOR.outline(state.getValue(FACING));
+            return DirectionalShape.CORNER.outline(state.getValue(FACING));
         }
 
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return Shapes.empty();
+            return DirectionalShape.CORNER.outline(state.getValue(FACING));
         }
 
         @Override
@@ -514,7 +514,9 @@ public final class UBlocksModule {
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return Shapes.empty();
+            return shape.hasCollision()
+                    ? shape.outline(state.getValue(FACING))
+                    : Shapes.empty();
         }
 
         @Override
@@ -526,11 +528,27 @@ public final class UBlocksModule {
     private enum DirectionalShape {
         FLOOR_DECAL,
         WALL_DECOR,
+        CORNER,
+        PILLAR,
         VENT;
 
         private VoxelShape outline(Direction facing) {
             return switch (this) {
                 case FLOOR_DECAL -> Block.box(0.0D, 0.0D, 0.0D, 16.0D, 0.5D, 16.0D);
+                case CORNER -> switch (facing) {
+                    case NORTH -> Block.box(0.0D, 0.0D, 8.0D, 8.0D, 16.0D, 16.0D);
+                    case EAST -> Block.box(0.0D, 0.0D, 0.0D, 8.0D, 16.0D, 8.0D);
+                    case SOUTH -> Block.box(8.0D, 0.0D, 0.0D, 16.0D, 16.0D, 8.0D);
+                    case WEST -> Block.box(8.0D, 0.0D, 8.0D, 16.0D, 16.0D, 16.0D);
+                    default -> Shapes.block();
+                };
+                case PILLAR -> switch (facing) {
+                    case NORTH -> Block.box(2.5D, 0.0D, 8.5D, 13.5D, 16.0D, 16.0D);
+                    case EAST -> Block.box(0.0D, 0.0D, 2.5D, 7.5D, 16.0D, 13.5D);
+                    case SOUTH -> Block.box(2.5D, 0.0D, 0.0D, 13.5D, 16.0D, 7.5D);
+                    case WEST -> Block.box(8.5D, 0.0D, 2.5D, 16.0D, 16.0D, 13.5D);
+                    default -> Shapes.block();
+                };
                 case WALL_DECOR, VENT -> switch (facing) {
                     case NORTH -> Block.box(0.0D, 0.0D, 14.5D, 16.0D, 16.0D, 16.0D);
                     case EAST -> Block.box(0.0D, 0.0D, 0.0D, 1.5D, 16.0D, 16.0D);
@@ -539,6 +557,10 @@ public final class UBlocksModule {
                     default -> Shapes.block();
                 };
             };
+        }
+
+        private boolean hasCollision() {
+            return this == CORNER || this == PILLAR;
         }
     }
 }

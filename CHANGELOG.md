@@ -6,14 +6,14 @@
 
 - Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks;
 - Added tooltips to both Sector 1 floor blocks explaining that they connect automatically;
-- Fixed the SL1 Small Floor Arrow and SL1 Big Floor Arrow disappearing or becoming visible only at specific angles in the vanilla renderer by using a single raised, unshaded cutout face instead of the angle-sensitive translucent decal pass.
+- Reworked the vanilla fallback for the SL1 Small Floor Arrow and SL1 Big Floor Arrow to use a stable cutout pass with a muted gray-blue tint, preserving their faded-paint appearance without the angle-dependent disappearance of the translucent pass.
 
 ## Facility building
 
 - Consolidated the SL1 Wall Detail into one adaptive building block: a single piece uses the bottom model, vertical stacks automatically use bottom and top endpoints, and longer columns fill their interior with the middle model;
 - Kept the previous middle and top registry entries for world compatibility while removing them from the normal creative-building list;
 - Renamed the adaptive piece to **SL1 Corner Wall Detail** and replaced the pane-shaped outlines on it and the **SL1 Pillar Wall Detail** with directional solid collision shapes that match their model footprints.
-- Changed **SL1 Corner Wall Detail** placement so clicking a horizontal side of a block determines the corner orientation, while vertical stacks continue inheriting the facing of their neighboring segment.
+- Fixed **SL1 Corner Wall Detail** placement so the horizontal face clicked with the main hand on the server reliably determines its orientation, while vertical stacks continue inheriting the facing of their neighboring segment.
 
 ## SCP-173
 
@@ -238,6 +238,7 @@
 * Added persistent following ownership across save and reload;
 * Added SCP-131-B following nearby idle SCP-131-A entities;
 * Added SCP-131 observation behavior against SCP-173;
+
 ## SCP Unity Facility content
 
 * Added Tesla, Archival, Office, Skyroom, and Security area blocks;

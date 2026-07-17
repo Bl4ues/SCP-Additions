@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.facility;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -31,9 +32,18 @@ public final class CornerWallDetailPlacementEvents {
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        // Client and off-hand copies of the interaction run in the same JVM in
+        // singleplayer. Letting either mutate this map could erase the main-hand
+        // server input before EntityPlaceEvent consumed it.
+        if (event.getLevel().isClientSide || event.getHand() != InteractionHand.MAIN_HAND) {
+            return;
+        }
+        if (!event.getItemStack().is(UBlocksModule.SL_1_WALL_DETAIL_1_BOT.get().asItem())) {
+            return;
+        }
+
         Direction face = event.getFace();
-        if (face == null || !face.getAxis().isHorizontal()
-                || !event.getItemStack().is(UBlocksModule.SL_1_WALL_DETAIL_1_BOT.get().asItem())) {
+        if (face == null || !face.getAxis().isHorizontal()) {
             PENDING.remove(event.getEntity().getUUID());
             return;
         }

@@ -93,7 +93,7 @@ public class ScpAdditionsMod {
 		Scp914SkinManager.initialize();
 	}
 
-	private static final String PROTOCOL_VERSION = "3";
+	private static final String PROTOCOL_VERSION = "4";
 	public static final SimpleChannel PACKET_HANDLER = NetworkRegistry.newSimpleChannel(new ResourceLocation(MODID, MODID), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
 	private static int messageID = 0;
 

@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - integration/scp-additions-3.0
+      - 'feature/**'
   pull_request:
     branches:
       - master
@@ -35,3 +36,11 @@ jobs:
 
       - name: Build
         run: ./gradlew clean build --stacktrace
+
+      - name: Upload compiled JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp-additions-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error

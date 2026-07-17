@@ -1,7 +1,55 @@
 {
   "variants": {
-    "": {
+    "transition=none": {
       "model": "scp_ublocks:block/sl_1_floor_2"
+    },
+    "transition=corner_sw": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a1"
+    },
+    "transition=corner_nw": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a1",
+      "y": 90
+    },
+    "transition=corner_ne": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a1",
+      "y": 180
+    },
+    "transition=corner_se": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a1",
+      "y": 270
+    },
+    "transition=edge_w": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a2"
+    },
+    "transition=edge_n": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a2",
+      "y": 90
+    },
+    "transition=edge_e": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a2",
+      "y": 180
+    },
+    "transition=edge_s": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a2",
+      "y": 270
+    },
+    "transition=inner_nw": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a3"
+    },
+    "transition=inner_ne": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a3",
+      "y": 90
+    },
+    "transition=inner_se": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a3",
+      "y": 180
+    },
+    "transition=inner_sw": {
+      "model": "scp_ublocks:block/sl_1_floor_2_a3",
+      "y": 270
+    },
+    "transition=full": {
+      "model": "scp_ublocks:block/sl_1_floor_1"
     }
   }
 }

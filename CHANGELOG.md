@@ -11,7 +11,8 @@
 ## Facility building
 
 - Consolidated the SL1 Wall Detail into one adaptive building block: a single piece uses the bottom model, vertical stacks automatically use bottom and top endpoints, and longer columns fill their interior with the middle model;
-- Kept the previous middle and top registry entries for world compatibility while removing them from the normal creative-building list.
+- Kept the previous middle and top registry entries for world compatibility while removing them from the normal creative-building list;
+- Renamed the adaptive piece to **SL1 Corner Wall Detail** and replaced the pane-shaped outlines on it and the **SL1 Pillar Wall Detail** with directional solid collision shapes that match their model footprints.
 
 ## SCP-173
 
@@ -286,7 +287,7 @@
 
 # SCP Additions 2.0.1 — Hotfix
 
-## Hotfix update for the 2.0.0 overhaul.
+## Hotfix update for the 2.0.0 hotfix.
 
 - Fixed the missing Level 1 Keycard language entry;
 - Fixed Security Credentials not being detected by the Tesla Gate Terminal when the item had NBT data;

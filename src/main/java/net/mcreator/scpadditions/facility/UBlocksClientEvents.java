@@ -16,7 +16,17 @@ public final class UBlocksClientEvents {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> UBlocksModule.cutoutBlocks().forEach(block ->
-                ItemBlockRenderTypes.setRenderLayer(block.get(), RenderType.cutout())));
+        event.enqueueWork(() -> {
+            UBlocksModule.cutoutBlocks().forEach(block ->
+                    ItemBlockRenderTypes.setRenderLayer(block.get(), RenderType.cutout()));
+
+            // The floor arrows use partially transparent pixels. They were
+            // previously forced through cutout with the other decorations,
+            // which discarded most of their texture and made them disappear.
+            ItemBlockRenderTypes.setRenderLayer(
+                    UBlocksModule.SL_1_FLOOR_DETAIL_SMALL.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(
+                    UBlocksModule.SL_1_FLOOR_DETAIL_BIG.get(), RenderType.translucent());
+        });
     }
 }

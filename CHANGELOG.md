@@ -6,14 +6,14 @@
 
 - Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks;
 - Added tooltips to both Sector 1 floor blocks explaining that they connect automatically;
-- Reworked the vanilla fallback for the SL1 Small Floor Arrow and SL1 Big Floor Arrow to use a stable cutout pass with a muted gray-blue tint, preserving their faded-paint appearance without the angle-dependent disappearance of the translucent pass.
+- Reworked the vanilla fallback for the SL1 Small Floor Arrow and SL1 Big Floor Arrow to use a stable cutout pass with a muted gray-blue tint, preserving their faded-paint appearance without angle-dependent disappearance, and returned both decals to their original near-flush height so they no longer appear to float above the floor.
 
 ## Facility building
 
 - Consolidated the SL1 Wall Detail into one adaptive building block: a single piece uses the bottom model, vertical stacks automatically use bottom and top endpoints, and longer columns fill their interior with the middle model;
 - Kept the previous middle and top registry entries for world compatibility while removing them from the normal creative-building list;
 - Renamed the adaptive piece to **SL1 Corner Wall Detail** and replaced the pane-shaped outlines on it and the **SL1 Pillar Wall Detail** with directional solid collision shapes that match their model footprints.
-- Fixed **SL1 Corner Wall Detail** placement so the horizontal face clicked with the main hand on the server reliably determines its orientation, while vertical stacks continue inheriting the facing of their neighboring segment.
+- Changed **SL1 Corner Wall Detail** placement to use the exact click position: the right half of a wall face keeps its natural orientation, the left half rotates it 90 degrees counter-clockwise, and the four quadrants of top or bottom faces select the corresponding corner; vertical stacks continue inheriting the facing of their neighboring segment.
 
 ## SCP-173
 

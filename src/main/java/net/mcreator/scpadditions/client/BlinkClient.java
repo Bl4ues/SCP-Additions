@@ -89,7 +89,7 @@ public final class BlinkClient {
             visualAlpha = 0.0F;
             fadeOutTicks = 0;
             blinkDrainRemainder = 0.0F;
-            syncBlinkClosed(false, true);
+            syncBlinkClosed(false, false);
             return;
         }
         if (mc == null || !mc.isPaused()) {

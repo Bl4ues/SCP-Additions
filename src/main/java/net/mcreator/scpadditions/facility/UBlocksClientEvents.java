@@ -16,7 +16,17 @@ public final class UBlocksClientEvents {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> UBlocksModule.cutoutBlocks().forEach(block ->
-                ItemBlockRenderTypes.setRenderLayer(block.get(), RenderType.cutout())));
+        event.enqueueWork(() -> {
+            UBlocksModule.cutoutBlocks().forEach(block ->
+                    ItemBlockRenderTypes.setRenderLayer(block.get(), RenderType.cutout()));
+
+            // These decals intentionally use partial alpha. Keep them in the
+            // translucent pass after the generic cutout registration so their
+            // faded paint remains visible instead of becoming solid white.
+            ItemBlockRenderTypes.setRenderLayer(
+                    UBlocksModule.SL_1_FLOOR_DETAIL_SMALL.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(
+                    UBlocksModule.SL_1_FLOOR_DETAIL_BIG.get(), RenderType.translucent());
+        });
     }
 }

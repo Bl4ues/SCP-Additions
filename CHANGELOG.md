@@ -5,7 +5,18 @@
 ## Facility floors
 
 - Added automatic connected-transition logic and model support between the blue and gray Sector 1 floor blocks, including straight edges, rounded corners, diagonal contacts, and live updates when nearby floors change;
+- Replaced rotated transition models with twelve dedicated orientation textures so normal and specular maps keep consistent PBR lighting across block boundaries;
+- Added tooltips to both Sector 1 floor blocks explaining that they connect automatically;
 - Fixed the SL1 Small Floor Arrow and SL1 Big Floor Arrow disappearing or becoming visible only at specific angles by restoring translucent rendering and raising their decal geometry slightly above the supporting floor.
+
+## Facility building
+
+- Consolidated the SL1 Wall Detail into one adaptive building block: a single piece uses the bottom model, vertical stacks automatically use bottom and top endpoints, and longer columns fill their interior with the middle model;
+- Kept the previous middle and top registry entries for world compatibility while removing them from the normal creative-building list.
+
+## SCP-173
+
+- Changed natural-spawn scheduling to begin a full interval when each player joins the server, preventing a spawn check from firing immediately because the player's accumulated tick counter happened to align with the old global modulo check.
 
 ## Presentation and naming
 

@@ -111,8 +111,9 @@ public final class Scp012InfluenceEvents {
 
         int ticks = CONTACT_TICKS.merge(player.getUUID(), 1, Integer::sum);
         if (ticks == 20) {
-            player.displayClientMessage(Component.translatable(
-                    "message.scp_additions.scp_012_contact"), true);
+            String first = "You tear open your left wrist and start writing ";
+            String second = "on the composition with your blood.";
+            player.displayClientMessage(Component.literal(first + second), true);
         }
         if (ticks >= DAMAGE_INTERVAL_TICKS
                 && ticks % DAMAGE_INTERVAL_TICKS == 0) {

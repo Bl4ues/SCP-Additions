@@ -47,6 +47,9 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.addNetworkMessage(EquipmentProgressPacket.class,
                 EquipmentProgressPacket::encode, EquipmentProgressPacket::decode,
                 EquipmentProgressPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(HazmatRemovalInputPacket.class,
+                HazmatRemovalInputPacket::encode, HazmatRemovalInputPacket::decode,
+                HazmatRemovalInputPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {

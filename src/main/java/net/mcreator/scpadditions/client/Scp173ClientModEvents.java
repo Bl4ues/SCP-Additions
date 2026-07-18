@@ -18,7 +18,10 @@ public final class Scp173ClientModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("hazmat_visor_overlay",
+        // The visor represents the player's view through the mask and must be
+        // rendered before every HUD layer, never over health, hotbar, notices,
+        // crosshair, progress bars, or overlays registered by other systems.
+        event.registerBelowAll("hazmat_visor_overlay",
                 (gui, graphics, partialTick, width, height) ->
                         HazmatVisorOverlay.render(graphics, width, height));
         event.registerAboveAll("blink_vignette_overlay",

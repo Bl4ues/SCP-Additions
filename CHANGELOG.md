@@ -23,6 +23,9 @@
 - Added complete-set eye protection and a reusable sealed-protection check for future chemical, biological, radiation, and environmental hazards;
 - Made the sealed suit reject splash-potion and lingering-potion effects, including instant potion healing or damage, while leaving commands and deliberately internal effects available to their own systems;
 - Prevented eating, drinking, drinking potions, eating cake, and every item classified as `CONSUMABLE` by the SCP Inventory while the mask is sealed, including configured consumables without vanilla eat or drink animations;
+- Kept explicit JSON item rules authoritative while separating SCP Inventory categories from physical hand-use checks, preventing Splash/Lingering Potions and other non-ingestible usable items from being mistaken for food or drink;
+- Added a public-item tooltip describing sealing, light protection, and the stationary equip/removal controls;
+- Added leather-equivalent armor points to the complete suit while keeping the hidden internal pieces non-repairable and effectively unbreakable;
 - Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
 
 ## Development

@@ -9,9 +9,10 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.effect.Scp714ExposureManager;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
-/** Server-authoritative horror movement controller with Hazmat penalties. */
+/** Server-authoritative horror movement controller with equipment penalties. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class HorrorMovementEvents {
     private static final double VANILLA_WALK_SPEED = 0.100D;
@@ -39,6 +40,8 @@ public final class HorrorMovementEvents {
         }
 
         boolean hazmat = HazmatSuitAccess.isFullyEquipped(player);
+        double scp714Multiplier =
+                Scp714ExposureManager.getMovementMultiplier(player);
         if (!VitalsModule.horrorMovementEnabled() || player.isCreative()) {
             HorrorMovementNetwork.clear(player);
             double speed = VANILLA_WALK_SPEED;
@@ -46,6 +49,10 @@ public final class HorrorMovementEvents {
                 speed *= player.isSprinting()
                         ? HAZMAT_SPRINT_MULTIPLIER
                         : HAZMAT_WALK_MULTIPLIER;
+            }
+            speed *= scp714Multiplier;
+            if (speed <= EPSILON) {
+                player.setSprinting(false);
             }
             applyMovementSpeed(player, speed);
             return;
@@ -66,6 +73,10 @@ public final class HorrorMovementEvents {
             speed *= sprinting
                     ? HAZMAT_SPRINT_MULTIPLIER
                     : HAZMAT_WALK_MULTIPLIER;
+        }
+        speed *= scp714Multiplier;
+        if (speed <= EPSILON) {
+            player.setSprinting(false);
         }
         applyMovementSpeed(player, speed);
     }
@@ -97,7 +108,8 @@ public final class HorrorMovementEvents {
     }
 
     private static void applyMovementSpeed(ServerPlayer player, double speed) {
-        AttributeInstance movementSpeed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+        AttributeInstance movementSpeed =
+                player.getAttribute(Attributes.MOVEMENT_SPEED);
         if (movementSpeed != null
                 && Math.abs(movementSpeed.getBaseValue() - speed) > EPSILON) {
             movementSpeed.setBaseValue(speed);

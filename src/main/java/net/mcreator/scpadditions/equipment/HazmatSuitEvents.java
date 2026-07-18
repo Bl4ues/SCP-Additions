@@ -50,8 +50,10 @@ public final class HazmatSuitEvents {
 
     @SubscribeEvent
     public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
-        if (HazmatSuitAccess.isFullyEquipped(event.getEntity())
-                && isFoodOrDrink(event.getItem())) {
+        if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())) {
+            return;
+        }
+        if (event.getEntity().isCrouching() || isFoodOrDrink(event.getItem())) {
             event.setCanceled(true);
         }
     }
@@ -59,8 +61,17 @@ public final class HazmatSuitEvents {
     @SubscribeEvent
     public static void onRightClickItem(
             PlayerInteractEvent.RightClickItem event) {
-        if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())
-                || !isFoodOrDrink(event.getItemStack())) {
+        if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())) {
+            return;
+        }
+
+        if (event.getEntity().isCrouching()) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
+            return;
+        }
+
+        if (!isFoodOrDrink(event.getItemStack())) {
             return;
         }
 
@@ -75,9 +86,18 @@ public final class HazmatSuitEvents {
     @SubscribeEvent
     public static void onRightClickBlock(
             PlayerInteractEvent.RightClickBlock event) {
-        if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())
-                || !(event.getLevel().getBlockState(event.getPos()).getBlock()
-                        instanceof CakeBlock)) {
+        if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())) {
+            return;
+        }
+
+        if (event.getEntity().isCrouching()) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
+            return;
+        }
+
+        if (!(event.getLevel().getBlockState(event.getPos()).getBlock()
+                instanceof CakeBlock)) {
             return;
         }
 
@@ -86,6 +106,16 @@ public final class HazmatSuitEvents {
         if (!event.getLevel().isClientSide
                 && event.getEntity() instanceof ServerPlayer player) {
             showSealedMaskMessage(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteract(
+            PlayerInteractEvent.EntityInteract event) {
+        if (HazmatSuitAccess.isFullyEquipped(event.getEntity())
+                && event.getEntity().isCrouching()) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
         }
     }
 

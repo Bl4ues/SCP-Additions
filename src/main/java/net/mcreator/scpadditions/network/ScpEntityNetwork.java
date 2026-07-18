@@ -71,6 +71,10 @@ public final class ScpEntityNetwork {
                 Scp714ExposurePacket::encode,
                 Scp714ExposurePacket::decode,
                 Scp714ExposurePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(Scp012InfluencePacket.class,
+                Scp012InfluencePacket::encode,
+                Scp012InfluencePacket::decode,
+                Scp012InfluencePacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -124,6 +128,14 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new Scp714ExposurePacket(active, progress, immobilized));
+    }
+
+    public static void syncScp012Influence(ServerPlayer player,
+            boolean active, BlockPos target, float contactProgress) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new Scp012InfluencePacket(active, target, contactProgress));
     }
 
     public static void playScare(ServerPlayer player) {

@@ -140,11 +140,11 @@ public final class CraftingPanel {
     }
 
     private void drawSectionTitle(GuiGraphics graphics, int x, int y,
-                                  String suffix) {
-        String prefix = "://INVENTORY_";
+                                  String section) {
+        String prefix = "://";
         graphics.drawString(mc.font, ScpFonts.roboto(prefix), x, y,
                 TEXT_GRAY, false);
-        graphics.drawString(mc.font, ScpFonts.roboto(suffix),
+        graphics.drawString(mc.font, ScpFonts.roboto(section),
                 x + mc.font.width(ScpFonts.roboto(prefix)), y,
                 TEXT_WHITE, false);
     }

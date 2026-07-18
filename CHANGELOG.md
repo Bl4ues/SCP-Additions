@@ -6,16 +6,22 @@
 
 - Changed Survival inventory routing so stacks that belong in the SCP Inventory are dropped into the world instead of remaining as an unintended vanilla-inventory fallback when the SCP Inventory cannot accept them;
 - Preserved controlled usable/placeable sessions and the vanilla mirrors required by equipped weapons, accessories, harmful items, and currency while applying the new overflow rule;
-- Moved the final vanilla-to-SCP routing pass to low event priority so durability and temporary-session synchronization can settle before overflow is evaluated.
+- Moved the final vanilla-to-SCP routing pass to low event priority so durability and temporary-session synchronization can settle before overflow is evaluated;
+- Changed normal equipment removal so a full SCP Inventory drops the removed item instead of silently retaining it or using vanilla storage as overflow.
 
-## Hazmat Suit groundwork
+## Hazmat Suit
 
+- Reintroduced the Hazmat Suit as a single public item backed by four hidden compatibility armor pieces that reuse the removed legacy registry IDs without exposing their old individual recipes;
+- Added a four-second hold-to-equip sequence and a three-second timed removal sequence controlled authoritatively by the server;
 - Added a reusable timed-equipment progress bar based on the Blink Bar presentation: centered, smaller, yellow, without an icon, and positioned above the Blink Bar;
 - Added server-to-client begin, synchronization, completion, and cancellation controls for timed equipment actions;
-- Reserved `scp_additions:hazmat_suit` as the public item and the removed legacy Hazmat armor IDs as hidden internal compatibility pieces;
-- Added complete-set detection for future Hazmat behavior, including eye protection and a reusable sealed-protection check;
-- Prepared matching server and client stamina logic for the complete Hazmat Suit to consume stamina twice as quickly and display the stamina bar in red;
-- Added a development asset contract covering the Blockbench rig, pivots, model hierarchy, file paths, textures, overlay, and sound names.
+- Converted attempts to remove, shift, replace, or drop any internal Hazmat piece into the complete suit-removal sequence and return one public Hazmat Suit instead of separate armor pieces;
+- Added recovery and cleanup for incomplete proxy sets, inventory cursors, SCP Inventory mirrors, death drops, logout, Creative use, and full-inventory returns;
+- Added GeckoLib armor rendering support and a development asset contract covering the Blockbench rig, pivots, model hierarchy, file paths, textures, overlay, and sound names;
+- Added complete-set eye protection and a reusable sealed-protection check for future chemical, biological, radiation, and environmental hazards;
+- Made the sealed suit reject splash-potion and lingering-potion effects, including instant potion healing or damage, while leaving commands and deliberately internal effects available to their own systems;
+- Prevented eating, drinking, drinking potions, and eating cake while the mask is sealed, including consumption initiated from the SCP Inventory;
+- Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
 
 ## Development
 
@@ -123,7 +129,7 @@
 - Existing valid recipes and players in the intake still start immediately, and repeated key use cannot queue duplicate pending cycles;
 - Added a material-aware fallback resolver that can infer transformations from registered crafting recipes and related item tiers when no explicit recipe matches;
 - Explicit JSON recipes remain fully authoritative and always take priority over inferred transformations;
-- Once an SCP-914 cycle starts, every item in the intake is consumed even when only part of the intake contributed to the selected result;
+- Once a SCP-914 cycle starts, every item in the intake is consumed even when only part of the intake contributed to the selected result;
 - Trimmed generic vanilla transformations from the bundled defaults so the fallback resolver handles broad behavior while explicit defaults remain focused on SCP Additions content and special entity transformations;
 - Reduced the bundled SCP-914 1:1 skin pool to five selected defaults and renumbered them consistently as `skin1.png` through `skin5.png`.
 
@@ -297,7 +303,6 @@
 * Added extensive configuration defaults, migration documentation, and build validation;
 * Fixed multiple item duplication, pickup routing, keycard synchronization, usable-session, interface, rendering, button, door, font, and configuration-generation issues.
 
-
 # SCP Additions 2.0.2 — Hotfix
 
 ## Hotfix update for the 2.0.1 hotfix.
@@ -346,7 +351,7 @@
 - Converted SCP-914 recipes to a runtime JSON configuration;
 - Added support for SCP-914 recipe fragments in `914recipes.d`;
 - Added SCP-914 weighted outputs, item recipes, entity recipes, machine offsets, and configurable processing behavior;
-- Added an SCP-914 Assembly Kit item that places the full saved SCP-914 structure from an NBT structure file;
+- Added a SCP-914 Assembly Kit item that places the full saved SCP-914 structure from an NBT structure file;
 - Added visual blocked-space feedback when the SCP-914 Assembly Kit cannot place the structure;
 - Improved SCP-914 orientation, intake/output range offsets, and machine processing logic;
 - Improved SCP-914 door behavior during processing;

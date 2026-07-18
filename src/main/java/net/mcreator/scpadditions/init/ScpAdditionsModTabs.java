@@ -37,6 +37,7 @@ public class ScpAdditionsModTabs {
 				tabData.accept(ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
 				tabData.accept(ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
+				tabData.accept(ScpAdditionsModItems.HAZMAT_SUIT.get());
 				tabData.accept(ScpAdditionsModItems.PLAYING_CARD.get());
 				tabData.accept(ScpAdditionsModItems.CREDIT_CARD.get());
 				tabData.accept(ScpAdditionsModItems.PIECES_OF_PAPER.get());

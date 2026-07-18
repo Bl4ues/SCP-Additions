@@ -72,6 +72,14 @@
     "scp_additions:lv_6_left_reader_wrong",
     "scp_additions:lv_6_left_reader_accept",
     "scp_additions:scp_294_out_of_range",
-    "scp_additions:scp_294_stocking"
+    "scp_additions:scp_294_stocking",
+    "scp_additions:scp_012",
+    "scp_additions:scp_012_opening_1",
+    "scp_additions:scp_012_opening_2",
+    "scp_additions:scp_012_opening_3",
+    "scp_additions:scp_012_open",
+    "scp_additions:scp_012_closing_3",
+    "scp_additions:scp_012_closing_2",
+    "scp_additions:scp_012_closing_1"
   ]
 }

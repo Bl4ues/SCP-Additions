@@ -9,6 +9,8 @@ import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
+import net.mcreator.scpadditions.equipment.HazmatSuitEvents;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -59,6 +61,16 @@ public class MainUseActionPacket {
                 }
 
                 if (type == ScpItemType.CONSUMABLE) {
+                    // The primary-use button has its own packet, separate from
+                    // InventoryActionPacket. Enforce the sealed mask here before
+                    // either direct consumption or a custom usable session can
+                    // remove the authoritative SCP Inventory stack.
+                    if (HazmatSuitAccess.isFullyEquipped(player)) {
+                        HazmatSuitEvents.showSealedMaskMessage(player);
+                        ModNetwork.syncTo(player, inventory);
+                        return;
+                    }
+
                     if (isVanillaConsumable(stack)) consume(player, inventory, msg.slot, stack);
                     else ScpInventoryMaintenanceEvents.activateUsableSession(player, inventory, msg.slot);
                     ModNetwork.syncTo(player, inventory);

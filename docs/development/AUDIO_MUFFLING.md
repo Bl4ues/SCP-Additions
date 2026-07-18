@@ -4,7 +4,7 @@ SCP Additions 3.0.6 applies client-side listener-perception effects without chan
 
 ## Hazmat Suit
 
-While the complete Hazmat Suit is equipped, ordinary world audio receives a fixed moderate low-pass filter and volume reduction. This includes ambient sounds, weather, blocks, entities, music, records, and interface sounds.
+While the complete Hazmat Suit is equipped, ordinary world audio receives a strong low-pass filter and volume reduction. The filter strength is `0.60`, increased from the initial `0.42` implementation. This includes ambient sounds, weather, blocks, entities, music, records, and interface sounds.
 
 The following authored sounds are considered internal to the mask and remain clear when the Hazmat Suit is the only active source of muffling:
 
@@ -37,7 +37,7 @@ OpenAL EFX is unavailable; SCP equipment audio will use volume fading without lo
 ## QA checklist
 
 - Equip and remove the Hazmat Suit while a looping ambient or machine sound is already playing;
-- Confirm world sounds are muffled while breathing remains clear;
+- Confirm world sounds are strongly muffled while breathing remains clear;
 - Start new block, entity, weather, music, record, and interface sounds while the suit is equipped;
 - Equip SCP-714 and listen at the beginning, middle, near 120 seconds, and during the five-second coma grace period;
 - Confirm silence is complete at 120 seconds;

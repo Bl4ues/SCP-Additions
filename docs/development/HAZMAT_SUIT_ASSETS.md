@@ -188,27 +188,24 @@ Keep the center mostly transparent. Place mask frame, visor edges, dirt, scratch
 
 ## Sound assets
 
-Use mono OGG files for positional/world sounds and a clean looping file for local breathing.
+The Hazmat Suit uses exactly three OGG files:
 
 ```text
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_equip_start.ogg
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_equip_loop.ogg
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_equip_finish.ogg
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_unequip_start.ogg
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_unequip_loop.ogg
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_unequip_finish.ogg
-src/main/resources/assets/scp_additions/sounds/equipment/hazmat_breathing.ogg
+src/main/resources/assets/scp_additions/sounds/hazmat_equip.ogg
+src/main/resources/assets/scp_additions/sounds/hazmat_remove.ogg
+src/main/resources/assets/scp_additions/sounds/hazmat_breathing.ogg
 ```
 
-Suggested content:
+Gameplay timing:
 
-- `equip_start`: suit unfolding, first fabric movement;
-- `equip_loop`: cloth, rubber, straps, and fastening movement;
-- `equip_finish`: zipper/velcro closure and mask seal;
-- `unequip_start`: seal release and zipper opening;
-- `unequip_loop`: fabric and equipment removal;
-- `unequip_finish`: final mask removal and suit bundle movement;
-- `breathing`: seamless filtered breathing loop with no large volume jump at the loop point.
+- equipping takes 80 ticks, or 4 seconds;
+- removing takes 60 ticks, or 3 seconds;
+- moving, releasing the required input, or otherwise canceling an action stops its sound immediately;
+- a successfully completed action may let a short authored audio tail finish naturally;
+- breathing begins after the equip sound has finished and loops while the complete suit remains equipped;
+- beginning removal stops breathing immediately; canceling removal restarts it.
+
+`hazmat_breathing.ogg` must have a clean loop point without a click, abrupt volume jump, or long silent tail.
 
 ## UI contract
 

@@ -19,9 +19,11 @@ import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.FlintAndSteelItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.LingeringPotionItem;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.SnowballItem;
+import net.minecraft.world.item.SplashPotionItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.item.UseAnim;
@@ -48,7 +50,8 @@ public final class ScpItemClassifier {
             return ScpItemType.MISCELLANEOUS;
         }
 
-        if (ScpPickupRouter.isCoinMirror(stack) || ScpPickupRouter.isHarmfulMirror(stack)) {
+        if (ScpPickupRouter.isCoinMirror(stack)
+                || ScpPickupRouter.isHarmfulMirror(stack)) {
             return ScpItemType.MISCELLANEOUS;
         }
 
@@ -64,7 +67,8 @@ public final class ScpItemClassifier {
         Optional<ScpItemType> configuredType = getConfiguredType(stack);
         if (configuredType.isPresent()) {
             ScpItemType type = configuredType.get();
-            return type == ScpItemType.COIN ? ScpItemType.MISCELLANEOUS : type;
+            return type == ScpItemType.COIN
+                    ? ScpItemType.MISCELLANEOUS : type;
         }
 
         if (stack.is(AUTO_MISCELLANEOUS)) {
@@ -74,6 +78,12 @@ public final class ScpItemClassifier {
             return ScpItemType.WEAPON;
         }
         if (stack.is(AUTO_USABLE)) {
+            return ScpItemType.USABLE;
+        }
+
+        // Thrown potions are manually activated tools. Only drinkable potions
+        // belong to the consumable category.
+        if (isThrownPotion(stack)) {
             return ScpItemType.USABLE;
         }
 
@@ -112,11 +122,14 @@ public final class ScpItemClassifier {
         return stack != null && !stack.isEmpty()
                 && !ScpPickupRouter.isCoinMirror(stack)
                 && (isCanonicalScpAdditionsCoin(stack)
-                        || getConfiguredType(stack).orElse(null) == ScpItemType.COIN);
+                        || getConfiguredType(stack).orElse(null)
+                        == ScpItemType.COIN);
     }
 
     public static boolean isMirroredMainItem(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || ScpPickupRouter.isCoinMirror(stack) || ScpPickupRouter.isHarmfulMirror(stack)) {
+        if (stack == null || stack.isEmpty()
+                || ScpPickupRouter.isCoinMirror(stack)
+                || ScpPickupRouter.isHarmfulMirror(stack)) {
             return false;
         }
         if (isCanonicalScpAdditionsCoin(stack)) {
@@ -153,13 +166,13 @@ public final class ScpItemClassifier {
                 return Optional.of(rule.get().itemId());
             }
         }
-
         return Optional.empty();
     }
 
     public static ItemStack getConfiguredCoinStack() {
         return getConfiguredCoinItemId()
-                .flatMap(id -> BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new))
+                .flatMap(id -> BuiltInRegistries.ITEM.getOptional(id)
+                        .map(ItemStack::new))
                 .orElse(ItemStack.EMPTY);
     }
 
@@ -173,7 +186,8 @@ public final class ScpItemClassifier {
         }
         for (String rawRule : ScpInventoryConfig.itemRules()) {
             Optional<ConfiguredItemRule> rule = parseItemRule(rawRule);
-            if (rule.isPresent() && rule.get().itemId().equals(stackId) && isMirroredMainType(rule.get().type())) {
+            if (rule.isPresent() && rule.get().itemId().equals(stackId)
+                    && isMirroredMainType(rule.get().type())) {
                 return true;
             }
         }
@@ -187,29 +201,56 @@ public final class ScpItemClassifier {
     public static String getCodexDisplayName(ItemStack stack) {
         return getCodexDocument(stack)
                 .map(document -> document.getDisplayName(stack))
-                .orElseGet(() -> stack == null || stack.isEmpty() ? "Unknown Document" : stack.getHoverName().getString());
+                .orElseGet(() -> stack == null || stack.isEmpty()
+                        ? "Unknown Document" : stack.getHoverName().getString());
     }
 
-    public static CodexDocumentDefinition getCodexDefinitionOrFallback(ItemStack stack) {
-        return getCodexDocument(stack).orElseGet(() -> CodexDocumentDefinition.fallback(stack));
+    public static CodexDocumentDefinition getCodexDefinitionOrFallback(
+            ItemStack stack) {
+        return getCodexDocument(stack)
+                .orElseGet(() -> CodexDocumentDefinition.fallback(stack));
     }
 
-    public static Optional<CodexDocumentDefinition> getCodexDocument(ItemStack stack) {
+    public static Optional<CodexDocumentDefinition> getCodexDocument(
+            ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return Optional.empty();
         }
 
         for (String rawRule : ScpInventoryConfig.codexDocuments()) {
-            Optional<CodexDocumentDefinition> definition = CodexDocumentDefinition.parse(rawRule);
+            Optional<CodexDocumentDefinition> definition =
+                    CodexDocumentDefinition.parse(rawRule);
             if (definition.isPresent() && definition.get().matches(stack)) {
                 return definition;
             }
         }
-
         return Optional.empty();
     }
 
+    private static boolean isThrownPotion(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        Item item = stack.getItem();
+        if (item instanceof SplashPotionItem
+                || item instanceof LingeringPotionItem) {
+            return true;
+        }
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+        if (id == null) {
+            return false;
+        }
+        String path = id.getPath();
+        return path.equals("splash_potion")
+                || path.equals("lingering_potion")
+                || path.endsWith("_splash_potion")
+                || path.endsWith("_lingering_potion");
+    }
+
     private static boolean isDefaultConsumable(ItemStack stack) {
+        if (isThrownPotion(stack)) {
+            return false;
+        }
         if (stack.isEdible()) {
             return true;
         }
@@ -226,15 +267,15 @@ public final class ScpItemClassifier {
 
         String path = stackId.getPath();
         return path.equals("potion")
-                || path.equals("splash_potion")
-                || path.equals("lingering_potion")
                 || path.endsWith("_potion")
                 || path.contains("potion");
     }
 
     private static boolean isDefaultWeapon(ItemStack stack) {
         Item item = stack.getItem();
-        if (item instanceof SwordItem || item instanceof ProjectileWeaponItem || item instanceof TridentItem) {
+        if (item instanceof SwordItem
+                || item instanceof ProjectileWeaponItem
+                || item instanceof TridentItem) {
             return true;
         }
 
@@ -245,6 +286,9 @@ public final class ScpItemClassifier {
     }
 
     private static boolean isDefaultUsable(ItemStack stack) {
+        if (isThrownPotion(stack)) {
+            return true;
+        }
         Item item = stack.getItem();
         if (item instanceof BlockItem) {
             return false;
@@ -276,7 +320,8 @@ public final class ScpItemClassifier {
     private static boolean overridesAirUse(Item item) {
         return AIR_USE_OVERRIDES.computeIfAbsent(item.getClass(), itemClass -> {
             try {
-                Method use = itemClass.getMethod("use", Level.class, Player.class, InteractionHand.class);
+                Method use = itemClass.getMethod(
+                        "use", Level.class, Player.class, InteractionHand.class);
                 return use.getDeclaringClass() != Item.class;
             } catch (ReflectiveOperationException exception) {
                 return false;
@@ -296,7 +341,6 @@ public final class ScpItemClassifier {
                 return Optional.of(rule.get().type());
             }
         }
-
         return Optional.empty();
     }
 
@@ -318,13 +362,16 @@ public final class ScpItemClassifier {
             return Optional.empty();
         }
 
-        ResourceLocation configuredId = ResourceLocation.tryParse(parts[0].trim());
+        ResourceLocation configuredId =
+                ResourceLocation.tryParse(parts[0].trim());
         if (configuredId == null) {
             return Optional.empty();
         }
 
-        Optional<ScpItemType> type = ScpItemType.fromConfigToken(parts[1]);
-        return type.map(scpItemType -> new ConfiguredItemRule(configuredId, scpItemType));
+        Optional<ScpItemType> type =
+                ScpItemType.fromConfigToken(parts[1]);
+        return type.map(scpItemType ->
+                new ConfiguredItemRule(configuredId, scpItemType));
     }
 
     private static ScpItemType fromVanillaEquipmentSlot(EquipmentSlot slot) {
@@ -338,9 +385,11 @@ public final class ScpItemClassifier {
     }
 
     private static TagKey<Item> itemTag(String path) {
-        return TagKey.create(Registries.ITEM, new ResourceLocation("scp_additions", path));
+        return TagKey.create(Registries.ITEM,
+                new ResourceLocation("scp_additions", path));
     }
 
-    private record ConfiguredItemRule(ResourceLocation itemId, ScpItemType type) {
+    private record ConfiguredItemRule(ResourceLocation itemId,
+            ScpItemType type) {
     }
 }

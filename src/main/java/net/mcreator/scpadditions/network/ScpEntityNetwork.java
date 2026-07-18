@@ -42,6 +42,14 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.addNetworkMessage(KeycardReaderCopyLevelPacket.class,
                 KeycardReaderCopyLevelPacket::encode, KeycardReaderCopyLevelPacket::decode,
                 KeycardReaderCopyLevelPacket::handle);
+        // Append new packets after the established sequence so existing packet IDs
+        // stay stable for clients and servers built from earlier 3.0.x sources.
+        ScpAdditionsMod.addNetworkMessage(EquipmentProgressPacket.class,
+                EquipmentProgressPacket::encode, EquipmentProgressPacket::decode,
+                EquipmentProgressPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(HazmatRemovalInputPacket.class,
+                HazmatRemovalInputPacket::encode, HazmatRemovalInputPacket::decode,
+                HazmatRemovalInputPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {
@@ -52,6 +60,31 @@ public final class ScpEntityNetwork {
     public static void setBlinkActive(ServerPlayer player, boolean active) {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player), new BlinkStatePacket(active));
+    }
+
+    public static void beginEquipmentProgress(ServerPlayer player, int durationTicks) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
+                EquipmentProgressPacket.begin(durationTicks));
+    }
+
+    public static void syncEquipmentProgress(ServerPlayer player, int elapsedTicks,
+            int durationTicks) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
+                EquipmentProgressPacket.sync(elapsedTicks, durationTicks));
+    }
+
+    public static void completeEquipmentProgress(ServerPlayer player) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
+                EquipmentProgressPacket.complete());
+    }
+
+    public static void cancelEquipmentProgress(ServerPlayer player) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
+                EquipmentProgressPacket.cancel());
     }
 
     public static void playScare(ServerPlayer player) {

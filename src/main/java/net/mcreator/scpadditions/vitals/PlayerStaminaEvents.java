@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -95,7 +96,9 @@ public final class PlayerStaminaEvents {
 
         if (moving && sprinting) {
             if (stamina > 0.0F) {
-                stamina = Math.max(0.0F, stamina - STAMINA_DRAIN_PER_TICK);
+                float drain = STAMINA_DRAIN_PER_TICK
+                        * HazmatSuitAccess.getStaminaDrainMultiplier(player);
+                stamina = Math.max(0.0F, stamina - drain);
             }
             regenDelay = REGEN_DELAY_TICKS;
             if (stamina <= 0.0F) {

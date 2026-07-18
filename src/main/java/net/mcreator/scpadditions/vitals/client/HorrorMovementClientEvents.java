@@ -12,15 +12,20 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.vitals.HorrorMovementNetwork;
 import net.mcreator.scpadditions.vitals.VitalsModule;
 
-/** Sends only sprint-input changes; speed and sprint state remain server-authoritative. */
+/** Sends sprint-input changes and corrects custom movement-speed FOV. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class HorrorMovementClientEvents {
     private static final double VANILLA_WALK_SPEED = 0.100D;
     private static final double HORROR_WALK_SPEED = 0.055D;
     private static final double HORROR_SPRINT_BASE_SPEED = 0.110D;
+    private static final double HAZMAT_VANILLA_WALK_SPEED = 0.075D;
+    private static final double HAZMAT_VANILLA_SPRINT_BASE_SPEED = 0.050D;
+    private static final double HAZMAT_HORROR_WALK_SPEED = 0.04125D;
+    private static final double HAZMAT_HORROR_SPRINT_BASE_SPEED = 0.055D;
     private static final double EPSILON = 0.0001D;
 
     private static boolean lastRequestedSprint;
@@ -59,18 +64,12 @@ public final class HorrorMovementClientEvents {
         }
     }
 
-    /**
-     * Minecraft derives part of its FOV modifier from the movement-speed
-     * attribute. Horror movement deliberately changes that attribute's base,
-     * but the slower walk/faster sprint should not behave like a speed potion
-     * or repeatedly stretch the camera. Rebuild only that movement component as
-     * if the base were still vanilla, preserving all other FOV modifiers.
-     */
     @SubscribeEvent
     public static void onComputeFovModifier(ComputeFovModifierEvent event) {
         Player player = event.getPlayer();
-        if (!VitalsModule.horrorMovementEnabled()
-                || player.isCreative() || player.isSpectator()) {
+        boolean hazmat = HazmatSuitAccess.isFullyEquipped(player);
+        if (player.isSpectator()
+                || (!VitalsModule.horrorMovementEnabled() && !hazmat)) {
             return;
         }
 
@@ -80,9 +79,13 @@ public final class HorrorMovementClientEvents {
         }
 
         double base = movement.getBaseValue();
-        boolean horrorBase = Math.abs(base - HORROR_WALK_SPEED) <= EPSILON
-                || Math.abs(base - HORROR_SPRINT_BASE_SPEED) <= EPSILON;
-        if (!horrorBase || base <= EPSILON) {
+        boolean managedBase = approximately(base, HORROR_WALK_SPEED)
+                || approximately(base, HORROR_SPRINT_BASE_SPEED)
+                || approximately(base, HAZMAT_VANILLA_WALK_SPEED)
+                || approximately(base, HAZMAT_VANILLA_SPRINT_BASE_SPEED)
+                || approximately(base, HAZMAT_HORROR_WALK_SPEED)
+                || approximately(base, HAZMAT_HORROR_SPRINT_BASE_SPEED);
+        if (!managedBase || base <= EPSILON) {
             return;
         }
 
@@ -92,14 +95,14 @@ public final class HorrorMovementClientEvents {
         }
 
         double currentValue = movement.getValue();
-        double currentMovementFactor = (currentValue / abilityWalkSpeed + 1.0D) / 2.0D;
+        double currentMovementFactor =
+                (currentValue / abilityWalkSpeed + 1.0D) / 2.0D;
         if (Math.abs(currentMovementFactor) <= EPSILON) {
             return;
         }
 
-        // Preserve sprint/potion/equipment modifiers while replacing only the
-        // custom base value with Minecraft's normal 0.100 base.
-        double vanillaEquivalentValue = currentValue * (VANILLA_WALK_SPEED / base);
+        double vanillaEquivalentValue =
+                currentValue * (VANILLA_WALK_SPEED / base);
         double vanillaMovementFactor =
                 (vanillaEquivalentValue / abilityWalkSpeed + 1.0D) / 2.0D;
         float correctedRaw = (float) (event.getFovModifier()
@@ -107,6 +110,11 @@ public final class HorrorMovementClientEvents {
 
         float accessibilityScale = Minecraft.getInstance().options
                 .fovEffectScale().get().floatValue();
-        event.setNewFovModifier(Mth.lerp(accessibilityScale, 1.0F, correctedRaw));
+        event.setNewFovModifier(Mth.lerp(
+                accessibilityScale, 1.0F, correctedRaw));
+    }
+
+    private static boolean approximately(double left, double right) {
+        return Math.abs(left - right) <= EPSILON;
     }
 }

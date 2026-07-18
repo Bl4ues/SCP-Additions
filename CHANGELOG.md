@@ -2,6 +2,36 @@
 
 # SCP Additions 3.0.6 — In Development
 
+## SCP Inventory overflow
+
+- Changed Survival inventory routing so stacks that belong in the SCP Inventory are dropped into the world instead of remaining as an unintended vanilla-inventory fallback when the SCP Inventory cannot accept them;
+- Preserved controlled usable/placeable sessions and the vanilla mirrors required by equipped weapons, accessories, harmful items, and currency while applying the new overflow rule;
+- Moved the final vanilla-to-SCP routing pass to low event priority so durability and temporary-session synchronization can settle before overflow is evaluated;
+- Changed normal equipment removal so a full SCP Inventory drops the removed item instead of silently retaining it or using vanilla storage as overflow.
+
+## Hazmat Suit
+
+- Reintroduced the Hazmat Suit as a single public item backed by four hidden compatibility armor pieces that reuse the removed legacy registry IDs without exposing their old individual recipes;
+- Added a four-second hold-to-equip sequence and a three-second timed removal sequence controlled authoritatively by the server;
+- Added a reusable timed-equipment progress bar based on the Blink Bar presentation: centered, smaller, yellow, without an icon, and positioned above the Blink Bar;
+- Added server-to-client begin, synchronization, completion, and cancellation controls for timed equipment actions;
+- Converted attempts to remove, shift, replace, or drop any internal Hazmat piece into the complete suit-removal sequence and return one public Hazmat Suit instead of separate armor pieces;
+- Added recovery and cleanup for incomplete proxy sets, inventory cursors, SCP Inventory mirrors, death drops, logout, Creative use, and full-inventory returns;
+- Added GeckoLib armor rendering support and a development asset contract covering the Blockbench rig, pivots, model hierarchy, file paths, textures, overlay, and sound names;
+- Added the shared Hazmat Suit inventory icon and a first-person visor overlay that scales to the current resolution while leaving gameplay HUD elements visible above it;
+- Added synchronized equip and removal sounds that stop immediately when an action is canceled, plus a local breathing loop that starts after the suit is sealed, stops during removal, and resumes if removal is canceled;
+- Added complete-set eye protection and a reusable sealed-protection check for future chemical, biological, radiation, and environmental hazards;
+- Made the sealed suit reject splash-potion and lingering-potion effects, including instant potion healing or damage, while leaving commands and deliberately internal effects available to their own systems;
+- Prevented eating, drinking, drinking potions, eating cake, and every item classified as `CONSUMABLE` by the SCP Inventory while the mask is sealed, including configured consumables without vanilla eat or drink animations;
+- Kept explicit JSON item rules authoritative while separating SCP Inventory categories from physical hand-use checks, preventing Splash/Lingering Potions and other non-ingestible usable items from being mistaken for food or drink;
+- Added a public-item tooltip describing sealing, light protection, and the stationary equip/removal controls;
+- Added leather-equivalent armor points to the complete suit while keeping the hidden internal pieces non-repairable and effectively unbreakable;
+- Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
+
+## Development
+
+- Expanded the Java 17 Gradle build workflow to validate feature branches and retain successful compiled JARs as workflow artifacts.
+
 # SCP Additions 3.0.5 — Refinement Update
 
 ## Facility floors
@@ -278,7 +308,6 @@
 * Added extensive configuration defaults, migration documentation, and build validation;
 * Fixed multiple item duplication, pickup routing, keycard synchronization, usable-session, interface, rendering, button, door, font, and configuration-generation issues.
 
-
 # SCP Additions 2.0.2 — Hotfix
 
 ## Hotfix update for the 2.0.1 hotfix.
@@ -309,7 +338,7 @@
 ## Major overhaul for the 1.20.1 version of SCP Additions.
 
 - Added a full SCP Unity-inspired Tesla Gate Terminal interface;
-- Added a new functional Tesla Gate Terminal model and a separate decorative OFF terminal;
+- Added a new functional SCP Unity-inspired Tesla Gate Terminal model and a separate decorative OFF terminal;
 - Added Security Credentials as Tesla Gate Terminal admin access instead of turning interaction;
 - Added global Tesla Gate controls through the terminal;
 - Added Emergency Override mode for Tesla Gates;

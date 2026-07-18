@@ -7,6 +7,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
+import net.mcreator.scpadditions.equipment.HazmatSuitManager;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -47,22 +49,34 @@ public class EquipmentActionPacket {
             }
 
             player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+                ItemStack equipped = inventory.getEquipment(slot.get());
+                if (HazmatSuitAccess.isInternalPiece(equipped)
+                        || (HazmatSuitAccess.isFullyEquipped(player)
+                                && isHazmatArmorSlot(slot.get()))) {
+                    HazmatSuitManager.requestUnequip(player);
+                    ModNetwork.syncTo(player, inventory);
+                    return;
+                }
+
                 switch (msg.action) {
                     case ACTION_UNEQUIP -> {
-                        ItemStack equipped = inventory.getEquipment(slot.get());
+                        equipped = inventory.extractEquipment(slot.get());
                         if (equipped.isEmpty()) {
                             return;
                         }
 
-                        if (inventory.addInventoryItem(equipped)) {
-                            inventory.clearEquipment(slot.get());
-                            InventoryActionPacket.syncVanillaEquipmentSlot(player, slot.get(), ItemStack.EMPTY);
-                        } else {
+                        InventoryActionPacket.syncVanillaEquipmentSlot(
+                                player, slot.get(), ItemStack.EMPTY);
+                        if (!inventory.addInventoryItem(equipped)) {
+                            // Survival never uses vanilla storage as overflow for
+                            // SCP Inventory equipment. A full custom inventory
+                            // turns the unequipped stack into a world drop.
+                            player.drop(equipped, false);
                             ModNetwork.showInventoryFull(player);
                         }
                     }
                     case ACTION_DROP -> {
-                        ItemStack equipped = inventory.extractEquipment(slot.get());
+                        equipped = inventory.extractEquipment(slot.get());
                         if (!equipped.isEmpty()) {
                             InventoryActionPacket.syncVanillaEquipmentSlot(player, slot.get(), ItemStack.EMPTY);
                             player.drop(equipped, false);
@@ -76,5 +90,12 @@ public class EquipmentActionPacket {
             });
         });
         ctx.get().setPacketHandled(true);
+    }
+
+    private static boolean isHazmatArmorSlot(ScpEquipmentSlot slot) {
+        return slot == ScpEquipmentSlot.HEAD
+                || slot == ScpEquipmentSlot.CHEST
+                || slot == ScpEquipmentSlot.LEGS
+                || slot == ScpEquipmentSlot.FEET;
     }
 }

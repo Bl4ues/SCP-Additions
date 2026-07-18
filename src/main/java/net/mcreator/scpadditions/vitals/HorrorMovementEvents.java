@@ -9,17 +9,16 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
-/**
- * Server-authoritative port of SCP Inventory's horror movement controller.
- * Walking is deliberately slow, while a committed sprint is slightly faster
- * than vanilla sprinting after Minecraft applies its normal sprint multiplier.
- */
+/** Server-authoritative horror movement controller with Hazmat penalties. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class HorrorMovementEvents {
     private static final double VANILLA_WALK_SPEED = 0.100D;
     private static final double HORROR_WALK_SPEED = 0.055D;
     private static final double HORROR_SPRINT_BASE_SPEED = 0.110D;
+    private static final double HAZMAT_WALK_MULTIPLIER = 0.75D;
+    private static final double HAZMAT_SPRINT_MULTIPLIER = 0.50D;
     private static final double EPSILON = 0.0001D;
 
     private HorrorMovementEvents() {
@@ -33,10 +32,22 @@ public final class HorrorMovementEvents {
             return;
         }
 
-        if (!VitalsModule.horrorMovementEnabled()
-                || player.isCreative() || player.isSpectator()) {
+        if (player.isSpectator()) {
             HorrorMovementNetwork.clear(player);
             applyMovementSpeed(player, VANILLA_WALK_SPEED);
+            return;
+        }
+
+        boolean hazmat = HazmatSuitAccess.isFullyEquipped(player);
+        if (!VitalsModule.horrorMovementEnabled() || player.isCreative()) {
+            HorrorMovementNetwork.clear(player);
+            double speed = VANILLA_WALK_SPEED;
+            if (hazmat) {
+                speed *= player.isSprinting()
+                        ? HAZMAT_SPRINT_MULTIPLIER
+                        : HAZMAT_WALK_MULTIPLIER;
+            }
+            applyMovementSpeed(player, speed);
             return;
         }
 
@@ -47,8 +58,16 @@ public final class HorrorMovementEvents {
         if (player.isSprinting() != sprinting) {
             player.setSprinting(sprinting);
         }
-        applyMovementSpeed(player,
-                sprinting ? HORROR_SPRINT_BASE_SPEED : HORROR_WALK_SPEED);
+
+        double speed = sprinting
+                ? HORROR_SPRINT_BASE_SPEED
+                : HORROR_WALK_SPEED;
+        if (hazmat) {
+            speed *= sprinting
+                    ? HAZMAT_SPRINT_MULTIPLIER
+                    : HAZMAT_WALK_MULTIPLIER;
+        }
+        applyMovementSpeed(player, speed);
     }
 
     @SubscribeEvent

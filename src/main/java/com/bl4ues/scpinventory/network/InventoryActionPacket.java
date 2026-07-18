@@ -10,6 +10,8 @@ import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
+import net.mcreator.scpadditions.equipment.HazmatSuitEvents;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -99,6 +101,13 @@ public class InventoryActionPacket {
     }
 
     private static void consumeSlot(ServerPlayer player, IScpInventory inventory, int slot, ItemStack stack) {
+        // This method is only reached after the authoritative classifier has
+        // returned CONSUMABLE, including explicit JSON rules.
+        if (HazmatSuitAccess.isFullyEquipped(player)) {
+            HazmatSuitEvents.showSealedMaskMessage(player);
+            return;
+        }
+
         UseAnim animation = stack.getUseAnimation();
         boolean hasVanillaUseResult = stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
         if (!hasVanillaUseResult) {

@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.effect;
 import com.bl4ues.scpinventory.item.ScpItemEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 
 /** Shared eye-protection rules for gas, decontamination, and future hazards. */
@@ -12,6 +13,7 @@ public final class EyeProtectionAccess {
 
     public static boolean blocksExternalEyeSore(Player player) {
         return player != null && (player.hasEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get())
+                || HazmatSuitAccess.protectsEyes(player)
                 || ScpItemEffects.hasProtectedEyesModifierEquipped(player));
     }
 

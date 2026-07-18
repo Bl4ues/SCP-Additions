@@ -5,6 +5,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.DeferredRegister;
 
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 
@@ -48,6 +49,11 @@ public class ScpAdditionsModItems {
 	public static final RegistryObject<Item> PIECES_OF_PAPER = REGISTRY.register("pieces_of_paper", () -> new PiecesOfPaperItem());
 	public static final RegistryObject<Item> COIN = REGISTRY.register("coin", () -> new CoinItem());
 	public static final RegistryObject<Item> EMPTY_CUP = REGISTRY.register("empty_cup", () -> new EmptyCupItem());
+	public static final RegistryObject<Item> HAZMAT_SUIT = REGISTRY.register("hazmat_suit", HazmatSuitItem::new);
+	public static final RegistryObject<Item> HAZMAT_SUIT_HELMET = REGISTRY.register("hazmat_suit_helmet", () -> new HazmatArmorItem(ArmorItem.Type.HELMET));
+	public static final RegistryObject<Item> HAZMAT_SUIT_CHESTPLATE = REGISTRY.register("hazmat_suit_chestplate", () -> new HazmatArmorItem(ArmorItem.Type.CHESTPLATE));
+	public static final RegistryObject<Item> HAZMAT_SUIT_LEGGINGS = REGISTRY.register("hazmat_suit_leggings", () -> new HazmatArmorItem(ArmorItem.Type.LEGGINGS));
+	public static final RegistryObject<Item> HAZMAT_SUIT_BOOTS = REGISTRY.register("hazmat_suit_boots", () -> new HazmatArmorItem(ArmorItem.Type.BOOTS));
 	public static final RegistryObject<Item> LEVEL_1_KEYCARD = REGISTRY.register("level_1_keycard", () -> new Level1KeycardItem());
 	public static final RegistryObject<Item> LEVEL_2_KEYCARD = REGISTRY.register("level_2_keycard", () -> new Level2KeycardItem());
 	public static final RegistryObject<Item> LEVEL_3_KEYCARD = REGISTRY.register("level_3_keycard", () -> new Level3KeycardItem());

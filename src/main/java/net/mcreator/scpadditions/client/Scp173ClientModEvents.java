@@ -18,6 +18,9 @@ public final class Scp173ClientModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+        event.registerAboveAll("hazmat_visor_overlay",
+                (gui, graphics, partialTick, width, height) ->
+                        HazmatVisorOverlay.render(graphics, width, height));
         event.registerAboveAll("blink_vignette_overlay",
                 (gui, graphics, partialTick, width, height) -> {
                     BlinkClient.renderVignette(graphics, width, height);
@@ -25,6 +28,9 @@ public final class Scp173ClientModEvents {
                 });
         event.registerAboveAll("blink_blackout_overlay",
                 (gui, graphics, partialTick, width, height) -> BlinkClient.renderBlackout(graphics, width, height));
+        event.registerAboveAll("equipment_progress_overlay",
+                (gui, graphics, partialTick, width, height) ->
+                        EquipmentProgressOverlay.render(graphics, width, height, partialTick));
         event.registerAboveAll("blink_meter_overlay",
                 (gui, graphics, partialTick, width, height) -> BlinkClient.renderHud(graphics, width, height, partialTick));
         event.registerAboveAll("scp_131_notice_overlay",

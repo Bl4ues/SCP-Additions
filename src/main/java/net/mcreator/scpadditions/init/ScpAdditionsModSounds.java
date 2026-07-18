@@ -70,4 +70,7 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> NUCLEAR = REGISTRY.register("nuclear", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "nuclear")));
 	public static final RegistryObject<SoundEvent> GRAVITONS = REGISTRY.register("gravitons", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "gravitons")));
 	public static final RegistryObject<SoundEvent> STOMACH = REGISTRY.register("stomach", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "stomach")));
+	public static final RegistryObject<SoundEvent> HAZMAT_EQUIP = REGISTRY.register("hazmat_equip", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "hazmat_equip")));
+	public static final RegistryObject<SoundEvent> HAZMAT_REMOVE = REGISTRY.register("hazmat_remove", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "hazmat_remove")));
+	public static final RegistryObject<SoundEvent> HAZMAT_BREATHING = REGISTRY.register("hazmat_breathing", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "hazmat_breathing")));
 }

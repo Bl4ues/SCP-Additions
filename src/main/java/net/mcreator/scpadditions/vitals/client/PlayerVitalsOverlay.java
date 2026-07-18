@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.vitals.VitalsModule;
 
 /** SCP Inventory's lower-left health and stamina HUD, with independent toggles. */
@@ -32,6 +33,8 @@ public final class PlayerVitalsOverlay {
     private static final int TEXT = 0xE8DDE3E0;
     private static final int STAMINA_LEFT = 0xAA4D6474;
     private static final int STAMINA_RIGHT = 0xCC7EA0B7;
+    private static final int HAZMAT_STAMINA_LEFT = 0xCC7B1717;
+    private static final int HAZMAT_STAMINA_RIGHT = 0xFFE04A3F;
     private static final int FLASH_RED = 0xFFE01010;
 
     private PlayerVitalsOverlay() {
@@ -51,9 +54,12 @@ public final class PlayerVitalsOverlay {
 
         if (VitalsModule.staminaHudEnabled()) {
             drawIcon(graphics, STAMINA_ICON, ICON_X, rowY - 4);
+            boolean hazmatEquipped = HazmatSuitAccess.isFullyEquipped(player);
             drawBar(graphics, BAR_X, rowY, BAR_WIDTH, BAR_HEIGHT,
                     PlayerVitalsClient.getStaminaRatio(),
-                    STAMINA_LEFT, STAMINA_RIGHT, 0.0F);
+                    hazmatEquipped ? HAZMAT_STAMINA_LEFT : STAMINA_LEFT,
+                    hazmatEquipped ? HAZMAT_STAMINA_RIGHT : STAMINA_RIGHT,
+                    0.0F);
             rowY += BAR_GAP;
         }
 

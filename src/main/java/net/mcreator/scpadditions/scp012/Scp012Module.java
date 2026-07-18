@@ -40,6 +40,11 @@ public final class Scp012Module {
     public static final RegistryObject<Item> SCP_012_ITEM = ITEMS.register("scp_012",
             () -> new BlockItem(CLOSED.get(), new Item.Properties().stacksTo(1)) {
                 @Override
+                public Component getName(ItemStack stack) {
+                    return Component.literal("SCP-012");
+                }
+
+                @Override
                 public void appendHoverText(ItemStack stack, BlockGetter level,
                                             List<Component> tooltip,
                                             TooltipFlag flag) {

@@ -18,6 +18,8 @@
 - Converted attempts to remove, shift, replace, or drop any internal Hazmat piece into the complete suit-removal sequence and return one public Hazmat Suit instead of separate armor pieces;
 - Added recovery and cleanup for incomplete proxy sets, inventory cursors, SCP Inventory mirrors, death drops, logout, Creative use, and full-inventory returns;
 - Added GeckoLib armor rendering support and a development asset contract covering the Blockbench rig, pivots, model hierarchy, file paths, textures, overlay, and sound names;
+- Added the shared Hazmat Suit inventory icon and a first-person visor overlay that scales to the current resolution while leaving gameplay HUD elements visible above it;
+- Added synchronized equip and removal sounds that stop immediately when an action is canceled, plus a local breathing loop that starts after the suit is sealed, stops during removal, and resumes if removal is canceled;
 - Added complete-set eye protection and a reusable sealed-protection check for future chemical, biological, radiation, and environmental hazards;
 - Made the sealed suit reject splash-potion and lingering-potion effects, including instant potion healing or damage, while leaving commands and deliberately internal effects available to their own systems;
 - Prevented eating, drinking, drinking potions, and eating cake while the mask is sealed, including consumption initiated from the SCP Inventory;

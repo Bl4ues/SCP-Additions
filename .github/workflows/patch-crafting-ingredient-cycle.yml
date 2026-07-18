@@ -1,9 +1,11 @@
 name: Patch Crafting Ingredient Cycle
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/3.0.6-crafting-tab
+      - master
+    types:
+      - synchronize
     paths:
       - .github/workflows/patch-crafting-ingredient-cycle.yml
 

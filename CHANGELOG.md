@@ -20,7 +20,8 @@
 - Kept explicit JSON item rules authoritative while separating SCP Inventory categories from physical hand-use checks, preventing Splash/Lingering Potions and other non-ingestible usable items from being mistaken for food or drink;
 - Added a public-item tooltip describing sealing, light protection, and the stationary equip/removal controls;
 - Added leather-equivalent armor points to the complete suit while keeping the hidden internal pieces non-repairable and effectively unbreakable;
-- Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
+- Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red;
+- Added strong low-pass muffling for diegetic world audio while keeping the suit's internal equip, removal, and breathing sounds clear.
 
 ## SCP-714
 
@@ -30,7 +31,20 @@
 - Added subtle first-person fatigue messages at 90, 110, and 120 seconds;
 - At two minutes, fully blacked out the view and froze horizontal movement while preserving a final five-second opportunity to remove the ring;
 - Added a custom coma death and death message when SCP-714 remains equipped for the complete 125-second sequence;
-- Made removing the ring immediately clear its slowdown, vignette, exposure timer, and pending coma.
+- Added a local-only SCP-714 soundtrack timed to the exposure, with a smooth two-second fade-out when the effect ends early;
+- Progressively muffled diegetic sounds from a light initial filter to complete silence while leaving non-diegetic music and interface audio unaffected;
+- Made removing the ring immediately clear its slowdown, vignette, exposure timer, pending coma, and active soundtrack.
+
+## SCP Inventory Crafting
+
+- Added a fourth Crafting tab between Status and Codex, with all four bottom tabs centered symmetrically and the established SCP Inventory title, color, panel, and scaling conventions;
+- Added a persistent, server-authoritative portable 3×3 crafting grid, result slot, and compact scrollable SCP Inventory item list with drag-and-drop in both directions;
+- Added learned recipes that unlock after successful portable, inventory, or crafting-table crafting, plus a public learning hook for future blueprint items;
+- Added a scrollable recipe list with output names and icons, compact ingredient requirements, red missing counts, dimmed unavailable recipes, and red missing-material feedback;
+- Added cycling displays for all valid alternatives accepted by recipe ingredients, including tag-based vanilla and modded materials;
+- Added persistent recipe pins and sorting by pinned, currently craftable, and unavailable groups, alphabetically within each group;
+- Made clicking a craftable learned recipe fill the grid in the correct shaped or shapeless arrangement while keeping item movement, consumption, remainder items, output insertion, and learning authoritative on the server;
+- Updated `/scpinventory reset` to clear learned recipes, pinned recipes, and the portable crafting grid together with the rest of the SCP Inventory state.
 
 ## Facility blocks
 

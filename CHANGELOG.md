@@ -46,6 +46,17 @@
 - Progressively muffled diegetic sounds from a light initial filter to complete silence while leaving non-diegetic music and interface audio unaffected;
 - Made removing the ring immediately clear its slowdown, vignette, exposure timer, pending coma, and active soundtrack.
 
+## SCP-012 foundation
+
+- Added SCP-012 as a public containment-box block with closed, three-stage opening, open, and reverse closing states prepared for authored Blockbench models;
+- Added `/scp012 open`, `/scp012 close`, `/scp012 toggle`, and `/scp012 status`, with optional coordinates and nearest-box lookup;
+- Made SCP-079 System Control automatically open a closed SCP-012 when an unprotected Survival player enters its ten-block influence range;
+- Added slow server-authoritative attraction toward an open SCP-012, smooth camera lock, and short-range A* obstacle avoidance instead of pulling the player through solid blocks;
+- Added a contact sequence with first-person action-bar narration, a progressive code-generated subliminal overlay, periodic damage, and the death message that the player could not complete SCP-012;
+- Integrated nearby controlled Default, Yellow, and Black heavy doors: while SCP-079 has System Control, a door within fifteen blocks of SCP-012 opens when the influenced player comes within five blocks, provided it has a functional control interface;
+- Made `SCP_714_PROTECTION` completely prevent automatic opening, attraction, camera lock, door assistance, overlays, contact narration, damage, and death from SCP-012;
+- Added temporary stable block models and documented the five authored model stages, texture path, shared pivots, and reverse closing reuse required for the final asset export.
+
 ## Facility blocks
 
 - Standardized structures, floors, walls, props, doors, animation states, and door panels from the integrated facility modules to brick-equivalent effective mining resistance;

@@ -101,8 +101,9 @@ public class InventoryActionPacket {
     }
 
     private static void consumeSlot(ServerPlayer player, IScpInventory inventory, int slot, ItemStack stack) {
-        if (HazmatSuitAccess.isFullyEquipped(player)
-                && HazmatSuitEvents.isFoodOrDrink(stack)) {
+        // This method is only reached after the authoritative classifier has
+        // returned CONSUMABLE, including explicit JSON rules.
+        if (HazmatSuitAccess.isFullyEquipped(player)) {
             HazmatSuitEvents.showSealedMaskMessage(player);
             return;
         }

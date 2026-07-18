@@ -14,6 +14,7 @@ import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.FacilityModule;
+import net.mcreator.scpadditions.scp012.Scp012Module;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModTabs {
@@ -46,6 +47,7 @@ public class ScpAdditionsModTabs {
             }).withSearchBar().build());
     public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS = REGISTRY.register("sc_padditions_sc_ps",
             () -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_sc_ps")).icon(() -> new ItemStack(ScpAdditionsModBlocks.SCP_1176.get())).displayItems((parameters, tabData) -> {
+                tabData.accept(Scp012Module.SCP_012_ITEM.get());
                 tabData.accept(ScpAdditionsModBlocks.SCP_079ON.get().asItem());
                 tabData.accept(Scp131Items.SCP_131_A_SPAWN_EGG.get());
                 tabData.accept(Scp131Items.SCP_131_B_SPAWN_EGG.get());

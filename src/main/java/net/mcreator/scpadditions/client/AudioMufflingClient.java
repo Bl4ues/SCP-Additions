@@ -49,6 +49,7 @@ public final class AudioMufflingClient {
     private static final ConcurrentMap<Channel, SoundInstance> SOUNDS_BY_CHANNEL =
             new ConcurrentHashMap<>();
     private static final AtomicBoolean UPDATE_QUEUED = new AtomicBoolean();
+    private static final AtomicBoolean UPDATE_DIRTY = new AtomicBoolean();
 
     private static volatile SoundEngine soundEngine;
     private static SoundEngine filterEngine;
@@ -136,11 +137,16 @@ public final class AudioMufflingClient {
     }
 
     private static void queueUpdate() {
+        UPDATE_DIRTY.set(true);
         SoundEngine engine = soundEngine;
         if (engine == null || !UPDATE_QUEUED.compareAndSet(false, true)) {
             return;
         }
+        scheduleUpdate(engine);
+    }
 
+    private static void scheduleUpdate(SoundEngine engine) {
+        UPDATE_DIRTY.set(false);
         float hazmat = Mth.clamp(currentHazmatStrength, 0.0F, 1.0F);
         float scp714 = Mth.clamp(currentScp714Strength, 0.0F, 1.0F);
         float requestedMasterVolume = Mth.clamp(masterVolume, 0.0F, 1.0F);
@@ -153,6 +159,9 @@ public final class AudioMufflingClient {
                         requestedMasterVolume);
             } finally {
                 UPDATE_QUEUED.set(false);
+                if (UPDATE_DIRTY.get()) {
+                    queueUpdate();
+                }
             }
         });
     }
@@ -170,7 +179,9 @@ public final class AudioMufflingClient {
         float worldStrength = combine(hazmat, scp714);
         if (worldStrength <= UPDATE_EPSILON
                 && scp714 <= UPDATE_EPSILON) {
-            detachFilters(channels);
+            if (worldFilter != 0 || internalFilter != 0) {
+                detachFilters(channels);
+            }
             engine.listener.setGain(requestedMasterVolume);
             return;
         }
@@ -321,7 +332,8 @@ public final class AudioMufflingClient {
     }
 
     private static void clearAlError() {
-        while (AL10.alGetError() != AL10.AL_NO_ERROR) {
+        for (int attempts = 0; attempts < 16
+                && AL10.alGetError() != AL10.AL_NO_ERROR; attempts++) {
             // Drain stale OpenAL errors before validating this operation.
         }
     }

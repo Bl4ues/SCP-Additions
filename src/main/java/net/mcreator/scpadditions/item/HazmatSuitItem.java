@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.item;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -7,9 +9,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.mcreator.scpadditions.equipment.HazmatSuitManager;
+
+import java.util.List;
 
 /** Public single-item representation of the complete Hazmat Suit. */
 public final class HazmatSuitItem extends Item {
@@ -64,5 +69,23 @@ public final class HazmatSuitItem extends Item {
             }
         }
         return stack;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Level level,
+            List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.translatable(
+                "tooltip.scp_additions.hazmat_suit.sealed")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.scp_additions.hazmat_suit.armor")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.scp_additions.hazmat_suit.equip")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.translatable(
+                "tooltip.scp_additions.hazmat_suit.remove")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        super.appendHoverText(stack, level, tooltip, flag);
     }
 }

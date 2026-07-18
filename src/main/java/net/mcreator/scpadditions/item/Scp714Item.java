@@ -1,6 +1,5 @@
 package net.mcreator.scpadditions.item;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -19,12 +18,7 @@ public final class Scp714Item extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.scp_additions.scp_714.exhaustion")
-                .withStyle(ChatFormatting.DARK_GREEN));
-        tooltip.add(Component.translatable("tooltip.scp_additions.scp_714.protection")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.scp_additions.scp_714.slot")
-                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.translatable("tooltip.scp_additions.scp_714"));
         super.appendHoverText(stack, level, tooltip, flag);
     }
 }

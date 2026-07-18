@@ -1,0 +1,133 @@
+name: Finalize Crafting UI refinement
+
+on:
+  push:
+    branches:
+      - feature/3.0.6-crafting-tab
+    paths:
+      - .github/workflows/patch-crafting-ui-final.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/3.0.6-crafting-tab
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Apply final Crafting UI refinements
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java')
+          text = path.read_text(encoding='utf-8')
+
+          def sub(pattern, replacement, expected=1, flags=0):
+              global text
+              text, count = re.subn(pattern, replacement, text, count=expected, flags=flags)
+              if count != expected:
+                  raise SystemExit(f'Expected {expected} replacement(s), found {count}: {pattern[:120]!r}')
+
+          sub(r'private static final int RECIPE_ROW_HEIGHT = \d+;',
+              'private static final int RECIPE_ROW_HEIGHT = 46;')
+          sub(r'private static final int RECIPE_ROW_GAP = \d+;',
+              'private static final int RECIPE_ROW_GAP = 4;')
+          sub(r'private static final int INVENTORY_ROW_HEIGHT = \d+;',
+              'private static final int INVENTORY_ROW_HEIGHT = 32;')
+          sub(r'private static final int PIN_WIDTH = \d+;',
+              'private static final int PIN_WIDTH = 12;')
+          sub(r'private static final int PIN_HEIGHT = \d+;',
+              'private static final int PIN_HEIGHT = 14;')
+
+          if 'MAX_VISIBLE_INVENTORY_ROWS' not in text:
+              text = text.replace(
+                  '    private static final int PIN_HEIGHT = 14;\n',
+                  '    private static final int PIN_HEIGHT = 14;\n'
+                  '    private static final int MAX_VISIBLE_INVENTORY_ROWS = 5;\n', 1)
+
+          sub(r'int iconY = rowY \+ \d+;\n        drawSlot\(graphics, iconX, iconY, RECIPE_ICON_SIZE\);',
+              'int iconY = rowY + 5;\n        drawSlot(graphics, iconX, iconY, RECIPE_ICON_SIZE);')
+          sub(r'int pinY = rowY \+ \d+;', 'int pinY = rowY + 5;')
+          sub(r'drawTrimmed\(graphics, entry\.name\(\), textX, rowY \+ \d+,',
+              'drawTrimmed(graphics, entry.name(), textX, rowY + 5,')
+          sub(r'int materialY = rowY \+ \d+;', 'int materialY = rowY + 23;')
+
+          # Quantities remain hidden for one item. Missing xN uses the same bad-condition hue.
+          sub(
+              r'group\.available\(\) \? TEXT_WHITE : flash\s*\? 0xFFFF8C8C : (?:TEXT_DIM|0xFF8A8C8C)',
+              'group.available() ? TEXT_WHITE : 0xFFA06F6F')
+
+          # Remove the compact-inventory heading entirely, when still present.
+          text = re.sub(
+              r'\s*graphics\.drawString\(mc\.font, ScpFonts\.roboto\("ITEMS IN INVENTORY"\),\s*\n\s*getInventoryListX\(\), getInventoryHeaderY\(\), TEXT_WHITE, false\);',
+              '', text, count=1)
+
+          sub(r'return isInside\(mouseX, mouseY, pinX, rowY \+ \d+,\n\s*PIN_WIDTH, PIN_HEIGHT\);',
+              'return isInside(mouseX, mouseY, pinX, rowY + 5,\n                PIN_WIDTH, PIN_HEIGHT);')
+
+          sub(
+              r'graphics\.fill\(x \+ \d+, y \+ 1, x \+ \d+, y \+ 3, color\);\n\s*graphics\.fill\(x \+ \d+, y \+ 3, x \+ \d+, y \+ \d+, color\);\n\s*graphics\.fill\(x \+ \d+, y \+ \d+, x \+ \d+, y \+ \d+, color\);\n\s*graphics\.fill\(x \+ \d+, y \+ \d+, x \+ \d+, y \+ \d+, color\);\n\s*graphics\.fill\(x \+ \d+, y \+ \d+, x \+ \d+, y \+ \d+, color\);',
+              'graphics.fill(x + 3, y + 1, x + 9, y + 3, color);\n'
+              '        graphics.fill(x + 5, y + 3, x + 7, y + 7, color);\n'
+              '        graphics.fill(x + 2, y + 6, x + 10, y + 8, color);\n'
+              '        graphics.fill(x + 5, y + 8, x + 7, y + 12, color);\n'
+              '        graphics.fill(x + 6, y + 11, x + 7, y + 14, color);')
+
+          # Replace either the original header-based geometry or the already-refined geometry.
+          geometry_pattern = re.compile(
+              r'    private int getInventoryHeaderY\(\) \{[^\n]*\}\n'
+              r'    private int getInventoryListX\(\) \{[^\n]*\}\n'
+              r'    private int getInventoryListY\(\) \{[^\n]*\}\n'
+              r'    private int getInventoryListWidth\(\) \{[^\n]*\}\n'
+              r'    private int getInventoryListHeight\(\) \{[^\n]*\}\n'
+              r'    private int getVisibleInventoryRows\(\) \{[^\n]*\}', re.MULTILINE)
+          geometry_replacement = (
+              '    private int getInventoryListX() { return gridX + 18; }\n'
+              '    private int getInventoryListY() { return getGridStartY() + getGridPixels() + 12; }\n'
+              '    private int getInventoryListWidth() { return Math.max(90, gridWidth - 45); }\n'
+              '    private int getInventoryListHeight() {\n'
+              '        int available = Math.max(INVENTORY_ROW_HEIGHT,\n'
+              '                gridY + gridHeight - getInventoryListY() - 10);\n'
+              '        return Math.min(INVENTORY_ROW_HEIGHT * MAX_VISIBLE_INVENTORY_ROWS, available);\n'
+              '    }\n'
+              '    private int getVisibleInventoryRows() {\n'
+              '        return Math.max(1, Math.min(MAX_VISIBLE_INVENTORY_ROWS,\n'
+              '                getInventoryListHeight() / INVENTORY_ROW_HEIGHT));\n'
+              '    }')
+          text, count = geometry_pattern.subn(geometry_replacement, text, count=1)
+          if count == 0:
+              # Already multiline-refined: replace the full block up to scrollbar X.
+              text, count = re.subn(
+                  r'    private int getInventoryListX\(\).*?\n    private int getInventoryScrollbarX\(\)',
+                  geometry_replacement + '\n    private int getInventoryScrollbarX()',
+                  text, count=1, flags=re.DOTALL)
+          if count != 1:
+              raise SystemExit(f'Could not normalize inventory geometry: {count}')
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Commit final refinement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java
+          if git diff --cached --quiet; then
+            echo "Crafting panel already has the final refinement"
+            exit 0
+          fi
+          git commit -m "Refine Crafting lists and missing counts"
+          git push origin HEAD:feature/3.0.6-crafting-tab

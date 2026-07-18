@@ -22,21 +22,20 @@
 - Added leather-equivalent armor points to the complete suit while keeping the hidden internal pieces non-repairable and effectively unbreakable;
 - Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
 
-## SCP-714 — The Jaded Ring
+## SCP-714
 
-- Added SCP-714 as a 3D `ACCESSORYHAND` item placed immediately after SCP-572 in the SCP creative tab;
+- Added SCP-714 as a `ACCESSORYHAND` item;
 - Added intrinsic `NO_STAMINA` and reusable `SCP_714_PROTECTION` equipment behavior for future threats such as SCP-012;
 - Added a persistent two-minute exposure sequence that progressively slows normal movement, darkens the player's vision through a smooth code-generated jade-black radial vignette, and removes sprinting immediately;
-- Added subtle first-person fatigue messages at 90, 110, and 120 seconds without directly explaining the danger;
+- Added subtle first-person fatigue messages at 90, 110, and 120 seconds;
 - At two minutes, fully blacked out the view and froze horizontal movement while preserving a final five-second opportunity to remove the ring;
 - Added a custom coma death and death message when SCP-714 remains equipped for the complete 125-second sequence;
-- Made removing the ring immediately clear its slowdown, vignette, exposure timer, and pending coma;
-- Added the subtitle tooltip `The Jaded Ring` while keeping the public item name as `SCP-714`.
+- Made removing the ring immediately clear its slowdown, vignette, exposure timer, and pending coma.
 
 ## Facility blocks
 
 - Standardized structures, floors, walls, props, doors, animation states, and door panels from the integrated facility modules to brick-equivalent effective mining resistance;
-- Made facility blocks slow to break by hand or with incorrect tools while allowing Forge-compatible pickaxes, tool tiers, Efficiency, Haste, Mining Fatigue, water, and airborne penalties to affect mining normally.
+- Made facility blocks slow to break by hand or with incorrect tools while allowing pickaxes, tool tiers, Efficiency, Haste, Mining Fatigue, water, and airborne penalties to affect mining normally.
 
 ## Development
 

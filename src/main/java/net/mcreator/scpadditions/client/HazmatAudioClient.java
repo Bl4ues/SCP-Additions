@@ -84,16 +84,19 @@ public final class HazmatAudioClient {
             return;
         }
 
-        if (actionSound != null
-                && !minecraft.getSoundManager().isActive(actionSound)) {
-            actionSound = null;
-        }
-
+        // Keep the instance reference for the complete timed action so any
+        // cancellation can always stop it, even while the sound engine is still
+        // starting or loading the OGG on its first client ticks.
         if (action == Action.EQUIP || action == Action.REMOVE) {
             if (action == Action.REMOVE) {
                 stopBreathing();
             }
             return;
+        }
+
+        if (actionSound != null
+                && !minecraft.getSoundManager().isActive(actionSound)) {
+            actionSound = null;
         }
 
         if (breathingAfterEquipSound) {

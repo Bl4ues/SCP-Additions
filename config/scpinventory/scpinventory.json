@@ -37,6 +37,10 @@
       "type": "WEAPON"
     },
     {
+      "id": "scp_additions:scp_714",
+      "type": "ACCESSORYHAND"
+    },
+    {
       "id": "scp_additions:screwdriver",
       "type": "USABLE"
     },
@@ -175,9 +179,17 @@
   ],
   "item_effects": [
     {
+      "id": "scp_additions:scp_714",
+      "effects": [
+        "NO_STAMINA",
+        "SCP_714_PROTECTION"
+      ]
+    },
+    {
       "id": "scpo:scp_714",
       "effects": [
-        "NO_STAMINA"
+        "NO_STAMINA",
+        "SCP_714_PROTECTION"
       ]
     }
   ],

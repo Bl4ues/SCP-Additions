@@ -1,0 +1,216 @@
+name: Patch Crafting Ingredient Cycle
+
+on:
+  push:
+    branches:
+      - feature/3.0.6-crafting-tab
+    paths:
+      - .github/workflows/patch-crafting-ingredient-cycle.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/3.0.6-crafting-tab
+          fetch-depth: 0
+
+      - name: Apply ingredient cycling and spacing
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = []
+
+          replacements.append((
+              "    private static final long MISSING_FLASH_MS = 950L;\n",
+              "    private static final long MISSING_FLASH_MS = 950L;\n"
+              "    private static final long INGREDIENT_CYCLE_MS = 1000L;\n"
+          ))
+
+          replacements.append((
+              '''        for (IngredientGroup group : entry.ingredients()) {
+              int neededWidth = MATERIAL_ICON_SIZE + (group.count() > 1 ? 14 : 4);
+              if (materialX + neededWidth > materialRight) {
+                  hiddenGroups++;
+                  continue;
+              }
+              graphics.renderItem(group.display(), materialX, materialY);
+              if (!group.available()) {
+                  graphics.fill(materialX, materialY,
+                          materialX + MATERIAL_ICON_SIZE,
+                          materialY + MATERIAL_ICON_SIZE,
+                          flash ? MISSING_RED : DIM_OVERLAY);
+                  if (flash) drawFrame(graphics, materialX, materialY,
+                          MATERIAL_ICON_SIZE, MISSING_RED);
+              }
+              if (group.count() > 1) {
+                  graphics.drawString(mc.font,
+                          ScpFonts.roboto("x" + group.count()),
+                          materialX + MATERIAL_ICON_SIZE - 1, materialY + 7,
+                          group.available() ? TEXT_WHITE : 0xFFA06F6F, false);
+              }
+              materialX += neededWidth + 4;
+          }
+''',
+              '''        for (IngredientGroup group : entry.ingredients()) {
+              String quantity = group.count() > 1 ? "x" + group.count() : "";
+              int quantityWidth = quantity.isEmpty()
+                      ? 0 : mc.font.width(ScpFonts.roboto(quantity));
+              int neededWidth = MATERIAL_ICON_SIZE
+                      + (quantity.isEmpty() ? 4 : 3 + quantityWidth);
+              if (materialX + neededWidth > materialRight) {
+                  hiddenGroups++;
+                  continue;
+              }
+              ItemStack display = getCyclingIngredientDisplay(group.ingredient());
+              if (!display.isEmpty()) {
+                  graphics.renderItem(display, materialX, materialY);
+              }
+              if (!group.available()) {
+                  graphics.fill(materialX, materialY,
+                          materialX + MATERIAL_ICON_SIZE,
+                          materialY + MATERIAL_ICON_SIZE,
+                          flash ? MISSING_RED : DIM_OVERLAY);
+                  if (flash) drawFrame(graphics, materialX, materialY,
+                          MATERIAL_ICON_SIZE, MISSING_RED);
+              }
+              if (!quantity.isEmpty()) {
+                  graphics.drawString(mc.font, ScpFonts.roboto(quantity),
+                          materialX + MATERIAL_ICON_SIZE + 3, materialY + 7,
+                          group.available() ? TEXT_WHITE : 0xFFA06F6F, false);
+              }
+              materialX += neededWidth + 4;
+          }
+'''
+          ))
+
+          replacements.append((
+              '''    private List<IngredientGroup> buildIngredientGroups(CraftingRecipe recipe,
+                                                          List<ItemStack> available) {
+          Map<ResourceLocation, MutableIngredientGroup> groups = new LinkedHashMap<>();
+          for (Ingredient ingredient : recipe.getIngredients()) {
+              if (ingredient == null || ingredient.isEmpty()) continue;
+              ItemStack display = ScpCraftingRecipeHelper.representative(ingredient);
+              if (display.isEmpty()) continue;
+              ResourceLocation key = BuiltInRegistries.ITEM.getKey(display.getItem());
+              MutableIngredientGroup group = groups.computeIfAbsent(key,
+                      ignored -> new MutableIngredientGroup(display, ingredient));
+              group.count++;
+          }
+
+          List<IngredientGroup> result = new ArrayList<>();
+          for (MutableIngredientGroup group : groups.values()) {
+              int availableCount = 0;
+              for (ItemStack stack : available) {
+                  if (group.ingredient.test(stack)) availableCount++;
+              }
+              result.add(new IngredientGroup(group.display, group.count,
+                      availableCount >= group.count));
+          }
+          return result;
+      }
+''',
+              '''    private List<IngredientGroup> buildIngredientGroups(CraftingRecipe recipe,
+                                                          List<ItemStack> available) {
+          Map<String, MutableIngredientGroup> groups = new LinkedHashMap<>();
+          for (Ingredient ingredient : recipe.getIngredients()) {
+              if (ingredient == null || ingredient.isEmpty()) continue;
+              ItemStack display = ScpCraftingRecipeHelper.representative(ingredient);
+              if (display.isEmpty()) continue;
+              String key = ingredientKey(ingredient);
+              MutableIngredientGroup group = groups.computeIfAbsent(key,
+                      ignored -> new MutableIngredientGroup(ingredient));
+              group.count++;
+          }
+
+          List<IngredientGroup> result = new ArrayList<>();
+          for (MutableIngredientGroup group : groups.values()) {
+              int availableCount = 0;
+              for (ItemStack stack : available) {
+                  if (group.ingredient.test(stack)) availableCount++;
+              }
+              result.add(new IngredientGroup(group.ingredient, group.count,
+                      availableCount >= group.count));
+          }
+          return result;
+      }
+
+      private String ingredientKey(Ingredient ingredient) {
+          StringBuilder key = new StringBuilder();
+          for (ItemStack option : ingredient.getItems()) {
+              if (option == null || option.isEmpty()) continue;
+              key.append(BuiltInRegistries.ITEM.getKey(option.getItem()))
+                      .append(';');
+          }
+          return key.toString();
+      }
+
+      private ItemStack getCyclingIngredientDisplay(Ingredient ingredient) {
+          if (ingredient == null || ingredient.isEmpty()) return ItemStack.EMPTY;
+          ItemStack[] options = ingredient.getItems();
+          if (options.length == 0) return ItemStack.EMPTY;
+          int start = (int) ((System.currentTimeMillis() / INGREDIENT_CYCLE_MS)
+                  % options.length);
+          for (int offset = 0; offset < options.length; offset++) {
+              ItemStack option = options[(start + offset) % options.length];
+              if (option != null && !option.isEmpty()) return option;
+          }
+          return ItemStack.EMPTY;
+      }
+'''
+          ))
+
+          replacements.append((
+              '''    private record IngredientGroup(ItemStack display, int count,
+                                     boolean available) {
+      }
+
+      private static final class MutableIngredientGroup {
+          private final ItemStack display;
+          private final Ingredient ingredient;
+          private int count;
+
+          private MutableIngredientGroup(ItemStack display,
+                                         Ingredient ingredient) {
+              this.display = display;
+              this.ingredient = ingredient;
+          }
+      }
+''',
+              '''    private record IngredientGroup(Ingredient ingredient, int count,
+                                     boolean available) {
+      }
+
+      private static final class MutableIngredientGroup {
+          private final Ingredient ingredient;
+          private int count;
+
+          private MutableIngredientGroup(Ingredient ingredient) {
+              this.ingredient = ingredient;
+          }
+      }
+'''
+          ))
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit("Expected CraftingPanel block was not found:\n" + old[:160])
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8")
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java
+          git commit -m "Cycle valid Crafting ingredients"
+          git push origin HEAD:feature/3.0.6-crafting-tab

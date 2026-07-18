@@ -12,6 +12,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.client.Scp714ClientState;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.vitals.HorrorMovementNetwork;
 import net.mcreator.scpadditions.vitals.VitalsModule;
@@ -27,8 +28,10 @@ public final class HorrorMovementClientEvents {
     private static final double HAZMAT_HORROR_WALK_SPEED = 0.04125D;
     private static final double HAZMAT_HORROR_SPRINT_BASE_SPEED = 0.055D;
     private static final double EPSILON = 0.0001D;
+    private static final float SCP_714_FOV_SMOOTHING = 0.12F;
 
     private static boolean lastRequestedSprint;
+    private static float smoothedScp714FovProgress;
 
     private HorrorMovementClientEvents() {
     }
@@ -43,7 +46,16 @@ public final class HorrorMovementClientEvents {
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null) {
             lastRequestedSprint = false;
+            smoothedScp714FovProgress = 0.0F;
             return;
+        }
+
+        float targetFovProgress = Scp714ClientState.isActive()
+                ? Scp714ClientState.getTargetProgress() : 0.0F;
+        smoothedScp714FovProgress = Mth.lerp(SCP_714_FOV_SMOOTHING,
+                smoothedScp714FovProgress, targetFovProgress);
+        if (Math.abs(smoothedScp714FovProgress - targetFovProgress) < 0.0005F) {
+            smoothedScp714FovProgress = targetFovProgress;
         }
 
         boolean requestedSprint = VitalsModule.horrorMovementEnabled()
@@ -68,8 +80,10 @@ public final class HorrorMovementClientEvents {
     public static void onComputeFovModifier(ComputeFovModifierEvent event) {
         Player player = event.getPlayer();
         boolean hazmat = HazmatSuitAccess.isFullyEquipped(player);
+        boolean scp714 = Scp714ClientState.isActive()
+                && !player.isCreative() && !player.isSpectator();
         if (player.isSpectator()
-                || (!VitalsModule.horrorMovementEnabled() && !hazmat)) {
+                || (!VitalsModule.horrorMovementEnabled() && !hazmat && !scp714)) {
             return;
         }
 
@@ -85,7 +99,12 @@ public final class HorrorMovementClientEvents {
                 || approximately(base, HAZMAT_VANILLA_SPRINT_BASE_SPEED)
                 || approximately(base, HAZMAT_HORROR_WALK_SPEED)
                 || approximately(base, HAZMAT_HORROR_SPRINT_BASE_SPEED);
-        if (!managedBase || base <= EPSILON) {
+        if (scp714) {
+            double maximumManagedBase = maximumManagedBase(player, hazmat);
+            managedBase |= base >= -EPSILON
+                    && base <= maximumManagedBase + EPSILON;
+        }
+        if (!managedBase || base < -EPSILON) {
             return;
         }
 
@@ -101,8 +120,22 @@ public final class HorrorMovementClientEvents {
             return;
         }
 
-        double vanillaEquivalentValue =
-                currentValue * (VANILLA_WALK_SPEED / base);
+        double vanillaEquivalentValue;
+        if (scp714) {
+            double modifierScale = base > EPSILON
+                    ? Mth.clamp(currentValue / base, 0.0D, 4.0D) : 1.0D;
+            double smoothMovementMultiplier = Mth.clamp(
+                    1.0D - smoothedScp714FovProgress, 0.0D, 1.0D);
+            vanillaEquivalentValue = VANILLA_WALK_SPEED
+                    * smoothMovementMultiplier * modifierScale;
+        } else {
+            if (base <= EPSILON) {
+                return;
+            }
+            vanillaEquivalentValue =
+                    currentValue * (VANILLA_WALK_SPEED / base);
+        }
+
         double vanillaMovementFactor =
                 (vanillaEquivalentValue / abilityWalkSpeed + 1.0D) / 2.0D;
         float correctedRaw = (float) (event.getFovModifier()
@@ -112,6 +145,16 @@ public final class HorrorMovementClientEvents {
                 .fovEffectScale().get().floatValue();
         event.setNewFovModifier(Mth.lerp(
                 accessibilityScale, 1.0F, correctedRaw));
+    }
+
+    private static double maximumManagedBase(Player player, boolean hazmat) {
+        boolean horrorMovement = VitalsModule.horrorMovementEnabled()
+                && !player.isCreative();
+        if (horrorMovement) {
+            return hazmat ? HAZMAT_HORROR_SPRINT_BASE_SPEED
+                    : HORROR_SPRINT_BASE_SPEED;
+        }
+        return hazmat ? HAZMAT_VANILLA_WALK_SPEED : VANILLA_WALK_SPEED;
     }
 
     private static boolean approximately(double left, double right) {

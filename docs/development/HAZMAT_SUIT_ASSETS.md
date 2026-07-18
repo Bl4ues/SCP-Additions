@@ -119,17 +119,22 @@ A hose connecting the mask to a torso tank should be split into two overlapping 
 
 ## Texture
 
-Recommended working resolution:
-
-```text
-128×128
-```
+The current model may keep its 512×512 working atlas. All additional PBR maps must use the same dimensions as the diffuse texture.
 
 Main armor texture:
 
 ```text
 src/main/resources/assets/scp_additions/textures/armor/hazmat_suit.png
 ```
+
+Reserved PBR texture names:
+
+```text
+src/main/resources/assets/scp_additions/textures/armor/hazmat_suit_n.png
+src/main/resources/assets/scp_additions/textures/armor/hazmat_suit_s.png
+```
+
+`hazmat_suit_n.png` is the normal map and `hazmat_suit_s.png` is the specular map. Their presence alone does not activate PBR rendering; renderer/resource metadata support will be connected after the base model works in-game.
 
 Keep asymmetric details on unique UV space. Mirroring is acceptable only for plain fabric regions.
 
@@ -143,7 +148,7 @@ Export the model to:
 src/main/resources/assets/scp_additions/geo/armor/hazmat_suit.geo.json
 ```
 
-A custom animation file is not required for ordinary player movement because the armor renderer follows the humanoid pose. If secondary animations are added later, use:
+A custom animation file is not required for ordinary player movement because the armor renderer follows the humanoid pose. An empty animation resource is already provided at:
 
 ```text
 src/main/resources/assets/scp_additions/animations/armor/hazmat_suit.animation.json
@@ -163,7 +168,7 @@ Item model:
 src/main/resources/assets/scp_additions/models/item/hazmat_suit.json
 ```
 
-The public item should look like a folded suit, containment bag, or compact suit bundle. The four internal armor pieces do not need distinct inventory artwork because they will be hidden and non-obtainable through normal gameplay.
+The item-model JSON is already present. The public item should look like a folded suit, containment bag, or compact suit bundle. The four internal armor pieces do not need distinct inventory artwork because they are hidden and non-obtainable through normal gameplay.
 
 ## First-person overlay
 

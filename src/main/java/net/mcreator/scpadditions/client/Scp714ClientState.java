@@ -38,6 +38,11 @@ public final class Scp714ClientState {
         return Mth.clamp(currentProgress, 0.0F, 1.0F);
     }
 
+    /** Server-synchronized progression used by non-render client systems. */
+    public static float getTargetProgress() {
+        return active ? Mth.clamp(targetProgress, 0.0F, 1.0F) : 0.0F;
+    }
+
     public static boolean isActive() {
         return active;
     }

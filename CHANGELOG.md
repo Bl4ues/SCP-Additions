@@ -5,24 +5,18 @@
 ## SCP Inventory overflow
 
 - Changed Survival inventory routing so stacks that belong in the SCP Inventory are dropped into the world instead of remaining as an unintended vanilla-inventory fallback when the SCP Inventory cannot accept them;
-- Preserved controlled usable/placeable sessions and the vanilla mirrors required by equipped weapons, accessories, harmful items, and currency while applying the new overflow rule;
 - Moved the final vanilla-to-SCP routing pass to low event priority so durability and temporary-session synchronization can settle before overflow is evaluated;
 - Changed normal equipment removal so a full SCP Inventory drops the removed item instead of silently retaining it or using vanilla storage as overflow.
 
-## Hazmat Suit
+## Hazmat Suit and fixes
 
-- Reintroduced the Hazmat Suit as a single public item backed by four hidden compatibility armor pieces that reuse the removed legacy registry IDs without exposing their old individual recipes;
-- Added a four-second hold-to-equip sequence and a three-second timed removal sequence controlled authoritatively by the server;
-- Added a reusable timed-equipment progress bar based on the Blink Bar presentation: centered, smaller, yellow, without an icon, and positioned above the Blink Bar;
-- Added server-to-client begin, synchronization, completion, and cancellation controls for timed equipment actions;
-- Converted attempts to remove, shift, replace, or drop any internal Hazmat piece into the complete suit-removal sequence and return one public Hazmat Suit instead of separate armor pieces;
-- Added recovery and cleanup for incomplete proxy sets, inventory cursors, SCP Inventory mirrors, death drops, logout, Creative use, and full-inventory returns;
-- Added GeckoLib armor rendering support and a development asset contract covering the Blockbench rig, pivots, model hierarchy, file paths, textures, overlay, and sound names;
-- Added the shared Hazmat Suit inventory icon and a first-person visor overlay that scales to the current resolution while leaving gameplay HUD elements visible above it;
-- Added synchronized equip and removal sounds that stop immediately when an action is canceled, plus a local breathing loop that starts after the suit is sealed, stops during removal, and resumes if removal is canceled;
+- Reintroduced the Hazmat Suit;
+- Added a four-second hold-to-equip sequence and a three-second timed removal sequence;
+- Added a reusable timed-equipment progress bar based on the Blink Bar;
+- Converted attempts to remove, shift, replace, or drop any internal Hazmat piece into the complete suit-removal sequence and return one public Hazmat Suit item;
 - Added complete-set eye protection and a reusable sealed-protection check for future chemical, biological, radiation, and environmental hazards;
-- Made the sealed suit reject splash-potion and lingering-potion effects, including instant potion healing or damage, while leaving commands and deliberately internal effects available to their own systems;
-- Prevented eating, drinking, drinking potions, eating cake, and every item classified as `CONSUMABLE` by the SCP Inventory while the mask is sealed, including configured consumables without vanilla eat or drink animations;
+- Made the sealed suit reject splash-potion and lingering-potion effects (e.g. instant potion healing or damage), while leaving commands and deliberately internal effects available to their own systems;
+- Prevented eating, drinking, drinking potions, eating cake, and every item classified as `CONSUMABLE` by the SCP Inventory while the mask is sealed;
 - Kept explicit JSON item rules authoritative while separating SCP Inventory categories from physical hand-use checks, preventing Splash/Lingering Potions and other non-ingestible usable items from being mistaken for food or drink;
 - Added a public-item tooltip describing sealing, light protection, and the stationary equip/removal controls;
 - Added leather-equivalent armor points to the complete suit while keeping the hidden internal pieces non-repairable and effectively unbreakable;

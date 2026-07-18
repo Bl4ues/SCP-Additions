@@ -22,7 +22,7 @@
 - Added synchronized equip and removal sounds that stop immediately when an action is canceled, plus a local breathing loop that starts after the suit is sealed, stops during removal, and resumes if removal is canceled;
 - Added complete-set eye protection and a reusable sealed-protection check for future chemical, biological, radiation, and environmental hazards;
 - Made the sealed suit reject splash-potion and lingering-potion effects, including instant potion healing or damage, while leaving commands and deliberately internal effects available to their own systems;
-- Prevented eating, drinking, drinking potions, and eating cake while the mask is sealed, including consumption initiated from the SCP Inventory;
+- Prevented eating, drinking, drinking potions, eating cake, and every item classified as `CONSUMABLE` by the SCP Inventory while the mask is sealed, including configured consumables without vanilla eat or drink animations;
 - Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
 
 ## Development

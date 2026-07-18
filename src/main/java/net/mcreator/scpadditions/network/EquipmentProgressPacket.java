@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.network;
 
+import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -19,7 +21,8 @@ public final class EquipmentProgressPacket {
     private final int elapsedTicks;
     private final int durationTicks;
 
-    private EquipmentProgressPacket(int action, int elapsedTicks, int durationTicks) {
+    private EquipmentProgressPacket(int action, int elapsedTicks,
+            int durationTicks) {
         this.action = action;
         this.elapsedTicks = elapsedTicks;
         this.durationTicks = durationTicks;
@@ -29,7 +32,8 @@ public final class EquipmentProgressPacket {
         return new EquipmentProgressPacket(BEGIN, 0, durationTicks);
     }
 
-    public static EquipmentProgressPacket sync(int elapsedTicks, int durationTicks) {
+    public static EquipmentProgressPacket sync(int elapsedTicks,
+            int durationTicks) {
         return new EquipmentProgressPacket(SYNC, elapsedTicks, durationTicks);
     }
 
@@ -41,7 +45,8 @@ public final class EquipmentProgressPacket {
         return new EquipmentProgressPacket(CANCEL, 0, 1);
     }
 
-    public static void encode(EquipmentProgressPacket message, FriendlyByteBuf buffer) {
+    public static void encode(EquipmentProgressPacket message,
+            FriendlyByteBuf buffer) {
         buffer.writeVarInt(message.action);
         buffer.writeVarInt(Math.max(0, message.elapsedTicks));
         buffer.writeVarInt(Math.max(1, message.durationTicks));
@@ -64,7 +69,13 @@ public final class EquipmentProgressPacket {
 
     private static void applyClient(EquipmentProgressPacket message) {
         switch (message.action) {
-            case BEGIN -> EquipmentProgressOverlay.begin(message.durationTicks);
+            case BEGIN -> {
+                Minecraft minecraft = Minecraft.getInstance();
+                if (minecraft.screen instanceof ScpInventoryScreen) {
+                    minecraft.setScreen(null);
+                }
+                EquipmentProgressOverlay.begin(message.durationTicks);
+            }
             case SYNC -> EquipmentProgressOverlay.syncProgress(
                     message.elapsedTicks, message.durationTicks);
             case COMPLETE -> EquipmentProgressOverlay.complete();

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
@@ -31,11 +32,15 @@ public final class HazmatSuitManager {
     private static final String RETURN_ITEM_TAG =
             "ScpAdditionsHazmatReturnPublicItem";
     private static final int PROGRESS_SYNC_INTERVAL_TICKS = 10;
+    private static final double MOVEMENT_CANCEL_DISTANCE_SQR = 0.0004D;
 
     private static final Set<UUID> EQUIPPING = new HashSet<>();
     private static final Set<UUID> KNOWN_EQUIPPED = new HashSet<>();
     private static final Set<UUID> INTERNAL_MUTATION = new HashSet<>();
+    private static final Set<UUID> MANUAL_UNEQUIP = new HashSet<>();
     private static final Map<UUID, Integer> UNEQUIP_PROGRESS =
+            new HashMap<>();
+    private static final Map<UUID, Vec3> ACTION_START_POSITIONS =
             new HashMap<>();
 
     private HazmatSuitManager() {
@@ -55,27 +60,37 @@ public final class HazmatSuitManager {
     }
 
     public static void explainBlockedEquip(ServerPlayer player) {
-        if (player != null) {
-            player.displayClientMessage(Component.translatable(
-                    "message.scp_additions.hazmat.remove_armor_first"), true);
-        }
+        showActionBar(player,
+                "message.scp_additions.hazmat.remove_armor_first");
     }
 
     public static void beginEquip(ServerPlayer player) {
         if (player == null || !canBeginEquip(player)) {
             return;
         }
-        EQUIPPING.add(player.getUUID());
+        UUID id = player.getUUID();
+        EQUIPPING.add(id);
+        ACTION_START_POSITIONS.put(id, player.position());
+        showActionBar(player,
+                "message.scp_additions.hazmat.equip_hold_still");
         ScpEntityNetwork.beginEquipmentProgress(
                 player, EQUIP_DURATION_TICKS);
     }
 
     public static void cancelEquip(ServerPlayer player) {
+        cancelEquip(player, null);
+    }
+
+    private static void cancelEquip(ServerPlayer player, String messageKey) {
         if (player == null) {
             return;
         }
-        if (EQUIPPING.remove(player.getUUID())) {
+        UUID id = player.getUUID();
+        ACTION_START_POSITIONS.remove(id);
+        if (EQUIPPING.remove(id)) {
+            player.stopUsingItem();
             ScpEntityNetwork.cancelEquipmentProgress(player);
+            showActionBar(player, messageKey);
         }
     }
 
@@ -83,13 +98,14 @@ public final class HazmatSuitManager {
         if (player == null || !EQUIPPING.remove(player.getUUID())) {
             return false;
         }
+        UUID id = player.getUUID();
+        ACTION_START_POSITIONS.remove(id);
         if (!canBeginEquip(player)) {
             ScpEntityNetwork.cancelEquipmentProgress(player);
             explainBlockedEquip(player);
             return false;
         }
 
-        UUID id = player.getUUID();
         INTERNAL_MUTATION.add(id);
         try {
             player.setItemSlot(EquipmentSlot.HEAD,
@@ -105,17 +121,21 @@ public final class HazmatSuitManager {
             KNOWN_EQUIPPED.add(id);
             ScpEntityNetwork.completeEquipmentProgress(player);
             ScpPickupRouter.syncVanillaInventory(player);
+            showActionBar(player,
+                    "message.scp_additions.hazmat.remove_instruction");
             return true;
         } finally {
             INTERNAL_MUTATION.remove(id);
         }
     }
 
-    /**
-     * Intercepts every normal request to remove or drop an internal proxy piece.
-     * The complete set remains equipped until the timed removal finishes.
-     */
+    /** Starts the removal flow after an armor-slot interaction. */
     public static boolean requestUnequip(ServerPlayer player) {
+        return requestUnequip(player, false);
+    }
+
+    private static boolean requestUnequip(ServerPlayer player,
+            boolean manualHold) {
         if (player == null || player.isSpectator()) {
             return false;
         }
@@ -132,9 +152,45 @@ public final class HazmatSuitManager {
         recoverCompleteSet(player);
         KNOWN_EQUIPPED.add(id);
         UNEQUIP_PROGRESS.put(id, 0);
+        ACTION_START_POSITIONS.put(id, player.position());
+        if (manualHold) {
+            MANUAL_UNEQUIP.add(id);
+            showActionBar(player,
+                    "message.scp_additions.hazmat.unequip_hold_use");
+        } else {
+            MANUAL_UNEQUIP.remove(id);
+            showActionBar(player,
+                    "message.scp_additions.hazmat.unequip_hold_still");
+        }
         ScpEntityNetwork.beginEquipmentProgress(
                 player, UNEQUIP_DURATION_TICKS);
         return true;
+    }
+
+    /**
+     * Receives the client hold state. Crouching is required only to begin;
+     * after that, the player may stand but must keep holding Use.
+     */
+    public static void setManualRemovalInput(ServerPlayer player,
+            boolean held) {
+        if (player == null || player.isSpectator()) {
+            return;
+        }
+
+        UUID id = player.getUUID();
+        if (held) {
+            if (!UNEQUIP_PROGRESS.containsKey(id)
+                    && player.isCrouching()
+                    && HazmatSuitAccess.isFullyEquipped(player)) {
+                requestUnequip(player, true);
+            }
+            return;
+        }
+
+        if (MANUAL_UNEQUIP.contains(id)) {
+            cancelUnequip(player,
+                    "message.scp_additions.hazmat.unequip_canceled_release");
+        }
     }
 
     public static boolean isUnequipping(Player player) {
@@ -157,19 +213,29 @@ public final class HazmatSuitManager {
             return;
         }
 
+        if (EQUIPPING.contains(id) && movedSinceActionStart(player)) {
+            cancelEquip(player,
+                    "message.scp_additions.hazmat.equip_canceled_moved");
+            return;
+        }
+
         if (HazmatSuitAccess.isFullyEquipped(player)) {
             KNOWN_EQUIPPED.add(id);
         } else if (KNOWN_EQUIPPED.contains(id)) {
             // A vanilla inventory click, shift-click, armor replacement, drop,
             // or another ordinary interaction removed at least one proxy piece.
-            // Recover the authoritative complete set and turn that action into
-            // the single timed suit-removal sequence.
             recoverCompleteSet(player);
             requestUnequip(player);
         }
 
         Integer elapsed = UNEQUIP_PROGRESS.get(id);
         if (elapsed == null) {
+            return;
+        }
+
+        if (movedSinceActionStart(player)) {
+            cancelUnequip(player,
+                    "message.scp_additions.hazmat.unequip_canceled_moved");
             return;
         }
 
@@ -199,6 +265,8 @@ public final class HazmatSuitManager {
         UNEQUIP_PROGRESS.remove(id);
         KNOWN_EQUIPPED.remove(id);
         INTERNAL_MUTATION.remove(id);
+        MANUAL_UNEQUIP.remove(id);
+        ACTION_START_POSITIONS.remove(id);
     }
 
     public static boolean shouldReplaceInternalDeathDrops(Player player) {
@@ -213,9 +281,29 @@ public final class HazmatSuitManager {
         if (player.getPersistentData().contains(RETURN_ITEM_TAG)) {
             return player.getPersistentData().getBoolean(RETURN_ITEM_TAG);
         }
-        // Legacy complete sets did not record their source. In Survival, assume
-        // the public suit should be returned instead of deleting the equipment.
         return !player.isCreative();
+    }
+
+    private static void cancelUnequip(ServerPlayer player,
+            String messageKey) {
+        if (player == null) {
+            return;
+        }
+        UUID id = player.getUUID();
+        boolean removed = UNEQUIP_PROGRESS.remove(id) != null;
+        MANUAL_UNEQUIP.remove(id);
+        ACTION_START_POSITIONS.remove(id);
+        if (removed) {
+            ScpEntityNetwork.cancelEquipmentProgress(player);
+            showActionBar(player, messageKey);
+        }
+    }
+
+    private static boolean movedSinceActionStart(ServerPlayer player) {
+        Vec3 start = ACTION_START_POSITIONS.get(player.getUUID());
+        return start != null
+                && player.position().distanceToSqr(start)
+                > MOVEMENT_CANCEL_DISTANCE_SQR;
     }
 
     private static void completeUnequip(ServerPlayer player) {
@@ -233,6 +321,8 @@ public final class HazmatSuitManager {
             EQUIPPING.remove(id);
             UNEQUIP_PROGRESS.remove(id);
             KNOWN_EQUIPPED.remove(id);
+            MANUAL_UNEQUIP.remove(id);
+            ACTION_START_POSITIONS.remove(id);
             player.getPersistentData().remove(RETURN_ITEM_TAG);
 
             if (returnPublicItem) {
@@ -242,6 +332,8 @@ public final class HazmatSuitManager {
 
             ScpEntityNetwork.completeEquipmentProgress(player);
             ScpPickupRouter.syncVanillaInventory(player);
+            showActionBar(player,
+                    "message.scp_additions.hazmat.removed");
         } finally {
             INTERNAL_MUTATION.remove(id);
         }
@@ -363,6 +455,12 @@ public final class HazmatSuitManager {
         if (!remaining.isEmpty()) {
             player.drop(remaining, false);
             ModNetwork.showInventoryFull(player);
+        }
+    }
+
+    private static void showActionBar(ServerPlayer player, String key) {
+        if (player != null && key != null && !key.isBlank()) {
+            player.displayClientMessage(Component.translatable(key), true);
         }
     }
 }

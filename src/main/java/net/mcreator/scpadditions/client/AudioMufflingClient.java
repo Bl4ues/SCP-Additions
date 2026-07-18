@@ -30,13 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-/**
- * Client-side listener perception effects for sealed equipment and SCP-714.
- *
- * <p>The normal path uses OpenAL EFX low-pass filters on every active Minecraft
- * channel, so sounds which were already playing are updated as the effect
- * changes. Systems without EFX support fall back to listener-volume fading.</p>
- */
+/** Client-side listener perception effects for sealed equipment and SCP-714. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class AudioMufflingClient {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -116,7 +110,7 @@ public final class AudioMufflingClient {
     }
 
     private static void register(SoundEngine engine, Channel channel,
-            SoundInstance sound) {
+                                 SoundInstance sound) {
         if (engine == null || channel == null || sound == null) {
             return;
         }
@@ -167,8 +161,9 @@ public final class AudioMufflingClient {
     }
 
     private static void applyToChannels(SoundEngine engine,
-            Stream<Channel> channelStream, float hazmat, float scp714,
-            float requestedMasterVolume) {
+                                        Stream<Channel> channelStream,
+                                        float hazmat, float scp714,
+                                        float requestedMasterVolume) {
         List<Channel> channels = channelStream.toList();
         Set<Channel> activeChannels = Collections.newSetFromMap(
                 new IdentityHashMap<>());
@@ -177,8 +172,7 @@ public final class AudioMufflingClient {
                 !activeChannels.contains(channel));
 
         float worldStrength = combine(hazmat, scp714);
-        if (worldStrength <= UPDATE_EPSILON
-                && scp714 <= UPDATE_EPSILON) {
+        if (worldStrength <= UPDATE_EPSILON && scp714 <= UPDATE_EPSILON) {
             if (worldFilter != 0 || internalFilter != 0) {
                 detachFilters(channels);
             }
@@ -187,35 +181,49 @@ public final class AudioMufflingClient {
         }
 
         if (!ensureFilters(engine)) {
-            // EFX is optional in OpenAL. The fallback cannot reproduce frequency
-            // filtering, but it preserves the progressive fade and final silence.
-            float gain = gainForStrength(worldStrength);
-            engine.listener.setGain(requestedMasterVolume * gain);
+            // Selective fallback is intentionally preferred over globally lowering
+            // the listener, which would incorrectly mute music and interface audio.
+            engine.listener.setGain(requestedMasterVolume);
             return;
         }
 
         engine.listener.setGain(requestedMasterVolume);
         if (!configureFilter(worldFilter, worldStrength)
                 || !configureFilter(internalFilter, scp714)) {
-            // The OpenAL context may have been recreated by a resource/device
-            // reload. Recreate both filters once in the current context.
             resetFilterHandles(engine);
             if (!ensureFilters(engine)
                     || !configureFilter(worldFilter, worldStrength)
                     || !configureFilter(internalFilter, scp714)) {
-                float gain = gainForStrength(worldStrength);
-                engine.listener.setGain(requestedMasterVolume * gain);
+                detachFilters(channels);
+                engine.listener.setGain(requestedMasterVolume);
                 return;
             }
         }
 
         for (Channel channel : channels) {
             SoundInstance sound = SOUNDS_BY_CHANNEL.get(channel);
-            int filter = isInternalHazmatSound(sound)
-                    ? (scp714 > UPDATE_EPSILON ? internalFilter : AL10.AL_NONE)
-                    : (worldStrength > UPDATE_EPSILON ? worldFilter : AL10.AL_NONE);
+            int filter;
+            if (isInternalHazmatSound(sound)) {
+                filter = scp714 > UPDATE_EPSILON
+                        ? internalFilter : AL10.AL_NONE;
+            } else if (isDiegetic(sound)) {
+                filter = worldStrength > UPDATE_EPSILON
+                        ? worldFilter : AL10.AL_NONE;
+            } else {
+                filter = AL10.AL_NONE;
+            }
             AL10.alSourcei(channel.source, EXTEfx.AL_DIRECT_FILTER, filter);
         }
+    }
+
+    private static boolean isDiegetic(SoundInstance sound) {
+        if (sound == null) {
+            return false;
+        }
+        SoundSource source = sound.getSource();
+        // MUSIC is non-diegetic soundtrack. MASTER is used by interface/UI sounds.
+        // RECORDS remain diegetic because they originate from jukeboxes in-world.
+        return source != SoundSource.MUSIC && source != SoundSource.MASTER;
     }
 
     private static float combine(float first, float second) {
@@ -327,7 +335,7 @@ public final class AudioMufflingClient {
         efxUnavailable = true;
         if (!loggedUnavailable) {
             loggedUnavailable = true;
-            LOGGER.warn("OpenAL EFX is unavailable; SCP equipment audio will use volume fading without low-pass filtering");
+            LOGGER.warn("OpenAL EFX is unavailable; selective SCP equipment muffling is disabled");
         }
     }
 

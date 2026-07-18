@@ -35,13 +35,11 @@ SCP-714 has no independent animation, so a normal vanilla item model is sufficie
 
 ## Exported model
 
-Export or save the final Blockbench model directly over:
+The current 3D Blockbench export is stored at:
 
 ```text
 src/main/resources/assets/scp_additions/models/item/scp_714.json
 ```
-
-A temporary flat-item model already exists at this path. Replace it with the exported 3D JSON.
 
 Every texture reference inside the exported JSON must use the resource location:
 
@@ -62,20 +60,17 @@ The numeric texture key may differ depending on the Blockbench export. The resou
 
 ## Texture
 
-Place the diffuse texture at:
+The diffuse texture is stored at:
 
 ```text
 src/main/resources/assets/scp_additions/textures/item/scp_714.png
 ```
 
-Recommended sizes:
+Current size:
 
 ```text
-64x64
 128x128
 ```
-
-Both work. Use 128x128 when the model contains engraved jade, metal setting or subtle surface details that do not read clearly at 64x64.
 
 The texture dimensions must match the texture size configured in Blockbench.
 
@@ -115,6 +110,8 @@ Recommended presentation:
 
 Minecraft mirrors some hand transforms automatically, but explicitly preview both left and right hands in Blockbench before export.
 
+The current export contains GUI, ground, fixed and third-person left/right transforms. First-person left/right transforms still need to be judged in-game and added in Blockbench if the defaults are not suitable.
+
 ## Files not required
 
 SCP-714 does not require:
@@ -130,9 +127,9 @@ It also does not require a vignette texture. The fatigue vignette is generated e
 
 ```text
 0-90 seconds: progressively increasing fatigue and movement slowdown
-90 seconds: "You feel very tired."
-110 seconds: "Maybe you should take a nap."
-120 seconds: screen fully black; horizontal movement frozen
+90 seconds: "I'm feeling really tired..."
+110 seconds: "Maybe I should take a nap..."
+120 seconds: "Just... a little rest..."; screen fully black; horizontal movement frozen
 120-125 seconds: final opportunity to remove SCP-714
 125 seconds: coma death
 ```

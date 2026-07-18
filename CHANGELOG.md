@@ -22,6 +22,14 @@
 - Added leather-equivalent armor points to the complete suit while keeping the hidden internal pieces non-repairable and effectively unbreakable;
 - Made the complete Hazmat Suit consume stamina twice as quickly and display the stamina bar in red.
 
+## SCP-714
+
+- Added SCP-714 as an `ACCESSORYHAND` item with intrinsic `NO_STAMINA` and reusable `SCP_714_PROTECTION` behavior;
+- Added persistent server-authoritative exhaustion that progressively slows the wearer over two minutes, generates a code-driven green-black vignette, freezes horizontal movement at full exposure, and causes a custom coma death after a final five-second grace period;
+- Added subtle first-person fatigue messages at 90, 110, and 120 seconds without explicitly instructing the player to remove the ring;
+- Added the final Blockbench 3D item model and 128×128 texture, with namespaced texture references for reliable loading;
+- Added a reusable protection API for future mental and anomalous threats such as SCP-012.
+
 ## Development
 
 - Expanded the Java 17 Gradle build workflow to validate feature branches and retain successful compiled JARs as workflow artifacts.
@@ -226,141 +234,7 @@
 * Added a full SCP Inventory interface with dedicated storage for general items, equipment, keycards, ammunition, weapons, documents, and currency;
 * Added configurable item classification and pickup routing, including custom-only keycard and currency storage;
 * Added equipment slots, shift-click equipment handling, context menus, item actions, dropping, moving, and usable-item sessions;
-* Added Codex and Status panels with configurable document entries and item information;
-* Added custom pickup prompts, inventory-full feedback, contextual interaction prompts, and configurable interaction icons;
-* Added localized Roboto font rendering throughout the SCP Inventory and interaction interfaces;
-* Added server-authoritative inventory synchronization, persistence, death handling, logout handling, and duplication safeguards;
-* Added compatibility access services so keycard readers, Tesla terminals, and other systems can detect items stored in the custom inventory;
-* Added configurable custom health and stamina HUDs;
-* Added horror-style movement behavior, sprint stamina consumption, regeneration delay, exhausted sprint lock, and configurable stamina-blocking items;
-* Added configurable modules for inventory, HUD, custom health, stamina, horror movement, blink, and SCP-173 behavior;
-
-### Blink and visual systems
-
-* Added automatic blinking with configurable timing;
-* Added a manual hold-to-blink keybind;
-* Added blink meter, vignette, blackout, and post-blink screen effects;
-* Added synchronized server-side eye state used by SCP-173 and other observers;
-* Added the Eye Sore effect, which accelerates blink drain;
-* Added SCP-173 threat confirmation, reveal feedback, and temporary paranoia retention;
-
-## SCP-173
-
-* Added a fully functional SCP-173 entity;
-* Added observation checks for players, configured mobs, raiders, and SCP-131;
-* Added sampled line-of-sight checks that correctly handle transparent and solid blocks;
-* Added deterministic snap movement, direct pursuit, path fallback, and side-step fallback behavior;
-* Added immediate movement reevaluation when observers blink or close their eyes;
-* Added contact-only neck snap damage;
-* Added natural spawning, isolated routine-spawn behavior, inactivity until first observation, and unseen despawning;
-* Added target recovery after player respawn and isolated post-kill despawning;
-* Added movement scrape, rattle, scare, horror, death, and neck-snap sounds.
-
-## SCP-131-A and SCP-131-B
-
-* Added SCP-131-A and SCP-131-B as spawnable entities;
-* Added idle voice sounds and custom SCP-styled interaction notices;
-* Added right-click following behavior;
-* Added persistent following ownership across save and reload;
-* Added SCP-131-B following nearby idle SCP-131-A entities;
-* Added SCP-131 observation behavior against SCP-173;
-
-## SCP Unity Facility content
-
-* Added Tesla, Archival, Office, Skyroom, and Security area blocks;
-* Added Alarm Lamps, Wall Lights, Heaters, Sign Supports, TVs, Trashbins, and other facility props;
-* Added animated Default, Yellow, Black, Normal, Logistics, Office, Bathroom, and Workshop doors;
-* Added opening and closing animations, timing, sounds, drops, collision behavior, and direct or redstone activation rules;
-* Added functional door buttons with mirrored left and right models;
-* Updated paired button behavior so an existing opposite panel synchronizes without automatically creating a second panel behind the wall.
-
-## Keycards, readers, and tools
-
-* Integrated keycards with the custom inventory without maintaining duplicate vanilla mirror stacks;
-* Updated shared inventory checks so readers detect custom-only keycards directly;
-* Added a screwdriver;
-* Added crouch-and-screwdriver reader configuration through both direct interaction and the custom contextual interaction system.
-
-## Configuration and data
-
-* Added `config/scpadditions/modules.json` for gameplay module controls;
-* Added `config/scpinventory/scpinventory.json` for inventory, HUD, stamina, movement, blink, and item behavior;
-* Added `config/scpinventory/context_interactions.json` for contextual block and entity interactions;
-* Added expanded default SCP-294 drink definitions;
-* Added expanded default SCP-914 item and entity recipes;
-* Added first-run copying of bundled default configuration files;
-* Existing local configuration files are not overwritten automatically;
-* Kept SCP-294 currency handling exclusive to either the custom inventory or vanilla inventory, depending on the selected inventory mode;
-
-## Technical changes
-
-* Updated the mod version to 3.0.0;
-* Added GeckoLib 4.4.9 or newer as a required dependency;
-* Updated the minimum Forge version to 47.4.10;
-* Preserved existing published SCP Additions registry IDs for old-world compatibility;
-* Added compatibility mappings for migrated facility content;
-* Added extensive configuration defaults, migration documentation, and build validation;
-* Fixed multiple item duplication, pickup routing, keycard synchronization, usable-session, interface, rendering, button, door, font, and configuration-generation issues.
-
-# SCP Additions 2.0.2 — Hotfix
-
-## Hotfix update for the 2.0.1 hotfix.
-
-- Fixed bundled SCP-294 and SCP-914 JSON templates being processed as single-line/minified files in the final build output;
-- Added build-time pretty printing for packaged `config/scpadditions/*.json` templates so newly generated configs are readable for humans;
-- (Hopefully) fixed the inactive Tesla Gate transparency issue by rendering the inactive gate model with the translucent render layer instead of cutout, as it was rendering oddly with shaders, for some reason.
-
-
-# SCP Additions 2.0.1 — Hotfix
-
-## Hotfix update for the 2.0.0 hotfix.
-
-- Fixed the missing Level 1 Keycard language entry;
-- Fixed Security Credentials not being detected by the Tesla Gate Terminal when the item had NBT data;
-- Fixed Level 1-6 Keycards not being detected by keycard readers when the item had NBT data;
-- Improved keycard reader checks so NBT-modified keycards are accepted as the correct keycard item;
-- Fixed Tesla Gate transparency issues with shaders by explicitly registering the Tesla Gate block render layers as cutout on the client;
-- Fixed the default SCP-294 drink configuration not being included in the final built;
-- Expanded the bundled SCP-294 default drink list with the legacy drink outputs and several SCP:CB-inspired dangerous outputs;
-- Expanded the bundled SCP-914 default recipe list with keycard, vanilla item, SCP Additions item, and entity transformations;
-- Improved SCP-294 config generation so the first generated `294drinks.json` can be copied from the full packaged template instead of falling back to the minimal internal example;
-- Improved SCP-914 config generation so the first generated `914recipes.json` can be copied from the full packaged template instead of falling back to the minimal internal example;
-- Included the default `config/scpadditions` templates in the build output.
-
-# SCP Additions 2.0.0
-
-## Major overhaul for the 1.20.1 version of SCP Additions.
-
-- Added a full SCP Unity-inspired Tesla Gate Terminal interface;
-- Added a new functional SCP Unity-inspired Tesla Gate Terminal model and a separate decorative OFF terminal;
-- Added Security Credentials as Tesla Gate Terminal admin access instead of turning interaction;
-- Added global Tesla Gate controls through the terminal;
-- Added Emergency Override mode for Tesla Gates;
-- Added new Tesla Gate Terminal sounds, including UI clicks, popups, standby sounds, override activation, and a terminal ambient loop;
-- Added a stronger overcharge sound and extra particles for Tesla Gates while Emergency Override is active;
-- Improved Tesla Gate placement so the model is placed one block higher when needed;
-- Improved Decontamination Checkpoint placement using the same one-block-up placement correction;
-- Improved Tesla Gate collision behavior (though still needs some tweaks);
-- Improved keycard logic so higher-level keycards open their own level and all lower-level readers when the keycard is in the inventory;
-- Added a custom SCP-294 GUI using the new screen texture, coin panel, input screen, and enter button;
-- Added dynamic SCP-294 drink cups with configurable liquid colors and drink behavior;
-- Converted SCP-294 drinks to a runtime JSON configuration;
-- Added SCP-294 fuzzy drink matching, aliases, effects, actions, sounds, and custom death messages;
-- Added a custom SCP-914 GUI with a draggable dial and snapping settings;
-- Converted SCP-914 recipes to a runtime JSON configuration;
-- Added support for SCP-914 recipe fragments in `914recipes.d`;
-- Added SCP-914 weighted outputs, item recipes, entity recipes, machine offsets, and configurable processing behavior;
-- Added an SCP-914 Assembly Kit item that places the full saved SCP-914 structure from an NBT structure file;
-- Added visual blocked-space feedback when the SCP-914 Assembly Kit cannot place the structure;
-- Improved SCP-914 orientation, intake/output range offsets, and machine processing logic;
-- Improved SCP-914 door behavior during processing;
-- Added multiple new default SCP-914 item and entity transformations (including default interactions with other mods);
-- Improved several GUI textures and screen overlays;
-- Made `kleiders_custom_renderer` optional;
-- Removed MCreator entirely from the project;
-- Removed SCP-059 and its related content from the mod as it was really bugged and really not worth the headache to fix it;
-- Removed the Hazmat Suit, Geiger Counter, radiation-related SCP-059 systems, and related legacy content;
-- Removed obsolete hardcoded SCP-294 and SCP-914 procedures;
-- Fixed multiple rendering, transparency, placement, and GUI behavior issues;
-- Fixed Tesla Gate Terminal state synchronization when opening terminals;
-- Fixed several outdated or misleading item names and tooltips.
+* Added HUD elements for stamina, health, Blink, SCP-131 notices, inventory full notices, SCP-1176 status, and contextual interaction prompts;
+* Added Codex support with configurable documents, world-scoped images, text, and generated unique document items;
+* Added a dedicated Status screen for effects and parameters;
+* Added a centralized configuration center and runtime reload support.

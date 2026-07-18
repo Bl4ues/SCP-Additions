@@ -27,6 +27,8 @@ public final class Scp173ClientModEvents {
                     HazmatVisorOverlay.render(graphics, width, height);
                     Scp714VignetteOverlay.render(graphics, width, height,
                             partialTick);
+                    Scp012SubliminalOverlay.render(graphics, width, height,
+                            partialTick);
                 });
         event.registerAboveAll("blink_vignette_overlay",
                 (gui, graphics, partialTick, width, height) -> {

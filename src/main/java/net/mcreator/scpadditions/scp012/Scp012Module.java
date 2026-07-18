@@ -8,7 +8,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -45,7 +45,7 @@ public final class Scp012Module {
                 }
 
                 @Override
-                public void appendHoverText(ItemStack stack, BlockGetter level,
+                public void appendHoverText(ItemStack stack, Level level,
                                             List<Component> tooltip,
                                             TooltipFlag flag) {
                     tooltip.add(Component.literal("A Bad Composition"));

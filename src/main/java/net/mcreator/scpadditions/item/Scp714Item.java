@@ -11,6 +11,8 @@ import java.util.List;
 
 /** Public SCP-714 jade ring item. Its equipped effects are handled centrally. */
 public final class Scp714Item extends Item {
+    private static final Component SUBTITLE = Component.literal("The Jaded Ring");
+
     public Scp714Item() {
         super(new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
     }
@@ -18,7 +20,7 @@ public final class Scp714Item extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.scp_additions.scp_714"));
+        tooltip.add(SUBTITLE);
         super.appendHoverText(stack, level, tooltip, flag);
     }
 }

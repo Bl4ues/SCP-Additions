@@ -4,14 +4,15 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.crafting.Ingredient;
 
 /**
- * Non-combat material used by the hidden Hazmat Suit proxy pieces.
+ * Hidden material used by the Hazmat Suit proxy pieces.
  *
- * <p>The suit's gameplay value comes from its sealed protection rather than
- * vanilla armor points. The internal pieces are not repairable and have no
- * durability budget, preventing ordinary combat from breaking the set apart.</p>
+ * <p>The complete set provides the same armor-point distribution as leather
+ * armor while remaining non-repairable and effectively unbreakable, so combat
+ * cannot split the internally managed suit into separate public pieces.</p>
  */
 public enum HazmatArmorMaterial implements ArmorMaterial {
     INSTANCE;
@@ -23,7 +24,7 @@ public enum HazmatArmorMaterial implements ArmorMaterial {
 
     @Override
     public int getDefenseForType(ArmorItem.Type type) {
-        return 0;
+        return ArmorMaterials.LEATHER.getDefenseForType(type);
     }
 
     @Override

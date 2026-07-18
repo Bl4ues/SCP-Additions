@@ -58,6 +58,7 @@ public final class CraftingPanel {
     private static final int MAX_VISIBLE_INVENTORY_ROWS = 5;
     private static final double DRAG_THRESHOLD = 4.0D;
     private static final long MISSING_FLASH_MS = 950L;
+    private static final long INGREDIENT_CYCLE_MS = 1000L;
 
     private enum DragKind { NONE, MAIN, GRID }
 
@@ -286,12 +287,19 @@ public final class CraftingPanel {
                 && ((missingFlashUntil - System.currentTimeMillis()) / 110L) % 2L == 0L;
         int hiddenGroups = 0;
         for (IngredientGroup group : entry.ingredients()) {
-            int neededWidth = MATERIAL_ICON_SIZE + (group.count() > 1 ? 14 : 4);
+            String quantity = group.count() > 1 ? "x" + group.count() : "";
+            int quantityWidth = quantity.isEmpty()
+                    ? 0 : mc.font.width(ScpFonts.roboto(quantity));
+            int neededWidth = MATERIAL_ICON_SIZE
+                    + (quantity.isEmpty() ? 4 : 3 + quantityWidth);
             if (materialX + neededWidth > materialRight) {
                 hiddenGroups++;
                 continue;
             }
-            graphics.renderItem(group.display(), materialX, materialY);
+            ItemStack display = getCyclingIngredientDisplay(group.ingredient());
+            if (!display.isEmpty()) {
+                graphics.renderItem(display, materialX, materialY);
+            }
             if (!group.available()) {
                 graphics.fill(materialX, materialY,
                         materialX + MATERIAL_ICON_SIZE,
@@ -300,10 +308,9 @@ public final class CraftingPanel {
                 if (flash) drawFrame(graphics, materialX, materialY,
                         MATERIAL_ICON_SIZE, MISSING_RED);
             }
-            if (group.count() > 1) {
-                graphics.drawString(mc.font,
-                        ScpFonts.roboto("x" + group.count()),
-                        materialX + MATERIAL_ICON_SIZE - 1, materialY + 7,
+            if (!quantity.isEmpty()) {
+                graphics.drawString(mc.font, ScpFonts.roboto(quantity),
+                        materialX + MATERIAL_ICON_SIZE + 3, materialY + 7,
                         group.available() ? TEXT_WHITE : 0xFFA06F6F, false);
             }
             materialX += neededWidth + 4;
@@ -435,14 +442,14 @@ public final class CraftingPanel {
 
     private List<IngredientGroup> buildIngredientGroups(CraftingRecipe recipe,
                                                         List<ItemStack> available) {
-        Map<ResourceLocation, MutableIngredientGroup> groups = new LinkedHashMap<>();
+        Map<String, MutableIngredientGroup> groups = new LinkedHashMap<>();
         for (Ingredient ingredient : recipe.getIngredients()) {
             if (ingredient == null || ingredient.isEmpty()) continue;
             ItemStack display = ScpCraftingRecipeHelper.representative(ingredient);
             if (display.isEmpty()) continue;
-            ResourceLocation key = BuiltInRegistries.ITEM.getKey(display.getItem());
+            String key = ingredientKey(ingredient);
             MutableIngredientGroup group = groups.computeIfAbsent(key,
-                    ignored -> new MutableIngredientGroup(display, ingredient));
+                    ignored -> new MutableIngredientGroup(ingredient));
             group.count++;
         }
 
@@ -452,10 +459,33 @@ public final class CraftingPanel {
             for (ItemStack stack : available) {
                 if (group.ingredient.test(stack)) availableCount++;
             }
-            result.add(new IngredientGroup(group.display, group.count,
+            result.add(new IngredientGroup(group.ingredient, group.count,
                     availableCount >= group.count));
         }
         return result;
+    }
+
+    private String ingredientKey(Ingredient ingredient) {
+        StringBuilder key = new StringBuilder();
+        for (ItemStack option : ingredient.getItems()) {
+            if (option == null || option.isEmpty()) continue;
+            key.append(BuiltInRegistries.ITEM.getKey(option.getItem()))
+                    .append(';');
+        }
+        return key.toString();
+    }
+
+    private ItemStack getCyclingIngredientDisplay(Ingredient ingredient) {
+        if (ingredient == null || ingredient.isEmpty()) return ItemStack.EMPTY;
+        ItemStack[] options = ingredient.getItems();
+        if (options.length == 0) return ItemStack.EMPTY;
+        int start = (int) ((System.currentTimeMillis() / INGREDIENT_CYCLE_MS)
+                % options.length);
+        for (int offset = 0; offset < options.length; offset++) {
+            ItemStack option = options[(start + offset) % options.length];
+            if (option != null && !option.isEmpty()) return option;
+        }
+        return ItemStack.EMPTY;
     }
 
     private ItemStack getCurrentResult() {
@@ -739,18 +769,15 @@ public final class CraftingPanel {
                                List<IngredientGroup> ingredients) {
     }
 
-    private record IngredientGroup(ItemStack display, int count,
+    private record IngredientGroup(Ingredient ingredient, int count,
                                    boolean available) {
     }
 
     private static final class MutableIngredientGroup {
-        private final ItemStack display;
         private final Ingredient ingredient;
         private int count;
 
-        private MutableIngredientGroup(ItemStack display,
-                                       Ingredient ingredient) {
-            this.display = display;
+        private MutableIngredientGroup(Ingredient ingredient) {
             this.ingredient = ingredient;
         }
     }

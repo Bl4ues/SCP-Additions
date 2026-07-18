@@ -3,6 +3,8 @@ package com.bl4ues.scpinventory.commands;
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpinventory.crafting.ScpCraftingService;
+import com.bl4ues.scpinventory.crafting.ScpCraftingState;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.commands.CommandSourceStack;
@@ -87,7 +89,13 @@ public class ScpInventoryCommands {
             ModNetwork.syncTo(player, inventory);
         });
 
-        player.sendSystemMessage(Component.literal("SCP Inventory reset. Max main slots restored to 12."));
+        ScpCraftingState.Data crafting = new ScpCraftingState.Data();
+        ScpCraftingState.save(player, crafting);
+        ScpCraftingService.syncState(player, crafting);
+
+        player.sendSystemMessage(Component.literal(
+                "SCP Inventory reset. Items, equipment, Crafting data, and max main slots were restored."
+        ));
         return 1;
     }
 

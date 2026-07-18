@@ -51,10 +51,8 @@ public final class CraftingPanel {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        drawSectionTitle(graphics, recipesTitleX, titleY,
-                "CRAFTING_RECIPES");
-        drawSectionTitle(graphics, gridTitleX, titleY,
-                "CRAFTING_GRID");
+        drawSectionTitle(graphics, recipesTitleX, titleY, "RECIPES");
+        drawSectionTitle(graphics, gridTitleX, titleY, "GRID");
         renderRecipeScaffold(graphics);
         renderGridScaffold(graphics);
     }
@@ -141,7 +139,7 @@ public final class CraftingPanel {
 
     private void drawSectionTitle(GuiGraphics graphics, int x, int y,
                                   String section) {
-        String prefix = "://";
+        String prefix = "://CRAFTING_";
         graphics.drawString(mc.font, ScpFonts.roboto(prefix), x, y,
                 TEXT_GRAY, false);
         graphics.drawString(mc.font, ScpFonts.roboto(section),

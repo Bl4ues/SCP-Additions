@@ -15,7 +15,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
-import net.mcreator.scpadditions.facility.Scp079FacilityThreatEvents;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
@@ -71,7 +70,7 @@ public final class Scp012InfluenceEvents {
 
         ACTIVE_TARGETS.put(player.getUUID(), nearby);
         if (systemControl && (level.getGameTime() + player.getId()) % 10L == 0L) {
-            Scp079FacilityThreatEvents.tryOpenDoorForScp012(level, player, nearby);
+            Scp012DoorAccess.tryOpen(level, player, nearby);
         }
 
         Vec3 attraction = Scp012Module.attractionPoint(level, nearby);

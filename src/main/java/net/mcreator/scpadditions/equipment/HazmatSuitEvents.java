@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.equipment;
 
+import com.bl4ues.scpinventory.item.ScpItemClassifier;
+import com.bl4ues.scpinventory.item.ScpItemType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -148,9 +150,17 @@ public final class HazmatSuitEvents {
         HazmatSuitManager.clearTransientState(event.getEntity());
     }
 
+    /**
+     * Treats the SCP Inventory's authoritative CONSUMABLE classification as an
+     * ingestion attempt even when a custom item does not expose a vanilla eat or
+     * drink animation. Thrown potions remain USABLE and are not caught here.
+     */
     public static boolean isFoodOrDrink(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return false;
+        }
+        if (ScpItemClassifier.getType(stack) == ScpItemType.CONSUMABLE) {
+            return true;
         }
         UseAnim animation = stack.getUseAnimation();
         return stack.isEdible()

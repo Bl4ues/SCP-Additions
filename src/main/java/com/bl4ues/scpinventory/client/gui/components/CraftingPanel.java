@@ -44,17 +44,18 @@ public final class CraftingPanel {
 
     private static final int RECIPE_PAD_X = 16;
     private static final int RECIPE_PAD_TOP = 18;
-    private static final int RECIPE_ROW_HEIGHT = 50;
-    private static final int RECIPE_ROW_GAP = 5;
+    private static final int RECIPE_ROW_HEIGHT = 46;
+    private static final int RECIPE_ROW_GAP = 4;
     private static final int RECIPE_ICON_SIZE = 24;
     private static final int MATERIAL_ICON_SIZE = 16;
     private static final int GRID_SLOT_SIZE = 32;
     private static final int GRID_SLOT_GAP = 8;
-    private static final int INVENTORY_ROW_HEIGHT = 36;
+    private static final int INVENTORY_ROW_HEIGHT = 32;
     private static final int INVENTORY_ICON_SIZE = 24;
     private static final int SCROLL_WIDTH = 5;
-    private static final int PIN_WIDTH = 16;
-    private static final int PIN_HEIGHT = 16;
+    private static final int PIN_WIDTH = 12;
+    private static final int PIN_HEIGHT = 14;
+    private static final int MAX_VISIBLE_INVENTORY_ROWS = 5;
     private static final double DRAG_THRESHOLD = 4.0D;
     private static final long MISSING_FLASH_MS = 950L;
 
@@ -258,7 +259,7 @@ public final class CraftingPanel {
                                    int rowX, int rowY,
                                    int mouseX, int mouseY) {
         int iconX = rowX + 8;
-        int iconY = rowY + 7;
+        int iconY = rowY + 5;
         drawSlot(graphics, iconX, iconY, RECIPE_ICON_SIZE);
         graphics.renderItem(entry.output(), iconX + 4, iconY + 4);
         if (!entry.craftable()) {
@@ -268,17 +269,17 @@ public final class CraftingPanel {
         }
 
         int pinX = rowX + getRecipeListWidth() - PIN_WIDTH - 7;
-        int pinY = rowY + 7;
+        int pinY = rowY + 5;
         drawPin(graphics, pinX, pinY, entry.pinned(),
                 isInside(mouseX, mouseY, pinX, pinY, PIN_WIDTH, PIN_HEIGHT));
 
         int textX = iconX + RECIPE_ICON_SIZE + 9;
         int textMax = Math.max(20, pinX - textX - 6);
-        drawTrimmed(graphics, entry.name(), textX, rowY + 7,
+        drawTrimmed(graphics, entry.name(), textX, rowY + 5,
                 textMax, entry.craftable() ? TEXT_WHITE : TEXT_GRAY);
 
         int materialX = textX;
-        int materialY = rowY + 25;
+        int materialY = rowY + 23;
         int materialRight = pinX - 3;
         boolean flash = entry.id().equals(missingFlashRecipe)
                 && System.currentTimeMillis() < missingFlashUntil
@@ -303,8 +304,7 @@ public final class CraftingPanel {
                 graphics.drawString(mc.font,
                         ScpFonts.roboto("x" + group.count()),
                         materialX + MATERIAL_ICON_SIZE - 1, materialY + 7,
-                        group.available() ? TEXT_WHITE : flash
-                                ? 0xFFFF8C8C : TEXT_DIM, false);
+                        group.available() ? TEXT_WHITE : 0xFFA06F6F, false);
             }
             materialX += neededWidth + 4;
         }
@@ -359,8 +359,6 @@ public final class CraftingPanel {
     private void renderCompactInventory(GuiGraphics graphics,
                                         IScpInventory inventory,
                                         int mouseX, int mouseY) {
-        graphics.drawString(mc.font, ScpFonts.roboto("ITEMS IN INVENTORY"),
-                getInventoryListX(), getInventoryHeaderY(), TEXT_WHITE, false);
         if (inventory == null) return;
 
         List<Integer> slots = getNonEmptyMainSlots(inventory);
@@ -577,7 +575,7 @@ public final class CraftingPanel {
         int rowY = getRecipeListY()
                 + visibleRow * (RECIPE_ROW_HEIGHT + RECIPE_ROW_GAP);
         int pinX = getRecipeListX() + getRecipeListWidth() - PIN_WIDTH - 7;
-        return isInside(mouseX, mouseY, pinX, rowY + 7,
+        return isInside(mouseX, mouseY, pinX, rowY + 5,
                 PIN_WIDTH, PIN_HEIGHT);
     }
 
@@ -652,11 +650,11 @@ public final class CraftingPanel {
     private void drawPin(GuiGraphics graphics, int x, int y,
                          boolean pinned, boolean hovered) {
         int color = pinned ? TEXT_WHITE : hovered ? 0xFF909292 : TEXT_GRAY;
-        graphics.fill(x + 4, y + 1, x + 12, y + 3, color);
-        graphics.fill(x + 6, y + 3, x + 10, y + 8, color);
-        graphics.fill(x + 3, y + 7, x + 13, y + 9, color);
-        graphics.fill(x + 7, y + 9, x + 9, y + 14, color);
-        graphics.fill(x + 8, y + 13, x + 9, y + 16, color);
+        graphics.fill(x + 3, y + 1, x + 9, y + 3, color);
+        graphics.fill(x + 5, y + 3, x + 7, y + 7, color);
+        graphics.fill(x + 2, y + 6, x + 10, y + 8, color);
+        graphics.fill(x + 5, y + 8, x + 7, y + 12, color);
+        graphics.fill(x + 6, y + 11, x + 7, y + 14, color);
     }
 
     private void drawSlot(GuiGraphics graphics, int x, int y, int size) {
@@ -711,12 +709,18 @@ public final class CraftingPanel {
     private int getOutputX() { return getGridStartX() + getGridPixels() + 44; }
     private int getOutputY() { return getGridStartY() + (getGridPixels() - GRID_SLOT_SIZE) / 2; }
 
-    private int getInventoryHeaderY() { return getGridStartY() + getGridPixels() + 24; }
     private int getInventoryListX() { return gridX + 18; }
-    private int getInventoryListY() { return getInventoryHeaderY() + 17; }
+    private int getInventoryListY() { return getGridStartY() + getGridPixels() + 12; }
     private int getInventoryListWidth() { return Math.max(90, gridWidth - 45); }
-    private int getInventoryListHeight() { return Math.max(INVENTORY_ROW_HEIGHT, gridY + gridHeight - getInventoryListY() - 10); }
-    private int getVisibleInventoryRows() { return Math.max(1, getInventoryListHeight() / INVENTORY_ROW_HEIGHT); }
+    private int getInventoryListHeight() {
+        int available = Math.max(INVENTORY_ROW_HEIGHT,
+                gridY + gridHeight - getInventoryListY() - 10);
+        return Math.min(INVENTORY_ROW_HEIGHT * MAX_VISIBLE_INVENTORY_ROWS, available);
+    }
+    private int getVisibleInventoryRows() {
+        return Math.max(1, Math.min(MAX_VISIBLE_INVENTORY_ROWS,
+                getInventoryListHeight() / INVENTORY_ROW_HEIGHT));
+    }
     private int getInventoryScrollbarX() { return gridX + gridWidth - 12; }
 
     private static int clampScroll(int scroll, int total, int visible) {

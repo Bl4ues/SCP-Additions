@@ -50,6 +50,9 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.addNetworkMessage(HazmatRemovalInputPacket.class,
                 HazmatRemovalInputPacket::encode, HazmatRemovalInputPacket::decode,
                 HazmatRemovalInputPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(HazmatAudioPacket.class,
+                HazmatAudioPacket::encode, HazmatAudioPacket::decode,
+                HazmatAudioPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player, boolean following) {
@@ -85,6 +88,28 @@ public final class ScpEntityNetwork {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
                 EquipmentProgressPacket.cancel());
+    }
+
+    public static void beginHazmatEquipAudio(ServerPlayer player) {
+        sendHazmatAudio(player, HazmatAudioPacket.BEGIN_EQUIP);
+    }
+
+    public static void beginHazmatRemoveAudio(ServerPlayer player) {
+        sendHazmatAudio(player, HazmatAudioPacket.BEGIN_REMOVE);
+    }
+
+    public static void completeHazmatAudio(ServerPlayer player) {
+        sendHazmatAudio(player, HazmatAudioPacket.COMPLETE_ACTION);
+    }
+
+    public static void cancelHazmatAudio(ServerPlayer player) {
+        sendHazmatAudio(player, HazmatAudioPacket.CANCEL_ACTION);
+    }
+
+    private static void sendHazmatAudio(ServerPlayer player, int action) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> player),
+                new HazmatAudioPacket(action));
     }
 
     public static void playScare(ServerPlayer player) {

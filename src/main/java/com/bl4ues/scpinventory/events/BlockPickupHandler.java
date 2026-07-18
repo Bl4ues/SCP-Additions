@@ -34,6 +34,15 @@ public class BlockPickupHandler {
         }
 
         ItemStack stack = itemEntity.getItem();
+        // A controlled USABLE mirror stops being an inventory mirror as soon as
+        // it becomes a real world item. Jukebox ejection and similar block/item
+        // outputs may preserve the mirror NBT; leaving it attached makes the
+        // pickup router reject the stack forever as an active session copy.
+        if (ScpPickupRouter.isUsableSession(stack)) {
+            ScpPickupRouter.stripUsableSession(stack);
+            itemEntity.setItem(stack);
+        }
+
         if (stack.getCount() > 1) {
             splitStackEntity(event, itemEntity, stack);
             return;

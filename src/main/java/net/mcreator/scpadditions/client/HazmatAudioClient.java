@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
+import net.mcreator.scpadditions.equipment.HazmatSuitManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 /** Owns all local Hazmat Suit audio so interrupted actions stop immediately. */
@@ -18,6 +19,15 @@ public final class HazmatAudioClient {
     private static HazmatBreathingSound breathingSound;
 
     private HazmatAudioClient() {
+    }
+
+    /** The timed-equipment bar currently serves the two Hazmat action lengths. */
+    public static void beginForDuration(int durationTicks) {
+        if (durationTicks == HazmatSuitManager.EQUIP_DURATION_TICKS) {
+            beginEquip();
+        } else if (durationTicks == HazmatSuitManager.UNEQUIP_DURATION_TICKS) {
+            beginRemove();
+        }
     }
 
     public static void beginEquip() {

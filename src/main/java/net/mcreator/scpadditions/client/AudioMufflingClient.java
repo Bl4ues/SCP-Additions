@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 public final class AudioMufflingClient {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final float HAZMAT_STRENGTH = 0.42F;
+    private static final float HAZMAT_STRENGTH = 0.60F;
     private static final float SCP_714_INITIAL_STRENGTH = 0.08F;
     private static final float TRANSITION_SPEED = 0.16F;
     private static final float UPDATE_EPSILON = 0.0015F;

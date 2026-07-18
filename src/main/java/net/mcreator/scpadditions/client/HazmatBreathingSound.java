@@ -5,7 +5,6 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 /** Local, non-positional breathing loop heard from inside the sealed mask. */
@@ -24,8 +23,7 @@ public final class HazmatBreathingSound extends AbstractTickableSoundInstance {
     @Override
     public void tick() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || !minecraft.player.isAlive()
-                || !HazmatSuitAccess.isFullyEquipped(minecraft.player)) {
+        if (minecraft.player == null || !minecraft.player.isAlive()) {
             stop();
         }
     }

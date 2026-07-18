@@ -11,7 +11,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp714MusicClient {
     private static Scp714MusicSound music;
-    private static boolean playedForCurrentExposure;
+    private static boolean exposureWasActive;
 
     private Scp714MusicClient() {
     }
@@ -26,26 +26,15 @@ public final class Scp714MusicClient {
         boolean active = minecraft.player != null && minecraft.level != null
                 && minecraft.player.isAlive() && Scp714ClientState.isActive();
 
-        if (active) {
-            if (!playedForCurrentExposure) {
-                startMusic(minecraft);
-                playedForCurrentExposure = true;
-            } else if (music != null
-                    && !minecraft.getSoundManager().isActive(music)) {
-                // The authored file is intentionally not looped or restarted.
-                music = null;
-            }
-            return;
-        }
-
-        if (music != null) {
+        if (active && !exposureWasActive) {
+            startMusic(minecraft);
+        } else if (!active && exposureWasActive && music != null) {
             music.beginFadeOut();
-            if (!minecraft.getSoundManager().isActive(music)) {
-                music = null;
-            }
         }
-        if (music == null) {
-            playedForCurrentExposure = false;
+        exposureWasActive = active;
+
+        if (music != null && !minecraft.getSoundManager().isActive(music)) {
+            music = null;
         }
     }
 

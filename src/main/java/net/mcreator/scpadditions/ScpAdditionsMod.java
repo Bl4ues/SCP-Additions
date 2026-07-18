@@ -31,6 +31,7 @@ import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
 import net.mcreator.scpadditions.facility.LeftDoorButtons;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
+import net.mcreator.scpadditions.scp012.Scp012Module;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.Scp131Items;
@@ -70,6 +71,7 @@ public class ScpAdditionsMod {
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
         ScpAdditionsModItems.REGISTRY.register(bus);
         Scp714Items.REGISTRY.register(bus);
+        Scp012Module.register(bus);
         UnifiedReaderItems.REGISTRY.register(bus);
         Scp131Items.REGISTRY.register(bus);
         ScpAdditionsModEntities.REGISTRY.register(bus);
@@ -97,7 +99,7 @@ public class ScpAdditionsMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "6";
+    private static final String PROTOCOL_VERSION = "7";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),

@@ -53,8 +53,8 @@ public class ScpAdditionsModTabs {
                 tabData.accept(ScpAdditionsModBlocks.SCP_294.get().asItem());
                 tabData.accept(ScpAdditionsModBlocks.SCP_330.get().asItem());
                 tabData.accept(ScpAdditionsModBlocks.SCP_426.get().asItem());
-                tabData.accept(Scp714Items.SCP_714.get());
                 tabData.accept(ScpAdditionsModItems.SCP_572.get());
+                tabData.accept(Scp714Items.SCP_714.get());
                 tabData.accept(ScpAdditionsModBlocks.SCP_902_CLOSED.get().asItem());
                 tabData.accept(ScpAdditionsModItems.SCP_914_ASSEMBLY_KIT.get());
                 tabData.accept(ScpAdditionsModBlocks.SCP_914BLOCK.get().asItem());

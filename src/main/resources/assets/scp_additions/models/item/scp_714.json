@@ -2,8 +2,8 @@
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
 	"textures": {
-		"0": "scp_714",
-		"particle": "scp_714"
+		"0": "scp_additions:item/scp_714",
+		"particle": "scp_additions:item/scp_714"
 	},
 	"elements": [
 		{

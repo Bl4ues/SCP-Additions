@@ -1,7 +1,5 @@
 package net.mcreator.scpadditions.network;
 
-import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -69,13 +67,7 @@ public final class EquipmentProgressPacket {
 
     private static void applyClient(EquipmentProgressPacket message) {
         switch (message.action) {
-            case BEGIN -> {
-                Minecraft minecraft = Minecraft.getInstance();
-                if (minecraft.screen instanceof ScpInventoryScreen) {
-                    minecraft.setScreen(null);
-                }
-                EquipmentProgressOverlay.begin(message.durationTicks);
-            }
+            case BEGIN -> EquipmentProgressOverlay.begin(message.durationTicks);
             case SYNC -> EquipmentProgressOverlay.syncProgress(
                     message.elapsedTicks, message.durationTicks);
             case COMPLETE -> EquipmentProgressOverlay.complete();

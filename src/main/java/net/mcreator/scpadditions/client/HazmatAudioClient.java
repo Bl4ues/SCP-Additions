@@ -17,6 +17,7 @@ public final class HazmatAudioClient {
     private static Action action = Action.NONE;
     private static SimpleSoundInstance actionSound;
     private static HazmatBreathingSound breathingSound;
+    private static boolean breathingAfterEquipSound;
 
     private HazmatAudioClient() {
     }
@@ -33,6 +34,7 @@ public final class HazmatAudioClient {
     public static void beginEquip() {
         stopActionSound();
         stopBreathing();
+        breathingAfterEquipSound = false;
         action = Action.EQUIP;
         actionSound = SimpleSoundInstance.forUI(
                 ScpAdditionsModSounds.HAZMAT_EQUIP.get(), 1.0F, 1.0F);
@@ -42,19 +44,24 @@ public final class HazmatAudioClient {
     public static void beginRemove() {
         stopActionSound();
         stopBreathing();
+        breathingAfterEquipSound = false;
         action = Action.REMOVE;
         actionSound = SimpleSoundInstance.forUI(
                 ScpAdditionsModSounds.HAZMAT_REMOVE.get(), 1.0F, 1.0F);
         Minecraft.getInstance().getSoundManager().play(actionSound);
     }
 
+    /**
+     * A successful action may leave a short authored audio tail. Cancellation is
+     * immediate, but normal completion lets that tail finish naturally.
+     */
     public static void completeAction() {
         Action completed = action;
-        stopActionSound();
         action = Action.NONE;
         if (completed == Action.EQUIP) {
-            startBreathing();
+            breathingAfterEquipSound = true;
         } else if (completed == Action.REMOVE) {
+            breathingAfterEquipSound = false;
             stopBreathing();
         }
     }
@@ -63,6 +70,7 @@ public final class HazmatAudioClient {
         Action canceled = action;
         stopActionSound();
         action = Action.NONE;
+        breathingAfterEquipSound = false;
         if (canceled == Action.REMOVE) {
             startBreathingIfEquipped();
         }
@@ -76,11 +84,23 @@ public final class HazmatAudioClient {
             return;
         }
 
+        if (actionSound != null
+                && !minecraft.getSoundManager().isActive(actionSound)) {
+            actionSound = null;
+        }
+
         if (action == Action.EQUIP || action == Action.REMOVE) {
             if (action == Action.REMOVE) {
                 stopBreathing();
             }
             return;
+        }
+
+        if (breathingAfterEquipSound) {
+            if (actionSound != null) {
+                return;
+            }
+            breathingAfterEquipSound = false;
         }
 
         if (HazmatSuitAccess.isFullyEquipped(minecraft.player)) {
@@ -94,6 +114,7 @@ public final class HazmatAudioClient {
         stopActionSound();
         stopBreathing();
         action = Action.NONE;
+        breathingAfterEquipSound = false;
     }
 
     private static void startBreathingIfEquipped() {

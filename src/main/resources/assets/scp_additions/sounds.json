@@ -795,5 +795,14 @@
         "volume": 1
       }
     ]
+  },
+  "scp_714": {
+    "sounds": [
+      {
+        "name": "scp_additions:scp_714",
+        "stream": true,
+        "volume": 1
+      }
+    ]
   }
 }

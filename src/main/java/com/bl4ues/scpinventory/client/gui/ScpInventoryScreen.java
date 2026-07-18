@@ -9,6 +9,7 @@ import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import com.bl4ues.scpinventory.client.ClientInventoryBridge;
 import com.bl4ues.scpinventory.client.gui.components.CodexPanel;
 import com.bl4ues.scpinventory.client.gui.components.ContextMenu;
+import com.bl4ues.scpinventory.client.gui.components.CraftingPanel;
 import com.bl4ues.scpinventory.client.gui.components.EquipmentPanel;
 import com.bl4ues.scpinventory.client.gui.components.ScrollableItemList;
 import com.bl4ues.scpinventory.client.gui.components.StatusPanel;
@@ -48,6 +49,8 @@ public class ScpInventoryScreen extends Screen {
     private static final ResourceLocation INVENTORY_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventoryicon_selected.png");
     private static final ResourceLocation STATUS_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/statusicon.png");
     private static final ResourceLocation STATUS_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/statusicon_selected.png");
+    private static final ResourceLocation CRAFTING_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/craft.png");
+    private static final ResourceLocation CRAFTING_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/craft_selected.png");
     private static final ResourceLocation CODEX_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/codexicon.png");
     private static final ResourceLocation CODEX_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/codexicon_selected.png");
     private static final ResourceLocation HEALTH_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/health.png");
@@ -58,6 +61,7 @@ public class ScpInventoryScreen extends Screen {
     private static final int NAV_ICON_SIZE = 24;
     private static final int NAV_BUTTON_WIDTH = 120;
     private static final int NAV_BUTTON_HEIGHT = 46;
+    private static final int NAV_BUTTON_GAP = 24;
     private static final int TAB_HEIGHT = 17;
     private static final int INVENTORY_TAB_WIDTH = 104;
     private static final int KEYS_TAB_WIDTH = 104;
@@ -67,7 +71,7 @@ public class ScpInventoryScreen extends Screen {
     private static final int EQUIPMENT_ICON_BOX_SIZE = 24;
     private static final float HEALTH_TEXT_SCALE = 0.86F;
 
-    private enum ScreenMode { INVENTORY, STATUS, CODEX }
+    private enum ScreenMode { INVENTORY, STATUS, CRAFTING, CODEX }
     private enum DragSourceKind { NONE, MAIN, EQUIPMENT }
 
     private static final ScpEquipmentSlot[] DROP_PREVIEW_EQUIPMENT_SLOTS = {
@@ -83,6 +87,7 @@ public class ScpInventoryScreen extends Screen {
     private EquipmentPanel equipmentPanel;
     private CodexPanel codexPanel;
     private StatusPanel statusPanel;
+    private CraftingPanel craftingPanel;
     private ContextMenu contextMenu;
     private IScpInventory inventory;
     private int contextIndex = -1;
@@ -131,7 +136,10 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     protected void init() {
-        if (itemList != null || codexPanel != null || statusPanel != null) captureSessionState();
+        if (itemList != null || codexPanel != null || statusPanel != null
+                || craftingPanel != null) {
+            captureSessionState();
+        }
         if (rememberUiState()) {
             mode = rememberedMode;
             showingKeys = rememberedShowingKeys;
@@ -142,6 +150,20 @@ public class ScpInventoryScreen extends Screen {
         }
         contextMenu = new ContextMenu();
         computeLayout();
+
+        craftingPanel = new CraftingPanel(
+                listPanelX + 10,
+                listPanelY,
+                listPanelWidth - 20,
+                listPanelHeight,
+                equipmentPanelX + 10,
+                equipmentPanelY,
+                equipmentPanelWidth - 20,
+                equipmentPanelHeight,
+                titleY,
+                listPanelX,
+                equipmentPanelX
+        );
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
@@ -270,6 +292,8 @@ public class ScpInventoryScreen extends Screen {
             if (codexPanel != null) codexPanel.render(g, mouseX, mouseY);
         } else if (mode == ScreenMode.STATUS) {
             if (statusPanel != null) statusPanel.render(g, mouseX, mouseY);
+        } else if (mode == ScreenMode.CRAFTING) {
+            if (craftingPanel != null) craftingPanel.render(g, mouseX, mouseY);
         } else {
             renderInventoryHeader(g);
             renderTabs(g);
@@ -308,6 +332,8 @@ public class ScpInventoryScreen extends Screen {
             if (codexPanel != null) codexPanel.render(g, mouseX, mouseY);
         } else if (mode == ScreenMode.STATUS) {
             if (statusPanel != null) statusPanel.render(g, mouseX, mouseY);
+        } else if (mode == ScreenMode.CRAFTING) {
+            if (craftingPanel != null) craftingPanel.render(g, mouseX, mouseY);
         } else {
             renderInventoryHeader(g);
             renderTabs(g);
@@ -435,6 +461,7 @@ public class ScpInventoryScreen extends Screen {
     private void renderBottomNavigation(GuiGraphics g) {
         drawNavigationButton(g, getInventoryNavX(), navY, "INVENTORY", mode == ScreenMode.INVENTORY ? INVENTORY_ICON_SELECTED : INVENTORY_ICON, mode == ScreenMode.INVENTORY);
         drawNavigationButton(g, getStatusNavX(), navY, "STATUS", mode == ScreenMode.STATUS ? STATUS_ICON_SELECTED : STATUS_ICON, mode == ScreenMode.STATUS);
+        drawNavigationButton(g, getCraftingNavX(), navY, "CRAFTING", mode == ScreenMode.CRAFTING ? CRAFTING_ICON_SELECTED : CRAFTING_ICON, mode == ScreenMode.CRAFTING);
         drawNavigationButton(g, getCodexNavX(), navY, "CODEX", mode == ScreenMode.CODEX ? CODEX_ICON_SELECTED : CODEX_ICON, mode == ScreenMode.CODEX);
     }
 
@@ -528,7 +555,7 @@ public class ScpInventoryScreen extends Screen {
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (button == 0 && clickedBottomNavigation(mouseX, mouseY)) return true;
-        if (mode == ScreenMode.STATUS) return super.mouseClicked(mouseX, mouseY, button);
+        if (mode == ScreenMode.STATUS || mode == ScreenMode.CRAFTING) return super.mouseClicked(mouseX, mouseY, button);
         if (mode == ScreenMode.CODEX) return codexPanel != null && codexPanel.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
         if (button == 0 && clickedTabs(mouseX, mouseY)) return true;
 
@@ -784,36 +811,51 @@ public class ScpInventoryScreen extends Screen {
 
     private boolean clickedBottomNavigation(double mouseX, double mouseY) {
         if (mouseY < navY || mouseY > navY + NAV_BUTTON_HEIGHT) return false;
-        int inventoryX = getInventoryNavX();
-        int statusX = getStatusNavX();
-        int codexX = getCodexNavX();
-        if (mouseX >= inventoryX && mouseX <= inventoryX + NAV_BUTTON_WIDTH) {
-            mode = ScreenMode.INVENTORY;
+        if (mouseX >= getInventoryNavX() && mouseX <= getInventoryNavX() + NAV_BUTTON_WIDTH) {
+            setMode(ScreenMode.INVENTORY);
             return true;
         }
-        if (mouseX >= statusX && mouseX <= statusX + NAV_BUTTON_WIDTH) {
-            mode = ScreenMode.STATUS;
-            if (contextMenu != null) contextMenu.close();
+        if (mouseX >= getStatusNavX() && mouseX <= getStatusNavX() + NAV_BUTTON_WIDTH) {
+            setMode(ScreenMode.STATUS);
             return true;
         }
-        if (mouseX >= codexX && mouseX <= codexX + NAV_BUTTON_WIDTH) {
-            mode = ScreenMode.CODEX;
-            if (contextMenu != null) contextMenu.close();
+        if (mouseX >= getCraftingNavX() && mouseX <= getCraftingNavX() + NAV_BUTTON_WIDTH) {
+            setMode(ScreenMode.CRAFTING);
+            return true;
+        }
+        if (mouseX >= getCodexNavX() && mouseX <= getCodexNavX() + NAV_BUTTON_WIDTH) {
+            setMode(ScreenMode.CODEX);
             return true;
         }
         return false;
     }
 
+    private void setMode(ScreenMode newMode) {
+        if (mode == ScreenMode.INVENTORY) rememberCurrentItemScroll();
+        mode = newMode;
+        if (contextMenu != null) contextMenu.close();
+        if (newMode != ScreenMode.INVENTORY) clearDragSource();
+    }
+
+    private int getNavigationStartX() {
+        int totalWidth = (NAV_BUTTON_WIDTH * 4) + (NAV_BUTTON_GAP * 3);
+        return rootX + (rootWidth - totalWidth) / 2;
+    }
+
     private int getInventoryNavX() {
-        return rootX + (rootWidth / 2) - 240;
+        return getNavigationStartX();
     }
 
     private int getStatusNavX() {
-        return rootX + (rootWidth / 2) - 60;
+        return getNavigationStartX() + NAV_BUTTON_WIDTH + NAV_BUTTON_GAP;
+    }
+
+    private int getCraftingNavX() {
+        return getNavigationStartX() + (NAV_BUTTON_WIDTH + NAV_BUTTON_GAP) * 2;
     }
 
     private int getCodexNavX() {
-        return rootX + (rootWidth / 2) + 120;
+        return getNavigationStartX() + (NAV_BUTTON_WIDTH + NAV_BUTTON_GAP) * 3;
     }
 
     private void handleAction(String action) {

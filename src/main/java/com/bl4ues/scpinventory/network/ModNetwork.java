@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "4";
+    private static final String PROTOCOL_VERSION = "5";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -53,6 +53,9 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, ItemConfigSavePacket.class, ItemConfigSavePacket::encode, ItemConfigSavePacket::decode, ItemConfigSavePacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigReloadPacket.class, ItemConfigReloadPacket::encode, ItemConfigReloadPacket::decode, ItemConfigReloadPacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigDeletePacket.class, ItemConfigDeletePacket::encode, ItemConfigDeletePacket::decode, ItemConfigDeletePacket::handle);
+        CHANNEL.registerMessage(id++, CraftingStateSyncPacket.class, CraftingStateSyncPacket::encode, CraftingStateSyncPacket::decode, CraftingStateSyncPacket::handle);
+        CHANNEL.registerMessage(id++, RequestCraftingStatePacket.class, RequestCraftingStatePacket::encode, RequestCraftingStatePacket::decode, RequestCraftingStatePacket::handle);
+        CHANNEL.registerMessage(id++, CraftingActionPacket.class, CraftingActionPacket::encode, CraftingActionPacket::decode, CraftingActionPacket::handle);
         ConfigCenterNetwork.register(CHANNEL, id);
     }
 
@@ -83,12 +86,13 @@ public final class ModNetwork {
     }
 
     public static void activateUsableItem(ServerPlayer player, int hotbarSlot,
-            boolean continuousUse, ItemStack stack) {
+                                          boolean continuousUse, ItemStack stack) {
         activateUsableItem(player, hotbarSlot, -1, continuousUse, stack);
     }
 
     public static void activateUsableItem(ServerPlayer player, int hotbarSlot,
-            int sourceSlot, boolean continuousUse, ItemStack stack) {
+                                          int sourceSlot, boolean continuousUse,
+                                          ItemStack stack) {
         if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
         if (player != null && !player.isCreative() && !player.isSpectator()) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),

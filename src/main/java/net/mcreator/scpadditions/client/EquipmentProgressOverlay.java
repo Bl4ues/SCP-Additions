@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -31,6 +32,10 @@ public final class EquipmentProgressOverlay {
     }
 
     public static void begin(int duration) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof ScpInventoryScreen) {
+            minecraft.setScreen(null);
+        }
         active = true;
         elapsedTicks = 0;
         durationTicks = Math.max(1, duration);

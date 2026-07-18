@@ -40,7 +40,6 @@ public final class CraftingPanel {
     private static final int SCROLL_TRACK = 0x44000000;
     private static final int SCROLL_THUMB = 0xAA6A6C6C;
     private static final int MISSING_RED = 0xAA9E4343;
-    private static final int MISSING_RED_FAINT = 0x559E4343;
     private static final int DIM_OVERLAY = 0x880C1011;
 
     private static final int RECIPE_PAD_X = 16;
@@ -111,7 +110,6 @@ public final class CraftingPanel {
         requestStateOnce();
         drawSectionTitle(graphics, recipesTitleX, titleY, "RECIPES");
         drawSectionTitle(graphics, gridTitleX, titleY, "GRID");
-
         IScpInventory inventory = getInventory();
         List<RecipeEntry> recipes = buildRecipeEntries(inventory);
         renderRecipes(graphics, recipes, mouseX, mouseY);
@@ -165,9 +163,7 @@ public final class CraftingPanel {
             return true;
         }
 
-        int outputX = getOutputX();
-        int outputY = getOutputY();
-        if (isInside(mouseX, mouseY, outputX, outputY,
+        if (isInside(mouseX, mouseY, getOutputX(), getOutputY(),
                 GRID_SLOT_SIZE, GRID_SLOT_SIZE)
                 && !getCurrentResult().isEmpty()) {
             ClientInventoryBridge.craftPortableGrid();
@@ -363,8 +359,7 @@ public final class CraftingPanel {
     private void renderCompactInventory(GuiGraphics graphics,
                                         IScpInventory inventory,
                                         int mouseX, int mouseY) {
-        String heading = "ITEMS IN INVENTORY";
-        graphics.drawString(mc.font, ScpFonts.roboto(heading),
+        graphics.drawString(mc.font, ScpFonts.roboto("ITEMS IN INVENTORY"),
                 getInventoryListX(), getInventoryHeaderY(), TEXT_WHITE, false);
         if (inventory == null) return;
 
@@ -372,8 +367,7 @@ public final class CraftingPanel {
         int visible = getVisibleInventoryRows();
         inventoryScroll = clampScroll(inventoryScroll, slots.size(), visible);
         if (slots.isEmpty()) {
-            String empty = "Inventory is empty";
-            graphics.drawString(mc.font, ScpFonts.roboto(empty),
+            graphics.drawString(mc.font, ScpFonts.roboto("Inventory is empty"),
                     getInventoryListX(), getInventoryListY() + 10,
                     TEXT_GRAY, false);
             return;
@@ -435,8 +429,8 @@ public final class CraftingPanel {
         Comparator<RecipeEntry> alphabetical = Comparator.comparing(
                 entry -> entry.name().toLowerCase(Locale.ROOT));
         result.sort(Comparator
-                .comparing(RecipeEntry::pinned).reversed()
-                .thenComparing(RecipeEntry::craftable).reversed()
+                .comparingInt((RecipeEntry entry) -> entry.pinned()
+                        ? 0 : entry.craftable() ? 1 : 2)
                 .thenComparing(alphabetical));
         return result;
     }

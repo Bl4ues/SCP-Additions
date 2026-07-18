@@ -1,12 +1,12 @@
 package net.mcreator.scpadditions.equipment;
 
-import com.bl4ues.scpinventory.item.ScpItemClassifier;
-import com.bl4ues.scpinventory.item.ScpItemType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.LingeringPotionItem;
+import net.minecraft.world.item.SplashPotionItem;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.block.CakeBlock;
 import net.minecraftforge.event.TickEvent;
@@ -55,7 +55,8 @@ public final class HazmatSuitEvents {
         if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())) {
             return;
         }
-        if (event.getEntity().isCrouching() || isFoodOrDrink(event.getItem())) {
+        if (event.getEntity().isCrouching()
+                || isPhysicalFoodOrDrink(event.getItem())) {
             event.setCanceled(true);
         }
     }
@@ -73,7 +74,7 @@ public final class HazmatSuitEvents {
             return;
         }
 
-        if (!isFoodOrDrink(event.getItemStack())) {
+        if (!isPhysicalFoodOrDrink(event.getItemStack())) {
             return;
         }
 
@@ -151,17 +152,22 @@ public final class HazmatSuitEvents {
     }
 
     /**
-     * Treats the SCP Inventory's authoritative CONSUMABLE classification as an
-     * ingestion attempt even when a custom item does not expose a vanilla eat or
-     * drink animation. Thrown potions remain USABLE and are not caught here.
+     * Detects actual physical ingestion while an item is already in the player's
+     * hand. SCP Inventory categories are deliberately not consulted here: explicit
+     * JSON rules remain authoritative for inventory routing, but they must not turn
+     * a throwable or tool into a physical eating/drinking action.
      */
-    public static boolean isFoodOrDrink(ItemStack stack) {
+    public static boolean isPhysicalFoodOrDrink(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        if (ScpItemClassifier.getType(stack) == ScpItemType.CONSUMABLE) {
-            return true;
+
+        // Vanilla and modded subclasses of these items are thrown, never ingested.
+        if (stack.getItem() instanceof SplashPotionItem
+                || stack.getItem() instanceof LingeringPotionItem) {
+            return false;
         }
+
         UseAnim animation = stack.getUseAnimation();
         return stack.isEdible()
                 || animation == UseAnim.EAT

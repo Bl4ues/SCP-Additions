@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.vitals;
 
+import com.bl4ues.scpinventory.item.ScpItemEffects;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -24,8 +25,8 @@ public final class StaminaBlockerAccess {
             new CopyOnWriteArraySet<>();
     private static final Set<ResourceLocation> RUNTIME_ITEMS =
             new CopyOnWriteArraySet<>();
-    private static final CopyOnWriteArrayList<Predicate<Player>> EXTRA_EQUIPPED_SOURCES =
-            new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<Predicate<Player>>
+            EXTRA_EQUIPPED_SOURCES = new CopyOnWriteArrayList<>();
 
     private StaminaBlockerAccess() {
     }
@@ -62,12 +63,21 @@ public final class StaminaBlockerAccess {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
+
+        // Consult the shared item-effect resolver first so intrinsic effects such
+        // as SCP-714 work for existing configs without requiring regeneration.
+        if (ScpItemEffects.hasNoStaminaModifier(stack)) {
+            return true;
+        }
+
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id != null
-                && (CONFIGURED_ITEMS.contains(id) || RUNTIME_ITEMS.contains(id));
+                && (CONFIGURED_ITEMS.contains(id)
+                || RUNTIME_ITEMS.contains(id));
     }
 
-    public static void replaceConfiguredItems(Collection<ResourceLocation> itemIds) {
+    public static void replaceConfiguredItems(
+            Collection<ResourceLocation> itemIds) {
         CONFIGURED_ITEMS.clear();
         if (itemIds != null) {
             CONFIGURED_ITEMS.addAll(itemIds);

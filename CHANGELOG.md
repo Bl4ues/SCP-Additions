@@ -10,8 +10,8 @@
 
 ## SCP Inventory Crafting
 
-- Added a fourth Crafting tab between Status and Codex, with all four bottom tabs centered symmetrically and the established SCP Inventory title, color, panel, and scaling conventions;
-- Added a persistent, server-authoritative portable 3×3 crafting grid, result slot, and compact scrollable SCP Inventory item list with drag-and-drop in both directions;
+- Added a fourth Crafting tab between Status and Codex;
+- Added a portable 3×3 crafting grid, result slot, and compact scrollable SCP Inventory item list with drag-and-drop in both directions;
 - Added learned recipes that unlock after successful portable, inventory, or crafting-table crafting, plus a public learning hook for future blueprint items;
 - Added a scrollable recipe list with output names and icons, compact ingredient requirements, red missing counts, dimmed unavailable recipes, and red missing-material feedback;
 - Added cycling displays for all valid alternatives accepted by recipe ingredients, including tag-based vanilla and modded materials;

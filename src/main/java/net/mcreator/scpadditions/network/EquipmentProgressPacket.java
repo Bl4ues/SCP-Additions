@@ -5,6 +5,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.client.EquipmentProgressOverlay;
+import net.mcreator.scpadditions.client.HazmatAudioClient;
 
 import java.util.function.Supplier;
 
@@ -67,12 +68,24 @@ public final class EquipmentProgressPacket {
 
     private static void applyClient(EquipmentProgressPacket message) {
         switch (message.action) {
-            case BEGIN -> EquipmentProgressOverlay.begin(message.durationTicks);
+            case BEGIN -> {
+                EquipmentProgressOverlay.begin(message.durationTicks);
+                HazmatAudioClient.beginForDuration(message.durationTicks);
+            }
             case SYNC -> EquipmentProgressOverlay.syncProgress(
                     message.elapsedTicks, message.durationTicks);
-            case COMPLETE -> EquipmentProgressOverlay.complete();
-            case CANCEL -> EquipmentProgressOverlay.cancel();
-            default -> EquipmentProgressOverlay.cancel();
+            case COMPLETE -> {
+                EquipmentProgressOverlay.complete();
+                HazmatAudioClient.completeAction();
+            }
+            case CANCEL -> {
+                EquipmentProgressOverlay.cancel();
+                HazmatAudioClient.cancelAction();
+            }
+            default -> {
+                EquipmentProgressOverlay.cancel();
+                HazmatAudioClient.cancelAction();
+            }
         }
     }
 }

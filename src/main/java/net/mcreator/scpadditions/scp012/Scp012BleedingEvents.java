@@ -6,13 +6,14 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,15 +44,13 @@ public final class Scp012BleedingEvents {
             clear(player, true);
             return;
         }
-        if (Scp714ProtectionAccess.isProtected(player)) {
-            clear(player, true);
-            return;
-        }
         if (!marked) {
             STATES.remove(id);
             return;
         }
 
+        // SCP-714 does not cure a physical wound. The bleeding state remains
+        // until the player receives real healing from any source.
         if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
             player.addEffect(new MobEffectInstance(
                     ScpAdditionsModMobEffects.BLEEDING.get(),
@@ -76,12 +75,22 @@ public final class Scp012BleedingEvents {
         }
     }
 
+    @SubscribeEvent
+    public static void onHeal(LivingHealEvent event) {
+        if (event.getAmount() <= 0.0F
+                || !(event.getEntity() instanceof ServerPlayer player)
+                || !player.getPersistentData().getBoolean(BLEEDING_TAG)) {
+            return;
+        }
+        clear(player, true);
+    }
+
     private static void playBleedCue(ServerPlayer player) {
         @SuppressWarnings("unchecked")
         RegistryObject<SoundEvent>[] sounds = new RegistryObject[]{
-                Scp012Sounds.BLEED_1,
-                Scp012Sounds.BLEED_2,
-                Scp012Sounds.BLEED_3
+                ScpAdditionsModSounds.SCP012_BLEED_1,
+                ScpAdditionsModSounds.SCP012_BLEED_2,
+                ScpAdditionsModSounds.SCP012_BLEED_3
         };
         RegistryObject<SoundEvent> selected = sounds[
                 player.getRandom().nextInt(sounds.length)];

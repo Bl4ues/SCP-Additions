@@ -32,7 +32,6 @@ import net.mcreator.scpadditions.facility.LeftDoorButtons;
 import net.mcreator.scpadditions.facility.MirroredDoorButtons;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import net.mcreator.scpadditions.scp012.Scp012Module;
-import net.mcreator.scpadditions.scp012.Scp012Sounds;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.Scp131Items;
@@ -66,7 +65,6 @@ public class ScpAdditionsMod {
         MinecraftForge.EVENT_BUS.register(this);
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         ScpAdditionsModSounds.REGISTRY.register(bus);
-        Scp012Sounds.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
         ScpAdditionsModBlocks.REGISTRY.register(bus);

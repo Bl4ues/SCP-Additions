@@ -6,7 +6,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.scp012.Scp012Sounds;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 /** Controls local trance and fifteen-second damage audio independently. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
@@ -30,9 +30,10 @@ public final class Scp012AudioClient {
         boolean damageActive = playerReady
                 && Scp012ClientState.isDamageActive();
 
-        if (tranceActive && !tranceWasActive) {
+        if (tranceActive && (!tranceWasActive || trance == null)) {
             trance = restart(minecraft, trance,
-                    new Scp012FadingSound(Scp012Sounds.TRANCE.get(),
+                    new Scp012FadingSound(
+                            ScpAdditionsModSounds.SCP012_TRANCE.get(),
                             true, 0.85F, 30, 35));
         } else if (!tranceActive && tranceWasActive && trance != null) {
             trance.beginFadeOut();
@@ -40,7 +41,8 @@ public final class Scp012AudioClient {
 
         if (damageActive && !damageWasActive) {
             damage = restart(minecraft, damage,
-                    new Scp012FadingSound(Scp012Sounds.DAMAGE.get(),
+                    new Scp012FadingSound(
+                            ScpAdditionsModSounds.SCP012_DAMAGE.get(),
                             false, 1.0F, 25, 35));
         } else if (!damageActive && damageWasActive && damage != null) {
             damage.beginFadeOut();

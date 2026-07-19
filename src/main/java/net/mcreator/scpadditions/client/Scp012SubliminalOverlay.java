@@ -51,17 +51,44 @@ public final class Scp012SubliminalOverlay {
         }
 
         renderAuthoredFlash(minecraft, graphics, width, height, progress, time);
+        renderSmoothVignette(graphics, width, height, progress);
+    }
 
-        int edgeAlpha = Mth.clamp(Math.round(progress * 115.0F), 0, 115);
-        int edge = Math.max(8, Math.round(Math.min(width, height)
-                * (0.025F + progress * 0.035F)));
-        graphics.fill(0, 0, width, edge, edgeAlpha << 24 | 0x00180005);
-        graphics.fill(0, height - edge, width, height,
-                edgeAlpha << 24 | 0x00180005);
-        graphics.fill(0, edge, edge, height - edge,
-                edgeAlpha << 24 | 0x00180005);
-        graphics.fill(width - edge, edge, width, height - edge,
-                edgeAlpha << 24 | 0x00180005);
+    private static void renderSmoothVignette(GuiGraphics graphics,
+                                              int width, int height,
+                                              float progress) {
+        SmoothRadialVignetteRenderer.render(graphics, width, height,
+                (x, y) -> vignetteColorAt(x, y, width, height, progress));
+    }
+
+    private static SmoothRadialVignetteRenderer.VertexColor vignetteColorAt(
+            float x, float y, int width, int height, float progress) {
+        float normalizedX = (x - width * 0.5F) / (width * 0.5F);
+        float normalizedY = (y - height * 0.5F) / (height * 0.5F);
+        float radius = Mth.sqrt(normalizedX * normalizedX
+                + normalizedY * normalizedY);
+
+        float easedProgress = SmoothRadialVignetteRenderer.smoothStep(
+                0.0F, 1.0F, progress);
+        float aperture = Mth.lerp(easedProgress, 1.18F, 0.30F);
+        float feather = Mth.lerp(easedProgress, 0.28F, 0.50F);
+        float edge = SmoothRadialVignetteRenderer.smoothStep(
+                aperture - feather, aperture + feather, radius);
+
+        float onset = (float) Math.pow(progress, 0.68D);
+        float edgeOpacity = edge * onset
+                * Mth.lerp(progress, 0.08F, 0.78F);
+        float centerOpacity = (float) Math.pow(progress, 3.25D) * 0.28F;
+        float alpha = Mth.clamp(Math.max(edgeOpacity, centerOpacity),
+                0.0F, 0.86F);
+
+        float redTint = (1.0F - progress)
+                * (0.18F + edge * 0.82F);
+        int red = Mth.clamp(Math.round(22.0F * redTint), 0, 22);
+        int green = Mth.clamp(Math.round(3.0F * redTint), 0, 3);
+        int blue = Mth.clamp(Math.round(5.0F * redTint), 0, 5);
+        return new SmoothRadialVignetteRenderer.VertexColor(red, green, blue,
+                Mth.clamp(Math.round(alpha * 255.0F), 0, 219));
     }
 
     private static void renderAuthoredFlash(Minecraft minecraft,

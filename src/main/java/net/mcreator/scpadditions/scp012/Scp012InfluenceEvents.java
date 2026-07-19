@@ -2,10 +2,12 @@ package net.mcreator.scpadditions.scp012;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
@@ -29,6 +31,7 @@ import java.util.UUID;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp012InfluenceEvents {
     public static final int INFLUENCE_RADIUS = 10;
+    private static final int TARGET_SEARCH_INTERVAL_TICKS = 10;
     private static final double AUTOMATIC_OPEN_RADIUS = 3.0D;
     private static final double DAMAGE_RADIUS = 1.25D;
     private static final int FATAL_CONTACT_TICKS = 15 * 20;
@@ -36,6 +39,9 @@ public final class Scp012InfluenceEvents {
 
     private static final Map<UUID, ContactState> CONTACT_STATES = new HashMap<>();
     private static final Map<UUID, BlockPos> ACTIVE_TARGETS = new HashMap<>();
+    private static final Map<UUID, DiscoveredTarget> DISCOVERED_TARGETS =
+            new HashMap<>();
+    private static final Map<UUID, Long> NEXT_TARGET_SEARCH = new HashMap<>();
 
     private Scp012InfluenceEvents() {
     }
@@ -47,15 +53,14 @@ public final class Scp012InfluenceEvents {
             return;
         }
         if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
-            clear(player);
+            clearAll(player);
             return;
         }
 
         ServerLevel level = player.serverLevel();
-        BlockPos nearby = Scp012Module.findNearest(level, player.position(),
-                INFLUENCE_RADIUS, false);
+        BlockPos nearby = findNearby(level, player);
         if (nearby == null) {
-            clear(player);
+            clearInfluence(player);
             return;
         }
 
@@ -80,11 +85,11 @@ public final class Scp012InfluenceEvents {
         // SCP-714 cancels only SCP-012's anomalous influence. It deliberately
         // does not close the box, undo SCP-079's door actions, or cure bleeding.
         if (Scp714ProtectionAccess.isProtected(player)) {
-            clear(player);
+            clearInfluence(player);
             return;
         }
         if (!Scp012Module.isOpen(level.getBlockState(nearby))) {
-            clear(player);
+            clearInfluence(player);
             return;
         }
 
@@ -103,6 +108,34 @@ public final class Scp012InfluenceEvents {
             contactProgress = 0.0F;
         }
         sync(player, nearby, contactProgress, damageActive);
+    }
+
+    private static BlockPos findNearby(ServerLevel level, ServerPlayer player) {
+        UUID id = player.getUUID();
+        DiscoveredTarget cached = DISCOVERED_TARGETS.get(id);
+        if (cached != null && cached.dimension().equals(level.dimension())) {
+            BlockPos pos = cached.pos();
+            if (Scp012Module.isScp012(level.getBlockState(pos))
+                    && Vec3.atCenterOf(pos).distanceToSqr(player.position())
+                    <= INFLUENCE_RADIUS * INFLUENCE_RADIUS) {
+                return pos;
+            }
+        }
+        DISCOVERED_TARGETS.remove(id);
+
+        long gameTime = level.getGameTime();
+        if (NEXT_TARGET_SEARCH.getOrDefault(id, 0L) > gameTime) {
+            return null;
+        }
+        NEXT_TARGET_SEARCH.put(id, gameTime + TARGET_SEARCH_INTERVAL_TICKS);
+
+        BlockPos found = Scp012Module.findNearest(level, player.position(),
+                INFLUENCE_RADIUS, false);
+        if (found != null) {
+            DISCOVERED_TARGETS.put(id,
+                    new DiscoveredTarget(level.dimension(), found.immutable()));
+        }
+        return found;
     }
 
     private static float influenceStrength(double distance) {
@@ -192,7 +225,7 @@ public final class Scp012InfluenceEvents {
         }
     }
 
-    private static void clear(ServerPlayer player) {
+    private static void clearInfluence(ServerPlayer player) {
         UUID id = player.getUUID();
         boolean wasActive = ACTIVE_TARGETS.remove(id) != null;
         CONTACT_STATES.remove(id);
@@ -203,14 +236,24 @@ public final class Scp012InfluenceEvents {
         }
     }
 
+    private static void clearAll(ServerPlayer player) {
+        UUID id = player.getUUID();
+        clearInfluence(player);
+        DISCOVERED_TARGETS.remove(id);
+        NEXT_TARGET_SEARCH.remove(id);
+    }
+
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) clear(player);
+        if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
     }
 
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) clear(player);
+        if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
+    }
+
+    private record DiscoveredTarget(ResourceKey<Level> dimension, BlockPos pos) {
     }
 
     private static final class ContactState {

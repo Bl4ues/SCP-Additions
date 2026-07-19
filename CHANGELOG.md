@@ -46,16 +46,20 @@
 - Progressively muffled diegetic sounds from a light initial filter to complete silence while leaving non-diegetic music and interface audio unaffected;
 - Made removing the ring immediately clear its slowdown, vignette, exposure timer, pending coma, and active soundtrack.
 
-## SCP-012 foundation
+## SCP-012
 
-- Added SCP-012 as a public containment-box block with closed, three-stage opening, open, and reverse closing states prepared for authored Blockbench models;
+- Added the authored SCP-012 containment model using separate 512×512 enclosure and 256×256 warning-sign textures, plus a dedicated flat item icon;
+- Expanded the box to closed, four-stage opening, open, and reverse four-stage closing states, with the complete opening or closing sequence lasting three seconds;
 - Added `/scp012 open`, `/scp012 close`, `/scp012 toggle`, and `/scp012 status`, with optional coordinates and nearest-box lookup;
+- Added synchronized opening and closing sounds, a smoothly fading looping trance track during influence, and a fifteen-second damage track that fades out when the player escapes;
 - Made SCP-079 System Control automatically open a closed SCP-012 when an unprotected Survival player enters its ten-block influence range;
-- Added slow server-authoritative attraction toward an open SCP-012, smooth camera lock, and short-range A* obstacle avoidance instead of pulling the player through solid blocks;
-- Added a contact sequence with first-person action-bar narration, a progressive code-generated subliminal overlay, periodic damage, and the death message that the player could not complete SCP-012;
+- Added proximity-scaled server-authoritative attraction, short-range A* obstacle avoidance, and camera influence that becomes harder—but remains possible—to resist near SCP-012;
+- Added progressive code-generated psychosis effects with optional randomized `012_overlay_1.png` through `012_overlay_5.png` flashes when those assets are present;
+- Made SCP-012 damage occur irregularly in its immediate damage zone, show the wrist-cutting action-bar narration after cumulative SCP-012 damage reaches 25% of maximum health, and deal fatal damage after fifteen uninterrupted seconds in the damage sequence;
+- Added persistent Bleeding after one exposure removes at least 40% of maximum health, including a red health HUD, slow lethal blood loss, and randomized bleeding sounds with subtle pitch variation at each further 20% of maximum health lost;
+- Registered `on_mount_golgotha.ogg` for a future SCP-012 monitor without using it in the current sequence;
 - Integrated nearby controlled Default, Yellow, and Black heavy doors: while SCP-079 has System Control, a door within fifteen blocks of SCP-012 opens when the influenced player comes within five blocks, provided it has a functional control interface;
-- Made `SCP_714_PROTECTION` completely prevent automatic opening, attraction, camera lock, door assistance, overlays, contact narration, damage, and death from SCP-012;
-- Added temporary stable block models and documented the five authored model stages, texture path, shared pivots, and reverse closing reuse required for the final asset export.
+- Made `SCP_714_PROTECTION` completely prevent or clear SCP-012 automatic opening triggers, attraction, camera influence, door assistance, overlays, trance and damage audio, contact narration, damage, fatal completion, and Bleeding.
 
 ## Facility blocks
 

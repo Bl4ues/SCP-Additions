@@ -19,11 +19,14 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import java.util.List;
 
 /** Registry and state transitions for SCP-012's animated containment box. */
 public final class Scp012Module {
+    private static final int CLOSING_SOUND_DELAY_TICKS = 20;
+
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
@@ -93,8 +96,8 @@ public final class Scp012Module {
         BlockState current = level.getBlockState(pos);
         if (stageOf(current) != Scp012Stage.CLOSED) return false;
         replace(level, pos, current, OPENING_1.get());
-        level.playSound(null, pos, Scp012Sounds.OPEN.get(), SoundSource.BLOCKS,
-                1.0F, 1.0F);
+        level.playSound(null, pos, ScpAdditionsModSounds.SCP012_OPEN.get(),
+                SoundSource.BLOCKS, 1.0F, 1.0F);
         return true;
     }
 
@@ -102,8 +105,19 @@ public final class Scp012Module {
         BlockState current = level.getBlockState(pos);
         if (stageOf(current) != Scp012Stage.OPEN) return false;
         replace(level, pos, current, CLOSING_4.get());
-        level.playSound(null, pos, Scp012Sounds.CLOSE.get(), SoundSource.BLOCKS,
-                1.0F, 1.0F);
+
+        // The authored closing cue begins one second into the three-second
+        // animation. Do not play it if the box was removed or changed meanwhile.
+        BlockPos immutablePos = pos.immutable();
+        ScpAdditionsMod.queueServerWork(CLOSING_SOUND_DELAY_TICKS, () -> {
+            if (!level.isLoaded(immutablePos)) return;
+            Scp012Stage stage = stageOf(level.getBlockState(immutablePos));
+            if (isClosing(stage)) {
+                level.playSound(null, immutablePos,
+                        ScpAdditionsModSounds.SCP012_CLOSE.get(),
+                        SoundSource.BLOCKS, 1.0F, 1.0F);
+            }
+        });
         return true;
     }
 
@@ -129,6 +143,13 @@ public final class Scp012Module {
             default -> null;
         };
         if (next != null) replace(level, pos, state, next);
+    }
+
+    private static boolean isClosing(Scp012Stage stage) {
+        return stage == Scp012Stage.CLOSING_4
+                || stage == Scp012Stage.CLOSING_3
+                || stage == Scp012Stage.CLOSING_2
+                || stage == Scp012Stage.CLOSING_1;
     }
 
     private static void replace(ServerLevel level, BlockPos pos,

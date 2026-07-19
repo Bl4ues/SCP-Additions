@@ -70,8 +70,8 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     private static final int IDLE_A_ROAM_INTERVAL_TICKS = 34;
     private static final double GROUP_TOGGLE_RANGE = 24.0D;
     private static final double GROUP_TOGGLE_RANGE_SQR = GROUP_TOGGLE_RANGE * GROUP_TOGGLE_RANGE;
-    private static final int AMBIENT_NOISE_MIN_TICKS = 360;
-    private static final int AMBIENT_NOISE_RANDOM_TICKS = 620;
+    private static final int AMBIENT_NOISE_MIN_TICKS = 260;
+    private static final int AMBIENT_NOISE_RANDOM_TICKS = 420;
     private static final double RANDOM_ROAM_SPEED = 0.36D;
     private static final double IDLE_A_FOLLOW_SPEED = 0.46D;
     private static final double FOLLOW_CLOSE_SPEED = 0.30D;

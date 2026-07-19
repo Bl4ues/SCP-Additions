@@ -41,7 +41,9 @@ public final class EyeSoreEffectEvents {
         int amplifier = instance.getAmplifier();
         boolean ambient = instance.isAmbient();
         entity.removeEffect(ScpAdditionsModMobEffects.EYE_SORE.get());
+        // Suppress particles while retaining the icon for inventory screens.
+        // EyeSoreEffect itself hides the vanilla HUD icon only.
         entity.addEffect(new MobEffectInstance(ScpAdditionsModMobEffects.EYE_SORE.get(),
-                duration, amplifier, ambient, false, false));
+                duration, amplifier, ambient, false, true));
     }
 }

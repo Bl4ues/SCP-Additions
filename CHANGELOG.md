@@ -48,19 +48,14 @@
 
 ## SCP-012
 
-- Added an authored SCP-012 containment model with closed, four-stage opening, open, and reversed closing states;
-- Corrected the authored model texture bindings and lifted the lower sheet plane slightly to prevent Z-fighting against the bottom of the containment box;
+- Added an SCP-012 containment model;
 - Added `/scp012 open`, `/scp012 close`, `/scp012 toggle`, and `/scp012 status`, with optional coordinates and nearest-box lookup;
-- Added synchronized opening audio, a closing cue that plays one second before the closing animation begins, a smoothly fading looping trance track during influence, and a fifteen-second damage track that fades out when the player escapes;
 - Made SCP-079 System Control spring the trap as soon as a Survival player enters SCP-012's ten-block influence range, commanding a functional controlled Default, Yellow, or Black heavy door in the route before beginning the box-opening animation in the same tick;
-- Kept SCP-079's door and SCP-012 opening actions hostile even while the player is protected by SCP-714;
 - Added proximity-scaled attraction, short-range A* obstacle avoidance, and camera influence that becomes harder to resist near SCP-012;
-- Expanded progressive psychosis across the complete influence range instead of limiting it to the immediate damage zone, with a smooth radial vignette, code-generated visual interference, and five randomized authored full-screen subliminal overlays that intensify with proximity and contact;
+- Progressive psychosis across the complete influence range, with a smooth radial vignette, visual interference, and subliminal overlays that intensify with proximity and contact;
 - Made SCP-012 damage occur irregularly in its immediate damage zone, show the wrist-cutting action-bar narration after cumulative SCP-012 damage reaches 25% of maximum health, and deal fatal damage after fifteen uninterrupted seconds in the damage sequence;
 - Added persistent Bleeding after one exposure removes at least 40% of maximum health, including a red health HUD, slow lethal blood loss, and randomized bleeding sounds with subtle pitch variation at each further 20% of maximum health lost;
-- Made established SCP-012 Bleeding remain after SCP-714 is equipped and clear only when the player receives actual healing;
-- Made `SCP_714_PROTECTION` prevent or clear SCP-012 attraction, forced camera movement, trance audio, psychosis, and contact progression without closing the containment box, undoing SCP-079 actions, or curing an existing physical wound;
-- Cached nearest-target discovery so SCP-012 no longer scans the full influence cube around every Survival player on every tick.
+- Made `SCP_714_PROTECTION` prevent or clear SCP-012 attraction, forced camera movement, trance audio, psychosis, and contact progression.
 
 ## Facility blocks
 

@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.scp012;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.BlockItem;
@@ -21,11 +22,14 @@ import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** Registry and state transitions for SCP-012's animated containment box. */
 public final class Scp012Module {
-    private static final int CLOSING_SOUND_DELAY_TICKS = 20;
+    private static final int CLOSING_LEAD_IN_TICKS = 20;
+    private static final Set<PendingClose> PENDING_CLOSES = new HashSet<>();
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
@@ -104,18 +108,23 @@ public final class Scp012Module {
     public static boolean close(ServerLevel level, BlockPos pos) {
         BlockState current = level.getBlockState(pos);
         if (stageOf(current) != Scp012Stage.OPEN) return false;
-        replace(level, pos, current, CLOSING_4.get());
 
-        // The authored closing cue begins one second into the three-second
-        // animation. Do not play it if the box was removed or changed meanwhile.
         BlockPos immutablePos = pos.immutable();
-        ScpAdditionsMod.queueServerWork(CLOSING_SOUND_DELAY_TICKS, () -> {
+        PendingClose pending = new PendingClose(level.dimension(), immutablePos);
+        if (!PENDING_CLOSES.add(pending)) return false;
+
+        // The authored cue is a one-second lead-in. Play it immediately, keep the
+        // box visibly open for twenty ticks, and only then begin the three-second
+        // closing animation. The pending key prevents duplicate sounds/tasks.
+        level.playSound(null, immutablePos, ScpAdditionsModSounds.SCP012_CLOSE.get(),
+                SoundSource.BLOCKS, 1.0F, 1.0F);
+        ScpAdditionsMod.queueServerWork(CLOSING_LEAD_IN_TICKS, () -> {
+            PENDING_CLOSES.remove(pending);
             if (!level.isLoaded(immutablePos)) return;
-            Scp012Stage stage = stageOf(level.getBlockState(immutablePos));
-            if (isClosing(stage)) {
-                level.playSound(null, immutablePos,
-                        ScpAdditionsModSounds.SCP012_CLOSE.get(),
-                        SoundSource.BLOCKS, 1.0F, 1.0F);
+
+            BlockState delayedState = level.getBlockState(immutablePos);
+            if (stageOf(delayedState) == Scp012Stage.OPEN) {
+                replace(level, immutablePos, delayedState, CLOSING_4.get());
             }
         });
         return true;
@@ -143,13 +152,6 @@ public final class Scp012Module {
             default -> null;
         };
         if (next != null) replace(level, pos, state, next);
-    }
-
-    private static boolean isClosing(Scp012Stage stage) {
-        return stage == Scp012Stage.CLOSING_4
-                || stage == Scp012Stage.CLOSING_3
-                || stage == Scp012Stage.CLOSING_2
-                || stage == Scp012Stage.CLOSING_1;
     }
 
     private static void replace(ServerLevel level, BlockPos pos,
@@ -189,5 +191,8 @@ public final class Scp012Module {
             }
         }
         return best;
+    }
+
+    private record PendingClose(ResourceKey<Level> dimension, BlockPos pos) {
     }
 }

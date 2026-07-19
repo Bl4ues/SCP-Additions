@@ -10,11 +10,14 @@ import net.minecraft.util.RandomSource;
 
 /** Relative SCP-012 sound with smooth authored fade-in and fade-out control. */
 public final class Scp012FadingSound extends AbstractTickableSoundInstance {
+    private static final float MINIMUM_START_VOLUME = 0.01F;
+
     private final float targetVolume;
     private final int fadeInTicks;
     private final int fadeOutTicks;
     private int age;
     private int fadeTicksRemaining = -1;
+    private float fadeStartVolume;
 
     public Scp012FadingSound(SoundEvent event, boolean looping,
                              float targetVolume, int fadeInTicks,
@@ -22,13 +25,23 @@ public final class Scp012FadingSound extends AbstractTickableSoundInstance {
         super(event, SoundSource.AMBIENT, RandomSource.create());
         this.looping = looping;
         this.delay = 0;
-        this.targetVolume = targetVolume;
+        this.targetVolume = Math.max(0.0F, targetVolume);
         this.fadeInTicks = Math.max(0, fadeInTicks);
         this.fadeOutTicks = Math.max(1, fadeOutTicks);
-        this.volume = this.fadeInTicks == 0 ? targetVolume : 0.0F;
         this.pitch = 1.0F;
         this.relative = true;
         this.attenuation = SoundInstance.Attenuation.NONE;
+
+        // SoundEngine may discard an instance that begins at exactly zero.
+        // Start inaudibly low instead, then continue the authored fade normally.
+        if (this.fadeInTicks == 0) {
+            this.volume = this.targetVolume;
+        } else {
+            this.age = 1;
+            this.volume = Math.min(this.targetVolume,
+                    Math.max(MINIMUM_START_VOLUME,
+                            this.targetVolume / this.fadeInTicks));
+        }
     }
 
     @Override
@@ -45,8 +58,9 @@ public final class Scp012FadingSound extends AbstractTickableSoundInstance {
                 stop();
                 return;
             }
-            volume = targetVolume * Mth.clamp(
-                    fadeTicksRemaining / (float) fadeOutTicks, 0.0F, 1.0F);
+            volume = fadeStartVolume * Mth.clamp(
+                    fadeTicksRemaining / (float) fadeOutTicks,
+                    0.0F, 1.0F);
             fadeTicksRemaining--;
             return;
         }
@@ -62,6 +76,7 @@ public final class Scp012FadingSound extends AbstractTickableSoundInstance {
 
     public void beginFadeOut() {
         if (fadeTicksRemaining < 0) {
+            fadeStartVolume = volume;
             fadeTicksRemaining = fadeOutTicks;
         }
     }

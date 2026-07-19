@@ -195,8 +195,7 @@
   ],
   "hidden_status_effects": [
     "minecraft:bad_omen",
-    "scpo:pestilence",
-    "scp_additions:eye_sore"
+    "scpo:pestilence"
   ],
   "codex_documents": [],
   "_comment": "SCP Inventory configuration. Explicit rules override automatic survival-compatible classification.",

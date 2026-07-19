@@ -19,7 +19,10 @@ public final class EyeProtectionAccess {
 
     public static boolean applyExternalEyeSore(Player player, int durationTicks) {
         if (player == null || durationTicks <= 0 || blocksExternalEyeSore(player)) return false;
+        // Keep particles disabled, but preserve the icon flag so the effect can
+        // appear in inventory interfaces. EyeSoreEffect hides only the HUD icon.
         return player.addEffect(new MobEffectInstance(
-                ScpAdditionsModMobEffects.EYE_SORE.get(), durationTicks, 0, false, false, false));
+                ScpAdditionsModMobEffects.EYE_SORE.get(), durationTicks, 0,
+                false, false, true));
     }
 }

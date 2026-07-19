@@ -2,6 +2,11 @@
 
 # SCP Additions 3.0.6 — In Development
 
+## Audio licensing
+
+- Temporarily disabled `enter.ogg` from playing when a player enters a world while permission to reuse music from SCP: Unity is being sought from the original composer;
+- SCP: Unity music will only be reintroduced after explicit permission is obtained. If permission is not granted, the remaining SCP: Unity music will be removed and replaced with original music in future updates.
+
 ## SCP Inventory overflow
 
 - Changed Survival inventory routing so stacks that belong in the SCP Inventory are dropped into the world instead of remaining as an unintended vanilla-inventory fallback when the SCP Inventory cannot accept them;

@@ -27,8 +27,11 @@ public final class Scp012ClientEvents {
             return;
         }
 
-        Scp012ClientState.tick();
-        if (!Scp012ClientState.isActive()) return;
+        if (!Scp012ClientState.isActive()) {
+            Scp012ClientState.setInfluenceProximity(0.0F);
+            Scp012ClientState.tick();
+            return;
+        }
 
         Player player = minecraft.player;
         Vec3 target = Vec3.atCenterOf(Scp012ClientState.target());
@@ -37,6 +40,12 @@ public final class Scp012ClientEvents {
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
         float proximity = Mth.clamp(1.0F - (float) (distance
                 / Scp012InfluenceEvents.INFLUENCE_RADIUS), 0.0F, 1.0F);
+
+        // Feed the whole influence range into the psychosis renderer. Contact
+        // progress still takes over near the composition and during damage.
+        Scp012ClientState.setInfluenceProximity(proximity);
+        Scp012ClientState.tick();
+
         float curved = (float) Math.pow(proximity, 1.45D);
         float cameraStrength = Mth.lerp(curved, 0.025F, 0.255F);
         if (Scp012ClientState.isDamageActive()) {

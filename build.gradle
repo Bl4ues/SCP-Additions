@@ -183,7 +183,12 @@ processResources {
                         "models/block/${buttonName}.json")
                 if (sourceBlockModel.exists()) {
                     def blockModel = parser.parse(sourceBlockModel)
-                    blockModel.parent = "scp_unity_extra_blocks:custom/${buttonName}_mirrored"
+                    String sourceParent = blockModel.parent?.toString()
+                    if (sourceParent?.startsWith('scp_unity_extra_blocks:custom/')) {
+                        blockModel.parent = "${sourceParent}_mirrored"
+                    } else {
+                        blockModel.parent = "scp_unity_extra_blocks:custom/${buttonName}_mirrored"
+                    }
                     writeJson(new File(legacyAssets,
                             "models/block/${buttonName}_mirrored.json"), blockModel)
                 }

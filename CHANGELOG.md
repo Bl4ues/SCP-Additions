@@ -1,6 +1,6 @@
 # Changelog
 
-# SCP Additions 3.0.6 — In Development
+# SCP Additions 3.0.6 — Hazards & Survival Update
 
 ## Audio licensing
 

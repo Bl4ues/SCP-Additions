@@ -26,7 +26,7 @@ Optional client integrations:
 
 ## Main features
 
-- Functional SCPs including SCP-173, SCP-131, SCP-294, SCP-914, SCP-330, SCP-426, SCP-572, SCP-902, and SCP-1176.
+- Functional SCPs including SCP-012, SCP-079, SCP-131, SCP-173, SCP-294, SCP-914, and more.
 - SCP Unity-inspired inventory, Status, Codex, health, stamina, movement, blink, and interaction systems.
 - Animated facility doors, keycard readers, Tesla Gates, decontamination machinery, terminals, lights, props, and modular building blocks.
 - Server-authoritative configuration center for modules, inventory rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes.

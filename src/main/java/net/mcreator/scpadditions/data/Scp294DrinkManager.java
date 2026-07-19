@@ -32,11 +32,75 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public final class Scp294DrinkManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("294drinks.json");
 	private static final String BUNDLED_CONFIG = "config/scpadditions/294drinks.json";
+	private static final ResourceLocation GENERIC_CUP = new ResourceLocation("scp_additions", "cup_of_coffee");
+	private static final Set<String> LEGACY_DRINK_ITEM_PATHS = Set.of(
+			"aloe",
+			"amnesia",
+			"anti_energy",
+			"apple_cider",
+			"aqua_regia",
+			"beer",
+			"bleach",
+			"blood",
+			"blood_of_christ",
+			"cactus",
+			"carbon",
+			"carrot",
+			"cassis_fanta",
+			"champagne",
+			"champion",
+			"chim",
+			"chocolate",
+			"cider",
+			"cocaine",
+			"coconut",
+			"cola",
+			"cold",
+			"corrosive_acid",
+			"corrosive_black",
+			"cosmopolitan",
+			"courage",
+			"cup_of_alcohol",
+			"curry",
+			"death",
+			"eggs",
+			"energy_drink",
+			"espresso",
+			"estus",
+			"ethanol",
+			"fear",
+			"feces",
+			"feces_and_blood",
+			"frozen_yogurt",
+			"gin",
+			"glass",
+			"gold_c",
+			"grimace_shake",
+			"grog",
+			"happiness",
+			"heroin",
+			"honey",
+			"hot",
+			"ice_cream",
+			"ink",
+			"insulin",
+			"ipecac",
+			"iron_c",
+			"lager",
+			"morphine",
+			"neutronium",
+			"pear_cider",
+			"quantum",
+			"spirit",
+			"tea",
+			"vodka",
+			"yogurt");
 	private static final String DEFAULT_CONFIG = """
 			{
 			  "version": 2,
@@ -175,7 +239,8 @@ public final class Scp294DrinkManager {
 		ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(json, "id"));
 		List<String> aliases = readAliases(id, json);
 		JsonObject result = json.has("result") ? GsonHelper.getAsJsonObject(json, "result") : new JsonObject();
-		ResourceLocation resultItem = new ResourceLocation(GsonHelper.getAsString(result, "item", "scp_additions:cup_of_coffee"));
+		ResourceLocation resultItem = normalizeLegacyDrinkItem(new ResourceLocation(
+				GsonHelper.getAsString(result, "item", GENERIC_CUP.toString())));
 		int resultCount = Math.max(1, GsonHelper.getAsInt(result, "count", 1));
 		int delayTicks = Math.max(0, GsonHelper.getAsInt(json, "delay_ticks", 40));
 		ResourceLocation sound = new ResourceLocation(GsonHelper.getAsString(json, "sound", "scp_additions:scp294pouring"));
@@ -194,6 +259,14 @@ public final class Scp294DrinkManager {
 		List<ConfiguredAction> dispenseActions = readActions(json, "dispense_actions");
 
 		return new DrinkDefinition(id, aliases, resultItem, resultCount, delayTicks, sound, consumesCoin, giveResult, drinkable, refuseMessage, actionbar, cupColor, placeholderCupTexture, effects, drinkActions, dispenseActions);
+	}
+
+	private static ResourceLocation normalizeLegacyDrinkItem(ResourceLocation requested) {
+		if (ScpAdditionsMod.MODID.equals(requested.getNamespace())
+				&& LEGACY_DRINK_ITEM_PATHS.contains(requested.getPath())) {
+			return GENERIC_CUP;
+		}
+		return requested;
 	}
 
 	private static List<String> readAliases(ResourceLocation id, JsonObject json) {

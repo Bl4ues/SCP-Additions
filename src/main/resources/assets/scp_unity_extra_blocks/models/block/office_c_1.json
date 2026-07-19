@@ -1,5 +1,5 @@
 {
-  "parent": "scp_unity_extra_blocks:custom/office_c_1",
+  "parent": "scp_unity_extra_blocks:custom/office_4",
   "textures": {
     "all": "scp_unity_extra_blocks:block/officedoortext",
     "particle": "scp_unity_extra_blocks:block/officedoortext",

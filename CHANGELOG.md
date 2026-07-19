@@ -2,6 +2,17 @@
 
 # SCP Additions 3.0.6 — Hazards & Survival Update
 
+## Internal cleanup
+
+- Consolidates the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects and actions while removing obsolete `/give` entries.
+- Adds old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs.
+- Removes legacy drink classes, procedures, item models and obsolete SCP-914/crafting recipes that depended on them.
+- Stops packaging duplicate registry-facing resources from the integrated legacy namespaces after their `scp_additions` copies are generated.
+- Reuses the shared SCP-294 geometry for stocking and out-of-range states.
+- Removes the unregistered SCP-059/Geiger resource set and three unreachable legacy SCP-294 overlay systems.
+- Removes plain Java helpers and procedures with no runtime, event-bus or textual caller.
+- Consolidates byte-identical custom model geometry and referenced block/item texture copies without removing registry-facing model paths.
+
 ## Audio licensing
 
 - Temporarily disabled `enter.ogg` from playing when a player enters a world while permission to reuse music from SCP: Unity is being sought from the original composer;

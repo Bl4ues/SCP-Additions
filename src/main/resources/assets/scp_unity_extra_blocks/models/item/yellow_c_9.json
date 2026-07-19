@@ -1,7 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_unity_extra_blocks:item/yellow_texture"
+    "layer0": "scp_unity_extra_blocks:block/yellow_texture"
   },
   "render_type": "translucent"
 }

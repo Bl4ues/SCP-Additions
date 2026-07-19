@@ -128,6 +128,12 @@ processResources {
                 into new File(additionsAssets, 'models/item')
             }
 
+            // Registry-facing copies now live under scp_additions. Remove the
+            // duplicate legacy copies from processed resources while retaining
+            // the legacy custom/block models, textures and sounds they reference.
+            project.delete(new File(legacyAssets, 'blockstates'))
+            project.delete(new File(legacyAssets, 'models/item'))
+
             // The original Unity button has geometry only for one lateral
             // offset. Generate reflected geometry for the opposite half while
             // keeping the texture UVs readable rather than mirroring the text.
@@ -206,6 +212,8 @@ processResources {
                 from new File(ublocksAssets, 'models/item')
                 into new File(additionsAssets, 'models/item')
             }
+            project.delete(new File(ublocksAssets, 'blockstates'))
+            project.delete(new File(ublocksAssets, 'models/item'))
         }
 
         // Copy loot tables, recipes and other namespace-owned data into the new
@@ -218,6 +226,7 @@ processResources {
                 from legacyData
                 into additionsData
             }
+            project.delete(legacyData)
         }
         def allData = file("$buildDir/resources/main/data")
         if (allData.exists()) {

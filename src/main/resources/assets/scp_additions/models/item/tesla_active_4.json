@@ -1,7 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_additions:item/tesla"
+    "layer0": "scp_additions:block/tesla"
   },
   "render_type": "translucent"
 }

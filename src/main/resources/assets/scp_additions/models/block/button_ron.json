@@ -1,5 +1,5 @@
 {
-  "parent": "scp_additions:custom/buttonron",
+  "parent": "scp_additions:custom/buttonroff",
   "textures": {
     "all": "scp_additions:block/button",
     "particle": "scp_additions:block/button",

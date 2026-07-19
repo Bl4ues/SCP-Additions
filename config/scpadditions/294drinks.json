@@ -27,9 +27,7 @@
             "give_result": true,
             "drinkable": false,
             "cup_color": "#FFFFFF",
-            "effects": [
-                
-            ],
+            "effects": [],
             "refuse_message": "There is nothing to drink in the cup."
         },
         {
@@ -84,9 +82,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#BFC7C9",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Well, that was refreshing."
         },
         {
@@ -138,9 +134,7 @@
             "give_result": false,
             "drinkable": true,
             "cup_color": "#050505",
-            "effects": [
-                
-            ],
+            "effects": [],
             "dispense_actions": [
                 {
                     "type": "visual_explosion",
@@ -192,9 +186,7 @@
             "give_result": false,
             "drinkable": true,
             "cup_color": "#B6FF66",
-            "effects": [
-                
-            ],
+            "effects": [],
             "dispense_actions": [
                 {
                     "type": "visual_explosion",
@@ -238,9 +230,7 @@
             "give_result": false,
             "drinkable": true,
             "cup_color": "#FFFFFF",
-            "effects": [
-                
-            ],
+            "effects": [],
             "dispense_actions": [
                 {
                     "type": "visual_explosion",
@@ -282,9 +272,7 @@
             "give_result": false,
             "drinkable": true,
             "cup_color": "#FFFFFF",
-            "effects": [
-                
-            ],
+            "effects": [],
             "dispense_actions": [
                 {
                     "type": "visual_explosion",
@@ -324,9 +312,7 @@
             "give_result": false,
             "drinkable": true,
             "cup_color": "#FFFFFF",
-            "effects": [
-                
-            ],
+            "effects": [],
             "dispense_actions": [
                 {
                     "type": "visual_explosion",
@@ -367,9 +353,7 @@
             "give_result": false,
             "drinkable": true,
             "cup_color": "#FFFFFF",
-            "effects": [
-                
-            ],
+            "effects": [],
             "dispense_actions": [
                 {
                     "type": "visual_explosion",
@@ -403,7 +387,7 @@
                 "old man"
             ],
             "result": {
-                "item": "scp_additions:corrosive_black",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -444,7 +428,7 @@
                 "bleach"
             ],
             "result": {
-                "item": "scp_additions:bleach",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -488,9 +472,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#050505",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "A deeply cursed sensation strikes from behind.",
             "drink_actions": [
                 {
@@ -509,7 +491,7 @@
                 "liquid death"
             ],
             "result": {
-                "item": "scp_additions:death",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -518,9 +500,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#000000",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Death tastes exactly as expected.",
             "drink_actions": [
                 {
@@ -539,7 +519,7 @@
                 "neutron"
             ],
             "result": {
-                "item": "scp_additions:neutronium",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -548,9 +528,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#C0C0C0",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "The cup is impossibly heavy.",
             "drink_actions": [
                 {
@@ -567,7 +545,7 @@
                 "carbon"
             ],
             "result": {
-                "item": "scp_additions:carbon",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -576,9 +554,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#111111",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Cannot process pure carbon slurry.",
             "drink_actions": [
                 {
@@ -597,7 +573,7 @@
                 "liquor"
             ],
             "result": {
-                "item": "scp_additions:cup_of_alcohol",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -626,7 +602,7 @@
                 "pure alcohol"
             ],
             "result": {
-                "item": "scp_additions:ethanol",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -661,7 +637,7 @@
                 "spirits"
             ],
             "result": {
-                "item": "scp_additions:spirit",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -688,7 +664,7 @@
                 "vodka"
             ],
             "result": {
-                "item": "scp_additions:vodka",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -716,7 +692,7 @@
                 "aloe vera"
             ],
             "result": {
-                "item": "scp_additions:aloe",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -725,9 +701,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#7ED957",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Bitter and soothing."
         },
         {
@@ -738,7 +712,7 @@
                 "cactus juice"
             ],
             "result": {
-                "item": "scp_additions:cactus",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -769,7 +743,7 @@
                 "amnestic"
             ],
             "result": {
-                "item": "scp_additions:amnesia",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -798,7 +772,7 @@
                 "negative energy"
             ],
             "result": {
-                "item": "scp_additions:anti_energy",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -826,7 +800,7 @@
                 "royal water"
             ],
             "result": {
-                "item": "scp_additions:aqua_regia",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -861,7 +835,7 @@
                 "ale"
             ],
             "result": {
-                "item": "scp_additions:beer",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -888,7 +862,7 @@
                 "lager"
             ],
             "result": {
-                "item": "scp_additions:lager",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -915,7 +889,7 @@
                 "blood"
             ],
             "result": {
-                "item": "scp_additions:blood",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -944,7 +918,7 @@
                 "sacrament"
             ],
             "result": {
-                "item": "scp_additions:blood_of_christ",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -953,9 +927,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#8A0303",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "A sacramental taste."
         },
         {
@@ -966,7 +938,7 @@
                 "purple shake"
             ],
             "result": {
-                "item": "scp_additions:grimace_shake",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -994,7 +966,7 @@
                 "quantum liquid"
             ],
             "result": {
-                "item": "scp_additions:quantum",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1022,7 +994,7 @@
                 "blackcurrant fanta"
             ],
             "result": {
-                "item": "scp_additions:cassis_fanta",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1031,9 +1003,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#6A1B9A",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Sweet blackcurrant soda."
         },
         {
@@ -1044,7 +1014,7 @@
                 "carrot juice"
             ],
             "result": {
-                "item": "scp_additions:carrot",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1071,7 +1041,7 @@
                 "champagne"
             ],
             "result": {
-                "item": "scp_additions:champagne",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1098,7 +1068,7 @@
                 "chim"
             ],
             "result": {
-                "item": "scp_additions:chim",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1125,7 +1095,7 @@
                 "cider"
             ],
             "result": {
-                "item": "scp_additions:cider",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1134,9 +1104,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#D49A3A",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Sweet cider."
         },
         {
@@ -1146,7 +1114,7 @@
                 "apple cider"
             ],
             "result": {
-                "item": "scp_additions:apple_cider",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1155,9 +1123,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#C98A2C",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "It tastes like apples and spice."
         },
         {
@@ -1167,7 +1133,7 @@
                 "pear cider"
             ],
             "result": {
-                "item": "scp_additions:pear_cider",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1176,9 +1142,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#DDBB55",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "It tastes like pear cider."
         },
         {
@@ -1191,7 +1155,7 @@
                 "hot cocoa"
             ],
             "result": {
-                "item": "scp_additions:chocolate",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1200,9 +1164,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#5A2E1B",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "It is rich and heavy."
         },
         {
@@ -1213,7 +1175,7 @@
                 "liquid cocaine"
             ],
             "result": {
-                "item": "scp_additions:cocaine",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1256,7 +1218,7 @@
                 "coconut water"
             ],
             "result": {
-                "item": "scp_additions:coconut",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1265,9 +1227,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#F5F5DC",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Creamy coconut flavor."
         },
         {
@@ -1278,7 +1238,7 @@
                 "liquid cold"
             ],
             "result": {
-                "item": "scp_additions:cold",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1306,7 +1266,7 @@
                 "cosmo"
             ],
             "result": {
-                "item": "scp_additions:cosmopolitan",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1334,7 +1294,7 @@
                 "liquid courage"
             ],
             "result": {
-                "item": "scp_additions:courage",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1361,7 +1321,7 @@
                 "curry"
             ],
             "result": {
-                "item": "scp_additions:curry",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1390,7 +1350,7 @@
                 "raw eggs"
             ],
             "result": {
-                "item": "scp_additions:eggs",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1419,7 +1379,7 @@
                 "red bull"
             ],
             "result": {
-                "item": "scp_additions:energy_drink",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1453,7 +1413,7 @@
                 "espresso"
             ],
             "result": {
-                "item": "scp_additions:espresso",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1481,7 +1441,7 @@
                 "estus flask"
             ],
             "result": {
-                "item": "scp_additions:estus",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1509,7 +1469,7 @@
                 "liquid champion"
             ],
             "result": {
-                "item": "scp_additions:champion",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1544,7 +1504,7 @@
                 "liquid fear"
             ],
             "result": {
-                "item": "scp_additions:fear",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1580,7 +1540,7 @@
                 "shit"
             ],
             "result": {
-                "item": "scp_additions:feces",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1615,7 +1575,7 @@
                 "blood and feces"
             ],
             "result": {
-                "item": "scp_additions:feces_and_blood",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1649,7 +1609,7 @@
                 "gin"
             ],
             "result": {
-                "item": "scp_additions:gin",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1677,7 +1637,7 @@
                 "liquid glass"
             ],
             "result": {
-                "item": "scp_additions:glass",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1705,7 +1665,7 @@
                 "liquid gold"
             ],
             "result": {
-                "item": "scp_additions:gold_c",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1732,7 +1692,7 @@
                 "grog"
             ],
             "result": {
-                "item": "scp_additions:grog",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1760,7 +1720,7 @@
                 "liquid happiness"
             ],
             "result": {
-                "item": "scp_additions:happiness",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1795,7 +1755,7 @@
                 "liquid heroin"
             ],
             "result": {
-                "item": "scp_additions:heroin",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1830,7 +1790,7 @@
                 "liquid morphine"
             ],
             "result": {
-                "item": "scp_additions:morphine",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1864,7 +1824,7 @@
                 "honey"
             ],
             "result": {
-                "item": "scp_additions:honey",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1892,7 +1852,7 @@
                 "liquid heat"
             ],
             "result": {
-                "item": "scp_additions:hot",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1921,7 +1881,7 @@
                 "black tea"
             ],
             "result": {
-                "item": "scp_additions:tea",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1930,9 +1890,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#8C5A20",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "A calming tea."
         },
         {
@@ -1944,7 +1902,7 @@
                 "hydrochloric acid"
             ],
             "result": {
-                "item": "scp_additions:corrosive_acid",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1978,7 +1936,7 @@
                 "ice cream"
             ],
             "result": {
-                "item": "scp_additions:ice_cream",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -1987,9 +1945,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#F8E8FF",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Cold and sweet."
         },
         {
@@ -2000,7 +1956,7 @@
                 "froyo"
             ],
             "result": {
-                "item": "scp_additions:frozen_yogurt",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -2009,9 +1965,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#F6E8D8",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Cold yogurt."
         },
         {
@@ -2021,7 +1975,7 @@
                 "yogurt"
             ],
             "result": {
-                "item": "scp_additions:yogurt",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -2030,9 +1984,7 @@
             "give_result": true,
             "drinkable": true,
             "cup_color": "#F8F2E8",
-            "effects": [
-                
-            ],
+            "effects": [],
             "actionbar": "Plain yogurt."
         },
         {
@@ -2043,7 +1995,7 @@
                 "squid ink"
             ],
             "result": {
-                "item": "scp_additions:ink",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -2070,7 +2022,7 @@
                 "insulin"
             ],
             "result": {
-                "item": "scp_additions:insulin",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -2097,7 +2049,7 @@
                 "ipecac"
             ],
             "result": {
-                "item": "scp_additions:ipecac",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,
@@ -2125,7 +2077,7 @@
                 "liquid iron"
             ],
             "result": {
-                "item": "scp_additions:iron_c",
+                "item": "scp_additions:cup_of_coffee",
                 "count": 1
             },
             "delay_ticks": 40,

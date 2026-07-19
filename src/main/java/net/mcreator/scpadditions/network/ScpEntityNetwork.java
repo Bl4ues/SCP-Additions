@@ -147,13 +147,6 @@ public final class ScpEntityNetwork {
                 new ScareSoundPacket());
     }
 
-    public static void playEnterSound(ServerPlayer player) {
-        if (player == null) return;
-        ScpAdditionsMod.PACKET_HANDLER.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                new EnterSoundPacket());
-    }
-
     public static void playScp1176Music(ServerPlayer player) {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(

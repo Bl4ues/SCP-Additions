@@ -1,5 +1,5 @@
 {
-  "parent": "scp_additions:custom/scp079on",
+  "parent": "scp_additions:custom/scp079off",
   "textures": {
     "all": "scp_additions:block/079body",
     "particle": "scp_additions:block/079body",

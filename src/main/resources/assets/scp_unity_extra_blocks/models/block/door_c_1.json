@@ -1,5 +1,5 @@
 {
-  "parent": "scp_unity_extra_blocks:custom/d_door_o_1",
+  "parent": "scp_unity_extra_blocks:custom/d_door_4",
   "textures": {
     "all": "scp_unity_extra_blocks:block/door",
     "particle": "scp_unity_extra_blocks:block/door",

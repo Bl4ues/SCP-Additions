@@ -29,6 +29,7 @@ import java.util.UUID;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp012InfluenceEvents {
     public static final int INFLUENCE_RADIUS = 10;
+    private static final double AUTOMATIC_OPEN_RADIUS = 3.0D;
     private static final double DAMAGE_RADIUS = 1.25D;
     private static final int FATAL_CONTACT_TICKS = 15 * 20;
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
@@ -51,13 +52,6 @@ public final class Scp012InfluenceEvents {
         }
 
         ServerLevel level = player.serverLevel();
-        if (Scp714ProtectionAccess.isProtected(player)) {
-            player.getPersistentData().remove(BLEEDING_TAG);
-            player.removeEffect(ScpAdditionsModMobEffects.BLEEDING.get());
-            clear(player);
-            return;
-        }
-
         BlockPos nearby = Scp012Module.findNearest(level, player.position(),
                 INFLUENCE_RADIUS, false);
         if (nearby == null) {
@@ -67,19 +61,34 @@ public final class Scp012InfluenceEvents {
 
         boolean systemControl = level.getGameRules().getBoolean(
                 ScpAdditionsModGameRules.SCP079CONTROLON);
+        Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
+        double distance = player.position().distanceTo(attraction);
+
+        // SCP-079 remains hostile even when SCP-714 protects the player from the
+        // composition itself. It first clears a controlled heavy door in the
+        // route, then opens the box only after the player reaches three blocks.
+        if (systemControl) {
+            if ((level.getGameTime() + player.getId()) % 10L == 0L) {
+                Scp012DoorAccess.tryOpen(level, player, nearby);
+            }
+            if (!Scp012Module.isOpen(level.getBlockState(nearby))
+                    && distance <= AUTOMATIC_OPEN_RADIUS) {
+                Scp012Module.open(level, nearby);
+            }
+        }
+
+        // SCP-714 cancels only SCP-012's anomalous influence. It deliberately
+        // does not close the box, undo SCP-079's door actions, or cure bleeding.
+        if (Scp714ProtectionAccess.isProtected(player)) {
+            clear(player);
+            return;
+        }
         if (!Scp012Module.isOpen(level.getBlockState(nearby))) {
-            if (systemControl) Scp012Module.open(level, nearby);
             clear(player);
             return;
         }
 
         ACTIVE_TARGETS.put(player.getUUID(), nearby);
-        if (systemControl && (level.getGameTime() + player.getId()) % 10L == 0L) {
-            Scp012DoorAccess.tryOpen(level, player, nearby);
-        }
-
-        Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
-        double distance = player.position().distanceTo(attraction);
         float influence = influenceStrength(distance);
         pullToward(level, player, attraction, influence);
 

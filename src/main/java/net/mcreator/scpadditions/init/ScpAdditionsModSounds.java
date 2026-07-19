@@ -74,4 +74,12 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> HAZMAT_REMOVE = REGISTRY.register("hazmat_remove", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "hazmat_remove")));
 	public static final RegistryObject<SoundEvent> HAZMAT_BREATHING = REGISTRY.register("hazmat_breathing", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "hazmat_breathing")));
 	public static final RegistryObject<SoundEvent> SCP_714_MUSIC = REGISTRY.register("scp_714", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp_714")));
+	public static final RegistryObject<SoundEvent> SCP012_TRANCE = REGISTRY.register("scp012_trance", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_trance")));
+	public static final RegistryObject<SoundEvent> SCP012_DAMAGE = REGISTRY.register("scp012_damage", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_damage")));
+	public static final RegistryObject<SoundEvent> SCP012_OPEN = REGISTRY.register("scp012_open", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_open")));
+	public static final RegistryObject<SoundEvent> SCP012_CLOSE = REGISTRY.register("scp012_close", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_close")));
+	public static final RegistryObject<SoundEvent> SCP012_BLEED_1 = REGISTRY.register("scp012_bleed_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_bleed_1")));
+	public static final RegistryObject<SoundEvent> SCP012_BLEED_2 = REGISTRY.register("scp012_bleed_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_bleed_2")));
+	public static final RegistryObject<SoundEvent> SCP012_BLEED_3 = REGISTRY.register("scp012_bleed_3", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_bleed_3")));
+	public static final RegistryObject<SoundEvent> SCP012_ON_MOUNT_GOLGOTHA = REGISTRY.register("scp012_on_mount_golgotha", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_on_mount_golgotha")));
 }

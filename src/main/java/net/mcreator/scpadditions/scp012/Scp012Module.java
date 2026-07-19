@@ -28,7 +28,7 @@ import java.util.Set;
 
 /** Registry and state transitions for SCP-012's animated containment box. */
 public final class Scp012Module {
-    private static final int CLOSING_LEAD_IN_TICKS = 20;
+    private static final int CLOSING_LEAD_IN_TICKS = 30;
     private static final Set<PendingClose> PENDING_CLOSES = new HashSet<>();
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
@@ -113,9 +113,10 @@ public final class Scp012Module {
         PendingClose pending = new PendingClose(level.dimension(), immutablePos);
         if (!PENDING_CLOSES.add(pending)) return false;
 
-        // The authored cue is a one-second lead-in. Play it immediately, keep the
-        // box visibly open for twenty ticks, and only then begin the three-second
-        // closing animation. The pending key prevents duplicate sounds/tasks.
+        // The authored cue is a one-and-a-half-second lead-in. Play it immediately,
+        // keep the box visibly open for thirty ticks, and only then begin the
+        // three-second closing animation. The pending key prevents duplicate
+        // sounds/tasks.
         level.playSound(null, immutablePos, ScpAdditionsModSounds.SCP012_CLOSE.get(),
                 SoundSource.BLOCKS, 1.0F, 1.0F);
         ScpAdditionsMod.queueServerWork(CLOSING_LEAD_IN_TICKS, () -> {

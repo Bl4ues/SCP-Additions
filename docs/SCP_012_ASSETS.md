@@ -15,7 +15,7 @@ The authored model sequence is:
 
 The closing sequence reuses `opening_4` through `opening_1` in reverse. The four intermediate stages each last fifteen ticks, making the complete opening or closing animation exactly sixty ticks (three seconds).
 
-All authored block models live directly under `assets/scp_additions/models/block/` and must use namespaced texture references from `scp_additions`.
+Raw Blockbench exports live under `assets/scp_additions/models/block/internal/` as geometry parents. The public stage models under `assets/scp_additions/models/block/` are small wrappers that bind texture slots `0`, `1`, and `particle` to fully namespaced `scp_additions:block/...` resources. Do not replace those wrappers with raw exports unless the export texture paths are also corrected.
 
 ## Textures
 

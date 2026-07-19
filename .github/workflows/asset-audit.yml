@@ -33,7 +33,10 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Audit repository and compiled JAR
-        run: python3 scripts/audit_unused_assets.py
+        run: |
+          python3 scripts/audit_unused_assets.py
+          git rev-parse HEAD > build/reports/asset-audit/head-sha.txt
+          git rev-parse 'HEAD^{tree}' > build/reports/asset-audit/tree-sha.txt
 
       - name: Upload audit report
         uses: actions/upload-artifact@v4

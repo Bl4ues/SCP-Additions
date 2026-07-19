@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - validation/scp-012-complete
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: read

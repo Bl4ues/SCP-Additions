@@ -28,7 +28,7 @@ Raw Blockbench exports live under `assets/scp_additions/models/block/internal/` 
 All SCP-012 sound files live under `assets/scp_additions/sounds/`, and their events are defined in the normal `assets/scp_additions/sounds.json` file. SCP-012 does not use a separate resource namespace.
 
 - `012_open.ogg` accompanies the three-second opening animation.
-- `012_close.ogg` plays first as a one-second lead-in; the three-second closing animation starts twenty ticks later.
+- `012_close.ogg` plays first as a one-and-a-half-second lead-in; the three-second closing animation starts thirty ticks later.
 - `012_trance.ogg` loops while the local player is influenced.
 - `012_damage.ogg` begins in the damage zone and fades out if the player escapes.
 - `bleed_1.ogg` through `bleed_3.ogg` are randomized bleeding milestones.

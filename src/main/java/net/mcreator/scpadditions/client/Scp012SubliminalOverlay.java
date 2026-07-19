@@ -25,7 +25,7 @@ public final class Scp012SubliminalOverlay {
                 || !Scp012ClientState.shouldRenderOverlay()) {
             return;
         }
-        float progress = Scp012ClientState.contactProgress();
+        float progress = Scp012ClientState.psychosisProgress();
         if (progress <= 0.01F) return;
 
         long time = System.currentTimeMillis();

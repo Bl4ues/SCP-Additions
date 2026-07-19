@@ -11,8 +11,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +25,7 @@ public final class Scp012BleedingEvents {
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
     private static final int DAMAGE_INTERVAL_TICKS = 40;
     private static final float DAMAGE_PER_INTERVAL = 1.0F;
+    private static final float FULL_HEALTH_EPSILON = 0.01F;
     private static final Map<UUID, BleedState> STATES = new HashMap<>();
 
     private Scp012BleedingEvents() {
@@ -43,12 +44,15 @@ public final class Scp012BleedingEvents {
             clear(player, true);
             return;
         }
-        if (Scp714ProtectionAccess.isProtected(player)) {
-            clear(player, true);
-            return;
-        }
         if (!marked) {
             STATES.remove(id);
+            return;
+        }
+
+        // SCP-714 does not cure a physical wound. Bleeding ends only after the
+        // player has actually recovered to full health (or dies/changes mode).
+        if (player.getHealth() >= player.getMaxHealth() - FULL_HEALTH_EPSILON) {
+            clear(player, true);
             return;
         }
 
@@ -79,9 +83,9 @@ public final class Scp012BleedingEvents {
     private static void playBleedCue(ServerPlayer player) {
         @SuppressWarnings("unchecked")
         RegistryObject<SoundEvent>[] sounds = new RegistryObject[]{
-                Scp012Sounds.BLEED_1,
-                Scp012Sounds.BLEED_2,
-                Scp012Sounds.BLEED_3
+                ScpAdditionsModSounds.SCP012_BLEED_1,
+                ScpAdditionsModSounds.SCP012_BLEED_2,
+                ScpAdditionsModSounds.SCP012_BLEED_3
         };
         RegistryObject<SoundEvent> selected = sounds[
                 player.getRandom().nextInt(sounds.length)];

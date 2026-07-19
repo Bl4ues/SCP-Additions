@@ -1,28 +1,16 @@
 package net.mcreator.scpadditions.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
-import org.joml.Matrix4f;
 
 /** Code-generated green-black fatigue vignette for SCP-714 exposure. */
 public final class Scp714VignetteOverlay {
-    private static final int GRID_COLUMNS = 48;
-    private static final int MIN_GRID_ROWS = 20;
-    private static final int MAX_GRID_ROWS = 36;
-
     private Scp714VignetteOverlay() {
     }
 
     public static void render(GuiGraphics graphics, int width, int height,
-            float partialTick) {
+                              float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || !minecraft.player.isAlive()) {
             Scp714ClientState.clear();
@@ -33,54 +21,16 @@ public final class Scp714VignetteOverlay {
         }
 
         float progress = Scp714ClientState.getSmoothedProgress(partialTick);
-        if (progress <= 0.001F) {
-            return;
-        }
+        if (progress <= 0.001F) return;
 
-        int rows = Mth.clamp(Math.round(GRID_COLUMNS
-                * height / (float) width), MIN_GRID_ROWS, MAX_GRID_ROWS);
-        Matrix4f matrix = graphics.pose().last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        buffer.begin(VertexFormat.Mode.QUADS,
-                DefaultVertexFormat.POSITION_COLOR);
-
-        for (int row = 0; row < rows; row++) {
-            float y0 = height * row / (float) rows;
-            float y1 = height * (row + 1) / (float) rows;
-            for (int column = 0; column < GRID_COLUMNS; column++) {
-                float x0 = width * column / (float) GRID_COLUMNS;
-                float x1 = width * (column + 1) / (float) GRID_COLUMNS;
-
-                VertexColor topLeft = colorAt(x0, y0, width, height,
-                        progress);
-                VertexColor bottomLeft = colorAt(x0, y1, width, height,
-                        progress);
-                VertexColor bottomRight = colorAt(x1, y1, width, height,
-                        progress);
-                VertexColor topRight = colorAt(x1, y0, width, height,
-                        progress);
-
-                vertex(buffer, matrix, x0, y0, topLeft);
-                vertex(buffer, matrix, x0, y1, bottomLeft);
-                vertex(buffer, matrix, x1, y1, bottomRight);
-                vertex(buffer, matrix, x1, y0, topRight);
-            }
-        }
-
-        BufferUploader.drawWithShader(buffer.end());
-        RenderSystem.enableDepthTest();
-        RenderSystem.disableBlend();
+        SmoothRadialVignetteRenderer.render(graphics, width, height,
+                (x, y) -> colorAt(x, y, width, height, progress));
     }
 
-    private static VertexColor colorAt(float x, float y, int width,
-            int height, float progress) {
+    private static SmoothRadialVignetteRenderer.VertexColor colorAt(
+            float x, float y, int width, int height, float progress) {
         if (Scp714ClientState.isImmobilized()) {
-            return new VertexColor(0, 0, 0, 255);
+            return new SmoothRadialVignetteRenderer.VertexColor(0, 0, 0, 255);
         }
 
         float normalizedX = (x - width * 0.5F) / (width * 0.5F);
@@ -88,11 +38,12 @@ public final class Scp714VignetteOverlay {
         float radius = Mth.sqrt(normalizedX * normalizedX
                 + normalizedY * normalizedY);
 
-        float easedProgress = smoothStep(0.0F, 1.0F, progress);
+        float easedProgress = SmoothRadialVignetteRenderer.smoothStep(
+                0.0F, 1.0F, progress);
         float aperture = Mth.lerp(easedProgress, 1.20F, -0.05F);
         float feather = Mth.lerp(easedProgress, 0.30F, 0.55F);
-        float edge = smoothStep(aperture - feather,
-                aperture + feather, radius);
+        float edge = SmoothRadialVignetteRenderer.smoothStep(
+                aperture - feather, aperture + feather, radius);
 
         float onset = (float) Math.pow(progress, 0.65D);
         float edgeOpacity = edge * onset
@@ -105,26 +56,7 @@ public final class Scp714VignetteOverlay {
                 * (0.20F + edge * 0.80F);
         int green = Mth.clamp(Math.round(18.0F * jadeTint), 0, 18);
         int blue = Mth.clamp(Math.round(5.0F * jadeTint), 0, 5);
-        return new VertexColor(0, green, blue,
+        return new SmoothRadialVignetteRenderer.VertexColor(0, green, blue,
                 Mth.clamp(Math.round(alpha * 255.0F), 0, 251));
-    }
-
-    private static float smoothStep(float edge0, float edge1, float value) {
-        if (edge1 <= edge0) {
-            return value >= edge1 ? 1.0F : 0.0F;
-        }
-        float normalized = Mth.clamp((value - edge0) / (edge1 - edge0),
-                0.0F, 1.0F);
-        return normalized * normalized * (3.0F - 2.0F * normalized);
-    }
-
-    private static void vertex(BufferBuilder buffer, Matrix4f matrix,
-            float x, float y, VertexColor color) {
-        buffer.vertex(matrix, x, y, 0.0F)
-                .color(color.red(), color.green(), color.blue(), color.alpha())
-                .endVertex();
-    }
-
-    private record VertexColor(int red, int green, int blue, int alpha) {
     }
 }

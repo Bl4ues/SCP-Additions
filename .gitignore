@@ -20,8 +20,4 @@ run/
 .project
 
 # Local clone of the GitHub Wiki
-<<<<<<< HEAD
 SCP-Additions.wiki/
-=======
-SCP-Additions.wiki/
->>>>>>> 18a18dd (Remove embedded wiki repository)

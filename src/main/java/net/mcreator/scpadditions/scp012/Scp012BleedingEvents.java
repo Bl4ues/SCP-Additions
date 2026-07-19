@@ -6,6 +6,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -25,7 +26,6 @@ public final class Scp012BleedingEvents {
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
     private static final int DAMAGE_INTERVAL_TICKS = 40;
     private static final float DAMAGE_PER_INTERVAL = 1.0F;
-    private static final float FULL_HEALTH_EPSILON = 0.01F;
     private static final Map<UUID, BleedState> STATES = new HashMap<>();
 
     private Scp012BleedingEvents() {
@@ -49,13 +49,8 @@ public final class Scp012BleedingEvents {
             return;
         }
 
-        // SCP-714 does not cure a physical wound. Bleeding ends only after the
-        // player has actually recovered to full health (or dies/changes mode).
-        if (player.getHealth() >= player.getMaxHealth() - FULL_HEALTH_EPSILON) {
-            clear(player, true);
-            return;
-        }
-
+        // SCP-714 does not cure a physical wound. The bleeding state remains
+        // until the player receives real healing from any source.
         if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
             player.addEffect(new MobEffectInstance(
                     ScpAdditionsModMobEffects.BLEEDING.get(),
@@ -78,6 +73,16 @@ public final class Scp012BleedingEvents {
             playBleedCue(player);
             state.nextMilestone++;
         }
+    }
+
+    @SubscribeEvent
+    public static void onHeal(LivingHealEvent event) {
+        if (event.getAmount() <= 0.0F
+                || !(event.getEntity() instanceof ServerPlayer player)
+                || !player.getPersistentData().getBoolean(BLEEDING_TAG)) {
+            return;
+        }
+        clear(player, true);
     }
 
     private static void playBleedCue(ServerPlayer player) {

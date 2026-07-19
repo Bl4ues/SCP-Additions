@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,14 +29,26 @@ public final class Scp012Module {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
             ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<Block> CLOSED = stage("scp_012", Scp012Stage.CLOSED);
-    public static final RegistryObject<Block> OPENING_1 = stage("scp_012_opening_1", Scp012Stage.OPENING_1);
-    public static final RegistryObject<Block> OPENING_2 = stage("scp_012_opening_2", Scp012Stage.OPENING_2);
-    public static final RegistryObject<Block> OPENING_3 = stage("scp_012_opening_3", Scp012Stage.OPENING_3);
-    public static final RegistryObject<Block> OPEN = stage("scp_012_open", Scp012Stage.OPEN);
-    public static final RegistryObject<Block> CLOSING_3 = stage("scp_012_closing_3", Scp012Stage.CLOSING_3);
-    public static final RegistryObject<Block> CLOSING_2 = stage("scp_012_closing_2", Scp012Stage.CLOSING_2);
-    public static final RegistryObject<Block> CLOSING_1 = stage("scp_012_closing_1", Scp012Stage.CLOSING_1);
+    public static final RegistryObject<Block> CLOSED =
+            stage("scp_012", Scp012Stage.CLOSED);
+    public static final RegistryObject<Block> OPENING_1 =
+            stage("scp_012_opening_1", Scp012Stage.OPENING_1);
+    public static final RegistryObject<Block> OPENING_2 =
+            stage("scp_012_opening_2", Scp012Stage.OPENING_2);
+    public static final RegistryObject<Block> OPENING_3 =
+            stage("scp_012_opening_3", Scp012Stage.OPENING_3);
+    public static final RegistryObject<Block> OPENING_4 =
+            stage("scp_012_opening_4", Scp012Stage.OPENING_4);
+    public static final RegistryObject<Block> OPEN =
+            stage("scp_012_open", Scp012Stage.OPEN);
+    public static final RegistryObject<Block> CLOSING_4 =
+            stage("scp_012_closing_4", Scp012Stage.CLOSING_4);
+    public static final RegistryObject<Block> CLOSING_3 =
+            stage("scp_012_closing_3", Scp012Stage.CLOSING_3);
+    public static final RegistryObject<Block> CLOSING_2 =
+            stage("scp_012_closing_2", Scp012Stage.CLOSING_2);
+    public static final RegistryObject<Block> CLOSING_1 =
+            stage("scp_012_closing_1", Scp012Stage.CLOSING_1);
 
     public static final RegistryObject<Item> SCP_012_ITEM = ITEMS.register("scp_012",
             () -> new BlockItem(CLOSED.get(), new Item.Properties().stacksTo(1)) {
@@ -78,35 +91,28 @@ public final class Scp012Module {
 
     public static boolean open(ServerLevel level, BlockPos pos) {
         BlockState current = level.getBlockState(pos);
-        Scp012Stage stage = stageOf(current);
-        if (stage == null || stage == Scp012Stage.OPEN
-                || stage == Scp012Stage.OPENING_1
-                || stage == Scp012Stage.OPENING_2
-                || stage == Scp012Stage.OPENING_3) {
-            return false;
-        }
+        if (stageOf(current) != Scp012Stage.CLOSED) return false;
         replace(level, pos, current, OPENING_1.get());
+        level.playSound(null, pos, Scp012Sounds.OPEN.get(), SoundSource.BLOCKS,
+                1.0F, 1.0F);
         return true;
     }
 
     public static boolean close(ServerLevel level, BlockPos pos) {
         BlockState current = level.getBlockState(pos);
-        Scp012Stage stage = stageOf(current);
-        if (stage == null || stage == Scp012Stage.CLOSED
-                || stage == Scp012Stage.CLOSING_1
-                || stage == Scp012Stage.CLOSING_2
-                || stage == Scp012Stage.CLOSING_3) {
-            return false;
-        }
-        replace(level, pos, current, CLOSING_3.get());
+        if (stageOf(current) != Scp012Stage.OPEN) return false;
+        replace(level, pos, current, CLOSING_4.get());
+        level.playSound(null, pos, Scp012Sounds.CLOSE.get(), SoundSource.BLOCKS,
+                1.0F, 1.0F);
         return true;
     }
 
     public static boolean toggle(ServerLevel level, BlockPos pos) {
         Scp012Stage stage = stageOf(level.getBlockState(pos));
         if (stage == null) return false;
-        return stage == Scp012Stage.CLOSED || stage.name().startsWith("CLOSING")
-                ? open(level, pos) : close(level, pos);
+        return stage == Scp012Stage.CLOSED
+                ? open(level, pos) : stage == Scp012Stage.OPEN
+                && close(level, pos);
     }
 
     static void advanceAnimation(ServerLevel level, BlockPos pos,
@@ -114,7 +120,9 @@ public final class Scp012Module {
         Block next = switch (stage) {
             case OPENING_1 -> OPENING_2.get();
             case OPENING_2 -> OPENING_3.get();
-            case OPENING_3 -> OPEN.get();
+            case OPENING_3 -> OPENING_4.get();
+            case OPENING_4 -> OPEN.get();
+            case CLOSING_4 -> CLOSING_3.get();
             case CLOSING_3 -> CLOSING_2.get();
             case CLOSING_2 -> CLOSING_1.get();
             case CLOSING_1 -> CLOSED.get();

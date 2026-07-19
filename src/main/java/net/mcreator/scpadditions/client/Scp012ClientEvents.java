@@ -9,13 +9,12 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.scp012.Scp012InfluenceEvents;
 
-/** Applies a smooth but authoritative visual lock toward the active SCP-012. */
+/** Applies a proximity-scaled camera influence that the player can resist. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp012ClientEvents {
-    private static final float CAMERA_LOCK_SPEED = 0.42F;
-
     private Scp012ClientEvents() {
     }
 
@@ -34,14 +33,23 @@ public final class Scp012ClientEvents {
         Player player = minecraft.player;
         Vec3 target = Vec3.atCenterOf(Scp012ClientState.target());
         Vec3 delta = target.subtract(player.getEyePosition());
+        double distance = delta.length();
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+        float proximity = Mth.clamp(1.0F - (float) (distance
+                / Scp012InfluenceEvents.INFLUENCE_RADIUS), 0.0F, 1.0F);
+        float curved = (float) Math.pow(proximity, 1.45D);
+        float cameraStrength = Mth.lerp(curved, 0.025F, 0.255F);
+        if (Scp012ClientState.isDamageActive()) {
+            cameraStrength = Math.min(0.34F, cameraStrength + 0.07F);
+        }
+
         float targetYaw = (float) (Mth.atan2(delta.z, delta.x)
                 * Mth.RAD_TO_DEG) - 90.0F;
         float targetPitch = (float) -(Mth.atan2(delta.y, horizontal)
                 * Mth.RAD_TO_DEG);
 
-        float yaw = Mth.rotLerp(CAMERA_LOCK_SPEED, player.getYRot(), targetYaw);
-        float pitch = Mth.lerp(CAMERA_LOCK_SPEED, player.getXRot(),
+        float yaw = Mth.rotLerp(cameraStrength, player.getYRot(), targetYaw);
+        float pitch = Mth.lerp(cameraStrength, player.getXRot(),
                 Mth.clamp(targetPitch, -90.0F, 90.0F));
         player.setYRot(yaw);
         player.setXRot(pitch);

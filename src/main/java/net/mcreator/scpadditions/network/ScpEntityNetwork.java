@@ -131,11 +131,13 @@ public final class ScpEntityNetwork {
     }
 
     public static void syncScp012Influence(ServerPlayer player,
-            boolean active, BlockPos target, float contactProgress) {
+            boolean active, BlockPos target, float contactProgress,
+            boolean damageActive) {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new Scp012InfluencePacket(active, target, contactProgress));
+                new Scp012InfluencePacket(active, target, contactProgress,
+                        damageActive));
     }
 
     public static void playScare(ServerPlayer player) {

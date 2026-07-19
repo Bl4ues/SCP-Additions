@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
@@ -16,6 +17,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.HashMap;
@@ -27,10 +29,11 @@ import java.util.UUID;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp012InfluenceEvents {
     public static final int INFLUENCE_RADIUS = 10;
-    private static final double PULL_SPEED = 0.035D;
-    private static final int DAMAGE_INTERVAL_TICKS = 40;
-    private static final int FULL_OVERLAY_TICKS = 100;
-    private static final Map<UUID, Integer> CONTACT_TICKS = new HashMap<>();
+    private static final double DAMAGE_RADIUS = 1.25D;
+    private static final int FATAL_CONTACT_TICKS = 15 * 20;
+    private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
+
+    private static final Map<UUID, ContactState> CONTACT_STATES = new HashMap<>();
     private static final Map<UUID, BlockPos> ACTIVE_TARGETS = new HashMap<>();
 
     private Scp012InfluenceEvents() {
@@ -49,6 +52,8 @@ public final class Scp012InfluenceEvents {
 
         ServerLevel level = player.serverLevel();
         if (Scp714ProtectionAccess.isProtected(player)) {
+            player.getPersistentData().remove(BLEEDING_TAG);
+            player.removeEffect(ScpAdditionsModMobEffects.BLEEDING.get());
             clear(player);
             return;
         }
@@ -74,72 +79,119 @@ public final class Scp012InfluenceEvents {
         }
 
         Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
-        boolean touching = player.getBoundingBox().inflate(0.15D)
+        double distance = player.position().distanceTo(attraction);
+        float influence = influenceStrength(distance);
+        pullToward(level, player, attraction, influence);
+
+        boolean damageActive = distance <= DAMAGE_RADIUS
+                || player.getBoundingBox().inflate(0.10D)
                 .intersects(new AABB(nearby));
-        if (touching) {
-            handleContact(level, player, nearby);
+        float contactProgress;
+        if (damageActive) {
+            contactProgress = handleContact(level, player);
         } else {
-            CONTACT_TICKS.remove(player.getUUID());
-            pullToward(level, player, attraction);
-            sync(player, nearby, 0.0F);
+            CONTACT_STATES.remove(player.getUUID());
+            contactProgress = 0.0F;
         }
+        sync(player, nearby, contactProgress, damageActive);
+    }
+
+    private static float influenceStrength(double distance) {
+        float proximity = Mth.clamp(
+                1.0F - (float) (distance / INFLUENCE_RADIUS), 0.0F, 1.0F);
+        return (float) Math.pow(proximity, 1.35D);
     }
 
     private static void pullToward(ServerLevel level, ServerPlayer player,
-                                   Vec3 destination) {
+                                   Vec3 destination, float influence) {
         Vec3 waypoint = Scp012Pathfinder.nextWaypoint(level, player, destination);
-        Vec3 horizontal = new Vec3(waypoint.x - player.getX(), 0.0D,
+        Vec3 toward = new Vec3(waypoint.x - player.getX(), 0.0D,
                 waypoint.z - player.getZ());
-        if (horizontal.lengthSqr() < 0.0001D) return;
-        Vec3 direction = horizontal.normalize();
-        double vertical = player.getDeltaMovement().y;
+        if (toward.lengthSqr() < 0.0001D) return;
+
+        Vec3 direction = toward.normalize();
+        Vec3 current = player.getDeltaMovement();
+        double retention = Mth.lerp(influence, 0.96D, 0.58D);
+        double pullSpeed = Mth.lerp(influence, 0.006D, 0.055D);
+        Vec3 horizontal = new Vec3(current.x * retention + direction.x * pullSpeed,
+                0.0D, current.z * retention + direction.z * pullSpeed);
+
+        double maximum = Mth.lerp(influence, 0.060D, 0.085D);
+        if (horizontal.lengthSqr() > maximum * maximum) {
+            horizontal = horizontal.normalize().scale(maximum);
+        }
+
+        double vertical = current.y;
         if (waypoint.y > player.getY() + 0.35D && player.onGround()) {
             vertical = 0.28D;
         }
         player.setSprinting(false);
-        player.setDeltaMovement(direction.x * PULL_SPEED, vertical,
-                direction.z * PULL_SPEED);
+        player.setDeltaMovement(horizontal.x, vertical, horizontal.z);
         player.hurtMarked = true;
     }
 
-    private static void handleContact(ServerLevel level, ServerPlayer player,
-                                      BlockPos target) {
-        player.setSprinting(false);
-        player.setDeltaMovement(0.0D, player.getDeltaMovement().y, 0.0D);
-        player.hurtMarked = true;
-        Scp012Pathfinder.clear(player);
+    private static float handleContact(ServerLevel level, ServerPlayer player) {
+        ContactState state = CONTACT_STATES.computeIfAbsent(player.getUUID(),
+                ignored -> new ContactState(20 + level.getRandom().nextInt(21)));
+        state.ticks++;
 
-        int ticks = CONTACT_TICKS.merge(player.getUUID(), 1, Integer::sum);
-        if (ticks == 20) {
-            String first = "You tear open your left wrist and start writing ";
-            String second = "on the composition with your blood.";
-            player.displayClientMessage(Component.literal(first + second), true);
+        if (state.ticks >= FATAL_CONTACT_TICKS) {
+            player.hurt(Scp012Damage.source(level), 10000.0F);
+            return 1.0F;
         }
-        if (ticks >= DAMAGE_INTERVAL_TICKS
-                && ticks % DAMAGE_INTERVAL_TICKS == 0) {
-            float damage = 3.0F + level.getRandom().nextFloat() * 2.0F;
+
+        if (state.ticks >= state.nextDamageTick) {
+            float before = player.getHealth();
+            float damage = 1.5F + level.getRandom().nextFloat() * 1.5F;
             player.hurt(Scp012Damage.source(level), damage);
+            float lost = Math.max(0.0F, before - player.getHealth());
+            state.damageTaken += lost;
+            state.nextDamageTick = state.ticks + 35
+                    + level.getRandom().nextInt(31);
+
+            float maxHealth = Math.max(1.0F, player.getMaxHealth());
+            if (!state.narrationShown
+                    && state.damageTaken >= maxHealth * 0.25F) {
+                state.narrationShown = true;
+                player.displayClientMessage(Component.literal(
+                        "You tear open your left wrist and start writing "
+                                + "on the composition with your blood."), true);
+            }
+            if (state.damageTaken >= maxHealth * 0.40F) {
+                applyBleeding(player);
+            }
         }
-        float contactProgress = Mth.clamp(ticks / (float) FULL_OVERLAY_TICKS,
+
+        return Mth.clamp(state.ticks / (float) FATAL_CONTACT_TICKS,
                 0.0F, 1.0F);
-        sync(player, target, contactProgress);
+    }
+
+    private static void applyBleeding(ServerPlayer player) {
+        player.getPersistentData().putBoolean(BLEEDING_TAG, true);
+        if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
+            player.addEffect(new MobEffectInstance(
+                    ScpAdditionsModMobEffects.BLEEDING.get(),
+                    Integer.MAX_VALUE, 0, false, false, true));
+        }
     }
 
     private static void sync(ServerPlayer player, BlockPos target,
-                             float contactProgress) {
+                             float contactProgress, boolean damageActive) {
         if ((player.tickCount + player.getId()) % 3 == 0) {
             ScpEntityNetwork.syncScp012Influence(player, true, target,
-                    contactProgress);
+                    contactProgress, damageActive);
         }
     }
 
     private static void clear(ServerPlayer player) {
         UUID id = player.getUUID();
         boolean wasActive = ACTIVE_TARGETS.remove(id) != null;
-        CONTACT_TICKS.remove(id);
+        CONTACT_STATES.remove(id);
         Scp012Pathfinder.clear(player);
-        if (wasActive) ScpEntityNetwork.syncScp012Influence(player, false,
-                BlockPos.ZERO, 0.0F);
+        if (wasActive) {
+            ScpEntityNetwork.syncScp012Influence(player, false,
+                    BlockPos.ZERO, 0.0F, false);
+        }
     }
 
     @SubscribeEvent
@@ -150,5 +202,16 @@ public final class Scp012InfluenceEvents {
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) clear(player);
+    }
+
+    private static final class ContactState {
+        private int ticks;
+        private int nextDamageTick;
+        private float damageTaken;
+        private boolean narrationShown;
+
+        private ContactState(int nextDamageTick) {
+            this.nextDamageTick = nextDamageTick;
+        }
     }
 }

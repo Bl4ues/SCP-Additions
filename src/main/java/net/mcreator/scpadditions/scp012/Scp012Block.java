@@ -22,7 +22,8 @@ import java.util.List;
 
 /** One registry block for one visible SCP-012 containment animation stage. */
 public final class Scp012Block extends HorizontalDirectionalBlock {
-    public static final int ANIMATION_STEP_TICKS = 4;
+    /** Four intermediate stages at fifteen ticks each make a three-second cycle. */
+    public static final int ANIMATION_STEP_TICKS = 15;
 
     private final Scp012Stage stage;
 

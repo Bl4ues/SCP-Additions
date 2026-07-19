@@ -1,0 +1,120 @@
+package net.mcreator.scpadditions.scp012;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.RegistryObject;
+import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
+import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/** Persistent post-exposure blood loss and authored bleeding cues. */
+@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
+public final class Scp012BleedingEvents {
+    private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
+    private static final int DAMAGE_INTERVAL_TICKS = 40;
+    private static final float DAMAGE_PER_INTERVAL = 1.0F;
+    private static final Map<UUID, BleedState> STATES = new HashMap<>();
+
+    private Scp012BleedingEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END
+                || !(event.player instanceof ServerPlayer player)) {
+            return;
+        }
+
+        UUID id = player.getUUID();
+        boolean marked = player.getPersistentData().getBoolean(BLEEDING_TAG);
+        if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+            clear(player, true);
+            return;
+        }
+        if (Scp714ProtectionAccess.isProtected(player)) {
+            clear(player, true);
+            return;
+        }
+        if (!marked) {
+            STATES.remove(id);
+            return;
+        }
+
+        if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
+            player.addEffect(new MobEffectInstance(
+                    ScpAdditionsModMobEffects.BLEEDING.get(),
+                    Integer.MAX_VALUE, 0, false, false, true));
+        }
+
+        BleedState state = STATES.computeIfAbsent(id, ignored -> new BleedState());
+        state.ticks++;
+        if (state.ticks % DAMAGE_INTERVAL_TICKS != 0) return;
+
+        float before = player.getHealth();
+        player.hurt(Scp012Damage.source(player.serverLevel()),
+                DAMAGE_PER_INTERVAL);
+        float lost = Math.max(0.0F, before - player.getHealth());
+        if (lost <= 0.0F) return;
+
+        state.damageTaken += lost;
+        float milestoneSize = Math.max(1.0F, player.getMaxHealth()) * 0.20F;
+        while (state.damageTaken >= milestoneSize * state.nextMilestone) {
+            playBleedCue(player);
+            state.nextMilestone++;
+        }
+    }
+
+    private static void playBleedCue(ServerPlayer player) {
+        @SuppressWarnings("unchecked")
+        RegistryObject<SoundEvent>[] sounds = new RegistryObject[]{
+                Scp012Sounds.BLEED_1,
+                Scp012Sounds.BLEED_2,
+                Scp012Sounds.BLEED_3
+        };
+        RegistryObject<SoundEvent> selected = sounds[
+                player.getRandom().nextInt(sounds.length)];
+        float pitch = 0.94F + player.getRandom().nextFloat() * 0.12F;
+        player.playNotifySound(selected.get(), SoundSource.PLAYERS,
+                0.9F, pitch);
+    }
+
+    private static void clear(ServerPlayer player, boolean removeEffect) {
+        STATES.remove(player.getUUID());
+        player.getPersistentData().remove(BLEEDING_TAG);
+        if (removeEffect) {
+            player.removeEffect(ScpAdditionsModMobEffects.BLEEDING.get());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            STATES.remove(player.getUUID());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            clear(player, true);
+        }
+    }
+
+    private static final class BleedState {
+        private int ticks;
+        private int nextMilestone = 1;
+        private float damageTaken;
+    }
+}

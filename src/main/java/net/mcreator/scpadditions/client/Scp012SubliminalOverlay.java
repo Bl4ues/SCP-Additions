@@ -1,11 +1,20 @@
 package net.mcreator.scpadditions.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-/** Code-generated subliminal flashes used until authored overlay textures exist. */
+import java.util.List;
+
+/** Code-generated psychosis plus optional authored full-screen subliminals. */
 public final class Scp012SubliminalOverlay {
+    private static final int TEXTURE_WIDTH = 1920;
+    private static final int TEXTURE_HEIGHT = 1080;
+    private static final List<ResourceLocation> AUTHORED = List.of(
+            texture(1), texture(2), texture(3), texture(4), texture(5));
+
     private Scp012SubliminalOverlay() {
     }
 
@@ -13,7 +22,7 @@ public final class Scp012SubliminalOverlay {
                               float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.options.hideGui || minecraft.player == null
-                || !Scp012ClientState.isActive()) {
+                || !Scp012ClientState.shouldRenderOverlay()) {
             return;
         }
         float progress = Scp012ClientState.contactProgress();
@@ -41,6 +50,8 @@ public final class Scp012SubliminalOverlay {
                     Math.min(height, y + h), alpha << 24 | 0x006A0F18);
         }
 
+        renderAuthoredFlash(minecraft, graphics, width, height, progress, time);
+
         int edgeAlpha = Mth.clamp(Math.round(progress * 115.0F), 0, 115);
         int edge = Math.max(8, Math.round(Math.min(width, height)
                 * (0.025F + progress * 0.035F)));
@@ -51,5 +62,39 @@ public final class Scp012SubliminalOverlay {
                 edgeAlpha << 24 | 0x00180005);
         graphics.fill(width - edge, edge, width, height - edge,
                 edgeAlpha << 24 | 0x00180005);
+    }
+
+    private static void renderAuthoredFlash(Minecraft minecraft,
+                                            GuiGraphics graphics,
+                                            int width, int height,
+                                            float progress, long time) {
+        long window = 520L;
+        long within = Math.floorMod(time, window);
+        long visibleFor = 70L + Math.round(progress * 120.0F);
+        if (within > visibleFor) return;
+
+        int bucket = (int) (time / window);
+        ResourceLocation texture = AUTHORED.get(
+                Math.floorMod(bucket * 7 + 3, AUTHORED.size()));
+        if (minecraft.getResourceManager().getResource(texture).isEmpty()) {
+            return;
+        }
+
+        float alpha = Mth.clamp(0.18F + progress * 0.62F, 0.0F, 0.82F);
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
+        graphics.blit(texture, 0, 0, width, height, 0.0F, 0.0F,
+                TEXTURE_WIDTH, TEXTURE_HEIGHT,
+                TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+        RenderSystem.enableDepthTest();
+    }
+
+    private static ResourceLocation texture(int index) {
+        return new ResourceLocation("scp_additions",
+                "textures/gui/012_overlay_" + index + ".png");
     }
 }

@@ -1,5 +1,5 @@
 {
-  "parent": "scp_additions:block/internal/scp_012_open_geometry",
+  "parent": "scp_additions:block/internal/scp_012_opening_4_geometry",
   "textures": {
     "0": "scp_additions:block/012_sign",
     "1": "scp_additions:block/scp_012",

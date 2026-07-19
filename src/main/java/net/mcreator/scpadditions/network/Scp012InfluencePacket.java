@@ -10,17 +10,20 @@ import net.mcreator.scpadditions.client.Scp012ClientState;
 
 import java.util.function.Supplier;
 
-/** Server-to-client target, camera-lock and contact-overlay synchronization. */
+/** Server-to-client SCP-012 camera, overlay and local-audio synchronization. */
 public final class Scp012InfluencePacket {
     private final boolean active;
+    private final boolean damageActive;
     private final BlockPos target;
     private final float contactProgress;
 
     public Scp012InfluencePacket(boolean active, BlockPos target,
-                                 float contactProgress) {
+                                 float contactProgress,
+                                 boolean damageActive) {
         this.active = active;
         this.target = target == null ? BlockPos.ZERO : target.immutable();
         this.contactProgress = Mth.clamp(contactProgress, 0.0F, 1.0F);
+        this.damageActive = active && damageActive;
     }
 
     public static void encode(Scp012InfluencePacket message,
@@ -28,11 +31,13 @@ public final class Scp012InfluencePacket {
         buffer.writeBoolean(message.active);
         buffer.writeBlockPos(message.target);
         buffer.writeFloat(message.contactProgress);
+        buffer.writeBoolean(message.damageActive);
     }
 
     public static Scp012InfluencePacket decode(FriendlyByteBuf buffer) {
         return new Scp012InfluencePacket(buffer.readBoolean(),
-                buffer.readBlockPos(), buffer.readFloat());
+                buffer.readBlockPos(), buffer.readFloat(),
+                buffer.readBoolean());
     }
 
     public static void handle(Scp012InfluencePacket message,
@@ -40,7 +45,8 @@ public final class Scp012InfluencePacket {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                 () -> () -> Scp012ClientState.update(message.active,
-                        message.target, message.contactProgress)));
+                        message.target, message.contactProgress,
+                        message.damageActive)));
         context.setPacketHandled(true);
     }
 }

@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "scp_additions:block/internal/scp_012_closed_geometry",
   "textures": {
-    "all": "minecraft:block/iron_block"
+    "0": "scp_additions:block/012_sign",
+    "1": "scp_additions:block/scp_012",
+    "particle": "scp_additions:block/012_sign"
   }
 }

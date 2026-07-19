@@ -65,10 +65,6 @@
 - Standardized structures, floors, walls, props, doors, animation states, and door panels from the integrated facility modules to brick-equivalent effective mining resistance;
 - Made facility blocks slow to break by hand or with incorrect tools while allowing pickaxes, tool tiers, Efficiency, Haste, Mining Fatigue, water, and airborne penalties to affect mining normally.
 
-## Development
-
-- Expanded the Java 17 Gradle build workflow to validate feature branches and retain successful compiled JARs as workflow artifacts.
-
 # SCP Additions 3.0.5 — Refinement Update
 
 ## Facility floors

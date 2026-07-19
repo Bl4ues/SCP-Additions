@@ -53,7 +53,7 @@
 - Added `/scp012 open`, `/scp012 close`, `/scp012 toggle`, and `/scp012 status`, with optional coordinates and nearest-box lookup;
 - Added synchronized opening and closing sounds, a smoothly fading looping trance track during influence, and a fifteen-second damage track that fades out when the player escapes;
 - Made SCP-079 System Control automatically open a closed SCP-012 when an unprotected Survival player enters its ten-block influence range;
-- Added proximity-scaled server-authoritative attraction, short-range A* obstacle avoidance, and camera influence that becomes harder—but remains possible—to resist near SCP-012;
+- Added proximity-scaled attraction, short-range A* obstacle avoidance, and camera influence that becomes harder to resist near SCP-012;
 - Added progressive psychosis effects with randomized flashes;
 - Made SCP-012 damage occur irregularly in its immediate damage zone, show the wrist-cutting action-bar narration after cumulative SCP-012 damage reaches 25% of maximum health, and deal fatal damage after fifteen uninterrupted seconds in the damage sequence;
 - Added persistent Bleeding after one exposure removes at least 40% of maximum health, including a red health HUD, slow lethal blood loss, and randomized bleeding sounds with subtle pitch variation at each further 20% of maximum health lost;

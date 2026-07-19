@@ -32,7 +32,7 @@ import java.util.UUID;
 public final class Scp012InfluenceEvents {
     public static final int INFLUENCE_RADIUS = 10;
     private static final int TARGET_SEARCH_INTERVAL_TICKS = 10;
-    private static final double AUTOMATIC_OPEN_RADIUS = 3.0D;
+    private static final int TARGET_DISCOVERY_RADIUS = INFLUENCE_RADIUS + 3;
     private static final double DAMAGE_RADIUS = 1.25D;
     private static final int FATAL_CONTACT_TICKS = 15 * 20;
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
@@ -69,15 +69,19 @@ public final class Scp012InfluenceEvents {
         Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
         double distance = player.position().distanceTo(attraction);
 
-        // SCP-079 remains hostile even when SCP-714 protects the player from the
-        // composition itself. It first clears a controlled heavy door in the
-        // route, then opens the box only after the player reaches three blocks.
+        // SCP-079 springs the trap as soon as the player enters SCP-012's
+        // influence radius. A controlled heavy door on the route is commanded
+        // first, then the containment box begins opening in the same tick.
+        // These hostile facility actions remain active through SCP-714.
         if (systemControl) {
-            if ((level.getGameTime() + player.getId()) % 10L == 0L) {
+            Scp012Stage stage = Scp012Module.stageOf(level.getBlockState(nearby));
+            boolean boxClosed = stage == Scp012Stage.CLOSED;
+            boolean periodicDoorCheck =
+                    (level.getGameTime() + player.getId()) % 10L == 0L;
+            if (boxClosed || periodicDoorCheck) {
                 Scp012DoorAccess.tryOpen(level, player, nearby);
             }
-            if (!Scp012Module.isOpen(level.getBlockState(nearby))
-                    && distance <= AUTOMATIC_OPEN_RADIUS) {
+            if (boxClosed) {
                 Scp012Module.open(level, nearby);
             }
         }
@@ -115,10 +119,13 @@ public final class Scp012InfluenceEvents {
         DiscoveredTarget cached = DISCOVERED_TARGETS.get(id);
         if (cached != null && cached.dimension().equals(level.dimension())) {
             BlockPos pos = cached.pos();
+            double distanceSqr = Vec3.atCenterOf(pos)
+                    .distanceToSqr(player.position());
             if (Scp012Module.isScp012(level.getBlockState(pos))
-                    && Vec3.atCenterOf(pos).distanceToSqr(player.position())
-                    <= INFLUENCE_RADIUS * INFLUENCE_RADIUS) {
-                return pos;
+                    && distanceSqr <= TARGET_DISCOVERY_RADIUS
+                    * TARGET_DISCOVERY_RADIUS) {
+                return distanceSqr <= INFLUENCE_RADIUS * INFLUENCE_RADIUS
+                        ? pos : null;
             }
         }
         DISCOVERED_TARGETS.remove(id);
@@ -129,13 +136,17 @@ public final class Scp012InfluenceEvents {
         }
         NEXT_TARGET_SEARCH.put(id, gameTime + TARGET_SEARCH_INTERVAL_TICKS);
 
+        // Discover the box slightly before the player reaches its actual effect
+        // radius. The cached target can then trigger on the exact crossing tick
+        // without restoring the old full-cube scan on every player tick.
         BlockPos found = Scp012Module.findNearest(level, player.position(),
-                INFLUENCE_RADIUS, false);
-        if (found != null) {
-            DISCOVERED_TARGETS.put(id,
-                    new DiscoveredTarget(level.dimension(), found.immutable()));
-        }
-        return found;
+                TARGET_DISCOVERY_RADIUS, false);
+        if (found == null) return null;
+
+        DISCOVERED_TARGETS.put(id,
+                new DiscoveredTarget(level.dimension(), found.immutable()));
+        return Vec3.atCenterOf(found).distanceToSqr(player.position())
+                <= INFLUENCE_RADIUS * INFLUENCE_RADIUS ? found : null;
     }
 
     private static float influenceStrength(double distance) {

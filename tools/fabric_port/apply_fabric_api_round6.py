@@ -1,11 +1,13 @@
+import re
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
 path = root / "src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java"
 text = path.read_text(encoding="utf-8")
-updated = text.replace(
-    "DataFixTypes.LEVEL, DataFixTypes.LEVEL)",
+updated = re.sub(
+    r"(?:DataFixTypes\.LEVEL,\s*)+DataFixTypes\.LEVEL\)",
     "DataFixTypes.LEVEL)",
+    text,
 )
 if updated != text:
     path.write_text(updated, encoding="utf-8")

@@ -1,0 +1,6 @@
+src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java
+src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java
+src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java
+src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java

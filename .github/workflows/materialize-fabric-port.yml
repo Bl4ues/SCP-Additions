@@ -1,0 +1,135 @@
+name: Materialize Fabric 1.21.1 Source
+
+on:
+  push:
+    branches:
+      - fabric-1.21.1-port-3.0.7
+    paths:
+      - '.github/workflows/materialize-fabric-port.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Fabric branch
+        uses: actions/checkout@v4
+        with:
+          ref: fabric-1.21.1-port-3.0.7
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Materialize shared Minecraft 1.21.1 frontier
+        shell: bash
+        env:
+          NEOFORGE_FRONTIER: 3ae02e88d6d429fad12f6d4d65582e2af83f2f7b
+        run: |
+          set -euo pipefail
+          temp_root="$(mktemp -d)"
+          neo_dir="$temp_root/neoforge"
+          git fetch origin "$NEOFORGE_FRONTIER"
+          git worktree add --detach "$neo_dir" "$NEOFORGE_FRONTIER"
+
+          scripts=(
+            apply_tick_bridge.py
+            apply_network_bridge.py
+            apply_inventory_attachment.py
+            apply_player_variables_attachment.py
+            apply_saved_data_api.py
+            apply_inventory_stack_serialization.py
+            apply_misc_api_moves.py
+            apply_item_custom_data.py
+            apply_item_api_renames.py
+            apply_core_api_moves.py
+            apply_capability_and_ui_api.py
+            apply_gameplay_api_round2.py
+            apply_gameplay_api_round3.py
+            apply_gameplay_api_round4.py
+            apply_gameplay_api_round5.py
+            apply_gameplay_api_round6.py
+          )
+          : > fabric-materialization.log
+          for script in "${scripts[@]}"; do
+            echo "=== $script ===" | tee -a fabric-materialization.log
+            (cd "$neo_dir" && python3 "tools/neoforge_port/$script") \
+              2>&1 | tee -a fabric-materialization.log
+          done
+
+          cp src/main/resources/fabric.mod.json "$temp_root/fabric.mod.json"
+          cp src/main/resources/scp_additions.accesswidener "$temp_root/scp_additions.accesswidener"
+
+          rm -rf src/main/java src/main/resources config
+          mkdir -p src/main
+          cp -a "$neo_dir/src/main/java" src/main/java
+          cp -a "$neo_dir/src/main/resources" src/main/resources
+          if test -d "$neo_dir/config"; then
+            cp -a "$neo_dir/config" config
+          fi
+
+          cp "$temp_root/fabric.mod.json" src/main/resources/fabric.mod.json
+          cp "$temp_root/scp_additions.accesswidener" src/main/resources/scp_additions.accesswidener
+          rm -f src/main/resources/META-INF/mods.toml
+          rm -f src/main/resources/META-INF/neoforge.mods.toml
+          rm -f src/main/resources/META-INF/accesstransformer.cfg
+
+          python3 tools/fabric_port/apply_fabric_bridge.py \
+            2>&1 | tee -a fabric-materialization.log
+          git diff --stat | tee -a fabric-materialization.log
+          git worktree remove --force "$neo_dir"
+
+      - name: Commit materialized Fabric source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java src/main/resources config fabric-materialization.log
+          if git diff --cached --quiet; then
+            echo 'Fabric source frontier was already materialized.'
+          else
+            git commit -m 'Materialize Fabric 1.21.1 source frontier [skip ci]'
+            git push origin HEAD:fabric-1.21.1-port-3.0.7
+          fi
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Compile materialized Fabric source
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --no-daemon --stacktrace > fabric-materialized-build.log 2>&1
+          status=$?
+          echo "$status" > fabric-materialized-build.exitcode
+          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" \
+            fabric-materialized-build.log | head -n 3500 \
+            > fabric-materialized-build-errors.log || true
+          tail -n 800 fabric-materialized-build.log
+          exit 0
+
+      - name: Upload materialized frontier
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-materialized-${{ github.sha }}
+          path: |
+            fabric-materialization.log
+            fabric-materialized-build.log
+            fabric-materialized-build-errors.log
+            fabric-materialized-build.exitcode
+            build/libs/*.jar
+            build/reports/**
+          if-no-files-found: warn

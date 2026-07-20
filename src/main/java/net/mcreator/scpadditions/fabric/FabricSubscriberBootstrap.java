@@ -80,7 +80,6 @@ final class FabricSubscriberBootstrap {
         register("net.mcreator.scpadditions.init.ScpAdditionsModEntities", EventBusSubscriber.Bus.MOD, false);
         register("net.mcreator.scpadditions.init.ScpAdditionsModEntityRenderers", EventBusSubscriber.Bus.MOD, true);
         register("net.mcreator.scpadditions.init.ScpAdditionsModScreens", EventBusSubscriber.Bus.MOD, true);
-        register("net.mcreator.scpadditions.init.ScpAdditionsModTabs", EventBusSubscriber.Bus.MOD, false);
         register("net.mcreator.scpadditions.inventory.ScpInventoryIntegration", EventBusSubscriber.Bus.MOD, false);
         register("net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents", EventBusSubscriber.Bus.GAME, false);
         register("net.mcreator.scpadditions.network.Scp294GuiButtonMessage", EventBusSubscriber.Bus.MOD, false);

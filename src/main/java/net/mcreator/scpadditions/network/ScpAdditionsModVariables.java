@@ -128,7 +128,7 @@ public class ScpAdditionsModVariables {
 		public double coinslot = 0;
 
 		public static final SavedData.Factory<WorldVariables> FACTORY =
-				new SavedData.Factory<>(WorldVariables::new, WorldVariables::load, DataFixTypes.LEVEL);
+				new SavedData.Factory<>(WorldVariables::new, WorldVariables::load, DataFixTypes.LEVEL, DataFixTypes.LEVEL);
 
 		public static WorldVariables load(CompoundTag tag, HolderLookup.Provider registries) {
 			WorldVariables data = new WorldVariables();
@@ -178,7 +178,7 @@ public class ScpAdditionsModVariables {
 		public double RandomZ = 0;
 
 		public static final SavedData.Factory<MapVariables> FACTORY =
-				new SavedData.Factory<>(MapVariables::new, MapVariables::load, DataFixTypes.LEVEL);
+				new SavedData.Factory<>(MapVariables::new, MapVariables::load, DataFixTypes.LEVEL, DataFixTypes.LEVEL);
 
 		public static MapVariables load(CompoundTag tag, HolderLookup.Provider registries) {
 			MapVariables data = new MapVariables();

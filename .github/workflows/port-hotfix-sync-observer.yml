@@ -1,0 +1,58 @@
+name: Port Hotfix Sync Observer
+
+on:
+  workflow_run:
+    workflows:
+      - Sync Master Hotfix to NeoForge 1.21.1
+      - Sync Master Hotfix to Fabric 1.21.1
+    types:
+      - completed
+
+permissions:
+  actions: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report synchronization result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUN_NAME" == *NeoForge* ]]; then
+            pr=42
+          else
+            pr=43
+          fi
+
+          gh run view "$RUN_ID" --repo "$REPOSITORY" --log-failed \
+            > failed.log 2>&1 || true
+          if test -s failed.log; then
+            tail -c 45000 failed.log > failed-tail.log
+          else
+            printf 'No failed-step log was returned.\n' > failed-tail.log
+          fi
+
+          {
+            printf '### Port hotfix synchronization: `%s`\n\n' "$CONCLUSION"
+            printf -- '- Workflow: `%s`\n' "$RUN_NAME"
+            printf -- '- Head: `%s`\n' "$HEAD_SHA"
+            printf -- '- Run: %s\n\n' "$RUN_URL"
+            if test "$CONCLUSION" != success; then
+              printf '<details><summary>Failed-step log</summary>\n\n```text\n'
+              cat failed-tail.log
+              printf '\n```\n</details>\n'
+            fi
+          } > comment.md
+
+          gh pr comment "$pr" --repo "$REPOSITORY" --body-file comment.md

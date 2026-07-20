@@ -1,0 +1,71 @@
+name: NeoForge 1.21.1 port for SCP Additions 3.0.7
+
+on:
+  push:
+    branches:
+      - neoforge-1.21.1-port-3.0.7
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap-and-compile:
+    if: contains(github.event.head_commit.message, '[neoforge-3.0.7-bootstrap]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: neoforge-1.21.1-port-3.0.7
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Apply clean migration
+        run: python3 tools/neoforge_port/bootstrap.py
+
+      - name: Record migration audit
+        shell: bash
+        run: |
+          {
+            echo "Forge imports remaining:"
+            grep -R "^import net\.minecraftforge" -n src/main/java || true
+            echo
+            echo "RegistryObject references remaining:"
+            grep -R "RegistryObject" -n src/main/java || true
+            echo
+            echo "Legacy SimpleChannel references:"
+            grep -R "SimpleChannel\|NetworkRegistry\|NetworkEvent\.Context\|PacketDistributor" -n src/main/java || true
+          } > neoforge-migration-audit.log
+
+      - name: Commit migrated tree
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Bootstrap clean NeoForge 1.21.1 port from 3.0.7" || true
+          git push origin HEAD:neoforge-1.21.1-port-3.0.7
+
+      - name: Compile and preserve complete frontier
+        shell: bash
+        run: |
+          set +e
+          chmod +x gradlew
+          ./gradlew clean compileJava --no-daemon --stacktrace > neoforge-compile.log 2>&1
+          status=$?
+          echo "$status" > neoforge-compile.exitcode
+          tail -n 350 neoforge-compile.log
+          exit 0
+
+      - name: Commit compiler frontier
+        if: always()
+        shell: bash
+        run: |
+          git add neoforge-compile.log neoforge-compile.exitcode neoforge-migration-audit.log
+          git commit -m "Record initial 3.0.7 NeoForge compiler frontier" || true
+          git push origin HEAD:neoforge-1.21.1-port-3.0.7

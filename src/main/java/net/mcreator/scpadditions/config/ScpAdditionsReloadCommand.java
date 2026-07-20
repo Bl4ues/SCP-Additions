@@ -63,12 +63,12 @@ public final class ScpAdditionsReloadCommand {
 
         try {
             ScpAdditionsModulesConfig.load();
-            ScpInventoryConfig.reload();
+            ScpInventoryConfig.reloadFromDisk();
             Scp173TargetConfig.load();
             StaminaItemEffectConfig.load();
             Scp294DrinkManager.loadFromConfig();
             Scp914RecipeManager.loadFromConfig();
-            ContextInteractionRegistry.reload();
+            ContextInteractionRegistry.reloadFromDisk();
             ModNetwork.syncModuleState(source.getServer().getPlayerList().getPlayers());
             ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
             source.sendSuccess(() -> Component.literal("SCP Additions configurations reloaded successfully.")

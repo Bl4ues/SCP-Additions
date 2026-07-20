@@ -17,11 +17,11 @@ import net.mcreator.scpadditions.entity.Scp173Entity;
 @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class Scp173DurabilityEvents {
     private static final double MAX_HEALTH = 1730.0D;
-    private static final double ARMOR = 80.0D;
-    private static final double ARMOR_TOUGHNESS = 40.0D;
+    private static final double ARMOR = 0.0D;
+    private static final double ARMOR_TOUGHNESS = 0.0D;
     private static final double KNOCKBACK_RESISTANCE = 1.0D;
-    private static final float DAMAGE_MULTIPLIER = 0.02F;
-    private static final float MIN_SURVIVABLE_DAMAGE = 0.25F;
+    private static final float DAMAGE_THRESHOLD = 6.0F;
+    private static final float MIN_ACCEPTED_DAMAGE = 1.0F;
 
     private Scp173DurabilityEvents() {
     }
@@ -29,22 +29,36 @@ public final class Scp173DurabilityEvents {
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (!(event.getEntity() instanceof Scp173Entity scp173) || event.getLevel().isClientSide()) return;
+        float previousMaxHealth = scp173.getMaxHealth();
+        float previousHealth = scp173.getHealth();
         setBaseAttribute(scp173, Attributes.MAX_HEALTH, MAX_HEALTH);
         setBaseAttribute(scp173, Attributes.ARMOR, ARMOR);
         setBaseAttribute(scp173, Attributes.ARMOR_TOUGHNESS, ARMOR_TOUGHNESS);
         setBaseAttribute(scp173, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE);
-        if (scp173.getHealth() < scp173.getMaxHealth()) scp173.setHealth(scp173.getMaxHealth());
+
+        // Initialize old/fresh 80-health statues proportionally, but never heal a
+        // damaged 173 every time its chunk or world is loaded.
+        if (previousHealth > 0.0F && previousMaxHealth > 0.0F
+                && previousMaxHealth < MAX_HEALTH) {
+            double ratio = Math.min(1.0D, previousHealth / previousMaxHealth);
+            scp173.setHealth((float) Math.max(1.0D, MAX_HEALTH * ratio));
+        } else if (previousHealth > scp173.getMaxHealth()) {
+            scp173.setHealth(scp173.getMaxHealth());
+        }
     }
 
     @SubscribeEvent
     public static void onLivingHurt(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof Scp173Entity)) return;
         float amount = event.getAmount();
-        if (amount <= 0.0F) {
+        if (amount <= DAMAGE_THRESHOLD) {
             event.setCanceled(true);
             return;
         }
-        event.setAmount(Math.max(MIN_SURVIVABLE_DAMAGE, amount * DAMAGE_MULTIPLIER));
+
+        // Six damage or less cannot scratch the statue. Stronger attacks deal
+        // one point at seven damage, then scale upward with their excess power.
+        event.setAmount(Math.max(MIN_ACCEPTED_DAMAGE, amount - DAMAGE_THRESHOLD));
     }
 
     private static void setBaseAttribute(Scp173Entity scp173, Holder<Attribute> attribute, double value) {

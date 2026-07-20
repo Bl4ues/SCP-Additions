@@ -115,7 +115,7 @@ public class ScpAdditionsMod {
     private void loadRegistryDependentConfiguration() {
         ScpAdditionsModulesConfig.load();
         Scp714ConfigBootstrap.ensureAccessoryRule();
-        ScpInventoryConfig.reload();
+        ScpInventoryConfig.reloadFromDisk();
         Scp173TargetConfig.load();
         StaminaItemEffectConfig.load();
         Scp294DrinkManager.loadFromConfig();

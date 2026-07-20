@@ -63,7 +63,7 @@ public final class ItemConfigManager {
         setItemEffect(root, idText, NO_STAMINA, noStamina);
         setItemEffect(root, idText, PROTECTED_EYES, protectedEyes);
         saveRoot(root);
-        ScpInventoryConfig.reload();
+        ScpInventoryConfig.reloadFromDisk();
         ModNetwork.syncServerConfig(player.server.getPlayerList().getPlayers());
         player.sendSystemMessage(Component.literal("[SCP Inventory] Saved item rule for ").withStyle(ChatFormatting.GREEN)
                 .append(Component.literal(idText).withStyle(ChatFormatting.AQUA)));
@@ -78,7 +78,7 @@ public final class ItemConfigManager {
         boolean removed = removeItemRuleEntries(array(root, "item_rules"), idText);
         removed |= removeItemEffects(array(root, "item_effects"), idText);
         saveRoot(root);
-        ScpInventoryConfig.reload();
+        ScpInventoryConfig.reloadFromDisk();
         ModNetwork.syncServerConfig(player.server.getPlayerList().getPlayers());
         player.sendSystemMessage(Component.literal("[SCP Inventory] " + (removed ? "Removed" : "No rule for") + " item rule ").withStyle(removed ? ChatFormatting.GREEN : ChatFormatting.YELLOW)
                 .append(Component.literal(idText).withStyle(ChatFormatting.AQUA)));

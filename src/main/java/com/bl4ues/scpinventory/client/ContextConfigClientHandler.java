@@ -18,7 +18,7 @@ public final class ContextConfigClientHandler {
     }
 
     public static void reloadContextConfig() {
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         ContextPromptIcons.reload();
         ContextPromptClient.clear();
     }

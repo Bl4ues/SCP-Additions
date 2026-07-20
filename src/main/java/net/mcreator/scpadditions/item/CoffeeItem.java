@@ -43,6 +43,9 @@ public class CoffeeItem extends Item {
 			String id = LegacyItemTags.getTag(stack).getCompound("Scp294Drink").getString("id");
 			if (!id.isBlank()) {
 				String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
+				while (path.startsWith("cup_of_")) {
+					path = path.substring("cup_of_".length());
+				}
 				return Component.literal("Cup of " + toTitleCase(path.replace('_', ' ')));
 			}
 		}

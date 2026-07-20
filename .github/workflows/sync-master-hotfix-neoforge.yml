@@ -54,12 +54,23 @@ jobs:
           git apply --3way --whitespace=nowarn master-multiplayer-hotfix.patch \
             > neoforge-hotfix-apply.log 2>&1
           status=$?
-          set -e
           git status --short | tee -a neoforge-hotfix-apply.log
           if test "$status" != "0"; then
-            cat neoforge-hotfix-apply.log
+            cp neoforge-hotfix-apply.log /tmp/neoforge-hotfix-apply.log
+            git diff --name-only --diff-filter=U > /tmp/neoforge-hotfix-conflicts.txt
+            git reset --hard HEAD
+            mkdir -p .port-sync
+            cp /tmp/neoforge-hotfix-apply.log .port-sync/neoforge-hotfix-apply.log
+            cp /tmp/neoforge-hotfix-conflicts.txt .port-sync/neoforge-hotfix-conflicts.txt
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add .port-sync
+            git commit -m 'Record NeoForge hotfix synchronization conflict [skip ci]'
+            git push origin HEAD:neoforge-1.21.1-port-3.0.7
+            cat .port-sync/neoforge-hotfix-apply.log
             exit "$status"
           fi
+          set -e
 
       - name: Reapply NeoForge 1.21.1 migrations
         shell: bash

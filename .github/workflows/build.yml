@@ -33,7 +33,52 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build NeoForge port
-        run: ./gradlew clean build --stacktrace
+        shell: bash
+        run: |
+          set +e
+          mkdir -p build/reports/neoforge-port
+          ./gradlew clean build --stacktrace --console=plain 2>&1 | tee build/reports/neoforge-port/full-build.log
+          status=${PIPESTATUS[0]}
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          source = Path('build/reports/neoforge-port/full-build.log')
+          lines = source.read_text(encoding='utf-8', errors='replace').splitlines()
+          selected = []
+          patterns = (
+              re.compile(r'\.java:\d+: error:'),
+              re.compile(r'^error:'),
+              re.compile(r'^FAILURE:'),
+              re.compile(r'^\* What went wrong:'),
+              re.compile(r'^Execution failed for task'),
+              re.compile(r'^Could not '),
+              re.compile(r'^Caused by:'),
+          )
+          for index, line in enumerate(lines):
+              if any(pattern.search(line) for pattern in patterns):
+                  start = max(0, index - 1)
+                  end = min(len(lines), index + 5)
+                  selected.extend(lines[start:end])
+          deduped = []
+          seen = set()
+          for line in selected:
+              if line not in seen:
+                  seen.add(line)
+                  deduped.append(line)
+          Path('build/reports/neoforge-port/diagnostics.txt').write_text(
+              '\n'.join(deduped[-2000:]) + '\n', encoding='utf-8')
+          PY
+          cat build/reports/neoforge-port/diagnostics.txt
+          exit "$status"
+
+      - name: Upload port diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoforge-port-diagnostics-${{ github.sha }}
+          path: build/reports/neoforge-port
+          if-no-files-found: warn
 
       - name: Upload compiled JAR
         if: success()

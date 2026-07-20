@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   migrate:
-    if: github.event_name == 'push' || github.head_ref == 'port/neoforge-1.21.1'
+    if: (github.event_name == 'pull_request' && github.head_ref == 'port/neoforge-1.21.1') || (github.event_name == 'push' && !contains(github.event.head_commit.message, 'Port project baseline to NeoForge 1.21.1'))
     runs-on: ubuntu-latest
 
     steps:
@@ -24,13 +24,14 @@ jobs:
           fetch-depth: 0
 
       - name: Apply NeoForge 1.21.1 baseline migration
-        run: python3 scripts/bootstrap_neoforge_1_21_1.py
+        run: |
+          python3 scripts/bootstrap_neoforge_1_21_1.py
+          git checkout HEAD -- .github/workflows/build.yml
 
       - name: Commit migrated project
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm scripts/bootstrap_neoforge_1_21_1.py
           git add -A
           git commit -m "Port project baseline to NeoForge 1.21.1"
           git push origin HEAD:port/neoforge-1.21.1

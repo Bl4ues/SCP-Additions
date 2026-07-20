@@ -81,3 +81,5 @@ jobs:
           git rm .github/workflows/start-3-0-7-once.yml
           git commit -m "Start SCP Additions 3.0.7 development"
           git push origin HEAD:feature/cleanup-unused-assets
+
+# One-time trigger update

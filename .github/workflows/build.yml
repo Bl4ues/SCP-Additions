@@ -12,7 +12,7 @@ on:
       - integration/scp-additions-3.0
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -21,108 +21,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Open 3.0.7 development cycle
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/cleanup-unused-assets'
-        run: |
-          cat > /tmp/start_3_0_7.py <<'PY'
-          from pathlib import Path
-
-          changelog = Path("CHANGELOG.md")
-          text = changelog.read_text(encoding="utf-8")
-          expected = "# Changelog\n\n# SCP Additions 3.0.6 — Hazards & Survival Update\n\n## Internal cleanup\n"
-          marker = "\n## Audio licensing\n"
-          if not text.startswith(expected) or marker not in text:
-              raise SystemExit("Expected 3.0.6 cleanup section was not found")
-
-          top_lines = [
-              "# Changelog",
-              "",
-              "# SCP Additions 3.0.7 — In Development",
-              "",
-              "## Internal cleanup",
-              "",
-              "- Consolidated the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects, actions, aliases, delays, and messages while removing 61 obsolete `/give` entries.",
-              "- Added old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs.",
-              "- Removed legacy drink classes, item-only procedures, item models, translations, and obsolete crafting/SCP-914 recipes that depended on them.",
-              "- Removed unregistered SCP-059, Delta Radiation, and Geiger resource leftovers, unreachable legacy overlays, and Java helpers with no runtime caller or event-bus role.",
-              "- Consolidated duplicate registry-facing resources from integrated legacy namespaces, shared SCP-294 geometry, byte-identical custom models, and safely redirectable texture copies.",
-              "- Corrected three pre-existing broken resource references uncovered by the audit: the terminal `click_1` sound, the left-button screen texture namespace, and a mirrored closing-button model parent.",
-              "- Reduced the compiled JAR from 49,609,314 to 47,795,445 bytes, removed 749 packaged entries, and reduced byte-identical duplicate groups from 443 to 152.",
-              "- Added a reusable repository/JAR audit workflow for validating future cleanup passes.",
-              "",
-              "# SCP Additions 3.0.6 — Hazards & Survival Update",
-          ]
-          tail = text[text.index(marker):]
-          changelog.write_text("\n".join(top_lines) + tail, encoding="utf-8")
-
-          build = Path("build.gradle")
-          build_text = build.read_text(encoding="utf-8")
-          if "version = '3.0.6'" not in build_text:
-              raise SystemExit("Expected 3.0.6 Gradle version was not found")
-          build.write_text(build_text.replace("version = '3.0.6'", "version = '3.0.7'", 1), encoding="utf-8")
-
-          workflow_lines = [
-              "name: Build",
-              "",
-              "on:",
-              "  push:",
-              "    branches:",
-              "      - master",
-              "      - integration/scp-additions-3.0",
-              "      - 'feature/**'",
-              "  pull_request:",
-              "    branches:",
-              "      - master",
-              "      - integration/scp-additions-3.0",
-              "",
-              "permissions:",
-              "  contents: read",
-              "",
-              "jobs:",
-              "  build:",
-              "    runs-on: ubuntu-latest",
-              "",
-              "    steps:",
-              "      - name: Checkout",
-              "        uses: actions/checkout@v4",
-              "",
-              "      - name: Set up Java 17",
-              "        uses: actions/setup-java@v4",
-              "        with:",
-              "          distribution: temurin",
-              "          java-version: '17'",
-              "",
-              "      - name: Set up Gradle",
-              "        uses: gradle/actions/setup-gradle@v4",
-              "",
-              "      - name: Make Gradle wrapper executable",
-              "        run: chmod +x gradlew",
-              "",
-              "      - name: Build",
-              "        run: ./gradlew clean build --stacktrace",
-              "",
-              "      - name: Upload compiled JAR",
-              "        if: success()",
-              "        uses: actions/upload-artifact@v4",
-              "        with:",
-              "          name: scp-additions-" + "$" + "{{ github.sha }}",
-              "          path: build/libs/*.jar",
-              "          if-no-files-found: error",
-          ]
-          Path(".github/workflows/build.yml").write_text("\n".join(workflow_lines) + "\n", encoding="utf-8")
-          Path(".github/workflows/start-3-0-7-once.yml").unlink(missing_ok=True)
-          PY
-          python3 /tmp/start_3_0_7.py
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md build.gradle .github/workflows/build.yml
-          git add -A .github/workflows/start-3-0-7-once.yml
-          git commit -m "Start SCP Additions 3.0.7 development"
-          git push origin HEAD:feature/cleanup-unused-assets
 
       - name: Set up Java 17
         uses: actions/setup-java@v4

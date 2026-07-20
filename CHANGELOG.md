@@ -1,18 +1,19 @@
 # Changelog
 
-# SCP Additions 3.0.6 — Hazards & Survival Update
+# SCP Additions 3.0.7 — In Development
 
 ## Internal cleanup
 
-- Consolidates the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects and actions while removing obsolete `/give` entries.
-- Adds old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs.
-- Removes legacy drink classes, procedures, item models and obsolete SCP-914/crafting recipes that depended on them.
-- Stops packaging duplicate registry-facing resources from the integrated legacy namespaces after their `scp_additions` copies are generated.
-- Reuses the shared SCP-294 geometry for stocking and out-of-range states.
-- Removes the unregistered SCP-059/Geiger resource set and three unreachable legacy SCP-294 overlay systems.
-- Removes plain Java helpers and procedures with no runtime, event-bus or textual caller.
-- Consolidates byte-identical custom model geometry and referenced block/item texture copies without removing registry-facing model paths.
+- Consolidated the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects, actions, aliases, delays, and messages while removing 61 obsolete `/give` entries.
+- Added old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs.
+- Removed legacy drink classes, item-only procedures, item models, translations, and obsolete crafting/SCP-914 recipes that depended on them.
+- Removed unregistered SCP-059, Delta Radiation, and Geiger resource leftovers, unreachable legacy overlays, and Java helpers with no runtime caller or event-bus role.
+- Consolidated duplicate registry-facing resources from integrated legacy namespaces, shared SCP-294 geometry, byte-identical custom models, and safely redirectable texture copies.
+- Corrected three pre-existing broken resource references uncovered by the audit: the terminal `click_1` sound, the left-button screen texture namespace, and a mirrored closing-button model parent.
+- Reduced the compiled JAR from 49,609,314 to 47,795,445 bytes, removed 749 packaged entries, and reduced byte-identical duplicate groups from 443 to 152.
+- Added a reusable repository/JAR audit workflow for validating future cleanup passes.
 
+# SCP Additions 3.0.6 — Hazards & Survival Update
 ## Audio licensing
 
 - Temporarily disabled `enter.ogg` from playing when a player enters a world while permission to reuse music from SCP: Unity is being sought from the original composer;

@@ -1,0 +1,170 @@
+name: Validate current Forge, NeoForge and Fabric heads
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/validation/VALIDATE_ALL_LOADERS
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - loader: Forge
+            branch: master
+            java: '17'
+            pr: 'none'
+            validate_data: 'false'
+          - loader: NeoForge
+            branch: neoforge-1.21.1-port-3.0.7
+            java: '21'
+            pr: '42'
+            validate_data: 'true'
+          - loader: Fabric
+            branch: fabric-1.21.1-port-3.0.7
+            java: '21'
+            pr: '43'
+            validate_data: 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: gradle
+
+      - name: Build ${{ matrix.loader }} edition
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Validate Minecraft 1.21.1 data resources
+        if: matrix.validate_data == 'true'
+        shell: bash
+        run: |
+          test -f build/resources/main/data/scp_additions/advancement/scp_additions_ach.json
+          test -d build/resources/main/data/scp_additions/recipe
+          test ! -d build/resources/main/data/scp_additions/advancements
+          test ! -d build/resources/main/data/scp_additions/recipes
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('build/resources/main')
+          meta = json.loads((root / 'pack.mcmeta').read_text())
+          assert meta['pack']['pack_format'] == 48
+          for path in (root / 'data').rglob('*.json'):
+              json.loads(path.read_text())
+          root_adv = json.loads((root / 'data/scp_additions/advancement/scp_additions_ach.json').read_text())
+          assert root_adv['display']['icon']['id'] == 'scp_additions:tesla_gate'
+          assert 'item' not in root_adv['display']['icon']
+          PY
+
+      - name: Create and tick a dedicated world
+        shell: bash
+        run: |
+          mkdir -p run run/server
+          printf 'eula=true\n' > run/eula.txt
+          printf 'eula=true\n' > run/server/eula.txt
+          set +e
+          timeout 180s ./gradlew runServer --no-daemon --console=plain > server-world-smoke.log 2>&1
+          status=$?
+          set -e
+          cat server-world-smoke.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -q "Done (" server-world-smoke.log
+          ! grep -Eqi "Encountered an unexpected exception|Exception in server tick loop|Failed to start the minecraft server|Could not execute entrypoint" server-world-smoke.log
+          ! grep -q "Unable to award missing root advancement" server-world-smoke.log
+          ! grep -q "Missing registered gamerule" server-world-smoke.log
+          if grep -E "Skipping SCP-914 recipe.*(level_[1-6]_keycard|pieces_of_paper|playing_card|credit_card|scp_572)" server-world-smoke.log; then
+            echo 'Core SCP-914 recipes were resolved before their registry items existed.'
+            exit 1
+          fi
+
+      - name: Start graphical client
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb
+          set +e
+          timeout 150s xvfb-run -a ./gradlew runClient --no-daemon --console=plain > graphical-client-smoke.log 2>&1
+          status=$?
+          set -e
+          cat graphical-client-smoke.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -Eq "Setting user:|Backend library:" graphical-client-smoke.log
+          ! grep -Eqi "Could not execute entrypoint|The game crashed whilst|Encountered an unexpected exception|Exception in thread.*(Render|Client)" graphical-client-smoke.log
+          if grep -E "Skipping SCP-914 recipe.*(level_[1-6]_keycard|pieces_of_paper|playing_card|credit_card|scp_572)" graphical-client-smoke.log; then
+            echo 'Core SCP-914 recipes were discarded during client initialization.'
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.loader }}-final-validation
+          path: |
+            build/libs/*.jar
+            server-world-smoke.log
+            graphical-client-smoke.log
+            run/logs/latest.log
+            run/server/logs/latest.log
+            run/client/logs/latest.log
+            run/crash-reports/**
+            run/server/crash-reports/**
+            run/client/crash-reports/**
+
+      - name: Report port result
+        if: always() && matrix.pr != 'none'
+        shell: bash
+        run: |
+          head_sha=$(git rev-parse HEAD)
+          gh pr comment '${{ matrix.pr }}' --repo '${{ github.repository }}' --body "### ${{ matrix.loader }} current-head validation: **${{ job.status }}**
+
+          - Tested branch: \`${{ matrix.branch }}\`
+          - Tested head: \`$head_sha\`
+          - Checks: clean build, datapack schema where applicable, dedicated world ticks, core SCP-914 registry resolution, and graphical client startup
+          - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Automated validation does not replace manual gameplay and multiplayer QA."
+
+  cleanup:
+    if: always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove temporary final validator
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/validate-all-loaders-final.yml tools/validation/VALIDATE_ALL_LOADERS
+          git commit -m "Remove temporary all-loader validator [skip ci]"
+          git push origin HEAD:master

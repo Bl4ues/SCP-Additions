@@ -50,6 +50,8 @@ jobs:
           python3 tools/fabric_port/apply_fabric_api_round3.py 2>&1 | tee -a fabric-migration.log
           echo '=== apply_fabric_api_round4.py ===' | tee -a fabric-migration.log
           python3 tools/fabric_port/apply_fabric_api_round4.py 2>&1 | tee -a fabric-migration.log
+          echo '=== apply_fabric_api_round5.py ===' | tee -a fabric-migration.log
+          python3 tools/fabric_port/apply_fabric_api_round5.py 2>&1 | tee -a fabric-migration.log
           git diff --binary > fabric-transformed.patch
 
       - name: Commit generated Fabric compatibility source
@@ -59,7 +61,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tools/fabric_port/apply_fabric_api_round2.py tools/fabric_port/apply_fabric_api_round3.py tools/fabric_port/apply_fabric_api_round4.py src/main/java
+          git add tools/fabric_port/apply_fabric_api_round2.py tools/fabric_port/apply_fabric_api_round3.py tools/fabric_port/apply_fabric_api_round4.py tools/fabric_port/apply_fabric_api_round5.py src/main/java src/main/resources/fabric.mod.json src/main/resources/scp_additions.accesswidener src/main/resources/scp_additions.mixins.json
           if git diff --cached --quiet; then
             echo 'Fabric API compatibility source is already materialized.'
           else

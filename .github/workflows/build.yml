@@ -197,6 +197,53 @@ jobs:
             run/server/crash-reports/**
           if-no-files-found: warn
 
+      - name: Launch NeoForge client smoke test
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port') && success()
+        shell: bash
+        run: |
+          set +e
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+          mkdir -p run/client
+          : > neoforge-client-console.log
+          timeout --signal=INT --kill-after=20s 180s \
+            xvfb-run -a -s '-screen 0 1280x720x24' \
+            ./gradlew runClient --no-daemon --console=plain \
+            > neoforge-client-console.log 2>&1
+          status=$?
+          test -f run/client/logs/latest.log && cp run/client/logs/latest.log neoforge-client-latest.log
+          if test "$status" != "124" && test "$status" != "130"; then
+            echo "Client exited before the smoke window completed (status $status)."
+            tail -n 500 neoforge-client-console.log
+            exit 1
+          fi
+          if ! grep -Eqi 'Sound engine started|OpenAL initialized|Created: [0-9]+x[0-9]+x[0-9]+ minecraft:textures/atlas' \
+              neoforge-client-console.log neoforge-client-latest.log 2>/dev/null; then
+            echo 'Client did not reach the rendered title-screen initialization phase.'
+            tail -n 500 neoforge-client-console.log
+            exit 1
+          fi
+          if grep -Eqi 'Mod loading has failed|Loading errors encountered|Exception in thread "Render thread"|The game crashed whilst|Description: Initializing game' \
+              neoforge-client-console.log neoforge-client-latest.log 2>/dev/null; then
+            echo 'Client log contains a fatal startup error.'
+            tail -n 500 neoforge-client-console.log
+            exit 1
+          fi
+          exit 0
+
+      - name: Upload NeoForge client smoke logs
+        if: always() && startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoforge-client-smoke-${{ github.event.pull_request.head.sha }}
+          path: |
+            neoforge-client-console.log
+            neoforge-client-latest.log
+            run/client/crash-reports/**
+          if-no-files-found: warn
+
       - name: Upload compiled JAR
         if: ${{ success() && !startsWith(github.head_ref, 'neoforge-1.21.1-port') }}
         uses: actions/upload-artifact@v4

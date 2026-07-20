@@ -27,6 +27,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
@@ -536,6 +537,18 @@ public final class ContextConfigManager {
         }
     }
 
+    public static String readConfigJson() {
+        try {
+            return Files.readString(ensureConfigFile().toPath(),
+                    StandardCharsets.UTF_8);
+        } catch (Exception exception) {
+            ScpInventoryMod.LOGGER.error(
+                    "Failed to read context interaction configuration",
+                    exception);
+            return "{\"interactions\":[]}";
+        }
+    }
+
     static File ensureConfigFile() {
         File file = configFile();
         if (!file.exists()) {
@@ -572,6 +585,10 @@ public final class ContextConfigManager {
             file.getParentFile().mkdirs();
             ConfigFilePersistence.writeWithBackup(file.toPath(),
                     GSON.toJson(root) + System.lineSeparator());
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                ModNetwork.syncServerConfig(server.getPlayerList().getPlayers());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

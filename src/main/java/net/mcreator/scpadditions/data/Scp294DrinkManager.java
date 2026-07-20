@@ -262,11 +262,24 @@ public final class Scp294DrinkManager {
 	}
 
 	private static ResourceLocation normalizeLegacyDrinkItem(ResourceLocation requested) {
-		if (ScpAdditionsMod.MODID.equals(requested.getNamespace())
-				&& LEGACY_DRINK_ITEM_PATHS.contains(requested.getPath())) {
+		if (!ScpAdditionsMod.MODID.equals(requested.getNamespace())
+				|| GENERIC_CUP.equals(requested)) {
+			return requested;
+		}
+		if (LEGACY_DRINK_ITEM_PATHS.contains(requested.getPath())
+				|| !hasBundledItemModel(requested)) {
+			ScpAdditionsMod.LOGGER.warn(
+					"SCP-294 result {} has no usable item model; using the generic configurable cup",
+					requested);
 			return GENERIC_CUP;
 		}
 		return requested;
+	}
+
+	private static boolean hasBundledItemModel(ResourceLocation itemId) {
+		String resourcePath = "assets/" + itemId.getNamespace()
+				+ "/models/item/" + itemId.getPath() + ".json";
+		return Scp294DrinkManager.class.getClassLoader().getResource(resourcePath) != null;
 	}
 
 	private static List<String> readAliases(ResourceLocation id, JsonObject json) {

@@ -25,6 +25,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
@@ -298,6 +299,10 @@ public final class ContextEntityConfigManager {
             file.getParentFile().mkdirs();
             ConfigFilePersistence.writeWithBackup(file.toPath(),
                     GSON.toJson(root) + System.lineSeparator());
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                ModNetwork.syncServerConfig(server.getPlayerList().getPlayers());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

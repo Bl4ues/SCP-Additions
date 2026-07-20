@@ -82,6 +82,7 @@ public final class ScpInventoryConfig {
     public static final JsonListValue SCP_173_TARGETS = new JsonListValue(ScpInventoryConfig::scp173Targets);
 
     private static boolean loaded = false;
+    private static volatile boolean serverSnapshotActive = false;
     private static List<String> itemRules = DEFAULT_ITEM_RULES;
     private static List<String> itemEffects = DEFAULT_ITEM_EFFECTS;
     private static List<String> codexDocuments = DEFAULT_CODEX_DOCUMENTS;
@@ -116,7 +117,34 @@ public final class ScpInventoryConfig {
         return scp173Targets;
     }
 
+    public static synchronized void applyServerSnapshot(
+            List<String> serverItemRules,
+            List<String> serverItemEffects,
+            List<String> serverCodexDocuments,
+            List<String> serverHiddenStatusEffects,
+            List<String> serverScp173Targets) {
+        itemRules = Collections.unmodifiableList(new ArrayList<>(serverItemRules));
+        itemEffects = Collections.unmodifiableList(new ArrayList<>(serverItemEffects));
+        codexDocuments = Collections.unmodifiableList(new ArrayList<>(serverCodexDocuments));
+        hiddenStatusEffects = Collections.unmodifiableList(new ArrayList<>(serverHiddenStatusEffects));
+        scp173Targets = Collections.unmodifiableList(new ArrayList<>(serverScp173Targets));
+        serverSnapshotActive = true;
+        loaded = true;
+    }
+
+    public static synchronized void clearServerSnapshot() {
+        if (!serverSnapshotActive) {
+            return;
+        }
+        serverSnapshotActive = false;
+        loaded = false;
+        load();
+    }
+
     public static void reload() {
+        if (serverSnapshotActive) {
+            return;
+        }
         loaded = false;
         load();
     }

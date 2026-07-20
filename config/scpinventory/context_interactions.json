@@ -1858,35 +1858,6 @@
     },
     {
       "type": "entity",
-      "id": "gas_mask:scp_1499",
-      "range": 2.25,
-      "priority": 25,
-      "useItem": "hand",
-      "text": {
-        "action": "Take",
-        "nameMode": "manual",
-        "name": "SCP-1499",
-        "showAction": true,
-        "showName": true
-      },
-      "anchor": {
-        "position": [
-          0.0,
-          0.5,
-          0.0
-        ],
-        "rotateWith": "none"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "front"
-      }
-    },
-    {
-      "type": "entity",
       "id": "encyclopedia_of_common_diseases:scp_1025",
       "range": 2.25,
       "priority": 25,

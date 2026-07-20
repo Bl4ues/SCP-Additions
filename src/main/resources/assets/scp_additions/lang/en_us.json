@@ -250,5 +250,6 @@
     "subtitles.scp_additions.scp012_damage": "The composition demands completion",
     "subtitles.scp_additions.scp012_open": "SCP-012 containment opens",
     "subtitles.scp_additions.scp012_close": "SCP-012 containment closes",
-    "subtitles.scp_additions.scp012_bleeding": "Blood drips"
+    "subtitles.scp_additions.scp012_bleeding": "Blood drips",
+    "advancements.scp_572_a_achievement.title": "The Chosen One"
 }

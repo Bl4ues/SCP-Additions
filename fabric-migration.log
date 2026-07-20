@@ -1,0 +1,36 @@
+=== apply_tick_bridge.py ===
+Updated 0 source files for the tick compatibility bridge
+=== apply_network_bridge.py ===
+Updated 0 source files for the network compatibility bridge
+=== apply_inventory_attachment.py ===
+Updated 0 files for the inventory attachment
+=== apply_player_variables_attachment.py ===
+Updated 1 files for player variable attachments
+=== apply_saved_data_api.py ===
+Migrated SCP Additions SavedData classes to Minecraft 1.21.1
+=== apply_inventory_stack_serialization.py ===
+Migrated SCP inventory ItemStack serialization to registry-aware 1.21.1 APIs
+=== apply_misc_api_moves.py ===
+Updated 0 files for moved APIs
+=== apply_item_custom_data.py ===
+Updated 2 files for ItemStack custom data
+Potential legacy item tag calls remaining:
+src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java
+src/main/java/net/mcreator/scpadditions/data/Scp914RecipeManager.java
+=== apply_item_api_renames.py ===
+Updated 0 files for Minecraft 1.21 item API names
+=== apply_core_api_moves.py ===
+Applied NeoForge 1.21.1 core API migrations
+=== apply_capability_and_ui_api.py ===
+Applied NeoForge capability, tooltip, input, and GUI API migrations
+=== apply_gameplay_api_round2.py ===
+Applied NeoForge 1.21.1 gameplay/API migration round 2
+=== apply_gameplay_api_round3.py ===
+Applied NeoForge 1.21.1 gameplay/API migration round 3
+=== apply_gameplay_api_round4.py ===
+Applied NeoForge 1.21.1 gameplay/API migration round 4
+=== apply_gameplay_api_round5.py ===
+Applied NeoForge 1.21.1 gameplay/API migration round 5
+=== apply_gameplay_api_round6.py ===
+Migrated 80 block item registrations away from early registry access; removed 3 invalid empty event subscribers
+Generated Fabric bridge core and 94 subscriber registrations

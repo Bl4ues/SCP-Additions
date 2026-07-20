@@ -98,11 +98,12 @@ for key in ("Head", "Chest", "Accessory", "Trinket", "Weapon"):
         f'loadEquipment(equipTag, "{key}", registries)',
     )
 
-helpers_start = text.index(
-    "    private static ListTag saveStackList(List<ItemStack> stacks, boolean keepEmptySlots) {"
-)
-helpers_end = text.index("\n}", helpers_start)
-new_helpers = '''    private static ListTag saveStackList(
+old_helpers = "    private static ListTag saveStackList(List<ItemStack> stacks, boolean keepEmptySlots) {"
+new_helpers_marker = "HolderLookup.Provider registries) {\n        ListTag list = new ListTag();"
+if old_helpers in text:
+    helpers_start = text.index(old_helpers)
+    helpers_end = text.index("\n}", helpers_start)
+    new_helpers = '''    private static ListTag saveStackList(
             List<ItemStack> stacks,
             boolean keepEmptySlots,
             HolderLookup.Provider registries) {
@@ -163,7 +164,9 @@ new_helpers = '''    private static ListTag saveStackList(
         throw new IllegalStateException("ItemStack did not serialize to a CompoundTag: " + stack);
     }
 '''
-text = text[:helpers_start] + new_helpers + text[helpers_end:]
+    text = text[:helpers_start] + new_helpers + text[helpers_end:]
+elif new_helpers_marker not in text:
+    raise RuntimeError("Could not locate either legacy or migrated ItemStack helper block")
 inventory_path.write_text(text, encoding="utf-8")
 
 

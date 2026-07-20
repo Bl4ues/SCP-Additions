@@ -1,16 +1,17 @@
 package net.mcreator.scpadditions.scp012;
 
+import java.util.function.Supplier;
+
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.event.TickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
@@ -87,12 +88,12 @@ public final class Scp012BleedingEvents {
 
     private static void playBleedCue(ServerPlayer player) {
         @SuppressWarnings("unchecked")
-        RegistryObject<SoundEvent>[] sounds = new RegistryObject[]{
+        Supplier<SoundEvent>[] sounds = new Supplier[]{
                 ScpAdditionsModSounds.SCP012_BLEED_1,
                 ScpAdditionsModSounds.SCP012_BLEED_2,
                 ScpAdditionsModSounds.SCP012_BLEED_3
         };
-        RegistryObject<SoundEvent> selected = sounds[
+        Supplier<SoundEvent> selected = sounds[
                 player.getRandom().nextInt(sounds.length)];
         float pitch = 0.94F + player.getRandom().nextFloat() * 0.12F;
         player.playNotifySound(selected.get(), SoundSource.PLAYERS,

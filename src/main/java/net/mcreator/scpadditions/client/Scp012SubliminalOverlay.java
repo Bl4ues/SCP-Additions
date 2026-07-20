@@ -121,7 +121,6 @@ public final class Scp012SubliminalOverlay {
     }
 
     private static ResourceLocation texture(int index) {
-        return new ResourceLocation("scp_additions",
-                "textures/gui/012_overlay_" + index + ".png");
+        return ResourceLocation.fromNamespaceAndPath("scp_additions", "textures/gui/012_overlay_" + index + ".png");
     }
 }

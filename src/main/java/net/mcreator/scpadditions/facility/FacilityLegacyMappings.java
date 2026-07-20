@@ -1,12 +1,13 @@
 package net.mcreator.scpadditions.facility;
 
+import java.util.function.Supplier;
+
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.MissingMappingsEvent;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.MissingMappingsEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
@@ -22,7 +23,7 @@ public final class FacilityLegacyMappings {
     public static void remapLegacyIds(MissingMappingsEvent event) {
         for (MissingMappingsEvent.Mapping<Block> mapping :
                 event.getMappings(ForgeRegistries.Keys.BLOCKS, FacilityModule.LEGACY_MODID)) {
-            RegistryObject<Block> replacement = FacilityModule.blockByPath(mapping.getKey().getPath());
+            Supplier<Block> replacement = FacilityModule.blockByPath(mapping.getKey().getPath());
             if (replacement != null && replacement.isPresent()) {
                 mapping.remap(replacement.get());
             }
@@ -30,7 +31,7 @@ public final class FacilityLegacyMappings {
 
         for (MissingMappingsEvent.Mapping<Block> mapping :
                 event.getMappings(ForgeRegistries.Keys.BLOCKS, UBlocksModule.LEGACY_MODID)) {
-            RegistryObject<Block> replacement = UBlocksModule.blockByPath(mapping.getKey().getPath());
+            Supplier<Block> replacement = UBlocksModule.blockByPath(mapping.getKey().getPath());
             if (replacement != null && replacement.isPresent()) {
                 mapping.remap(replacement.get());
             }
@@ -38,7 +39,7 @@ public final class FacilityLegacyMappings {
 
         for (MissingMappingsEvent.Mapping<Item> mapping :
                 event.getMappings(ForgeRegistries.Keys.ITEMS, FacilityModule.LEGACY_MODID)) {
-            RegistryObject<Item> replacement = FacilityModule.itemByPath(mapping.getKey().getPath());
+            Supplier<Item> replacement = FacilityModule.itemByPath(mapping.getKey().getPath());
             if (replacement != null && replacement.isPresent()) {
                 mapping.remap(replacement.get());
             }
@@ -46,7 +47,7 @@ public final class FacilityLegacyMappings {
 
         for (MissingMappingsEvent.Mapping<Item> mapping :
                 event.getMappings(ForgeRegistries.Keys.ITEMS, UBlocksModule.LEGACY_MODID)) {
-            RegistryObject<Item> replacement = UBlocksModule.registeredItemByPath(mapping.getKey().getPath());
+            Supplier<Item> replacement = UBlocksModule.registeredItemByPath(mapping.getKey().getPath());
             if (replacement != null && replacement.isPresent()) {
                 mapping.remap(replacement.get());
             }

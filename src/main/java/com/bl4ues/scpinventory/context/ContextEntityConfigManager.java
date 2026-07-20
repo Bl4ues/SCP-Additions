@@ -20,11 +20,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
@@ -338,7 +338,7 @@ public final class ContextEntityConfigManager {
 
     private static ResourceLocation parseId(String idText) {
         try {
-            return new ResourceLocation(idText);
+            return ResourceLocation.parse(idText);
         } catch (Exception ignored) {
             return null;
         }

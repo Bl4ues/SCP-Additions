@@ -22,11 +22,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
@@ -82,7 +82,7 @@ public final class ContextConfigManager {
 
         ResourceLocation id;
         try {
-            id = new ResourceLocation(idText);
+            id = ResourceLocation.parse(idText);
         } catch (Exception ex) {
             player.sendSystemMessage(Component.literal("[SCP Inventory] Invalid block id: " + idText).withStyle(ChatFormatting.RED));
             return;
@@ -137,7 +137,7 @@ public final class ContextConfigManager {
 
         ResourceLocation id;
         try {
-            id = new ResourceLocation(idText);
+            id = ResourceLocation.parse(idText);
         } catch (Exception ex) {
             player.sendSystemMessage(Component.literal("[SCP Inventory] Invalid block id: " + idText).withStyle(ChatFormatting.RED));
             return;

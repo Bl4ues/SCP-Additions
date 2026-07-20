@@ -10,11 +10,11 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.TickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
@@ -32,8 +32,7 @@ public final class Scp714ExposureManager {
     private static final String EXPOSURE_TAG = "Scp714ExposureTicks";
     private static final ResourceKey<DamageType> COMA_DAMAGE_TYPE =
             ResourceKey.create(Registries.DAMAGE_TYPE,
-                    new ResourceLocation(ScpAdditionsMod.MODID,
-                            "scp_714_coma"));
+                    ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "scp_714_coma"));
 
     private Scp714ExposureManager() {
     }

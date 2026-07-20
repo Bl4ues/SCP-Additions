@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
@@ -162,8 +162,7 @@ public final class HeavyDoorControlPanelAccess {
             return false;
         }
 
-        ResourceLocation targetId = new ResourceLocation(ScpAdditionsMod.MODID,
-                accepted ? basePath + "_accept" : basePath);
+        ResourceLocation targetId = ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, accepted ? basePath + "_accept" : basePath);
         Block target = ForgeRegistries.BLOCKS.getValue(targetId);
         if (target == null) {
             return false;

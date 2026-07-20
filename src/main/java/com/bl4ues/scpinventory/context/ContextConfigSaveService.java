@@ -46,7 +46,7 @@ public final class ContextConfigSaveService {
 
         ResourceLocation id;
         try {
-            id = new ResourceLocation(idText);
+            id = ResourceLocation.parse(idText);
         } catch (Exception exception) {
             return failure("Invalid block id: " + idText);
         }

@@ -42,10 +42,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.ArrayList;
@@ -73,63 +72,63 @@ public final class FacilityModule {
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MODID);
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    private static final Map<String, RegistryObject<Block>> BLOCKS_BY_PATH = new LinkedHashMap<>();
-    private static final Map<String, RegistryObject<Item>> ITEMS_BY_PATH = new LinkedHashMap<>();
-    private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
+    private static final Map<String, Supplier<Block>> BLOCKS_BY_PATH = new LinkedHashMap<>();
+    private static final Map<String, Supplier<Item>> ITEMS_BY_PATH = new LinkedHashMap<>();
+    private static final List<Supplier<Item>> CREATIVE_ITEMS = new ArrayList<>();
     private static final Map<String, DoorFamily> DOOR_FAMILIES = new LinkedHashMap<>();
 
-    private static final RegistryObject<SoundEvent> UNITY_DOOR_OPENING = sound("unity_door_opening");
-    private static final RegistryObject<SoundEvent> UNITY_DOOR_CLOSING = sound("unity_door_closing");
-    private static final RegistryObject<SoundEvent> UNITY_DOOR_OPEN = sound("unity_door_open");
-    private static final RegistryObject<SoundEvent> UNITY_DOOR_CLOSE = sound("unity_door_close");
-    private static final RegistryObject<SoundEvent> UNITY_BATH_OPEN = sound("unity_bath_open");
-    private static final RegistryObject<SoundEvent> UNITY_BATH_CLOSE = sound("unity_bath_close");
-    private static final RegistryObject<SoundEvent> UNITY_OFFICE_OPEN = sound("unity_office_open");
-    private static final RegistryObject<SoundEvent> UNITY_OFFICE_CLOSE = sound("unity_office_close");
+    private static final Supplier<SoundEvent> UNITY_DOOR_OPENING = sound("unity_door_opening");
+    private static final Supplier<SoundEvent> UNITY_DOOR_CLOSING = sound("unity_door_closing");
+    private static final Supplier<SoundEvent> UNITY_DOOR_OPEN = sound("unity_door_open");
+    private static final Supplier<SoundEvent> UNITY_DOOR_CLOSE = sound("unity_door_close");
+    private static final Supplier<SoundEvent> UNITY_BATH_OPEN = sound("unity_bath_open");
+    private static final Supplier<SoundEvent> UNITY_BATH_CLOSE = sound("unity_bath_close");
+    private static final Supplier<SoundEvent> UNITY_OFFICE_OPEN = sound("unity_office_open");
+    private static final Supplier<SoundEvent> UNITY_OFFICE_CLOSE = sound("unity_office_close");
 
     // Architectural pieces.
-    public static final RegistryObject<Block> TESLA_BOTTOM = structure("tesla_bottom");
-    public static final RegistryObject<Block> TESLA_MID_1 = structure("tesla_mid_1");
-    public static final RegistryObject<Block> TESLA_MID_2 = structure("tesla_mid_2");
-    public static final RegistryObject<Block> TESLA_BOTTOM_ALT = structure("tesla_bottom_alt");
-    public static final RegistryObject<Block> TESLA_TOP_ALT = structure("tesla_top_alt");
-    public static final RegistryObject<Block> ARCHIVAL_BOTTOM = structure("archival_bottom");
-    public static final RegistryObject<Block> ARCHIVAL_MID = structure("archival_mid");
-    public static final RegistryObject<Block> ARCHIVAL_TOP = structure("archival_top");
-    public static final RegistryObject<Block> ARCHIVAL_BOT_1 = structure("archival_bot_1");
-    public static final RegistryObject<Block> ARCHIVAL_MID_2 = structure("archival_mid_2");
-    public static final RegistryObject<Block> OFFICE_BOTTOM = structure("office_bottom");
-    public static final RegistryObject<Block> OFFICE_MID = structure("office_mid");
-    public static final RegistryObject<Block> OFFICE_TOP = structure("office_top");
-    public static final RegistryObject<Block> SKYROOM_BOT_1 = structure("skyroom_bot_1");
-    public static final RegistryObject<Block> SKYROOM_BOT_2 = structure("skyroom_bot_2");
-    public static final RegistryObject<Block> SKYROOM_MID = structure("skyroom_mid");
-    public static final RegistryObject<Block> SKYROOM_TOP_ALT = structure("skyroom_top_alt");
-    public static final RegistryObject<Block> SKYROOM_BLOCK = structure("skyroom_block");
-    public static final RegistryObject<Block> SECURITY_BOT = structure("security_bot");
-    public static final RegistryObject<Block> SECURITY_MID = structure("security_mid");
-    public static final RegistryObject<Block> SECURITY_TOP = structure("security_top");
+    public static final Supplier<Block> TESLA_BOTTOM = structure("tesla_bottom");
+    public static final Supplier<Block> TESLA_MID_1 = structure("tesla_mid_1");
+    public static final Supplier<Block> TESLA_MID_2 = structure("tesla_mid_2");
+    public static final Supplier<Block> TESLA_BOTTOM_ALT = structure("tesla_bottom_alt");
+    public static final Supplier<Block> TESLA_TOP_ALT = structure("tesla_top_alt");
+    public static final Supplier<Block> ARCHIVAL_BOTTOM = structure("archival_bottom");
+    public static final Supplier<Block> ARCHIVAL_MID = structure("archival_mid");
+    public static final Supplier<Block> ARCHIVAL_TOP = structure("archival_top");
+    public static final Supplier<Block> ARCHIVAL_BOT_1 = structure("archival_bot_1");
+    public static final Supplier<Block> ARCHIVAL_MID_2 = structure("archival_mid_2");
+    public static final Supplier<Block> OFFICE_BOTTOM = structure("office_bottom");
+    public static final Supplier<Block> OFFICE_MID = structure("office_mid");
+    public static final Supplier<Block> OFFICE_TOP = structure("office_top");
+    public static final Supplier<Block> SKYROOM_BOT_1 = structure("skyroom_bot_1");
+    public static final Supplier<Block> SKYROOM_BOT_2 = structure("skyroom_bot_2");
+    public static final Supplier<Block> SKYROOM_MID = structure("skyroom_mid");
+    public static final Supplier<Block> SKYROOM_TOP_ALT = structure("skyroom_top_alt");
+    public static final Supplier<Block> SKYROOM_BLOCK = structure("skyroom_block");
+    public static final Supplier<Block> SECURITY_BOT = structure("security_bot");
+    public static final Supplier<Block> SECURITY_MID = structure("security_mid");
+    public static final Supplier<Block> SECURITY_TOP = structure("security_top");
 
     // Props and lights.
-    public static final RegistryObject<Block> ALARM_LAMP = registerBlock("alarm_lamp",
+    public static final Supplier<Block> ALARM_LAMP = registerBlock("alarm_lamp",
             () -> new AlarmLampBlock(false), true);
-    public static final RegistryObject<Block> ALARM_LAMP_ON = registerBlock("alarm_lamp_on",
+    public static final Supplier<Block> ALARM_LAMP_ON = registerBlock("alarm_lamp_on",
             () -> new AlarmLampBlock(true), false);
-    public static final RegistryObject<Block> WALLLIGHT = registerBlock("walllight",
+    public static final Supplier<Block> WALLLIGHT = registerBlock("walllight",
             () -> new WallLightBlock(false), true);
-    public static final RegistryObject<Block> WALLLIGHT_2 = registerBlock("walllight_2",
+    public static final Supplier<Block> WALLLIGHT_2 = registerBlock("walllight_2",
             () -> new WallLightBlock(true), false);
-    public static final RegistryObject<Block> HEATER = registerBlock("heater", HeaterBlock::new, true);
-    public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", SignSupportBlock::new, true);
-    public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
-    public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
+    public static final Supplier<Block> HEATER = registerBlock("heater", HeaterBlock::new, true);
+    public static final Supplier<Block> SIGN_SUPPORT = registerBlock("sign_support", SignSupportBlock::new, true);
+    public static final Supplier<Block> TV = registerBlock("tv", TvBlock::new, true);
+    public static final Supplier<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
 
     // Button states. Only LOCKED and CLOSED are public items.
-    public static final RegistryObject<Block> BUTTON_LOCKED = registerButton("button_locked", ButtonState.LOCKED, true);
-    public static final RegistryObject<Block> BUTTON_CLOSED = registerButton("button_closed", ButtonState.CLOSED, true);
-    public static final RegistryObject<Block> BUTTON_OPENING = registerButton("button_opening", ButtonState.OPENING, false);
-    public static final RegistryObject<Block> BUTTON_OPEN = registerButton("button_open", ButtonState.OPEN, false);
-    public static final RegistryObject<Block> BUTTON_CLOSING = registerButton("button_closing", ButtonState.CLOSING, false);
+    public static final Supplier<Block> BUTTON_LOCKED = registerButton("button_locked", ButtonState.LOCKED, true);
+    public static final Supplier<Block> BUTTON_CLOSED = registerButton("button_closed", ButtonState.CLOSED, true);
+    public static final Supplier<Block> BUTTON_OPENING = registerButton("button_opening", ButtonState.OPENING, false);
+    public static final Supplier<Block> BUTTON_OPEN = registerButton("button_open", ButtonState.OPEN, false);
+    public static final Supplier<Block> BUTTON_CLOSING = registerButton("button_closing", ButtonState.CLOSING, false);
 
     // Door collision indices reproduce the standalone classes. Heavy doors
     // become passable at opening frame 10 and solid again at closing frame 9.
@@ -172,7 +171,7 @@ public final class FacilityModule {
             List.of("w_sc_1", "w_sc_2", "wsc_3"), 5, true, 4, 0, SoundType.WOOD,
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
 
-    public static final RegistryObject<CreativeModeTab> SCP_UNITY_BLOCKS = TABS.register("scp_unity_blocks", () ->
+    public static final Supplier<CreativeModeTab> SCP_UNITY_BLOCKS = TABS.register("scp_unity_blocks", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
                     .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
@@ -191,11 +190,11 @@ public final class FacilityModule {
         TABS.register(modBus);
     }
 
-    public static RegistryObject<Block> blockByPath(String path) {
+    public static Supplier<Block> blockByPath(String path) {
         return BLOCKS_BY_PATH.get(path);
     }
 
-    public static RegistryObject<Item> itemByPath(String path) {
+    public static Supplier<Item> itemByPath(String path) {
         return ITEMS_BY_PATH.get(path);
     }
 
@@ -234,8 +233,8 @@ public final class FacilityModule {
      * intentionally not used here because animation states and compatibility
      * entries are interleaved with the public endpoints.
      */
-    private static List<RegistryObject<Item>> creativeItemsInDisplayOrder() {
-        List<RegistryObject<Item>> ordered = new ArrayList<>();
+    private static List<Supplier<Item>> creativeItemsInDisplayOrder() {
+        List<Supplier<Item>> ordered = new ArrayList<>();
 
         // Frequently used facility props.
         addFacilityCreativeItem(ordered, "walllight");
@@ -271,37 +270,37 @@ public final class FacilityModule {
         return ordered;
     }
 
-    private static void addFacilityCreativeItem(List<RegistryObject<Item>> ordered, String path) {
-        RegistryObject<Item> item = ITEMS_BY_PATH.get(path);
+    private static void addFacilityCreativeItem(List<Supplier<Item>> ordered, String path) {
+        Supplier<Item> item = ITEMS_BY_PATH.get(path);
         if (item != null) addUnique(ordered, item);
     }
 
-    private static void addUBlockCreativeItem(List<RegistryObject<Item>> ordered, String path) {
-        RegistryObject<Item> item = UBlocksModule.itemByPath(path);
+    private static void addUBlockCreativeItem(List<Supplier<Item>> ordered, String path) {
+        Supplier<Item> item = UBlocksModule.itemByPath(path);
         if (item != null) addUnique(ordered, item);
     }
 
-    private static void addUnique(List<RegistryObject<Item>> ordered, RegistryObject<Item> item) {
+    private static void addUnique(List<Supplier<Item>> ordered, Supplier<Item> item) {
         if (!ordered.contains(item)) ordered.add(item);
     }
 
-    private static RegistryObject<SoundEvent> sound(String path) {
+    private static Supplier<SoundEvent> sound(String path) {
         return SOUNDS.register(path,
-                () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MODID, path)));
+                () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MODID, path)));
     }
 
-    private static RegistryObject<Block> structure(String path) {
+    private static Supplier<Block> structure(String path) {
         return registerBlock(path, FacilityStructureBlock::new, true);
     }
 
-    private static RegistryObject<Block> registerButton(String path, ButtonState state, boolean publicItem) {
+    private static Supplier<Block> registerButton(String path, ButtonState state, boolean publicItem) {
         return registerBlock(path, () -> new DoorButtonBlock(state), publicItem);
     }
 
-    private static RegistryObject<Block> registerBlock(String path,
+    private static Supplier<Block> registerBlock(String path,
             Supplier<? extends Block> factory, boolean publicItem) {
-        RegistryObject<Block> block = BLOCKS.register(path, factory);
-        RegistryObject<Item> item = ITEMS.register(path,
+        Supplier<Block> block = BLOCKS.register(path, factory);
+        Supplier<Item> item = ITEMS.register(path,
                 () -> new BlockItem(block.get(), new Item.Properties()));
         BLOCKS_BY_PATH.put(path, block);
         ITEMS_BY_PATH.put(path, item);
@@ -312,21 +311,21 @@ public final class FacilityModule {
     private static DoorFamily door(String id, String closedPath, List<String> openingPaths,
             String openPath, List<String> closingPaths, int frameDelay, boolean directUse,
             int openingPassableFrame, int closingSolidFrame, SoundType soundType,
-            RegistryObject<SoundEvent> openingSound, RegistryObject<SoundEvent> closingSound) {
-        RegistryObject<Block> closed = registerBlock(closedPath,
+            Supplier<SoundEvent> openingSound, Supplier<SoundEvent> closingSound) {
+        Supplier<Block> closed = registerBlock(closedPath,
                 () -> new AnimatedDoorBlock(id, DoorStage.CLOSED, 0, soundType), true);
 
-        List<RegistryObject<Block>> opening = new ArrayList<>();
+        List<Supplier<Block>> opening = new ArrayList<>();
         for (int i = 0; i < openingPaths.size(); i++) {
             final int frame = i;
             opening.add(registerBlock(openingPaths.get(i),
                     () -> new AnimatedDoorBlock(id, DoorStage.OPENING, frame, soundType), false));
         }
 
-        RegistryObject<Block> open = registerBlock(openPath,
+        Supplier<Block> open = registerBlock(openPath,
                 () -> new AnimatedDoorBlock(id, DoorStage.OPEN, 0, soundType), false);
 
-        List<RegistryObject<Block>> closing = new ArrayList<>();
+        List<Supplier<Block>> closing = new ArrayList<>();
         for (int i = 0; i < closingPaths.size(); i++) {
             final int frame = i;
             closing.add(registerBlock(closingPaths.get(i),
@@ -383,7 +382,7 @@ public final class FacilityModule {
                 || block == BUTTON_CLOSING.get();
     }
 
-    private static RegistryObject<Block> buttonFor(ButtonState state) {
+    private static Supplier<Block> buttonFor(ButtonState state) {
         return switch (state) {
             case LOCKED -> BUTTON_LOCKED;
             case CLOSED -> BUTTON_CLOSED;
@@ -423,11 +422,11 @@ public final class FacilityModule {
         CLOSING
     }
 
-    public record DoorFamily(String id, RegistryObject<Block> closed,
-            List<RegistryObject<Block>> opening, RegistryObject<Block> open,
-            List<RegistryObject<Block>> closing, int frameDelay, boolean directUse,
+    public record DoorFamily(String id, Supplier<Block> closed,
+            List<Supplier<Block>> opening, Supplier<Block> open,
+            List<Supplier<Block>> closing, int frameDelay, boolean directUse,
             int openingPassableFrame, int closingSolidFrame,
-            RegistryObject<SoundEvent> openingSound, RegistryObject<SoundEvent> closingSound) {
+            Supplier<SoundEvent> openingSound, Supplier<SoundEvent> closingSound) {
     }
 
     private static final class FacilityStructureBlock extends Block {

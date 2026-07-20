@@ -1,6 +1,6 @@
 package net.mcreator.scpadditions.item;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

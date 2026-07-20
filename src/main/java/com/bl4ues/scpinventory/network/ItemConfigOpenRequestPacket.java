@@ -3,7 +3,7 @@ package com.bl4ues.scpinventory.network;
 import com.bl4ues.scpinventory.config.ItemConfigManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.NetworkEvent;
 import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
 import java.util.function.Supplier;

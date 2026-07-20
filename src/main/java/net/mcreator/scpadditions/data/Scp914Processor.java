@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
@@ -218,7 +218,7 @@ public final class Scp914Processor {
             return;
         }
         Advancement advancement = server.getAdvancements().getAdvancement(
-                new ResourceLocation("scp_additions", "scp_914_metamorphosis"));
+                ResourceLocation.fromNamespaceAndPath("scp_additions", "scp_914_metamorphosis"));
         if (advancement == null) {
             return;
         }
@@ -364,7 +364,7 @@ public final class Scp914Processor {
     }
 
     private static void playSound(Level level, BlockPos pos, String soundId) {
-        ResourceLocation id = new ResourceLocation(soundId);
+        ResourceLocation id = ResourceLocation.parse(soundId);
         level.playSound(null, pos, ForgeRegistries.SOUND_EVENTS.getValue(id),
                 SoundSource.NEUTRAL, 1.0F, 1.0F);
     }

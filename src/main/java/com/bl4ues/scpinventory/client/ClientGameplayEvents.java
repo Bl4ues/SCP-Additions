@@ -1,10 +1,10 @@
 package com.bl4ues.scpinventory.client;
 
 import net.mcreator.scpadditions.client.Scp1176MusicClient;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.event.TickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
 public final class ClientGameplayEvents {

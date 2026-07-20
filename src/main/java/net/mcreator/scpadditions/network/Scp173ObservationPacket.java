@@ -3,7 +3,7 @@ package net.mcreator.scpadditions.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.NetworkEvent;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 
 import java.util.function.Supplier;

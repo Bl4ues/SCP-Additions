@@ -1,10 +1,11 @@
 package net.mcreator.scpadditions.facility;
 
+import java.util.function.Supplier;
+
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Field;
@@ -62,8 +63,8 @@ public final class HeavyDoorAnimationTiming {
 
     private static void retime(Map<String, FacilityModule.DoorFamily> families,
             FacilityModule.DoorFamily original) {
-        List<RegistryObject<Block>> opening = withoutFinalTransition(original.opening());
-        List<RegistryObject<Block>> closing = withoutFinalTransition(original.closing());
+        List<Supplier<Block>> opening = withoutFinalTransition(original.opening());
+        List<Supplier<Block>> closing = withoutFinalTransition(original.closing());
 
         if (opening.size() != 12 || closing.size() != 12) {
             throw new IllegalStateException("Heavy door family " + original.id()
@@ -85,8 +86,8 @@ public final class HeavyDoorAnimationTiming {
         families.put(original.id(), timed);
     }
 
-    private static List<RegistryObject<Block>> withoutFinalTransition(
-            List<RegistryObject<Block>> frames) {
+    private static List<Supplier<Block>> withoutFinalTransition(
+            List<Supplier<Block>> frames) {
         if (frames == null || frames.size() < 2) {
             throw new IllegalStateException("Door animation frame list is incomplete");
         }

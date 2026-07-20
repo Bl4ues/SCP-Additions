@@ -1,6 +1,6 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +29,7 @@ public class TeslaGateUpdateTickProcedure {
 
 		double detectionRadius = manualOverride ? 3.5D : 2.0D;
 		int activationDelay = manualOverride ? 1 : 5;
-		ResourceLocation activationSound = new ResourceLocation("scp_additions", manualOverride ? "overcharge" : "teslaactivate");
+		ResourceLocation activationSound = ResourceLocation.fromNamespaceAndPath("scp_additions", manualOverride ? "overcharge" : "teslaactivate");
 		float activationVolume = manualOverride ? 2.0F : 1.0F;
 
 		final Vec3 center = new Vec3(x, y, z);

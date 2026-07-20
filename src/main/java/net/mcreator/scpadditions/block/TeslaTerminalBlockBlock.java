@@ -1,7 +1,7 @@
 package net.mcreator.scpadditions.block;
 
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.network.NetworkHooks;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -97,7 +97,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 		long gameTime = world.getGameTime();
 		long nextLoop = TERMINAL_LOOP_NEXT_TICK.getOrDefault(key, 0L);
 		if (gameTime >= nextLoop) {
-			SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", "terminalloop"));
+			SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(ResourceLocation.fromNamespaceAndPath("scp_additions", "terminalloop"));
 			if (sound != null) {
 				world.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, sound, SoundSource.BLOCKS, 0.4F, 1.0F, false);
 			}

@@ -2,9 +2,9 @@ package net.mcreator.scpadditions.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.DistExecutor;
+import net.neoforged.neoforge.network.NetworkEvent;
 import net.mcreator.scpadditions.client.Scp714ClientState;
 
 import java.util.function.Supplier;

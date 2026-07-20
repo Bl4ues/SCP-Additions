@@ -13,11 +13,11 @@ import net.mcreator.scpadditions.vitals.VitalsModule;
 /** SCP Inventory's lower-left health and stamina HUD, with independent toggles. */
 public final class PlayerVitalsOverlay {
     private static final ResourceLocation STAMINA_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/stamina.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/stamina.png");
     private static final ResourceLocation HEALTH_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/healthlogo.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/healthlogo.png");
     private static final ResourceLocation ROBOTO_FONT =
-            new ResourceLocation("scpinventory", "roboto");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "roboto");
 
     private static final int ICON_SOURCE_SIZE = 128;
     private static final int ICON_SIZE = 17;

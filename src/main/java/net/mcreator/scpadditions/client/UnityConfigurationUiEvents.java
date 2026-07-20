@@ -29,12 +29,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 
 import java.lang.reflect.Constructor;
@@ -68,7 +68,7 @@ public final class UnityConfigurationUiEvents {
     private static final int BLOCK_BADGE = 0xFF22384A;
     private static final int ENTITY_BADGE = 0xFF3D2E4B;
     private static final ResourceLocation CONFIG_LOGO =
-            new ResourceLocation("scp_additions", "textures/screens/logo.png");
+            ResourceLocation.fromNamespaceAndPath("scp_additions", "textures/screens/logo.png");
     private static final List<String> ITEM_TYPES = List.of(
             "MISCELLANEOUS", "CONSUMABLE", "USABLE", "PLACEABLE", "HARMFUL",
             "KEY", "COIN", "AMMO", "HEAD", "CHEST", "LEGS", "FEET",

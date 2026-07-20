@@ -1,10 +1,11 @@
 package net.mcreator.scpadditions.entity;
 
+import java.util.function.Supplier;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
@@ -14,12 +15,12 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 public final class Scp131Sounds {
 	public static final DeferredRegister<SoundEvent> REGISTRY = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, ScpAdditionsMod.MODID);
 
-	public static final RegistryObject<SoundEvent> EYE_POD_VOICE = REGISTRY.register("eye_pod_voice", () ->
-			SoundEvent.createVariableRangeEvent(new ResourceLocation(ScpAdditionsMod.MODID, "eye_pod_voice")));
-	public static final RegistryObject<SoundEvent> EYE_POD_IDLE = REGISTRY.register("eye_pod_idle", () ->
-			SoundEvent.createVariableRangeEvent(new ResourceLocation(ScpAdditionsMod.MODID, "eye_pod_idle")));
-	public static final RegistryObject<SoundEvent> EYE_POD_MOVE = REGISTRY.register("eye_pod_move", () ->
-			SoundEvent.createVariableRangeEvent(new ResourceLocation(ScpAdditionsMod.MODID, "eye_pod_move")));
+	public static final Supplier<SoundEvent> EYE_POD_VOICE = REGISTRY.register("eye_pod_voice", () ->
+			SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "eye_pod_voice")));
+	public static final Supplier<SoundEvent> EYE_POD_IDLE = REGISTRY.register("eye_pod_idle", () ->
+			SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "eye_pod_idle")));
+	public static final Supplier<SoundEvent> EYE_POD_MOVE = REGISTRY.register("eye_pod_move", () ->
+			SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "eye_pod_move")));
 
 	private Scp131Sounds() {
 	}

@@ -17,13 +17,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.ConfigScreenHandler;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.CodexAssetClient;
@@ -748,7 +748,7 @@ public final class ConfigCenterClient {
             String value = valueBox.getValue().trim();
             if (value.isEmpty()) return;
             String check = allowTag && value.startsWith("#") ? value.substring(1) : value;
-            try { new ResourceLocation(check); }
+            try { ResourceLocation.parse(check); }
             catch (Exception ignored) { valueBox.setTextColor(BAD); return; }
             JsonArray values = array(root, key);
             for (JsonElement element : values) if (element.isJsonPrimitive() && value.equals(element.getAsString())) return;
@@ -1081,7 +1081,7 @@ public final class ConfigCenterClient {
             sync();
             if (!uniqueMode) return;
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
+            try { ResourceLocation.parse(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             persistDocument();
             submitCodex(root, new PendingCodexGive(id,
@@ -1092,7 +1092,7 @@ public final class ConfigCenterClient {
         private void save() {
             sync();
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
+            try { ResourceLocation.parse(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             persistDocument();
             submitCodex(root, null);
@@ -1464,7 +1464,7 @@ public final class ConfigCenterClient {
         private void save() {
             sync();
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
+            try { ResourceLocation.parse(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             for (String key : new ArrayList<>(original.keySet())) original.remove(key);
             for (Map.Entry<String, JsonElement> entry : edit.entrySet()) original.add(entry.getKey(), entry.getValue().deepCopy());
@@ -2183,7 +2183,7 @@ public final class ConfigCenterClient {
 
         private String itemName(String id) {
             try {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
+                Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
                 return item == null || item == Items.AIR ? id : new ItemStack(item).getHoverName().getString();
             } catch (Exception ignored) { return id; }
         }
@@ -2254,7 +2254,7 @@ public final class ConfigCenterClient {
         private void save() {
             syncHeader();
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); } catch (Exception ignored) { idBox.setTextColor(BAD); return; }
+            try { ResourceLocation.parse(id); } catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             if (!validItems(array(edit, "item_inputs")) || !validItems(outputArray())) return;
             boolean hasInput = array(edit, "item_inputs").size() > 0 || (edit.has("entity_inputs") && edit.get("entity_inputs").isJsonArray() && edit.getAsJsonArray("entity_inputs").size() > 0);
             boolean hasOutput = outputArray().size() > 0 || (edit.has("entity_outputs") && edit.get("entity_outputs").isJsonArray() && edit.getAsJsonArray("entity_outputs").size() > 0);

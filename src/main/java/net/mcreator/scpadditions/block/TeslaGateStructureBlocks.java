@@ -1,10 +1,10 @@
 package net.mcreator.scpadditions.block;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
@@ -14,7 +14,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class TeslaGateStructureBlocks {
     public static final ResourceLocation COLLISION_ID =
-            new ResourceLocation(ScpAdditionsMod.MODID, "tesla_gate_collision");
+            ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "tesla_gate_collision");
 
     private static TeslaGateCollisionBlock collision;
 

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import java.util.function.Supplier;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -25,10 +27,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Collections;
@@ -47,11 +48,11 @@ public final class LeftDoorButtons {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<Block> BUTTON_LOCKED = register("button_locked_left", State.LOCKED);
-    public static final RegistryObject<Block> BUTTON_CLOSED = register("button_closed_left", State.CLOSED);
-    public static final RegistryObject<Block> BUTTON_OPENING = register("button_opening_left", State.OPENING);
-    public static final RegistryObject<Block> BUTTON_OPEN = register("button_open_left", State.OPEN);
-    public static final RegistryObject<Block> BUTTON_CLOSING = register("button_closing_left", State.CLOSING);
+    public static final Supplier<Block> BUTTON_LOCKED = register("button_locked_left", State.LOCKED);
+    public static final Supplier<Block> BUTTON_CLOSED = register("button_closed_left", State.CLOSED);
+    public static final Supplier<Block> BUTTON_OPENING = register("button_opening_left", State.OPENING);
+    public static final Supplier<Block> BUTTON_OPEN = register("button_open_left", State.OPEN);
+    public static final Supplier<Block> BUTTON_CLOSING = register("button_closing_left", State.CLOSING);
 
     private LeftDoorButtons() {
     }
@@ -60,7 +61,7 @@ public final class LeftDoorButtons {
         BLOCKS.register(modBus);
     }
 
-    private static RegistryObject<Block> register(String path, State state) {
+    private static Supplier<Block> register(String path, State state) {
         return BLOCKS.register(path, () -> new LeftDoorButtonBlock(state));
     }
 

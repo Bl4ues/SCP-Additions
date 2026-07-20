@@ -2,10 +2,10 @@ package com.bl4ues.scpinventory.client;
 
 import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
 import com.bl4ues.scpinventory.client.gui.components.CraftingPanel;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
 import java.lang.reflect.Field;
 

@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 public final class ScpEntityNetwork {

@@ -1,10 +1,11 @@
 package net.mcreator.scpadditions.init;
 
-import net.minecraftforge.registries.RegistryObject;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import java.util.function.Supplier;
+
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -19,7 +20,7 @@ import net.mcreator.scpadditions.scp012.Scp012Module;
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModTabs {
     public static final DeferredRegister<CreativeModeTab> REGISTRY = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ScpAdditionsMod.MODID);
-    public static final RegistryObject<CreativeModeTab> SCP_ADDITIONS = REGISTRY.register("scp_additions",
+    public static final Supplier<CreativeModeTab> SCP_ADDITIONS = REGISTRY.register("scp_additions",
             () -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.scp_additions")).icon(() -> new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get())).displayItems((parameters, tabData) -> {
                 tabData.accept(ScpAdditionsModBlocks.TESLA_GATE.get().asItem());
                 tabData.accept(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem());
@@ -45,7 +46,7 @@ public class ScpAdditionsModTabs {
                 tabData.accept(ScpAdditionsModItems.COIN.get());
                 tabData.accept(ScpAdditionsModItems.EMPTY_CUP.get());
             }).withSearchBar().build());
-    public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS = REGISTRY.register("sc_padditions_sc_ps",
+    public static final Supplier<CreativeModeTab> SC_PADDITIONS_SC_PS = REGISTRY.register("sc_padditions_sc_ps",
             () -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_sc_ps")).icon(() -> new ItemStack(ScpAdditionsModBlocks.SCP_1176.get())).displayItems((parameters, tabData) -> {
                 tabData.accept(Scp012Module.SCP_012_ITEM.get());
                 tabData.accept(ScpAdditionsModBlocks.SCP_079ON.get().asItem());

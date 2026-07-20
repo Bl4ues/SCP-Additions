@@ -4,10 +4,11 @@
  */
 package net.mcreator.scpadditions.init;
 
-import net.minecraftforge.registries.RegistryObject;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.common.extensions.IForgeMenuType;
+import java.util.function.Supplier;
+
+import net.neoforged.neoforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.common.extensions.IForgeMenuType;
 
 import net.minecraft.world.inventory.MenuType;
 
@@ -18,7 +19,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 public class ScpAdditionsModMenus {
 	public static final DeferredRegister<MenuType<?>> REGISTRY = DeferredRegister.create(ForgeRegistries.MENU_TYPES, ScpAdditionsMod.MODID);
-	public static final RegistryObject<MenuType<TeslaTerminalMenu>> TESLA_TERMINAL = REGISTRY.register("tesla_terminal", () -> IForgeMenuType.create(TeslaTerminalMenu::new));
-	public static final RegistryObject<MenuType<Scp914GuiMenu>> SCP_914_GUI = REGISTRY.register("scp_914_gui", () -> IForgeMenuType.create(Scp914GuiMenu::new));
-	public static final RegistryObject<MenuType<Scp294GuiMenu>> SCP_294_GUI = REGISTRY.register("scp_294_gui", () -> IForgeMenuType.create(Scp294GuiMenu::new));
+	public static final Supplier<MenuType<TeslaTerminalMenu>> TESLA_TERMINAL = REGISTRY.register("tesla_terminal", () -> IForgeMenuType.create(TeslaTerminalMenu::new));
+	public static final Supplier<MenuType<Scp914GuiMenu>> SCP_914_GUI = REGISTRY.register("scp_914_gui", () -> IForgeMenuType.create(Scp914GuiMenu::new));
+	public static final Supplier<MenuType<Scp294GuiMenu>> SCP_294_GUI = REGISTRY.register("scp_294_gui", () -> IForgeMenuType.create(Scp294GuiMenu::new));
 }

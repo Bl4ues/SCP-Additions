@@ -2,6 +2,12 @@
 
 # SCP Additions 3.0.7 — In Development
 
+## NeoForge 1.21.1 port
+
+- Began a feature-parity port of SCP Additions 3.0.7 to NeoForge 1.21.1 on the dedicated `port/neoforge-1.21.1` branch.
+- Migrated the project baseline to Java 21, NeoForge 21.1.235, NeoGradle, Minecraft 1.21.1 resource formats, and the NeoForge build of GeckoLib.
+
+
 ## Internal cleanup
 
 - Consolidated the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects, actions, aliases, delays, and messages while removing 61 obsolete `/give` entries;

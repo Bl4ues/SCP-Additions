@@ -8,11 +8,11 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.data.Scp914SkinManager;
@@ -131,8 +131,7 @@ public final class Scp914SkinRenderEvents {
         Minecraft minecraft = Minecraft.getInstance();
         String hash = Integer.toUnsignedString(
                 (fileName.toLowerCase(Locale.ROOT) + ":" + modified).hashCode(), 16);
-        ResourceLocation textureId = new ResourceLocation(
-                ScpAdditionsMod.MODID, "dynamic/scp914_skins/" + hash);
+        ResourceLocation textureId = ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "dynamic/scp914_skins/" + hash);
         minecraft.getTextureManager().register(
                 textureId, new DynamicTexture(image));
 

@@ -14,8 +14,8 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
@@ -38,7 +38,7 @@ public final class Scp294DrinkManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("294drinks.json");
 	private static final String BUNDLED_CONFIG = "config/scpadditions/294drinks.json";
-	private static final ResourceLocation GENERIC_CUP = new ResourceLocation("scp_additions", "cup_of_coffee");
+	private static final ResourceLocation GENERIC_CUP = ResourceLocation.fromNamespaceAndPath("scp_additions", "cup_of_coffee");
 	private static final Set<String> LEGACY_DRINK_ITEM_PATHS = Set.of(
 			"aloe",
 			"amnesia",

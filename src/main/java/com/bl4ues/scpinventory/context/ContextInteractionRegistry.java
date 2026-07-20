@@ -33,6 +33,7 @@ public final class ContextInteractionRegistry {
     private static final Map<Block, List<Rule>> BLOCK_RULES = new HashMap<>();
     private static final Map<EntityType<?>, List<Rule>> ENTITY_RULES = new HashMap<>();
     private static boolean loaded = false;
+    private static volatile String serverSnapshotJson;
     private static double maxBlockRange = 0.0D;
     private static double maxEntityRange = 0.0D;
 
@@ -45,7 +46,26 @@ public final class ContextInteractionRegistry {
         }
     }
 
+    public static synchronized void applyServerSnapshot(String json) {
+        serverSnapshotJson = json == null ? "" : json;
+        loaded = false;
+        load();
+    }
+
+    public static synchronized void clearServerSnapshot() {
+        serverSnapshotJson = null;
+        loaded = false;
+        load();
+    }
+
     public static void reload() {
+        loaded = false;
+        load();
+    }
+
+    /** Reloads the host's file instead of a client snapshot shared in singleplayer. */
+    public static synchronized void reloadFromDisk() {
+        serverSnapshotJson = null;
         loaded = false;
         load();
     }
@@ -87,9 +107,14 @@ public final class ContextInteractionRegistry {
         maxEntityRange = 0.0D;
 
         try {
-            File file = ContextConfigManager.ensureConfigFile();
-
-            JsonObject root = JsonParser.parseReader(new FileReader(file)).getAsJsonObject();
+            String snapshot = serverSnapshotJson;
+            JsonObject root;
+            if (snapshot != null && !snapshot.isBlank()) {
+                root = JsonParser.parseString(snapshot).getAsJsonObject();
+            } else {
+                File file = ContextConfigManager.ensureConfigFile();
+                root = JsonParser.parseReader(new FileReader(file)).getAsJsonObject();
+            }
             JsonArray interactions = root.has("interactions") && root.get("interactions").isJsonArray()
                     ? root.getAsJsonArray("interactions")
                     : new JsonArray();
@@ -123,7 +148,6 @@ public final class ContextInteractionRegistry {
         if (type.isEmpty() || idText.isEmpty()) {
             return null;
         }
-
         ResourceLocation id;
         try {
             id = ResourceLocation.parse(idText);
@@ -136,12 +160,18 @@ public final class ContextInteractionRegistry {
         EntityType<?> entityType = null;
         if ("block".equals(type)) {
             kind = Kind.BLOCK;
+            if (!BuiltInRegistries.BLOCK.containsKey(id)) {
+                return null;
+            }
             block = BuiltInRegistries.BLOCK.get(id);
             if (block == null || block == Blocks.AIR) {
                 return null;
             }
         } else if ("entity".equals(type)) {
             kind = Kind.ENTITY;
+            if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
+                return null;
+            }
             entityType = BuiltInRegistries.ENTITY_TYPE.get(id);
             if (entityType == null) {
                 return null;

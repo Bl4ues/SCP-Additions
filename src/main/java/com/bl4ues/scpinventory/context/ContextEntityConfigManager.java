@@ -23,6 +23,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import com.bl4ues.scpadditions.compat.network.PacketDistributor;
@@ -126,7 +127,7 @@ public final class ContextEntityConfigManager {
         anchor.addProperty("rotateWith", cleanRotateWith(rotateWith));
 
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Saved context interaction for entity ").withStyle(ChatFormatting.GREEN)
                 .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));
         return true;
@@ -160,7 +161,7 @@ public final class ContextEntityConfigManager {
 
         if (removed) {
             saveRoot(root);
-            ContextInteractionRegistry.reload();
+            ContextInteractionRegistry.reloadFromDisk();
             ENTITY_SESSIONS.remove(player.getUUID());
             player.sendSystemMessage(Component.literal("[SCP Inventory] Deleted context interaction for entity ").withStyle(ChatFormatting.GREEN)
                     .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));
@@ -301,6 +302,10 @@ public final class ContextEntityConfigManager {
             file.getParentFile().mkdirs();
             ConfigFilePersistence.writeWithBackup(file.toPath(),
                     GSON.toJson(root) + System.lineSeparator());
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                ModNetwork.syncServerConfig(server.getPlayerList().getPlayers());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

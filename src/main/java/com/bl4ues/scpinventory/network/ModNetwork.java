@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "5";
+    private static final String PROTOCOL_VERSION = "6";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -53,6 +53,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, ItemConfigSavePacket.class, ItemConfigSavePacket::encode, ItemConfigSavePacket::decode, ItemConfigSavePacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigReloadPacket.class, ItemConfigReloadPacket::encode, ItemConfigReloadPacket::decode, ItemConfigReloadPacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigDeletePacket.class, ItemConfigDeletePacket::encode, ItemConfigDeletePacket::decode, ItemConfigDeletePacket::handle);
+        CHANNEL.registerMessage(id++, ServerConfigSyncPacket.class, ServerConfigSyncPacket::encode, ServerConfigSyncPacket::decode, ServerConfigSyncPacket::handle);
         CHANNEL.registerMessage(id++, CraftingStateSyncPacket.class, CraftingStateSyncPacket::encode, CraftingStateSyncPacket::decode, CraftingStateSyncPacket::handle);
         CHANNEL.registerMessage(id++, RequestCraftingStatePacket.class, RequestCraftingStatePacket::encode, RequestCraftingStatePacket::decode, RequestCraftingStatePacket::handle);
         CHANNEL.registerMessage(id++, CraftingActionPacket.class, CraftingActionPacket::encode, CraftingActionPacket::decode, CraftingActionPacket::handle);
@@ -76,6 +77,25 @@ public final class ModNetwork {
     public static void syncModuleState(Iterable<ServerPlayer> players) {
         if (players == null) return;
         for (ServerPlayer player : players) syncModuleState(player);
+    }
+
+    public static void syncServerConfig(ServerPlayer player) {
+        if (player == null) return;
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                new ServerConfigSyncPacket(
+                        com.bl4ues.scpinventory.config.ScpInventoryConfig.itemRules(),
+                        com.bl4ues.scpinventory.config.ScpInventoryConfig.itemEffects(),
+                        com.bl4ues.scpinventory.config.ScpInventoryConfig.codexDocuments(),
+                        com.bl4ues.scpinventory.config.ScpInventoryConfig.hiddenStatusEffects(),
+                        com.bl4ues.scpinventory.config.ScpInventoryConfig.scp173Targets(),
+                        com.bl4ues.scpinventory.context.ContextConfigManager.readConfigJson()));
+    }
+
+    public static void syncServerConfig(Iterable<ServerPlayer> players) {
+        if (players == null) return;
+        for (ServerPlayer player : players) {
+            syncServerConfig(player);
+        }
     }
 
     public static void showInventoryFull(ServerPlayer player) {

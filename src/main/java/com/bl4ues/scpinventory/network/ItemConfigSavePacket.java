@@ -42,7 +42,6 @@ public class ItemConfigSavePacket {
             ServerPlayer player = ctx.get().getSender();
             if (!ConfigCenterService.requireEdit(player)) return;
             ItemConfigManager.saveRule(player, msg.itemId, msg.type, msg.noStamina, msg.protectedEyes);
-            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
         });
         ctx.get().setPacketHandled(true);
     }

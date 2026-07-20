@@ -35,6 +35,10 @@ IGNORED_JAVA_PARTS = (
     "/compat/",
     "/network/compat/",
 )
+MIGRATED_FILES = {
+    "src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java":
+        "src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModArmorMaterials.java",
+}
 REGISTER_PATTERN = re.compile(r"\bregister\s*\(\s*\"([^\"]+)\"")
 
 
@@ -86,10 +90,20 @@ def main() -> int:
     base_files = tracked_at(args.base_ref)
     port_files = current_tracked()
     relevant_base = {path for path in base_files if relevant(path)}
-    missing_files = sorted(path for path in relevant_base if path not in port_files)
+    migrated_files = {
+        old: replacement for old, replacement in MIGRATED_FILES.items()
+        if old in relevant_base and old not in port_files and replacement in port_files
+    }
+    missing_files = sorted(
+        path for path in relevant_base
+        if path not in port_files and path not in migrated_files
+    )
 
     base_java = sorted(path for path in relevant_base if gameplay_java(path))
-    missing_java = sorted(path for path in base_java if path not in port_files)
+    missing_java = sorted(
+        path for path in base_java
+        if path not in port_files and path not in migrated_files
+    )
 
     init_java = [
         path for path in base_java
@@ -120,6 +134,7 @@ def main() -> int:
         "base_feature_files": len(relevant_base),
         "base_gameplay_java_files": len(base_java),
         "base_registry_ids": len(base_ids),
+        "migrated_files": migrated_files,
         "missing_files": missing_files,
         "missing_gameplay_java": missing_java,
         "missing_registry_ids": missing_registry_ids,

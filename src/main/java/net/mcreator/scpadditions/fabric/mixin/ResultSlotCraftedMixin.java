@@ -1,6 +1,6 @@
 package net.mcreator.scpadditions.fabric.mixin;
 
-import net.minecraft.world.Container;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ResultSlot;
 import net.minecraft.world.item.ItemStack;
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ResultSlot.class)
 abstract class ResultSlotCraftedMixin {
-    @Shadow private Container craftSlots;
+    @Shadow(aliases = "field_7870") private CraftingContainer craftSlots;
 
     @Inject(
             method = "onTake(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/item/ItemStack;)V",

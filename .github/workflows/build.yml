@@ -40,6 +40,7 @@ jobs:
           python3 tools/neoforge_port/apply_network_bridge.py
           python3 tools/neoforge_port/apply_inventory_attachment.py
           python3 tools/neoforge_port/apply_player_variables_attachment.py
+          python3 tools/neoforge_port/apply_inventory_stack_serialization.py
           python3 tools/neoforge_port/apply_misc_api_moves.py
           python3 tools/neoforge_port/apply_item_custom_data.py
           python3 tools/neoforge_port/apply_item_api_renames.py

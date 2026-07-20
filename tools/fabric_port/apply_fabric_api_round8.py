@@ -102,7 +102,11 @@ for item in changed:
     print(item)
 
 # Keep the existing workflow compatible while the migration frontier advances.
-runpy.run_path(
-    str(ROOT / "tools/fabric_port/apply_fabric_api_round9.py"),
-    run_name="__main__",
-)
+for script in (
+    "apply_fabric_api_round9.py",
+    "apply_fabric_api_round10.py",
+):
+    runpy.run_path(
+        str(ROOT / "tools/fabric_port" / script),
+        run_name="__main__",
+    )

@@ -5,7 +5,7 @@ import hashlib
 from pathlib import Path
 
 EXPECTED_SHA256 = "838866362be0e024efdaf7617b2125bdf305bbf23f248792bc024586e5abd0d5"
-EXPECTED_SIZE = 28119
+EXPECTED_SIZE = 28117
 EXPECTED_ENCODED_SIZE = 37492
 
 root = Path(__file__).resolve().parents[2]

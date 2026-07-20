@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
 
 import java.util.function.Supplier;

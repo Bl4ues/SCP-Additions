@@ -25,7 +25,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;

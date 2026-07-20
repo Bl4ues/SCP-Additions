@@ -2,7 +2,7 @@ package com.bl4ues.scpinventory.network;
 
 import com.bl4ues.scpinventory.client.ContextConfigClientHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

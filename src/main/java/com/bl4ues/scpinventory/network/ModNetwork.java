@@ -5,9 +5,9 @@ import com.bl4ues.scpinventory.capability.IScpInventory;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import com.bl4ues.scpadditions.compat.network.NetworkRegistry;
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
+import com.bl4ues.scpadditions.compat.network.SimpleChannel;
 import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 

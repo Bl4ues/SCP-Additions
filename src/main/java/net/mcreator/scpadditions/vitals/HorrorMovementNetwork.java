@@ -8,9 +8,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkRegistry;
+import com.bl4ues.scpadditions.compat.network.SimpleChannel;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Map;

@@ -19,7 +19,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.Optional;
 import java.util.function.Supplier;

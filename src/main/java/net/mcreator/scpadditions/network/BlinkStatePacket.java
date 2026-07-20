@@ -2,8 +2,8 @@ package net.mcreator.scpadditions.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.neoforged.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.fml.DistExecutor;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.mcreator.scpadditions.client.BlinkClient;
 
 import java.util.function.Supplier;

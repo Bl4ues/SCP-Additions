@@ -5,10 +5,10 @@ import com.google.gson.GsonBuilder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.fml.DistExecutor;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
+import com.bl4ues.scpadditions.compat.network.SimpleChannel;
 import net.mcreator.scpadditions.client.CodexAssetClient;
 
 import java.util.List;

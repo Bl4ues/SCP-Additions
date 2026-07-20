@@ -3,9 +3,9 @@ package net.mcreator.scpadditions;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.SimpleChannel;
+import com.bl4ues.scpadditions.compat.network.NetworkRegistry;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.bus.api.SubscribeEvent;

@@ -4,8 +4,8 @@ import com.bl4ues.scpinventory.client.ScpCraftingClientState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.neoforged.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.fml.DistExecutor;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

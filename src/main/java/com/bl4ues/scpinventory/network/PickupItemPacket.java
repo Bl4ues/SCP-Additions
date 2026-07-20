@@ -14,7 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.HashMap;
 import java.util.Map;

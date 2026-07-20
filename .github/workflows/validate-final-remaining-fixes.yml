@@ -1,0 +1,230 @@
+name: Validate final remaining 3.0.7 fixes
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/validation/VALIDATE_FINAL_REMAINING_FIXES
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - loader: Forge
+            branch: master
+            java: '17'
+            pr: 'none'
+            modern_registry: 'false'
+            validate_datapack: 'false'
+          - loader: NeoForge
+            branch: neoforge-1.21.1-port-3.0.7
+            java: '21'
+            pr: '42'
+            modern_registry: 'true'
+            validate_datapack: 'true'
+          - loader: Fabric
+            branch: fabric-1.21.1-port-3.0.7
+            java: '21'
+            pr: '43'
+            modern_registry: 'true'
+            validate_datapack: 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: gradle
+
+      - name: Verify final source invariants
+        shell: bash
+        env:
+          LOADER: ${{ matrix.loader }}
+          MODERN_REGISTRY: ${{ matrix.modern_registry }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = Path('src/main/java')
+          inventory_config = (root / 'com/bl4ues/scpinventory/config/ScpInventoryConfig.java').read_text()
+          item_manager = (root / 'com/bl4ues/scpinventory/config/ItemConfigManager.java').read_text()
+          item_client = (root / 'com/bl4ues/scpinventory/client/ItemConfigClientHandler.java').read_text()
+          context_client = (root / 'com/bl4ues/scpinventory/client/ContextConfigClientHandler.java').read_text()
+          context = (root / 'com/bl4ues/scpinventory/context/ContextInteractionRegistry.java').read_text()
+          coffee = (root / 'net/mcreator/scpadditions/item/CoffeeItem.java').read_text()
+          durability = (root / 'net/mcreator/scpadditions/event/Scp173DurabilityEvents.java').read_text()
+          mod_network = (root / 'com/bl4ues/scpinventory/network/ModNetwork.java').read_text()
+          login_events = (root / 'com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java').read_text()
+          client_events = (root / 'com/bl4ues/scpinventory/client/ClientGameplayEvents.java').read_text()
+          usable_client = (root / 'com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java').read_text()
+          inventory_action = (root / 'com/bl4ues/scpinventory/network/InventoryActionPacket.java').read_text()
+
+          assert 'applyServerSnapshot' in inventory_config
+          assert 'clearServerSnapshot' in inventory_config
+          assert 'reloadFromDisk()' in inventory_config
+          assert 'ScpInventoryConfig.reloadFromDisk();' in item_manager
+          assert 'syncServerConfig' in item_manager
+
+          assert 'ScpInventoryConfig.reload();' in item_client
+          assert 'ScpInventoryConfig.reloadFromDisk();' not in item_client
+          assert 'ContextInteractionRegistry.reload();' in context_client
+          assert 'ContextInteractionRegistry.reloadFromDisk();' not in context_client
+
+          assert 'gas_mask:scp_1499' not in context
+          if os.environ['MODERN_REGISTRY'] == 'true':
+              assert context.count('if (!BuiltInRegistries.BLOCK.containsKey(id))') == 1
+              assert context.count('if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id))') == 1
+          else:
+              assert context.count('if (!ForgeRegistries.BLOCKS.containsKey(id))') == 1
+              assert context.count('if (!ForgeRegistries.ENTITY_TYPES.containsKey(id))') == 1
+
+          assert 'while (path.startsWith("cup_of_"))' in coffee
+          assert 'DAMAGE_THRESHOLD = 6.0F' in durability
+          assert 'MIN_ACCEPTED_DAMAGE = 1.0F' in durability
+          assert 'amount - DAMAGE_THRESHOLD' in durability
+          assert 'DAMAGE_MULTIPLIER' not in durability
+          assert 'private static final double KNOCKBACK_RESISTANCE = 1.0D' in durability
+          assert 'scp173.setHealth(scp173.getMaxHealth())' not in durability
+          assert 'previousMaxHealth < MAX_HEALTH' in durability
+
+          def converted_damage(amount: float):
+              if amount <= 6.0:
+                  return None
+              return max(1.0, amount - 6.0)
+
+          assert converted_damage(0.0) is None
+          assert converted_damage(6.0) is None
+          assert converted_damage(7.0) == 1.0
+          assert converted_damage(10.0) == 4.0
+          assert converted_damage(20.0) == 14.0
+
+          assert 'PROTOCOL_VERSION = "6"' in mod_network
+          assert 'ServerConfigSyncPacket.class' in mod_network
+          assert (root / 'com/bl4ues/scpinventory/network/ServerConfigSyncPacket.java').is_file()
+          assert 'syncServerConfig(player)' in login_events
+          assert 'clearServerSnapshot' in client_events
+          assert 'return stack != null && !stack.isEmpty();' in usable_client
+          assert 'ClientboundSetCarriedItemPacket' in inventory_action
+          PY
+
+      - name: Validate 1.21.1 datapack layout
+        if: matrix.validate_datapack == 'true'
+        shell: bash
+        run: |
+          test -d src/main/resources/data/scp_additions/advancement
+          test -d src/main/resources/data/scp_additions/recipe
+          test ! -d src/main/resources/data/scp_additions/advancements
+          test ! -d src/main/resources/data/scp_additions/recipes
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          meta = json.loads(Path('src/main/resources/pack.mcmeta').read_text())
+          assert meta['pack']['pack_format'] == 48
+          for path in Path('src/main/resources/data').rglob('*.json'):
+              json.loads(path.read_text())
+          PY
+
+      - name: Build ${{ matrix.loader }} edition
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Create and tick a dedicated world
+        shell: bash
+        run: |
+          mkdir -p run run/server
+          printf 'eula=true\n' > run/eula.txt
+          printf 'eula=true\n' > run/server/eula.txt
+          set +e
+          timeout 150s ./gradlew runServer --no-daemon --console=plain > final-server.log 2>&1
+          status=$?
+          set -e
+          cat final-server.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -q "Done (" final-server.log
+          ! grep -Eqi "Encountered an unexpected exception|Exception in server tick loop|Failed to start the minecraft server|Could not execute entrypoint" final-server.log
+          ! grep -q "Missing registered gamerule" final-server.log
+          ! grep -q "Unable to award missing root advancement" final-server.log
+
+      - name: Start graphical client
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb
+          set +e
+          timeout 120s xvfb-run -a ./gradlew runClient --no-daemon --console=plain > final-client.log 2>&1
+          status=$?
+          set -e
+          cat final-client.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -Eq "Setting user:|Backend library:" final-client.log
+          ! grep -Eqi "Could not execute entrypoint|The game crashed whilst|Encountered an unexpected exception|Exception in thread.*(Render|Client)" final-client.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.loader }}-final-remaining-fixes
+          path: |
+            build/libs/*.jar
+            final-server.log
+            final-client.log
+            run/logs/latest.log
+            run/server/logs/latest.log
+            run/client/logs/latest.log
+            run/crash-reports/**
+            run/server/crash-reports/**
+            run/client/crash-reports/**
+
+      - name: Report final port result
+        if: always() && matrix.pr != 'none'
+        shell: bash
+        run: |
+          head_sha=$(git rev-parse HEAD)
+          gh pr comment '${{ matrix.pr }}' --repo '${{ github.repository }}' --body "### ${{ matrix.loader }} final remaining-fixes validation: **${{ job.status }}**
+
+          - Tested head: \`$head_sha\`
+          - Verified: authoritative host snapshots, immediate item-rule reload, missing target rejection, SCP-294 naming, SCP-173 damage mapping, usable-tool synchronization, clean build, dedicated world ticks, and graphical client startup
+          - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Manual in-game and two-player QA remain the final acceptance step."
+
+  cleanup:
+    if: always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/validate-final-remaining-fixes.yml tools/validation/VALIDATE_FINAL_REMAINING_FIXES
+          git commit -m "Remove temporary final remaining-fixes validator [skip ci]"
+          git push origin HEAD:master

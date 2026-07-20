@@ -1,0 +1,115 @@
+name: Restore Fabric common 3.0.7 parity
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/RESTORE_FABRIC_COMMON_PARITY
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore-build-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fabric-1.21.1-port-3.0.7
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch validated common 1.21.1 source and current docs
+        shell: bash
+        run: |
+          git fetch origin neoforge-1.21.1-port-3.0.7 master
+          common_files=(
+            src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java
+            src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java
+            src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java
+            src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java
+            src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java
+            src/main/java/com/bl4ues/scpinventory/network/ServerConfigSyncPacket.java
+            src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java
+            src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java
+            src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java
+            src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java
+            src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java
+            src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+            src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java
+            src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientHandler.java
+            src/main/java/com/bl4ues/scpinventory/client/ItemConfigClientHandler.java
+            src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java
+            src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java
+            src/main/java/net/mcreator/scpadditions/item/CoffeeItem.java
+            src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java
+          )
+          for path in "${common_files[@]}"; do
+            mkdir -p "$(dirname "$path")"
+            git show "origin/neoforge-1.21.1-port-3.0.7:$path" > "$path"
+          done
+          git show origin/master:README.md > README.md
+          git show origin/master:CHANGELOG.md > CHANGELOG.md
+
+      - name: Verify parity-sensitive source before build
+        shell: bash
+        run: |
+          grep -q 'PROTOCOL_VERSION = "6"' src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java
+          test -f src/main/java/com/bl4ues/scpinventory/network/ServerConfigSyncPacket.java
+          grep -q 'applyServerSnapshot' src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java
+          grep -q 'syncServerConfig(player)' src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java
+          grep -q 'clearServerSnapshot' src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+          grep -q 'shouldClientReapplySessionCopy' src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java
+          grep -q 'ClientboundSetCarriedItemPacket' src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java
+          grep -q 'ScpInventoryConfig.reload();' src/main/java/com/bl4ues/scpinventory/client/ItemConfigClientHandler.java
+          ! grep -q 'ScpInventoryConfig.reloadFromDisk();' src/main/java/com/bl4ues/scpinventory/client/ItemConfigClientHandler.java
+          grep -q 'DAMAGE_THRESHOLD = 6.0F' src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java
+          grep -q 'while (path.startsWith("cup_of_"))' src/main/java/net/mcreator/scpadditions/item/CoffeeItem.java
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build restored Fabric source
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit restored Fabric parity
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md CHANGELOG.md src/main/java
+          git commit -m "Restore Fabric multiplayer parity and remaining 3.0.7 fixes"
+          git push origin HEAD:fabric-1.21.1-port-3.0.7
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fabric-common-parity-build
+          path: build/libs/*.jar
+          if-no-files-found: warn
+
+  cleanup:
+    if: always()
+    needs: restore-build-and-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/restore-fabric-common-parity.yml tools/hotfix/RESTORE_FABRIC_COMMON_PARITY
+          git commit -m "Remove temporary Fabric parity restoration [skip ci]"
+          git push origin HEAD:master

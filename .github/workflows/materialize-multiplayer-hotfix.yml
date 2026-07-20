@@ -47,8 +47,21 @@ jobs:
           set -euo pipefail
           python3 tools/hotfix/apply_gameplay_hotfix_3_0_7.py | tee gameplay-hotfix.log
           python3 tools/hotfix/repair_gameplay_hotfix_idempotence.py | tee -a gameplay-hotfix.log
-          python3 tools/hotfix/apply_multiplayer_config_hotfix_3_0_7.py | tee config-hotfix.log
-          python3 tools/hotfix/apply_tool_session_hotfix_3_0_7.py | tee tool-hotfix.log
+
+          if test ! -f src/main/java/com/bl4ues/scpinventory/network/ServerConfigSyncPacket.java; then
+            python3 tools/hotfix/apply_multiplayer_config_hotfix_3_0_7.py | tee config-hotfix.log
+          else
+            echo 'Core host-config snapshot layer is already materialized.' | tee config-hotfix.log
+          fi
+
+          if ! grep -Fq 'return stack != null && !stack.isEmpty();' \
+              src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java; then
+            python3 tools/hotfix/apply_tool_session_hotfix_3_0_7.py | tee tool-hotfix.log
+          else
+            echo 'Core usable-tool session layer is already materialized.' | tee tool-hotfix.log
+          fi
+
+          python3 tools/hotfix/apply_incremental_multiplayer_fixes.py | tee -a config-hotfix.log
           git diff --check
           git diff --binary > multiplayer-hotfix.patch
 
@@ -62,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew clean build --no-daemon --stacktrace | tee forge-hotfix-build.log
+          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee forge-hotfix-build.log
 
       - name: Audit compiled assets
         run: python3 scripts/audit_unused_assets.py

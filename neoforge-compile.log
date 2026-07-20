@@ -1,5 +1,3 @@
-Downloading https://services.gradle.org/distributions/gradle-9.2.1-bin.zip
-............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
 
 Welcome to Gradle 9.2.1!
 
@@ -13,40 +11,27 @@ For more details see https://docs.gradle.org/9.2.1/release-notes.html
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 > Task :clean
-> Task :neoFormListLibraries
-> Task :cacheVersionManifest1.21.1
-> Task :cacheVersionExecutableClient1.21.1
-> Task :cacheVersionExecutableServer1.21.1
-> Task :cacheVersionExtractedServer1.21.1
-> Task :cacheVersionMappingsClient1.21.1
-> Task :create1.21.1ClientExtraJar
+> Task :neoFormListLibraries UP-TO-DATE
+> Task :cacheVersionManifest1.21.1 FROM-CACHE
+> Task :cacheVersionExecutableClient1.21.1 FROM-CACHE
+> Task :cacheVersionExecutableServer1.21.1 FROM-CACHE
+> Task :cacheVersionExtractedServer1.21.1 FROM-CACHE
+> Task :cacheVersionMappingsClient1.21.1 FROM-CACHE
+> Task :create1.21.1ClientExtraJar FROM-CACHE
 > Task :selectRawArtifactNg_dummy_ng.net.minecraft_client_1.21.1_client-extra
-> Task :neoFormListTransformLibraries
-> Task :neoFormStripClientFinals
-> Task :neoFormStripClient
-> Task :neoFormStripServer
-> Task :neoFormMerge
-> Task :neoFormMergeMappings
-> Task :neoFormRename
-> Task :neoFormDecompile
-> Task :neoFormInject
-> Task :neoFormPatch
-> Task :neoFormPatchUserDev
-
-> Task :neoFormTransformSource
-Access transformer PUBLIC LEAVE /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg:5, targeting net.minecraft.client.sounds.SoundEngine FIELD f_120224_ did not apply as its target doesn't exist
-Access transformer PUBLIC REMOVEFINAL /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg:3, targeting net.minecraft.world.level.levelgen.feature.TreeFeature METHOD m_142674_(Lnet/minecraft/world/level/levelgen/feature/FeaturePlaceContext;)Z did not apply as its target doesn't exist
-Access transformer PUBLIC LEAVE /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg:6, targeting net.minecraft.client.sounds.SoundEngine FIELD f_120221_ did not apply as its target doesn't exist
-Access transformer PUBLIC LEAVE /home/runner/work/SCP-Additions/SCP-Additions/src/main/resources/META-INF/accesstransformer.cfg:4, targeting com.mojang.blaze3d.audio.Channel FIELD f_83642_ did not apply as its target doesn't exist
-
-> Task :neoFormRecompile
-Note: Some input files use or override a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
-Note: Some input files use or override a deprecated API that is marked for removal.
-Note: Recompile with -Xlint:removal for details.
-Note: Some input files use unchecked or unsafe operations.
-Note: Recompile with -Xlint:unchecked for details.
-
+> Task :neoFormListTransformLibraries UP-TO-DATE
+> Task :neoFormStripClientFinals FROM-CACHE
+> Task :neoFormStripClient FROM-CACHE
+> Task :neoFormStripServer FROM-CACHE
+> Task :neoFormMerge FROM-CACHE
+> Task :neoFormMergeMappings FROM-CACHE
+> Task :neoFormRename FROM-CACHE
+> Task :neoFormDecompile FROM-CACHE
+> Task :neoFormInject FROM-CACHE
+> Task :neoFormPatch FROM-CACHE
+> Task :neoFormPatchUserDev FROM-CACHE
+> Task :neoFormTransformSource FROM-CACHE
+> Task :neoFormRecompile FROM-CACHE
 > Task :supplyRawJarForneoFormJoined1.21.1-20240808.144430
 > Task :selectRawArtifactNg_dummy_ng.net.neoforged_neoforge_21.1.235
 
@@ -110,9 +95,6 @@ import net.neoforged.neoforge.capabilities.CapabilityToken;
                         ^
   symbol:   class Capability
   location: class ScpInventoryCapability
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
 import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
                                                  ^
@@ -123,15 +105,6 @@ import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
                                     ^
   symbol:   class EntityItemPickupEvent
   location: class BlockPickupHandler
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                             ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
 import net.minecraftforge.event.AttachCapabilitiesEvent;
                                ^
@@ -140,12 +113,6 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
                                         ^
   symbol:   class AttachCapabilitiesEvent
   location: class CapabilityEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                             ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
 import net.minecraftforge.network.NetworkEvent;
                                  ^
@@ -374,18 +341,44 @@ import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                         ^
   symbol:   class RegisterGuiOverlaysEvent
   location: class ClientModEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
+import net.minecraftforge.client.settings.KeyConflictContext;
+                                         ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.PacketDistributor;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimatableManager;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+                  ^
+  symbol:   class AnimatableInstanceCache
+  location: class HazmatArmorItem
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
+            AnimatableManager.ControllerRegistrar controllers) {
+                             ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+           ^
+  symbol:   class AnimatableInstanceCache
+  location: class HazmatArmorItem
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
+public enum HazmatArmorMaterial implements ArmorMaterial {
+                                           ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
+import net.neoforged.neoforge.registries.MissingMappingsEvent;
+                                        ^
+  symbol:   class MissingMappingsEvent
+  location: package net.neoforged.neoforge.registries
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
+    public static void remapLegacyDrinkItems(MissingMappingsEvent event) {
                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-                                             ^
+  symbol:   class MissingMappingsEvent
+  location: class LegacyDrinkItemMappings
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
 @EventBusSubscriber(modid = "scp_additions", bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
                                              ^
@@ -706,6 +699,9 @@ Execution failed for task ':compileJava'.
 > Compilation failed; see the compiler output below.
   Note: Some input files additionally use or override a deprecated API that is marked for removal.
   Note: Recompile with -Xlint:deprecation for details.
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
+  public enum HazmatArmorMaterial implements ArmorMaterial {
+                                             ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
   import net.neoforged.neoforge.capabilities.Capability;
                                             ^
@@ -791,6 +787,26 @@ Execution failed for task ':compileJava'.
                                           ^
     symbol:   class RegisterGuiOverlaysEvent
     location: class ClientModEvents
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
+      private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+                    ^
+    symbol:   class AnimatableInstanceCache
+    location: class HazmatArmorItem
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
+      public AnimatableInstanceCache getAnimatableInstanceCache() {
+             ^
+    symbol:   class AnimatableInstanceCache
+    location: class HazmatArmorItem
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
+  import net.neoforged.neoforge.registries.MissingMappingsEvent;
+                                          ^
+    symbol:   class MissingMappingsEvent
+    location: package net.neoforged.neoforge.registries
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
+      public static void remapLegacyDrinkItems(MissingMappingsEvent event) {
+                                               ^
+    symbol:   class MissingMappingsEvent
+    location: class LegacyDrinkItemMappings
   Note: Recompile with -Xlint:unchecked for details.
   Note: Some input files use or override a deprecated API.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
@@ -1099,27 +1115,9 @@ Execution failed for task ':compileJava'.
                                                ^
     symbol: class ICapabilitySerializable
   Note: Some input files use unchecked or unsafe operations.
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
-  import net.minecraftforge.event.TickEvent;
-                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
-      public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
-  import net.minecraftforge.event.TickEvent;
-                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
-      public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                               ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
   import net.minecraftforge.event.AttachCapabilitiesEvent;
                                  ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
-  import net.minecraftforge.event.TickEvent;
-                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
-      public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                               ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
   import net.minecraftforge.network.NetworkEvent;
                                    ^
@@ -1333,18 +1331,21 @@ Execution failed for task ':compileJava'.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
   import net.minecraftforge.network.PacketDistributor;
                                    ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
-  import net.minecraftforge.event.TickEvent;
-                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
-      public static void onClientTick(TickEvent.ClientTickEvent event) {
-                                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
-  import net.minecraftforge.event.TickEvent;
-                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
-      public static void onClientTick(TickEvent.ClientTickEvent event) {
-                                               ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
+  import net.minecraftforge.client.settings.KeyConflictContext;
+                                           ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.PacketDistributor;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+  import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                          ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
+  import software.bernie.geckolib.core.animation.AnimatableManager;
+                                                ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
+              AnimatableManager.ControllerRegistrar controllers) {
+                               ^
   100 errors
   100 warnings
 
@@ -1385,11 +1386,45 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compile
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:328)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:146)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:131)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:45)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$withLocksAcquired$0(DefaultWorkerLeaseService.java:269)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:42)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:259)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
 Note: Some input files additionally use or override a deprecated API that is marked for removal.
 Note: Recompile with -Xlint:deprecation for details.
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
+public enum HazmatArmorMaterial implements ArmorMaterial {
+                                           ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.Capability;
                                           ^
@@ -1475,6 +1510,26 @@ import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                         ^
   symbol:   class RegisterGuiOverlaysEvent
   location: class ClientModEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+                  ^
+  symbol:   class AnimatableInstanceCache
+  location: class HazmatArmorItem
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+           ^
+  symbol:   class AnimatableInstanceCache
+  location: class HazmatArmorItem
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
+import net.neoforged.neoforge.registries.MissingMappingsEvent;
+                                        ^
+  symbol:   class MissingMappingsEvent
+  location: package net.neoforged.neoforge.registries
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
+    public static void remapLegacyDrinkItems(MissingMappingsEvent event) {
+                                             ^
+  symbol:   class MissingMappingsEvent
+  location: class LegacyDrinkItemMappings
 Note: Recompile with -Xlint:unchecked for details.
 Note: Some input files use or override a deprecated API.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
@@ -1783,27 +1838,9 @@ public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag
                                              ^
   symbol: class ICapabilitySerializable
 Note: Some input files use unchecked or unsafe operations.
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                             ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
 import net.minecraftforge.event.AttachCapabilitiesEvent;
                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-                                             ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
 import net.minecraftforge.network.NetworkEvent;
                                  ^
@@ -2017,18 +2054,21 @@ import net.minecraftforge.network.PacketDistributor;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
 import net.minecraftforge.network.PacketDistributor;
                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.TickEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-                                             ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
+import net.minecraftforge.client.settings.KeyConflictContext;
+                                         ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.PacketDistributor;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimatableManager;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
+            AnimatableManager.ControllerRegistrar controllers) {
+                             ^
 100 errors
 100 warnings
 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:89)
@@ -2156,8 +2196,8 @@ import net.minecraftforge.event.TickEvent;
 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:31)
 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:64)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
-	... 30 more
+	... 61 more
 
 
-BUILD FAILED in 3m 43s
-25 actionable tasks: 25 executed
+BUILD FAILED in 25s
+25 actionable tasks: 5 executed, 18 from cache, 2 up-to-date

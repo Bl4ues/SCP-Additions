@@ -10,16 +10,10 @@
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
@@ -94,12 +88,19 @@
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
 FAILURE: Build failed with an exception.
 * What went wrong:
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
@@ -117,14 +118,12 @@ FAILURE: Build failed with an exception.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
@@ -196,10 +195,12 @@ FAILURE: Build failed with an exception.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
@@ -217,14 +218,12 @@ FAILURE: Build failed with an exception.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
@@ -296,8 +295,9 @@ FAILURE: Build failed with an exception.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
-BUILD FAILED in 3m 43s
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
+BUILD FAILED in 25s

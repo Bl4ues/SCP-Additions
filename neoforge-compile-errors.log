@@ -1,8 +1,3 @@
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:10: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:7: error: cannot find symbol
@@ -13,102 +8,138 @@
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:7: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:16: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:17: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:18: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:277: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:281: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:283: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:12: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:78: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:19: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:8: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:9: error: package net.neoforged.neoforge.client.gui.overlay does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:30: error: package RenderGuiOverlayEvent does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:14: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:72: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/EyeSoreEffectEvents.java:32: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:7: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:23: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:9: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:38: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityBlockMiningEvents.java:12: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:13: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:26: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpItemClassifier.java:254: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:140: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:281: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:288: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:312: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:343: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:437: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:449: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:551: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:558: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:566: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:569: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:575: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:583: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:591: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:594: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:600: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:636: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:646: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:649: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:653: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:657: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:665: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:673: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:677: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:681: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:688: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:372: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:448: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:530: error: incompatible types: CompoundTag cannot be converted to Provider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:538: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:545: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:553: error: incompatible types: CompoundTag cannot be converted to Provider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:559: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:127: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:128: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:97: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:165: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:213: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:221: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:281: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:171: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:26: error: incompatible types: bad return type in lambda expression
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:85: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:33: error: incompatible types: bad return type in lambda expression
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:32: error: incompatible types: bad return type in lambda expression
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:35: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:39: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java:399: error: constructor ResourceLocation in class ResourceLocation cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:139: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:145: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java:152: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:285: error: method renderBackground in class Screen cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:544: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:549: error: method mouseScrolled in interface ContainerEventHandler cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/ScrollableItemList.java:136: error: method getTooltipLines in class ItemStack cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:208: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:213: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:218: error: incompatible types: Holder<MobEffect> cannot be converted to MobEffect
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:253: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:362: error: method renderEntityInInventoryFollowsMouse in class InventoryScreen cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:369: error: incompatible types: Holder<Attribute> cannot be converted to Attribute
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:370: error: incompatible types: Holder<Attribute> cannot be converted to Attribute
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:400: error: incompatible types: Attribute cannot be converted to Holder<Attribute>
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java:498: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ItemConfigScreen.java:93: error: method renderBackground in class Screen cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:135: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:136: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:137: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:195: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingState.java:46: error: incompatible types: CompoundTag cannot be converted to Provider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingState.java:61: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/CraftingInputHandler.java:53: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/StatusEffectTimelineClient.java:62: error: incompatible types: Holder<MobEffect> cannot be converted to MobEffect
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingRecipeHelper.java:48: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingRecipeHelper.java:54: error: incompatible types: Optional<RecipeHolder<?>> cannot be converted to Optional<? extends Recipe<?>>
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingKnowledgeEvents.java:25: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:185: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:190: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:192: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:222: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:19: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:22: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:27: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:22: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:40: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:42: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java:18: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:54: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:56: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:127: error: no suitable method found for readCompressed(InputStream)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:154: error: constructor ResourceLocation in class ResourceLocation cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:155: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:19: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:22: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:27: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:31: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:35: error: incompatible types: EquipmentSlot cannot be converted to ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:36: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:36: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:37: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:37: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:40: error: incompatible types: EquipmentSlot cannot be converted to ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:43: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:48: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:50: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java:18: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java:18: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:43: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:74: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:89: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:19: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:22: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:27: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:32: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:34: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CoffeeItem.java:27: error: cannot find symbol
 FAILURE: Build failed with an exception.
 * What went wrong:
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:530: error: incompatible types: CompoundTag cannot be converted to Provider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:553: error: incompatible types: CompoundTag cannot be converted to Provider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:26: error: incompatible types: bad return type in lambda expression
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:33: error: incompatible types: bad return type in lambda expression
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:32: error: incompatible types: bad return type in lambda expression
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:10: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java:399: error: constructor ResourceLocation in class ResourceLocation cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:285: error: method renderBackground in class Screen cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:549: error: method mouseScrolled in interface ContainerEventHandler cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/ScrollableItemList.java:136: error: method getTooltipLines in class ItemStack cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:362: error: method renderEntityInInventoryFollowsMouse in class InventoryScreen cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ItemConfigScreen.java:93: error: method renderBackground in class Screen cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:154: error: constructor ResourceLocation in class ResourceLocation cannot be applied to given types;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingRecipeHelper.java:48: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingKnowledgeEvents.java:25: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:185: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:127: error: no suitable method found for readCompressed(InputStream)
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:218: error: incompatible types: Holder<MobEffect> cannot be converted to MobEffect
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:369: error: incompatible types: Holder<Attribute> cannot be converted to Attribute
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:370: error: incompatible types: Holder<Attribute> cannot be converted to Attribute
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:400: error: incompatible types: Attribute cannot be converted to Holder<Attribute>
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java:498: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingState.java:46: error: incompatible types: CompoundTag cannot be converted to Provider
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/StatusEffectTimelineClient.java:62: error: incompatible types: Holder<MobEffect> cannot be converted to MobEffect
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingRecipeHelper.java:54: error: incompatible types: Optional<RecipeHolder<?>> cannot be converted to Optional<? extends Recipe<?>>
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:190: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:192: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:42: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:56: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:35: error: incompatible types: EquipmentSlot cannot be converted to ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:40: error: incompatible types: EquipmentSlot cannot be converted to ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:50: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:89: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:34: error: incompatible types: Level cannot be converted to TooltipContext
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:7: error: cannot find symbol
@@ -119,96 +150,96 @@ FAILURE: Build failed with an exception.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:7: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:16: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:17: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:18: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:277: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:281: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:283: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:12: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:78: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:19: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:8: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:14: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:72: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/EyeSoreEffectEvents.java:32: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:7: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:23: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:9: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:38: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityBlockMiningEvents.java:12: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:13: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:26: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpItemClassifier.java:254: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:140: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:281: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:288: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:312: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:343: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:437: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:449: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:551: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:558: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:566: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:569: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:575: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:583: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:591: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:594: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:600: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:636: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:646: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:649: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:653: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:657: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:665: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:673: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:677: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:681: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:688: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:372: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:448: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:538: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:545: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:559: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:127: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:128: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:97: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:165: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:213: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:221: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:281: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:171: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:85: error: cannot find symbol
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10: error: package net.minecraftforge.event does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:9: error: package net.neoforged.neoforge.client.gui.overlay does not exist
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:30: error: package RenderGuiOverlayEvent does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:530: error: incompatible types: CompoundTag cannot be converted to Provider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:553: error: incompatible types: CompoundTag cannot be converted to Provider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:26: error: incompatible types: bad return type in lambda expression
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:33: error: incompatible types: bad return type in lambda expression
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:32: error: incompatible types: bad return type in lambda expression
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:89: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:10: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:36: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:36: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:37: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:37: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:544: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:195: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:22: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:27: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:40: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java:28: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java:18: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:54: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:22: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:27: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:31: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:43: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:48: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java:18: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java:18: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java:28: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java:28: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java:28: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:43: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:74: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java:28: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:22: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:27: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java:28: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:32: error: method does not override or implement a method from a supertype
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:35: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:39: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:139: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:145: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java:152: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:208: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:213: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:253: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:135: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:136: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:137: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingState.java:61: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/CraftingInputHandler.java:53: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:222: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:19: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:22: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:155: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:19: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:19: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CoffeeItem.java:27: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java:399: error: constructor ResourceLocation in class ResourceLocation cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:285: error: method renderBackground in class Screen cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:549: error: method mouseScrolled in interface ContainerEventHandler cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/ScrollableItemList.java:136: error: method getTooltipLines in class ItemStack cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:362: error: method renderEntityInInventoryFollowsMouse in class InventoryScreen cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ItemConfigScreen.java:93: error: method renderBackground in class Screen cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:154: error: constructor ResourceLocation in class ResourceLocation cannot be applied to given types;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingRecipeHelper.java:48: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingKnowledgeEvents.java:25: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:185: error: no suitable method found for getRecipeFor(RecipeType<CraftingRecipe>,TransientCraftingContainer,Level)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:127: error: no suitable method found for readCompressed(InputStream)
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:218: error: incompatible types: Holder<MobEffect> cannot be converted to MobEffect
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:369: error: incompatible types: Holder<Attribute> cannot be converted to Attribute
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:370: error: incompatible types: Holder<Attribute> cannot be converted to Attribute
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:400: error: incompatible types: Attribute cannot be converted to Holder<Attribute>
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/CraftingPanel.java:498: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingState.java:46: error: incompatible types: CompoundTag cannot be converted to Provider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/StatusEffectTimelineClient.java:62: error: incompatible types: Holder<MobEffect> cannot be converted to MobEffect
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingRecipeHelper.java:54: error: incompatible types: Optional<RecipeHolder<?>> cannot be converted to Optional<? extends Recipe<?>>
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:190: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:192: error: incompatible types: TransientCraftingContainer cannot be converted to CraftingInput
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:42: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:56: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:35: error: incompatible types: EquipmentSlot cannot be converted to ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:40: error: incompatible types: EquipmentSlot cannot be converted to ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:50: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java:20: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:89: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:29: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java:30: error: incompatible types: Level cannot be converted to TooltipContext
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:34: error: incompatible types: Level cannot be converted to TooltipContext
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:7: error: cannot find symbol
@@ -219,85 +250,54 @@ FAILURE: Build failed with an exception.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:7: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:16: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:17: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:18: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:277: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:281: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:283: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:12: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:78: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:19: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:8: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:14: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:72: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/EyeSoreEffectEvents.java:32: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:7: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:23: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:9: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:38: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityBlockMiningEvents.java:12: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:13: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:26: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpItemClassifier.java:254: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:140: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:281: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:288: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:312: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:343: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:437: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:449: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:551: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:558: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:566: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:569: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:575: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:583: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:591: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:594: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:600: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:636: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:646: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:649: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:653: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:657: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:665: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:673: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:677: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:681: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:688: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:372: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:448: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:538: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:545: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:559: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:127: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:128: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:97: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:165: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:213: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:221: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:281: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:171: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:85: error: cannot find symbol
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10: error: package net.minecraftforge.event does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:9: error: package net.neoforged.neoforge.client.gui.overlay does not exist
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:30: error: package RenderGuiOverlayEvent does not exist
-BUILD FAILED in 26s
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:36: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:36: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:37: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:37: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java:544: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:195: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:22: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:27: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:40: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SecurityCredentialsItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/EmptyCupItem.java:18: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:54: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:22: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:27: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:31: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:43: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:48: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/PlayingCardItem.java:18: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CreditCardItem.java:18: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level4KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level6KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level2KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:43: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatSuitItem.java:74: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level3KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:22: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:27: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Level5KeycardItem.java:28: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:32: error: method does not override or implement a method from a supertype
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:35: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:39: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:139: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:145: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java:152: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:208: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:213: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/components/StatusPanel.java:253: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:135: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:136: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/gui/ContextConfigScreen.java:137: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingState.java:61: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/CraftingInputHandler.java:53: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:222: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java:19: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp1176honeyItem.java:22: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java:155: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java:19: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java:19: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/CoffeeItem.java:27: error: cannot find symbol
+BUILD FAILED in 33s

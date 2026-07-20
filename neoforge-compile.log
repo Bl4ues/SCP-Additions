@@ -113,224 +113,26 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
                                         ^
   symbol:   class AttachCapabilitiesEvent
   location: class CapabilityEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23: error: package NetworkEvent does not exist
-    public static void handle(RequestInventorySyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigOpenRequestPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                    ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72: error: package NetworkEvent does not exist
-    public static void handle(ContextInteractPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkRegistry;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10: error: package net.minecraftforge.network.simple does not exist
-import net.minecraftforge.network.simple.SimpleChannel;
-                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
                         ^
-  symbol:   class SimpleChannel
-  location: class ModNetwork
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23: error: package NetworkEvent does not exist
-    public static void handle(InventoryFullPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33: error: package NetworkEvent does not exist
-    public static void handle(DocumentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27: error: package NetworkEvent does not exist
-    public static void handle(UsableSessionReturnPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39: error: package NetworkEvent does not exist
-    public static void handle(MainUseActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49: error: package NetworkEvent does not exist
-    public static void handle(PickupItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                         ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38: error: package NetworkEvent does not exist
-    public static void handle(EquipmentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33: error: package NetworkEvent does not exist
-    public static void handle(KeyActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29: error: package NetworkEvent does not exist
-    public static void handle(SyncInventoryPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55: error: package NetworkEvent does not exist
-    public static void handle(InventoryActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigSelectPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27: error: package NetworkEvent does not exist
-    public static void handle(UsableSessionDropPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42: error: package NetworkEvent does not exist
-    public static void handle(UseHotbarItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58: error: package NetworkEvent does not exist
-    public static void handle(InventoryMovePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
 import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                           ^
@@ -344,9 +146,6 @@ import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
 import net.minecraftforge.client.settings.KeyConflictContext;
                                          ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
                                                         ^
@@ -379,6 +178,312 @@ import net.neoforged.neoforge.registries.MissingMappingsEvent;
                                              ^
   symbol:   class MissingMappingsEvent
   location: class LegacyDrinkItemMappings
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:10: error: cannot find symbol
+import net.neoforged.neoforge.common.ForgeSpawnEggItem;
+                                    ^
+  symbol:   class ForgeSpawnEggItem
+  location: package net.neoforged.neoforge.common
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
+public class NamedSpawnEggItem extends ForgeSpawnEggItem {
+                                       ^
+  symbol: class ForgeSpawnEggItem
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:15: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimatableManager;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:19: error: cannot find symbol
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+                  ^
+  symbol:   class AnimatableInstanceCache
+  location: class BlinkWatcherEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:42: error: package AnimatableManager does not exist
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+                                                     ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:46: error: cannot find symbol
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+           ^
+  symbol:   class AnimatableInstanceCache
+  location: class BlinkWatcherEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:30: error: package software.bernie.geckolib.core.animatable.instance does not exist
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:31: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimatableManager;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:32: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimationController;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:33: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.RawAnimation;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:42: error: cannot find symbol
+    private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
+                         ^
+  symbol:   class RawAnimation
+  location: class AbstractScp131Entity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:82: error: cannot find symbol
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+                  ^
+  symbol:   class AnimatableInstanceCache
+  location: class AbstractScp131Entity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:237: error: package AnimatableManager does not exist
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+                                                     ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:242: error: cannot find symbol
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+           ^
+  symbol:   class AnimatableInstanceCache
+  location: class AbstractScp131Entity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:14: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:27: error: cannot find symbol
+    public static LazyOptional<IScpInventory> get(Player player) {
+                  ^
+  symbol:   class LazyOptional
+  location: class ScpInventoryAccess
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:5: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:7: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:35: error: cannot find symbol
+	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	              ^
+  symbol:   class LazyOptional
+  location: class Scp294BlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	                                         ^
+  symbol:   class Capability
+  location: class Scp294BlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	           ^
+  symbol:   class LazyOptional
+  location: class Scp294BlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:5: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:7: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:35: error: cannot find symbol
+	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	              ^
+  symbol:   class LazyOptional
+  location: class Scp294StockingBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	                                         ^
+  symbol:   class Capability
+  location: class Scp294StockingBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	           ^
+  symbol:   class LazyOptional
+  location: class Scp294StockingBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:5: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:7: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:35: error: cannot find symbol
+	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	              ^
+  symbol:   class LazyOptional
+  location: class Scp294OutOfRangeBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	                                         ^
+  symbol:   class Capability
+  location: class Scp294OutOfRangeBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	           ^
+  symbol:   class LazyOptional
+  location: class Scp294OutOfRangeBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
+import net.minecraftforge.event.AttachCapabilitiesEvent;
+                               ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:12: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
+                                          ^
+  symbol:   class ICapabilitySerializable
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:16: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.CapabilityToken;
+                                          ^
+  symbol:   class CapabilityToken
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:17: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.CapabilityManager;
+                                          ^
+  symbol:   class CapabilityManager
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:18: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:277: error: cannot find symbol
+	public static final Capability<PlayerVariables> PLAYER_VARIABLES_CAPABILITY = CapabilityManager.get(new CapabilityToken<PlayerVariables>() {
+	                    ^
+  symbol:   class Capability
+  location: class ScpAdditionsModVariables
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:281: error: cannot find symbol
+	private static class PlayerVariablesProvider implements ICapabilitySerializable<Tag> {
+	                                                        ^
+  symbol:   class ICapabilitySerializable
+  location: class ScpAdditionsModVariables
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:283: error: cannot find symbol
+		public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
+		                                        ^
+  symbol:   class AttachCapabilitiesEvent
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:289: error: cannot find symbol
+		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
+		              ^
+  symbol:   class LazyOptional
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
+		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+		                                         ^
+  symbol:   class Capability
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
+		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+		           ^
+  symbol:   class LazyOptional
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
+import net.neoforged.neoforge.common.extensions.IForgeMenuType;
+                                               ^
+  symbol:   class IForgeMenuType
+  location: package net.neoforged.neoforge.common.extensions
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:12: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10: error: package net.minecraftforge.event does not exist
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+                               ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:78: error: cannot find symbol
+    public static void buildTabContentsVanilla(BuildCreativeModeTabContentsEvent tabData) {
+                                               ^
+  symbol:   class BuildCreativeModeTabContentsEvent
+  location: class ScpAdditionsModTabs
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
+import net.minecraftforge.client.ConfigScreenHandler;
+                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
+import net.minecraftforge.fml.ModLoadingContext;
+                             ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
+import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+                                          ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: package net.neoforged.neoforge.client.event
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
 @EventBusSubscriber(modid = "scp_additions", bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
                                              ^
@@ -415,6 +520,12 @@ import net.neoforged.neoforge.registries.MissingMappingsEvent;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingKnowledgeEvents.java:14: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
         bus = EventBusSubscriber.Bus.GAME)
                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpadditions/compat/network/LegacyNetworkPayloads.java:9: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
+                                                   ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpadditions/compat/network/LegacyNetworkPayloads.java:9: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
+                                                                           ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:55: warning: [removal] onEntitySwing(ItemStack,LivingEntity) in IItemExtension has been deprecated and marked for removal
 	public boolean onEntitySwing(ItemStack itemstack, LivingEntity entity) {
 	               ^
@@ -673,12 +784,6 @@ import net.neoforged.neoforge.registries.MissingMappingsEvent;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173SpawnEvents.java:30: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
 @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173PostKillDespawnEvents.java:17: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
-@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173PostKillDespawnEvents.java:17: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
-@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
-                                                                           ^
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 Note: Some input files additionally use or override a deprecated API that is marked for removal.
@@ -772,11 +877,26 @@ Execution failed for task ':compileJava'.
                                           ^
     symbol:   class AttachCapabilitiesEvent
     location: class CapabilityEvents
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
-      public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
                           ^
-    symbol:   class SimpleChannel
-    location: class ModNetwork
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
   import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                             ^
@@ -807,6 +927,251 @@ Execution failed for task ':compileJava'.
                                                ^
     symbol:   class MissingMappingsEvent
     location: class LegacyDrinkItemMappings
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:10: error: cannot find symbol
+  import net.neoforged.neoforge.common.ForgeSpawnEggItem;
+                                      ^
+    symbol:   class ForgeSpawnEggItem
+    location: package net.neoforged.neoforge.common
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:19: error: cannot find symbol
+      private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+                    ^
+    symbol:   class AnimatableInstanceCache
+    location: class BlinkWatcherEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:46: error: cannot find symbol
+      public AnimatableInstanceCache getAnimatableInstanceCache() {
+             ^
+    symbol:   class AnimatableInstanceCache
+    location: class BlinkWatcherEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:42: error: cannot find symbol
+      private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
+                           ^
+    symbol:   class RawAnimation
+    location: class AbstractScp131Entity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:82: error: cannot find symbol
+      private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+                    ^
+    symbol:   class AnimatableInstanceCache
+    location: class AbstractScp131Entity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:242: error: cannot find symbol
+      public AnimatableInstanceCache getAnimatableInstanceCache() {
+             ^
+    symbol:   class AnimatableInstanceCache
+    location: class AbstractScp131Entity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                            ^
+    symbol:   class ForgeCapabilities
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:14: error: cannot find symbol
+  import net.neoforged.neoforge.common.util.LazyOptional;
+                                           ^
+    symbol:   class LazyOptional
+    location: package net.neoforged.neoforge.common.util
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:27: error: cannot find symbol
+      public static LazyOptional<IScpInventory> get(Player player) {
+                    ^
+    symbol:   class LazyOptional
+    location: class ScpInventoryAccess
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:5: error: cannot find symbol
+  import net.neoforged.neoforge.common.util.LazyOptional;
+                                           ^
+    symbol:   class LazyOptional
+    location: package net.neoforged.neoforge.common.util
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                            ^
+    symbol:   class ForgeCapabilities
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:7: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.Capability;
+                                            ^
+    symbol:   class Capability
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:35: error: cannot find symbol
+  	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+  	              ^
+    symbol:   class LazyOptional
+    location: class Scp294BlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
+  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+  	                                         ^
+    symbol:   class Capability
+    location: class Scp294BlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
+  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+  	           ^
+    symbol:   class LazyOptional
+    location: class Scp294BlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:5: error: cannot find symbol
+  import net.neoforged.neoforge.common.util.LazyOptional;
+                                           ^
+    symbol:   class LazyOptional
+    location: package net.neoforged.neoforge.common.util
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:6: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                            ^
+    symbol:   class ForgeCapabilities
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:7: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.Capability;
+                                            ^
+    symbol:   class Capability
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:35: error: cannot find symbol
+  	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+  	              ^
+    symbol:   class LazyOptional
+    location: class Scp294StockingBlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
+  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+  	                                         ^
+    symbol:   class Capability
+    location: class Scp294StockingBlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
+  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+  	           ^
+    symbol:   class LazyOptional
+    location: class Scp294StockingBlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:5: error: cannot find symbol
+  import net.neoforged.neoforge.common.util.LazyOptional;
+                                           ^
+    symbol:   class LazyOptional
+    location: package net.neoforged.neoforge.common.util
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                            ^
+    symbol:   class ForgeCapabilities
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:7: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.Capability;
+                                            ^
+    symbol:   class Capability
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:35: error: cannot find symbol
+  	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+  	              ^
+    symbol:   class LazyOptional
+    location: class Scp294OutOfRangeBlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
+  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+  	                                         ^
+    symbol:   class Capability
+    location: class Scp294OutOfRangeBlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
+  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+  	           ^
+    symbol:   class LazyOptional
+    location: class Scp294OutOfRangeBlockEntity
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:12: error: cannot find symbol
+  import net.neoforged.neoforge.common.util.LazyOptional;
+                                           ^
+    symbol:   class LazyOptional
+    location: package net.neoforged.neoforge.common.util
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
+                                            ^
+    symbol:   class ICapabilitySerializable
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:16: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.CapabilityToken;
+                                            ^
+    symbol:   class CapabilityToken
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:17: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.CapabilityManager;
+                                            ^
+    symbol:   class CapabilityManager
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:18: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.Capability;
+                                            ^
+    symbol:   class Capability
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:277: error: cannot find symbol
+  	public static final Capability<PlayerVariables> PLAYER_VARIABLES_CAPABILITY = CapabilityManager.get(new CapabilityToken<PlayerVariables>() {
+  	                    ^
+    symbol:   class Capability
+    location: class ScpAdditionsModVariables
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:281: error: cannot find symbol
+  	private static class PlayerVariablesProvider implements ICapabilitySerializable<Tag> {
+  	                                                        ^
+    symbol:   class ICapabilitySerializable
+    location: class ScpAdditionsModVariables
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:283: error: cannot find symbol
+  		public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
+  		                                        ^
+    symbol:   class AttachCapabilitiesEvent
+    location: class PlayerVariablesProvider
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:289: error: cannot find symbol
+  		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
+  		              ^
+    symbol:   class LazyOptional
+    location: class PlayerVariablesProvider
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
+  		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+  		                                         ^
+    symbol:   class Capability
+    location: class PlayerVariablesProvider
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
+  		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+  		           ^
+    symbol:   class LazyOptional
+    location: class PlayerVariablesProvider
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
+  import net.neoforged.neoforge.common.extensions.IForgeMenuType;
+                                                 ^
+    symbol:   class IForgeMenuType
+    location: package net.neoforged.neoforge.common.extensions
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:12: error: cannot find symbol
+  import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                            ^
+    symbol:   class ForgeCapabilities
+    location: package net.neoforged.neoforge.capabilities
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:78: error: cannot find symbol
+      public static void buildTabContentsVanilla(BuildCreativeModeTabContentsEvent tabData) {
+                                                 ^
+    symbol:   class BuildCreativeModeTabContentsEvent
+    location: class ScpAdditionsModTabs
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8: error: cannot find symbol
+  import net.neoforged.fml.DistExecutor;
+                          ^
+    symbol:   class DistExecutor
+    location: package net.neoforged.fml
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
+  import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+                                            ^
+    symbol:   class RegisterGuiOverlaysEvent
+    location: package net.neoforged.neoforge.client.event
   Note: Recompile with -Xlint:unchecked for details.
   Note: Some input files use or override a deprecated API.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
@@ -845,6 +1210,12 @@ Execution failed for task ':compileJava'.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingKnowledgeEvents.java:14: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
           bus = EventBusSubscriber.Bus.GAME)
                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpadditions/compat/network/LegacyNetworkPayloads.java:9: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
+  @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
+                                                     ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpadditions/compat/network/LegacyNetworkPayloads.java:9: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
+  @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
+                                                                             ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:55: warning: [removal] onEntitySwing(ItemStack,LivingEntity) in IItemExtension has been deprecated and marked for removal
   	public boolean onEntitySwing(ItemStack itemstack, LivingEntity entity) {
   	               ^
@@ -1103,240 +1474,22 @@ Execution failed for task ':compileJava'.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173SpawnEvents.java:30: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
   @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
                                                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173PostKillDespawnEvents.java:17: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
-  @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
-                                                     ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173PostKillDespawnEvents.java:17: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
-  @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
-                                                                             ^
   Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
   public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
                                                ^
     symbol: class ICapabilitySerializable
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
+  public class NamedSpawnEggItem extends ForgeSpawnEggItem {
+                                         ^
+    symbol: class ForgeSpawnEggItem
   Note: Some input files use unchecked or unsafe operations.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
   import net.minecraftforge.event.AttachCapabilitiesEvent;
                                  ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
-                                Supplier<NetworkEvent.Context> supplier) {
-                                                     ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22: error: package NetworkEvent does not exist
-                                Supplier<NetworkEvent.Context> supplier) {
-                                                     ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20: error: package NetworkEvent does not exist
-      public static void handle(ContextConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                    ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23: error: package NetworkEvent does not exist
-      public static void handle(RequestInventorySyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                     ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26: error: package NetworkEvent does not exist
-      public static void handle(ItemConfigOpenRequestPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                      ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51: error: package NetworkEvent does not exist
-                                Supplier<NetworkEvent.Context> supplier) {
-                                                     ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72: error: package NetworkEvent does not exist
-      public static void handle(ContextInteractPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85: error: package NetworkEvent does not exist
-      public static void handle(ContextConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkRegistry;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10: error: package net.minecraftforge.network.simple does not exist
-  import net.minecraftforge.network.simple.SimpleChannel;
-                                          ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: package net.minecraftforge.fml does not exist
-  import net.minecraftforge.fml.DistExecutor;
-                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23: error: package NetworkEvent does not exist
-      public static void handle(InventoryFullPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20: error: package NetworkEvent does not exist
-      public static void handle(ItemConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33: error: package NetworkEvent does not exist
-      public static void handle(DocumentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27: error: package NetworkEvent does not exist
-      public static void handle(ItemConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                 ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27: error: package NetworkEvent does not exist
-      public static void handle(UsableSessionReturnPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                    ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39: error: package NetworkEvent does not exist
-      public static void handle(MainUseActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38: error: package NetworkEvent does not exist
-      public static void handle(ItemConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49: error: package NetworkEvent does not exist
-      public static void handle(PickupItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                           ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: package net.minecraftforge.fml does not exist
-  import net.minecraftforge.fml.DistExecutor;
-                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30: error: package NetworkEvent does not exist
-                                Supplier<NetworkEvent.Context> supplier) {
-                                                     ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38: error: package NetworkEvent does not exist
-      public static void handle(EquipmentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33: error: package NetworkEvent does not exist
-      public static void handle(KeyActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                          ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: package net.minecraftforge.fml does not exist
-  import net.minecraftforge.fml.DistExecutor;
-                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29: error: package NetworkEvent does not exist
-      public static void handle(SyncInventoryPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55: error: package NetworkEvent does not exist
-      public static void handle(InventoryActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40: error: package NetworkEvent does not exist
-      public static void handle(ItemConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22: error: package NetworkEvent does not exist
-      public static void handle(ContextConfigSelectPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                    ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27: error: package NetworkEvent does not exist
-      public static void handle(UsableSessionDropPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32: error: package NetworkEvent does not exist
-      public static void handle(ContextConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                    ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: package net.minecraftforge.fml does not exist
-  import net.minecraftforge.fml.DistExecutor;
-                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42: error: package NetworkEvent does not exist
-      public static void handle(UseHotbarItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58: error: package NetworkEvent does not exist
-      public static void handle(InventoryMovePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkEvent;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87: error: package NetworkEvent does not exist
-      public static void handle(ContextConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
   import net.minecraftforge.client.settings.KeyConflictContext;
                                            ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.PacketDistributor;
-                                   ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
   import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
                                                           ^
@@ -1345,6 +1498,63 @@ Execution failed for task ':compileJava'.
                                                 ^
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
               AnimatableManager.ControllerRegistrar controllers) {
+                               ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+  import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                          ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:15: error: package software.bernie.geckolib.core.animation does not exist
+  import software.bernie.geckolib.core.animation.AnimatableManager;
+                                                ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:42: error: package AnimatableManager does not exist
+      public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+                                                       ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:30: error: package software.bernie.geckolib.core.animatable.instance does not exist
+  import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                          ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:31: error: package software.bernie.geckolib.core.animation does not exist
+  import software.bernie.geckolib.core.animation.AnimatableManager;
+                                                ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:32: error: package software.bernie.geckolib.core.animation does not exist
+  import software.bernie.geckolib.core.animation.AnimationController;
+                                                ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:33: error: package software.bernie.geckolib.core.animation does not exist
+  import software.bernie.geckolib.core.animation.RawAnimation;
+                                                ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:237: error: package AnimatableManager does not exist
+      public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+                                                       ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4: error: package net.minecraftforge.network does not exist
+  import net.minecraftforge.network.NetworkHooks;
+                                   ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
+  import net.minecraftforge.event.AttachCapabilitiesEvent;
+                                 ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10: error: package net.minecraftforge.event does not exist
+  import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+                                 ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
+  import net.minecraftforge.client.ConfigScreenHandler;
+                                  ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
+  import net.minecraftforge.fml.ModLoadingContext;
                                ^
   100 errors
   100 warnings
@@ -1386,37 +1596,6 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compile
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:328)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
-	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:146)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:131)
-	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
-	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
-	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
-	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:45)
-	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
-	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$withLocksAcquired$0(DefaultWorkerLeaseService.java:269)
-	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:42)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:267)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:259)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
-	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
-	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
@@ -1495,11 +1674,26 @@ import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
                                         ^
   symbol:   class AttachCapabilitiesEvent
   location: class CapabilityEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
                         ^
-  symbol:   class SimpleChannel
-  location: class ModNetwork
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
 import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                           ^
@@ -1530,6 +1724,251 @@ import net.neoforged.neoforge.registries.MissingMappingsEvent;
                                              ^
   symbol:   class MissingMappingsEvent
   location: class LegacyDrinkItemMappings
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:10: error: cannot find symbol
+import net.neoforged.neoforge.common.ForgeSpawnEggItem;
+                                    ^
+  symbol:   class ForgeSpawnEggItem
+  location: package net.neoforged.neoforge.common
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:19: error: cannot find symbol
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+                  ^
+  symbol:   class AnimatableInstanceCache
+  location: class BlinkWatcherEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:46: error: cannot find symbol
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+           ^
+  symbol:   class AnimatableInstanceCache
+  location: class BlinkWatcherEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:42: error: cannot find symbol
+    private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
+                         ^
+  symbol:   class RawAnimation
+  location: class AbstractScp131Entity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:82: error: cannot find symbol
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+                  ^
+  symbol:   class AnimatableInstanceCache
+  location: class AbstractScp131Entity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:242: error: cannot find symbol
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+           ^
+  symbol:   class AnimatableInstanceCache
+  location: class AbstractScp131Entity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:14: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:27: error: cannot find symbol
+    public static LazyOptional<IScpInventory> get(Player player) {
+                  ^
+  symbol:   class LazyOptional
+  location: class ScpInventoryAccess
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:5: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:7: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:35: error: cannot find symbol
+	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	              ^
+  symbol:   class LazyOptional
+  location: class Scp294BlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	                                         ^
+  symbol:   class Capability
+  location: class Scp294BlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	           ^
+  symbol:   class LazyOptional
+  location: class Scp294BlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:5: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:7: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:35: error: cannot find symbol
+	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	              ^
+  symbol:   class LazyOptional
+  location: class Scp294StockingBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	                                         ^
+  symbol:   class Capability
+  location: class Scp294StockingBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	           ^
+  symbol:   class LazyOptional
+  location: class Scp294StockingBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:5: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:7: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:35: error: cannot find symbol
+	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	              ^
+  symbol:   class LazyOptional
+  location: class Scp294OutOfRangeBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	                                         ^
+  symbol:   class Capability
+  location: class Scp294OutOfRangeBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
+	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
+	           ^
+  symbol:   class LazyOptional
+  location: class Scp294OutOfRangeBlockEntity
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:12: error: cannot find symbol
+import net.neoforged.neoforge.common.util.LazyOptional;
+                                         ^
+  symbol:   class LazyOptional
+  location: package net.neoforged.neoforge.common.util
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
+                                          ^
+  symbol:   class ICapabilitySerializable
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:16: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.CapabilityToken;
+                                          ^
+  symbol:   class CapabilityToken
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:17: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.CapabilityManager;
+                                          ^
+  symbol:   class CapabilityManager
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:18: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.Capability;
+                                          ^
+  symbol:   class Capability
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:277: error: cannot find symbol
+	public static final Capability<PlayerVariables> PLAYER_VARIABLES_CAPABILITY = CapabilityManager.get(new CapabilityToken<PlayerVariables>() {
+	                    ^
+  symbol:   class Capability
+  location: class ScpAdditionsModVariables
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:281: error: cannot find symbol
+	private static class PlayerVariablesProvider implements ICapabilitySerializable<Tag> {
+	                                                        ^
+  symbol:   class ICapabilitySerializable
+  location: class ScpAdditionsModVariables
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:283: error: cannot find symbol
+		public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
+		                                        ^
+  symbol:   class AttachCapabilitiesEvent
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:289: error: cannot find symbol
+		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
+		              ^
+  symbol:   class LazyOptional
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
+		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+		                                         ^
+  symbol:   class Capability
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
+		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+		           ^
+  symbol:   class LazyOptional
+  location: class PlayerVariablesProvider
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
+import net.neoforged.neoforge.common.extensions.IForgeMenuType;
+                                               ^
+  symbol:   class IForgeMenuType
+  location: package net.neoforged.neoforge.common.extensions
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:12: error: cannot find symbol
+import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+                                          ^
+  symbol:   class ForgeCapabilities
+  location: package net.neoforged.neoforge.capabilities
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:78: error: cannot find symbol
+    public static void buildTabContentsVanilla(BuildCreativeModeTabContentsEvent tabData) {
+                                               ^
+  symbol:   class BuildCreativeModeTabContentsEvent
+  location: class ScpAdditionsModTabs
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8: error: cannot find symbol
+import net.neoforged.fml.DistExecutor;
+                        ^
+  symbol:   class DistExecutor
+  location: package net.neoforged.fml
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
+import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+                                          ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: package net.neoforged.neoforge.client.event
 Note: Recompile with -Xlint:unchecked for details.
 Note: Some input files use or override a deprecated API.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
@@ -1568,6 +2007,12 @@ Note: Some input files use or override a deprecated API.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingKnowledgeEvents.java:14: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
         bus = EventBusSubscriber.Bus.GAME)
                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpadditions/compat/network/LegacyNetworkPayloads.java:9: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
+                                                   ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpadditions/compat/network/LegacyNetworkPayloads.java:9: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
+                                                                           ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/SCP572Item.java:55: warning: [removal] onEntitySwing(ItemStack,LivingEntity) in IItemExtension has been deprecated and marked for removal
 	public boolean onEntitySwing(ItemStack itemstack, LivingEntity entity) {
 	               ^
@@ -1826,240 +2271,22 @@ Note: Some input files use or override a deprecated API.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173SpawnEvents.java:30: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
 @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173PostKillDespawnEvents.java:17: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
-@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173PostKillDespawnEvents.java:17: warning: [removal] Bus in EventBusSubscriber has been deprecated and marked for removal
-@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
-                                                                           ^
 Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
 public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
                                              ^
   symbol: class ICapabilitySerializable
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
+public class NamedSpawnEggItem extends ForgeSpawnEggItem {
+                                       ^
+  symbol: class ForgeSpawnEggItem
 Note: Some input files use unchecked or unsafe operations.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
 import net.minecraftforge.event.AttachCapabilitiesEvent;
                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23: error: package NetworkEvent does not exist
-    public static void handle(RequestInventorySyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigOpenRequestPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                    ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72: error: package NetworkEvent does not exist
-    public static void handle(ContextInteractPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkRegistry;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10: error: package net.minecraftforge.network.simple does not exist
-import net.minecraftforge.network.simple.SimpleChannel;
-                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23: error: package NetworkEvent does not exist
-    public static void handle(InventoryFullPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33: error: package NetworkEvent does not exist
-    public static void handle(DocumentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27: error: package NetworkEvent does not exist
-    public static void handle(UsableSessionReturnPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39: error: package NetworkEvent does not exist
-    public static void handle(MainUseActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49: error: package NetworkEvent does not exist
-    public static void handle(PickupItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                         ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30: error: package NetworkEvent does not exist
-                              Supplier<NetworkEvent.Context> supplier) {
-                                                   ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38: error: package NetworkEvent does not exist
-    public static void handle(EquipmentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33: error: package NetworkEvent does not exist
-    public static void handle(KeyActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29: error: package NetworkEvent does not exist
-    public static void handle(SyncInventoryPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55: error: package NetworkEvent does not exist
-    public static void handle(InventoryActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40: error: package NetworkEvent does not exist
-    public static void handle(ItemConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigSelectPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27: error: package NetworkEvent does not exist
-    public static void handle(UsableSessionDropPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: package net.minecraftforge.fml does not exist
-import net.minecraftforge.fml.DistExecutor;
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42: error: package NetworkEvent does not exist
-    public static void handle(UseHotbarItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58: error: package NetworkEvent does not exist
-    public static void handle(InventoryMovePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkEvent;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87: error: package NetworkEvent does not exist
-    public static void handle(ContextConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
-                                                                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
 import net.minecraftforge.client.settings.KeyConflictContext;
                                          ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.PacketDistributor;
-                                 ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
                                                         ^
@@ -2068,6 +2295,63 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
                                               ^
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
             AnimatableManager.ControllerRegistrar controllers) {
+                             ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:15: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimatableManager;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:42: error: package AnimatableManager does not exist
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+                                                     ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:30: error: package software.bernie.geckolib.core.animatable.instance does not exist
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+                                                        ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:31: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimatableManager;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:32: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.AnimationController;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:33: error: package software.bernie.geckolib.core.animation does not exist
+import software.bernie.geckolib.core.animation.RawAnimation;
+                                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:237: error: package AnimatableManager does not exist
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+                                                     ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4: error: package net.minecraftforge.network does not exist
+import net.minecraftforge.network.NetworkHooks;
+                                 ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
+import net.minecraftforge.event.AttachCapabilitiesEvent;
+                               ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10: error: package net.minecraftforge.event does not exist
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+                               ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
+import net.minecraftforge.client.ConfigScreenHandler;
+                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
+import net.minecraftforge.fml.ModLoadingContext;
                              ^
 100 errors
 100 warnings
@@ -2196,8 +2480,8 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:31)
 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:64)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
-	... 61 more
+	... 30 more
 
 
-BUILD FAILED in 25s
+BUILD FAILED in 29s
 25 actionable tasks: 5 executed, 18 from cache, 2 up-to-date

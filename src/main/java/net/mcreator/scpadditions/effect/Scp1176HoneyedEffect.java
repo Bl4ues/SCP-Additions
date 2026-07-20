@@ -16,7 +16,6 @@ public class Scp1176HoneyedEffect extends MobEffect {
         super(MobEffectCategory.NEUTRAL, 0xD99A2B);
     }
 
-    @Override
     public void initializeClient(Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {
             @Override

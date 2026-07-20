@@ -13,5 +13,6 @@ public final class ScpAdditionsFabric implements ModInitializer {
         FabricSubscriberBootstrap.registerAll(MOD_BUS);
         MOD_BUS.post(new FMLCommonSetupEvent());
         FabricGameEventBridge.register();
+        com.bl4ues.scpadditions.compat.network.SimpleChannel.registerAllCommon();
     }
 }

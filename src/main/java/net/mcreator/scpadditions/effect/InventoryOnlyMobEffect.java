@@ -16,7 +16,6 @@ public abstract class InventoryOnlyMobEffect extends MobEffect {
         super(category, color);
     }
 
-    @Override
     public void initializeClient(Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {
             @Override

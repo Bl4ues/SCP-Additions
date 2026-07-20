@@ -25,12 +25,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
-import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.attachment.IAttachmentHolder;
-import net.neoforged.neoforge.attachment.IAttachmentSerializer;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
-
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.function.Supplier;
@@ -279,35 +273,21 @@ public class ScpAdditionsModVariables {
 		}
 	}
 
-	public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
-			DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES,
-					ScpAdditionsMod.MODID);
-
-	public static final Supplier<AttachmentType<PlayerVariables>> PLAYER_VARIABLES_ATTACHMENT =
-			ATTACHMENTS.register("player_variables", () -> AttachmentType
-					.builder(PlayerVariables::new)
-					.serialize(new IAttachmentSerializer<CompoundTag, PlayerVariables>() {
-						@Override
-						public PlayerVariables read(IAttachmentHolder holder,
-								CompoundTag tag, HolderLookup.Provider provider) {
+	public static final net.fabricmc.fabric.api.attachment.v1.AttachmentType<PlayerVariables> PLAYER_VARIABLES_ATTACHMENT =
+			net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry.create(
+				net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "player_variables"),
+				builder -> builder.initializer(PlayerVariables::new)
+						.persistent(net.minecraft.nbt.CompoundTag.CODEC.xmap(tag -> {
 							PlayerVariables variables = new PlayerVariables();
 							variables.readNBT(tag);
 							return variables;
-						}
-
-						@Override
-						public CompoundTag write(PlayerVariables variables,
-								HolderLookup.Provider provider) {
-							return (CompoundTag) variables.writeNBT();
-						}
-					})
-					.build());
+						}, variables -> (net.minecraft.nbt.CompoundTag) variables.writeNBT())));
 
 	public static LazyOptional<PlayerVariables> getPlayerVariables(Entity entity) {
 		if (!(entity instanceof Player player) || entity instanceof FakePlayer) {
 			return LazyOptional.empty();
 		}
-		return LazyOptional.of(() -> player.getData(PLAYER_VARIABLES_ATTACHMENT));
+		return LazyOptional.of(() -> ((net.fabricmc.fabric.api.attachment.v1.AttachmentTarget) player).getAttachedOrCreate(PLAYER_VARIABLES_ATTACHMENT));
 	}
 
 	public static class PlayerVariables {

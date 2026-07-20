@@ -28,7 +28,7 @@ public class Scp1176OnBlockRightClickedProcedure {
 				final int _slotid = 0;
 				final ItemStack _setstack = new ItemStack(ScpAdditionsModItems.SCP_1176HONEY.get());
 				_setstack.setCount(1);
-				var capability = entity.getCapability(Capabilities.ItemHandler.ENTITY);
+				var capability = net.mcreator.scpadditions.fabric.FabricItemHandlers.find(entity);
                 if (capability instanceof IItemHandlerModifiable _modHandler)
                     _modHandler.setStackInSlot(_slotid, _setstack);
 			}

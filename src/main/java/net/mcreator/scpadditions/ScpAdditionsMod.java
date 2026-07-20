@@ -81,13 +81,11 @@ public class ScpAdditionsMod {
         LegacyDrinkItemMappings.registerAliases();
         FacilityLegacyMappings.registerAliases();
         ScpAdditionsModItems.REGISTRY.register(bus);
-        ScpInventoryCapability.REGISTRY.register(bus);
-        ScpAdditionsModVariables.ATTACHMENTS.register(bus);
+        ScpAdditionsModEntities.REGISTRY.register(bus);
         Scp714Items.REGISTRY.register(bus);
         Scp012Module.register(bus);
         UnifiedReaderItems.REGISTRY.register(bus);
         Scp131Items.REGISTRY.register(bus);
-        ScpAdditionsModEntities.REGISTRY.register(bus);
         ScpAdditionsModParticleTypes.REGISTRY.register(bus);
 
         ScpAdditionsModTabs.REGISTRY.register(bus);

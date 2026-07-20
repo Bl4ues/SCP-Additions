@@ -8,5 +8,6 @@ public final class ScpAdditionsFabricClient implements ClientModInitializer {
     public void onInitializeClient() {
         ScpAdditionsFabric.MOD_BUS.post(new FMLClientSetupEvent());
         FabricClientEventBridge.register();
+        com.bl4ues.scpadditions.compat.network.SimpleChannel.registerAllClient();
     }
 }

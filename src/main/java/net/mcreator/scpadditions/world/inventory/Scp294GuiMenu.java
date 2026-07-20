@@ -68,8 +68,7 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 				byte hand = extraData.readByte();
 				ItemStack itemstack = hand == 0 ? this.entity.getMainHandItem() : this.entity.getOffhandItem();
 				this.boundItemMatcher = () -> itemstack == (hand == 0 ? this.entity.getMainHandItem() : this.entity.getOffhandItem());
-				IItemHandler capability = itemstack.getCapability(
-                        Capabilities.ItemHandler.ITEM);
+				IItemHandler capability = net.mcreator.scpadditions.fabric.FabricItemHandlers.find(itemstack);
                 if (capability != null) {
                     this.internal = capability;
                     this.bound = true;
@@ -79,8 +78,7 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 				boundEntity = world.getEntity(extraData.readVarInt());
 				if (boundEntity != null)
 					{
-                    IItemHandler capability = boundEntity.getCapability(
-                            Capabilities.ItemHandler.ENTITY);
+                    IItemHandler capability = net.mcreator.scpadditions.fabric.FabricItemHandlers.find(boundEntity);
                     if (capability != null) {
                         this.internal = capability;
                         this.bound = true;
@@ -90,8 +88,7 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 				boundBlockEntity = this.world.getBlockEntity(pos);
 				if (boundBlockEntity != null)
 					{
-                    IItemHandler capability = this.world.getCapability(
-                            Capabilities.ItemHandler.BLOCK, pos, null);
+                    IItemHandler capability = net.mcreator.scpadditions.fabric.FabricItemHandlers.find(this.world, pos, null);
                     if (capability != null) {
                         this.internal = capability;
                         this.bound = true;

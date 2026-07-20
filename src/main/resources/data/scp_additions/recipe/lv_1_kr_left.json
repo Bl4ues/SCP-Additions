@@ -6,11 +6,11 @@
       "item": "scp_additions:button_loff"
     },
     {
-      "item": "scp_additions:level_5_keycard"
+      "item": "scp_additions:level_1_keycard"
     }
   ],
   "result": {
-    "item": "scp_additions:level_5_keycard_reader",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:keycard_reader"
   }
 }

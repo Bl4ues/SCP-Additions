@@ -24,7 +24,7 @@
     }
   },
   "result": {
-    "item": "scp_additions:spray",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:spray"
   }
 }

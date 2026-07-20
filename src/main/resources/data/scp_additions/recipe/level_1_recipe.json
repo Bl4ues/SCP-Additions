@@ -14,17 +14,17 @@
       "item": "minecraft:redstone"
     },
     "c": {
-      "item": "minecraft:red_wool"
+      "item": "minecraft:lime_wool"
     },
     "d": {
       "item": "minecraft:paper"
     },
     "e": {
-      "item": "minecraft:lapis_lazuli"
+      "item": "minecraft:coal"
     }
   },
   "result": {
-    "item": "scp_additions:level_5_keycard",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:level_1_keycard"
   }
 }

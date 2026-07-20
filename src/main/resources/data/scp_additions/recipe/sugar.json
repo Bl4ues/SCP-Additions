@@ -3,11 +3,11 @@
   "category": "misc",
   "ingredients": [
     {
-      "item": "scp_additions:lv_2_left_reader"
+      "item": "scp_additions:scp_1176honey"
     }
   ],
   "result": {
-    "item": "scp_additions:lv_2_right_reader",
-    "count": 1
+    "count": 3,
+    "id": "minecraft:sugar"
   }
 }

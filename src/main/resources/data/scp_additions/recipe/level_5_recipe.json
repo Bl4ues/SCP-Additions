@@ -4,24 +4,27 @@
   "pattern": [
     "abc",
     "ddd",
-    "bbb"
+    "beb"
   ],
   "key": {
     "a": {
-      "item": "minecraft:black_wool"
+      "item": "minecraft:white_wool"
     },
     "b": {
       "item": "minecraft:redstone"
     },
     "c": {
-      "item": "minecraft:blue_wool"
+      "item": "minecraft:red_wool"
     },
     "d": {
       "item": "minecraft:paper"
+    },
+    "e": {
+      "item": "minecraft:lapis_lazuli"
     }
   },
   "result": {
-    "item": "scp_additions:security_credentials",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:level_5_keycard"
   }
 }

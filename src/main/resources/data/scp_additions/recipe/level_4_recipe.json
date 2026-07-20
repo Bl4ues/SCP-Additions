@@ -14,17 +14,17 @@
       "item": "minecraft:redstone"
     },
     "c": {
-      "item": "minecraft:lime_wool"
+      "item": "minecraft:orange_wool"
     },
     "d": {
       "item": "minecraft:paper"
     },
     "e": {
-      "item": "minecraft:coal"
+      "item": "minecraft:gold_ingot"
     }
   },
   "result": {
-    "item": "scp_additions:level_1_keycard",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:level_4_keycard"
   }
 }

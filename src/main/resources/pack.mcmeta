@@ -1,7 +1,10 @@
 {
   "pack": {
     "pack_format": 48,
-    "supported_formats": [34, 48],
+    "supported_formats": [
+      34,
+      48
+    ],
     "description": "SCP Additions resources for Minecraft 1.21.1"
   }
 }

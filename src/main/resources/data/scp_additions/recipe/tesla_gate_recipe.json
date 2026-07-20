@@ -21,7 +21,7 @@
     }
   },
   "result": {
-    "item": "scp_additions:tesla_gate",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:tesla_gate"
   }
 }

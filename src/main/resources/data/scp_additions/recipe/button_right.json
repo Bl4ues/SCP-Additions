@@ -3,28 +3,28 @@
   "category": "misc",
   "pattern": [
     "abc",
-    "ddd",
-    "beb"
+    "ade",
+    "abb"
   ],
   "key": {
     "a": {
-      "item": "minecraft:white_wool"
+      "item": "minecraft:iron_ingot"
     },
     "b": {
       "item": "minecraft:redstone"
     },
     "c": {
-      "item": "minecraft:light_blue_wool"
+      "item": "minecraft:iron_nugget"
     },
     "d": {
-      "item": "minecraft:paper"
+      "item": "minecraft:stone_button"
     },
     "e": {
-      "item": "minecraft:iron_ingot"
+      "item": "minecraft:glass"
     }
   },
   "result": {
-    "item": "scp_additions:level_2_keycard",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:button_closed"
   }
 }

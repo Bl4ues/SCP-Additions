@@ -8,26 +8,26 @@
   ],
   "key": {
     "a": {
-      "item": "minecraft:glass"
-    },
-    "b": {
-      "item": "minecraft:redstone"
-    },
-    "c": {
       "item": "minecraft:iron_ingot"
     },
+    "b": {
+      "item": "minecraft:glass"
+    },
+    "c": {
+      "item": "minecraft:redstone"
+    },
     "d": {
-      "item": "minecraft:water_bucket"
+      "item": "scp_additions:security_credentials"
     },
     "e": {
       "item": "minecraft:iron_block"
     },
     "f": {
-      "item": "minecraft:iron_trapdoor"
+      "item": "minecraft:stone_button"
     }
   },
   "result": {
-    "item": "scp_additions:decon_open",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:tesla_terminal_off"
   }
 }

@@ -21,7 +21,7 @@
     }
   },
   "result": {
-    "item": "scp_additions:level_3_keycard",
-    "count": 1
+    "count": 1,
+    "id": "scp_additions:level_3_keycard"
   }
 }

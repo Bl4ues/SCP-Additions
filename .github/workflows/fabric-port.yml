@@ -40,8 +40,8 @@ jobs:
           : > fabric-migration.log
           echo '=== apply_fabric_bridge.py ===' | tee -a fabric-migration.log
           python3 tools/fabric_port/apply_fabric_bridge.py 2>&1 | tee -a fabric-migration.log
-          echo '=== bootstrap_fabric_api_round2.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/bootstrap_fabric_api_round2.py 2>&1 | tee -a fabric-migration.log
+          echo '=== materialize_fabric_api_round2.py ===' | tee -a fabric-migration.log
+          python3 tools/fabric_port/materialize_fabric_api_round2.py 2>&1 | tee -a fabric-migration.log
           echo '=== apply_fabric_api_round2.py ===' | tee -a fabric-migration.log
           python3 tools/fabric_port/apply_fabric_api_round2.py 2>&1 | tee -a fabric-migration.log
           git diff --binary > fabric-transformed.patch

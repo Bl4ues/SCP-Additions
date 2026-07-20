@@ -1,0 +1,83 @@
+name: Start 3.0.7 Development Once
+
+on:
+  push:
+    branches:
+      - feature/cleanup-unused-assets
+    paths:
+      - .github/workflows/start-3-0-7-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/cleanup-unused-assets
+          fetch-depth: 0
+
+      - name: Open 3.0.7 development cycle
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          old = '''# Changelog
+
+# SCP Additions 3.0.6 — Hazards & Survival Update
+
+## Internal cleanup
+
+- Consolidates the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects and actions while removing obsolete `/give` entries.
+- Adds old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs.
+- Removes legacy drink classes, procedures, item models and obsolete SCP-914/crafting recipes that depended on them.
+- Stops packaging duplicate registry-facing resources from the integrated legacy namespaces after their `scp_additions` copies are generated.
+- Reuses the shared SCP-294 geometry for stocking and out-of-range states.
+- Removes the unregistered SCP-059/Geiger resource set and three unreachable legacy SCP-294 overlay systems.
+- Removes plain Java helpers and procedures with no runtime, event-bus or textual caller.
+- Consolidates byte-identical custom model geometry and referenced block/item texture copies without removing registry-facing model paths.
+
+'''
+          new = '''# Changelog
+
+# SCP Additions 3.0.7 — In Development
+
+## Internal cleanup
+
+- Consolidated the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects, actions, aliases, delays, and messages while removing 61 obsolete `/give` entries.
+- Added old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs.
+- Removed legacy drink classes, item-only procedures, item models, translations, and obsolete crafting/SCP-914 recipes that depended on them.
+- Removed unregistered SCP-059, Delta Radiation, and Geiger resource leftovers, unreachable legacy overlays, and Java helpers with no runtime caller or event-bus role.
+- Consolidated duplicate registry-facing resources from integrated legacy namespaces, shared SCP-294 geometry, byte-identical custom models, and safely redirectable texture copies.
+- Corrected three pre-existing broken resource references uncovered by the audit: the terminal `click_1` sound, the left-button screen texture namespace, and a mirrored closing-button model parent.
+- Reduced the compiled JAR from 49,609,314 to 47,795,445 bytes, removed 749 packaged entries, and reduced byte-identical duplicate groups from 443 to 152.
+- Added a reusable repository/JAR audit workflow for validating future cleanup passes.
+
+# SCP Additions 3.0.6 — Hazards & Survival Update
+
+'''
+          if old not in text:
+              raise SystemExit('Expected 3.0.6 cleanup block was not found')
+          changelog.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          build = Path('build.gradle')
+          build_text = build.read_text(encoding='utf-8')
+          if "version = '3.0.6'" not in build_text:
+              raise SystemExit('Expected 3.0.6 Gradle version was not found')
+          build.write_text(build_text.replace("version = '3.0.6'", "version = '3.0.7'", 1), encoding='utf-8')
+          PY
+
+      - name: Commit version and changelog update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md build.gradle
+          git rm .github/workflows/start-3-0-7-once.yml
+          git commit -m "Start SCP Additions 3.0.7 development"
+          git push origin HEAD:feature/cleanup-unused-assets

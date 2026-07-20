@@ -1,0 +1,50 @@
+Applied patch to 'config/scpinventory/context_interactions.json' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java' with conflicts.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java' with conflicts.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java' with conflicts.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java' cleanly.
+Applied patch to 'src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java' cleanly.
+Falling back to direct application...
+Applied patch to 'src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java' cleanly.
+Applied patch to 'src/main/java/net/mcreator/scpadditions/data/Scp294DrinkManager.java' cleanly.
+Applied patch to 'src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java' with conflicts.
+Applied patch to 'src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java' with conflicts.
+Applied patch to 'src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java' with conflicts.
+Falling back to direct application...
+Applied patch to 'src/main/resources/assets/scp_additions/lang/en_us.json' cleanly.
+U src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+U src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java
+U src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java
+U src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java
+U src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java
+U src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java
+M  config/scpinventory/context_interactions.json
+UU src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+M  src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java
+M  src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java
+M  src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java
+UU src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java
+UU src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java
+M  src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java
+M  src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java
+M  src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java
+M  src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java
+M  src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java
+M  src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java
+A  src/main/java/com/bl4ues/scpinventory/network/ServerConfigSyncPacket.java
+M  src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java
+M  src/main/java/net/mcreator/scpadditions/data/Scp294DrinkManager.java
+UU src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java
+UU src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java
+UU src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java
+A  src/main/java/net/mcreator/scpadditions/procedures/TeslaGateVolume.java
+M  src/main/resources/assets/scp_additions/lang/en_us.json
+?? fabric-hotfix-apply.log
+?? master-multiplayer-hotfix.patch

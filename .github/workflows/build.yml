@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - port/neoforge-1.21.1
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: write
 
 jobs:
   migrate:
+    if: github.event_name == 'push' || github.head_ref == 'port/neoforge-1.21.1'
     runs-on: ubuntu-latest
 
     steps:

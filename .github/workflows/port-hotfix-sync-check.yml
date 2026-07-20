@@ -1,7 +1,7 @@
 name: Port Hotfix Sync Check
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - master
 
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   sync-check:
-    if: startsWith(github.head_ref, 'neoforge-1.21.1-port') || startsWith(github.head_ref, 'fabric-1.21.1-port')
+    if: startsWith(github.event.pull_request.head.ref, 'neoforge-1.21.1-port') || startsWith(github.event.pull_request.head.ref, 'fabric-1.21.1-port')
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
@@ -55,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           : > port-hotfix-migration.log
-          if [[ "${{ github.head_ref }}" == neoforge-* ]]; then
+          if [[ "${{ github.event.pull_request.head.ref }}" == neoforge-* ]]; then
             scripts=(
               apply_tick_bridge.py
               apply_network_bridge.py

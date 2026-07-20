@@ -67,9 +67,7 @@ public final class Scp012Module {
                 }
 
                 @Override
-                public void appendHoverText(ItemStack stack, Level level,
-                                            List<Component> tooltip,
-                                            TooltipFlag flag) {
+                public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.literal("A Bad Composition"));
                 }
             });

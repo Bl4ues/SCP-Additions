@@ -41,7 +41,7 @@ public final class HazmatSuitItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack) {
+    public int getUseDuration(ItemStack stack, LivingEntity user) {
         return HazmatSuitManager.EQUIP_DURATION_TICKS;
     }
 
@@ -72,8 +72,7 @@ public final class HazmatSuitItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level,
-            List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable(
                 "tooltip.scp_additions.hazmat_suit.sealed")
                 .withStyle(ChatFormatting.GRAY));
@@ -86,6 +85,6 @@ public final class HazmatSuitItem extends Item {
         tooltip.add(Component.translatable(
                 "tooltip.scp_additions.hazmat_suit.remove")
                 .withStyle(ChatFormatting.DARK_GRAY));
-        super.appendHoverText(stack, level, tooltip, flag);
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 }

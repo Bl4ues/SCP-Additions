@@ -48,7 +48,7 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
 		updateLayout();
-		this.renderBackground(guiGraphics);
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
 		renderPanel(guiGraphics);
 		renderHoverTooltip(guiGraphics, mouseX, mouseY);
 	}

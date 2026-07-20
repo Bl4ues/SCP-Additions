@@ -109,9 +109,8 @@ public final class OffsetKeycardReaderItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level,
-            List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
         tooltip.add(Component.translatable(
                 "tooltip.scp_additions.keycard_reader_placement")
                 .withStyle(ChatFormatting.GRAY));

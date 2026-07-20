@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -200,12 +202,12 @@ public final class BlinkClient {
     }
 
     private static boolean hasEyeSore(Minecraft mc) {
-        return mc != null && mc.player != null && mc.player.hasEffect(ScpAdditionsModMobEffects.EYE_SORE.get());
+        return mc != null && mc.player != null && mc.player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.EYE_SORE.get()));
     }
 
     private static boolean hasLubricatedEye(Minecraft mc) {
         return mc != null && mc.player != null
-                && mc.player.hasEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get());
+                && mc.player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.LUBRICATED_EYE.get()));
     }
 
     private static int getBlinkIntervalTicks(Minecraft mc) {

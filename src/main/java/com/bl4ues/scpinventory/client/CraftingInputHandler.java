@@ -50,7 +50,7 @@ public final class CraftingInputHandler {
     public static void onMouseScrolled(ScreenEvent.MouseScrolled.Pre event) {
         CraftingPanel panel = getActivePanel(event.getScreen());
         if (panel != null && panel.mouseScrolled(event.getMouseX(),
-                event.getMouseY(), event.getScrollDelta())) {
+                event.getMouseY(), event.getScrollDeltaY())) {
             event.setCanceled(true);
         }
     }

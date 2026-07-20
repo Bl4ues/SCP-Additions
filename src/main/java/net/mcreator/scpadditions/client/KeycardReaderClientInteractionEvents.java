@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import net.neoforged.neoforge.common.util.TriState;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.minecraft.client.gui.screens.Screen;
@@ -7,7 +9,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -32,8 +33,8 @@ public final class KeycardReaderClientInteractionEvents {
                 || event.getEntity().getOffhandItem().is(UnifiedReaderItems.SCREWDRIVER.get());
         if (!hasScrewdriver || KeycardReaderLevels.describe(event.getLevel().getBlockState(event.getPos())) == null) return;
 
-        event.setUseBlock(Event.Result.DENY);
-        event.setUseItem(Event.Result.DENY);
+        event.setUseBlock(TriState.FALSE);
+        event.setUseItem(TriState.FALSE);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
         if (applySavedLevel) {

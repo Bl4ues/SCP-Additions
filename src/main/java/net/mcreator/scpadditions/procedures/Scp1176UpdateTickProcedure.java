@@ -7,7 +7,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class Scp1176UpdateTickProcedure {
 			List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(4 / 2d), e -> true);
 			for (Entity entityiterator : _entfound) {
 				if (entityiterator instanceof ServerPlayer _player) {
-					Advancement _adv = _player.server.getAdvancements().getAdvancement(ResourceLocation.parse("scp_additions:scp_1176_achievement"));
+					AdvancementHolder _adv = _player.server.getAdvancements().get(ResourceLocation.parse("scp_additions:scp_1176_achievement"));
 					AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
 					if (!_ap.isDone()) {
 						for (String criteria : _ap.getRemainingCriteria())

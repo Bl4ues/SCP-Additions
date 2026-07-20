@@ -41,9 +41,9 @@ public class TeslaGateUpdateTickProcedure {
 
 		if (world instanceof Level level) {
 			if (!level.isClientSide()) {
-				level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F);
+				level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F);
 			} else {
-				level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F, false);
+				level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F, false);
 			}
 		}
 		ScpAdditionsMod.queueServerWork(activationDelay, () -> TeslaGateTransitionHelper.transitionIfCurrent(world, x, y, z, ScpAdditionsModBlocks.TESLA_GATE, ScpAdditionsModBlocks.TESLA_ACTIVE));

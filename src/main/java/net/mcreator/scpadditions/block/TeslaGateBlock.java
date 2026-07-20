@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.item.Item;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -59,9 +61,8 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, BlockGetter level, List<Component> tooltip,
-            TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 
     @Override
@@ -143,10 +144,7 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
 
     @Override
     public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        if (player.getInventory().getSelected().getItem() instanceof PickaxeItem pickaxe) {
-            return pickaxe.getTier().getLevel() >= 1;
-        }
-        return false;
+        return player.getMainHandItem().isCorrectToolForDrops(state);
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
@@ -133,7 +134,7 @@ public class ScrollableItemList {
             return "";
         }
 
-        List<Component> lines = stack.getTooltipLines(mc.player, TooltipFlag.Default.NORMAL);
+        List<Component> lines = stack.getTooltipLines(Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.Default.NORMAL);
         for (int i = 1; i < lines.size(); i++) {
             String text = lines.get(i).getString().trim();
             if (!text.isEmpty()) {

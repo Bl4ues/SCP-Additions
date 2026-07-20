@@ -26,7 +26,7 @@ public final class RequestCraftingStatePacket {
             if (player != null) {
                 ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                         new CraftingStateSyncPacket(ScpCraftingState.toTag(
-                                ScpCraftingState.load(player))));
+                                ScpCraftingState.load(player), player.registryAccess())));
             }
         });
         context.setPacketHandled(true);

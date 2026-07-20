@@ -164,7 +164,7 @@ public final class HeavyDoorControlPanelAccess {
         }
 
         ResourceLocation targetId = ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, accepted ? basePath + "_accept" : basePath);
-        Block target = BuiltInRegistries.BLOCK.getValue(targetId);
+        Block target = BuiltInRegistries.BLOCK.get(targetId);
         if (target == null) {
             return false;
         }

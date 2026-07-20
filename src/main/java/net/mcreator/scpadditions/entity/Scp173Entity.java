@@ -101,7 +101,6 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     public Scp173Entity(EntityType<? extends Scp173Entity> type, Level level) {
         super(type, level);
-        setMaxUpStep(1.05F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -111,7 +110,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
                 // Snap movement is authoritative, but keep vanilla movement at
                 // the same safe rate so navigation can never bypass the cap.
                 .add(Attributes.MOVEMENT_SPEED, BLINK_STEP_PER_TICK)
-                .add(Attributes.ATTACK_DAMAGE, 0.0D);
+                .add(Attributes.ATTACK_DAMAGE, 0.0D)
+                .add(Attributes.STEP_HEIGHT, 1.05D);
     }
 
     public static void reactToBlinkState(ServerPlayer player, boolean closed, boolean manual) {
@@ -152,12 +152,12 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        entityData.define(SCRAPING, false);
-        entityData.define(MANUAL_YAW, 0.0F);
-        entityData.define(ACTIVATED, false);
-        entityData.define(ROUTINE_SPAWN, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SCRAPING, false);
+        builder.define(MANUAL_YAW, 0.0F);
+        builder.define(ACTIVATED, false);
+        builder.define(ROUTINE_SPAWN, false);
     }
 
     @Override
@@ -168,7 +168,6 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     @Override
     public void tick() {
-        setMaxUpStep(1.05F);
         if (level().isClientSide) {
             super.tick();
             if (!ScpAdditionsModulesConfig.get().scp173.enabled) {
@@ -240,7 +239,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     @Override
-    public void lerpTo(double x, double y, double z, float yRot, float xRot, int increments, boolean teleport) {
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int increments) {
         if (isClientObservedByLocalPlayer()) {
             // Observation freezes future movement, but it must never discard an
             // authoritative server position. Discarding it left a harmless
@@ -254,7 +253,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
             hardStopLocalMovement();
             return;
         }
-        super.lerpTo(x, y, z, yRot, xRot, increments, teleport);
+        super.lerpTo(x, y, z, yRot, xRot, increments);
     }
 
     @Override

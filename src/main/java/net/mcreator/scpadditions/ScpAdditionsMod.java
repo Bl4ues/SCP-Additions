@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions;
 
+import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -45,6 +49,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
+import net.mcreator.scpadditions.block.entity.Scp294Capabilities;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModArmorMaterials;
 import net.mcreator.scpadditions.item.LegacyDrinkItemMappings;
@@ -71,6 +76,7 @@ public class ScpAdditionsMod {
         Scp173Sounds.REGISTRY.register(bus);
         ScpAdditionsModBlocks.REGISTRY.register(bus);
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
+        bus.addListener(Scp294Capabilities::register);
         ScpAdditionsModArmorMaterials.REGISTRY.register(bus);
         LegacyDrinkItemMappings.registerAliases();
         FacilityLegacyMappings.registerAliases();

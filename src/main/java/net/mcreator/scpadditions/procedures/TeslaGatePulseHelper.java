@@ -1,6 +1,8 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraft.advancements.Advancement;
+import net.minecraft.core.component.DataComponents;
+
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -62,14 +64,14 @@ public final class TeslaGatePulseHelper {
 						if (this.getEntity() instanceof LivingEntity sourceLiving) {
 							itemStack = sourceLiving.getMainHandItem();
 						}
-						return !itemStack.isEmpty() && itemStack.hasCustomHoverName()
+						return !itemStack.isEmpty() && itemStack.has(DataComponents.CUSTOM_NAME)
 								? Component.translatable(translateKey + ".item", messageEntity.getDisplayName(), component, itemStack.getDisplayName())
 								: Component.translatable(translateKey, messageEntity.getDisplayName(), component);
 					}
 				}, damage);
 			}
 			if (entity instanceof ServerPlayer player) {
-				Advancement advancement = player.server.getAdvancements().getAdvancement(ResourceLocation.parse("scp_additions:tesla"));
+				AdvancementHolder advancement = player.server.getAdvancements().get(ResourceLocation.parse("scp_additions:tesla"));
 				if (advancement != null) {
 					AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
 					if (!progress.isDone()) {

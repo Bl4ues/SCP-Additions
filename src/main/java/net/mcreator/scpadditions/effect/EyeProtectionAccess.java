@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.effect;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.bl4ues.scpinventory.item.ScpItemEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
@@ -12,7 +14,7 @@ public final class EyeProtectionAccess {
     }
 
     public static boolean blocksExternalEyeSore(Player player) {
-        return player != null && (player.hasEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get())
+        return player != null && (player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.LUBRICATED_EYE.get()))
                 || HazmatSuitAccess.protectsEyes(player)
                 || ScpItemEffects.hasProtectedEyesModifierEquipped(player));
     }
@@ -21,8 +23,7 @@ public final class EyeProtectionAccess {
         if (player == null || durationTicks <= 0 || blocksExternalEyeSore(player)) return false;
         // Keep particles disabled, but preserve the icon flag so the effect can
         // appear in inventory interfaces. EyeSoreEffect hides only the HUD icon.
-        return player.addEffect(new MobEffectInstance(
-                ScpAdditionsModMobEffects.EYE_SORE.get(), durationTicks, 0,
+        return player.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.EYE_SORE.get()), durationTicks, 0,
                 false, false, true));
     }
 }

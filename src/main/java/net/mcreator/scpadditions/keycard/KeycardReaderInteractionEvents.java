@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.keycard;
 
+import net.neoforged.neoforge.common.util.TriState;
+
 import com.bl4ues.scpadditions.compat.LegacyItemTags;
 
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -12,7 +14,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -98,8 +99,8 @@ public final class KeycardReaderInteractionEvents {
 
         // Stop the normal keycard swipe procedure from running underneath the
         // configuration interaction.
-        event.setUseBlock(Event.Result.DENY);
-        event.setUseItem(Event.Result.DENY);
+        event.setUseBlock(TriState.FALSE);
+        event.setUseItem(TriState.FALSE);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
 

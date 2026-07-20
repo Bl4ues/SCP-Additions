@@ -75,7 +75,7 @@ public final class UnityColorPickerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         int panelW = Math.min(430, width - 24);
         int left = (width - panelW) / 2;
         int top = Math.max(12, (height - 265) / 2);

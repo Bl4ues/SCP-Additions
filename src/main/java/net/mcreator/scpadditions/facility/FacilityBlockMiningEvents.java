@@ -1,5 +1,13 @@
 package net.mcreator.scpadditions.facility;
 
+import net.minecraft.world.item.enchantment.Enchantments;
+
+import net.minecraft.world.item.enchantment.Enchantment;
+
+import net.minecraft.core.registries.Registries;
+
+import net.minecraft.core.Holder;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.minecraft.core.BlockPos;
@@ -71,7 +79,11 @@ public final class FacilityBlockMiningEvents {
                         / stateBaseSpeed;
                 float referenceSpeed = Math.max(1.0F,
                         tool.getDestroySpeed(Blocks.STONE.defaultBlockState()));
-                int efficiency = EnchantmentHelper.getBlockEfficiency(player);
+                Holder.Reference<Enchantment> efficiencyHolder = player.level()
+                        .registryAccess().registryOrThrow(Registries.ENCHANTMENT)
+                        .getHolderOrThrow(Enchantments.EFFICIENCY);
+                int efficiency = EnchantmentHelper.getItemEnchantmentLevel(
+                        efficiencyHolder, tool);
                 if (referenceSpeed > 1.0F && efficiency > 0) {
                     referenceSpeed += efficiency * efficiency + 1.0F;
                 }

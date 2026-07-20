@@ -1,5 +1,9 @@
 package com.bl4ues.scpinventory.crafting;
 
+import net.minecraft.world.item.crafting.RecipeHolder;
+
+import net.minecraft.world.item.crafting.CraftingInput;
+
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -43,16 +47,26 @@ public final class ScpCraftingRecipeHelper {
         return container;
     }
 
+    public static CraftingInput createInput(List<ItemStack> grid) {
+        NonNullList<ItemStack> stacks = NonNullList.withSize(ScpCraftingState.GRID_SIZE, ItemStack.EMPTY);
+        for (int i = 0; i < ScpCraftingState.GRID_SIZE; i++) {
+            ItemStack stack = grid != null && i < grid.size() ? grid.get(i) : ItemStack.EMPTY;
+            stacks.set(i, stack == null ? ItemStack.EMPTY : stack.copy());
+        }
+        return CraftingInput.of(3, 3, stacks);
+    }
+
     public static Optional<CraftingRecipe> findMatching(Level level, List<ItemStack> grid) {
         if (level == null) return Optional.empty();
         return level.getRecipeManager().getRecipeFor(
-                RecipeType.CRAFTING, createContainer(grid), level);
+                RecipeType.CRAFTING, createInput(grid), level)
+                .map(RecipeHolder::value);
     }
 
     public static Optional<CraftingRecipe> getById(Level level, ResourceLocation id) {
         if (level == null || id == null) return Optional.empty();
-        Optional<? extends Recipe<?>> recipe = level.getRecipeManager().byKey(id);
-        if (recipe.isEmpty() || !(recipe.get() instanceof CraftingRecipe crafting)) {
+        Optional<RecipeHolder<?>> recipe = level.getRecipeManager().byKey(id);
+        if (recipe.isEmpty() || !(recipe.get().value() instanceof CraftingRecipe crafting)) {
             return Optional.empty();
         }
         return Optional.of(crafting);

@@ -81,7 +81,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
 		initializeDisplayState();
 		updateLayout();
-		this.renderBackground(guiGraphics);
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
 		renderTerminal(guiGraphics);
 	}
 
@@ -384,14 +384,14 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		if (world == null) {
 			return;
 		}
-		SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.fromNamespaceAndPath("scp_additions", soundId));
+		SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("scp_additions", soundId));
 		if (sound != null) {
 			world.playLocalSound(x + 0.5D, y + 0.5D, z + 0.5D, sound, SoundSource.BLOCKS, volume, pitch, false);
 		}
 	}
 
 	private void playHeadSound(String soundId) {
-		SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.fromNamespaceAndPath("scp_additions", soundId));
+		SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("scp_additions", soundId));
 		if (sound != null) {
 			Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(sound.getLocation(), SoundSource.AMBIENT, 1.0F, 1.0F, RandomSource.create(), false, 0, SoundInstance.Attenuation.NONE, 0.0D, 0.0D, 0.0D, true));
 		}

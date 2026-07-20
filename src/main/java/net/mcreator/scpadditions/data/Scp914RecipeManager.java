@@ -214,7 +214,7 @@ public final class Scp914RecipeManager {
 	}
 
 	private static RecipeDefinition parseRecipe(JsonObject json) {
-		ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(json, "id"));
+		ResourceLocation id = ResourceLocation.parse(GsonHelper.getAsString(json, "id"));
 		Setting setting = Setting.fromSerializedName(GsonHelper.getAsString(json, "setting"));
 		List<ItemIngredient> itemInputs = readItemInputs(json);
 		List<EntityIngredient> entityInputs = readEntityInputs(json);
@@ -238,13 +238,13 @@ public final class Scp914RecipeManager {
 		List<ItemIngredient> inputs = new ArrayList<>();
 		if (json.has("input")) {
 			JsonObject input = GsonHelper.getAsJsonObject(json, "input");
-			inputs.add(new ItemIngredient(new ResourceLocation(GsonHelper.getAsString(input, "item")), Math.max(1, GsonHelper.getAsInt(input, "count", 1))));
+			inputs.add(new ItemIngredient(ResourceLocation.parse(GsonHelper.getAsString(input, "item")), Math.max(1, GsonHelper.getAsInt(input, "count", 1))));
 		}
 		if (json.has("item_inputs")) {
 			JsonArray array = GsonHelper.getAsJsonArray(json, "item_inputs");
 			for (JsonElement element : array) {
 				JsonObject input = GsonHelper.convertToJsonObject(element, "SCP-914 item input");
-				inputs.add(new ItemIngredient(new ResourceLocation(GsonHelper.getAsString(input, "item")), Math.max(1, GsonHelper.getAsInt(input, "count", 1))));
+				inputs.add(new ItemIngredient(ResourceLocation.parse(GsonHelper.getAsString(input, "item")), Math.max(1, GsonHelper.getAsInt(input, "count", 1))));
 			}
 		}
 		return List.copyOf(inputs);
@@ -256,7 +256,7 @@ public final class Scp914RecipeManager {
 			JsonArray array = GsonHelper.getAsJsonArray(json, "entity_inputs");
 			for (JsonElement element : array) {
 				JsonObject input = GsonHelper.convertToJsonObject(element, "SCP-914 entity input");
-				inputs.add(new EntityIngredient(new ResourceLocation(GsonHelper.getAsString(input, "entity")), Math.max(1, GsonHelper.getAsInt(input, "count", 1)), GsonHelper.getAsBoolean(input, "consume", true)));
+				inputs.add(new EntityIngredient(ResourceLocation.parse(GsonHelper.getAsString(input, "entity")), Math.max(1, GsonHelper.getAsInt(input, "count", 1)), GsonHelper.getAsBoolean(input, "consume", true)));
 			}
 		}
 		return List.copyOf(inputs);
@@ -266,13 +266,13 @@ public final class Scp914RecipeManager {
 		List<ItemOutput> outputs = new ArrayList<>();
 		if (json.has("output")) {
 			JsonObject output = GsonHelper.getAsJsonObject(json, "output");
-			outputs.add(new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
+			outputs.add(new ItemOutput(ResourceLocation.parse(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
 		}
 		if (json.has("item_outputs")) {
 			JsonArray array = GsonHelper.getAsJsonArray(json, "item_outputs");
 			for (JsonElement element : array) {
 				JsonObject output = GsonHelper.convertToJsonObject(element, "SCP-914 item output");
-				outputs.add(new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
+				outputs.add(new ItemOutput(ResourceLocation.parse(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
 			}
 		}
 		return List.copyOf(outputs);
@@ -284,7 +284,7 @@ public final class Scp914RecipeManager {
 			JsonArray array = GsonHelper.getAsJsonArray(json, "weighted_item_outputs");
 			for (JsonElement element : array) {
 				JsonObject output = GsonHelper.convertToJsonObject(element, "SCP-914 weighted item output");
-				outputs.add(new WeightedItemOutput(Math.max(1, GsonHelper.getAsInt(output, "weight", 1)), new ItemOutput(new ResourceLocation(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1)))));
+				outputs.add(new WeightedItemOutput(Math.max(1, GsonHelper.getAsInt(output, "weight", 1)), new ItemOutput(ResourceLocation.parse(GsonHelper.getAsString(output, "item")), Math.max(1, GsonHelper.getAsInt(output, "count", 1)))));
 			}
 		}
 		return List.copyOf(outputs);
@@ -296,7 +296,7 @@ public final class Scp914RecipeManager {
 			JsonArray array = GsonHelper.getAsJsonArray(json, "entity_outputs");
 			for (JsonElement element : array) {
 				JsonObject output = GsonHelper.convertToJsonObject(element, "SCP-914 entity output");
-				outputs.add(new EntityOutput(new ResourceLocation(GsonHelper.getAsString(output, "entity")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
+				outputs.add(new EntityOutput(ResourceLocation.parse(GsonHelper.getAsString(output, "entity")), Math.max(1, GsonHelper.getAsInt(output, "count", 1))));
 			}
 		}
 		return List.copyOf(outputs);
@@ -357,7 +357,7 @@ public final class Scp914RecipeManager {
 	}
 
 	public static ItemStack createItemOutput(ItemOutput output, ItemStack inputStack, boolean copyInputNbt) {
-		Item item = BuiltInRegistries.ITEM.getValue(output.item());
+		Item item = BuiltInRegistries.ITEM.get(output.item());
 		if (item == null || item == Items.AIR) {
 			ScpAdditionsMod.LOGGER.warn("SCP-914 output points to missing item {}", output.item());
 			return ItemStack.EMPTY;
@@ -368,7 +368,7 @@ public final class Scp914RecipeManager {
 	}
 
 	public static Optional<EntityType<?>> getEntityType(EntityOutput output) {
-		EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(output.entity());
+		EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(output.entity());
 		return Optional.ofNullable(type);
 	}
 

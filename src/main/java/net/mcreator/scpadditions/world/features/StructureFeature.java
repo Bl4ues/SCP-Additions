@@ -2,13 +2,9 @@ package net.mcreator.scpadditions.world.features;
 
 import java.util.function.Supplier;
 
-import net.neoforged.fml.common.EventBusSubscriber;
-
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.fml.common.Mod;
-
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -27,9 +23,8 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import com.mojang.serialization.Codec;
 
-@EventBusSubscriber
 public class StructureFeature extends Feature<StructureFeatureConfiguration> {
-	public static final DeferredRegister<Feature<?>> REGISTRY = DeferredRegister.create(ForgeRegistries.FEATURES, ScpAdditionsMod.MODID);
+	public static final DeferredRegister<Feature<?>> REGISTRY = DeferredRegister.create(BuiltInRegistries.FEATURE, ScpAdditionsMod.MODID);
 	public static final Supplier<Feature<?>> STRUCTURE_FEATURE = REGISTRY.register("structure_feature", () -> new StructureFeature(StructureFeatureConfiguration.CODEC));
 
 	public StructureFeature(Codec<StructureFeatureConfiguration> codec) {
@@ -47,7 +42,7 @@ public class StructureFeature extends Feature<StructureFeatureConfiguration> {
 		StructureTemplateManager structureManager = worldGenLevel.getLevel().getServer().getStructureManager();
 		StructureTemplate template = structureManager.getOrCreate(config.structure());
 		StructurePlaceSettings placeSettings = (new StructurePlaceSettings()).setRotation(rotation).setMirror(mirror).setRandom(random).setIgnoreEntities(false)
-				.addProcessor(new BlockIgnoreProcessor(config.ignoredBlocks().stream().map(Holder::get).toList()));
+				.addProcessor(new BlockIgnoreProcessor(config.ignoredBlocks().stream().map(Holder::value).toList()));
 		template.placeInWorld(worldGenLevel, placePos, placePos, placeSettings, random, 4);
 		return true;
 	}

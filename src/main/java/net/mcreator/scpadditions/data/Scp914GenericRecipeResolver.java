@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.data;
 
+import net.minecraft.world.item.crafting.RecipeHolder;
+
 import com.bl4ues.scpadditions.compat.LegacyItemTags;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -86,7 +88,8 @@ public final class Scp914GenericRecipeResolver {
 
     private static List<ForwardCandidate> collectForwardCandidates(ServerLevel level, List<ItemUnit> units) {
         List<ForwardCandidate> candidates = new ArrayList<>();
-        for (CraftingRecipe recipe : recipes(level)) {
+        for (RecipeHolder<CraftingRecipe> recipeHolder : recipes(level)) {
+            CraftingRecipe recipe = recipeHolder.value();
             if (!eligible(recipe)) continue;
             List<Ingredient> ingredients = nonEmptyIngredients(recipe);
             if (ingredients.isEmpty() || ingredients.size() > units.size()) continue;
@@ -94,7 +97,7 @@ public final class Scp914GenericRecipeResolver {
             if (assignment.isEmpty()) continue;
             ItemStack result = result(level, recipe);
             if (result.isEmpty()) continue;
-            candidates.add(new ForwardCandidate(recipe.getId(), assignment.get(), result));
+            candidates.add(new ForwardCandidate(recipeHolder.id(), assignment.get(), result));
         }
         return candidates;
     }
@@ -115,7 +118,8 @@ public final class Scp914GenericRecipeResolver {
         ItemUnit input = units.get(0);
 
         List<ReverseCandidate> candidates = new ArrayList<>();
-        for (CraftingRecipe recipe : recipes(level)) {
+        for (RecipeHolder<CraftingRecipe> recipeHolder : recipes(level)) {
+            CraftingRecipe recipe = recipeHolder.value();
             if (!eligible(recipe)) continue;
             ItemStack result = result(level, recipe);
             if (result.isEmpty() || result.getCount() != 1 || !ItemStack.isSameItem(result, input.stack())) continue;
@@ -125,7 +129,7 @@ public final class Scp914GenericRecipeResolver {
                 ItemStack concrete = chooseIngredientStack(ingredient, level.random);
                 if (!concrete.isEmpty() && !ItemStack.isSameItem(concrete, input.stack())) recovered.add(concrete);
             }
-            if (!recovered.isEmpty()) candidates.add(new ReverseCandidate(recipe.getId(), recovered));
+            if (!recovered.isEmpty()) candidates.add(new ReverseCandidate(recipeHolder.id(), recovered));
         }
 
         List<ItemStack> synthetic = syntheticComponents(input.stack());
@@ -173,13 +177,14 @@ public final class Scp914GenericRecipeResolver {
         if (units.size() != 1) return Optional.empty();
         ItemUnit input = units.get(0);
         List<RecipeResult> equivalents = new ArrayList<>();
-        for (CraftingRecipe recipe : recipes(level)) {
+        for (RecipeHolder<CraftingRecipe> recipeHolder : recipes(level)) {
+            CraftingRecipe recipe = recipeHolder.value();
             if (!eligible(recipe)) continue;
             ItemStack output = result(level, recipe);
             if (output.isEmpty() || output.getCount() != 1 || ItemStack.isSameItem(output, input.stack())) continue;
             if (isEquivalentCategory(input.stack().getItem(), output.getItem())
                     && qualityCompatible(input.stack().getItem(), output.getItem())) {
-                equivalents.add(new RecipeResult(recipe.getId(), output));
+                equivalents.add(new RecipeResult(recipeHolder.id(), output));
             }
         }
         if (equivalents.isEmpty()) return Optional.empty();
@@ -261,7 +266,8 @@ public final class Scp914GenericRecipeResolver {
         one.setCount(1);
 
         List<RecipeResult> successors = new ArrayList<>();
-        for (CraftingRecipe recipe : recipes(level)) {
+        for (RecipeHolder<CraftingRecipe> recipeHolder : recipes(level)) {
+            CraftingRecipe recipe = recipeHolder.value();
             if (!eligible(recipe)) continue;
             List<Ingredient> ingredients = nonEmptyIngredients(recipe);
             if (ingredients.isEmpty() || ingredients.size() > intermediate.getCount()) continue;
@@ -275,7 +281,7 @@ public final class Scp914GenericRecipeResolver {
             if (!allMatch) continue;
             ItemStack result = result(level, recipe);
             if (result.isEmpty() || ItemStack.isSameItem(result, intermediate)) continue;
-            successors.add(new RecipeResult(recipe.getId(), result));
+            successors.add(new RecipeResult(recipeHolder.id(), result));
         }
         return successors.isEmpty() ? Optional.empty() : Optional.of(random(successors, level.random));
     }
@@ -411,7 +417,7 @@ public final class Scp914GenericRecipeResolver {
         return result == null ? ItemStack.EMPTY : result.copy();
     }
 
-    private static List<CraftingRecipe> recipes(ServerLevel level) {
+    private static List<RecipeHolder<CraftingRecipe>> recipes(ServerLevel level) {
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING);
     }
 
@@ -423,7 +429,7 @@ public final class Scp914GenericRecipeResolver {
         if (input instanceof DiggerItem && output instanceof DiggerItem) return input.getClass().equals(output.getClass());
         if (input instanceof ProjectileWeaponItem && output instanceof ProjectileWeaponItem) return true;
         return input.getClass() != Item.class && input.getClass().equals(output.getClass())
-                && input.getMaxStackSize() == output.getMaxStackSize();
+                && input.getDefaultInstance().getMaxStackSize() == output.getDefaultInstance().getMaxStackSize();
     }
 
     private static boolean qualityCompatible(Item input, Item output) {

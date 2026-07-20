@@ -935,7 +935,7 @@ public final class UnityConfigurationUiEvents {
         }
 
         LivingEntity living = ENTITY_PREVIEWS.computeIfAbsent(id, key -> {
-            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(key);
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(key);
             if (type == null) return null;
             Entity entity = type.create(level);
             if (!(entity instanceof LivingEntity created)) return null;
@@ -951,7 +951,8 @@ public final class UnityConfigurationUiEvents {
         try {
             graphics.enableScissor(x - 1, y - 1, x + 18, y + 19);
             InventoryScreen.renderEntityInInventoryFollowsMouse(graphics,
-                    x + 8, y + 17, scale, 0.0F, 0.0F, living);
+                    x - 1, y - 1, x + 18, y + 19, scale,
+                    0.0F, 0.0F, 0.0F, living);
             graphics.disableScissor();
             return true;
         } catch (Throwable ignored) {
@@ -987,13 +988,13 @@ public final class UnityConfigurationUiEvents {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         if (id == null) return ItemStack.EMPTY;
         if ("entity".equals(type)) {
-            ResourceLocation eggId = new ResourceLocation(id.getNamespace(),
+            ResourceLocation eggId = ResourceLocation.fromNamespaceAndPath(id.getNamespace(),
                     id.getPath() + "_spawn_egg");
-            Item egg = BuiltInRegistries.ITEM.getValue(eggId);
+            Item egg = BuiltInRegistries.ITEM.get(eggId);
             return egg == null || egg == Items.AIR
                     ? new ItemStack(Items.SPAWNER) : new ItemStack(egg);
         }
-        Block block = BuiltInRegistries.BLOCK.getValue(id);
+        Block block = BuiltInRegistries.BLOCK.get(id);
         if (block != null && block.asItem() != Items.AIR) return new ItemStack(block.asItem());
         return itemStack(idText);
     }
@@ -1001,7 +1002,7 @@ public final class UnityConfigurationUiEvents {
     private static ItemStack itemStack(String id) {
         ResourceLocation resource = ResourceLocation.tryParse(id == null ? "" : id);
         if (resource == null) return ItemStack.EMPTY;
-        Item item = BuiltInRegistries.ITEM.getValue(resource);
+        Item item = BuiltInRegistries.ITEM.get(resource);
         return item == null || item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
@@ -1012,21 +1013,21 @@ public final class UnityConfigurationUiEvents {
 
     private static String displayNameForBlock(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
-        Block block = id == null ? null : BuiltInRegistries.BLOCK.getValue(id);
+        Block block = id == null ? null : BuiltInRegistries.BLOCK.get(id);
         return block == null ? humanizeId(idText) : block.getName().getString();
     }
 
     private static String displayNameForEntity(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         net.minecraft.world.entity.EntityType<?> type = id == null
-                ? null : BuiltInRegistries.ENTITY_TYPE.getValue(id);
+                ? null : BuiltInRegistries.ENTITY_TYPE.get(id);
         return type == null ? humanizeId(idText) : type.getDescription().getString();
     }
 
     private static String displayNameForEffect(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         net.minecraft.world.effect.MobEffect effect = id == null
-                ? null : BuiltInRegistries.MOB_EFFECT.getValue(id);
+                ? null : BuiltInRegistries.MOB_EFFECT.get(id);
         return effect == null ? humanizeId(idText)
                 : Component.translatable(effect.getDescriptionId()).getString();
     }

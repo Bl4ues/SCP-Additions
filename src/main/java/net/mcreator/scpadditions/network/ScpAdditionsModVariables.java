@@ -418,9 +418,8 @@ public class ScpAdditionsModVariables {
 						&& Minecraft.getInstance().level != null) {
 					Entity target = Minecraft.getInstance().level.getEntity(message.entityId);
 					if (target instanceof Player player) {
-						PlayerVariables variables = ((PlayerVariables) player
-								.getCapability(PLAYER_VARIABLES_CAPABILITY, null)
-								.orElse(new PlayerVariables()));
+						PlayerVariables variables = ScpAdditionsModVariables.getPlayerVariables(player)
+								.orElse(new PlayerVariables());
 						variables.Opos = message.data.Opos;
 						variables.Oneg = message.data.Oneg;
 						variables.Apos = message.data.Apos;

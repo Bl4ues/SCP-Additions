@@ -1,6 +1,6 @@
 package net.mcreator.scpadditions.data;
 
-import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -218,7 +218,7 @@ public final class Scp914Processor {
         if (server == null) {
             return;
         }
-        Advancement advancement = server.getAdvancements().getAdvancement(
+        AdvancementHolder advancement = server.getAdvancements().get(
                 ResourceLocation.fromNamespaceAndPath("scp_additions", "scp_914_metamorphosis"));
         if (advancement == null) {
             return;
@@ -366,7 +366,7 @@ public final class Scp914Processor {
 
     private static void playSound(Level level, BlockPos pos, String soundId) {
         ResourceLocation id = ResourceLocation.parse(soundId);
-        level.playSound(null, pos, BuiltInRegistries.SOUND_EVENT.getValue(id),
+        level.playSound(null, pos, BuiltInRegistries.SOUND_EVENT.get(id),
                 SoundSource.NEUTRAL, 1.0F, 1.0F);
     }
 

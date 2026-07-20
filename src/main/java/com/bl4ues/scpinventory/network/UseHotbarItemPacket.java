@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
+import net.minecraft.network.RegistryFriendlyByteBuf;
+
 import com.bl4ues.scpinventory.client.ClientPacketHandlers;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,11 +34,11 @@ public class UseHotbarItemPacket {
         buf.writeInt(msg.hotbarSlot);
         buf.writeInt(msg.sourceSlot);
         buf.writeBoolean(msg.continuousUse);
-        buf.writeItem(msg.stack);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buf, msg.stack);
     }
 
     public static UseHotbarItemPacket decode(FriendlyByteBuf buf) {
-        return new UseHotbarItemPacket(buf.readInt(), buf.readInt(), buf.readBoolean(), buf.readItem());
+        return new UseHotbarItemPacket(buf.readInt(), buf.readInt(), buf.readBoolean(), ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buf));
     }
 
     public static void handle(UseHotbarItemPacket msg, Supplier<NetworkEvent.Context> ctx) {

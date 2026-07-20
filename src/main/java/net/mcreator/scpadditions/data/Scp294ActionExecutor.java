@@ -65,7 +65,7 @@ public final class Scp294ActionExecutor {
 			case "kill" -> kill(entity, action);
 			case "set_fire" -> {
 				if (entity != null) {
-					entity.setSecondsOnFire(Math.max(1, action.getInt("seconds")));
+					entity.igniteForSeconds(Math.max(1, action.getInt("seconds")));
 				}
 			}
 			default -> {
@@ -99,7 +99,7 @@ public final class Scp294ActionExecutor {
 			return;
 		}
 		living.addEffect(new MobEffectInstance(
-				effect,
+				BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect),
 				Math.max(1, action.getInt("duration")),
 				Math.max(0, action.getInt("amplifier")),
 				action.getBoolean("ambient"),
@@ -111,7 +111,7 @@ public final class Scp294ActionExecutor {
 		if (entity instanceof LivingEntity living) {
 			MobEffect effect = getEffect(effectId);
 			if (effect != null) {
-				living.removeEffect(effect);
+				living.removeEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect));
 			}
 		}
 	}
@@ -120,7 +120,7 @@ public final class Scp294ActionExecutor {
 		if (effectId == null || effectId.isBlank()) {
 			return null;
 		}
-		return BuiltInRegistries.MOB_EFFECT.getValue(ResourceLocation.parse(effectId));
+		return BuiltInRegistries.MOB_EFFECT.get(ResourceLocation.parse(effectId));
 	}
 
 	private static void heal(Entity entity, float amount) {
@@ -186,7 +186,7 @@ public final class Scp294ActionExecutor {
 		}
 		SoundEvent sound = SoundEvents.GENERIC_DRINK;
 		if (soundId != null && !soundId.isBlank()) {
-			SoundEvent configured = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse(soundId));
+			SoundEvent configured = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId));
 			if (configured != null) {
 				sound = configured;
 			}

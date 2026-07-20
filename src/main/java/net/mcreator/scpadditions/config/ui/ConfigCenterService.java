@@ -396,7 +396,7 @@ public final class ConfigCenterService {
 
     private static void validateId(String raw, String label, List<String> errors, List<String> warnings, boolean allowMissing) {
         if (raw == null || raw.isBlank()) { errors.add(label + " is required"); return; }
-        try { new ResourceLocation(raw.trim()); }
+        try { ResourceLocation.parse(raw.trim()); }
         catch (Exception exception) { errors.add(label + " has invalid resource id '" + raw + "'"); }
     }
 

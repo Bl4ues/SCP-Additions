@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.minecraft.core.component.DataComponents;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 
@@ -20,7 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -35,9 +37,9 @@ public class Scp330CandyDropProcedure {
 			entity.getPersistentData().putBoolean("candy0", false);
 			if (world instanceof Level _level) {
 				if (!_level.isClientSide()) {
-					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
+					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
 				} else {
-					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
+					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
 				}
 			}
 		} else {
@@ -47,15 +49,15 @@ public class Scp330CandyDropProcedure {
 				entity.getPersistentData().putBoolean("candy1", false);
 				if (world instanceof Level _level) {
 					if (!_level.isClientSide()) {
-						_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
+						_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
 					} else {
-						_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
+						_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
 					}
 				}
 			} else {
 				if (entity.getPersistentData().getBoolean("candy2")) {
 					if (entity instanceof ServerPlayer _player) {
-						Advancement _adv = _player.server.getAdvancements().getAdvancement(ResourceLocation.parse("scp_additions:scp_330_achievement"));
+						AdvancementHolder _adv = _player.server.getAdvancements().get(ResourceLocation.parse("scp_additions:scp_330_achievement"));
 						AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
 						if (!_ap.isDone()) {
 							for (String criteria : _ap.getRemainingCriteria())
@@ -64,16 +66,16 @@ public class Scp330CandyDropProcedure {
 					}
 					if (world instanceof Level _level) {
 						if (!_level.isClientSide()) {
-							_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
+							_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
 						} else {
-							_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
+							_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1, false);
 						}
 					}
 					if (world instanceof Level _level) {
 						if (!_level.isClientSide()) {
-							_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:scp330death")), SoundSource.HOSTILE, 1, 1);
+							_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:scp330death")), SoundSource.HOSTILE, 1, 1);
 						} else {
-							_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:scp330death")), SoundSource.HOSTILE, 1, 1, false);
+							_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:scp330death")), SoundSource.HOSTILE, 1, 1, false);
 						}
 					}
 					if (entity instanceof LivingEntity _entity)
@@ -90,7 +92,7 @@ public class Scp330CandyDropProcedure {
 									ItemStack _itemstack = ItemStack.EMPTY;
 									if (this.getEntity() instanceof LivingEntity _livingentity)
 										_itemstack = _livingentity.getMainHandItem();
-									return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+									return !_itemstack.isEmpty() && _itemstack.has(DataComponents.CUSTOM_NAME)
 											? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
 											: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
 								}
@@ -115,7 +117,7 @@ public class Scp330CandyDropProcedure {
 										ItemStack _itemstack = ItemStack.EMPTY;
 										if (this.getEntity() instanceof LivingEntity _livingentity)
 											_itemstack = _livingentity.getMainHandItem();
-										return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+										return !_itemstack.isEmpty() && _itemstack.has(DataComponents.CUSTOM_NAME)
 												? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
 												: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
 									}

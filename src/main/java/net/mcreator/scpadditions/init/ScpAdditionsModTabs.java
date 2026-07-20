@@ -77,14 +77,10 @@ public class ScpAdditionsModTabs {
     @SubscribeEvent
     public static void buildTabContentsVanilla(BuildCreativeModeTabContentsEvent tabData) {
         if (tabData.getTab() == FacilityModule.SCP_UNITY_BLOCKS.get()) {
-            var iterator = tabData.getEntries().iterator();
-            while (iterator.hasNext()) {
-                ItemStack stack = iterator.next().getKey();
-                if (stack.is(FacilityModule.itemByPath("button_closed").get())
-                        || stack.is(FacilityModule.itemByPath("button_locked").get())) {
-                    iterator.remove();
-                }
-            }
+            tabData.remove(new ItemStack(FacilityModule.itemByPath("button_closed").get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            tabData.remove(new ItemStack(FacilityModule.itemByPath("button_locked").get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
             tabData.accept(ScpAdditionsModItems.SCP_330_RED_CANDY.get());

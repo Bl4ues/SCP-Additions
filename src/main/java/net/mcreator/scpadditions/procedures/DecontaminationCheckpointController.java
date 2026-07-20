@@ -1,6 +1,8 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraft.advancements.Advancement;
+import net.minecraft.core.registries.BuiltInRegistries;
+
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -147,7 +149,7 @@ public final class DecontaminationCheckpointController {
     }
 
     private static void decontaminate(ServerLevel level, ServerPlayer player) {
-        MobEffectInstance lubricatedEye = player.getEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get());
+        MobEffectInstance lubricatedEye = player.getEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.LUBRICATED_EYE.get()));
         player.removeAllEffects();
         if (lubricatedEye != null) {
             player.addEffect(new MobEffectInstance(lubricatedEye));
@@ -159,7 +161,7 @@ public final class DecontaminationCheckpointController {
                     player.getYRot(), true, false);
         }
 
-        Advancement advancement = player.server.getAdvancements().getAdvancement(
+        AdvancementHolder advancement = player.server.getAdvancements().get(
                 ResourceLocation.fromNamespaceAndPath("scp_additions", "decon_achievement"));
         if (advancement == null) return;
 

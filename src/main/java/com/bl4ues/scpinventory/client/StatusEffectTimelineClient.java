@@ -59,7 +59,7 @@ public final class StatusEffectTimelineClient {
     }
 
     private static EffectKey key(MobEffectInstance effect) {
-        ResourceLocation id = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect());
+        ResourceLocation id = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect().value());
         return id == null ? null : new EffectKey(id, effect.getAmplifier());
     }
 

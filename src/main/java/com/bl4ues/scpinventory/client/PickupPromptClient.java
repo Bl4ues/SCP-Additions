@@ -149,7 +149,7 @@ public final class PickupPromptClient {
         poseStack.translate(cx, cy, cz);
         poseStack.scale(MODEL_OUTLINE_SCALE, MODEL_OUTLINE_SCALE, MODEL_OUTLINE_SCALE);
         poseStack.translate(-cx, -cy, -cz);
-        mc.getEntityRenderDispatcher().render(target, x, y, z, target.getYRot(), mc.getFrameTime(), poseStack, outline, LightTexture.FULL_BRIGHT);
+        mc.getEntityRenderDispatcher().render(target, x, y, z, target.getYRot(), mc.getTimer().getGameTimeDeltaPartialTick(false), poseStack, outline, LightTexture.FULL_BRIGHT);
         poseStack.popPose();
 
         outline.endOutlineBatch();

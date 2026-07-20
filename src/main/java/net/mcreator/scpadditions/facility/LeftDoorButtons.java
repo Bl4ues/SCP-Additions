@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.facility;
 
+import com.mojang.serialization.MapCodec;
+
+import net.minecraft.world.level.LevelReader;
+
 import java.util.function.Supplier;
 
 import net.minecraft.core.BlockPos;
@@ -107,6 +111,11 @@ public final class LeftDoorButtons {
     }
 
     private static final class LeftDoorButtonBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private final State state;
 
         private LeftDoorButtonBlock(State state) {
@@ -155,8 +164,7 @@ public final class LeftDoorButtons {
         }
 
         @Override
-        public InteractionResult use(BlockState blockState, Level level, BlockPos pos,
-                Player player, InteractionHand hand, BlockHitResult hit) {
+        protected InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult hit) {
             if (state != State.CLOSED && state != State.OPEN) {
                 return InteractionResult.PASS;
             }
@@ -214,8 +222,7 @@ public final class LeftDoorButtons {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState blockState, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState blockState, HitResult target, LevelReader level, BlockPos pos, Player player) {
             return new ItemStack(state == State.LOCKED
                     ? FacilityModule.BUTTON_LOCKED.get()
                     : FacilityModule.BUTTON_CLOSED.get());

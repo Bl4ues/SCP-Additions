@@ -54,9 +54,7 @@ public final class Scp914SkinRenderEvents {
         if (!(event.getEntity() instanceof AbstractClientPlayer player)) {
             return;
         }
-        ScpAdditionsModVariables.PlayerVariables variables = player
-                .getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
-                .orElse(null);
+        ScpAdditionsModVariables.PlayerVariables variables = ScpAdditionsModVariables.getPlayerVariables(player).orElse(null);
         if (variables == null || variables.scp914Skin == null
                 || variables.scp914Skin.isBlank()) {
             return;
@@ -133,7 +131,7 @@ public final class Scp914SkinRenderEvents {
         Minecraft minecraft = Minecraft.getInstance();
         String hash = Integer.toUnsignedString(
                 (fileName.toLowerCase(Locale.ROOT) + ":" + modified).hashCode(), 16);
-        ResourceLocation textureId = new ResourceLocation(
+        ResourceLocation textureId = ResourceLocation.fromNamespaceAndPath(
                 ScpAdditionsMod.MODID, "dynamic/scp914_skins/" + hash);
         minecraft.getTextureManager().register(
                 textureId, new DynamicTexture(image));

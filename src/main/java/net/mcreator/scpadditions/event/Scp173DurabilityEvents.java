@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.event;
 
+import net.minecraft.core.Holder;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -45,7 +47,7 @@ public final class Scp173DurabilityEvents {
         event.setAmount(Math.max(MIN_SURVIVABLE_DAMAGE, amount * DAMAGE_MULTIPLIER));
     }
 
-    private static void setBaseAttribute(Scp173Entity scp173, Attribute attribute, double value) {
+    private static void setBaseAttribute(Scp173Entity scp173, Holder<Attribute> attribute, double value) {
         AttributeInstance instance = scp173.getAttribute(attribute);
         if (instance != null && instance.getBaseValue() != value) instance.setBaseValue(value);
     }

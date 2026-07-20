@@ -136,13 +136,13 @@ public final class ContextInteractionRegistry {
         EntityType<?> entityType = null;
         if ("block".equals(type)) {
             kind = Kind.BLOCK;
-            block = BuiltInRegistries.BLOCK.getValue(id);
+            block = BuiltInRegistries.BLOCK.get(id);
             if (block == null || block == Blocks.AIR) {
                 return null;
             }
         } else if ("entity".equals(type)) {
             kind = Kind.ENTITY;
-            entityType = BuiltInRegistries.ENTITY_TYPE.getValue(id);
+            entityType = BuiltInRegistries.ENTITY_TYPE.get(id);
             if (entityType == null) {
                 return null;
             }

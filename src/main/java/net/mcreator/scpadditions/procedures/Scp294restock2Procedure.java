@@ -31,7 +31,7 @@ public class Scp294restock2Procedure {
 				BlockEntity _be = world.getBlockEntity(_bp);
 				CompoundTag _bnbt = null;
 				if (_be != null) {
-					_bnbt = _be.saveWithFullMetadata();
+					_bnbt = _be.saveWithFullMetadata(world.registryAccess());
 					_be.setRemoved();
 				}
 				world.setBlock(_bp, _bs, 3);
@@ -39,7 +39,7 @@ public class Scp294restock2Procedure {
 					_be = world.getBlockEntity(_bp);
 					if (_be != null) {
 						try {
-							_be.load(_bnbt);
+							_be.loadWithComponents(_bnbt, world.registryAccess());
 						} catch (Exception ignored) {
 						}
 					}

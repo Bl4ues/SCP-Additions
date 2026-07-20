@@ -3,7 +3,7 @@ package net.mcreator.scpadditions.procedures;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
-import net.neoforged.neoforge.capabilities.ForgeCapabilities;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.Level;
@@ -28,10 +28,9 @@ public class Scp1176OnBlockRightClickedProcedure {
 				final int _slotid = 0;
 				final ItemStack _setstack = new ItemStack(ScpAdditionsModItems.SCP_1176HONEY.get());
 				_setstack.setCount(1);
-				entity.getCapability(ForgeCapabilities.ITEM_HANDLER, null).ifPresent(capability -> {
-					if (capability instanceof IItemHandlerModifiable _modHandler)
-						_modHandler.setStackInSlot(_slotid, _setstack);
-				});
+				var capability = entity.getCapability(Capabilities.ItemHandler.ENTITY);
+                if (capability instanceof IItemHandlerModifiable _modHandler)
+                    _modHandler.setStackInSlot(_slotid, _setstack);
 			}
 			if (entity instanceof Player _player) {
 				ItemStack _stktoremove = new ItemStack(Items.GLASS_BOTTLE);
@@ -39,18 +38,18 @@ public class Scp1176OnBlockRightClickedProcedure {
 			}
 			if (world instanceof Level _level) {
 				if (!_level.isClientSide()) {
-					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("item.bottle.fill")), SoundSource.HOSTILE, 1, 1);
+					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("item.bottle.fill")), SoundSource.HOSTILE, 1, 1);
 				} else {
-					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("item.bottle.fill")), SoundSource.HOSTILE, 1, 1, false);
+					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("item.bottle.fill")), SoundSource.HOSTILE, 1, 1, false);
 				}
 			}
 		} else {
 			Scp1176honeyPlayerFinishesUsingItemProcedure.execute(world, x, y, z, entity);
 			if (world instanceof Level _level) {
 				if (!_level.isClientSide()) {
-					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("item.honey_bottle.drink")), SoundSource.HOSTILE, 1, 1);
+					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("item.honey_bottle.drink")), SoundSource.HOSTILE, 1, 1);
 				} else {
-					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("item.honey_bottle.drink")), SoundSource.HOSTILE, 1, 1, false);
+					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("item.honey_bottle.drink")), SoundSource.HOSTILE, 1, 1, false);
 				}
 			}
 		}

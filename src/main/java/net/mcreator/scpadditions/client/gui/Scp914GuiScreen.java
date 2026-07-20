@@ -57,7 +57,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 			dragAngle = selected.angle();
 			initializedSetting = true;
 		}
-		this.renderBackground(guiGraphics);
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
 		renderPanel(guiGraphics, mouseX, mouseY);
 		renderHoverTooltip(guiGraphics, mouseX, mouseY);
 	}

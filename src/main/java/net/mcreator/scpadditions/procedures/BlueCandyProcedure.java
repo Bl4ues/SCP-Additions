@@ -21,9 +21,9 @@ public class BlueCandyProcedure {
 			_entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 1200, 1, false, false));
 		if (world instanceof Level _level) {
 			if (!_level.isClientSide()) {
-				_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candyeat")), SoundSource.HOSTILE, 1, 1);
+				_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candyeat")), SoundSource.HOSTILE, 1, 1);
 			} else {
-				_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:candyeat")), SoundSource.HOSTILE, 1, 1, false);
+				_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candyeat")), SoundSource.HOSTILE, 1, 1, false);
 			}
 		}
 	}

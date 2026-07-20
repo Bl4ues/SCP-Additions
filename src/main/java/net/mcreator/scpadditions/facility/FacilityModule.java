@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.facility;
 
+import com.mojang.serialization.MapCodec;
+
+import net.minecraft.world.level.LevelReader;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -547,13 +551,17 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
             return new ItemStack(ALARM_LAMP.get());
         }
     }
 
     private static final class WallLightBlock extends HorizontalWaterloggedPropBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private final boolean upper;
 
         private WallLightBlock(boolean upper) {
@@ -618,13 +626,17 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
             return new ItemStack(WALLLIGHT.get());
         }
     }
 
     private static final class HeaterBlock extends HorizontalWaterloggedPropBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private HeaterBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F).lightLevel(state -> 5));
@@ -651,6 +663,11 @@ public final class FacilityModule {
     }
 
     private static final class SignSupportBlock extends HorizontalWaterloggedPropBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private SignSupportBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.GLASS)
                     .strength(1.0F, 10.0F).noCollission());
@@ -689,6 +706,11 @@ public final class FacilityModule {
     }
 
     private static final class TvBlock extends DirectionalBlock {
+        @Override
+        protected MapCodec<? extends DirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private TvBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F).noCollission().noOcclusion()
@@ -761,6 +783,11 @@ public final class FacilityModule {
     }
 
     private static final class TrashbinBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private TrashbinBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F).noOcclusion());
@@ -809,6 +836,11 @@ public final class FacilityModule {
     }
 
     private static final class AnimatedDoorBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private final String familyId;
         private final DoorStage stage;
         private final int frame;
@@ -888,8 +920,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public boolean isPathfindable(BlockState state, BlockGetter level,
-                BlockPos pos, PathComputationType type) {
+        protected boolean isPathfindable(BlockState state, PathComputationType type) {
             return passable();
         }
 
@@ -917,8 +948,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                Player player, InteractionHand hand, BlockHitResult hit) {
+        protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
             DoorFamily family = family();
             if (!family.directUse() || (stage != DoorStage.CLOSED && stage != DoorStage.OPEN)) {
                 return InteractionResult.PASS;
@@ -979,13 +1009,17 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
             return new ItemStack(family().closed().get());
         }
     }
 
     private static final class DoorButtonBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private final ButtonState buttonState;
 
         private DoorButtonBlock(ButtonState buttonState) {
@@ -1051,8 +1085,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                Player player, InteractionHand hand, BlockHitResult hit) {
+        protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
             if (buttonState != ButtonState.CLOSED && buttonState != ButtonState.OPEN) {
                 return InteractionResult.PASS;
             }
@@ -1080,8 +1113,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
             return new ItemStack(buttonState == ButtonState.LOCKED
                     ? BUTTON_LOCKED.get() : BUTTON_CLOSED.get());
         }

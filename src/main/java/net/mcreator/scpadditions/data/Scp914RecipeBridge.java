@@ -70,8 +70,7 @@ public final class Scp914RecipeBridge {
         if (outputs.isEmpty()) return Optional.empty();
 
         ResourceLocation source = generic.sourceRecipe();
-        ResourceLocation syntheticId = new ResourceLocation("scp_additions",
-                "inferred/" + requestedSetting.serializedName() + "/"
+        ResourceLocation syntheticId = ResourceLocation.fromNamespaceAndPath("scp_additions", "inferred/" + requestedSetting.serializedName() + "/"
                         + source.getNamespace() + "/" + source.getPath());
         Scp914RecipeManager.RecipeDefinition definition =
                 new Scp914RecipeManager.RecipeDefinition(

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.item.Item;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 
@@ -66,8 +68,8 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 	}
 
 	@Override
@@ -97,7 +99,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 		long gameTime = world.getGameTime();
 		long nextLoop = TERMINAL_LOOP_NEXT_TICK.getOrDefault(key, 0L);
 		if (gameTime >= nextLoop) {
-			SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.fromNamespaceAndPath("scp_additions", "terminalloop"));
+			SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("scp_additions", "terminalloop"));
 			if (sound != null) {
 				world.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, sound, SoundSource.BLOCKS, 0.4F, 1.0F, false);
 			}
@@ -141,11 +143,9 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	}
 
 	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
-		if (player.getInventory().getSelected().getItem() instanceof PickaxeItem tieredItem)
-			return tieredItem.getTier().getLevel() >= 1;
-		return false;
-	}
+	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
+        return player.getMainHandItem().isCorrectToolForDrops(state);
+    }
 
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
@@ -156,8 +156,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	}
 
 	@Override
-	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
+	protected InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
 		if (entity instanceof ServerPlayer player) {
 			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
 			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);

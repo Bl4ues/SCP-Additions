@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -28,7 +30,7 @@ public final class Scp1176HoneyVignette {
     public static void render(GuiGraphics graphics, int width, int height, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null
-                || !mc.player.hasEffect(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get())) {
+                || !mc.player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get()))) {
             return;
         }
 

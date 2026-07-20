@@ -23,8 +23,8 @@ public final class ScpCraftingKnowledgeEvents {
             return;
         }
         player.level().getRecipeManager().getRecipeFor(
-                        RecipeType.CRAFTING, grid, player.level())
+                        RecipeType.CRAFTING, ScpCraftingRecipeHelper.createInput(grid.getItems()), player.level())
                 .ifPresent(recipe -> ScpCraftingService.learn(player,
-                        recipe.getId()));
+                        recipe.id()));
     }
 }

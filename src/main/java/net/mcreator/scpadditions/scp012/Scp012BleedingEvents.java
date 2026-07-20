@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.scp012;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.function.Supplier;
 
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -54,9 +56,8 @@ public final class Scp012BleedingEvents {
 
         // SCP-714 does not cure a physical wound. The bleeding state remains
         // until the player receives real healing from any source.
-        if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
-            player.addEffect(new MobEffectInstance(
-                    ScpAdditionsModMobEffects.BLEEDING.get(),
+        if (!player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()))) {
+            player.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()),
                     Integer.MAX_VALUE, 0, false, false, true));
         }
 
@@ -106,7 +107,7 @@ public final class Scp012BleedingEvents {
         STATES.remove(player.getUUID());
         player.getPersistentData().remove(BLEEDING_TAG);
         if (removeEffect) {
-            player.removeEffect(ScpAdditionsModMobEffects.BLEEDING.get());
+            player.removeEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()));
         }
     }
 

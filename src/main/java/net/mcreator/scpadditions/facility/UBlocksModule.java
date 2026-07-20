@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import com.mojang.serialization.MapCodec;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -132,6 +134,7 @@ public final class UBlocksModule {
     public static Supplier<Block> blockByPath(String path) {
         return BLOCKS.getEntries().stream()
                 .filter(entry -> entry.getId().getPath().equals(path))
+                .<Supplier<Block>>map(entry -> entry::get)
                 .findFirst()
                 .orElse(null);
     }
@@ -143,6 +146,7 @@ public final class UBlocksModule {
     public static Supplier<Item> registeredItemByPath(String path) {
         return ITEMS.getEntries().stream()
                 .filter(entry -> entry.getId().getPath().equals(path))
+                .<Supplier<Item>>map(entry -> entry::get)
                 .findFirst()
                 .orElse(null);
     }
@@ -186,11 +190,10 @@ public final class UBlocksModule {
         }
 
         @Override
-        public void appendHoverText(ItemStack stack, @Nullable Level level,
-                List<Component> tooltip, TooltipFlag flag) {
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
             tooltip.add(Component.translatable("tooltip.scp_additions.sl1_connected_floors")
                     .withStyle(ChatFormatting.GRAY));
-            super.appendHoverText(stack, level, tooltip, flag);
+            super.appendHoverText(stack, context, tooltip, flag);
         }
     }
 
@@ -386,6 +389,11 @@ public final class UBlocksModule {
     }
 
     private static final class AdaptiveWallDetailBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private static final EnumProperty<WallDetailSegment> SEGMENT =
                 EnumProperty.create("segment", WallDetailSegment.class);
 
@@ -493,6 +501,11 @@ public final class UBlocksModule {
     }
 
     private static final class UBlockDirectionalBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private final DirectionalShape shape;
 
         private UBlockDirectionalBlock(DirectionalShape shape, SoundType sound) {

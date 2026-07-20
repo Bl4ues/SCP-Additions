@@ -1,5 +1,11 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.phys.HitResult;
+
+import net.minecraft.world.level.LevelReader;
+
+import net.minecraft.world.item.Item;
+
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -42,8 +48,8 @@ public class Scp079controlBlock extends Block implements SimpleWaterloggedBlock 
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 		list.add(Component.literal("Active Facility Pulse Node: currently emitting redstone under SCP-079 control."));
 		list.add(Component.literal("It returns to its inactive state when Facility Control is disabled."));
 	}
@@ -106,8 +112,7 @@ public class Scp079controlBlock extends Block implements SimpleWaterloggedBlock 
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
-			BlockGetter world, BlockPos pos, Player player) {
+	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader world, BlockPos pos, Player player) {
 		return new ItemStack(ScpAdditionsModBlocks.SCP_079CONTROLOFF.get());
 	}
 

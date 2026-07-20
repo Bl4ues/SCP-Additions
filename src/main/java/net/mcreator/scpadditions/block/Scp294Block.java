@@ -1,6 +1,8 @@
 
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.item.Item;
+
 
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -58,8 +60,8 @@ public class Scp294Block extends Block implements EntityBlock {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 		list.add(Component.literal("The Coffee Machine"));
 	}
 
@@ -107,11 +109,9 @@ public class Scp294Block extends Block implements EntityBlock {
 	}
 
 	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
-		if (player.getInventory().getSelected().getItem() instanceof PickaxeItem tieredItem)
-			return tieredItem.getTier().getLevel() >= 1;
-		return false;
-	}
+	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
+        return player.getMainHandItem().isCorrectToolForDrops(state);
+    }
 
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
@@ -139,8 +139,7 @@ public class Scp294Block extends Block implements EntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
+	protected InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
 		if (entity instanceof ServerPlayer player) {
 			player.openMenu( new MenuProvider() {
 				@Override

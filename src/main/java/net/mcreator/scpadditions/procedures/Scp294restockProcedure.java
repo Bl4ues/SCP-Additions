@@ -28,9 +28,9 @@ public class Scp294restockProcedure {
 		if (ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock == 50) {
 			if (world instanceof Level _level) {
 				if (!_level.isClientSide()) {
-					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:scp294off")), SoundSource.NEUTRAL, 1, 1);
+					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:scp294off")), SoundSource.NEUTRAL, 1, 1);
 				} else {
-					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:scp294off")), SoundSource.NEUTRAL, 1, 1, false);
+					_level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:scp294off")), SoundSource.NEUTRAL, 1, 1, false);
 				}
 			}
 			{
@@ -48,7 +48,7 @@ public class Scp294restockProcedure {
 				BlockEntity _be = world.getBlockEntity(_bp);
 				CompoundTag _bnbt = null;
 				if (_be != null) {
-					_bnbt = _be.saveWithFullMetadata();
+					_bnbt = _be.saveWithFullMetadata(world.registryAccess());
 					_be.setRemoved();
 				}
 				world.setBlock(_bp, _bs, 3);
@@ -56,7 +56,7 @@ public class Scp294restockProcedure {
 					_be = world.getBlockEntity(_bp);
 					if (_be != null) {
 						try {
-							_be.load(_bnbt);
+							_be.loadWithComponents(_bnbt, world.registryAccess());
 						} catch (Exception ignored) {
 						}
 					}

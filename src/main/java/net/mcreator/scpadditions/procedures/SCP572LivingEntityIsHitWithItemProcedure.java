@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.minecraft.core.component.DataComponents;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity;
@@ -26,7 +28,7 @@ public class SCP572LivingEntityIsHitWithItemProcedure {
 						ItemStack _itemstack = ItemStack.EMPTY;
 						if (this.getEntity() instanceof LivingEntity _livingentity)
 							_itemstack = _livingentity.getMainHandItem();
-						return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+						return !_itemstack.isEmpty() && _itemstack.has(DataComponents.CUSTOM_NAME)
 								? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
 								: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
 					}

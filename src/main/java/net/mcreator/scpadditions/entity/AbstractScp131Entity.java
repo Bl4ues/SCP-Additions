@@ -103,9 +103,9 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     public abstract String textureName();
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        entityData.define(FOLLOWING, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(FOLLOWING, false);
     }
 
     @Override

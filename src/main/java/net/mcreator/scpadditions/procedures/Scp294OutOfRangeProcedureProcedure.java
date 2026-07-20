@@ -20,7 +20,7 @@ public class Scp294OutOfRangeProcedureProcedure {
 			BlockEntity blockEntity = world.getBlockEntity(pos);
 			CompoundTag blockEntityTag = null;
 			if (blockEntity != null) {
-				blockEntityTag = blockEntity.saveWithFullMetadata();
+				blockEntityTag = blockEntity.saveWithFullMetadata(world.registryAccess());
 				blockEntity.setRemoved();
 			}
 			world.setBlock(pos, newState, 3);
@@ -28,7 +28,7 @@ public class Scp294OutOfRangeProcedureProcedure {
 				BlockEntity newBlockEntity = world.getBlockEntity(pos);
 				if (newBlockEntity != null) {
 					try {
-						newBlockEntity.load(blockEntityTag);
+						newBlockEntity.loadWithComponents(blockEntityTag, world.registryAccess());
 					} catch (Exception ignored) {
 					}
 				}

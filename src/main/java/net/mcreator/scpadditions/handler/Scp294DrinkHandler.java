@@ -61,13 +61,13 @@ public final class Scp294DrinkHandler {
 		ListTag effects = drinkTag.getList("effects", Tag.TAG_COMPOUND);
 		for (int i = 0; i < effects.size(); i++) {
 			CompoundTag effectTag = effects.getCompound(i);
-			MobEffect effect = BuiltInRegistries.MOB_EFFECT.getValue(new ResourceLocation(effectTag.getString("id")));
+			MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(ResourceLocation.parse(effectTag.getString("id")));
 			if (effect == null) {
 				continue;
 			}
 
 			entity.addEffect(new MobEffectInstance(
-					effect,
+					BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect),
 					Math.max(1, effectTag.getInt("duration")),
 					Math.max(0, effectTag.getInt("amplifier")),
 					effectTag.getBoolean("ambient"),

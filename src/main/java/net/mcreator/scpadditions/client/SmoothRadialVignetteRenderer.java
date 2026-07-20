@@ -27,14 +27,13 @@ public final class SmoothRadialVignetteRenderer {
         int rows = Mth.clamp(Math.round(GRID_COLUMNS
                 * height / (float) width), MIN_GRID_ROWS, MAX_GRID_ROWS);
         Matrix4f matrix = graphics.pose().last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
+        BufferBuilder buffer = Tesselator.getInstance().begin(
+                VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        buffer.begin(VertexFormat.Mode.QUADS,
-                DefaultVertexFormat.POSITION_COLOR);
 
         for (int row = 0; row < rows; row++) {
             float y0 = height * row / (float) rows;
@@ -55,7 +54,7 @@ public final class SmoothRadialVignetteRenderer {
             }
         }
 
-        BufferUploader.drawWithShader(buffer.end());
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
@@ -71,9 +70,8 @@ public final class SmoothRadialVignetteRenderer {
 
     private static void vertex(BufferBuilder buffer, Matrix4f matrix,
                                float x, float y, VertexColor color) {
-        buffer.vertex(matrix, x, y, 0.0F)
-                .color(color.red(), color.green(), color.blue(), color.alpha())
-                .endVertex();
+        buffer.addVertex(matrix, x, y, 0.0F)
+                .setColor(color.red(), color.green(), color.blue(), color.alpha());
     }
 
     @FunctionalInterface

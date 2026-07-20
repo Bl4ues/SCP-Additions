@@ -112,7 +112,7 @@ public class Scp294drinkGiveProcedure {
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		CompoundTag blockEntityTag = null;
 		if (blockEntity != null) {
-			blockEntityTag = blockEntity.saveWithFullMetadata();
+			blockEntityTag = blockEntity.saveWithFullMetadata(world.registryAccess());
 			blockEntity.setRemoved();
 		}
 		world.setBlock(pos, newState, 3);
@@ -120,7 +120,7 @@ public class Scp294drinkGiveProcedure {
 			BlockEntity newBlockEntity = world.getBlockEntity(pos);
 			if (newBlockEntity != null) {
 				try {
-					newBlockEntity.load(blockEntityTag);
+					newBlockEntity.loadWithComponents(blockEntityTag, world.registryAccess());
 				} catch (Exception ignored) {
 				}
 			}
@@ -145,9 +145,9 @@ public class Scp294drinkGiveProcedure {
 	private static void playSound(LevelAccessor world, double x, double y, double z, ResourceLocation sound) {
 		if (world instanceof Level level) {
 			if (!level.isClientSide()) {
-				level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(sound), SoundSource.NEUTRAL, 1, 1);
+				level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(sound), SoundSource.NEUTRAL, 1, 1);
 			} else {
-				level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(sound), SoundSource.NEUTRAL, 1, 1, false);
+				level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(sound), SoundSource.NEUTRAL, 1, 1, false);
 			}
 		}
 	}

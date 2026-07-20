@@ -9,7 +9,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.neoforged.neoforge.common.util.LazyOptional;
+import com.bl4ues.scpadditions.compat.LazyOptional;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.capabilities.ICapabilitySerializable;

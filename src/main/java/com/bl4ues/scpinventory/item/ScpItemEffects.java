@@ -60,7 +60,7 @@ public final class ScpItemEffects {
         }
 
         AtomicBoolean hasEffect = new AtomicBoolean(false);
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
+        ScpInventoryCapability.get(player).ifPresent(inventory ->
                 hasEffect.set(hasEffectEquipped(inventory, effect))
         );
         return hasEffect.get();

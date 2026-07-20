@@ -48,7 +48,7 @@ public class EquipmentActionPacket {
                 return;
             }
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 ItemStack equipped = inventory.getEquipment(slot.get());
                 if (HazmatSuitAccess.isInternalPiece(equipped)
                         || (HazmatSuitAccess.isFullyEquipped(player)

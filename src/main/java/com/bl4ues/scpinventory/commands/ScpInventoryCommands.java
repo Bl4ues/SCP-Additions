@@ -85,7 +85,7 @@ public class ScpInventoryCommands {
     }
 
     private static int resetSingle(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.resetAll();
             clearMirroredVanillaEquipment(player);
             ModNetwork.syncTo(player, inventory);
@@ -111,7 +111,7 @@ public class ScpInventoryCommands {
     }
 
     private static int clearMainSingle(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.resetMainInventory();
             ModNetwork.syncTo(player, inventory);
         });
@@ -130,7 +130,7 @@ public class ScpInventoryCommands {
     }
 
     private static int setMaxSingle(ServerPlayer player, int slots) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.setMaxMainSlots(slots);
             ModNetwork.syncTo(player, inventory);
             player.sendSystemMessage(Component.literal("SCP max main slots set to " + inventory.getMaxMainSlots() + "."));
@@ -149,7 +149,7 @@ public class ScpInventoryCommands {
     }
 
     private static int getMax(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
+        ScpInventoryCapability.get(player).ifPresent(inventory ->
                 player.sendSystemMessage(Component.literal(
                         "SCP main slots: " + inventory.getInventoryCount() + "/" + inventory.getMaxMainSlots()
                                 + ", keys: " + inventory.getKeyCount() + "/" + IScpInventory.MAX_KEY_COUNT

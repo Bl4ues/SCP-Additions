@@ -390,7 +390,7 @@ public final class HazmatSuitManager {
             player.containerMenu.setCarried(ItemStack.EMPTY);
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE)
+        ScpInventoryCapability.get(player)
                 .ifPresent(inventory -> {
                     for (int i = 0; i < inventory.getMaxMainSlots(); i++) {
                         if (HazmatSuitAccess.isInternalPiece(
@@ -418,7 +418,7 @@ public final class HazmatSuitManager {
     }
 
     private static void clearCustomEquipmentMirrors(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE)
+        ScpInventoryCapability.get(player)
                 .ifPresent(inventory -> {
                     inventory.clearEquipment(ScpEquipmentSlot.HEAD);
                     inventory.clearEquipment(ScpEquipmentSlot.CHEST);
@@ -440,7 +440,7 @@ public final class HazmatSuitManager {
             player.getInventory().add(remaining);
         } else {
             AtomicInteger accepted = new AtomicInteger();
-            player.getCapability(ScpInventoryCapability.INSTANCE)
+            ScpInventoryCapability.get(player)
                     .ifPresent(inventory -> {
                         accepted.set(ScpPickupRouter.accept(
                                 inventory, player, remaining.copy()));

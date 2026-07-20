@@ -88,7 +88,7 @@ public final class ScpInventoryUsableOutputGuardEvents {
             return;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ItemStack routing = current.copy();
             ScpPickupRouter.stripUsableSession(routing);
             ScpPickupRouter.stripNoMergeMarker(routing);

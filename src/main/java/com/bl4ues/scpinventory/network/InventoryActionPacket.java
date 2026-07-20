@@ -58,7 +58,7 @@ public class InventoryActionPacket {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (!inventory.isValidMainSlot(msg.slot)) {
                     ModNetwork.syncTo(player, inventory);
                     return;

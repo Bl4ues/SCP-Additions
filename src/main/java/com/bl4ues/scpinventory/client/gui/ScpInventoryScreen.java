@@ -168,7 +168,7 @@ public class ScpInventoryScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        mc.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inv -> {
+        ScpInventoryCapability.get(mc.player).ifPresent(inv -> {
             inventory = inv;
             rebuildItemList();
             equipmentPanel = new EquipmentPanel(equipmentX, equipmentY, equipmentWidth, titleY, equipmentPanelX, inv);

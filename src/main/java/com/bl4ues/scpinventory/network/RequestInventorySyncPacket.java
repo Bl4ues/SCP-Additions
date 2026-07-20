@@ -29,7 +29,7 @@ public class RequestInventorySyncPacket {
             ModNetwork.syncModuleState(player);
             if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
+            ScpInventoryCapability.get(player).ifPresent(inventory ->
                     ModNetwork.syncTo(player, inventory)
             );
         });

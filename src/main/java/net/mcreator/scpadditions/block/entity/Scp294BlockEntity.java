@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.block.entity;
 
 import net.neoforged.neoforge.items.wrapper.SidedInvWrapper;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.common.util.LazyOptional;
+import com.bl4ues.scpadditions.compat.LazyOptional;
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
 import net.neoforged.neoforge.capabilities.Capability;
 

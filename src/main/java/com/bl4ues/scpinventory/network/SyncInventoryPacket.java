@@ -4,7 +4,7 @@ import com.bl4ues.scpinventory.client.ClientPacketHandlers;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.DistExecutor;
+import com.bl4ues.scpadditions.compat.DistExecutor;
 import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;

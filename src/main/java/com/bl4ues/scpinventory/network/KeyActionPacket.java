@@ -38,7 +38,7 @@ public class KeyActionPacket {
                 return;
             }
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (ACTION_DROP.equals(msg.action)) {
                     ItemStack key = inventory.extractKeyItem(msg.index);
                     if (!key.isEmpty()) {

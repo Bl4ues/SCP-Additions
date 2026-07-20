@@ -1,6 +1,5 @@
 package net.mcreator.scpadditions.block;
 
-import net.minecraftforge.network.NetworkHooks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 
@@ -162,7 +161,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 		if (entity instanceof ServerPlayer player) {
 			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
 			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
-			NetworkHooks.openScreen(player, new MenuProvider() {
+			player.openMenu( new MenuProvider() {
 				@Override
 				public Component getDisplayName() {
 					return Component.literal("Tesla Terminal");

@@ -63,7 +63,7 @@ public class InventoryMovePacket {
                 return;
             }
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 handleMove(player, inventory, msg);
                 ModNetwork.syncTo(player, inventory);
             });

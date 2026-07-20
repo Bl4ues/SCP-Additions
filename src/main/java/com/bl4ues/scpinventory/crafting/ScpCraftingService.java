@@ -27,7 +27,7 @@ public final class ScpCraftingService {
     public static void handle(ServerPlayer player, int action, int source,
                               int target, ResourceLocation recipeId) {
         if (player == null || player.isSpectator()) return;
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ScpCraftingState.Data state = ScpCraftingState.load(player);
             boolean changed = switch (action) {
                 case CraftingActionPacket.MOVE_MAIN_TO_GRID ->

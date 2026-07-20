@@ -66,7 +66,7 @@ public final class InventoryModuleStateEvents {
     }
 
     private static void releaseStoredItems(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             Inventory vanilla = player.getInventory();
 
             // Tagged harmful/usable stacks are mirrors of capability-owned data.

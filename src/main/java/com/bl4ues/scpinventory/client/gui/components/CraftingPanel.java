@@ -546,7 +546,7 @@ public final class CraftingPanel {
 
     private IScpInventory getInventory() {
         if (mc.player == null) return null;
-        return mc.player.getCapability(ScpInventoryCapability.INSTANCE)
+        return ScpInventoryCapability.get(mc.player)
                 .resolve().orElse(null);
     }
 

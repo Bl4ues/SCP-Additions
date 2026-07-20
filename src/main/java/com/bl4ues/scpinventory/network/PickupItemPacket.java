@@ -82,7 +82,7 @@ public class PickupItemPacket {
                 return;
             }
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 ItemStack pickupStack = stack.copy();
                 pickupStack.setCount(1);
 

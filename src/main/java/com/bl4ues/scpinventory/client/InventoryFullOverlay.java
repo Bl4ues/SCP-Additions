@@ -145,7 +145,7 @@ public class InventoryFullOverlay {
             return false;
         }
         final boolean[] blocked = {false};
-        minecraft.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(minecraft.player).ifPresent(inventory -> {
             if (ScpItemClassifier.isCoin(targetStack)) {
                 blocked[0] = inventory.getFreeMainSlots() <= 0;
                 return;

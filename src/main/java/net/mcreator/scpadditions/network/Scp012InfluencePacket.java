@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.DistExecutor;
+import com.bl4ues.scpadditions.compat.DistExecutor;
 import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.mcreator.scpadditions.client.Scp012ClientState;
 

@@ -38,7 +38,7 @@ public class DocumentActionPacket {
                 return;
             }
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (ACTION_DROP.equals(msg.action)) {
                     ItemStack document = inventory.extractDocumentItem(msg.index);
                     if (!document.isEmpty()) {

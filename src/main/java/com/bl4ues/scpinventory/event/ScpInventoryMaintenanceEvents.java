@@ -129,7 +129,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ItemStack returning = cleanForScpStorage(inventory.extractActiveUsable());
             if (returning.isEmpty()) {
                 returning = cleanForScpStorage(getHotbarOrTrackedSessionStack(player, hotbarSlot, id));
@@ -156,7 +156,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ItemStack dropStack = cleanForExternalWorld(inventory.extractActiveUsable());
             if (dropStack.isEmpty()) {
                 dropStack = cleanForExternalWorld(getHotbarOrTrackedSessionStack(player, hotbarSlot, id));
@@ -189,7 +189,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.clearActiveUsable();
             clearActiveUsableMirrors(player, activeStack);
             ModNetwork.syncTo(player, inventory);
@@ -400,7 +400,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.clearActiveUsable();
             clearActiveUsableMirrors(player, activeStack);
             ModNetwork.syncTo(player, inventory);
@@ -419,7 +419,7 @@ public final class ScpInventoryMaintenanceEvents {
             return;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             boolean changed = false;
             if (!player.isCreative()) {
                 if (ScpItemEffects.hasNoStaminaModifierEquipped(player, inventory)) {

@@ -22,11 +22,18 @@ def write(rel: str, text: str) -> None:
 
 def replace_once(rel: str, old: str, new: str) -> None:
     text = read(rel)
-    if new in text:
-        return
     if old not in text:
+        if new in text:
+            return
         raise RuntimeError(f"Expected source fragment not found in {rel}: {old[:120]!r}")
     write(rel, text.replace(old, new, 1))
+
+
+def remove_once(rel: str, stale: str) -> None:
+    text = read(rel)
+    if stale not in text:
+        return
+    write(rel, text.replace(stale, "", 1))
 
 
 replace_once(
@@ -370,21 +377,13 @@ replace_once(
         player.sendSystemMessage(Component.literal("[SCP Inventory] " + (removed ? "Removed" : "No rule for") + " item rule ").withStyle(removed ? ChatFormatting.GREEN : ChatFormatting.YELLOW)
 ''',
 )
-replace_once(
+remove_once(
     "src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java",
-    '''            ItemConfigManager.saveRule(player, msg.itemId, msg.type, msg.noStamina, msg.protectedEyes);
-            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
-''',
-    '''            ItemConfigManager.saveRule(player, msg.itemId, msg.type, msg.noStamina, msg.protectedEyes);
-''',
+    "            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());\n",
 )
-replace_once(
+remove_once(
     "src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java",
-    '''            ItemConfigManager.deleteRule(player, msg.itemId);
-            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
-''',
-    '''            ItemConfigManager.deleteRule(player, msg.itemId);
-''',
+    "            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());\n",
 )
 
 replace_once(

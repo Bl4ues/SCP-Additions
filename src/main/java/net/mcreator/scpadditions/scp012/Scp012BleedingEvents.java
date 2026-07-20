@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.event.TickEvent;
+import com.bl4ues.scpadditions.compat.TickEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -90,7 +90,7 @@ public final class Scp012BleedingEvents {
 
     private static void playBleedCue(ServerPlayer player) {
         @SuppressWarnings("unchecked")
-        Supplier<SoundEvent>[] sounds = new RegistryObject[]{
+        Supplier<SoundEvent>[] sounds = new Supplier[]{
                 ScpAdditionsModSounds.SCP012_BLEED_1,
                 ScpAdditionsModSounds.SCP012_BLEED_2,
                 ScpAdditionsModSounds.SCP012_BLEED_3

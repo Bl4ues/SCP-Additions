@@ -13,7 +13,7 @@ import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.sound.PlaySoundSourceEvent;
 import net.neoforged.neoforge.client.event.sound.PlayStreamingSourceEvent;
-import net.minecraftforge.event.TickEvent;
+import com.bl4ues.scpadditions.compat.TickEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;

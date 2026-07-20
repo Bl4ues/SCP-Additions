@@ -7,7 +7,7 @@ import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.event.TickEvent;
+import com.bl4ues.scpadditions.compat.TickEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;

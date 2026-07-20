@@ -1,0 +1,28 @@
+name: Export NeoForge port source once
+
+on:
+  push:
+    branches:
+      - neoforge-1.21.1-port-3.0.7
+    paths:
+      - .github/workflows/export-neoforge-source-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: neoforge-1.21.1-port-3.0.7
+          fetch-depth: 0
+      - name: Create source snapshot
+        run: git archive --format=zip --output=neoforge-port-source.zip HEAD
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoforge-port-source-${{ github.sha }}
+          path: neoforge-port-source.zip
+          if-no-files-found: error

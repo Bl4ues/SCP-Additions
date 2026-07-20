@@ -1,0 +1,148 @@
+name: Validate final remaining 3.0.7 fixes v2
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/validation/VALIDATE_FINAL_REMAINING_FIXES_V2
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - loader: Forge
+            branch: master
+            java: '17'
+            pr: 'none'
+            validator_args: ''
+          - loader: NeoForge
+            branch: neoforge-1.21.1-port-3.0.7
+            java: '21'
+            pr: '42'
+            validator_args: '--modern-registry --validate-datapack'
+          - loader: Fabric
+            branch: fabric-1.21.1-port-3.0.7
+            java: '21'
+            pr: '43'
+            validator_args: '--modern-registry --validate-datapack'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+
+      - name: Fetch corrected source validator
+        shell: bash
+        run: |
+          git fetch origin master
+          git show origin/master:tools/validation/check_final_remaining_fixes.py > /tmp/check_final_remaining_fixes.py
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: gradle
+
+      - name: Verify source and datapack invariants
+        shell: bash
+        run: python3 /tmp/check_final_remaining_fixes.py ${{ matrix.validator_args }}
+
+      - name: Build ${{ matrix.loader }} edition
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Create and tick a dedicated world
+        shell: bash
+        run: |
+          mkdir -p run run/server
+          printf 'eula=true\n' > run/eula.txt
+          printf 'eula=true\n' > run/server/eula.txt
+          set +e
+          timeout 150s ./gradlew runServer --no-daemon --console=plain > final-v2-server.log 2>&1
+          status=$?
+          set -e
+          cat final-v2-server.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -q "Done (" final-v2-server.log
+          ! grep -Eqi "Encountered an unexpected exception|Exception in server tick loop|Failed to start the minecraft server|Could not execute entrypoint" final-v2-server.log
+          ! grep -q "Missing registered gamerule" final-v2-server.log
+          ! grep -q "Unable to award missing root advancement" final-v2-server.log
+
+      - name: Start graphical client
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb
+          set +e
+          timeout 120s xvfb-run -a ./gradlew runClient --no-daemon --console=plain > final-v2-client.log 2>&1
+          status=$?
+          set -e
+          cat final-v2-client.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -Eq "Setting user:|Backend library:" final-v2-client.log
+          ! grep -Eqi "Could not execute entrypoint|The game crashed whilst|Encountered an unexpected exception|Exception in thread.*(Render|Client)" final-v2-client.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.loader }}-final-remaining-fixes-v2
+          path: |
+            build/libs/*.jar
+            final-v2-server.log
+            final-v2-client.log
+            run/logs/latest.log
+            run/server/logs/latest.log
+            run/client/logs/latest.log
+            run/crash-reports/**
+            run/server/crash-reports/**
+            run/client/crash-reports/**
+
+      - name: Report corrected final port result
+        if: always() && matrix.pr != 'none'
+        shell: bash
+        run: |
+          head_sha=$(git rev-parse HEAD)
+          gh pr comment '${{ matrix.pr }}' --repo '${{ github.repository }}' --body "### ${{ matrix.loader }} corrected final validation: **${{ job.status }}**
+
+          - Tested head: \`$head_sha\`
+          - Verified: host snapshots, immediate editor updates, missing-ID rejection, SCP-294 naming, exact SCP-173 damage mapping, usable tools, clean build, server ticks, and graphical client startup
+          - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Manual gameplay and two-player QA remain the final acceptance step."
+
+  cleanup:
+    if: always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/validate-final-remaining-fixes-v2.yml tools/validation/check_final_remaining_fixes.py tools/validation/VALIDATE_FINAL_REMAINING_FIXES_V2
+          git commit -m "Remove temporary corrected final validator [skip ci]"
+          git push origin HEAD:master

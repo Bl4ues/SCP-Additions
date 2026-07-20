@@ -4,9 +4,6 @@
 
 ## Platform expansion
 
-- Expanded SCP Additions beyond its original Forge-only scope with native NeoForge and Fabric ports for Minecraft 1.21.1;
-- Kept the stable Forge 1.20.1 edition on `master` while developing the NeoForge and Fabric editions in isolated loader branches with Java 21;
-- Added loader-specific build and runtime validation for Forge, NeoForge, and Fabric without merging incompatible platform code into the stable branch;
 - Added documentation for the supported Minecraft versions, loaders, Java versions, dependencies, development branches, and current release status;
 - Marked both 1.21.1 editions as alpha ports pending complete runtime and manual feature-parity validation.
 

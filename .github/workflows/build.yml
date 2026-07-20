@@ -36,14 +36,15 @@ jobs:
         shell: bash
         run: |
           set +e
-          mkdir -p build/reports/neoforge-port
-          ./gradlew clean build --stacktrace --console=plain 2>&1 | tee build/reports/neoforge-port/full-build.log
+          rm -rf .port-diagnostics
+          mkdir -p .port-diagnostics
+          ./gradlew clean build --stacktrace --console=plain 2>&1 | tee .port-diagnostics/full-build.log
           status=${PIPESTATUS[0]}
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          source = Path('build/reports/neoforge-port/full-build.log')
+          source = Path('.port-diagnostics/full-build.log')
           lines = source.read_text(encoding='utf-8', errors='replace').splitlines()
           selected = []
           patterns = (
@@ -58,7 +59,7 @@ jobs:
           for index, line in enumerate(lines):
               if any(pattern.search(line) for pattern in patterns):
                   start = max(0, index - 1)
-                  end = min(len(lines), index + 5)
+                  end = min(len(lines), index + 6)
                   selected.extend(lines[start:end])
           deduped = []
           seen = set()
@@ -66,10 +67,10 @@ jobs:
               if line not in seen:
                   seen.add(line)
                   deduped.append(line)
-          Path('build/reports/neoforge-port/diagnostics.txt').write_text(
-              '\n'.join(deduped[-2000:]) + '\n', encoding='utf-8')
+          Path('.port-diagnostics/diagnostics.txt').write_text(
+              '\n'.join(deduped[-3000:]) + '\n', encoding='utf-8')
           PY
-          cat build/reports/neoforge-port/diagnostics.txt
+          cat .port-diagnostics/diagnostics.txt
           exit "$status"
 
       - name: Upload port diagnostics
@@ -77,8 +78,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: neoforge-port-diagnostics-${{ github.sha }}
-          path: build/reports/neoforge-port
-          if-no-files-found: warn
+          path: .port-diagnostics
+          if-no-files-found: error
 
       - name: Upload compiled JAR
         if: success()

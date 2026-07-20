@@ -17,6 +17,7 @@ public final class ItemConfigClientHandler {
     }
 
     public static void reloadItemConfig() {
-        ScpInventoryConfig.reloadFromDisk();
+        // Keep the synchronized host snapshot authoritative on remote servers.
+        ScpInventoryConfig.reload();
     }
 }

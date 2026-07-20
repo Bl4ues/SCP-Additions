@@ -4,7 +4,7 @@
 
 SCP Additions is an SCP survival-horror and facility-building mod. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
 
-The project is expanding beyond its original Forge-only scope. The current public edition remains **Forge for Minecraft 1.20.1**, while native **NeoForge and Fabric ports for Minecraft 1.21.1** are being developed and validated in separate branches.
+The current public edition remains **Forge for Minecraft 1.20.1**, while native **NeoForge and Fabric ports for Minecraft 1.21.1** are being developed and validated in separate branches.
 
 ## Editions and development status
 
@@ -30,24 +30,21 @@ The 1.21.1 branches are intended to reach feature parity with the Forge edition,
 ### Forge 1.20.1
 
 - Minecraft **1.20.1**
-- Forge **47.4.10** or newer
-- GeckoLib **4.4.9** or newer
-- Java **17**
+- Forge **47.4.10**
+- GeckoLib **4.4.9**
 
 ### NeoForge 1.21.1 alpha
 
 - Minecraft **1.21.1**
 - NeoForge **21.1.235**
 - GeckoLib **4.9.2**
-- Java **21**
 
 ### Fabric 1.21.1 alpha
 
 - Minecraft **1.21.1**
-- Fabric Loader **0.17.3** or newer
-- Fabric API **0.116.14+1.21.1** or newer compatible version
+- Fabric Loader **0.17.3**
+- Fabric API **0.116.14+1.21.1**
 - GeckoLib **4.9.2**
-- Java **21**
 
 Optional client integrations:
 
@@ -98,7 +95,7 @@ Clone or open the branch for the intended loader, then use its included Gradle w
 ./gradlew clean build
 ```
 
-Use Java 17 for `master` and Java 21 for both 1.21.1 branches. The compiled JAR is written to `build/libs`.
+Preferably use Java 17 for `master` and Java 21 for both 1.21.1 branches. The compiled JAR is written to `build/libs`.
 
 Development runs are available through each branch's Gradle configuration:
 

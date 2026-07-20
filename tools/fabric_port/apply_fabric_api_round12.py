@@ -1,4 +1,5 @@
 from pathlib import Path
+import runpy
 
 ROOT = Path(__file__).resolve().parents[2]
 path = ROOT / "src/main/java/net/mcreator/scpadditions/fabric/mixin/client/ScreenDragMixin.java"
@@ -25,3 +26,10 @@ if updated == text:
 else:
     path.write_text(updated, encoding="utf-8")
     print(f"Retargeted screen drag mixin in {path.relative_to(ROOT)}")
+
+# Round 13 removes this fragile interface-owned injection entirely and routes
+# crafting drag input through the concrete SCP inventory screen.
+runpy.run_path(
+    str(ROOT / "tools/fabric_port/apply_fabric_api_round13.py"),
+    run_name="__main__",
+)

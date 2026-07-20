@@ -1,0 +1,64 @@
+name: Normalize NeoForge remaining fixes
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/NORMALIZE_NEOFORGE_FIXES
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: neoforge-1.21.1-port-3.0.7
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove duplicate registry guards
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java')
+          text = p.read_text()
+          block = '''            if (!BuiltInRegistries.BLOCK.containsKey(id)) {\n                return null;\n            }\n'''
+          entity = '''            if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {\n                return null;\n            }\n'''
+          while block + block in text:
+              text = text.replace(block + block, block)
+          while entity + entity in text:
+              text = text.replace(entity + entity, entity)
+          assert text.count('if (!BuiltInRegistries.BLOCK.containsKey(id))') == 1
+          assert text.count('if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id))') == 1
+          p.write_text(text)
+          PY
+      - name: Commit normalization
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java
+          git commit -m "Normalize missing context target guards" || true
+          git push origin HEAD:neoforge-1.21.1-port-3.0.7
+
+  cleanup:
+    if: always()
+    needs: normalize
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/normalize-neoforge-remaining-fixes.yml tools/hotfix/NORMALIZE_NEOFORGE_FIXES
+          git commit -m "Remove temporary NeoForge normalization [skip ci]"
+          git push origin HEAD:master

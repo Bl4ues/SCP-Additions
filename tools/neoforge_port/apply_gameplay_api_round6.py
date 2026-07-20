@@ -42,4 +42,29 @@ remaining = re.findall(r"block\(ScpAdditionsModBlocks\.(\w+)\)", items)
 if remaining:
     raise RuntimeError("Unmigrated block item registrations: " + ", ".join(remaining))
 
-print(f"Migrated {len(registered_names)} block item registrations away from early registry access")
+# NeoForge 21 rejects automatically registered subscriber classes that do not
+# actually declare any @SubscribeEvent methods. These classes are either plain
+# holders or are registered explicitly elsewhere, so the annotation is invalid
+# and unnecessary.
+empty_subscribers = (
+    JAVA / "net/mcreator/scpadditions/init/ScpAdditionsModGameRules.java",
+    JAVA / "net/mcreator/scpadditions/world/features/StructureFeature.java",
+    JAVA / "com/bl4ues/scpinventory/client/CoinCounterClient.java",
+)
+removed_subscribers = 0
+for path in empty_subscribers:
+    source = path.read_text(encoding="utf-8")
+    if "@SubscribeEvent" in source:
+        raise RuntimeError(f"Expected an empty subscriber but found event methods in {path}")
+    transformed = re.sub(r"^import net\.neoforged\.fml\.common\.EventBusSubscriber;\s*\n", "", source, flags=re.MULTILINE)
+    transformed = re.sub(r"^import net\.neoforged\.api\.distmarker\.Dist;\s*\n", "", transformed, flags=re.MULTILINE)
+    transformed = re.sub(r"^import net\.neoforged\.fml\.common\.Mod;\s*\n", "", transformed, flags=re.MULTILINE)
+    transformed, count = re.subn(r"^@EventBusSubscriber(?:\([^\n]*\))?\s*\n", "", transformed, flags=re.MULTILINE)
+    if count:
+        removed_subscribers += count
+        path.write_text(transformed, encoding="utf-8")
+
+print(
+    f"Migrated {len(registered_names)} block item registrations away from early registry access; "
+    f"removed {removed_subscribers} invalid empty event subscribers"
+)

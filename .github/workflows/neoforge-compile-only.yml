@@ -26,6 +26,17 @@ jobs:
           java-version: '21'
           cache: gradle
 
+      - name: Apply current repeatable migrations
+        shell: bash
+        run: |
+          python3 tools/neoforge_port/apply_tick_bridge.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java
+          git commit -m "Bridge legacy tick handlers to NeoForge 1.21.1" || true
+          git pull --rebase origin neoforge-1.21.1-port-3.0.7
+          git push origin HEAD:neoforge-1.21.1-port-3.0.7
+
       - name: Compile current migrated tree
         shell: bash
         run: |
@@ -34,17 +45,15 @@ jobs:
           ./gradlew clean compileJava --no-daemon --stacktrace > neoforge-compile.log 2>&1
           status=$?
           echo "$status" > neoforge-compile.exitcode
-          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" neoforge-compile.log | head -n 600 > neoforge-compile-errors.log || true
-          tail -n 300 neoforge-compile.log
+          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" neoforge-compile.log | head -n 800 > neoforge-compile-errors.log || true
+          tail -n 350 neoforge-compile.log
           exit 0
 
       - name: Commit compiler frontier
         if: always()
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add neoforge-compile.log neoforge-compile-errors.log neoforge-compile.exitcode
-          git commit -m "Record NeoForge 1.21.1 compiler frontier" || true
+          git commit -m "Record NeoForge 1.21.1 compiler frontier after tick bridge" || true
           git pull --rebase origin neoforge-1.21.1-port-3.0.7
           git push origin HEAD:neoforge-1.21.1-port-3.0.7

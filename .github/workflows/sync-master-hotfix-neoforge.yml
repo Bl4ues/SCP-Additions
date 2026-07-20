@@ -6,11 +6,13 @@ on:
       - neoforge-1.21.1-port-3.0.7
     paths:
       - '.github/workflows/sync-master-hotfix-neoforge.yml'
+      - 'tools/neoforge_port/resolve_master_multiplayer_hotfix.py'
   pull_request:
     branches:
       - master
     paths:
       - '.github/workflows/sync-master-hotfix-neoforge.yml'
+      - 'tools/neoforge_port/resolve_master_multiplayer_hotfix.py'
       - 'config/**'
       - 'src/main/**'
   workflow_dispatch:
@@ -33,7 +35,7 @@ jobs:
       - name: Fetch validated Forge baseline
         run: git fetch --no-tags origin master:refs/remotes/origin/master
 
-      - name: Apply master hotfix as a three-way patch
+      - name: Apply and resolve master hotfix
         shell: bash
         run: |
           set -euo pipefail
@@ -50,27 +52,42 @@ jobs:
             src/main/java/net/mcreator/scpadditions/procedures/TeslaGateVolume.java \
             src/main/resources/assets/scp_additions/lang/en_us.json \
             > master-multiplayer-hotfix.patch
+
           set +e
           git apply --3way --whitespace=nowarn master-multiplayer-hotfix.patch \
             > neoforge-hotfix-apply.log 2>&1
-          status=$?
-          git status --short | tee -a neoforge-hotfix-apply.log
-          if test "$status" != "0"; then
-            cp neoforge-hotfix-apply.log /tmp/neoforge-hotfix-apply.log
-            git diff --name-only --diff-filter=U > /tmp/neoforge-hotfix-conflicts.txt
-            git reset --hard HEAD
-            mkdir -p .port-sync
-            cp /tmp/neoforge-hotfix-apply.log .port-sync/neoforge-hotfix-apply.log
-            cp /tmp/neoforge-hotfix-conflicts.txt .port-sync/neoforge-hotfix-conflicts.txt
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add .port-sync
-            git commit -m 'Record NeoForge hotfix synchronization conflict [skip ci]'
-            git push origin HEAD:neoforge-1.21.1-port-3.0.7
-            cat .port-sync/neoforge-hotfix-apply.log
-            exit "$status"
-          fi
+          apply_status=$?
           set -e
+
+          if test "$apply_status" != "0"; then
+            conflicts=(
+              src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+              src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java
+              src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java
+              src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java
+              src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java
+              src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java
+            )
+            actual_conflicts="$(git diff --name-only --diff-filter=U)"
+            printf '%s\n' "$actual_conflicts" >> neoforge-hotfix-apply.log
+            for path in "${conflicts[@]}"; do
+              if grep -Fxq "$path" <<< "$actual_conflicts"; then
+                git checkout --ours -- "$path"
+              fi
+            done
+            python3 tools/neoforge_port/resolve_master_multiplayer_hotfix.py \
+              2>&1 | tee -a neoforge-hotfix-apply.log
+            git add "${conflicts[@]}"
+          fi
+
+          unresolved="$(git diff --name-only --diff-filter=U)"
+          if test -n "$unresolved"; then
+            echo 'Unresolved NeoForge hotfix conflicts:' | tee -a neoforge-hotfix-apply.log
+            printf '%s\n' "$unresolved" | tee -a neoforge-hotfix-apply.log
+            exit 1
+          fi
+          git status --short | tee -a neoforge-hotfix-apply.log
+          git diff --check
 
       - name: Reapply NeoForge 1.21.1 migrations
         shell: bash
@@ -118,6 +135,14 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee neoforge-hotfix-build.log
+
+      - name: Validate Forge 3.0.7 feature parity
+        run: |
+          git fetch --no-tags origin master:refs/remotes/origin/master
+          python3 scripts/validate_port_feature_parity.py --base-ref origin/master
+
+      - name: Audit compiled assets
+        run: python3 scripts/audit_unused_assets.py
 
       - name: Launch dedicated server smoke test
         shell: bash
@@ -182,7 +207,8 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add config src/main
+          rm -rf .port-sync
+          git add -A .port-sync config src/main
           if git diff --cached --quiet; then
             echo 'NeoForge multiplayer hotfix is already materialized.'
           else
@@ -202,6 +228,7 @@ jobs:
             neoforge-hotfix-build.log
             neoforge-hotfix-server.log
             neoforge-hotfix-client.log
+            build/reports/**
             run/server/logs/latest.log
             run/client/logs/latest.log
             build/libs/*.jar

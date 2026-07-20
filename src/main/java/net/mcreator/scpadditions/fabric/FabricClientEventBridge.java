@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.fabric;
 
 import java.util.ArrayList;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -23,6 +24,8 @@ final class FabricClientEventBridge {
         modBus.post(new RegisterColorHandlersEvent.Block());
         modBus.post(new RegisterColorHandlersEvent.Item());
         modBus.post(new RegisterGuiLayersEvent());
+        ItemTooltipCallback.EVENT.register((stack, context, type, lines) ->
+                NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.ItemTooltipEvent(stack, lines)));
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             NeoForge.EVENT_BUS.post(new ClientTickEvent.Pre());

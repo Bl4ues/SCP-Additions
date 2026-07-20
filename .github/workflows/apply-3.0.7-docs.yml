@@ -1,0 +1,38 @@
+name: Apply 3.0.7 documentation update
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/update_3_0_7_changelog.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update only the 3.0.7 section
+        run: python3 tools/update_3_0_7_changelog.py
+
+      - name: Remove temporary updater
+        run: |
+          rm tools/update_3_0_7_changelog.py
+          rm .github/workflows/apply-3.0.7-docs.yml
+
+      - name: Commit documentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md tools/update_3_0_7_changelog.py .github/workflows/apply-3.0.7-docs.yml
+          git commit -m "Update 3.0.7 changelog for multi-loader development"
+          git push origin HEAD:master

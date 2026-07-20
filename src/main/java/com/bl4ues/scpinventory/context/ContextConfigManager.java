@@ -414,6 +414,7 @@ public final class ContextConfigManager {
 
     public static int reload(CommandSourceStack source) {
         ContextInteractionRegistry.reload();
+        ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
         source.sendSuccess(() -> Component.literal("[SCP Inventory] Context interactions reloaded.").withStyle(ChatFormatting.GREEN), false);
         return 1;
     }

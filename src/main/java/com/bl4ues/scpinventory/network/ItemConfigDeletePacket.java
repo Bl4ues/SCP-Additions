@@ -29,7 +29,6 @@ public class ItemConfigDeletePacket {
             ServerPlayer player = ctx.get().getSender();
             if (!ConfigCenterService.requireEdit(player)) return;
             ItemConfigManager.deleteRule(player, msg.itemId);
-            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
         });
         ctx.get().setPacketHandled(true);
     }

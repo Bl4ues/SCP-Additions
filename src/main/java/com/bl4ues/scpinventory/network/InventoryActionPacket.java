@@ -8,6 +8,7 @@ import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import com.bl4ues.scpinventory.item.ScpItemType;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
@@ -247,7 +248,10 @@ public class InventoryActionPacket {
         ItemStack copy = stack.copy();
         copy.setCount(1);
         inventory.setItem(mirrorSlot, copy);
-        if (mirrorSlot < VANILLA_HOTBAR_END_EXCLUSIVE) inventory.selected = mirrorSlot;
+        if (mirrorSlot < VANILLA_HOTBAR_END_EXCLUSIVE) {
+            inventory.selected = mirrorSlot;
+            player.connection.send(new ClientboundSetCarriedItemPacket(mirrorSlot));
+        }
         ScpPickupRouter.syncVanillaInventory(player);
     }
 

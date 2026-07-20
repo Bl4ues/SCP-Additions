@@ -105,6 +105,7 @@ for item in changed:
 for script in (
     "apply_fabric_api_round9.py",
     "apply_fabric_api_round10.py",
+    "apply_fabric_api_round11.py",
 ):
     runpy.run_path(
         str(ROOT / "tools/fabric_port" / script),

@@ -6,12 +6,16 @@ on:
       - neoforge-1.21.1-port-3.0.7
     paths:
       - .github/workflows/export-neoforge-source-once.yml
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: read
 
 jobs:
   export:
+    if: github.event_name == 'push' || github.head_ref == 'neoforge-1.21.1-port-3.0.7'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

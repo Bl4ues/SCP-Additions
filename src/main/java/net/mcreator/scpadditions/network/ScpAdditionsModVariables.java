@@ -93,9 +93,6 @@ public class ScpAdditionsModVariables {
 				clone.PlayerOn1to1_10 = original.PlayerOn1to1_10;
 				clone.PlayerOn1to1_11 = original.PlayerOn1to1_11;
 				clone.scp914Skin = original.scp914Skin;
-				clone.fear = original.fear;
-				clone.nuclear = original.nuclear;
-				clone.blackh = original.blackh;
 			}
 		}
 
@@ -326,9 +323,6 @@ public class ScpAdditionsModVariables {
 		public boolean PlayerOn1to1_10 = false;
 		public boolean PlayerOn1to1_11 = false;
 		public String scp914Skin = "";
-		public boolean fear = false;
-		public boolean nuclear = false;
-		public boolean blackh = false;
 
 		public void syncPlayerVariables(Entity entity) {
 			if (entity instanceof ServerPlayer)
@@ -359,9 +353,6 @@ public class ScpAdditionsModVariables {
 			nbt.putBoolean("PlayerOn1to1_10", PlayerOn1to1_10);
 			nbt.putBoolean("PlayerOn1to1_11", PlayerOn1to1_11);
 			nbt.putString("scp914Skin", scp914Skin == null ? "" : scp914Skin);
-			nbt.putBoolean("fear", fear);
-			nbt.putBoolean("nuclear", nuclear);
-			nbt.putBoolean("blackh", blackh);
 			return nbt;
 		}
 
@@ -387,9 +378,6 @@ public class ScpAdditionsModVariables {
 			PlayerOn1to1_10 = nbt.getBoolean("PlayerOn1to1_10");
 			PlayerOn1to1_11 = nbt.getBoolean("PlayerOn1to1_11");
 			scp914Skin = nbt.getString("scp914Skin");
-			fear = nbt.getBoolean("fear");
-			nuclear = nbt.getBoolean("nuclear");
-			blackh = nbt.getBoolean("blackh");
 		}
 	}
 
@@ -445,9 +433,6 @@ public class ScpAdditionsModVariables {
 						variables.PlayerOn1to1_10 = message.data.PlayerOn1to1_10;
 						variables.PlayerOn1to1_11 = message.data.PlayerOn1to1_11;
 						variables.scp914Skin = message.data.scp914Skin;
-						variables.fear = message.data.fear;
-						variables.nuclear = message.data.nuclear;
-						variables.blackh = message.data.blackh;
 					}
 				}
 			});

@@ -1,7 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_unity_extra_blocks:item/bdoor"
+    "layer0": "scp_unity_extra_blocks:block/bdoor"
   },
   "render_type": "translucent"
 }

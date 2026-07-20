@@ -47,12 +47,6 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> SCP914DIAL = REGISTRY.register("scp914dial", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914dial")));
 	public static final RegistryObject<SoundEvent> SCP914INSIDE = REGISTRY.register("scp914inside", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914inside")));
 	public static final RegistryObject<SoundEvent> SCP914DEATH = REGISTRY.register("scp914death", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp914death")));
-	public static final RegistryObject<SoundEvent> ENTER = REGISTRY.register("enter", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "enter")));
-	public static final RegistryObject<SoundEvent> SCP059BOX = REGISTRY.register("scp059box", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp059box")));
-	public static final RegistryObject<SoundEvent> GEIGER2 = REGISTRY.register("geiger2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger2")));
-	public static final RegistryObject<SoundEvent> GEIGER1 = REGISTRY.register("geiger1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger1")));
-	public static final RegistryObject<SoundEvent> SCP059_1 = REGISTRY.register("scp059_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp059_1")));
-	public static final RegistryObject<SoundEvent> GEIGER3 = REGISTRY.register("geiger3", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "geiger3")));
 	public static final RegistryObject<SoundEvent> SPRAY = REGISTRY.register("spray", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "spray")));
 	public static final RegistryObject<SoundEvent> DECONTAMINATION = REGISTRY.register("decontamination", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "decontamination")));
 	public static final RegistryObject<SoundEvent> DOOROPEN = REGISTRY.register("dooropen", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "dooropen")));

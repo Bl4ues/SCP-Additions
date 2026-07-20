@@ -1,7 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_unity_extra_blocks:item/officedoortext"
+    "layer0": "scp_unity_extra_blocks:block/officedoortext"
   },
   "render_type": "translucent"
 }

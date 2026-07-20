@@ -2,6 +2,6 @@
   "parent": "scp_additions:custom/creditcard",
   "textures": {
     "1": "scp_additions:block/creditcard",
-    "particle": "scp_additions:item/creditcard"
+    "particle": "scp_additions:block/creditcard"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "parent": "scp_unity_extra_blocks:custom/yellow_10",
+  "parent": "scp_unity_extra_blocks:custom/black_10",
   "textures": {
     "all": "scp_unity_extra_blocks:block/yellow_texture",
     "particle": "scp_unity_extra_blocks:block/yellow_texture",

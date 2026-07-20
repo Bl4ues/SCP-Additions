@@ -46,6 +46,7 @@ jobs:
           python3 tools/neoforge_port/apply_item_custom_data.py
           python3 tools/neoforge_port/apply_item_api_renames.py
           python3 tools/neoforge_port/apply_core_api_moves.py
+          python3 tools/neoforge_port/apply_capability_and_ui_api.py
           git diff --binary > neoforge-transformed.patch
 
       - name: Make Gradle wrapper executable

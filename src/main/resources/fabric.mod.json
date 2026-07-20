@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "SCP survival horror and facility-building systems for Minecraft 1.21.1.",
+  "authors": [
+    "Bl4ues"
+  ],
+  "contact": {
+    "sources": "https://github.com/Bl4ues/SCP-Additions"
+  },
+  "license": "${mod_license}",
+  "icon": "logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.mcreator.scpadditions.fabric.ScpAdditionsFabric"
+    ],
+    "client": [
+      "net.mcreator.scpadditions.fabric.ScpAdditionsFabricClient"
+    ]
+  },
+  "accessWidener": "scp_additions.accesswidener",
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": ">=${fabric_version}",
+    "geckolib": ">=${geckolib_version}"
+  },
+  "suggests": {
+    "kleiders_custom_renderer": "*",
+    "moremcmeta_emissive_plugin": "*"
+  }
+}

@@ -46,6 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/hotfix/apply_gameplay_hotfix_3_0_7.py | tee gameplay-hotfix.log
+          python3 tools/hotfix/repair_gameplay_hotfix_idempotence.py | tee -a gameplay-hotfix.log
           python3 tools/hotfix/apply_multiplayer_config_hotfix_3_0_7.py | tee config-hotfix.log
           python3 tools/hotfix/apply_tool_session_hotfix_3_0_7.py | tee tool-hotfix.log
           git diff --check
@@ -58,7 +59,10 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Forge 1.20.1 hotfix
-        run: ./gradlew clean build --no-daemon --stacktrace | tee forge-hotfix-build.log
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew clean build --no-daemon --stacktrace | tee forge-hotfix-build.log
 
       - name: Audit compiled assets
         run: python3 scripts/audit_unused_assets.py

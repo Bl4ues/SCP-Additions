@@ -25,6 +25,6 @@ public class Scp9141to1PlayerResetProcedure {
 	private static void execute(@Nullable Event event, Entity entity) {
 		if (entity == null)
 			return;
-		entity.getPersistentData().putBoolean("1to1", false);
+		net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("1to1", false);
 	}
 }

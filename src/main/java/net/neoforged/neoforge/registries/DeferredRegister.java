@@ -46,6 +46,10 @@ public final class DeferredRegister<T> {
                 ResourceLocation.fromNamespaceAndPath(namespace, name), value.create())));
     }
 
+    public void addAlias(ResourceLocation oldId, ResourceLocation newId) {
+        ((net.fabricmc.fabric.api.event.registry.FabricRegistry)(Object) registry).addAlias(oldId, newId);
+    }
+
     public Collection<Supplier<T>> getEntries() {
         return entries.values().stream().map(v -> (Supplier<T>) v).toList();
     }

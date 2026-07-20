@@ -224,7 +224,7 @@ public final class Scp012InfluenceEvents {
     }
 
     private static void applyBleeding(ServerPlayer player) {
-        player.getPersistentData().putBoolean(BLEEDING_TAG, true);
+        net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).putBoolean(BLEEDING_TAG, true);
         if (!player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()))) {
             player.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()),
                     Integer.MAX_VALUE, 0, false, false, true));

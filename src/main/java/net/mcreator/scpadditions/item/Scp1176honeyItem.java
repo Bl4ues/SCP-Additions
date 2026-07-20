@@ -28,16 +28,6 @@ public class Scp1176honeyItem extends Item {
 	}
 
 	@Override
-	public boolean hasCraftingRemainingItem() {
-		return true;
-	}
-
-	@Override
-	public ItemStack getCraftingRemainingItem(ItemStack itemstack) {
-		return new ItemStack(this);
-	}
-
-	@Override
 	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
 		super.appendHoverText(itemstack, context, list, flag);
 	}

@@ -70,6 +70,7 @@ public final class SimpleChannel {
     public void sendToServer(Object message) { ClientPlayNetworking.send(envelope(message)); }
     private Envelope envelope(Object message) { Registration<?> registration=byClass.get(message.getClass()); if(registration==null) throw new IllegalStateException("Unregistered packet "+message.getClass()); return new Envelope(this,registration.id,message); }
     private Registration<?> require(int id) { Registration<?> registration=byId.get(id); if(registration==null) throw new IllegalStateException("Unknown packet "+id+" on "+channelId); return registration; }
+    public void registerPayload(net.neoforged.neoforge.network.registration.PayloadRegistrar ignored) { registerCommon(); }
     public synchronized void registerCommon() {
         if(commonRegistered) return; commonRegistered=true;
         PayloadTypeRegistry.playC2S().register(payloadType,codec);

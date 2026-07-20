@@ -54,12 +54,6 @@ public class SCP572Item extends Item {
 		list.add(Component.literal("Katana of Apparent Invincibility"));
 	}
 
-	@Override
-	public boolean onEntitySwing(ItemStack itemstack, LivingEntity entity) {
-		boolean retval = super.onEntitySwing(itemstack, entity);
-		SCP572LivingEntityIsHitWithItemProcedure.execute(entity);
-		return retval;
-	}
 
 	@Override
 	public void inventoryTick(ItemStack itemstack, Level world, Entity entity, int slot, boolean selected) {

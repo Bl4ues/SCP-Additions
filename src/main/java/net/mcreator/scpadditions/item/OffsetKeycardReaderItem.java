@@ -127,17 +127,4 @@ public final class OffsetKeycardReaderItem extends BlockItem {
             blockToItemMap.put(readerBlock.get(), item);
         }
     }
-
-    @Override
-    public void removeFromBlockToItemMap(Map<Block, Item> blockToItemMap, Item item) {
-        super.removeFromBlockToItemMap(blockToItemMap, item);
-        if (blockToItemMap.get(rightPlacementBlock.get()) == item) {
-            blockToItemMap.remove(rightPlacementBlock.get());
-        }
-        for (Supplier<? extends Block> readerBlock : canonicalReaderBlocks) {
-            if (blockToItemMap.get(readerBlock.get()) == item) {
-                blockToItemMap.remove(readerBlock.get());
-            }
-        }
-    }
 }

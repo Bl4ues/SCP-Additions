@@ -30,7 +30,7 @@ public final class ContextConfigClientEvents {
 
     @SubscribeEvent
     public static void onScreenKeyPressed(ScreenEvent.KeyPressed.Pre event) {
-        if (event.getKeyCode() != Keybinds.CONTEXT_CONFIG_SELECT.getKey().getValue()) {
+        if (!Keybinds.CONTEXT_CONFIG_SELECT.matches(event.getKeyCode(), event.getScanCode())) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();

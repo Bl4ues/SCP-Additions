@@ -367,12 +367,12 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private static void showBlinkTutorialOnce(ServerPlayer player) {
         if (!ScpAdditionsModulesConfig.get().blink.enabled) return;
-        CompoundTag persistentData = player.getPersistentData();
-        CompoundTag persisted = persistentData.getCompound(Player.PERSISTED_NBT_TAG);
+        CompoundTag persistentData = net.mcreator.scpadditions.fabric.FabricPersistentData.get(player);
+        CompoundTag persisted = persistentData.getCompound("PlayerPersisted");
         if (persisted.getBoolean(BLINK_TUTORIAL_SHOWN_TAG)) return;
 
         persisted.putBoolean(BLINK_TUTORIAL_SHOWN_TAG, true);
-        persistentData.put(Player.PERSISTED_NBT_TAG, persisted);
+        persistentData.put("PlayerPersisted", persisted);
         player.displayClientMessage(Component.translatable(
                 "message.scp_additions.scp_173_blink_hint",
                 Component.keybind("key.scpinventory.blink")), true);

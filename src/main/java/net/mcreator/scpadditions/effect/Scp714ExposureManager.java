@@ -111,7 +111,7 @@ public final class Scp714ExposureManager {
         if (player == null) {
             return 0;
         }
-        return Mth.clamp(player.getPersistentData().getInt(EXPOSURE_TAG),
+        return Mth.clamp(net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).getInt(EXPOSURE_TAG),
                 0, DEATH_TICKS);
     }
 
@@ -135,7 +135,7 @@ public final class Scp714ExposureManager {
     }
 
     private static void setExposureTicks(ServerPlayer player, int ticks) {
-        CompoundTag data = player.getPersistentData();
+        CompoundTag data = net.mcreator.scpadditions.fabric.FabricPersistentData.get(player);
         if (ticks <= 0) {
             data.remove(EXPOSURE_TAG);
         } else {

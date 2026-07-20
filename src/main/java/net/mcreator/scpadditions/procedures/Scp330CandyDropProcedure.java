@@ -31,10 +31,10 @@ public class Scp330CandyDropProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
 		if (entity == null)
 			return;
-		if (entity.getPersistentData().getBoolean("candy0")) {
+		if (net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).getBoolean("candy0")) {
 			Scp330CandyGiveProcedure.execute(entity);
-			entity.getPersistentData().putBoolean("candy1", true);
-			entity.getPersistentData().putBoolean("candy0", false);
+			net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy1", true);
+			net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy0", false);
 			if (world instanceof Level _level) {
 				if (!_level.isClientSide()) {
 					_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
@@ -43,10 +43,10 @@ public class Scp330CandyDropProcedure {
 				}
 			}
 		} else {
-			if (entity.getPersistentData().getBoolean("candy1")) {
+			if (net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).getBoolean("candy1")) {
 				Scp330CandyGiveProcedure.execute(entity);
-				entity.getPersistentData().putBoolean("candy2", true);
-				entity.getPersistentData().putBoolean("candy1", false);
+				net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy2", true);
+				net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy1", false);
 				if (world instanceof Level _level) {
 					if (!_level.isClientSide()) {
 						_level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("scp_additions:candy")), SoundSource.HOSTILE, 1, 1);
@@ -55,7 +55,7 @@ public class Scp330CandyDropProcedure {
 					}
 				}
 			} else {
-				if (entity.getPersistentData().getBoolean("candy2")) {
+				if (net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).getBoolean("candy2")) {
 					if (entity instanceof ServerPlayer _player) {
 						AdvancementHolder _adv = _player.server.getAdvancements().get(ResourceLocation.parse("scp_additions:scp_330_achievement"));
 						AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
@@ -123,9 +123,9 @@ public class Scp330CandyDropProcedure {
 									}
 								}
 							}, 50);
-						entity.getPersistentData().putBoolean("candy1", false);
-						entity.getPersistentData().putBoolean("candy2", false);
-						entity.getPersistentData().putBoolean("candy0", true);
+						net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy1", false);
+						net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy2", false);
+						net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy0", true);
 					});
 					if (entity instanceof Player _player) {
 						ItemStack _stktoremove = new ItemStack(ScpAdditionsModItems.SCP_330_RED_CANDY.get());

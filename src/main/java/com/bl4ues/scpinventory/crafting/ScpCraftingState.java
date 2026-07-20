@@ -29,17 +29,17 @@ public final class ScpCraftingState {
 
     public static Data load(Player player) {
         if (player == null) return new Data();
-        CompoundTag persisted = player.getPersistentData()
-                .getCompound(Player.PERSISTED_NBT_TAG);
+        CompoundTag persisted = net.mcreator.scpadditions.fabric.FabricPersistentData.get(player)
+                .getCompound("PlayerPersisted");
         return fromTag(persisted.getCompound(ROOT_KEY), player.registryAccess());
     }
 
     public static void save(Player player, Data data) {
         if (player == null || data == null) return;
-        CompoundTag root = player.getPersistentData();
-        CompoundTag persisted = root.getCompound(Player.PERSISTED_NBT_TAG);
+        CompoundTag root = net.mcreator.scpadditions.fabric.FabricPersistentData.get(player);
+        CompoundTag persisted = root.getCompound("PlayerPersisted");
         persisted.put(ROOT_KEY, toTag(data, player.registryAccess()));
-        root.put(Player.PERSISTED_NBT_TAG, persisted);
+        root.put("PlayerPersisted", persisted);
     }
 
     public static CompoundTag toTag(Data data, HolderLookup.Provider registries) {

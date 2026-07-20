@@ -25,8 +25,8 @@ public class Scp330CandyClearProcedure {
 	private static void execute(@Nullable Event event, Entity entity) {
 		if (entity == null)
 			return;
-		entity.getPersistentData().putBoolean("candy0", true);
-		entity.getPersistentData().putBoolean("candy1", false);
-		entity.getPersistentData().putBoolean("candy2", false);
+		net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy0", true);
+		net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy1", false);
+		net.mcreator.scpadditions.fabric.FabricPersistentData.get(entity).putBoolean("candy2", false);
 	}
 }

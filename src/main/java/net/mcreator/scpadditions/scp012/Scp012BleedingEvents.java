@@ -44,7 +44,7 @@ public final class Scp012BleedingEvents {
         }
 
         UUID id = player.getUUID();
-        boolean marked = player.getPersistentData().getBoolean(BLEEDING_TAG);
+        boolean marked = net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).getBoolean(BLEEDING_TAG);
         if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
             clear(player, true);
             return;
@@ -83,7 +83,7 @@ public final class Scp012BleedingEvents {
     public static void onHeal(LivingHealEvent event) {
         if (event.getAmount() <= 0.0F
                 || !(event.getEntity() instanceof ServerPlayer player)
-                || !player.getPersistentData().getBoolean(BLEEDING_TAG)) {
+                || !net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).getBoolean(BLEEDING_TAG)) {
             return;
         }
         clear(player, true);
@@ -105,7 +105,7 @@ public final class Scp012BleedingEvents {
 
     private static void clear(ServerPlayer player, boolean removeEffect) {
         STATES.remove(player.getUUID());
-        player.getPersistentData().remove(BLEEDING_TAG);
+        net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).remove(BLEEDING_TAG);
         if (removeEffect) {
             player.removeEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()));
         }

@@ -5,8 +5,6 @@ import net.minecraft.world.level.LevelReader;
 
 import net.minecraft.world.item.Item;
 
-import org.checkerframework.checker.units.qual.s;
-
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;

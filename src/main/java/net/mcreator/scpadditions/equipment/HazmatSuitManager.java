@@ -116,7 +116,7 @@ public final class HazmatSuitManager {
                     new ItemStack(ScpAdditionsModItems.HAZMAT_SUIT_LEGGINGS.get()));
             player.setItemSlot(EquipmentSlot.FEET,
                     new ItemStack(ScpAdditionsModItems.HAZMAT_SUIT_BOOTS.get()));
-            player.getPersistentData().putBoolean(
+            net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).putBoolean(
                     RETURN_ITEM_TAG, !player.isCreative());
             KNOWN_EQUIPPED.add(id);
             ScpEntityNetwork.completeEquipmentProgress(player);
@@ -278,8 +278,8 @@ public final class HazmatSuitManager {
         if (player == null) {
             return false;
         }
-        if (player.getPersistentData().contains(RETURN_ITEM_TAG)) {
-            return player.getPersistentData().getBoolean(RETURN_ITEM_TAG);
+        if (net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).contains(RETURN_ITEM_TAG)) {
+            return net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).getBoolean(RETURN_ITEM_TAG);
         }
         return !player.isCreative();
     }
@@ -323,7 +323,7 @@ public final class HazmatSuitManager {
             KNOWN_EQUIPPED.remove(id);
             MANUAL_UNEQUIP.remove(id);
             ACTION_START_POSITIONS.remove(id);
-            player.getPersistentData().remove(RETURN_ITEM_TAG);
+            net.mcreator.scpadditions.fabric.FabricPersistentData.get(player).remove(RETURN_ITEM_TAG);
 
             if (returnPublicItem) {
                 routeToAuthoritativeInventoryOrDrop(player,

@@ -91,6 +91,11 @@ require(
     "return stack != null && !stack.isEmpty();",
     "isSameMutableUsableItem(active, activeStack)",
 )
+require(
+    "src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java",
+    "ClientboundSetCarriedItemPacket",
+    "player.connection.send(new ClientboundSetCarriedItemPacket(mirrorSlot))",
+)
 forbid(
     "src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java",
     "new ItemConfigReloadPacket()",

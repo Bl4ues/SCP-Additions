@@ -2,8 +2,6 @@ package net.mcreator.scpadditions;
 
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -11,6 +9,7 @@ import com.bl4ues.scpadditions.compat.network.SimpleChannel;
 import com.bl4ues.scpadditions.compat.network.NetworkRegistry;
 import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.IEventBus;
 import com.bl4ues.scpadditions.compat.TickEvent;
@@ -72,11 +71,11 @@ public class ScpAdditionsMod {
 
     public ScpAdditionsMod(IEventBus bus) {
         // GameRules instances snapshot the registered rule table when a world is
-        // created. Force our keys to exist before any integrated or dedicated
-        // server starts constructing levels.
+        // created. Force our keys to exist before any server constructs levels.
         ScpAdditionsModGameRules.bootstrap();
 
         NeoForge.EVENT_BUS.register(this);
+        bus.addListener(this::commonSetup);
         ScpAdditionsModSounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
@@ -107,7 +106,13 @@ public class ScpAdditionsMod {
         ScpAdditionsModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();
         com.bl4ues.scpinventory.network.ModNetwork.register();
+    }
 
+    private void commonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(this::loadRegistryDependentConfiguration);
+    }
+
+    private void loadRegistryDependentConfiguration() {
         ScpAdditionsModulesConfig.load();
         Scp714ConfigBootstrap.ensureAccessoryRule();
         ScpInventoryConfig.reload();

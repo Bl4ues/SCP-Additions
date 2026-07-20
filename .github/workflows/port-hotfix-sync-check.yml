@@ -1,0 +1,143 @@
+name: Port Hotfix Sync Check
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  sync-check:
+    if: startsWith(github.head_ref, 'neoforge-1.21.1-port') || startsWith(github.head_ref, 'fabric-1.21.1-port')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+
+    steps:
+      - name: Checkout port revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch validated Forge baseline
+        run: git fetch --no-tags origin master:refs/remotes/origin/master
+
+      - name: Apply validated master hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --binary \
+            26308ad9dbbdca536a7095c102902576789c0a6f \
+            origin/master -- \
+            config/scpinventory/context_interactions.json \
+            src/main/java/com/bl4ues/scpinventory \
+            src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java \
+            src/main/java/net/mcreator/scpadditions/data/Scp294DrinkManager.java \
+            src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java \
+            src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java \
+            src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java \
+            src/main/java/net/mcreator/scpadditions/procedures/TeslaGateVolume.java \
+            src/main/resources/assets/scp_additions/lang/en_us.json \
+            > port-master-hotfix.patch
+          set +e
+          git apply --3way --whitespace=nowarn port-master-hotfix.patch \
+            > port-hotfix-apply.log 2>&1
+          status=$?
+          set -e
+          git status --short | tee -a port-hotfix-apply.log
+          cat port-hotfix-apply.log
+          exit "$status"
+
+      - name: Reapply loader migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > port-hotfix-migration.log
+          if [[ "${{ github.head_ref }}" == neoforge-* ]]; then
+            scripts=(
+              apply_tick_bridge.py
+              apply_network_bridge.py
+              apply_inventory_attachment.py
+              apply_player_variables_attachment.py
+              apply_saved_data_api.py
+              apply_inventory_stack_serialization.py
+              apply_misc_api_moves.py
+              apply_item_custom_data.py
+              apply_item_api_renames.py
+              apply_core_api_moves.py
+              apply_capability_and_ui_api.py
+              apply_gameplay_api_round2.py
+              apply_gameplay_api_round3.py
+              apply_gameplay_api_round4.py
+              apply_gameplay_api_round5.py
+              apply_gameplay_api_round6.py
+            )
+            for script in "${scripts[@]}"; do
+              echo "=== $script ===" | tee -a port-hotfix-migration.log
+              python3 "tools/neoforge_port/$script" 2>&1 | tee -a port-hotfix-migration.log
+            done
+          else
+            scripts=(
+              apply_fabric_bridge.py
+              patch_fabric_api_round2_idempotence.py
+              apply_fabric_api_round2.py
+              materialize_fabric_api_round3.py
+              apply_fabric_api_round3.py
+              apply_fabric_api_round4.py
+              apply_fabric_api_round5.py
+              apply_fabric_api_round6.py
+              apply_fabric_api_round7.py
+              apply_fabric_api_round8.py
+              apply_fabric_api_round9.py
+              apply_fabric_api_round10.py
+              apply_fabric_api_round11.py
+              apply_fabric_api_round12.py
+              apply_fabric_api_round13.py
+            )
+            for script in "${scripts[@]}"; do
+              echo "=== $script ===" | tee -a port-hotfix-migration.log
+              python3 "tools/fabric_port/$script" 2>&1 | tee -a port-hotfix-migration.log
+            done
+          fi
+          git diff --check
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build synchronized port frontier
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --no-daemon --stacktrace > port-hotfix-build.log 2>&1
+          status=$?
+          echo "$status" > port-hotfix-build.exitcode
+          tail -n 800 port-hotfix-build.log
+          exit 0
+
+      - name: Verify synchronized port build
+        run: test "$(cat port-hotfix-build.exitcode)" = "0"
+
+      - name: Upload synchronization frontier
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: port-hotfix-sync-${{ github.event.pull_request.head.sha }}
+          path: |
+            port-master-hotfix.patch
+            port-hotfix-apply.log
+            port-hotfix-migration.log
+            port-hotfix-build.log
+            port-hotfix-build.exitcode
+            build/libs/*.jar
+          if-no-files-found: warn

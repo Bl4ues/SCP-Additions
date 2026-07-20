@@ -3,9 +3,15 @@
   "package": "net.mcreator.scpadditions.fabric.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "MobEffectApplicableMixin"
+    "MobEffectApplicableMixin",
+    "Scp572SwingMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "client": [
+    "client.ScreenAccessorMixin",
+    "client.AbstractClientPlayerFovMixin",
+    "client.PlayerRendererMixin"
+  ]
 }

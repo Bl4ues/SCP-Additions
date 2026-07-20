@@ -78,9 +78,8 @@ public class ScpAdditionsMod {
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
         bus.addListener(Scp294Capabilities::register);
         ScpAdditionsModArmorMaterials.REGISTRY.register(bus);
-        LegacyDrinkItemMappings.registerAliases();
-        FacilityLegacyMappings.registerAliases();
         ScpAdditionsModItems.REGISTRY.register(bus);
+        LegacyDrinkItemMappings.registerAliases();
         ScpAdditionsModEntities.REGISTRY.register(bus);
         Scp714Items.REGISTRY.register(bus);
         Scp012Module.register(bus);
@@ -91,6 +90,7 @@ public class ScpAdditionsMod {
         ScpAdditionsModTabs.REGISTRY.register(bus);
         UBlocksModule.register(bus);
         FacilityModule.register(bus);
+        FacilityLegacyMappings.registerAliases();
         MirroredDoorButtons.register(bus);
         LeftDoorButtons.register(bus);
         HeavyDoorPowerRelay.register(bus);

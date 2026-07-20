@@ -163,6 +163,8 @@ public final class FabricScpInventoryCodec {
 
 
 def inventory_attachment(source: str) -> str:
+    if "AttachmentRegistry.create(" in source:
+        return source
     start = source.index("    public static final DeferredRegister<AttachmentType<?>> REGISTRY")
     end = source.index("    private ScpInventoryCapability()", start)
     replacement = '''    public static final net.fabricmc.fabric.api.attachment.v1.AttachmentType<IScpInventory> INSTANCE =
@@ -183,6 +185,8 @@ rewrite("com/bl4ues/scpinventory/capability/ScpInventoryCapability.java", invent
 
 
 def variables_attachment(source: str) -> str:
+    if "AttachmentRegistry.create(" in source:
+        return source
     start = source.index("\tpublic static final DeferredRegister<AttachmentType<?>> ATTACHMENTS")
     end = source.index("\n\tpublic static LazyOptional<PlayerVariables>", start)
     replacement = '''\tpublic static final net.fabricmc.fabric.api.attachment.v1.AttachmentType<PlayerVariables> PLAYER_VARIABLES_ATTACHMENT =
@@ -1165,12 +1169,14 @@ final class FabricGameEventBridge {
 
 # Register common payload types after every legacy message has been declared.
 def entrypoint_common(source: str) -> str:
-    source = source.replace("        FabricGameEventBridge.register();\n", "        FabricGameEventBridge.register();\n        com.bl4ues.scpadditions.compat.network.SimpleChannel.registerAllCommon();\n")
+    if "SimpleChannel.registerAllCommon();" not in source:
+        source = source.replace("        FabricGameEventBridge.register();\n", "        FabricGameEventBridge.register();\n        com.bl4ues.scpadditions.compat.network.SimpleChannel.registerAllCommon();\n")
     return source
 rewrite("net/mcreator/scpadditions/fabric/ScpAdditionsFabric.java", entrypoint_common)
 
 def entrypoint_client(source: str) -> str:
-    source = source.replace("        FabricClientEventBridge.register();\n", "        FabricClientEventBridge.register();\n        com.bl4ues.scpadditions.compat.network.SimpleChannel.registerAllClient();\n")
+    if "SimpleChannel.registerAllClient();" not in source:
+        source = source.replace("        FabricClientEventBridge.register();\n", "        FabricClientEventBridge.register();\n        com.bl4ues.scpadditions.compat.network.SimpleChannel.registerAllClient();\n")
     return source
 rewrite("net/mcreator/scpadditions/fabric/ScpAdditionsFabricClient.java", entrypoint_client)
 

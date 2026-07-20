@@ -1,0 +1,186 @@
+name: Fabric 1.21.1 Port
+
+on:
+  push:
+    branches:
+      - fabric-1.21.1-port-3.0.7
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Fabric branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Import shared 1.21.1 source migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin neoforge-1.21.1-port-3.0.7 --depth=1
+          mkdir -p .fabric-port-tmp/neoforge
+          scripts=(
+            apply_tick_bridge.py
+            apply_network_bridge.py
+            apply_inventory_attachment.py
+            apply_player_variables_attachment.py
+            apply_saved_data_api.py
+            apply_inventory_stack_serialization.py
+            apply_misc_api_moves.py
+            apply_item_custom_data.py
+            apply_item_api_renames.py
+            apply_core_api_moves.py
+            apply_capability_and_ui_api.py
+            apply_gameplay_api_round2.py
+            apply_gameplay_api_round3.py
+            apply_gameplay_api_round4.py
+            apply_gameplay_api_round5.py
+            apply_gameplay_api_round6.py
+          )
+          : > fabric-migration.log
+          for script in "${scripts[@]}"; do
+            git show "FETCH_HEAD:tools/neoforge_port/$script" \
+              > ".fabric-port-tmp/neoforge/$script"
+            echo "=== $script ===" | tee -a fabric-migration.log
+            python3 ".fabric-port-tmp/neoforge/$script" 2>&1 \
+              | tee -a fabric-migration.log
+          done
+          echo '=== apply_fabric_bridge.py ===' | tee -a fabric-migration.log
+          python3 tools/fabric_port/apply_fabric_bridge.py 2>&1 \
+            | tee -a fabric-migration.log
+          git diff --binary > fabric-transformed.patch
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build Fabric port and preserve frontier
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --no-daemon --stacktrace > fabric-build.log 2>&1
+          status=$?
+          echo "$status" > fabric-build.exitcode
+          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" \
+            fabric-build.log | head -n 3000 > fabric-build-errors.log || true
+          tail -n 700 fabric-build.log
+          exit 0
+
+      - name: Export transformed Fabric worktree
+        if: always()
+        shell: bash
+        run: |
+          zip -qr fabric-transformed-source.zip . \
+            -x '.git/*' 'build/*' '.gradle/*' 'run/*' '*.zip' '.fabric-port-tmp/*'
+
+      - name: Upload Fabric build frontier
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-build-${{ github.sha }}
+          path: |
+            fabric-migration.log
+            fabric-build.log
+            fabric-build-errors.log
+            fabric-build.exitcode
+            fabric-transformed.patch
+            fabric-transformed-source.zip
+            build/libs/*.jar
+            build/reports/**
+          if-no-files-found: warn
+
+      - name: Verify Fabric build result
+        shell: bash
+        run: test "$(cat fabric-build.exitcode)" = "0"
+
+      - name: Upload compiled Fabric JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp-additions-fabric-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+      - name: Launch Fabric dedicated server smoke test
+        if: success()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+          cat > run/server/server.properties <<'EOF'
+          online-mode=false
+          server-port=25577
+          motd=SCP Additions Fabric smoke test
+          view-distance=4
+          simulation-distance=4
+          spawn-protection=0
+          max-tick-time=120000
+          EOF
+          : > fabric-server-console.log
+          setsid ./gradlew runServer --no-daemon --console=plain \
+            > fabric-server-console.log 2>&1 &
+          launcher_pid=$!
+          started=0
+          for second in $(seq 1 300); do
+            if test -f run/server/logs/latest.log \
+                && grep -Fq 'Done (' run/server/logs/latest.log; then
+              started=1
+              echo "Dedicated server reached ready state after ${second}s."
+              break
+            fi
+            if ! kill -0 "$launcher_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if kill -0 "$launcher_pid" 2>/dev/null; then
+            kill -INT -- "-$launcher_pid" 2>/dev/null || true
+            sleep 5
+          fi
+          if kill -0 "$launcher_pid" 2>/dev/null; then
+            kill -KILL -- "-$launcher_pid" 2>/dev/null || true
+          fi
+          wait "$launcher_pid" 2>/dev/null || true
+          test -f run/server/logs/latest.log \
+            && cp run/server/logs/latest.log fabric-server-latest.log
+          if test "$started" != "1"; then
+            echo 'Dedicated server did not reach the ready state.'
+            tail -n 500 fabric-server-console.log
+            exit 1
+          fi
+          if grep -Eqi 'Exception in server tick loop|Failed to start the minecraft server|Mod resolution encountered an incompatible mod set|Could not execute entrypoint' \
+              fabric-server-console.log fabric-server-latest.log 2>/dev/null; then
+            echo 'Dedicated server log contains a fatal startup error.'
+            tail -n 500 fabric-server-console.log
+            exit 1
+          fi
+
+      - name: Upload Fabric server smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-server-smoke-${{ github.sha }}
+          path: |
+            fabric-server-console.log
+            fabric-server-latest.log
+            run/server/crash-reports/**
+          if-no-files-found: warn

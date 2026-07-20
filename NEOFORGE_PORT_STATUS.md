@@ -19,7 +19,8 @@ This port starts from the audited SCP Additions 3.0.7 master cleanup, including 
 ## Migration progress
 
 - Migrated the networking layer, tick bridges, player attachments, SCP Inventory attachment, saved-data APIs, item custom data, item-stack serialization, and common item API renames.
-- Migrating registry aliases, registered armor materials, spawn eggs, menu factories, GUI layers, config-screen extension points, damage events, entity ticks, creative tabs, and item abilities.
+- Migrated registry aliases, registered armor materials, spawn eggs, menu factories, GUI layers, config-screen extension points, damage events, entity ticks, creative tabs, and item abilities.
+- Migrating SCP-294 block/item/entity capabilities, tooltip and food APIs, GUI input signatures, effect/attribute holders, and other Minecraft 1.21.1 client API changes.
 - Compiler-frontier logs are generated after each repeatable migration pass.
 
 ## Completion rule

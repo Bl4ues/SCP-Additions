@@ -12,13 +12,10 @@ public final class DistExecutor {
 
     public static void unsafeRunWhenOn(
             Dist dist,
-            Supplier<? extends Supplier<? extends Runnable>> workSupplier) {
+            Supplier<? extends Runnable> workSupplier) {
         if (FMLEnvironment.dist == dist) {
-            Supplier<? extends Runnable> work = workSupplier.get();
-            if (work != null) {
-                Runnable runnable = work.get();
-                if (runnable != null) runnable.run();
-            }
+            Runnable runnable = workSupplier.get();
+            if (runnable != null) runnable.run();
         }
     }
 }

@@ -1,3 +1,4 @@
+import runpy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,3 +65,8 @@ edit(
 print(f"Fabric API round 11 changed {len(changed)} files")
 for item in changed:
     print(item)
+
+runpy.run_path(
+    str(ROOT / "tools/fabric_port/apply_fabric_api_round12.py"),
+    run_name="__main__",
+)

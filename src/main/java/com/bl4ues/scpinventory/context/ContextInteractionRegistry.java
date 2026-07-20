@@ -163,12 +163,18 @@ public final class ContextInteractionRegistry {
             if (!BuiltInRegistries.BLOCK.containsKey(id)) {
                 return null;
             }
+            if (!BuiltInRegistries.BLOCK.containsKey(id)) {
+                return null;
+            }
             block = BuiltInRegistries.BLOCK.get(id);
             if (block == null || block == Blocks.AIR) {
                 return null;
             }
         } else if ("entity".equals(type)) {
             kind = Kind.ENTITY;
+            if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
+                return null;
+            }
             if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
                 return null;
             }

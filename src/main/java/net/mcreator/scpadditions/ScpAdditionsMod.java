@@ -76,7 +76,6 @@ public class ScpAdditionsMod {
         Scp173Sounds.REGISTRY.register(bus);
         ScpAdditionsModBlocks.REGISTRY.register(bus);
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
-        bus.addListener(Scp294Capabilities::register);
         ScpAdditionsModArmorMaterials.REGISTRY.register(bus);
         ScpAdditionsModItems.REGISTRY.register(bus);
         LegacyDrinkItemMappings.registerAliases();

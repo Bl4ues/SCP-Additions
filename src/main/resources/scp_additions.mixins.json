@@ -12,6 +12,7 @@
   "client": [
     "client.ScreenAccessorMixin",
     "client.AbstractClientPlayerFovMixin",
-    "client.PlayerRendererMixin"
+    "client.PlayerRendererMixin",
+    "client.SoundEngineMixin"
   ]
 }

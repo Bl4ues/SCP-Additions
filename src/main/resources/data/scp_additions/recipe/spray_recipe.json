@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " a ",
+    "bcd",
+    " e "
+  ],
+  "key": {
+    "a": {
+      "item": "minecraft:blue_dye"
+    },
+    "b": {
+      "item": "minecraft:light_gray_stained_glass"
+    },
+    "c": {
+      "item": "minecraft:glass_bottle"
+    },
+    "d": {
+      "item": "minecraft:lever"
+    },
+    "e": {
+      "item": "minecraft:white_stained_glass"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "scp_additions:spray"
+  }
+}

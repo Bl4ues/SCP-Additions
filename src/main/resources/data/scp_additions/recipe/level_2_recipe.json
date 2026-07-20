@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "abc",
+    "ddd",
+    "beb"
+  ],
+  "key": {
+    "a": {
+      "item": "minecraft:white_wool"
+    },
+    "b": {
+      "item": "minecraft:redstone"
+    },
+    "c": {
+      "item": "minecraft:light_blue_wool"
+    },
+    "d": {
+      "item": "minecraft:paper"
+    },
+    "e": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "scp_additions:level_2_keycard"
+  }
+}

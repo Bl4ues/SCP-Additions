@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "abc",
+    "ddd",
+    "bbb"
+  ],
+  "key": {
+    "a": {
+      "item": "minecraft:black_wool"
+    },
+    "b": {
+      "item": "minecraft:redstone"
+    },
+    "c": {
+      "item": "minecraft:blue_wool"
+    },
+    "d": {
+      "item": "minecraft:paper"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "scp_additions:security_credentials"
+  }
+}

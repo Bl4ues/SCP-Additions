@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "aba",
+    "cdc",
+    "efe"
+  ],
+  "key": {
+    "a": {
+      "item": "minecraft:iron_ingot"
+    },
+    "b": {
+      "item": "minecraft:glass"
+    },
+    "c": {
+      "item": "minecraft:redstone"
+    },
+    "d": {
+      "item": "scp_additions:security_credentials"
+    },
+    "e": {
+      "item": "minecraft:iron_block"
+    },
+    "f": {
+      "item": "minecraft:stone_button"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "scp_additions:tesla_terminal_off"
+  }
+}

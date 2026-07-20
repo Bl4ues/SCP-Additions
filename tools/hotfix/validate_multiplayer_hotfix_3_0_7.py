@@ -91,6 +91,14 @@ require(
     "return stack != null && !stack.isEmpty();",
     "isSameMutableUsableItem(active, activeStack)",
 )
+forbid(
+    "src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java",
+    "new ItemConfigReloadPacket()",
+)
+forbid(
+    "src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java",
+    "new ItemConfigReloadPacket()",
+)
 
 context = json.loads(text("config/scpinventory/context_interactions.json") or "{}")
 for entry in context.get("interactions", []):

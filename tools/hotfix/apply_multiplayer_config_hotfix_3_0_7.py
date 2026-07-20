@@ -185,6 +185,22 @@ replace_once(
             }
 ''',
 )
+replace_once(
+    "src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java",
+    '''    public static int reload(CommandSourceStack source) {
+        ContextInteractionRegistry.reload();
+        source.sendSuccess(() -> Component.literal("[SCP Inventory] Context interactions reloaded.").withStyle(ChatFormatting.GREEN), false);
+        return 1;
+    }
+''',
+    '''    public static int reload(CommandSourceStack source) {
+        ContextInteractionRegistry.reload();
+        ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
+        source.sendSuccess(() -> Component.literal("[SCP Inventory] Context interactions reloaded.").withStyle(ChatFormatting.GREEN), false);
+        return 1;
+    }
+''',
+)
 
 replace_once(
     "src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java",
@@ -407,6 +423,17 @@ replace_once(
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
+''',
+)
+
+replace_once(
+    "src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java",
+    '''            ModNetwork.syncModuleState(source.getServer().getPlayerList().getPlayers());
+            source.sendSuccess(() -> Component.literal("SCP Additions configurations reloaded successfully.")
+''',
+    '''            ModNetwork.syncModuleState(source.getServer().getPlayerList().getPlayers());
+            ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
+            source.sendSuccess(() -> Component.literal("SCP Additions configurations reloaded successfully.")
 ''',
 )
 

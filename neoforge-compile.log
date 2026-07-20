@@ -36,135 +36,6 @@ Daemon will be stopped at the end of the build
 > Task :selectRawArtifactNg_dummy_ng.net.neoforged_neoforge_21.1.235
 
 > Task :compileJava
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.Capability;
-                                          ^
-  symbol:   class Capability
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
-                                          ^
-  symbol:   class ICapabilitySerializable
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
-public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
-                                             ^
-  symbol: class ICapabilitySerializable
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:14: error: cannot find symbol
-    public static final Capability<IScpInventory> INSTANCE = ScpInventoryCapability.INSTANCE;
-                        ^
-  symbol:   class Capability
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:17: error: cannot find symbol
-    private final LazyOptional<IScpInventory> optionalData = LazyOptional.of(() -> backend);
-                  ^
-  symbol:   class LazyOptional
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-                                                      ^
-  symbol:   class Capability
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-               ^
-  symbol:   class LazyOptional
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:3: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.Capability;
-                                          ^
-  symbol:   class Capability
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.CapabilityManager;
-                                          ^
-  symbol:   class CapabilityManager
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.CapabilityToken;
-                                          ^
-  symbol:   class CapabilityToken
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
-    public static final Capability<IScpInventory> INSTANCE =
-                        ^
-  symbol:   class Capability
-  location: class ScpInventoryCapability
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
-import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
-                                                 ^
-  symbol:   class EntityItemPickupEvent
-  location: package net.neoforged.neoforge.event.entity.player
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
-    public static void onItemPickup(EntityItemPickupEvent event) {
-                                    ^
-  symbol:   class EntityItemPickupEvent
-  location: class BlockPickupHandler
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-                               ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
-    public static void attachCapability(AttachCapabilitiesEvent<Entity> event) {
-                                        ^
-  symbol:   class AttachCapabilitiesEvent
-  location: class CapabilityEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
-import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
-                                          ^
-  symbol:   class RegisterGuiOverlaysEvent
-  location: package net.neoforged.neoforge.client.event
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
-    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-                                        ^
-  symbol:   class RegisterGuiOverlaysEvent
-  location: class ClientModEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
-import net.minecraftforge.client.settings.KeyConflictContext;
-                                         ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimatableManager;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-                  ^
-  symbol:   class AnimatableInstanceCache
-  location: class HazmatArmorItem
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
-            AnimatableManager.ControllerRegistrar controllers) {
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-           ^
-  symbol:   class AnimatableInstanceCache
-  location: class HazmatArmorItem
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
 public enum HazmatArmorMaterial implements ArmorMaterial {
                                            ^
@@ -187,78 +58,11 @@ import net.neoforged.neoforge.common.ForgeSpawnEggItem;
 public class NamedSpawnEggItem extends ForgeSpawnEggItem {
                                        ^
   symbol: class ForgeSpawnEggItem
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:15: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimatableManager;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:19: error: cannot find symbol
-    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-                  ^
-  symbol:   class AnimatableInstanceCache
-  location: class BlinkWatcherEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:42: error: package AnimatableManager does not exist
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-                                                     ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:46: error: cannot find symbol
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-           ^
-  symbol:   class AnimatableInstanceCache
-  location: class BlinkWatcherEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:30: error: package software.bernie.geckolib.core.animatable.instance does not exist
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:31: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimatableManager;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:32: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimationController;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:33: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.RawAnimation;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:42: error: cannot find symbol
-    private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
-                         ^
-  symbol:   class RawAnimation
-  location: class AbstractScp131Entity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:82: error: cannot find symbol
-    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-                  ^
-  symbol:   class AnimatableInstanceCache
-  location: class AbstractScp131Entity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:237: error: package AnimatableManager does not exist
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-                                                     ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:242: error: cannot find symbol
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-           ^
-  symbol:   class AnimatableInstanceCache
-  location: class AbstractScp131Entity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
   symbol:   class ForgeCapabilities
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:14: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:27: error: cannot find symbol
-    public static LazyOptional<IScpInventory> get(Player player) {
-                  ^
-  symbol:   class LazyOptional
-  location: class ScpInventoryAccess
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:5: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
@@ -269,26 +73,11 @@ import net.neoforged.neoforge.capabilities.Capability;
                                           ^
   symbol:   class Capability
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:35: error: cannot find symbol
-	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-	              ^
-  symbol:   class LazyOptional
-  location: class Scp294BlockEntity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
 	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
 	                                         ^
   symbol:   class Capability
   location: class Scp294BlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
-	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-	           ^
-  symbol:   class LazyOptional
-  location: class Scp294BlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:5: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
@@ -299,26 +88,11 @@ import net.neoforged.neoforge.capabilities.Capability;
                                           ^
   symbol:   class Capability
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:35: error: cannot find symbol
-	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-	              ^
-  symbol:   class LazyOptional
-  location: class Scp294StockingBlockEntity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
 	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
 	                                         ^
   symbol:   class Capability
   location: class Scp294StockingBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
-	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-	           ^
-  symbol:   class LazyOptional
-  location: class Scp294StockingBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:5: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
@@ -329,77 +103,14 @@ import net.neoforged.neoforge.capabilities.Capability;
                                           ^
   symbol:   class Capability
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:35: error: cannot find symbol
-	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-	              ^
-  symbol:   class LazyOptional
-  location: class Scp294OutOfRangeBlockEntity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
 	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
 	                                         ^
   symbol:   class Capability
   location: class Scp294OutOfRangeBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
-	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-	           ^
-  symbol:   class LazyOptional
-  location: class Scp294OutOfRangeBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
 import net.minecraftforge.event.AttachCapabilitiesEvent;
                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:12: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
                                           ^
@@ -435,20 +146,10 @@ import net.neoforged.neoforge.capabilities.Capability;
 		                                        ^
   symbol:   class AttachCapabilitiesEvent
   location: class PlayerVariablesProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:289: error: cannot find symbol
-		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
-		              ^
-  symbol:   class LazyOptional
-  location: class PlayerVariablesProvider
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
 		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
 		                                         ^
   symbol:   class Capability
-  location: class PlayerVariablesProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
-		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-		           ^
-  symbol:   class LazyOptional
   location: class PlayerVariablesProvider
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
 import net.neoforged.neoforge.common.extensions.IForgeMenuType;
@@ -468,11 +169,6 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
                                                ^
   symbol:   class BuildCreativeModeTabContentsEvent
   location: class ScpAdditionsModTabs
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23: error: package net.minecraftforge.client does not exist
 import net.minecraftforge.client.ConfigScreenHandler;
                                 ^
@@ -484,6 +180,343 @@ import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                           ^
   symbol:   class RegisterGuiOverlaysEvent
   location: package net.neoforged.neoforge.client.event
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:19: error: cannot find symbol
+    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+                                        ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: class ClientVitalsModEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:8: error: cannot find symbol
+import net.neoforged.neoforge.client.event.RenderGuiOverlayEvent;
+                                          ^
+  symbol:   class RenderGuiOverlayEvent
+  location: package net.neoforged.neoforge.client.event
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:9: error: package net.neoforged.neoforge.client.gui.overlay does not exist
+import net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay;
+                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:30: error: package RenderGuiOverlayEvent does not exist
+    public static void beforeOverlay(RenderGuiOverlayEvent.Pre event) {
+                                                          ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:14: error: cannot find symbol
+import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+                                                 ^
+  symbol:   class LivingHurtEvent
+  location: package net.neoforged.neoforge.event.entity.living
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:72: error: cannot find symbol
+    public static void onPotionDamage(LivingHurtEvent event) {
+                                      ^
+  symbol:   class LivingHurtEvent
+  location: class HazmatExternalEffectEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/EyeSoreEffectEvents.java:32: error: cannot find symbol
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+                                               ^
+  symbol:   class LivingTickEvent
+  location: class LivingEvent
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:7: error: cannot find symbol
+import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+                                          ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: package net.neoforged.neoforge.client.event
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:23: error: cannot find symbol
+    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+                                        ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: class Scp173ClientModEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:9: error: cannot find symbol
+import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+                                                 ^
+  symbol:   class LivingHurtEvent
+  location: package net.neoforged.neoforge.event.entity.living
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:38: error: cannot find symbol
+    public static void onLivingHurt(LivingHurtEvent event) {
+                                    ^
+  symbol:   class LivingHurtEvent
+  location: class Scp173DurabilityEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityBlockMiningEvents.java:12: error: cannot find symbol
+import net.neoforged.neoforge.common.ToolActions;
+                                    ^
+  symbol:   class ToolActions
+  location: package net.neoforged.neoforge.common
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:13: error: cannot find symbol
+import net.neoforged.neoforge.registries.MissingMappingsEvent;
+                                        ^
+  symbol:   class MissingMappingsEvent
+  location: package net.neoforged.neoforge.registries
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:26: error: cannot find symbol
+    public static void remapLegacyIds(MissingMappingsEvent event) {
+                                      ^
+  symbol:   class MissingMappingsEvent
+  location: class FacilityLegacyMappings
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpItemClassifier.java:254: error: cannot find symbol
+        if (stack.isEdible()) {
+                 ^
+  symbol:   method isEdible()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:140: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:281: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalizedCandidate, normalizedCoin);
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:288: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalizeHarmfulComparable(candidate), normalizeHarmfulComparable(harmful));
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:312: error: cannot find symbol
+                    && ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
+                                ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:343: error: cannot find symbol
+                    || !ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
+                                 ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:437: error: cannot find symbol
+            if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+                         ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:449: error: cannot find symbol
+            if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+                         ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:551: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalizedStack, normalizedTemplate);
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:558: error: cannot find symbol
+        stack.getOrCreateTag().putBoolean(COIN_MIRROR_TAG, true);
+             ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                         ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                                           ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                                                                     ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:566: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:569: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:575: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:583: error: cannot find symbol
+        stack.getOrCreateTag().putBoolean(HARMFUL_MIRROR_TAG, true);
+             ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                         ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                                           ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                                                                     ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:591: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:594: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:600: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:636: error: cannot find symbol
+        CompoundTag tag = stack.getOrCreateTag();
+                               ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                         ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                                           ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                                                                     ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:646: error: cannot find symbol
+        if (!isUsableSession(stack) || stack.getTag() == null) {
+                                            ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:649: error: cannot find symbol
+        return stack.getTag().getInt(USABLE_START_TICK_TAG);
+                    ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:653: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:657: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:665: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:673: error: cannot find symbol
+        stack.getOrCreateTag().putString(NO_MERGE_TAG, marker);
+             ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:677: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:681: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:688: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:372: error: cannot find symbol
+            if (i < invList.size()) inventory.add(toMainInventoryStack(ItemStack.of(invList.getCompound(i))));
+                                                                                ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:448: error: cannot find symbol
+        return !active.isEmpty() && !incoming.isEmpty() && ItemStack.isSameItemSameTags(incoming, active);
+                                                                    ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:530: error: incompatible types: CompoundTag cannot be converted to Provider
+            if (!stack.isEmpty()) stack.save(stackTag);
+                                             ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:538: error: cannot find symbol
+            ItemStack stack = ItemStack.of(list.getCompound(i));
+                                       ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:545: error: cannot find symbol
+            ItemStack stack = toSingleItemOrEmpty(ItemStack.of(list.getCompound(i)));
+                                                           ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:553: error: incompatible types: CompoundTag cannot be converted to Provider
+            stack.save(stackTag);
+                       ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:559: error: cannot find symbol
+        return parent.contains(key) ? ItemStack.of(parent.getCompound(key)) : ItemStack.EMPTY;
+                                               ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:127: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) return false;
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:128: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:97: error: cannot find symbol
+        if (!ItemStack.isSameItemSameTags(customStack, normalized) || customStack.getCount() != 1) {
+                      ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:165: error: cannot find symbol
+                && ItemStack.isSameItemSameTags(
+                            ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:213: error: cannot find symbol
+        return !equipped.isEmpty() && ItemStack.isSameItemSameTags(equipped, normalized);
+                                               ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:221: error: cannot find symbol
+        if (equipped.getCount() != 1 || !ItemStack.isSameItemSameTags(equipped, normalized)) {
+                                                  ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:281: error: cannot find symbol
+            if (ItemStack.isSameItemSameTags(normalizedCandidate, normalizedExpected)) {
+                         ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:171: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalized(first), normalized(second));
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:26: error: incompatible types: bad return type in lambda expression
+                        ClientPacketHandlers.showInventoryFullOverlay()
+                                                                     ^
+    bad return type in lambda expression
+      void cannot be converted to Runnable
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:85: error: cannot find symbol
+        return stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+                    ^
+  symbol:   method isEdible()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:33: error: incompatible types: bad return type in lambda expression
+                () -> () -> ScpCraftingClientState.apply(message.stateTag)));
+                                                        ^
+    bad return type in lambda expression
+      void cannot be converted to Runnable
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:32: error: incompatible types: bad return type in lambda expression
+                        ClientPacketHandlers.syncInventory(msg.inventoryTag)
+                                                          ^
+    bad return type in lambda expression
+      void cannot be converted to Runnable
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
 @EventBusSubscriber(modid = "scp_additions", bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
                                              ^
@@ -804,119 +837,30 @@ Execution failed for task ':compileJava'.
 > Compilation failed; see the compiler output below.
   Note: Some input files additionally use or override a deprecated API that is marked for removal.
   Note: Recompile with -Xlint:deprecation for details.
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:530: error: incompatible types: CompoundTag cannot be converted to Provider
+              if (!stack.isEmpty()) stack.save(stackTag);
+                                               ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:553: error: incompatible types: CompoundTag cannot be converted to Provider
+              stack.save(stackTag);
+                         ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:26: error: incompatible types: bad return type in lambda expression
+                          ClientPacketHandlers.showInventoryFullOverlay()
+                                                                       ^
+      bad return type in lambda expression
+        void cannot be converted to Runnable
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:33: error: incompatible types: bad return type in lambda expression
+                  () -> () -> ScpCraftingClientState.apply(message.stateTag)));
+                                                          ^
+      bad return type in lambda expression
+        void cannot be converted to Runnable
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:32: error: incompatible types: bad return type in lambda expression
+                          ClientPacketHandlers.syncInventory(msg.inventoryTag)
+                                                            ^
+      bad return type in lambda expression
+        void cannot be converted to Runnable
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
   public enum HazmatArmorMaterial implements ArmorMaterial {
                                              ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
-  import net.neoforged.neoforge.capabilities.Capability;
-                                            ^
-    symbol:   class Capability
-    location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
-  import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
-                                            ^
-    symbol:   class ICapabilitySerializable
-    location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
-  import net.neoforged.neoforge.common.util.LazyOptional;
-                                           ^
-    symbol:   class LazyOptional
-    location: package net.neoforged.neoforge.common.util
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:14: error: cannot find symbol
-      public static final Capability<IScpInventory> INSTANCE = ScpInventoryCapability.INSTANCE;
-                          ^
-    symbol:   class Capability
-    location: class ScpInventoryProvider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:17: error: cannot find symbol
-      private final LazyOptional<IScpInventory> optionalData = LazyOptional.of(() -> backend);
-                    ^
-    symbol:   class LazyOptional
-    location: class ScpInventoryProvider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
-      public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-                                                        ^
-    symbol:   class Capability
-    location: class ScpInventoryProvider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
-      public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-                 ^
-    symbol:   class LazyOptional
-    location: class ScpInventoryProvider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:3: error: cannot find symbol
-  import net.neoforged.neoforge.capabilities.Capability;
-                                            ^
-    symbol:   class Capability
-    location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
-  import net.neoforged.neoforge.capabilities.CapabilityManager;
-                                            ^
-    symbol:   class CapabilityManager
-    location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
-  import net.neoforged.neoforge.capabilities.CapabilityToken;
-                                            ^
-    symbol:   class CapabilityToken
-    location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
-      public static final Capability<IScpInventory> INSTANCE =
-                          ^
-    symbol:   class Capability
-    location: class ScpInventoryCapability
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
-  import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
-                                                   ^
-    symbol:   class EntityItemPickupEvent
-    location: package net.neoforged.neoforge.event.entity.player
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
-      public static void onItemPickup(EntityItemPickupEvent event) {
-                                      ^
-    symbol:   class EntityItemPickupEvent
-    location: class BlockPickupHandler
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
-      public static void attachCapability(AttachCapabilitiesEvent<Entity> event) {
-                                          ^
-    symbol:   class AttachCapabilitiesEvent
-    location: class CapabilityEvents
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
-  import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
-                                            ^
-    symbol:   class RegisterGuiOverlaysEvent
-    location: package net.neoforged.neoforge.client.event
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
-      public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-                                          ^
-    symbol:   class RegisterGuiOverlaysEvent
-    location: class ClientModEvents
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
-      private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-                    ^
-    symbol:   class AnimatableInstanceCache
-    location: class HazmatArmorItem
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
-      public AnimatableInstanceCache getAnimatableInstanceCache() {
-             ^
-    symbol:   class AnimatableInstanceCache
-    location: class HazmatArmorItem
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
   import net.neoforged.neoforge.registries.MissingMappingsEvent;
                                           ^
@@ -932,51 +876,11 @@ Execution failed for task ':compileJava'.
                                       ^
     symbol:   class ForgeSpawnEggItem
     location: package net.neoforged.neoforge.common
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:19: error: cannot find symbol
-      private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-                    ^
-    symbol:   class AnimatableInstanceCache
-    location: class BlinkWatcherEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:46: error: cannot find symbol
-      public AnimatableInstanceCache getAnimatableInstanceCache() {
-             ^
-    symbol:   class AnimatableInstanceCache
-    location: class BlinkWatcherEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:42: error: cannot find symbol
-      private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
-                           ^
-    symbol:   class RawAnimation
-    location: class AbstractScp131Entity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:82: error: cannot find symbol
-      private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-                    ^
-    symbol:   class AnimatableInstanceCache
-    location: class AbstractScp131Entity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:242: error: cannot find symbol
-      public AnimatableInstanceCache getAnimatableInstanceCache() {
-             ^
-    symbol:   class AnimatableInstanceCache
-    location: class AbstractScp131Entity
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
   import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                             ^
     symbol:   class ForgeCapabilities
     location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:14: error: cannot find symbol
-  import net.neoforged.neoforge.common.util.LazyOptional;
-                                           ^
-    symbol:   class LazyOptional
-    location: package net.neoforged.neoforge.common.util
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:27: error: cannot find symbol
-      public static LazyOptional<IScpInventory> get(Player player) {
-                    ^
-    symbol:   class LazyOptional
-    location: class ScpInventoryAccess
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:5: error: cannot find symbol
-  import net.neoforged.neoforge.common.util.LazyOptional;
-                                           ^
-    symbol:   class LazyOptional
-    location: package net.neoforged.neoforge.common.util
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
   import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                             ^
@@ -987,26 +891,11 @@ Execution failed for task ':compileJava'.
                                             ^
     symbol:   class Capability
     location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:35: error: cannot find symbol
-  	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-  	              ^
-    symbol:   class LazyOptional
-    location: class Scp294BlockEntity
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
   	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
   	                                         ^
     symbol:   class Capability
     location: class Scp294BlockEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
-  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-  	           ^
-    symbol:   class LazyOptional
-    location: class Scp294BlockEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:5: error: cannot find symbol
-  import net.neoforged.neoforge.common.util.LazyOptional;
-                                           ^
-    symbol:   class LazyOptional
-    location: package net.neoforged.neoforge.common.util
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:6: error: cannot find symbol
   import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                             ^
@@ -1017,26 +906,11 @@ Execution failed for task ':compileJava'.
                                             ^
     symbol:   class Capability
     location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:35: error: cannot find symbol
-  	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-  	              ^
-    symbol:   class LazyOptional
-    location: class Scp294StockingBlockEntity
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
   	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
   	                                         ^
     symbol:   class Capability
     location: class Scp294StockingBlockEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
-  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-  	           ^
-    symbol:   class LazyOptional
-    location: class Scp294StockingBlockEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:5: error: cannot find symbol
-  import net.neoforged.neoforge.common.util.LazyOptional;
-                                           ^
-    symbol:   class LazyOptional
-    location: package net.neoforged.neoforge.common.util
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
   import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                             ^
@@ -1047,56 +921,11 @@ Execution failed for task ':compileJava'.
                                             ^
     symbol:   class Capability
     location: package net.neoforged.neoforge.capabilities
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:35: error: cannot find symbol
-  	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-  	              ^
-    symbol:   class LazyOptional
-    location: class Scp294OutOfRangeBlockEntity
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
   	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
   	                                         ^
     symbol:   class Capability
     location: class Scp294OutOfRangeBlockEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
-  	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-  	           ^
-    symbol:   class LazyOptional
-    location: class Scp294OutOfRangeBlockEntity
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:12: error: cannot find symbol
-  import net.neoforged.neoforge.common.util.LazyOptional;
-                                           ^
-    symbol:   class LazyOptional
-    location: package net.neoforged.neoforge.common.util
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
   import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
                                             ^
@@ -1132,20 +961,10 @@ Execution failed for task ':compileJava'.
   		                                        ^
     symbol:   class AttachCapabilitiesEvent
     location: class PlayerVariablesProvider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:289: error: cannot find symbol
-  		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
-  		              ^
-    symbol:   class LazyOptional
-    location: class PlayerVariablesProvider
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
   		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
   		                                         ^
     symbol:   class Capability
-    location: class PlayerVariablesProvider
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
-  		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-  		           ^
-    symbol:   class LazyOptional
     location: class PlayerVariablesProvider
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
   import net.neoforged.neoforge.common.extensions.IForgeMenuType;
@@ -1162,16 +981,71 @@ Execution failed for task ':compileJava'.
                                                  ^
     symbol:   class BuildCreativeModeTabContentsEvent
     location: class ScpAdditionsModTabs
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8: error: cannot find symbol
-  import net.neoforged.fml.DistExecutor;
-                          ^
-    symbol:   class DistExecutor
-    location: package net.neoforged.fml
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
   import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                             ^
     symbol:   class RegisterGuiOverlaysEvent
     location: package net.neoforged.neoforge.client.event
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:19: error: cannot find symbol
+      public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+                                          ^
+    symbol:   class RegisterGuiOverlaysEvent
+    location: class ClientVitalsModEvents
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:8: error: cannot find symbol
+  import net.neoforged.neoforge.client.event.RenderGuiOverlayEvent;
+                                            ^
+    symbol:   class RenderGuiOverlayEvent
+    location: package net.neoforged.neoforge.client.event
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:14: error: cannot find symbol
+  import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+                                                   ^
+    symbol:   class LivingHurtEvent
+    location: package net.neoforged.neoforge.event.entity.living
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:72: error: cannot find symbol
+      public static void onPotionDamage(LivingHurtEvent event) {
+                                        ^
+    symbol:   class LivingHurtEvent
+    location: class HazmatExternalEffectEvents
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/EyeSoreEffectEvents.java:32: error: cannot find symbol
+      public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+                                                 ^
+    symbol:   class LivingTickEvent
+    location: class LivingEvent
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:7: error: cannot find symbol
+  import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+                                            ^
+    symbol:   class RegisterGuiOverlaysEvent
+    location: package net.neoforged.neoforge.client.event
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:23: error: cannot find symbol
+      public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+                                          ^
+    symbol:   class RegisterGuiOverlaysEvent
+    location: class Scp173ClientModEvents
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:9: error: cannot find symbol
+  import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+                                                   ^
+    symbol:   class LivingHurtEvent
+    location: package net.neoforged.neoforge.event.entity.living
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:38: error: cannot find symbol
+      public static void onLivingHurt(LivingHurtEvent event) {
+                                      ^
+    symbol:   class LivingHurtEvent
+    location: class Scp173DurabilityEvents
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityBlockMiningEvents.java:12: error: cannot find symbol
+  import net.neoforged.neoforge.common.ToolActions;
+                                      ^
+    symbol:   class ToolActions
+    location: package net.neoforged.neoforge.common
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:13: error: cannot find symbol
+  import net.neoforged.neoforge.registries.MissingMappingsEvent;
+                                          ^
+    symbol:   class MissingMappingsEvent
+    location: package net.neoforged.neoforge.registries
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:26: error: cannot find symbol
+      public static void remapLegacyIds(MissingMappingsEvent event) {
+                                        ^
+    symbol:   class MissingMappingsEvent
+    location: class FacilityLegacyMappings
   Note: Recompile with -Xlint:unchecked for details.
   Note: Some input files use or override a deprecated API.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
@@ -1475,75 +1349,261 @@ Execution failed for task ':compileJava'.
   @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
                                                                              ^
   Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
-  public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
-                                               ^
-    symbol: class ICapabilitySerializable
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
   public class NamedSpawnEggItem extends ForgeSpawnEggItem {
                                          ^
     symbol: class ForgeSpawnEggItem
   Note: Some input files use unchecked or unsafe operations.
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
-  import net.minecraftforge.event.AttachCapabilitiesEvent;
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpItemClassifier.java:254: error: cannot find symbol
+          if (stack.isEdible()) {
+                   ^
+    symbol:   method isEdible()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:140: error: cannot find symbol
+          CompoundTag tag = stack.getTag();
                                  ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
-  import net.minecraftforge.client.settings.KeyConflictContext;
-                                           ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
-  import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                          ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
-  import software.bernie.geckolib.core.animation.AnimatableManager;
-                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
-              AnimatableManager.ControllerRegistrar controllers) {
-                               ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
-  import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                          ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:15: error: package software.bernie.geckolib.core.animation does not exist
-  import software.bernie.geckolib.core.animation.AnimatableManager;
-                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:42: error: package AnimatableManager does not exist
-      public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-                                                       ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:30: error: package software.bernie.geckolib.core.animatable.instance does not exist
-  import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                          ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:31: error: package software.bernie.geckolib.core.animation does not exist
-  import software.bernie.geckolib.core.animation.AnimatableManager;
-                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:32: error: package software.bernie.geckolib.core.animation does not exist
-  import software.bernie.geckolib.core.animation.AnimationController;
-                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:33: error: package software.bernie.geckolib.core.animation does not exist
-  import software.bernie.geckolib.core.animation.RawAnimation;
-                                                ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:237: error: package AnimatableManager does not exist
-      public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-                                                       ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:281: error: cannot find symbol
+          return ItemStack.isSameItemSameTags(normalizedCandidate, normalizedCoin);
+                          ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:288: error: cannot find symbol
+          return ItemStack.isSameItemSameTags(normalizeHarmfulComparable(candidate), normalizeHarmfulComparable(harmful));
+                          ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:312: error: cannot find symbol
+                      && ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
+                                  ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:343: error: cannot find symbol
+                      || !ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
                                    ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
-                                   ^
-  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4: error: package net.minecraftforge.network does not exist
-  import net.minecraftforge.network.NetworkHooks;
-                                   ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:437: error: cannot find symbol
+              if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+                           ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:449: error: cannot find symbol
+              if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+                           ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:551: error: cannot find symbol
+          return ItemStack.isSameItemSameTags(normalizedStack, normalizedTemplate);
+                          ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:558: error: cannot find symbol
+          stack.getOrCreateTag().putBoolean(COIN_MIRROR_TAG, true);
+               ^
+    symbol:   method getOrCreateTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                           ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                                             ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                                                                       ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:566: error: cannot find symbol
+          if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                        ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:569: error: cannot find symbol
+          CompoundTag tag = stack.getTag();
+                                 ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:575: error: cannot find symbol
+              stack.setTag(null);
+                   ^
+    symbol:   method setTag(<null>)
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:583: error: cannot find symbol
+          stack.getOrCreateTag().putBoolean(HARMFUL_MIRROR_TAG, true);
+               ^
+    symbol:   method getOrCreateTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                           ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                                             ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                                                                       ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:591: error: cannot find symbol
+          if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                        ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:594: error: cannot find symbol
+          CompoundTag tag = stack.getTag();
+                                 ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:600: error: cannot find symbol
+              stack.setTag(null);
+                   ^
+    symbol:   method setTag(<null>)
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:636: error: cannot find symbol
+          CompoundTag tag = stack.getOrCreateTag();
+                                 ^
+    symbol:   method getOrCreateTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                           ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                                             ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+          return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                                                                       ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:646: error: cannot find symbol
+          if (!isUsableSession(stack) || stack.getTag() == null) {
+                                              ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:649: error: cannot find symbol
+          return stack.getTag().getInt(USABLE_START_TICK_TAG);
+                      ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:653: error: cannot find symbol
+          if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                        ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:657: error: cannot find symbol
+          CompoundTag tag = stack.getTag();
+                                 ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:665: error: cannot find symbol
+              stack.setTag(null);
+                   ^
+    symbol:   method setTag(<null>)
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:673: error: cannot find symbol
+          stack.getOrCreateTag().putString(NO_MERGE_TAG, marker);
+               ^
+    symbol:   method getOrCreateTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:677: error: cannot find symbol
+          if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                        ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:681: error: cannot find symbol
+          CompoundTag tag = stack.getTag();
+                                 ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:688: error: cannot find symbol
+              stack.setTag(null);
+                   ^
+    symbol:   method setTag(<null>)
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:372: error: cannot find symbol
+              if (i < invList.size()) inventory.add(toMainInventoryStack(ItemStack.of(invList.getCompound(i))));
+                                                                                  ^
+    symbol:   method of(CompoundTag)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:448: error: cannot find symbol
+          return !active.isEmpty() && !incoming.isEmpty() && ItemStack.isSameItemSameTags(incoming, active);
+                                                                      ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:538: error: cannot find symbol
+              ItemStack stack = ItemStack.of(list.getCompound(i));
+                                         ^
+    symbol:   method of(CompoundTag)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:545: error: cannot find symbol
+              ItemStack stack = toSingleItemOrEmpty(ItemStack.of(list.getCompound(i)));
+                                                             ^
+    symbol:   method of(CompoundTag)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:559: error: cannot find symbol
+          return parent.contains(key) ? ItemStack.of(parent.getCompound(key)) : ItemStack.EMPTY;
+                                                 ^
+    symbol:   method of(CompoundTag)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:127: error: cannot find symbol
+          if (stack == null || stack.isEmpty() || !stack.hasTag()) return false;
+                                                        ^
+    symbol:   method hasTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:128: error: cannot find symbol
+          CompoundTag tag = stack.getTag();
+                                 ^
+    symbol:   method getTag()
+    location: variable stack of type ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:97: error: cannot find symbol
+          if (!ItemStack.isSameItemSameTags(customStack, normalized) || customStack.getCount() != 1) {
+                        ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:165: error: cannot find symbol
+                  && ItemStack.isSameItemSameTags(
+                              ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:213: error: cannot find symbol
+          return !equipped.isEmpty() && ItemStack.isSameItemSameTags(equipped, normalized);
+                                                 ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:221: error: cannot find symbol
+          if (equipped.getCount() != 1 || !ItemStack.isSameItemSameTags(equipped, normalized)) {
+                                                    ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:281: error: cannot find symbol
+              if (ItemStack.isSameItemSameTags(normalizedCandidate, normalizedExpected)) {
+                           ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:171: error: cannot find symbol
+          return ItemStack.isSameItemSameTags(normalized(first), normalized(second));
+                          ^
+    symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+    location: class ItemStack
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:85: error: cannot find symbol
+          return stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+                      ^
+    symbol:   method isEdible()
+    location: variable stack of type ItemStack
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
   import net.minecraftforge.event.AttachCapabilitiesEvent;
                                  ^
@@ -1556,6 +1616,12 @@ Execution failed for task ':compileJava'.
   /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
   import net.minecraftforge.fml.ModLoadingContext;
                                ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:9: error: package net.neoforged.neoforge.client.gui.overlay does not exist
+  import net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay;
+                                                  ^
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:30: error: package RenderGuiOverlayEvent does not exist
+      public static void beforeOverlay(RenderGuiOverlayEvent.Pre event) {
+                                                            ^
   100 errors
   100 warnings
 
@@ -1601,119 +1667,30 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compile
 Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
 Note: Some input files additionally use or override a deprecated API that is marked for removal.
 Note: Recompile with -Xlint:deprecation for details.
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:530: error: incompatible types: CompoundTag cannot be converted to Provider
+            if (!stack.isEmpty()) stack.save(stackTag);
+                                             ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:553: error: incompatible types: CompoundTag cannot be converted to Provider
+            stack.save(stackTag);
+                       ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:26: error: incompatible types: bad return type in lambda expression
+                        ClientPacketHandlers.showInventoryFullOverlay()
+                                                                     ^
+    bad return type in lambda expression
+      void cannot be converted to Runnable
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:33: error: incompatible types: bad return type in lambda expression
+                () -> () -> ScpCraftingClientState.apply(message.stateTag)));
+                                                        ^
+    bad return type in lambda expression
+      void cannot be converted to Runnable
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:32: error: incompatible types: bad return type in lambda expression
+                        ClientPacketHandlers.syncInventory(msg.inventoryTag)
+                                                          ^
+    bad return type in lambda expression
+      void cannot be converted to Runnable
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorMaterial.java:17: error: interface expected here
 public enum HazmatArmorMaterial implements ArmorMaterial {
                                            ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.Capability;
-                                          ^
-  symbol:   class Capability
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
-                                          ^
-  symbol:   class ICapabilitySerializable
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:14: error: cannot find symbol
-    public static final Capability<IScpInventory> INSTANCE = ScpInventoryCapability.INSTANCE;
-                        ^
-  symbol:   class Capability
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:17: error: cannot find symbol
-    private final LazyOptional<IScpInventory> optionalData = LazyOptional.of(() -> backend);
-                  ^
-  symbol:   class LazyOptional
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-                                                      ^
-  symbol:   class Capability
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-               ^
-  symbol:   class LazyOptional
-  location: class ScpInventoryProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:3: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.Capability;
-                                          ^
-  symbol:   class Capability
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.CapabilityManager;
-                                          ^
-  symbol:   class CapabilityManager
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
-import net.neoforged.neoforge.capabilities.CapabilityToken;
-                                          ^
-  symbol:   class CapabilityToken
-  location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
-    public static final Capability<IScpInventory> INSTANCE =
-                        ^
-  symbol:   class Capability
-  location: class ScpInventoryCapability
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
-import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
-                                                 ^
-  symbol:   class EntityItemPickupEvent
-  location: package net.neoforged.neoforge.event.entity.player
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
-    public static void onItemPickup(EntityItemPickupEvent event) {
-                                    ^
-  symbol:   class EntityItemPickupEvent
-  location: class BlockPickupHandler
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
-    public static void attachCapability(AttachCapabilitiesEvent<Entity> event) {
-                                        ^
-  symbol:   class AttachCapabilitiesEvent
-  location: class CapabilityEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
-import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
-                                          ^
-  symbol:   class RegisterGuiOverlaysEvent
-  location: package net.neoforged.neoforge.client.event
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
-    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-                                        ^
-  symbol:   class RegisterGuiOverlaysEvent
-  location: class ClientModEvents
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:23: error: cannot find symbol
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-                  ^
-  symbol:   class AnimatableInstanceCache
-  location: class HazmatArmorItem
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:58: error: cannot find symbol
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-           ^
-  symbol:   class AnimatableInstanceCache
-  location: class HazmatArmorItem
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/LegacyDrinkItemMappings.java:10: error: cannot find symbol
 import net.neoforged.neoforge.registries.MissingMappingsEvent;
                                         ^
@@ -1729,51 +1706,11 @@ import net.neoforged.neoforge.common.ForgeSpawnEggItem;
                                     ^
   symbol:   class ForgeSpawnEggItem
   location: package net.neoforged.neoforge.common
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:19: error: cannot find symbol
-    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-                  ^
-  symbol:   class AnimatableInstanceCache
-  location: class BlinkWatcherEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:46: error: cannot find symbol
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-           ^
-  symbol:   class AnimatableInstanceCache
-  location: class BlinkWatcherEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:42: error: cannot find symbol
-    private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
-                         ^
-  symbol:   class RawAnimation
-  location: class AbstractScp131Entity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:82: error: cannot find symbol
-    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-                  ^
-  symbol:   class AnimatableInstanceCache
-  location: class AbstractScp131Entity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:242: error: cannot find symbol
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-           ^
-  symbol:   class AnimatableInstanceCache
-  location: class AbstractScp131Entity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/procedures/Scp1176OnBlockRightClickedProcedure.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
   symbol:   class ForgeCapabilities
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:14: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/inventory/ScpInventoryAccess.java:27: error: cannot find symbol
-    public static LazyOptional<IScpInventory> get(Player player) {
-                  ^
-  symbol:   class LazyOptional
-  location: class ScpInventoryAccess
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:5: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
@@ -1784,26 +1721,11 @@ import net.neoforged.neoforge.capabilities.Capability;
                                           ^
   symbol:   class Capability
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:35: error: cannot find symbol
-	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-	              ^
-  symbol:   class LazyOptional
-  location: class Scp294BlockEntity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
 	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
 	                                         ^
   symbol:   class Capability
   location: class Scp294BlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294BlockEntity.java:131: error: cannot find symbol
-	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-	           ^
-  symbol:   class LazyOptional
-  location: class Scp294BlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:5: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
@@ -1814,26 +1736,11 @@ import net.neoforged.neoforge.capabilities.Capability;
                                           ^
   symbol:   class Capability
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:35: error: cannot find symbol
-	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-	              ^
-  symbol:   class LazyOptional
-  location: class Scp294StockingBlockEntity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
 	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
 	                                         ^
   symbol:   class Capability
   location: class Scp294StockingBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294StockingBlockEntity.java:131: error: cannot find symbol
-	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-	           ^
-  symbol:   class LazyOptional
-  location: class Scp294StockingBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:5: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:6: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                           ^
@@ -1844,56 +1751,11 @@ import net.neoforged.neoforge.capabilities.Capability;
                                           ^
   symbol:   class Capability
   location: package net.neoforged.neoforge.capabilities
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:35: error: cannot find symbol
-	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
-	              ^
-  symbol:   class LazyOptional
-  location: class Scp294OutOfRangeBlockEntity
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
 	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
 	                                         ^
   symbol:   class Capability
   location: class Scp294OutOfRangeBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/entity/Scp294OutOfRangeBlockEntity.java:131: error: cannot find symbol
-	public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-	           ^
-  symbol:   class LazyOptional
-  location: class Scp294OutOfRangeBlockEntity
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:12: error: cannot find symbol
-import net.neoforged.neoforge.common.util.LazyOptional;
-                                         ^
-  symbol:   class LazyOptional
-  location: package net.neoforged.neoforge.common.util
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:15: error: cannot find symbol
 import net.neoforged.neoforge.capabilities.ICapabilitySerializable;
                                           ^
@@ -1929,20 +1791,10 @@ import net.neoforged.neoforge.capabilities.Capability;
 		                                        ^
   symbol:   class AttachCapabilitiesEvent
   location: class PlayerVariablesProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:289: error: cannot find symbol
-		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
-		              ^
-  symbol:   class LazyOptional
-  location: class PlayerVariablesProvider
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
 		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
 		                                         ^
   symbol:   class Capability
-  location: class PlayerVariablesProvider
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:292: error: cannot find symbol
-		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-		           ^
-  symbol:   class LazyOptional
   location: class PlayerVariablesProvider
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMenus.java:12: error: cannot find symbol
 import net.neoforged.neoforge.common.extensions.IForgeMenuType;
@@ -1959,16 +1811,71 @@ import net.neoforged.neoforge.capabilities.ForgeCapabilities;
                                                ^
   symbol:   class BuildCreativeModeTabContentsEvent
   location: class ScpAdditionsModTabs
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8: error: cannot find symbol
-import net.neoforged.fml.DistExecutor;
-                        ^
-  symbol:   class DistExecutor
-  location: package net.neoforged.fml
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:6: error: cannot find symbol
 import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
                                           ^
   symbol:   class RegisterGuiOverlaysEvent
   location: package net.neoforged.neoforge.client.event
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsModEvents.java:19: error: cannot find symbol
+    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+                                        ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: class ClientVitalsModEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:8: error: cannot find symbol
+import net.neoforged.neoforge.client.event.RenderGuiOverlayEvent;
+                                          ^
+  symbol:   class RenderGuiOverlayEvent
+  location: package net.neoforged.neoforge.client.event
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:14: error: cannot find symbol
+import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+                                                 ^
+  symbol:   class LivingHurtEvent
+  location: package net.neoforged.neoforge.event.entity.living
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/HazmatExternalEffectEvents.java:72: error: cannot find symbol
+    public static void onPotionDamage(LivingHurtEvent event) {
+                                      ^
+  symbol:   class LivingHurtEvent
+  location: class HazmatExternalEffectEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/effect/EyeSoreEffectEvents.java:32: error: cannot find symbol
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+                                               ^
+  symbol:   class LivingTickEvent
+  location: class LivingEvent
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:7: error: cannot find symbol
+import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+                                          ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: package net.neoforged.neoforge.client.event
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/client/Scp173ClientModEvents.java:23: error: cannot find symbol
+    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+                                        ^
+  symbol:   class RegisterGuiOverlaysEvent
+  location: class Scp173ClientModEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:9: error: cannot find symbol
+import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+                                                 ^
+  symbol:   class LivingHurtEvent
+  location: package net.neoforged.neoforge.event.entity.living
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/event/Scp173DurabilityEvents.java:38: error: cannot find symbol
+    public static void onLivingHurt(LivingHurtEvent event) {
+                                    ^
+  symbol:   class LivingHurtEvent
+  location: class Scp173DurabilityEvents
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityBlockMiningEvents.java:12: error: cannot find symbol
+import net.neoforged.neoforge.common.ToolActions;
+                                    ^
+  symbol:   class ToolActions
+  location: package net.neoforged.neoforge.common
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:13: error: cannot find symbol
+import net.neoforged.neoforge.registries.MissingMappingsEvent;
+                                        ^
+  symbol:   class MissingMappingsEvent
+  location: package net.neoforged.neoforge.registries
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/facility/FacilityLegacyMappings.java:26: error: cannot find symbol
+    public static void remapLegacyIds(MissingMappingsEvent event) {
+                                      ^
+  symbol:   class MissingMappingsEvent
+  location: class FacilityLegacyMappings
 Note: Recompile with -Xlint:unchecked for details.
 Note: Some input files use or override a deprecated API.
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/InventoryUiSessionEvents.java:11: warning: [removal] bus() in EventBusSubscriber has been deprecated and marked for removal
@@ -2272,75 +2179,261 @@ Note: Some input files use or override a deprecated API.
 @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
                                                                            ^
 Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
-public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
-                                             ^
-  symbol: class ICapabilitySerializable
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/NamedSpawnEggItem.java:16: error: cannot find symbol
 public class NamedSpawnEggItem extends ForgeSpawnEggItem {
                                        ^
   symbol: class ForgeSpawnEggItem
 Note: Some input files use unchecked or unsafe operations.
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
-import net.minecraftforge.event.AttachCapabilitiesEvent;
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpItemClassifier.java:254: error: cannot find symbol
+        if (stack.isEdible()) {
+                 ^
+  symbol:   method isEdible()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/CodexDocumentDefinition.java:140: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
                                ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5: error: package net.minecraftforge.client.settings does not exist
-import net.minecraftforge.client.settings.KeyConflictContext;
-                                         ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:15: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimatableManager;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/item/HazmatArmorItem.java:52: error: package AnimatableManager does not exist
-            AnimatableManager.ControllerRegistrar controllers) {
-                             ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:14: error: package software.bernie.geckolib.core.animatable.instance does not exist
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:15: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimatableManager;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/BlinkWatcherEntity.java:42: error: package AnimatableManager does not exist
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-                                                     ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:30: error: package software.bernie.geckolib.core.animatable.instance does not exist
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-                                                        ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:31: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimatableManager;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:32: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.AnimationController;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:33: error: package software.bernie.geckolib.core.animation does not exist
-import software.bernie.geckolib.core.animation.RawAnimation;
-                                              ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:237: error: package AnimatableManager does not exist
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-                                                     ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:281: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalizedCandidate, normalizedCoin);
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:288: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalizeHarmfulComparable(candidate), normalizeHarmfulComparable(harmful));
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:312: error: cannot find symbol
+                    && ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
+                                ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:343: error: cannot find symbol
+                    || !ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
                                  ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
-/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4: error: package net.minecraftforge.network does not exist
-import net.minecraftforge.network.NetworkHooks;
-                                 ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:437: error: cannot find symbol
+            if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+                         ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:449: error: cannot find symbol
+            if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+                         ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:551: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalizedStack, normalizedTemplate);
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:558: error: cannot find symbol
+        stack.getOrCreateTag().putBoolean(COIN_MIRROR_TAG, true);
+             ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                         ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                                           ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:562: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+                                                                                                     ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:566: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:569: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:575: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:583: error: cannot find symbol
+        stack.getOrCreateTag().putBoolean(HARMFUL_MIRROR_TAG, true);
+             ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                         ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                                           ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:587: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+                                                                                                     ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:591: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:594: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:600: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:636: error: cannot find symbol
+        CompoundTag tag = stack.getOrCreateTag();
+                               ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                         ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                                           ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:642: error: cannot find symbol
+        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+                                                                                                     ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:646: error: cannot find symbol
+        if (!isUsableSession(stack) || stack.getTag() == null) {
+                                            ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:649: error: cannot find symbol
+        return stack.getTag().getInt(USABLE_START_TICK_TAG);
+                    ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:653: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:657: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:665: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:673: error: cannot find symbol
+        stack.getOrCreateTag().putString(NO_MERGE_TAG, marker);
+             ^
+  symbol:   method getOrCreateTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:677: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:681: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/item/ScpPickupRouter.java:688: error: cannot find symbol
+            stack.setTag(null);
+                 ^
+  symbol:   method setTag(<null>)
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:372: error: cannot find symbol
+            if (i < invList.size()) inventory.add(toMainInventoryStack(ItemStack.of(invList.getCompound(i))));
+                                                                                ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:448: error: cannot find symbol
+        return !active.isEmpty() && !incoming.isEmpty() && ItemStack.isSameItemSameTags(incoming, active);
+                                                                    ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:538: error: cannot find symbol
+            ItemStack stack = ItemStack.of(list.getCompound(i));
+                                       ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:545: error: cannot find symbol
+            ItemStack stack = toSingleItemOrEmpty(ItemStack.of(list.getCompound(i)));
+                                                           ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventory.java:559: error: cannot find symbol
+        return parent.contains(key) ? ItemStack.of(parent.getCompound(key)) : ItemStack.EMPTY;
+                                               ^
+  symbol:   method of(CompoundTag)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:127: error: cannot find symbol
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) return false;
+                                                      ^
+  symbol:   method hasTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:128: error: cannot find symbol
+        CompoundTag tag = stack.getTag();
+                               ^
+  symbol:   method getTag()
+  location: variable stack of type ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:97: error: cannot find symbol
+        if (!ItemStack.isSameItemSameTags(customStack, normalized) || customStack.getCount() != 1) {
+                      ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:165: error: cannot find symbol
+                && ItemStack.isSameItemSameTags(
+                            ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:213: error: cannot find symbol
+        return !equipped.isEmpty() && ItemStack.isSameItemSameTags(equipped, normalized);
+                                               ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:221: error: cannot find symbol
+        if (equipped.getCount() != 1 || !ItemStack.isSameItemSameTags(equipped, normalized)) {
+                                                  ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:281: error: cannot find symbol
+            if (ItemStack.isSameItemSameTags(normalizedCandidate, normalizedExpected)) {
+                         ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:171: error: cannot find symbol
+        return ItemStack.isSameItemSameTags(normalized(first), normalized(second));
+                        ^
+  symbol:   method isSameItemSameTags(ItemStack,ItemStack)
+  location: class ItemStack
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:85: error: cannot find symbol
+        return stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+                    ^
+  symbol:   method isEdible()
+  location: variable stack of type ItemStack
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11: error: package net.minecraftforge.event does not exist
 import net.minecraftforge.event.AttachCapabilitiesEvent;
                                ^
@@ -2353,6 +2446,12 @@ import net.minecraftforge.client.ConfigScreenHandler;
 /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25: error: package net.minecraftforge.fml does not exist
 import net.minecraftforge.fml.ModLoadingContext;
                              ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:9: error: package net.neoforged.neoforge.client.gui.overlay does not exist
+import net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay;
+                                                ^
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:30: error: package RenderGuiOverlayEvent does not exist
+    public static void beforeOverlay(RenderGuiOverlayEvent.Pre event) {
+                                                          ^
 100 errors
 100 warnings
 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:89)
@@ -2483,5 +2582,5 @@ import net.minecraftforge.fml.ModLoadingContext;
 	... 30 more
 
 
-BUILD FAILED in 29s
+BUILD FAILED in 26s
 25 actionable tasks: 5 executed, 18 from cache, 2 up-to-date

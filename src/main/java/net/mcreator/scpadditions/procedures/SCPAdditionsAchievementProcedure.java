@@ -2,7 +2,6 @@ package net.mcreator.scpadditions.procedures;
 
 import net.neoforged.fml.common.EventBusSubscriber;
 
-import net.neoforged.fml.common.Mod;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -13,29 +12,46 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.advancements.AdvancementHolder;
 
+import net.mcreator.scpadditions.ScpAdditionsMod;
+
 import javax.annotation.Nullable;
 
 @EventBusSubscriber
 public class SCPAdditionsAchievementProcedure {
-	@SubscribeEvent
-	public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-		execute(event, event.getEntity());
-	}
+    private static final ResourceLocation ROOT_ADVANCEMENT =
+            ResourceLocation.parse("scp_additions:scp_additions_ach");
 
-	public static void execute(Entity entity) {
-		execute(null, entity);
-	}
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        execute(event, event.getEntity());
+    }
 
-	private static void execute(@Nullable Event event, Entity entity) {
-		if (entity == null)
-			return;
-		if (entity instanceof ServerPlayer _player) {
-			AdvancementHolder _adv = _player.server.getAdvancements().get(ResourceLocation.parse("scp_additions:scp_additions_ach"));
-			AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
-			if (!_ap.isDone()) {
-				for (String criteria : _ap.getRemainingCriteria())
-					_player.getAdvancements().award(_adv, criteria);
-			}
-		}
-	}
+    public static void execute(Entity entity) {
+        execute(null, entity);
+    }
+
+    private static void execute(@Nullable Event event, Entity entity) {
+        if (!(entity instanceof ServerPlayer player)) {
+            return;
+        }
+
+        AdvancementHolder advancement = player.server.getAdvancements()
+                .get(ROOT_ADVANCEMENT);
+        if (advancement == null) {
+            // A missing or rejected datapack entry must never prevent a player
+            // from joining. Resource validation reports the underlying problem.
+            ScpAdditionsMod.LOGGER.error(
+                    "Unable to award missing root advancement {}",
+                    ROOT_ADVANCEMENT);
+            return;
+        }
+
+        AdvancementProgress progress = player.getAdvancements()
+                .getOrStartProgress(advancement);
+        if (!progress.isDone()) {
+            for (String criteria : progress.getRemainingCriteria()) {
+                player.getAdvancements().award(advancement, criteria);
+            }
+        }
+    }
 }

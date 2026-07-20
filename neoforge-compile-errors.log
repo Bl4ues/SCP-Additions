@@ -1,0 +1,303 @@
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:14: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:17: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:3: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10: error: package net.minecraftforge.network.simple does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
+FAILURE: Build failed with an exception.
+* What went wrong:
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:14: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:17: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:3: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10: error: package net.minecraftforge.network.simple does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: package net.minecraftforge.fml does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: package net.minecraftforge.fml does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: package net.minecraftforge.fml does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: package net.minecraftforge.fml does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87: error: package NetworkEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
+  /home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:5: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:6: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:7: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:14: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:17: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:21: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:3: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:4: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:5: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryCapability.java:9: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:15: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:83: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:22: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:6: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ClientModEvents.java:17: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/capability/ScpInventoryProvider.java:12: error: cannot find symbol
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:97: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:39: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:49: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10: error: package net.minecraftforge.network.simple does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8: error: package net.minecraftforge.fml does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87: error: package NetworkEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30: error: package net.minecraftforge.network does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:46: error: package TickEvent does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18: error: package net.minecraftforge.event does not exist
+/home/runner/work/SCP-Additions/SCP-Additions/src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:88: error: package TickEvent does not exist
+BUILD FAILED in 3m 43s

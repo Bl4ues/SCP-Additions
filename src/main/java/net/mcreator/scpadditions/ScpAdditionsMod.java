@@ -2,8 +2,6 @@ package net.mcreator.scpadditions;
 
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -49,7 +47,6 @@ import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
-import net.mcreator.scpadditions.block.entity.Scp294Capabilities;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModArmorMaterials;
 import net.mcreator.scpadditions.item.LegacyDrinkItemMappings;
@@ -98,7 +95,10 @@ public class ScpAdditionsMod {
         ScpAdditionsModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();
         com.bl4ues.scpinventory.network.ModNetwork.register();
+    }
 
+    /** Called by the Fabric entrypoint after registry events have completed. */
+    public void completeCommonSetup() {
         ScpAdditionsModulesConfig.load();
         Scp714ConfigBootstrap.ensureAccessoryRule();
         ScpInventoryConfig.reload();

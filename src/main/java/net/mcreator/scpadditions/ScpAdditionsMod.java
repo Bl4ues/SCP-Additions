@@ -49,6 +49,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
+import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.block.entity.Scp294Capabilities;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModArmorMaterials;
@@ -70,6 +71,11 @@ public class ScpAdditionsMod {
     public static final String MODID = "scp_additions";
 
     public ScpAdditionsMod(IEventBus bus) {
+        // GameRules instances snapshot the registered rule table when a world is
+        // created. Force our keys to exist before any integrated or dedicated
+        // server starts constructing levels.
+        ScpAdditionsModGameRules.bootstrap();
+
         NeoForge.EVENT_BUS.register(this);
         ScpAdditionsModSounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);

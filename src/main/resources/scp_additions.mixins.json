@@ -24,7 +24,6 @@
     "client.SoundEngineMixin",
     "client.MinecraftInputMixin",
     "client.MouseScrollInputMixin",
-    "client.ScreenDragMixin",
     "client.GuiHealthLayerMixin"
   ]
 }

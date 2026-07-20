@@ -52,6 +52,7 @@ jobs:
             apply_capability_and_ui_api.py
             apply_gameplay_api_round2.py
             apply_gameplay_api_round3.py
+            apply_gameplay_api_round4.py
           )
           status=0
           for script in "${scripts[@]}"; do

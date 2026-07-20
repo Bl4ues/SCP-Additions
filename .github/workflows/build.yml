@@ -50,6 +50,7 @@ jobs:
             apply_item_api_renames.py
             apply_core_api_moves.py
             apply_capability_and_ui_api.py
+            apply_gameplay_api_round2.py
           )
           status=0
           for script in "${scripts[@]}"; do

@@ -23,7 +23,7 @@ import org.joml.Vector3f;
 import java.util.List;
 
 public final class PickupPromptClient {
-    private static final ResourceLocation PICKUP_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/pickup.png");
+    private static final ResourceLocation PICKUP_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/pickup.png");
 
     private static final int ICON_SOURCE_SIZE = 128;
     private static final int ICON_SIZE = 82;

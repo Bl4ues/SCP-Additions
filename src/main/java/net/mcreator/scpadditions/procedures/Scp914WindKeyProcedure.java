@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.Level;
@@ -21,7 +22,7 @@ public class Scp914WindKeyProcedure {
         if (entity == null)
             return;
         if (entity instanceof ServerPlayer _player) {
-            Advancement _adv = _player.server.getAdvancements().getAdvancement(new ResourceLocation("scp_additions:scp_914_achievement"));
+            Advancement _adv = _player.server.getAdvancements().getAdvancement(ResourceLocation.parse("scp_additions:scp_914_achievement"));
             AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
             if (!_ap.isDone()) {
                 for (String criteria : _ap.getRemainingCriteria())
@@ -30,9 +31,9 @@ public class Scp914WindKeyProcedure {
         }
         if (world instanceof Level _level) {
             if (!_level.isClientSide()) {
-                _level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp914key")), SoundSource.NEUTRAL, 1, 1);
+                _level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:scp914key")), SoundSource.NEUTRAL, 1, 1);
             } else {
-                _level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions:scp914key")), SoundSource.NEUTRAL, 1, 1, false);
+                _level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse("scp_additions:scp914key")), SoundSource.NEUTRAL, 1, 1, false);
             }
         }
 

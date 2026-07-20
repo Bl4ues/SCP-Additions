@@ -19,10 +19,10 @@ import com.mojang.math.Axis;
 public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 	private static final int TEX_W = 600;
 	private static final int TEX_H = 476;
-	private static final ResourceLocation BACKGROUND = new ResourceLocation("scp_additions:textures/screens/scp_294_gui.png");
-	private static final ResourceLocation COIN_OFF = new ResourceLocation("scp_additions:textures/screens/scp_294_coin_off.png");
-	private static final ResourceLocation COIN_ON = new ResourceLocation("scp_additions:textures/screens/scp_294_coin_on.png");
-	private static final ResourceLocation SCREEN_OVERLAY = new ResourceLocation("scp_additions:textures/screens/scp_294_screen_overlay.png");
+	private static final ResourceLocation BACKGROUND = ResourceLocation.parse("scp_additions:textures/screens/scp_294_gui.png");
+	private static final ResourceLocation COIN_OFF = ResourceLocation.parse("scp_additions:textures/screens/scp_294_coin_off.png");
+	private static final ResourceLocation COIN_ON = ResourceLocation.parse("scp_additions:textures/screens/scp_294_coin_on.png");
+	private static final ResourceLocation SCREEN_OVERLAY = ResourceLocation.parse("scp_additions:textures/screens/scp_294_screen_overlay.png");
 	private static final double[][] INPUT_POLY = {{84, 285}, {399, 286}, {408, 50}, {73, 52}};
 	private static final double[][] COIN_POLY = {{464, 388}, {564, 390}, {579, 227}, {472, 228}};
 	private static final double[][] ENTER_POLY = {{110, 442}, {376, 440}, {364, 330}, {115, 330}};

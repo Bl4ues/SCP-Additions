@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -8,11 +10,11 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.data.Scp914SkinManager;
@@ -27,10 +29,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(
+@EventBusSubscriber(
         modid = ScpAdditionsMod.MODID,
         value = Dist.CLIENT,
-        bus = Mod.EventBusSubscriber.Bus.FORGE)
+        bus = EventBusSubscriber.Bus.GAME)
 public final class Scp914SkinRenderEvents {
     private static final String KLEIDERS_MOD_ID = "kleiders_custom_renderer";
     private static final String RENDERER_CLASS =

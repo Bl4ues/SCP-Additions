@@ -3,9 +3,9 @@ package net.mcreator.scpadditions.init;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.item.OffsetKeycardReaderItem;
 import net.mcreator.scpadditions.item.ScrewdriverItem;
@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public final class UnifiedReaderItems {
-    public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
+    public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(BuiltInRegistries.ITEM, ScpAdditionsMod.MODID);
 
     /**
      * The only public reader item. It always places a level 1 reader; its level
      * is changed in-world with the screwdriver configuration screen.
      */
-    public static final RegistryObject<Item> KEYCARD_READER = REGISTRY.register("keycard_reader",
+    public static final Supplier<Item> KEYCARD_READER = REGISTRY.register("keycard_reader",
             () -> new OffsetKeycardReaderItem(
                     ScpAdditionsModBlocks.LEFT_READER.get(),
                     ScpAdditionsModBlocks.RIGHT_READER,
@@ -46,7 +46,7 @@ public final class UnifiedReaderItems {
      * Using a reader opens its configuration screen. Crouching copies its
      * level, while Control-use applies the copied level to another reader.
      */
-    public static final RegistryObject<Item> SCREWDRIVER = REGISTRY.register("screwdriver",
+    public static final Supplier<Item> SCREWDRIVER = REGISTRY.register("screwdriver",
             () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
     private UnifiedReaderItems() {

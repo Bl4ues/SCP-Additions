@@ -11,8 +11,8 @@ import software.bernie.geckolib.model.data.EntityModelData;
 
 public class Scp131Model<T extends AbstractScp131Entity> extends GeoModel<T> {
     private static final String RESOURCE_NAMESPACE = "scpinventory";
-    private static final ResourceLocation MODEL_RESOURCE = new ResourceLocation(RESOURCE_NAMESPACE, "geo/entity/scp_131_a.geo.json");
-    private static final ResourceLocation ANIMATION_RESOURCE = new ResourceLocation(RESOURCE_NAMESPACE, "animations/entity/scp_131_a.animation.json");
+    private static final ResourceLocation MODEL_RESOURCE = ResourceLocation.fromNamespaceAndPath(RESOURCE_NAMESPACE, "geo/entity/scp_131_a.geo.json");
+    private static final ResourceLocation ANIMATION_RESOURCE = ResourceLocation.fromNamespaceAndPath(RESOURCE_NAMESPACE, "animations/entity/scp_131_a.animation.json");
     private static final float EYE_YAW_SCALE = 0.45F;
     private static final float EYE_PITCH_SCALE = 0.45F;
     private static final float EYE_MAX_YAW = 28.0F;

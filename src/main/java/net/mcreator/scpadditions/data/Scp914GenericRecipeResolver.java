@@ -131,7 +131,7 @@ public final class Scp914GenericRecipeResolver {
             ResourceLocation inputId = BuiltInRegistries.ITEM.getKey(input.stack().getItem());
             String path = inputId == null ? "unknown" : inputId.getNamespace() + "/" + inputId.getPath();
             candidates.add(new ReverseCandidate(
-                    new ResourceLocation("scp_additions", "inferred/disassembly/" + path), synthetic));
+                    ResourceLocation.fromNamespaceAndPath("scp_additions", "inferred/disassembly/" + path), synthetic));
         }
         if (candidates.isEmpty()) return Optional.empty();
 

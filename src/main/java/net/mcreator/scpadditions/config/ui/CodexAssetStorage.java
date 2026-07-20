@@ -11,7 +11,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.io.IOException;
@@ -104,7 +105,7 @@ public final class CodexAssetStorage {
             return false;
         }
         ResourceLocation id = ResourceLocation.tryParse(itemId == null ? "" : itemId);
-        Item item = id == null ? null : ForgeRegistries.ITEMS.getValue(id);
+        Item item = id == null ? null : BuiltInRegistries.ITEM.getValue(id);
         if (item == null) return false;
         ItemStack stack = new ItemStack(item);
         stack.getOrCreateTag().putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());

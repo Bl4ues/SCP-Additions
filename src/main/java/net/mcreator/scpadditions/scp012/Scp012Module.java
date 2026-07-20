@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.scp012;
 
+import java.util.function.Supplier;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -15,10 +17,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
@@ -32,32 +34,32 @@ public final class Scp012Module {
     private static final Set<PendingClose> PENDING_CLOSES = new HashSet<>();
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
-            ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
+            BuiltInRegistries.BLOCK, ScpAdditionsMod.MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
-            ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
+            BuiltInRegistries.ITEM, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<Block> CLOSED =
+    public static final Supplier<Block> CLOSED =
             stage("scp_012", Scp012Stage.CLOSED);
-    public static final RegistryObject<Block> OPENING_1 =
+    public static final Supplier<Block> OPENING_1 =
             stage("scp_012_opening_1", Scp012Stage.OPENING_1);
-    public static final RegistryObject<Block> OPENING_2 =
+    public static final Supplier<Block> OPENING_2 =
             stage("scp_012_opening_2", Scp012Stage.OPENING_2);
-    public static final RegistryObject<Block> OPENING_3 =
+    public static final Supplier<Block> OPENING_3 =
             stage("scp_012_opening_3", Scp012Stage.OPENING_3);
-    public static final RegistryObject<Block> OPENING_4 =
+    public static final Supplier<Block> OPENING_4 =
             stage("scp_012_opening_4", Scp012Stage.OPENING_4);
-    public static final RegistryObject<Block> OPEN =
+    public static final Supplier<Block> OPEN =
             stage("scp_012_open", Scp012Stage.OPEN);
-    public static final RegistryObject<Block> CLOSING_4 =
+    public static final Supplier<Block> CLOSING_4 =
             stage("scp_012_closing_4", Scp012Stage.CLOSING_4);
-    public static final RegistryObject<Block> CLOSING_3 =
+    public static final Supplier<Block> CLOSING_3 =
             stage("scp_012_closing_3", Scp012Stage.CLOSING_3);
-    public static final RegistryObject<Block> CLOSING_2 =
+    public static final Supplier<Block> CLOSING_2 =
             stage("scp_012_closing_2", Scp012Stage.CLOSING_2);
-    public static final RegistryObject<Block> CLOSING_1 =
+    public static final Supplier<Block> CLOSING_1 =
             stage("scp_012_closing_1", Scp012Stage.CLOSING_1);
 
-    public static final RegistryObject<Item> SCP_012_ITEM = ITEMS.register("scp_012",
+    public static final Supplier<Item> SCP_012_ITEM = ITEMS.register("scp_012",
             () -> new BlockItem(CLOSED.get(), new Item.Properties().stacksTo(1)) {
                 @Override
                 public Component getName(ItemStack stack) {
@@ -80,7 +82,7 @@ public final class Scp012Module {
         ITEMS.register(bus);
     }
 
-    private static RegistryObject<Block> stage(String id, Scp012Stage stage) {
+    private static Supplier<Block> stage(String id, Scp012Stage stage) {
         return BLOCKS.register(id, () -> new Scp012Block(stage));
     }
 

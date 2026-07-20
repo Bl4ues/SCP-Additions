@@ -1,12 +1,13 @@
 package net.mcreator.scpadditions.keycard;
 
+import java.util.function.Supplier;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 /**
@@ -145,8 +146,8 @@ public final class KeycardReaderLevels {
         };
     }
 
-    private static boolean matches(Block block, RegistryObject<Block> normal,
-            RegistryObject<Block> accepted, RegistryObject<Block> wrong) {
+    private static boolean matches(Block block, Supplier<Block> normal,
+            Supplier<Block> accepted, Supplier<Block> wrong) {
         return block == normal.get() || block == accepted.get() || block == wrong.get();
     }
 }

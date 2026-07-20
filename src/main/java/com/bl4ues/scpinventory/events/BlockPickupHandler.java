@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.events;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,15 +11,15 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.player.EntityItemPickupEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public class BlockPickupHandler {
 
     @SubscribeEvent

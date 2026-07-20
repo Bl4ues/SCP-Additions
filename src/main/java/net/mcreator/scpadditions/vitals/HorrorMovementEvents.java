@@ -1,19 +1,21 @@
 package net.mcreator.scpadditions.vitals;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ExposureManager;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
 /** Server-authoritative horror movement controller with equipment penalties. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class HorrorMovementEvents {
     private static final double VANILLA_WALK_SPEED = 0.100D;
     private static final double HORROR_WALK_SPEED = 0.055D;

@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.client.gui;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -28,7 +29,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
 	private static final int TEX_W = 1410;
 	private static final int TEX_H = 1080;
-	private static final ResourceLocation ROBOTO_FONT = new ResourceLocation("scpinventory", "roboto");
+	private static final ResourceLocation ROBOTO_FONT = ResourceLocation.fromNamespaceAndPath("scpinventory", "roboto");
 	private static final ResourceLocation SCREEN_ON = screen("1");
 	private static final ResourceLocation SCREEN_STANDBY_DISABLE = screen("2");
 	private static final ResourceLocation SCREEN_OFF = screen("3");
@@ -73,7 +74,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private static ResourceLocation screen(String id) {
-		return new ResourceLocation("scp_additions:textures/screens/" + id + ".png");
+		return ResourceLocation.parse("scp_additions:textures/screens/" + id + ".png");
 	}
 
 	@Override
@@ -383,14 +384,14 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		if (world == null) {
 			return;
 		}
-		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", soundId));
+		SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.fromNamespaceAndPath("scp_additions", soundId));
 		if (sound != null) {
 			world.playLocalSound(x + 0.5D, y + 0.5D, z + 0.5D, sound, SoundSource.BLOCKS, volume, pitch, false);
 		}
 	}
 
 	private void playHeadSound(String soundId) {
-		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_additions", soundId));
+		SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.fromNamespaceAndPath("scp_additions", soundId));
 		if (sound != null) {
 			Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(sound.getLocation(), SoundSource.AMBIENT, 1.0F, 1.0F, RandomSource.create(), false, 0, SoundInstance.Attenuation.NONE, 0.0D, 0.0D, 0.0D, true));
 		}

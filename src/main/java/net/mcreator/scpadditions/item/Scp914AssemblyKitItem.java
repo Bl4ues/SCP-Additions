@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.item;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -151,7 +152,7 @@ public class Scp914AssemblyKitItem extends Item {
 
 	private static BlockState readState(CompoundTag tag) {
 		ResourceLocation id = new ResourceLocation(tag.getString("Name"));
-		Block block = ForgeRegistries.BLOCKS.getValue(id);
+		Block block = BuiltInRegistries.BLOCK.getValue(id);
 		if (block == null) {
 			return Blocks.AIR.defaultBlockState();
 		}

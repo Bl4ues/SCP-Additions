@@ -1,20 +1,23 @@
 package net.mcreator.scpadditions.block;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
  * Registers the invisible collision-only part used by the Tesla Gate structure.
  * No BlockItem is registered: players only ever obtain the normal Tesla Gate.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD)
 public final class TeslaGateStructureBlocks {
     public static final ResourceLocation COLLISION_ID =
-            new ResourceLocation(ScpAdditionsMod.MODID, "tesla_gate_collision");
+            ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "tesla_gate_collision");
 
     private static TeslaGateCollisionBlock collision;
 
@@ -23,7 +26,7 @@ public final class TeslaGateStructureBlocks {
 
     @SubscribeEvent
     public static void registerBlocks(RegisterEvent event) {
-        event.register(ForgeRegistries.Keys.BLOCKS, COLLISION_ID, () -> {
+        event.register(Registries.BLOCK, COLLISION_ID, () -> {
             collision = new TeslaGateCollisionBlock();
             return collision;
         });

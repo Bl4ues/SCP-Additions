@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -8,10 +10,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.LinkedHashSet;
@@ -25,7 +27,7 @@ import java.util.Set;
  * exists exactly two blocks through the wall, both preserve their own right- or
  * left-side geometry while changing state together.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class DoorButtonIndependentInteractionEvents {
     private static final int TRANSITION_TICKS = 21;
     private static final int HEAVY_DOOR_TRANSITION_TICKS = 24;

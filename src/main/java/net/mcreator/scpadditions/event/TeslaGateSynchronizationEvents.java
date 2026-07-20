@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.event;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -8,8 +10,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.block.TeslaGateStructure;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
@@ -27,8 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * to exist for legacy world blocks, so a loaded gate could otherwise remain idle
  * until broken and placed again.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = EventBusSubscriber.Bus.GAME)
 public final class TeslaGateSynchronizationEvents {
     private static final int HORIZONTAL_RADIUS = 5;
     private static final int VERTICAL_RADIUS = 4;

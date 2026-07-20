@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +30,7 @@ public class TeslaGateUpdateTickProcedure {
 
 		double detectionRadius = manualOverride ? 3.5D : 2.0D;
 		int activationDelay = manualOverride ? 1 : 5;
-		ResourceLocation activationSound = new ResourceLocation("scp_additions", manualOverride ? "overcharge" : "teslaactivate");
+		ResourceLocation activationSound = ResourceLocation.fromNamespaceAndPath("scp_additions", manualOverride ? "overcharge" : "teslaactivate");
 		float activationVolume = manualOverride ? 2.0F : 1.0F;
 
 		final Vec3 center = new Vec3(x, y, z);
@@ -40,9 +41,9 @@ public class TeslaGateUpdateTickProcedure {
 
 		if (world instanceof Level level) {
 			if (!level.isClientSide()) {
-				level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F);
+				level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.getValue(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F);
 			} else {
-				level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F, false);
+				level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.getValue(activationSound), SoundSource.HOSTILE, activationVolume, manualOverride ? 1.25F : 1F, false);
 			}
 		}
 		ScpAdditionsMod.queueServerWork(activationDelay, () -> TeslaGateTransitionHelper.transitionIfCurrent(world, x, y, z, ScpAdditionsModBlocks.TESLA_GATE, ScpAdditionsModBlocks.TESLA_ACTIVE));

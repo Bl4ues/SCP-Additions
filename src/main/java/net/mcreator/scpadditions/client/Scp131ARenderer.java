@@ -11,7 +11,7 @@ import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 public class Scp131ARenderer extends GeoEntityRenderer<Scp131AEntity> {
     private static final float VISUAL_SCALE = 2.3F;
-    private static final ResourceLocation TEXTURE_RESOURCE = new ResourceLocation("scpinventory", "textures/entities/scp131a.png");
+    private static final ResourceLocation TEXTURE_RESOURCE = ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/entities/scp131a.png");
 
     public Scp131ARenderer(EntityRendererProvider.Context context) {
         super(context, new Scp131Model<>(TEXTURE_RESOURCE));

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.config;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
@@ -11,11 +13,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLPaths;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
@@ -33,7 +36,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class ScpAdditionsReloadCommand {
     private static final Path SCP_CONFIG = FMLPaths.CONFIGDIR.get().resolve("scpadditions");
     private static final Path INVENTORY_CONFIG = FMLPaths.CONFIGDIR.get().resolve("scpinventory");
@@ -372,11 +375,11 @@ public final class ScpAdditionsReloadCommand {
         return object.has(key) && object.get(key).isJsonPrimitive() ? object.get(key).getAsString().trim() : "";
     }
 
-    private static boolean itemExists(ResourceLocation id) { return ForgeRegistries.ITEMS.containsKey(id); }
-    private static boolean blockExists(ResourceLocation id) { return ForgeRegistries.BLOCKS.containsKey(id); }
-    private static boolean entityExists(ResourceLocation id) { return ForgeRegistries.ENTITY_TYPES.containsKey(id); }
-    private static boolean effectExists(ResourceLocation id) { return ForgeRegistries.MOB_EFFECTS.containsKey(id); }
-    private static boolean soundExists(ResourceLocation id) { return ForgeRegistries.SOUND_EVENTS.containsKey(id); }
+    private static boolean itemExists(ResourceLocation id) { return BuiltInRegistries.ITEM.containsKey(id); }
+    private static boolean blockExists(ResourceLocation id) { return BuiltInRegistries.BLOCK.containsKey(id); }
+    private static boolean entityExists(ResourceLocation id) { return BuiltInRegistries.ENTITY_TYPE.containsKey(id); }
+    private static boolean effectExists(ResourceLocation id) { return BuiltInRegistries.MOB_EFFECT.containsKey(id); }
+    private static boolean soundExists(ResourceLocation id) { return BuiltInRegistries.SOUND_EVENT.containsKey(id); }
 
     private static String relative(Path path) {
         Path config = FMLPaths.CONFIGDIR.get();

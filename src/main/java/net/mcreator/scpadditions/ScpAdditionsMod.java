@@ -7,11 +7,11 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.IEventBus;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
@@ -61,9 +61,8 @@ public class ScpAdditionsMod {
     public static final Logger LOGGER = LogManager.getLogger(ScpAdditionsMod.class);
     public static final String MODID = "scp_additions";
 
-    public ScpAdditionsMod() {
-        MinecraftForge.EVENT_BUS.register(this);
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+    public ScpAdditionsMod(IEventBus bus) {
+        NeoForge.EVENT_BUS.register(this);
         ScpAdditionsModSounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
@@ -102,7 +101,7 @@ public class ScpAdditionsMod {
     private static final String PROTOCOL_VERSION = "8";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
-                    new ResourceLocation(MODID, MODID),
+                    ResourceLocation.fromNamespaceAndPath(MODID, MODID),
                     () -> PROTOCOL_VERSION,
                     PROTOCOL_VERSION::equals,
                     PROTOCOL_VERSION::equals);

@@ -56,7 +56,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private static final EntityDataAccessor<Boolean> ROUTINE_SPAWN = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
 
     private static final ResourceKey<DamageType> NECK_SNAP_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE,
-            new ResourceLocation(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
+            ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
     // The client camera is authoritative for whether SCP-173 is on screen. A
     // zero threshold deliberately covers the complete forward hemisphere so
     // every visible screen edge remains safe at any configured field of view.

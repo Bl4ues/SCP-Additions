@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class ScpItemClassifier {
     private static final ResourceLocation CANONICAL_SCP_ADDITIONS_COIN =
-            new ResourceLocation("scp_additions", "coin");
+            ResourceLocation.fromNamespaceAndPath("scp_additions", "coin");
     private static final TagKey<Item> AUTO_WEAPON = itemTag("auto_weapon");
     private static final TagKey<Item> AUTO_USABLE = itemTag("auto_usable");
     private static final TagKey<Item> AUTO_MISCELLANEOUS = itemTag("auto_miscellaneous");
@@ -386,7 +386,7 @@ public final class ScpItemClassifier {
 
     private static TagKey<Item> itemTag(String path) {
         return TagKey.create(Registries.ITEM,
-                new ResourceLocation("scp_additions", path));
+                ResourceLocation.fromNamespaceAndPath("scp_additions", path));
     }
 
     private record ConfiguredItemRule(ResourceLocation itemId,

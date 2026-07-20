@@ -26,10 +26,10 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import javax.annotation.Nullable;
@@ -50,46 +50,46 @@ public final class UBlocksModule {
     private static final String LEGACY_WALL_DETAIL_MID = "sl_1_wall_detail_1_mid";
     private static final String LEGACY_WALL_DETAIL_TOP = "sl_1_wall_detail_1_top";
 
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MODID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, MODID);
 
-    private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
-    private static final List<RegistryObject<Block>> CUTOUT_BLOCKS = new ArrayList<>();
+    private static final List<Supplier<Item>> CREATIVE_ITEMS = new ArrayList<>();
+    private static final List<Supplier<Block>> CUTOUT_BLOCKS = new ArrayList<>();
 
     // Sector 1 structural set. Floor 1 is the static gray surface; Floor 2 owns
     // the visual transition states rendered around neighboring gray tiles.
-    public static final RegistryObject<Block> SL_1_FLOOR_1 = registerBlock(
+    public static final Supplier<Block> SL_1_FLOOR_1 = registerBlock(
             "sl_1_floor_1", GrayConnectedFloorBlock::new, false);
-    public static final RegistryObject<Block> SL_1_FLOOR_2 = registerBlock(
+    public static final Supplier<Block> SL_1_FLOOR_2 = registerBlock(
             "sl_1_floor_2", BlueConnectedFloorBlock::new, false);
-    public static final RegistryObject<Block> SL1_WALL_BOT = structure("sl1_wall_bot");
-    public static final RegistryObject<Block> SL1_WALL_MID = structure("sl1_wall_mid");
-    public static final RegistryObject<Block> SL_1_WALL_TOP = structure("sl_1_wall_top");
+    public static final Supplier<Block> SL1_WALL_BOT = structure("sl1_wall_bot");
+    public static final Supplier<Block> SL1_WALL_MID = structure("sl1_wall_mid");
+    public static final Supplier<Block> SL_1_WALL_TOP = structure("sl_1_wall_top");
 
     // Sector 1 directional decoration.
-    public static final RegistryObject<Block> SL_1_FLOOR_DETAIL_SMALL = directional(
+    public static final Supplier<Block> SL_1_FLOOR_DETAIL_SMALL = directional(
             "sl_1_floor_detail_small", DirectionalShape.FLOOR_DECAL, SoundType.STONE);
-    public static final RegistryObject<Block> SL_1_FLOOR_DETAIL_BIG = directional(
+    public static final Supplier<Block> SL_1_FLOOR_DETAIL_BIG = directional(
             "sl_1_floor_detail_big", DirectionalShape.FLOOR_DECAL, SoundType.STONE);
-    public static final RegistryObject<Block> SL_1_WALL_DETAIL_1_BOT = registerBlock(
+    public static final Supplier<Block> SL_1_WALL_DETAIL_1_BOT = registerBlock(
             "sl_1_wall_detail_1_bot", AdaptiveWallDetailBlock::new, true);
     // Kept registered for old worlds and inventories. New construction uses the
     // adaptive bottom ID, which selects all three visual sections by blockstate.
-    public static final RegistryObject<Block> SL_1_WALL_DETAIL_1_MID = directional(
+    public static final Supplier<Block> SL_1_WALL_DETAIL_1_MID = directional(
             LEGACY_WALL_DETAIL_MID, DirectionalShape.WALL_DECOR, SoundType.STONE);
-    public static final RegistryObject<Block> SL_1_WALL_DETAIL_1_TOP = directional(
+    public static final Supplier<Block> SL_1_WALL_DETAIL_1_TOP = directional(
             LEGACY_WALL_DETAIL_TOP, DirectionalShape.WALL_DECOR, SoundType.STONE);
-    public static final RegistryObject<Block> SL_1_WALL_DETAIL_2 = directional(
+    public static final Supplier<Block> SL_1_WALL_DETAIL_2 = directional(
             "sl_1_wall_detail_2", DirectionalShape.PILLAR, SoundType.STONE);
 
     // Sector 2 structural set.
-    public static final RegistryObject<Block> SL_2_FLOOR = structure("sl_2_floor");
-    public static final RegistryObject<Block> SL_2_WALL_BOT = structure("sl_2_wall_bot");
-    public static final RegistryObject<Block> SL_2_WALL_MID = structure("sl_2_wall_mid");
-    public static final RegistryObject<Block> SL_2_WALL_TOP = structure("sl_2_wall_top");
+    public static final Supplier<Block> SL_2_FLOOR = structure("sl_2_floor");
+    public static final Supplier<Block> SL_2_WALL_BOT = structure("sl_2_wall_bot");
+    public static final Supplier<Block> SL_2_WALL_MID = structure("sl_2_wall_mid");
+    public static final Supplier<Block> SL_2_WALL_TOP = structure("sl_2_wall_top");
 
     // Props.
-    public static final RegistryObject<Block> VENT_OPEN = directional(
+    public static final Supplier<Block> VENT_OPEN = directional(
             "vent_open", DirectionalShape.VENT, SoundType.METAL);
 
     private UBlocksModule() {
@@ -101,54 +101,54 @@ public final class UBlocksModule {
     }
 
     /** Items are deliberately returned in registration order for tab ordering. */
-    public static List<RegistryObject<Item>> creativeItems() {
+    public static List<Supplier<Item>> creativeItems() {
         return CREATIVE_ITEMS.stream()
                 .filter(item -> !isLegacyWallDetailItem(item))
                 .toList();
     }
 
-    public static List<RegistryObject<Block>> cutoutBlocks() {
+    public static List<Supplier<Block>> cutoutBlocks() {
         return Collections.unmodifiableList(CUTOUT_BLOCKS);
     }
 
-    public static RegistryObject<Block> blockByPath(String path) {
+    public static Supplier<Block> blockByPath(String path) {
         return BLOCKS.getEntries().stream()
                 .filter(entry -> entry.getId().getPath().equals(path))
                 .findFirst()
                 .orElse(null);
     }
 
-    public static RegistryObject<Item> itemByPath(String path) {
+    public static Supplier<Item> itemByPath(String path) {
         return isLegacyWallDetailPath(path) ? null : registeredItemByPath(path);
     }
 
-    public static RegistryObject<Item> registeredItemByPath(String path) {
+    public static Supplier<Item> registeredItemByPath(String path) {
         return ITEMS.getEntries().stream()
                 .filter(entry -> entry.getId().getPath().equals(path))
                 .findFirst()
                 .orElse(null);
     }
 
-    private static boolean isLegacyWallDetailItem(RegistryObject<Item> item) {
-        return item != null && isLegacyWallDetailPath(item.getId().getPath());
+    private static boolean isLegacyWallDetailItem(Supplier<Item> item) {
+        return item != null && isLegacyWallDetailPath(BuiltInRegistries.ITEM.getKey(item.get()).getPath());
     }
 
     private static boolean isLegacyWallDetailPath(String path) {
         return LEGACY_WALL_DETAIL_MID.equals(path) || LEGACY_WALL_DETAIL_TOP.equals(path);
     }
 
-    private static RegistryObject<Block> structure(String path) {
+    private static Supplier<Block> structure(String path) {
         return registerBlock(path, UBlockStructureBlock::new, false);
     }
 
-    private static RegistryObject<Block> directional(String path, DirectionalShape shape, SoundType sound) {
+    private static Supplier<Block> directional(String path, DirectionalShape shape, SoundType sound) {
         return registerBlock(path, () -> new UBlockDirectionalBlock(shape, sound), true);
     }
 
-    private static RegistryObject<Block> registerBlock(String path,
+    private static Supplier<Block> registerBlock(String path,
             Supplier<? extends Block> factory, boolean cutout) {
-        RegistryObject<Block> block = BLOCKS.register(path, factory);
-        RegistryObject<Item> item = ITEMS.register(path, () -> isConnectedFloorPath(path)
+        Supplier<Block> block = BLOCKS.register(path, factory);
+        Supplier<Item> item = ITEMS.register(path, () -> isConnectedFloorPath(path)
                 ? new ConnectedFloorBlockItem(block.get(), new Item.Properties())
                 : new BlockItem(block.get(), new Item.Properties()));
         CREATIVE_ITEMS.add(item);

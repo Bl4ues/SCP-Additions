@@ -12,8 +12,8 @@ import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.network.BlinkInputStatePacket;
 
 public final class BlinkClient {
-    private static final ResourceLocation EYE_ICON = new ResourceLocation("scpinventory", "textures/gui/eye.png");
-    private static final ResourceLocation VIGNETTE = new ResourceLocation("scpinventory", "textures/gui/vignette.png");
+    private static final ResourceLocation EYE_ICON = ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/eye.png");
+    private static final ResourceLocation VIGNETTE = ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/vignette.png");
     private static final int VIGNETTE_SOURCE_WIDTH = 1920;
     private static final int VIGNETTE_SOURCE_HEIGHT = 1080;
     private static final int BASE_BLINK_INTERVAL_TICKS = 200;

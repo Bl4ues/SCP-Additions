@@ -160,7 +160,7 @@ public final class DecontaminationCheckpointController {
         }
 
         Advancement advancement = player.server.getAdvancements().getAdvancement(
-                new ResourceLocation("scp_additions", "decon_achievement"));
+                ResourceLocation.fromNamespaceAndPath("scp_additions", "decon_achievement"));
         if (advancement == null) return;
 
         AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);

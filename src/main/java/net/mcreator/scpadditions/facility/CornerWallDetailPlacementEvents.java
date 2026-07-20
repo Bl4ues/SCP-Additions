@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -9,10 +11,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Map;
@@ -24,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * selected by the player. Vertical stacks still inherit the facing of their
  * neighboring segment so bottom/middle/top columns remain aligned.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class CornerWallDetailPlacementEvents {
     private static final Map<UUID, PendingPlacement> PENDING = new ConcurrentHashMap<>();
 

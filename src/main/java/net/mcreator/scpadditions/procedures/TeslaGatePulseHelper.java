@@ -69,7 +69,7 @@ public final class TeslaGatePulseHelper {
 				}, damage);
 			}
 			if (entity instanceof ServerPlayer player) {
-				Advancement advancement = player.server.getAdvancements().getAdvancement(new ResourceLocation("scp_additions:tesla"));
+				Advancement advancement = player.server.getAdvancements().getAdvancement(ResourceLocation.parse("scp_additions:tesla"));
 				if (advancement != null) {
 					AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
 					if (!progress.isDone()) {

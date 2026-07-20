@@ -16,7 +16,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import java.io.File;
 import java.io.FileReader;
@@ -125,7 +126,7 @@ public final class ContextInteractionRegistry {
 
         ResourceLocation id;
         try {
-            id = new ResourceLocation(idText);
+            id = ResourceLocation.parse(idText);
         } catch (Exception ignored) {
             return null;
         }
@@ -135,13 +136,13 @@ public final class ContextInteractionRegistry {
         EntityType<?> entityType = null;
         if ("block".equals(type)) {
             kind = Kind.BLOCK;
-            block = ForgeRegistries.BLOCKS.getValue(id);
+            block = BuiltInRegistries.BLOCK.getValue(id);
             if (block == null || block == Blocks.AIR) {
                 return null;
             }
         } else if ("entity".equals(type)) {
             kind = Kind.ENTITY;
-            entityType = ForgeRegistries.ENTITY_TYPES.getValue(id);
+            entityType = BuiltInRegistries.ENTITY_TYPE.getValue(id);
             if (entityType == null) {
                 return null;
             }

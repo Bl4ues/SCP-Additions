@@ -24,14 +24,15 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Optional;
 
 public final class Scp294ActionExecutor {
-	private static final ResourceLocation DEFAULT_DAMAGE_TYPE = new ResourceLocation("scp_additions:scp294");
+	private static final ResourceLocation DEFAULT_DAMAGE_TYPE = ResourceLocation.parse("scp_additions:scp294");
 
 	private Scp294ActionExecutor() {
 	}
@@ -119,7 +120,7 @@ public final class Scp294ActionExecutor {
 		if (effectId == null || effectId.isBlank()) {
 			return null;
 		}
-		return ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation(effectId));
+		return BuiltInRegistries.MOB_EFFECT.getValue(ResourceLocation.parse(effectId));
 	}
 
 	private static void heal(Entity entity, float amount) {
@@ -155,27 +156,27 @@ public final class Scp294ActionExecutor {
 	private static ResourceLocation resolveDamageType(CompoundTag action) {
 		String configured = action.contains("damage_type", Tag.TAG_STRING) ? action.getString("damage_type") : "";
 		if (!configured.isBlank()) {
-			return new ResourceLocation(configured);
+			return ResourceLocation.parse(configured);
 		}
 
 		String marker = action.getString("message").toLowerCase();
-		if (marker.contains("bleach")) return new ResourceLocation("scp_additions:scp294_bleach");
-		if (marker.contains("106") || marker.contains("corrosive black")) return new ResourceLocation("scp_additions:scp294_106");
-		if (marker.contains("butt ghost")) return new ResourceLocation("scp_additions:scp294_butt_ghost");
-		if (marker.contains("carbon")) return new ResourceLocation("scp_additions:scp294_carbon");
-		if (marker.contains("neutronium") || marker.contains("density")) return new ResourceLocation("scp_additions:scp294_neutronium");
-		if (marker.contains("jewel") || marker.contains("lifeforce")) return new ResourceLocation("scp_additions:scp294_lifeforce");
-		if (marker.contains("lava") || marker.contains("magma")) return new ResourceLocation("scp_additions:scp294_lava");
-		if (marker.contains("quantum") || marker.contains("nitrogen") || marker.contains("helium") || marker.contains("hydrogen")) return new ResourceLocation("scp_additions:scp294_cold");
-		if (marker.contains("radiation") || marker.contains("radioactive") || marker.contains("nuclear")) return new ResourceLocation("scp_additions:scp294_radiation");
-		if (marker.contains("fear")) return new ResourceLocation("scp_additions:scp294_fear");
-		if (marker.contains("overdose") || marker.contains("heroin")) return new ResourceLocation("scp_additions:scp294_overdose");
-		if (marker.contains("glass")) return new ResourceLocation("scp_additions:scp294_glass");
-		if (marker.contains("gold")) return new ResourceLocation("scp_additions:scp294_gold");
-		if (marker.contains("metal") || marker.contains("iron")) return new ResourceLocation("scp_additions:scp294_metal");
-		if (marker.contains("joy") || marker.contains("happiness")) return new ResourceLocation("scp_additions:scp294_happiness");
-		if (marker.contains("death")) return new ResourceLocation("scp_additions:scp294_death");
-		if (marker.contains("violent reaction") || marker.contains("antimatter") || marker.contains("tachyon") || marker.contains("quark") || marker.contains("682")) return new ResourceLocation("scp_additions:scp294_violent_reaction");
+		if (marker.contains("bleach")) return ResourceLocation.parse("scp_additions:scp294_bleach");
+		if (marker.contains("106") || marker.contains("corrosive black")) return ResourceLocation.parse("scp_additions:scp294_106");
+		if (marker.contains("butt ghost")) return ResourceLocation.parse("scp_additions:scp294_butt_ghost");
+		if (marker.contains("carbon")) return ResourceLocation.parse("scp_additions:scp294_carbon");
+		if (marker.contains("neutronium") || marker.contains("density")) return ResourceLocation.parse("scp_additions:scp294_neutronium");
+		if (marker.contains("jewel") || marker.contains("lifeforce")) return ResourceLocation.parse("scp_additions:scp294_lifeforce");
+		if (marker.contains("lava") || marker.contains("magma")) return ResourceLocation.parse("scp_additions:scp294_lava");
+		if (marker.contains("quantum") || marker.contains("nitrogen") || marker.contains("helium") || marker.contains("hydrogen")) return ResourceLocation.parse("scp_additions:scp294_cold");
+		if (marker.contains("radiation") || marker.contains("radioactive") || marker.contains("nuclear")) return ResourceLocation.parse("scp_additions:scp294_radiation");
+		if (marker.contains("fear")) return ResourceLocation.parse("scp_additions:scp294_fear");
+		if (marker.contains("overdose") || marker.contains("heroin")) return ResourceLocation.parse("scp_additions:scp294_overdose");
+		if (marker.contains("glass")) return ResourceLocation.parse("scp_additions:scp294_glass");
+		if (marker.contains("gold")) return ResourceLocation.parse("scp_additions:scp294_gold");
+		if (marker.contains("metal") || marker.contains("iron")) return ResourceLocation.parse("scp_additions:scp294_metal");
+		if (marker.contains("joy") || marker.contains("happiness")) return ResourceLocation.parse("scp_additions:scp294_happiness");
+		if (marker.contains("death")) return ResourceLocation.parse("scp_additions:scp294_death");
+		if (marker.contains("violent reaction") || marker.contains("antimatter") || marker.contains("tachyon") || marker.contains("quark") || marker.contains("682")) return ResourceLocation.parse("scp_additions:scp294_violent_reaction");
 		return DEFAULT_DAMAGE_TYPE;
 	}
 
@@ -185,7 +186,7 @@ public final class Scp294ActionExecutor {
 		}
 		SoundEvent sound = SoundEvents.GENERIC_DRINK;
 		if (soundId != null && !soundId.isBlank()) {
-			SoundEvent configured = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation(soundId));
+			SoundEvent configured = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.parse(soundId));
 			if (configured != null) {
 				sound = configured;
 			}

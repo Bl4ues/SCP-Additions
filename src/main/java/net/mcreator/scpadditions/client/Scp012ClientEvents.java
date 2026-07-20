@@ -1,19 +1,21 @@
 package net.mcreator.scpadditions.client;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
+import net.neoforged.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.scp012.Scp012InfluenceEvents;
 
 /** Applies a proximity-scaled camera influence that the player can resist. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public final class Scp012ClientEvents {
     private Scp012ClientEvents() {
     }

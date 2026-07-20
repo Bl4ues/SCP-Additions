@@ -1,10 +1,13 @@
 package net.mcreator.scpadditions.item;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.world.item.Item;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.MissingMappingsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.MissingMappingsEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 
@@ -14,7 +17,7 @@ import java.util.Set;
  * Preserves old-world inventory loading after the pre-3.0 SCP-294 drink items
  * were consolidated into the configurable, NBT-backed generic cup.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class LegacyDrinkItemMappings {
     private static final Set<String> LEGACY_DRINK_ITEMS = Set.of(
             "aloe",
@@ -86,7 +89,7 @@ public final class LegacyDrinkItemMappings {
     public static void remapLegacyDrinkItems(MissingMappingsEvent event) {
         Item replacement = ScpAdditionsModItems.CUP_OF_COFFEE.get();
         for (MissingMappingsEvent.Mapping<Item> mapping :
-                event.getMappings(ForgeRegistries.Keys.ITEMS, ScpAdditionsMod.MODID)) {
+                event.getMappings(Registries.ITEM, ScpAdditionsMod.MODID)) {
             if (LEGACY_DRINK_ITEMS.contains(mapping.getKey().getPath())) {
                 mapping.remap(replacement);
             }

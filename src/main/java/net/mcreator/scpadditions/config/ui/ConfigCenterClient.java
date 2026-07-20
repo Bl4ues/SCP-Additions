@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.config.ui;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -17,13 +19,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.api.distmarker.Dist;
+import net.neoforged.api.distmarker.Dist;
 import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.CodexAssetClient;
@@ -62,7 +65,7 @@ public final class ConfigCenterClient {
     private ConfigCenterClient() {
     }
 
-    @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    @EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static final class Registration {
         private Registration() {
         }
@@ -748,7 +751,7 @@ public final class ConfigCenterClient {
             String value = valueBox.getValue().trim();
             if (value.isEmpty()) return;
             String check = allowTag && value.startsWith("#") ? value.substring(1) : value;
-            try { new ResourceLocation(check); }
+            try { ResourceLocation.parse(check); }
             catch (Exception ignored) { valueBox.setTextColor(BAD); return; }
             JsonArray values = array(root, key);
             for (JsonElement element : values) if (element.isJsonPrimitive() && value.equals(element.getAsString())) return;
@@ -1081,7 +1084,7 @@ public final class ConfigCenterClient {
             sync();
             if (!uniqueMode) return;
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
+            try { ResourceLocation.parse(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             persistDocument();
             submitCodex(root, new PendingCodexGive(id,
@@ -1092,7 +1095,7 @@ public final class ConfigCenterClient {
         private void save() {
             sync();
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
+            try { ResourceLocation.parse(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             persistDocument();
             submitCodex(root, null);
@@ -1155,8 +1158,8 @@ public final class ConfigCenterClient {
             super(parent, "Choose an Item");
             this.callback = callback;
             this.searchBox = new EditBox(Minecraft.getInstance().font, 0, 0, 100, 20, Component.literal("Search items"));
-            this.allItems = ForgeRegistries.ITEMS.getKeys().stream()
-                    .filter(id -> ForgeRegistries.ITEMS.getValue(id) != Items.AIR)
+            this.allItems = BuiltInRegistries.ITEM.getKeys().stream()
+                    .filter(id -> BuiltInRegistries.ITEM.getValue(id) != Items.AIR)
                     .sorted(Comparator.comparing(ResourceLocation::toString))
                     .toList();
             this.filtered = allItems;
@@ -1181,7 +1184,7 @@ public final class ConfigCenterClient {
             else {
                 List<ResourceLocation> values = new ArrayList<>();
                 for (ResourceLocation id : allItems) {
-                    Item item = ForgeRegistries.ITEMS.getValue(id);
+                    Item item = BuiltInRegistries.ITEM.getValue(id);
                     String name = item == null ? "" : new ItemStack(item).getHoverName().getString();
                     if (id.toString().toLowerCase(Locale.ROOT).contains(needle) || name.toLowerCase(Locale.ROOT).contains(needle)) values.add(id);
                 }
@@ -1201,7 +1204,7 @@ public final class ConfigCenterClient {
             scroll = Math.min(scroll, Math.max(0, filtered.size() - visible));
             for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
                 ResourceLocation id = filtered.get(i);
-                Item item = ForgeRegistries.ITEMS.getValue(id);
+                Item item = BuiltInRegistries.ITEM.getValue(id);
                 String name = item == null ? id.toString() : new ItemStack(item).getHoverName().getString();
                 int row = i - scroll;
                 addRenderableWidget(Button.builder(Component.literal("    " + compact(name, 42) + "  —  " + compact(id.toString(), 38)), b -> {
@@ -1231,7 +1234,7 @@ public final class ConfigCenterClient {
             int listY = y + 68;
             int visible = Math.max(5, Math.min(12, (height - 112) / 24));
             for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
-                Item item = ForgeRegistries.ITEMS.getValue(filtered.get(i));
+                Item item = BuiltInRegistries.ITEM.getValue(filtered.get(i));
                 if (item != null) graphics.renderItem(new ItemStack(item), x + 18, listY + (i - scroll) * 24 + 2);
             }
             graphics.drawString(font, filtered.size() + " matching item(s)", x + 12, y + h - 17, MUTED, false);
@@ -1464,7 +1467,7 @@ public final class ConfigCenterClient {
         private void save() {
             sync();
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
+            try { ResourceLocation.parse(id); }
             catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             for (String key : new ArrayList<>(original.keySet())) original.remove(key);
             for (Map.Entry<String, JsonElement> entry : edit.entrySet()) original.add(entry.getKey(), entry.getValue().deepCopy());
@@ -2183,7 +2186,7 @@ public final class ConfigCenterClient {
 
         private String itemName(String id) {
             try {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
+                Item item = BuiltInRegistries.ITEM.getValue(ResourceLocation.parse(id));
                 return item == null || item == Items.AIR ? id : new ItemStack(item).getHoverName().getString();
             } catch (Exception ignored) { return id; }
         }
@@ -2254,7 +2257,7 @@ public final class ConfigCenterClient {
         private void save() {
             syncHeader();
             String id = string(edit, "id", "");
-            try { new ResourceLocation(id); } catch (Exception ignored) { idBox.setTextColor(BAD); return; }
+            try { ResourceLocation.parse(id); } catch (Exception ignored) { idBox.setTextColor(BAD); return; }
             if (!validItems(array(edit, "item_inputs")) || !validItems(outputArray())) return;
             boolean hasInput = array(edit, "item_inputs").size() > 0 || (edit.has("entity_inputs") && edit.get("entity_inputs").isJsonArray() && edit.getAsJsonArray("entity_inputs").size() > 0);
             boolean hasOutput = outputArray().size() > 0 || (edit.has("entity_outputs") && edit.get("entity_outputs").isJsonArray() && edit.getAsJsonArray("entity_outputs").size() > 0);
@@ -2283,7 +2286,7 @@ public final class ConfigCenterClient {
             graphics.drawString(font, "Choose items by search. Use + to add as many intake or output entries as required.", x + 12, y + 28, MUTED, false);
             for (ItemRender render : renders) {
                 try {
-                    Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(render.id()));
+                    Item item = BuiltInRegistries.ITEM.getValue(new ResourceLocation(render.id()));
                     if (item != null && item != Items.AIR) graphics.renderItem(new ItemStack(item), render.x(), render.y());
                 } catch (Exception ignored) {
                 }

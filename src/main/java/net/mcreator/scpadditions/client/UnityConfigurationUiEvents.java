@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.client.ScpFonts;
 import com.bl4ues.scpinventory.client.gui.ContextConfigScreen;
 import com.bl4ues.scpinventory.client.gui.ItemConfigScreen;
@@ -29,12 +31,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 
 import java.lang.reflect.Constructor;
@@ -50,7 +53,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /** Native SCP Unity presentation shared by every SCP Additions configuration screen. */
-@Mod.EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
+@EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
 public final class UnityConfigurationUiEvents {
     private static final int PANEL = 0xFF111317;
     private static final int HEADER = 0xFF24282E;
@@ -68,7 +71,7 @@ public final class UnityConfigurationUiEvents {
     private static final int BLOCK_BADGE = 0xFF22384A;
     private static final int ENTITY_BADGE = 0xFF3D2E4B;
     private static final ResourceLocation CONFIG_LOGO =
-            new ResourceLocation("scp_additions", "textures/screens/logo.png");
+            ResourceLocation.fromNamespaceAndPath("scp_additions", "textures/screens/logo.png");
     private static final List<String> ITEM_TYPES = List.of(
             "MISCELLANEOUS", "CONSUMABLE", "USABLE", "PLACEABLE", "HARMFUL",
             "KEY", "COIN", "AMMO", "HEAD", "CHEST", "LEGS", "FEET",
@@ -930,7 +933,7 @@ public final class UnityConfigurationUiEvents {
         }
 
         LivingEntity living = ENTITY_PREVIEWS.computeIfAbsent(id, key -> {
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(key);
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(key);
             if (type == null) return null;
             Entity entity = type.create(level);
             if (!(entity instanceof LivingEntity created)) return null;
@@ -984,11 +987,11 @@ public final class UnityConfigurationUiEvents {
         if ("entity".equals(type)) {
             ResourceLocation eggId = new ResourceLocation(id.getNamespace(),
                     id.getPath() + "_spawn_egg");
-            Item egg = ForgeRegistries.ITEMS.getValue(eggId);
+            Item egg = BuiltInRegistries.ITEM.getValue(eggId);
             return egg == null || egg == Items.AIR
                     ? new ItemStack(Items.SPAWNER) : new ItemStack(egg);
         }
-        Block block = ForgeRegistries.BLOCKS.getValue(id);
+        Block block = BuiltInRegistries.BLOCK.getValue(id);
         if (block != null && block.asItem() != Items.AIR) return new ItemStack(block.asItem());
         return itemStack(idText);
     }
@@ -996,7 +999,7 @@ public final class UnityConfigurationUiEvents {
     private static ItemStack itemStack(String id) {
         ResourceLocation resource = ResourceLocation.tryParse(id == null ? "" : id);
         if (resource == null) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(resource);
+        Item item = BuiltInRegistries.ITEM.getValue(resource);
         return item == null || item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
@@ -1007,21 +1010,21 @@ public final class UnityConfigurationUiEvents {
 
     private static String displayNameForBlock(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
-        Block block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
+        Block block = id == null ? null : BuiltInRegistries.BLOCK.getValue(id);
         return block == null ? humanizeId(idText) : block.getName().getString();
     }
 
     private static String displayNameForEntity(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         net.minecraft.world.entity.EntityType<?> type = id == null
-                ? null : ForgeRegistries.ENTITY_TYPES.getValue(id);
+                ? null : BuiltInRegistries.ENTITY_TYPE.getValue(id);
         return type == null ? humanizeId(idText) : type.getDescription().getString();
     }
 
     private static String displayNameForEffect(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         net.minecraft.world.effect.MobEffect effect = id == null
-                ? null : ForgeRegistries.MOB_EFFECTS.getValue(id);
+                ? null : BuiltInRegistries.MOB_EFFECT.getValue(id);
         return effect == null ? humanizeId(idText)
                 : Component.translatable(effect.getDescriptionId()).getString();
     }

@@ -74,7 +74,7 @@ public final class CodexDocumentDefinition {
 
     public static CodexDocumentDefinition fallback(ItemStack stack) {
         ResourceLocation itemId = stack == null || stack.isEmpty()
-                ? new ResourceLocation("minecraft", "air")
+                ? ResourceLocation.fromNamespaceAndPath("minecraft", "air")
                 : BuiltInRegistries.ITEM.getKey(stack.getItem());
         String name = stack == null || stack.isEmpty()
                 ? "Unknown Document" : stack.getHoverName().getString();

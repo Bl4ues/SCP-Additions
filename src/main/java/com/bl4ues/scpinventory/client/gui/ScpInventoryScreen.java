@@ -44,16 +44,16 @@ public class ScpInventoryScreen extends Screen {
     private static final float DROP_PREVIEW_UI_ALPHA = 0.25F;
     private static final float DROP_PREVIEW_SOLID_ITEM_ALPHA_THRESHOLD = 0.72F;
 
-    private static final ResourceLocation BACKGROUND = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventory_background.png");
-    private static final ResourceLocation INVENTORY_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventoryicon.png");
-    private static final ResourceLocation INVENTORY_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventoryicon_selected.png");
-    private static final ResourceLocation STATUS_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/statusicon.png");
-    private static final ResourceLocation STATUS_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/statusicon_selected.png");
-    private static final ResourceLocation CRAFTING_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/craft.png");
-    private static final ResourceLocation CRAFTING_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/craft_selected.png");
-    private static final ResourceLocation CODEX_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/codexicon.png");
-    private static final ResourceLocation CODEX_ICON_SELECTED = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/codexicon_selected.png");
-    private static final ResourceLocation HEALTH_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/health.png");
+    private static final ResourceLocation BACKGROUND = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/inventory_background.png");
+    private static final ResourceLocation INVENTORY_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/inventoryicon.png");
+    private static final ResourceLocation INVENTORY_ICON_SELECTED = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/inventoryicon_selected.png");
+    private static final ResourceLocation STATUS_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/statusicon.png");
+    private static final ResourceLocation STATUS_ICON_SELECTED = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/statusicon_selected.png");
+    private static final ResourceLocation CRAFTING_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/craft.png");
+    private static final ResourceLocation CRAFTING_ICON_SELECTED = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/craft_selected.png");
+    private static final ResourceLocation CODEX_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/codexicon.png");
+    private static final ResourceLocation CODEX_ICON_SELECTED = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/codexicon_selected.png");
+    private static final ResourceLocation HEALTH_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/health.png");
 
     private static final int BACKGROUND_SOURCE_WIDTH = 1406;
     private static final int BACKGROUND_SOURCE_HEIGHT = 1080;

@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.client;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
@@ -11,13 +13,13 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
+@EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
 public final class UsableHotbarSessionClient {
 
     private static final int STARTUP_SELECT_SYNC_TICKS = 3;

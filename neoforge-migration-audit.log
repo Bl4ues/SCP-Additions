@@ -1,0 +1,299 @@
+Forge imports remaining:
+src/main/java/com/bl4ues/scpinventory/events/BlockPickupHandler.java:13:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/events/VanillaMirrorSyncHandler.java:17:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/events/CapabilityEvents.java:10:import net.minecraftforge.event.AttachCapabilitiesEvent;
+src/main/java/com/bl4ues/scpinventory/events/InventoryModuleStateEvents.java:14:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:25:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8:import net.minecraftforge.network.NetworkRegistry;
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:6:import net.minecraftforge.fml.DistExecutor;
+src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:19:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:17:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:7:import net.minecraftforge.fml.DistExecutor;
+src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:8:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:8:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:7:import net.minecraftforge.fml.DistExecutor;
+src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:8:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:22:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:8:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:8:import net.minecraftforge.fml.DistExecutor;
+src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:9:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:10:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:10:import net.minecraftforge.network.NetworkEvent;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/client/ContextConfigClientEvents.java:18:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java:18:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/client/Keybinds.java:5:import net.minecraftforge.client.settings.KeyConflictContext;
+src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java:7:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/event/ScpInventoryUsableOutputGuardEvents.java:14:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/event/ScpInventoryMaintenanceEvents.java:20:import net.minecraftforge.event.TickEvent;
+src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/scp012/Scp012InfluenceEvents.java:15:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/scp012/Scp012BleedingEvents.java:11:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:4:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:4:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:4:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:4:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:3:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:4:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:4:import net.minecraftforge.network.NetworkHooks;
+src/main/java/net/mcreator/scpadditions/network/Scp914GuiButtonMessage.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:5:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/network/Scp173ObservationPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/ScareSoundPacket.java:4:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:5:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:5:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:6:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderSetLevelPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp131StopPacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderApplySavedLevelPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/BlinkInputStatePacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp294GuiSlotMessage.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/EnterSoundPacket.java:4:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/TeslaTerminalButtonMessage.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:7:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:8:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp294GuiButtonMessage.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderCopyLevelPacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp1176MusicPacket.java:4:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/HazmatRemovalInputPacket.java:5:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:6:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:7:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:5:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:5:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:6:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:11:import net.minecraftforge.event.AttachCapabilitiesEvent;
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java:10:import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+src/main/java/net/mcreator/scpadditions/equipment/HazmatSuitEvents.java:14:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:8:import net.minecraftforge.fml.DistExecutor;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:9:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:10:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:11:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:23:import net.minecraftforge.client.ConfigScreenHandler;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java:25:import net.minecraftforge.fml.ModLoadingContext;
+src/main/java/net/mcreator/scpadditions/vitals/PlayerStaminaEvents.java:7:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementEvents.java:8:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:11:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:12:import net.minecraftforge.network.NetworkRegistry;
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:13:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/net/mcreator/scpadditions/vitals/client/HorrorMovementClientEvents.java:13:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/vitals/client/ClientVitalsEvents.java:10:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/effect/Scp714ExposureManager.java:15:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/Scp131LoopSoundEvents.java:9:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/Scp012ClientEvents.java:10:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/Scp714MusicClient.java:7:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/Scp012AudioClient.java:7:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/Scp173Keybinds.java:5:import net.minecraftforge.client.settings.KeyConflictContext;
+src/main/java/net/mcreator/scpadditions/client/AudioMufflingClient.java:16:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/Scp131Keybinds.java:5:import net.minecraftforge.client.settings.KeyConflictContext;
+src/main/java/net/mcreator/scpadditions/client/Scp131ClientEvents.java:8:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/EquipmentProgressClientEvents.java:6:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/BlinkClientEvents.java:6:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/client/HazmatSuitClientEvents.java:10:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/world/inventory/Scp294GuiMenu.java:11:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/event/Scp173MovementScrapeEvents.java:9:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/event/TeslaGateSynchronizationEvents.java:12:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/event/BlinkWatcherAggroEvents.java:8:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/event/Scp173TargetRecoveryEvents.java:9:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/event/Scp173SpawnEvents.java:16:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:19:import net.minecraftforge.event.TickEvent;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:6:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:7:import net.minecraftforge.network.NetworkRegistry;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:8:import net.minecraftforge.network.NetworkEvent;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:9:import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:13:import net.minecraftforge.event.TickEvent;
+
+RegistryObject references remaining:
+src/main/java/net/mcreator/scpadditions/scp012/Scp012BleedingEvents.java:93:        Supplier<SoundEvent>[] sounds = new RegistryObject[]{
+
+Legacy SimpleChannel references:
+src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:19:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/com/bl4ues/scpinventory/network/InventoryModuleStatePacket.java:20:        NetworkEvent.Context context = supplier.get();
+src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:7:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:22:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:23:        NetworkEvent.Context context = supplier.get();
+src/main/java/com/bl4ues/scpinventory/network/RequestCraftingStatePacket.java:27:                ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigReloadPacket.java:20:    public static void handle(ContextConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/RequestInventorySyncPacket.java:23:    public static void handle(RequestInventorySyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenRequestPacket.java:26:    public static void handle(ItemConfigOpenRequestPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:51:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/com/bl4ues/scpinventory/network/CraftingActionPacket.java:52:        NetworkEvent.Context context = supplier.get();
+src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java:72:    public static void handle(ContextInteractPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigOpenPacket.java:85:    public static void handle(ContextConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:8:import net.minecraftforge.network.NetworkRegistry;
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:9:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:10:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:18:    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:65:            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:72:        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:84:            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new InventoryFullPacket());
+src/main/java/com/bl4ues/scpinventory/network/ModNetwork.java:98:            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/network/InventoryFullPacket.java:23:    public static void handle(InventoryFullPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigReloadPacket.java:20:    public static void handle(ItemConfigReloadPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/DocumentActionPacket.java:33:    public static void handle(DocumentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:7:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:27:    public static void handle(ItemConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigDeletePacket.java:32:            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
+src/main/java/com/bl4ues/scpinventory/network/UsableSessionReturnPacket.java:27:    public static void handle(UsableSessionReturnPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/MainUseActionPacket.java:39:    public static void handle(MainUseActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigOpenPacket.java:38:    public static void handle(ItemConfigOpenPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/PickupItemPacket.java:49:    public static void handle(PickupItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:30:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/com/bl4ues/scpinventory/network/CraftingStateSyncPacket.java:31:        NetworkEvent.Context context = supplier.get();
+src/main/java/com/bl4ues/scpinventory/network/EquipmentActionPacket.java:38:    public static void handle(EquipmentActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/KeyActionPacket.java:33:    public static void handle(KeyActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/SyncInventoryPacket.java:29:    public static void handle(SyncInventoryPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java:55:    public static void handle(InventoryActionPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:7:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:40:    public static void handle(ItemConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ItemConfigSavePacket.java:45:            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ItemConfigReloadPacket());
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSelectPacket.java:22:    public static void handle(ContextConfigSelectPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/UsableSessionDropPacket.java:27:    public static void handle(UsableSessionDropPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:9:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:32:    public static void handle(ContextConfigDeletePacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigDeletePacket.java:39:            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ContextConfigReloadPacket());
+src/main/java/com/bl4ues/scpinventory/network/UseHotbarItemPacket.java:42:    public static void handle(UseHotbarItemPacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/InventoryMovePacket.java:58:    public static void handle(InventoryMovePacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:11:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:87:    public static void handle(ContextConfigSavePacket msg, Supplier<NetworkEvent.Context> ctx) {
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:97:                ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/network/ContextConfigSavePacket.java:118:            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:15:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/config/ItemConfigManager.java:44:        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:28:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java:77:        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:30:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java:76:        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:15:import net.minecraftforge.network.PacketDistributor;
+src/main/java/com/bl4ues/scpinventory/crafting/ScpCraftingService.java:72:        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/Scp914GuiButtonMessage.java:52:	public static void handler(Scp914GuiButtonMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp914GuiButtonMessage.java:53:		NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:5:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:84:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:91:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:99:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:107:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:114:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:121:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:129:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:138:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:146:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:153:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java:161:                PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/network/Scp173ObservationPacket.java:29:    public static void handle(Scp173ObservationPacket message, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp173ObservationPacket.java:30:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/ScareSoundPacket.java:17:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/ScareSoundPacket.java:18:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:62:            Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/EquipmentProgressPacket.java:63:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:16:    public static void handle(BlinkStatePacket message, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/BlinkStatePacket.java:17:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:31:            Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderOpenScreenPacket.java:32:        NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderSetLevelPacket.java:32:            Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderSetLevelPacket.java:33:        NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp131StopPacket.java:18:    public static void handle(Scp131StopPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp131StopPacket.java:19:        NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderApplySavedLevelPacket.java:27:    public static void handle(KeycardReaderApplySavedLevelPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderApplySavedLevelPacket.java:28:        NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/BlinkInputStatePacket.java:26:    public static void handle(BlinkInputStatePacket message, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/BlinkInputStatePacket.java:27:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp294GuiSlotMessage.java:54:	public static void handler(Scp294GuiSlotMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp294GuiSlotMessage.java:55:		NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/EnterSoundPacket.java:17:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/EnterSoundPacket.java:18:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/TeslaTerminalButtonMessage.java:48:	public static void handler(TeslaTerminalButtonMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/TeslaTerminalButtonMessage.java:49:		NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:44:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp012InfluencePacket.java:45:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp294GuiButtonMessage.java:49:	public static void handler(Scp294GuiButtonMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp294GuiButtonMessage.java:50:		NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderCopyLevelPacket.java:28:            Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/KeycardReaderCopyLevelPacket.java:29:        NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp1176MusicPacket.java:17:                              Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp1176MusicPacket.java:18:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/HazmatRemovalInputPacket.java:28:            Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/HazmatRemovalInputPacket.java:29:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:38:            Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp714ExposurePacket.java:39:        NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:26:    public static void handle(Scp131NoticePacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/Scp131NoticePacket.java:27:        NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:5:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:108:								PacketDistributor.PLAYER.with(() -> observer),
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:119:					ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new SavedDataSyncMessage(0, mapdata));
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:121:					ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new SavedDataSyncMessage(1, worlddata));
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:130:					ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new SavedDataSyncMessage(1, worlddata));
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:161:				ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.DIMENSION.with(level::dimension), new SavedDataSyncMessage(1, this));
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:222:				ScpAdditionsMod.PACKET_HANDLER.send(PacketDistributor.ALL.noArg(), new SavedDataSyncMessage(0, this));
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:263:		public static void handler(SavedDataSyncMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:264:			NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:332:						PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:408:		public static void handler(PlayerVariablesSyncMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/network/ScpAdditionsModVariables.java:409:			NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:10:import net.minecraftforge.network.PacketDistributor;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:11:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:23:    public static int register(SimpleChannel channel, int id) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:36:    public static void openFor(ServerPlayer player, SimpleChannel channel) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:39:            channel.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:42:            channel.send(PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:51:        public static void handle(OpenRequest ignored, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:52:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:58:                            PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:76:        public static void handle(Snapshot message, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:77:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:92:        public static void handle(SaveRequest message, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:93:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:104:                        PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:136:        public static void handle(SaveResult result, Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:137:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:164:                                  Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:165:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:172:                        PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:200:                                  Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:201:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:221:                                  Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:222:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:230:                        PacketDistributor.PLAYER.with(() -> player),
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:253:                                  Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:254:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:278:                                  Supplier<NetworkEvent.Context> supplier) {
+src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterNetwork.java:279:            NetworkEvent.Context context = supplier.get();
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:12:import net.minecraftforge.network.NetworkRegistry;
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:13:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:26:    private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:78:                Supplier<NetworkEvent.Context> contextSupplier) {
+src/main/java/net/mcreator/scpadditions/vitals/HorrorMovementNetwork.java:79:            NetworkEvent.Context context = contextSupplier.get();
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:6:import net.minecraftforge.network.simple.SimpleChannel;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:7:import net.minecraftforge.network.NetworkRegistry;
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:102:    public static final SimpleChannel PACKET_HANDLER =
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:103:            NetworkRegistry.newSimpleChannel(
+src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java:113:            BiConsumer<T, Supplier<NetworkEvent.Context>> messageConsumer) {

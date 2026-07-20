@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.context;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.network.ContextConfigOpenPacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
@@ -22,11 +24,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
@@ -40,7 +43,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public final class ContextConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String BUNDLED_CONFIG = "config/scpinventory/context_interactions.json";
@@ -82,7 +85,7 @@ public final class ContextConfigManager {
 
         ResourceLocation id;
         try {
-            id = new ResourceLocation(idText);
+            id = ResourceLocation.parse(idText);
         } catch (Exception ex) {
             player.sendSystemMessage(Component.literal("[SCP Inventory] Invalid block id: " + idText).withStyle(ChatFormatting.RED));
             return;
@@ -137,7 +140,7 @@ public final class ContextConfigManager {
 
         ResourceLocation id;
         try {
-            id = new ResourceLocation(idText);
+            id = ResourceLocation.parse(idText);
         } catch (Exception ex) {
             player.sendSystemMessage(Component.literal("[SCP Inventory] Invalid block id: " + idText).withStyle(ChatFormatting.RED));
             return;
@@ -503,7 +506,7 @@ public final class ContextConfigManager {
         }
         BlockPos pos = hit.getBlockPos();
         BlockState state = player.level().getBlockState(pos);
-        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         if (id == null || state.isAir()) {
             return null;
         }

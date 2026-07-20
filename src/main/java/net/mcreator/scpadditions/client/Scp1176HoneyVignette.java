@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
  */
 public final class Scp1176HoneyVignette {
     private static final ResourceLocation VIGNETTE =
-            new ResourceLocation("scpinventory", "textures/gui/vignette.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/vignette.png");
     private static final int VIGNETTE_SOURCE_WIDTH = 1920;
     private static final int VIGNETTE_SOURCE_HEIGHT = 1080;
     private static final float PULSE_PERIOD_TICKS = 160.0F;

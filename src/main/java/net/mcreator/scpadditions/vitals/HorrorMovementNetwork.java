@@ -1,11 +1,13 @@
 package net.mcreator.scpadditions.vitals;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -17,12 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /** Small dedicated channel for authoritative horror-sprint input state. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
-        bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = EventBusSubscriber.Bus.MOD)
 public final class HorrorMovementNetwork {
     private static final String PROTOCOL_VERSION = "1";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(ScpAdditionsMod.MODID, "horror_movement"),
+            ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "horror_movement"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals);

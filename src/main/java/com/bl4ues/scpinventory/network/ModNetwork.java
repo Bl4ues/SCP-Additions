@@ -16,7 +16,7 @@ public final class ModNetwork {
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(ScpInventoryMod.MODID, "main"),
+            ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals);

@@ -16,8 +16,9 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.loading.FMLPaths;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
@@ -169,19 +170,19 @@ public final class Scp914RecipeManager {
 	private static List<ResourceLocation> unavailableRegistryEntries(RecipeDefinition recipe) {
 		LinkedHashSet<ResourceLocation> missing = new LinkedHashSet<>();
 		for (ItemIngredient input : recipe.itemInputs()) {
-			if (!ForgeRegistries.ITEMS.containsKey(input.item())) missing.add(input.item());
+			if (!BuiltInRegistries.ITEM.containsKey(input.item())) missing.add(input.item());
 		}
 		for (ItemOutput output : recipe.itemOutputs()) {
-			if (!ForgeRegistries.ITEMS.containsKey(output.item())) missing.add(output.item());
+			if (!BuiltInRegistries.ITEM.containsKey(output.item())) missing.add(output.item());
 		}
 		for (WeightedItemOutput output : recipe.weightedItemOutputs()) {
-			if (!ForgeRegistries.ITEMS.containsKey(output.output().item())) missing.add(output.output().item());
+			if (!BuiltInRegistries.ITEM.containsKey(output.output().item())) missing.add(output.output().item());
 		}
 		for (EntityIngredient input : recipe.entityInputs()) {
-			if (!ForgeRegistries.ENTITY_TYPES.containsKey(input.entity())) missing.add(input.entity());
+			if (!BuiltInRegistries.ENTITY_TYPE.containsKey(input.entity())) missing.add(input.entity());
 		}
 		for (EntityOutput output : recipe.entityOutputs()) {
-			if (!ForgeRegistries.ENTITY_TYPES.containsKey(output.entity())) missing.add(output.entity());
+			if (!BuiltInRegistries.ENTITY_TYPE.containsKey(output.entity())) missing.add(output.entity());
 		}
 		return List.copyOf(missing);
 	}
@@ -310,7 +311,7 @@ public final class Scp914RecipeManager {
 			int remaining = ingredient.count();
 			for (ItemEntity itemEntity : itemEntities) {
 				ItemStack stack = itemEntity.getItem();
-				ResourceLocation stackId = ForgeRegistries.ITEMS.getKey(stack.getItem());
+				ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
 				if (!ingredient.item().equals(stackId)) continue;
 				int alreadyReserved = reservedItemCounts.getOrDefault(itemEntity, 0);
 				int available = stack.getCount() - alreadyReserved;
@@ -330,7 +331,7 @@ public final class Scp914RecipeManager {
 			int remaining = ingredient.count();
 			for (Entity entity : entities) {
 				if (reservedEntities.contains(entity)) continue;
-				ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+				ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
 				if (!ingredient.entity().equals(entityId)) continue;
 				reservedEntities.add(entity);
 				entityUses.add(new EntityUse(entity, ingredient.consume()));
@@ -354,7 +355,7 @@ public final class Scp914RecipeManager {
 	}
 
 	public static ItemStack createItemOutput(ItemOutput output, ItemStack inputStack, boolean copyInputNbt) {
-		Item item = ForgeRegistries.ITEMS.getValue(output.item());
+		Item item = BuiltInRegistries.ITEM.getValue(output.item());
 		if (item == null || item == Items.AIR) {
 			ScpAdditionsMod.LOGGER.warn("SCP-914 output points to missing item {}", output.item());
 			return ItemStack.EMPTY;
@@ -365,7 +366,7 @@ public final class Scp914RecipeManager {
 	}
 
 	public static Optional<EntityType<?>> getEntityType(EntityOutput output) {
-		EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(output.entity());
+		EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(output.entity());
 		return Optional.ofNullable(type);
 	}
 

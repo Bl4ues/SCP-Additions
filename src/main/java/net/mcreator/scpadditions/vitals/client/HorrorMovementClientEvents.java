@@ -1,16 +1,18 @@
 package net.mcreator.scpadditions.vitals.client;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ComputeFovModifierEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.Scp714ClientState;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
@@ -18,7 +20,7 @@ import net.mcreator.scpadditions.vitals.HorrorMovementNetwork;
 import net.mcreator.scpadditions.vitals.VitalsModule;
 
 /** Sends sprint-input changes and corrects custom movement-speed FOV. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class HorrorMovementClientEvents {
     private static final double VANILLA_WALK_SPEED = 0.100D;
     private static final double HORROR_WALK_SPEED = 0.055D;

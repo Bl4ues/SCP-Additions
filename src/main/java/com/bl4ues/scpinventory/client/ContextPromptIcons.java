@@ -14,8 +14,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class ContextPromptIcons {
-    public static final ResourceLocation DEFAULT_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/pickup.png");
-    public static final ResourceLocation CARD_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/card.png");
+    public static final ResourceLocation DEFAULT_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/pickup.png");
+    public static final ResourceLocation CARD_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/card.png");
 
     private static final Map<ResourceLocation, ResourceLocation> ICONS = new HashMap<>();
     private static boolean loaded = false;
@@ -83,7 +83,7 @@ public final class ContextPromptIcons {
                     continue;
                 }
 
-                ResourceLocation id = new ResourceLocation(idText);
+                ResourceLocation id = ResourceLocation.parse(idText);
                 ICONS.put(id, resolveIcon(iconText));
             }
         } catch (Exception ex) {
@@ -102,7 +102,7 @@ public final class ContextPromptIcons {
         if ("card".equals(lower)) {
             return CARD_ICON;
         }
-        return new ResourceLocation(text);
+        return ResourceLocation.parse(text);
     }
 
     private static JsonObject getObject(JsonObject obj, String key) {

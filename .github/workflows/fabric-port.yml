@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 70
 
     steps:
       - name: Checkout Fabric branch
@@ -38,22 +38,21 @@ jobs:
         run: |
           set -euo pipefail
           : > fabric-migration.log
-          echo '=== apply_fabric_bridge.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_bridge.py 2>&1 | tee -a fabric-migration.log
-          echo '=== patch_fabric_api_round2_idempotence.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/patch_fabric_api_round2_idempotence.py 2>&1 | tee -a fabric-migration.log
-          echo '=== apply_fabric_api_round2.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_api_round2.py 2>&1 | tee -a fabric-migration.log
-          echo '=== materialize_fabric_api_round3.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/materialize_fabric_api_round3.py 2>&1 | tee -a fabric-migration.log
-          echo '=== apply_fabric_api_round3.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_api_round3.py 2>&1 | tee -a fabric-migration.log
-          echo '=== apply_fabric_api_round4.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_api_round4.py 2>&1 | tee -a fabric-migration.log
-          echo '=== apply_fabric_api_round5.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_api_round5.py 2>&1 | tee -a fabric-migration.log
-          echo '=== apply_fabric_api_round6.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_api_round6.py 2>&1 | tee -a fabric-migration.log
+          scripts=(
+            apply_fabric_bridge.py
+            patch_fabric_api_round2_idempotence.py
+            apply_fabric_api_round2.py
+            materialize_fabric_api_round3.py
+            apply_fabric_api_round3.py
+            apply_fabric_api_round4.py
+            apply_fabric_api_round5.py
+            apply_fabric_api_round6.py
+            apply_fabric_api_round7.py
+          )
+          for script in "${scripts[@]}"; do
+            echo "=== $script ===" | tee -a fabric-migration.log
+            python3 "tools/fabric_port/$script" 2>&1 | tee -a fabric-migration.log
+          done
           git diff --binary > fabric-transformed.patch
 
       - name: Commit generated Fabric compatibility source
@@ -63,7 +62,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tools/fabric_port/apply_fabric_api_round2.py tools/fabric_port/apply_fabric_api_round3.py tools/fabric_port/apply_fabric_api_round4.py tools/fabric_port/apply_fabric_api_round5.py tools/fabric_port/apply_fabric_api_round6.py src/main/java src/main/resources/fabric.mod.json src/main/resources/scp_additions.accesswidener src/main/resources/scp_additions.mixins.json
+          git add tools/fabric_port/apply_fabric_api_round2.py tools/fabric_port/apply_fabric_api_round3.py tools/fabric_port/apply_fabric_api_round4.py tools/fabric_port/apply_fabric_api_round5.py tools/fabric_port/apply_fabric_api_round6.py tools/fabric_port/apply_fabric_api_round7.py src/main/java src/main/resources/fabric.mod.json src/main/resources/scp_additions.accesswidener src/main/resources/scp_additions.mixins.json
           if git diff --cached --quiet; then
             echo 'Fabric API compatibility source is already materialized.'
           else
@@ -185,4 +184,51 @@ jobs:
             fabric-server-console.log
             fabric-server-latest.log
             run/server/crash-reports/**
+          if-no-files-found: warn
+
+      - name: Launch Fabric client smoke test
+        if: success()
+        shell: bash
+        run: |
+          set +e
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+          mkdir -p run/client
+          : > fabric-client-console.log
+          timeout --signal=INT --kill-after=20s 180s \
+            xvfb-run -a -s '-screen 0 1280x720x24' \
+            ./gradlew runClient --no-daemon --console=plain \
+            > fabric-client-console.log 2>&1
+          status=$?
+          test -f run/client/logs/latest.log \
+            && cp run/client/logs/latest.log fabric-client-latest.log
+          if test "$status" != "124" && test "$status" != "130"; then
+            echo "Client exited before the smoke window completed (status $status)."
+            tail -n 500 fabric-client-console.log
+            exit 1
+          fi
+          if ! grep -Eqi 'Sound engine started|OpenAL initialized|Created: [0-9]+x[0-9]+x[0-9]+ minecraft:textures/atlas' \
+              fabric-client-console.log fabric-client-latest.log 2>/dev/null; then
+            echo 'Client did not reach the rendered title-screen initialization phase.'
+            tail -n 500 fabric-client-console.log
+            exit 1
+          fi
+          if grep -Eqi 'Could not execute entrypoint|Exception in thread "Render thread"|The game crashed whilst|Description: Initializing game' \
+              fabric-client-console.log fabric-client-latest.log 2>/dev/null; then
+            echo 'Client log contains a fatal startup error.'
+            tail -n 500 fabric-client-console.log
+            exit 1
+          fi
+
+      - name: Upload Fabric client smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-client-smoke-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            fabric-client-console.log
+            fabric-client-latest.log
+            run/client/crash-reports/**
           if-no-files-found: warn

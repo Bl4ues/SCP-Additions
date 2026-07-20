@@ -123,7 +123,7 @@ public final class DoorButtonPlacementEvents {
                 }
             }
 
-            SoundType sound = placed.getSoundType(level, pos, player);
+            SoundType sound = placed.getSoundType();
             level.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS,
                     (sound.getVolume() + 1.0F) / 2.0F,
                     sound.getPitch() * 0.8F);

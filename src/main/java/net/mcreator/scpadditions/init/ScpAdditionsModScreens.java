@@ -13,7 +13,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.api.distmarker.Dist;
 
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.minecraft.client.renderer.RenderType;
 
 import net.mcreator.scpadditions.client.gui.TeslaTerminalScreen;
@@ -32,12 +32,12 @@ public class ScpAdditionsModScreens {
 	@SubscribeEvent
 	public static void clientLoad(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_GATE.get(), RenderType.translucent());
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_RECHARGE.get(), RenderType.translucent());
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE.get(), RenderType.cutout());
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_3.get(), RenderType.cutout());
-			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_4.get(), RenderType.cutout());
+			BlockRenderLayerMap.INSTANCE.putBlock(ScpAdditionsModBlocks.TESLA_GATE.get(), RenderType.translucent());
+			BlockRenderLayerMap.INSTANCE.putBlock(ScpAdditionsModBlocks.TESLA_RECHARGE.get(), RenderType.translucent());
+			BlockRenderLayerMap.INSTANCE.putBlock(ScpAdditionsModBlocks.TESLA_ACTIVE.get(), RenderType.cutout());
+			BlockRenderLayerMap.INSTANCE.putBlock(ScpAdditionsModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());
+			BlockRenderLayerMap.INSTANCE.putBlock(ScpAdditionsModBlocks.TESLA_ACTIVE_3.get(), RenderType.cutout());
+			BlockRenderLayerMap.INSTANCE.putBlock(ScpAdditionsModBlocks.TESLA_ACTIVE_4.get(), RenderType.cutout());
 		});
 	}
 }

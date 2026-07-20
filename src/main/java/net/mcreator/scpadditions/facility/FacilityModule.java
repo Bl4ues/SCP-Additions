@@ -183,8 +183,10 @@ public final class FacilityModule {
                     .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
                     .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
                     .displayItems((parameters, output) ->
-                            creativeItemsInDisplayOrder().forEach(item -> output.accept(item.get())))
-                    .withSearchBar()
+                            creativeItemsInDisplayOrder().stream()
+                                    .filter(item -> item.get() != BUTTON_CLOSED.get().asItem()
+                                            && item.get() != BUTTON_LOCKED.get().asItem())
+                                    .forEach(item -> output.accept(item.get())))
                     .build());
 
     private FacilityModule() {

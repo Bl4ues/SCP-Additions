@@ -345,8 +345,8 @@ public final class Scp914GenericRecipeResolver {
         List<ItemStack> remainders = new ArrayList<>();
         for (ItemUnit unit : units) {
             ItemStack stack = unit.stack();
-            if (stack.hasCraftingRemainingItem()) {
-                ItemStack remainder = stack.getCraftingRemainingItem();
+            if (stack.getItem().hasCraftingRemainingItem()) {
+                ItemStack remainder = stack.getItem().getCraftingRemainingItem().getDefaultInstance();
                 if (!remainder.isEmpty()) remainders.add(remainder.copy());
             }
         }

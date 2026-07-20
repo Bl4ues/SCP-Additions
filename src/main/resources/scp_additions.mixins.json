@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "net.mcreator.scpadditions.fabric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "MobEffectApplicableMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

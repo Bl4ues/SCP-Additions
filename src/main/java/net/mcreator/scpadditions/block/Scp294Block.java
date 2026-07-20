@@ -1,6 +1,9 @@
 
 package net.mcreator.scpadditions.block;
 
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuData;
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuProvider;
+
 import net.minecraft.world.item.Item;
 
 
@@ -137,17 +140,10 @@ public class Scp294Block extends Block implements EntityBlock {
 	@Override
 	protected InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
 		if (entity instanceof ServerPlayer player) {
-			player.openMenu( new MenuProvider() {
-				@Override
-				public Component getDisplayName() {
-					return Component.literal("SCP-294");
-				}
-
-				@Override
-				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-					return new Scp294GuiMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos));
-				}
-			}, pos);
+			player.openMenu(new LegacyMenuProvider(
+				Component.literal("SCP-294"),
+				(id, inventory, menuPlayer, data) -> new Scp294GuiMenu(id, inventory, data.toBuffer()),
+				() -> LegacyMenuData.create(data -> data.writeBlockPos(pos))));
 		}
 		return InteractionResult.SUCCESS;
 	}

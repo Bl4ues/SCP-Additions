@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.network;
 
+import net.minecraft.util.datafix.DataFixTypes;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import com.bl4ues.scpadditions.compat.network.PacketDistributor;
@@ -126,7 +128,7 @@ public class ScpAdditionsModVariables {
 		public double coinslot = 0;
 
 		public static final SavedData.Factory<WorldVariables> FACTORY =
-				new SavedData.Factory<>(WorldVariables::new, WorldVariables::load);
+				new SavedData.Factory<>(WorldVariables::new, WorldVariables::load, DataFixTypes.LEVEL);
 
 		public static WorldVariables load(CompoundTag tag, HolderLookup.Provider registries) {
 			WorldVariables data = new WorldVariables();
@@ -176,7 +178,7 @@ public class ScpAdditionsModVariables {
 		public double RandomZ = 0;
 
 		public static final SavedData.Factory<MapVariables> FACTORY =
-				new SavedData.Factory<>(MapVariables::new, MapVariables::load);
+				new SavedData.Factory<>(MapVariables::new, MapVariables::load, DataFixTypes.LEVEL);
 
 		public static MapVariables load(CompoundTag tag, HolderLookup.Provider registries) {
 			MapVariables data = new MapVariables();

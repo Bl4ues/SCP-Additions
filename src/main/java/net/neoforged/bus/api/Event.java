@@ -1,6 +1,6 @@
 package net.neoforged.bus.api;
 public class Event {
-    public enum Result { DENY, DEFAULT, ALLOW }
+    public enum Result { DENY, DEFAULT, ALLOW, DO_NOT_APPLY }
     private boolean canceled;
     private Result result = Result.DEFAULT;
     public boolean isCanceled() { return canceled; }

@@ -1,1 +1,4 @@
 accessWidener v2 named
+accessible field net/minecraft/client/sounds/SoundEngine listener Lcom/mojang/blaze3d/audio/Listener;
+accessible field net/minecraft/client/sounds/SoundEngine channelAccess Lnet/minecraft/client/sounds/ChannelAccess;
+accessible field com/mojang/blaze3d/audio/Channel source I

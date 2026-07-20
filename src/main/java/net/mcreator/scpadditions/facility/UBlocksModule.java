@@ -100,13 +100,13 @@ public final class UBlocksModule {
 
     public static void registerLegacyAliases() {
         BLOCKS.getEntries().forEach(entry -> {
-            String oldPath = entry.getId().getPath();
+            String oldPath = BuiltInRegistries.BLOCK.getKey(entry.get()).getPath();
             BLOCKS.addAlias(
                     ResourceLocation.fromNamespaceAndPath(LEGACY_MODID, oldPath),
                     ResourceLocation.fromNamespaceAndPath(MODID, oldPath));
         });
         ITEMS.getEntries().forEach(entry -> {
-            String oldPath = entry.getId().getPath();
+            String oldPath = BuiltInRegistries.ITEM.getKey(entry.get()).getPath();
             if (!isLegacyWallDetailPath(oldPath)) {
                 ITEMS.addAlias(
                         ResourceLocation.fromNamespaceAndPath(LEGACY_MODID, oldPath),
@@ -133,7 +133,7 @@ public final class UBlocksModule {
 
     public static Supplier<Block> blockByPath(String path) {
         return BLOCKS.getEntries().stream()
-                .filter(entry -> entry.getId().getPath().equals(path))
+                .filter(entry -> BuiltInRegistries.BLOCK.getKey(entry.get()).getPath().equals(path))
                 .<Supplier<Block>>map(entry -> entry::get)
                 .findFirst()
                 .orElse(null);
@@ -145,7 +145,7 @@ public final class UBlocksModule {
 
     public static Supplier<Item> registeredItemByPath(String path) {
         return ITEMS.getEntries().stream()
-                .filter(entry -> entry.getId().getPath().equals(path))
+                .filter(entry -> BuiltInRegistries.ITEM.getKey(entry.get()).getPath().equals(path))
                 .<Supplier<Item>>map(entry -> entry::get)
                 .findFirst()
                 .orElse(null);

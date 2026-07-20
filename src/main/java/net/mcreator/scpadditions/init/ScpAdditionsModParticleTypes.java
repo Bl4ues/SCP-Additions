@@ -2,6 +2,8 @@ package net.mcreator.scpadditions.init;
 
 import java.util.function.Supplier;
 
+import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
+
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -14,7 +16,7 @@ public final class ScpAdditionsModParticleTypes {
             BuiltInRegistries.PARTICLE_TYPE, ScpAdditionsMod.MODID);
 
     public static final Supplier<SimpleParticleType> DECONTAMINATION_GAS = REGISTRY.register(
-            "decontamination_gas", () -> new SimpleParticleType(false));
+            "decontamination_gas", () -> FabricParticleTypes.simple(false));
 
     private ScpAdditionsModParticleTypes() {
     }

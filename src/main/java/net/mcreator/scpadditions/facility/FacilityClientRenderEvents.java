@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.facility;
 
 import net.neoforged.fml.common.EventBusSubscriber;
 
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,18 +20,18 @@ public final class FacilityClientRenderEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            ItemBlockRenderTypes.setRenderLayer(
+            BlockRenderLayerMap.INSTANCE.putBlock(
                     FacilityModule.TRASHBIN.get(), RenderType.translucent());
 
-            ItemBlockRenderTypes.setRenderLayer(
+            BlockRenderLayerMap.INSTANCE.putBlock(
                     MirroredDoorButtons.BUTTON_LOCKED.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(
+            BlockRenderLayerMap.INSTANCE.putBlock(
                     MirroredDoorButtons.BUTTON_CLOSED.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(
+            BlockRenderLayerMap.INSTANCE.putBlock(
                     MirroredDoorButtons.BUTTON_OPENING.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(
+            BlockRenderLayerMap.INSTANCE.putBlock(
                     MirroredDoorButtons.BUTTON_OPEN.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(
+            BlockRenderLayerMap.INSTANCE.putBlock(
                     MirroredDoorButtons.BUTTON_CLOSING.get(), RenderType.cutout());
         });
     }

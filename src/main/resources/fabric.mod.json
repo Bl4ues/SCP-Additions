@@ -32,5 +32,8 @@
   "suggests": {
     "kleiders_custom_renderer": "*",
     "moremcmeta_emissive_plugin": "*"
-  }
+  },
+  "mixins": [
+    "scp_additions.mixins.json"
+  ]
 }

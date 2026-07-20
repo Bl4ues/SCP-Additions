@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.facility;
 
 import net.neoforged.fml.common.EventBusSubscriber;
 
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
@@ -24,7 +24,7 @@ public final class UBlocksClientEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> UBlocksModule.cutoutBlocks().forEach(block ->
-                ItemBlockRenderTypes.setRenderLayer(block.get(), RenderType.cutout())));
+                BlockRenderLayerMap.INSTANCE.putBlock(block.get(), RenderType.cutout())));
     }
 
     @SubscribeEvent

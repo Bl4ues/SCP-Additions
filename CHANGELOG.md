@@ -14,6 +14,7 @@
 - Added a reusable repository/JAR audit workflow for validating future cleanup passes.
 
 # SCP Additions 3.0.6 — Hazards & Survival Update
+
 ## Audio licensing
 
 - Temporarily disabled `enter.ogg` from playing when a player enters a world while permission to reuse music from SCP: Unity is being sought from the original composer;

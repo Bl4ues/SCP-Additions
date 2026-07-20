@@ -60,6 +60,10 @@ require(
     "MOB_OBSERVED_DOT_THRESHOLD = 0.8660254037844386D",
     "SCP_131_OBSERVED_DOT_THRESHOLD = 0.70D",
 )
+forbid(
+    "src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java",
+    "dotThreshold, dotThreshold,",
+)
 require(
     "src/main/java/net/mcreator/scpadditions/data/Scp294DrinkManager.java",
     "hasBundledItemModel",

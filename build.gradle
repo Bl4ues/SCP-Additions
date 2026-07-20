@@ -57,6 +57,10 @@ repositories {
     }
 }
 
+configurations.configureEach {
+    resolutionStrategy.force "net.fabricmc:fabric-loader:${loader_version}"
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.officialMojangMappings()

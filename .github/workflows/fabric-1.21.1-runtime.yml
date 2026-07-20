@@ -1,0 +1,95 @@
+name: Fabric 1.21.1 runtime validation
+
+on:
+  push:
+    branches:
+      - fabric-1.21.1-port-3.0.7
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-data-and-world-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fabric-1.21.1-port-3.0.7
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Normalize Minecraft 1.21.1 data resources
+        run: python3 tools/port_1_21/migrate_data_resources.py
+
+      - name: Commit normalized data tree
+        shell: bash
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/main/resources/data src/main/resources/pack.mcmeta
+            git commit -m "Migrate datapack resources to Minecraft 1.21.1"
+            git push origin HEAD:fabric-1.21.1-port-3.0.7
+          fi
+
+      - name: Build Fabric port
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Validate migrated resources
+        shell: bash
+        run: |
+          test -f build/resources/main/data/scp_additions/advancement/scp_additions_ach.json
+          test -d build/resources/main/data/scp_additions/recipe
+          test ! -d build/resources/main/data/scp_additions/advancements
+          test ! -d build/resources/main/data/scp_additions/recipes
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('build/resources/main')
+          meta = json.loads((root / 'pack.mcmeta').read_text())
+          assert meta['pack']['pack_format'] == 48
+          for path in (root / 'data').rglob('*.json'):
+              json.loads(path.read_text())
+          advancement = json.loads((root / 'data/scp_additions/advancement/scp_additions_ach.json').read_text())
+          assert advancement['display']['icon']['id'] == 'scp_additions:tesla_gate'
+          assert 'item' not in advancement['display']['icon']
+          PY
+
+      - name: Create and tick a dedicated world
+        shell: bash
+        run: |
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+          set +e
+          timeout 150s ./gradlew runServer --no-daemon > fabric-world-smoke.log 2>&1
+          status=$?
+          set -e
+          cat fabric-world-smoke.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -q "Done (" fabric-world-smoke.log
+          ! grep -q "Encountered an unexpected exception" fabric-world-smoke.log
+          ! grep -q "Exception in server tick loop" fabric-world-smoke.log
+          ! grep -q "Unable to award missing root advancement" fabric-world-smoke.log
+          ! grep -q "Missing registered gamerule" fabric-world-smoke.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fabric-1.21.1-runtime-validation
+          path: |
+            build/libs/*.jar
+            fabric-world-smoke.log
+            run/server/logs/latest.log

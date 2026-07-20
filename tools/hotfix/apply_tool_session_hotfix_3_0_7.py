@@ -21,9 +21,9 @@ def write(rel: str, text: str) -> None:
 
 def replace_once(rel: str, old: str, new: str) -> None:
     text = read(rel)
-    if new in text:
-        return
     if old not in text:
+        if new in text:
+            return
         raise RuntimeError(f"Expected source fragment not found in {rel}: {old[:120]!r}")
     write(rel, text.replace(old, new, 1))
 
@@ -62,6 +62,30 @@ replace_once(
 ''',
 )
 
-print(f"Usable tool hotfix changed {len(changed)} files")
+# WEAPON equipment creates a vanilla hotbar mirror. The slot contents were sent
+# to clients, but the selected-slot index was not, leaving the client to mine as
+# though it still held the previous item or an empty hand.
+replace_once(
+    "src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java",
+    "import net.minecraft.network.FriendlyByteBuf;\n",
+    "import net.minecraft.network.FriendlyByteBuf;\n"
+    "import net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket;\n",
+)
+replace_once(
+    "src/main/java/com/bl4ues/scpinventory/network/InventoryActionPacket.java",
+    '''        inventory.setItem(mirrorSlot, copy);
+        if (mirrorSlot < VANILLA_HOTBAR_END_EXCLUSIVE) inventory.selected = mirrorSlot;
+        ScpPickupRouter.syncVanillaInventory(player);
+''',
+    '''        inventory.setItem(mirrorSlot, copy);
+        if (mirrorSlot < VANILLA_HOTBAR_END_EXCLUSIVE) {
+            inventory.selected = mirrorSlot;
+            player.connection.send(new ClientboundSetCarriedItemPacket(mirrorSlot));
+        }
+        ScpPickupRouter.syncVanillaInventory(player);
+''',
+)
+
+print(f"Usable and weapon tool hotfix changed {len(changed)} files")
 for rel in changed:
     print(rel)

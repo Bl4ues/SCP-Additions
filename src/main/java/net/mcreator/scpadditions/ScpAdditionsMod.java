@@ -7,6 +7,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -64,6 +65,7 @@ public class ScpAdditionsMod {
     public ScpAdditionsMod() {
         MinecraftForge.EVENT_BUS.register(this);
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+        bus.addListener(this::commonSetup);
         ScpAdditionsModSounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
@@ -88,7 +90,13 @@ public class ScpAdditionsMod {
         ScpAdditionsModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();
         com.bl4ues.scpinventory.network.ModNetwork.register();
+    }
 
+    private void commonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(this::loadRegistryDependentConfiguration);
+    }
+
+    private void loadRegistryDependentConfiguration() {
         ScpAdditionsModulesConfig.load();
         Scp714ConfigBootstrap.ensureAccessoryRule();
         ScpInventoryConfig.reload();

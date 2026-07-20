@@ -17,28 +17,75 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ startsWith(github.head_ref, 'neoforge-1.21.1-port') && '21' || '17' }}
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Apply NeoForge port migrations
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        shell: bash
+        run: |
+          python3 tools/neoforge_port/apply_tick_bridge.py
+          python3 tools/neoforge_port/apply_network_bridge.py
+          python3 tools/neoforge_port/apply_inventory_attachment.py
+          python3 tools/neoforge_port/apply_player_variables_attachment.py
+          python3 tools/neoforge_port/apply_misc_api_moves.py
+          python3 tools/neoforge_port/apply_item_custom_data.py
+          python3 tools/neoforge_port/apply_item_api_renames.py
+          git diff --binary > neoforge-transformed.patch
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build
+      - name: Compile NeoForge port and preserve frontier
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean compileJava --no-daemon --stacktrace > neoforge-compile.log 2>&1
+          status=$?
+          echo "$status" > neoforge-compile.exitcode
+          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" neoforge-compile.log | head -n 2000 > neoforge-compile-errors.log || true
+          tail -n 500 neoforge-compile.log
+          exit 0
+
+      - name: Build Forge branches
+        if: ${{ !startsWith(github.head_ref, 'neoforge-1.21.1-port') }}
         run: ./gradlew clean build --stacktrace
 
+      - name: Export transformed NeoForge worktree
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        shell: bash
+        run: |
+          zip -qr neoforge-transformed-source.zip . \
+            -x '.git/*' 'build/*' '.gradle/*' 'run/*' '*.zip'
+
+      - name: Upload NeoForge compiler frontier
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoforge-frontier-${{ github.event.pull_request.head.sha }}
+          path: |
+            neoforge-compile.log
+            neoforge-compile-errors.log
+            neoforge-compile.exitcode
+            neoforge-transformed.patch
+            neoforge-transformed-source.zip
+          if-no-files-found: error
+
       - name: Upload compiled JAR
-        if: success()
+        if: ${{ success() && !startsWith(github.head_ref, 'neoforge-1.21.1-port') }}
         uses: actions/upload-artifact@v4
         with:
           name: scp-additions-${{ github.sha }}

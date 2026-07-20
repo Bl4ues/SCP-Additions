@@ -17,7 +17,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
 
     steps:
       - name: Checkout
@@ -129,6 +129,72 @@ jobs:
           name: scp-additions-neoforge-${{ github.event.pull_request.head.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
+
+      - name: Launch NeoForge dedicated server smoke test
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port') && success()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+          cat > run/server/server.properties <<'EOF'
+          online-mode=false
+          server-port=25576
+          motd=SCP Additions NeoForge smoke test
+          view-distance=4
+          simulation-distance=4
+          spawn-protection=0
+          max-tick-time=120000
+          EOF
+          : > neoforge-server-console.log
+          setsid ./gradlew runServer --no-daemon --console=plain > neoforge-server-console.log 2>&1 &
+          launcher_pid=$!
+          started=0
+          for second in $(seq 1 300); do
+            if test -f run/server/logs/latest.log && grep -Fq 'Done (' run/server/logs/latest.log; then
+              started=1
+              echo "Dedicated server reached ready state after ${second}s."
+              break
+            fi
+            if ! kill -0 "$launcher_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if kill -0 "$launcher_pid" 2>/dev/null; then
+            kill -INT -- "-$launcher_pid" 2>/dev/null || true
+            for wait_second in $(seq 1 25); do
+              kill -0 "$launcher_pid" 2>/dev/null || break
+              sleep 1
+            done
+          fi
+          if kill -0 "$launcher_pid" 2>/dev/null; then
+            kill -KILL -- "-$launcher_pid" 2>/dev/null || true
+          fi
+          wait "$launcher_pid" 2>/dev/null || true
+          test -f run/server/logs/latest.log && cp run/server/logs/latest.log neoforge-server-latest.log
+          if test "$started" != "1"; then
+            echo 'Dedicated server did not reach the ready state.'
+            tail -n 400 neoforge-server-console.log
+            exit 1
+          fi
+          if grep -Eqi 'Exception in server tick loop|Failed to start the minecraft server|Mod loading has failed|Loading errors encountered' neoforge-server-console.log neoforge-server-latest.log 2>/dev/null; then
+            echo 'Dedicated server log contains a fatal startup error.'
+            tail -n 400 neoforge-server-console.log
+            exit 1
+          fi
+          exit 0
+
+      - name: Upload NeoForge server smoke logs
+        if: always() && startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoforge-server-smoke-${{ github.event.pull_request.head.sha }}
+          path: |
+            neoforge-server-console.log
+            neoforge-server-latest.log
+            run/server/crash-reports/**
+          if-no-files-found: warn
 
       - name: Upload compiled JAR
         if: ${{ success() && !startsWith(github.head_ref, 'neoforge-1.21.1-port') }}

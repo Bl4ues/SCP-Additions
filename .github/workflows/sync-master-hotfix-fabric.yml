@@ -6,7 +6,6 @@ on:
       - fabric-1.21.1-port-3.0.7
     paths:
       - '.github/workflows/sync-master-hotfix-fabric.yml'
-      - 'tools/fabric_port/resolve_master_multiplayer_hotfix.py'
   workflow_dispatch:
 
 permissions:
@@ -24,10 +23,12 @@ jobs:
           ref: fabric-1.21.1-port-3.0.7
           fetch-depth: 0
 
-      - name: Fetch validated Forge baseline
-        run: git fetch --no-tags origin master:refs/remotes/origin/master
+      - name: Fetch validated baselines and shared resolver
+        run: |
+          git fetch --no-tags origin master:refs/remotes/origin/master
+          git fetch --no-tags origin neoforge-1.21.1-port-3.0.7:refs/remotes/origin/neoforge-1.21.1-port-3.0.7
 
-      - name: Apply master hotfix as a three-way patch
+      - name: Apply and resolve master hotfix
         shell: bash
         run: |
           set -euo pipefail
@@ -44,26 +45,44 @@ jobs:
             src/main/java/net/mcreator/scpadditions/procedures/TeslaGateVolume.java \
             src/main/resources/assets/scp_additions/lang/en_us.json \
             > master-multiplayer-hotfix.patch
+
           set +e
           git apply --3way --whitespace=nowarn master-multiplayer-hotfix.patch \
             > fabric-hotfix-apply.log 2>&1
-          status=$?
-          git status --short | tee -a fabric-hotfix-apply.log
-          if test "$status" != "0"; then
-            cp fabric-hotfix-apply.log /tmp/fabric-hotfix-apply.log
-            git diff --name-only --diff-filter=U > /tmp/fabric-hotfix-conflicts.txt
-            git reset --hard HEAD
-            mkdir -p .port-sync
-            cp /tmp/fabric-hotfix-apply.log .port-sync/fabric-hotfix-apply.log
-            cp /tmp/fabric-hotfix-conflicts.txt .port-sync/fabric-hotfix-conflicts.txt
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add .port-sync
-            git commit -m 'Record Fabric hotfix synchronization conflict [skip ci]'
-            git push origin HEAD:fabric-1.21.1-port-3.0.7
-            exit "$status"
-          fi
+          apply_status=$?
           set -e
+
+          if test "$apply_status" != "0"; then
+            conflicts=(
+              src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java
+              src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java
+              src/main/java/com/bl4ues/scpinventory/context/ContextEntityConfigManager.java
+              src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java
+              src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java
+              src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java
+            )
+            actual_conflicts="$(git diff --name-only --diff-filter=U)"
+            printf '%s\n' "$actual_conflicts" >> fabric-hotfix-apply.log
+            for path in "${conflicts[@]}"; do
+              if grep -Fxq "$path" <<< "$actual_conflicts"; then
+                git checkout --ours -- "$path"
+              fi
+            done
+            git show origin/neoforge-1.21.1-port-3.0.7:tools/neoforge_port/resolve_master_multiplayer_hotfix.py \
+              > tools/fabric_port/resolve_master_multiplayer_hotfix.py
+            python3 tools/fabric_port/resolve_master_multiplayer_hotfix.py \
+              2>&1 | tee -a fabric-hotfix-apply.log
+            git add "${conflicts[@]}"
+          fi
+
+          unresolved="$(git diff --name-only --diff-filter=U)"
+          if test -n "$unresolved"; then
+            echo 'Unresolved Fabric hotfix conflicts:' | tee -a fabric-hotfix-apply.log
+            printf '%s\n' "$unresolved" | tee -a fabric-hotfix-apply.log
+            exit 1
+          fi
+          git status --short | tee -a fabric-hotfix-apply.log
+          git diff --check
 
       - name: Reapply Fabric 1.21.1 migrations
         shell: bash
@@ -111,6 +130,12 @@ jobs:
           set -o pipefail
           ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee fabric-hotfix-build.log
 
+      - name: Validate Forge 3.0.7 feature parity
+        run: python3 scripts/validate_port_feature_parity.py --base-ref origin/master
+
+      - name: Audit compiled assets
+        run: python3 scripts/audit_unused_assets.py
+
       - name: Launch dedicated server smoke test
         shell: bash
         run: |
@@ -154,8 +179,8 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          rm -rf .port-sync
-          git add -A .port-sync config src/main
+          rm -rf .port-sync tools/fabric_port/resolve_master_multiplayer_hotfix.py
+          git add -A .port-sync tools/fabric_port/resolve_master_multiplayer_hotfix.py config src/main
           if git diff --cached --quiet; then
             echo 'Fabric multiplayer hotfix is already materialized.'
           else
@@ -175,6 +200,7 @@ jobs:
             fabric-hotfix-build.log
             fabric-hotfix-server.log
             fabric-hotfix-client.log
+            build/reports/**
             run/server/logs/latest.log
             run/client/logs/latest.log
             build/libs/*.jar

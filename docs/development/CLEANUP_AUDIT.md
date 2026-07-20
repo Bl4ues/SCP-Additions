@@ -1,6 +1,6 @@
 # Cleanup audit policy
 
-The 3.0.6 cleanup is intentionally conservative. A file is removed only after its registration, Java callers, configuration references, model parents, sound definitions, and data-driven uses have been checked.
+The 3.0.7 cleanup is intentionally conservative. A file is removed only after its registration, Java callers, configuration references, model parents, sound definitions, and data-driven uses have been checked.
 
 ## Preserved intentionally
 

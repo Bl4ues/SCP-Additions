@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import runpy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -99,3 +100,9 @@ if new_json != old_json:
 print(f"Fabric API round 8 changed {len(changed)} files")
 for item in changed:
     print(item)
+
+# Keep the existing workflow compatible while the migration frontier advances.
+runpy.run_path(
+    str(ROOT / "tools/fabric_port/apply_fabric_api_round9.py"),
+    run_name="__main__",
+)

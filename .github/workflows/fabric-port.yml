@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -21,6 +21,7 @@ jobs:
       - name: Checkout Fabric branch
         uses: actions/checkout@v4
         with:
+          ref: fabric-1.21.1-port-3.0.7
           fetch-depth: 0
 
       - name: Set up Java 21
@@ -32,12 +33,17 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Import shared 1.21.1 source migrations
+      - name: Materialize shared Minecraft 1.21.1 frontier
         shell: bash
+        env:
+          NEOFORGE_FRONTIER: 3ae02e88d6d429fad12f6d4d65582e2af83f2f7b
         run: |
           set -euo pipefail
-          git fetch origin neoforge-1.21.1-port-3.0.7 --depth=1
-          mkdir -p .fabric-port-tmp/neoforge
+          temp_root="$(mktemp -d)"
+          neo_dir="$temp_root/neoforge"
+          git fetch origin "$NEOFORGE_FRONTIER"
+          git worktree add --detach "$neo_dir" "$NEOFORGE_FRONTIER"
+
           scripts=(
             apply_tick_bridge.py
             apply_network_bridge.py
@@ -58,16 +64,46 @@ jobs:
           )
           : > fabric-migration.log
           for script in "${scripts[@]}"; do
-            git show "FETCH_HEAD:tools/neoforge_port/$script" \
-              > ".fabric-port-tmp/neoforge/$script"
             echo "=== $script ===" | tee -a fabric-migration.log
-            python3 ".fabric-port-tmp/neoforge/$script" 2>&1 \
-              | tee -a fabric-migration.log
+            (cd "$neo_dir" && python3 "tools/neoforge_port/$script") \
+              2>&1 | tee -a fabric-migration.log
           done
-          echo '=== apply_fabric_bridge.py ===' | tee -a fabric-migration.log
-          python3 tools/fabric_port/apply_fabric_bridge.py 2>&1 \
-            | tee -a fabric-migration.log
+
+          cp src/main/resources/fabric.mod.json "$temp_root/fabric.mod.json"
+          cp src/main/resources/scp_additions.accesswidener "$temp_root/scp_additions.accesswidener"
+
+          rm -rf src/main/java src/main/resources config
+          mkdir -p src/main
+          cp -a "$neo_dir/src/main/java" src/main/java
+          cp -a "$neo_dir/src/main/resources" src/main/resources
+          if test -d "$neo_dir/config"; then
+            cp -a "$neo_dir/config" config
+          fi
+
+          cp "$temp_root/fabric.mod.json" src/main/resources/fabric.mod.json
+          cp "$temp_root/scp_additions.accesswidener" src/main/resources/scp_additions.accesswidener
+          rm -f src/main/resources/META-INF/mods.toml
+          rm -f src/main/resources/META-INF/neoforge.mods.toml
+          rm -f src/main/resources/META-INF/accesstransformer.cfg
+
+          python3 tools/fabric_port/apply_fabric_bridge.py \
+            2>&1 | tee -a fabric-migration.log
           git diff --binary > fabric-transformed.patch
+          git worktree remove --force "$neo_dir"
+
+      - name: Commit materialized Fabric source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java src/main/resources config fabric-migration.log
+          if git diff --cached --quiet; then
+            echo 'Fabric source frontier is already materialized.'
+          else
+            git commit -m 'Materialize Fabric 1.21.1 source frontier [skip ci]'
+            git push origin HEAD:fabric-1.21.1-port-3.0.7
+          fi
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -80,8 +116,8 @@ jobs:
           status=$?
           echo "$status" > fabric-build.exitcode
           grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" \
-            fabric-build.log | head -n 3000 > fabric-build-errors.log || true
-          tail -n 700 fabric-build.log
+            fabric-build.log | head -n 3500 > fabric-build-errors.log || true
+          tail -n 800 fabric-build.log
           exit 0
 
       - name: Export transformed Fabric worktree
@@ -89,13 +125,13 @@ jobs:
         shell: bash
         run: |
           zip -qr fabric-transformed-source.zip . \
-            -x '.git/*' 'build/*' '.gradle/*' 'run/*' '*.zip' '.fabric-port-tmp/*'
+            -x '.git/*' 'build/*' '.gradle/*' 'run/*' '*.zip'
 
       - name: Upload Fabric build frontier
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-build-${{ github.sha }}
+          name: fabric-build-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             fabric-migration.log
             fabric-build.log
@@ -115,7 +151,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: scp-additions-fabric-${{ github.sha }}
+          name: scp-additions-fabric-${{ github.event.pull_request.head.sha || github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
 
@@ -178,7 +214,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-server-smoke-${{ github.sha }}
+          name: fabric-server-smoke-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             fabric-server-console.log
             fabric-server-latest.log

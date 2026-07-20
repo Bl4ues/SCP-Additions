@@ -21,8 +21,14 @@ final class FabricGameEventBridge {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> FabricServerContext.set(null));
         ServerTickEvents.START_SERVER_TICK.register(server -> NeoForge.EVENT_BUS.post(new ServerTickEvent.Pre(server)));
         ServerTickEvents.END_SERVER_TICK.register(server -> NeoForge.EVENT_BUS.post(new ServerTickEvent.Post(server)));
-        ServerTickEvents.START_WORLD_TICK.register(level -> NeoForge.EVENT_BUS.post(new LevelTickEvent.Pre(level)));
-        ServerTickEvents.END_WORLD_TICK.register(level -> NeoForge.EVENT_BUS.post(new LevelTickEvent.Post(level)));
+        ServerTickEvents.START_WORLD_TICK.register(level -> {
+            NeoForge.EVENT_BUS.post(new LevelTickEvent.Pre(level));
+            level.players().forEach(player -> NeoForge.EVENT_BUS.post(new PlayerTickEvent.Pre(player)));
+        });
+        ServerTickEvents.END_WORLD_TICK.register(level -> {
+            level.players().forEach(player -> NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player)));
+            NeoForge.EVENT_BUS.post(new LevelTickEvent.Post(level));
+        });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> NeoForge.EVENT_BUS.post(new EntityJoinLevelEvent(entity, level)));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(handler.player)));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedOutEvent(handler.player)));
@@ -48,12 +54,6 @@ final class FabricGameEventBridge {
             NeoForge.EVENT_BUS.post(event);
             return event.isCanceled()?event.getCancellationResult():InteractionResult.PASS;
         });
-        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            LivingIncomingDamageEvent event=new LivingIncomingDamageEvent(entity,source,amount);
-            NeoForge.EVENT_BUS.post(event);
-            return !event.isCanceled() && event.getAmount() > 0;
-        });
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> !NeoForge.EVENT_BUS.post(new LivingDeathEvent(entity,source)));
-        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> NeoForge.EVENT_BUS.post(new LivingDeathEvent(entity,source)));
     }
 }

@@ -24,8 +24,16 @@ final class FabricClientEventBridge {
         modBus.post(new RegisterColorHandlersEvent.Item());
         modBus.post(new RegisterGuiLayersEvent());
 
-        ClientTickEvents.START_CLIENT_TICK.register(client -> NeoForge.EVENT_BUS.post(new ClientTickEvent.Pre()));
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            NeoForge.EVENT_BUS.post(new ClientTickEvent.Pre());
+            if (client.player != null) {
+                NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre(client.player));
+            }
+        });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player != null) {
+                NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Post(client.player));
+            }
             NeoForge.EVENT_BUS.post(new InputEvent.Key());
             NeoForge.EVENT_BUS.post(new ClientTickEvent.Post());
         });

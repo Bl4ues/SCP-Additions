@@ -4,7 +4,15 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "MobEffectApplicableMixin",
-    "Scp572SwingMixin"
+    "Scp572SwingMixin",
+    "LivingEntityEventMixin",
+    "ServerLevelDropsMixin",
+    "ProjectileImpactMixin",
+    "ItemEntityPickupMixin",
+    "PlayerEventMixin",
+    "BlockItemPlaceMixin",
+    "LevelNeighborNotifyMixin",
+    "ResultSlotCraftedMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -13,6 +21,10 @@
     "client.ScreenAccessorMixin",
     "client.AbstractClientPlayerFovMixin",
     "client.PlayerRendererMixin",
-    "client.SoundEngineMixin"
+    "client.SoundEngineMixin",
+    "client.MinecraftInputMixin",
+    "client.MouseScrollInputMixin",
+    "client.ScreenDragMixin",
+    "client.GuiHealthLayerMixin"
   ]
 }

@@ -19,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -61,6 +62,13 @@ jobs:
       - name: Build
         run: ./gradlew clean build --no-daemon --stacktrace
 
+      - name: Validate Forge 3.0.7 feature parity
+        run: |
+          git fetch origin master:refs/remotes/origin/master
+          python3 scripts/validate_port_feature_parity.py \
+            --base-ref origin/master \
+            --report build/reports/port-parity/report.json
+
       - name: Audit repository and compiled JAR
         run: |
           python3 scripts/audit_unused_assets.py
@@ -75,5 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asset-audit-${{ github.event.pull_request.head.sha || github.sha }}
-          path: build/reports/asset-audit
+          path: |
+            build/reports/asset-audit
+            build/reports/port-parity
           if-no-files-found: warn

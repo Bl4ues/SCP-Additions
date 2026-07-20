@@ -87,6 +87,14 @@ require(
     '"gas_mask:scp_1499".equals(idText)',
 )
 require(
+    "src/main/java/com/bl4ues/scpinventory/context/ContextConfigManager.java",
+    "ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers())",
+)
+require(
+    "src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java",
+    "ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers())",
+)
+require(
     "src/main/java/com/bl4ues/scpinventory/client/UsableHotbarSessionClient.java",
     "return stack != null && !stack.isEmpty();",
     "isSameMutableUsableItem(active, activeStack)",

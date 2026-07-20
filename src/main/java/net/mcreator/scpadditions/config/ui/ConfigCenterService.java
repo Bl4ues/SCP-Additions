@@ -160,12 +160,12 @@ public final class ConfigCenterService {
 
     public static void reloadAll() {
         ScpAdditionsModulesConfig.load();
-        ScpInventoryConfig.reload();
+        ScpInventoryConfig.reloadFromDisk();
         Scp173TargetConfig.load();
         StaminaItemEffectConfig.load();
         Scp294DrinkManager.loadFromConfig();
         Scp914RecipeManager.loadFromConfig();
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
     }
 
     private static void rollback(Map<Path, String> oldContents) throws IOException {

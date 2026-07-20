@@ -124,7 +124,7 @@ public final class ContextEntityConfigManager {
         anchor.addProperty("rotateWith", cleanRotateWith(rotateWith));
 
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Saved context interaction for entity ").withStyle(ChatFormatting.GREEN)
                 .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));
         return true;
@@ -158,7 +158,7 @@ public final class ContextEntityConfigManager {
 
         if (removed) {
             saveRoot(root);
-            ContextInteractionRegistry.reload();
+            ContextInteractionRegistry.reloadFromDisk();
             ENTITY_SESSIONS.remove(player.getUUID());
             player.sendSystemMessage(Component.literal("[SCP Inventory] Deleted context interaction for entity ").withStyle(ChatFormatting.GREEN)
                     .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));

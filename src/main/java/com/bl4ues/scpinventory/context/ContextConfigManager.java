@@ -125,7 +125,7 @@ public final class ContextConfigManager {
         anchor.addProperty("rotateWith", cleanRotateWith(rotateWith));
 
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         setSession(player, pos, id);
         player.sendSystemMessage(Component.literal("[SCP Inventory] Saved context interaction for ").withStyle(ChatFormatting.GREEN)
                 .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));
@@ -161,7 +161,7 @@ public final class ContextConfigManager {
 
         if (removed) {
             saveRoot(root);
-            ContextInteractionRegistry.reload();
+            ContextInteractionRegistry.reloadFromDisk();
             clearSession(player);
             player.sendSystemMessage(Component.literal("[SCP Inventory] Deleted context interaction for ").withStyle(ChatFormatting.GREEN)
                     .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));
@@ -185,7 +185,7 @@ public final class ContextConfigManager {
 
         if (hasRule(selection.id())) {
             setSession(player, selection.pos(), selection.id());
-            ContextInteractionRegistry.reload();
+            ContextInteractionRegistry.reloadFromDisk();
             sendAnchorMarkerHint(player);
             sendSelectedHelp(player, selection.id(), false);
         } else {
@@ -219,7 +219,7 @@ public final class ContextConfigManager {
         }
 
         setSession(player, pending.pos(), pending.id());
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         sendAnchorMarkerHint(player);
         sendSelectedHelp(player, pending.id(), true);
         return 1;
@@ -264,7 +264,7 @@ public final class ContextConfigManager {
             text.addProperty("showAction", true);
         }
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Set " + key + " = " + value).withStyle(ChatFormatting.GREEN));
         return 1;
     }
@@ -279,7 +279,7 @@ public final class ContextConfigManager {
         JsonObject rule = requireRule(root, session.id(), player);
         rule.addProperty("range", Math.max(0.25D, range));
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Range set to " + Math.max(0.25D, range)).withStyle(ChatFormatting.GREEN));
         return 1;
     }
@@ -308,7 +308,7 @@ public final class ContextConfigManager {
         input.addProperty("allowE", allowE);
         input.addProperty("allowRightClick", allowRightClick);
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Input mode set to " + mode).withStyle(ChatFormatting.GREEN));
         return 1;
     }
@@ -324,7 +324,7 @@ public final class ContextConfigManager {
         JsonObject rule = requireRule(root, session.id(), player);
         rule.addProperty("useItem", mode);
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Use item set to " + mode).withStyle(ChatFormatting.GREEN));
         return 1;
     }
@@ -339,7 +339,7 @@ public final class ContextConfigManager {
         JsonObject rule = requireRule(root, session.id(), player);
         object(rule, "click").addProperty("face", cleanClickFace(value));
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         player.sendSystemMessage(Component.literal("[SCP Inventory] Click face set to " + value).withStyle(ChatFormatting.GREEN));
         return 1;
     }
@@ -355,7 +355,7 @@ public final class ContextConfigManager {
         JsonObject rule = requireRule(root, session.id(), player);
         object(rule, "anchor").addProperty("rotateWith", mode);
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         sendAnchorMarkerHint(player);
         player.sendSystemMessage(Component.literal("[SCP Inventory] Anchor rotation set to " + mode).withStyle(ChatFormatting.GREEN));
         return 1;
@@ -397,7 +397,7 @@ public final class ContextConfigManager {
         position.set(2, number(position.get(2).getAsDouble() + dz));
         anchor.addProperty("rotateWith", "none");
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         sendAnchorMarkerHint(player);
         player.sendSystemMessage(Component.literal("[SCP Inventory] Anchor nudged by [" + dx + ", " + dy + ", " + dz + "]").withStyle(ChatFormatting.GREEN));
         return 1;
@@ -413,7 +413,7 @@ public final class ContextConfigManager {
     }
 
     public static int reload(CommandSourceStack source) {
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
         source.sendSuccess(() -> Component.literal("[SCP Inventory] Context interactions reloaded.").withStyle(ChatFormatting.GREEN), false);
         return 1;
@@ -431,7 +431,7 @@ public final class ContextConfigManager {
         anchor.add("position", position);
         anchor.addProperty("rotateWith", "none");
         saveRoot(root);
-        ContextInteractionRegistry.reload();
+        ContextInteractionRegistry.reloadFromDisk();
         sendAnchorMarkerHint(player);
         player.sendSystemMessage(Component.literal("[SCP Inventory] Anchor set to local [" + round(local.x) + ", " + round(local.y) + ", " + round(local.z) + "]").withStyle(ChatFormatting.GREEN));
         return 1;

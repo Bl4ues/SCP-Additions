@@ -62,6 +62,13 @@ public final class ContextInteractionRegistry {
         load();
     }
 
+    /** Reloads the host's file instead of a client snapshot shared in singleplayer. */
+    public static synchronized void reloadFromDisk() {
+        serverSnapshotJson = null;
+        loaded = false;
+        load();
+    }
+
     public static List<Rule> getBlockRules(Block block) {
         ensureLoaded();
         return BLOCK_RULES.getOrDefault(block, Collections.emptyList());
@@ -140,12 +147,6 @@ public final class ContextInteractionRegistry {
         if (type.isEmpty() || idText.isEmpty()) {
             return null;
         }
-        // The old default 1499 entity rule resolves to a vanilla pig in the
-        // external gas-mask mod. Ignore it even in pre-hotfix user configs.
-        if ("entity".equals(type) && "gas_mask:scp_1499".equals(idText)) {
-            return null;
-        }
-
         ResourceLocation id;
         try {
             id = new ResourceLocation(idText);
@@ -158,12 +159,18 @@ public final class ContextInteractionRegistry {
         EntityType<?> entityType = null;
         if ("block".equals(type)) {
             kind = Kind.BLOCK;
+            if (!ForgeRegistries.BLOCKS.containsKey(id)) {
+                return null;
+            }
             block = ForgeRegistries.BLOCKS.getValue(id);
             if (block == null || block == Blocks.AIR) {
                 return null;
             }
         } else if ("entity".equals(type)) {
             kind = Kind.ENTITY;
+            if (!ForgeRegistries.ENTITY_TYPES.containsKey(id)) {
+                return null;
+            }
             entityType = ForgeRegistries.ENTITY_TYPES.getValue(id);
             if (entityType == null) {
                 return null;

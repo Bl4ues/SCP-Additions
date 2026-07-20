@@ -149,6 +149,16 @@ public final class ScpInventoryConfig {
         load();
     }
 
+    /**
+     * Reloads the host's local file even when the physical client and integrated
+     * server share this class and a synchronized server snapshot is active.
+     */
+    public static synchronized void reloadFromDisk() {
+        serverSnapshotActive = false;
+        loaded = false;
+        load();
+    }
+
     private static void ensureLoaded() {
         if (!loaded) {
             load();

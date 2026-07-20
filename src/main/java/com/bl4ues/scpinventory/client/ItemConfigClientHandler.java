@@ -17,6 +17,6 @@ public final class ItemConfigClientHandler {
     }
 
     public static void reloadItemConfig() {
-        ScpInventoryConfig.reload();
+        ScpInventoryConfig.reloadFromDisk();
     }
 }

@@ -179,7 +179,7 @@ public final class TeslaGateCollisionBlock extends Block implements SimpleWaterl
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
         return new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get());
     }
 

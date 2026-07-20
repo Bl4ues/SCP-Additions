@@ -123,15 +123,11 @@ public class DeconClosedBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader world, BlockPos pos, Player player) {
+	public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state) {
 		return new ItemStack(ScpAdditionsModBlocks.DECON_OPEN.get());
 	}
 
-	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+	
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
 		List<ItemStack> dropsOriginal = super.getDrops(state, builder);

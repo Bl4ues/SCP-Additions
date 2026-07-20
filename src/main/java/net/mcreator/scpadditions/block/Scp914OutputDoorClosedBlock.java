@@ -95,7 +95,7 @@ public class Scp914OutputDoorClosedBlock extends Block {
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader world, BlockPos pos, Player player) {
+	public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state) {
 		return new ItemStack(ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR.get());
 	}
 

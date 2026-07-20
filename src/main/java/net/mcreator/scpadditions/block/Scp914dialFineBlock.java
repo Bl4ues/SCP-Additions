@@ -1,6 +1,9 @@
 
 package net.mcreator.scpadditions.block;
 
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuData;
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuProvider;
+
 import net.minecraft.world.level.LevelReader;
 
 import net.minecraft.world.item.Item;
@@ -107,15 +110,11 @@ public class Scp914dialFineBlock extends Block {
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader world, BlockPos pos, Player player) {
+	public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state) {
 		return new ItemStack(ScpAdditionsModBlocks.SCP_914DIAL_1TO_1.get());
 	}
 
-	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+	
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
 		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
@@ -125,26 +124,19 @@ public class Scp914dialFineBlock extends Block {
 	}
 
 	@Override
-	public boolean onDestroyedByPlayer(BlockState blockstate, Level world, BlockPos pos, Player entity, boolean willHarvest, FluidState fluid) {
-		boolean retval = super.onDestroyedByPlayer(blockstate, world, pos, entity, willHarvest, fluid);
+	public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState blockstate, Player entity) {
+		BlockState result = super.playerWillDestroy(world, pos, blockstate, entity);
 		Scp914dialRoughBlockDestroyedByPlayerProcedure.execute(world);
-		return retval;
+		return result;
 	}
 
 	@Override
 	protected InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
 		if (entity instanceof ServerPlayer player) {
-			player.openMenu( new MenuProvider() {
-				@Override
-				public Component getDisplayName() {
-					return Component.literal("SCP-914 dial");
-				}
-
-				@Override
-				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-					return new Scp914GuiMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos));
-				}
-			}, pos);
+			player.openMenu(new LegacyMenuProvider(
+                    Component.literal("SCP-914 dial"),
+                    (id, inventory, menuPlayer, data) -> new Scp914GuiMenu(id, inventory, data.toBuffer()),
+                    () -> LegacyMenuData.create(data -> data.writeBlockPos(pos))));
 		}
 		return InteractionResult.SUCCESS;
 	}

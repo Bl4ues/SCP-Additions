@@ -107,11 +107,7 @@ public class Scp914bodyBlock extends Block implements SimpleWaterloggedBlock {
 		return super.updateShape(state, facing, facingState, world, currentPos, facingPos);
 	}
 
-	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+	
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
 		List<ItemStack> dropsOriginal = super.getDrops(state, builder);

@@ -1,6 +1,9 @@
 
 package net.mcreator.scpadditions.block;
 
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuData;
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuProvider;
+
 import net.minecraft.world.item.Item;
 
 
@@ -100,11 +103,7 @@ public class Scp914dial1to1Block extends Block {
 		return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
 	}
 
-	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+	
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
 		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
@@ -116,17 +115,10 @@ public class Scp914dial1to1Block extends Block {
 	@Override
 	protected InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
 		if (entity instanceof ServerPlayer player) {
-			player.openMenu( new MenuProvider() {
-				@Override
-				public Component getDisplayName() {
-					return Component.literal("SCP-914 dial");
-				}
-
-				@Override
-				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-					return new Scp914GuiMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos));
-				}
-			}, pos);
+			player.openMenu(new LegacyMenuProvider(
+                    Component.literal("SCP-914 dial"),
+                    (id, inventory, menuPlayer, data) -> new Scp914GuiMenu(id, inventory, data.toBuffer()),
+                    () -> LegacyMenuData.create(data -> data.writeBlockPos(pos))));
 		}
 		return InteractionResult.SUCCESS;
 	}

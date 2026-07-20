@@ -112,15 +112,12 @@ public class Scp079onBlock extends Block implements SimpleWaterloggedBlock {
 		return super.updateShape(state, facing, facingState, world, currentPos, facingPos);
 	}
 
+	
+	
 	@Override
-	public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, Direction side) {
+	public boolean isSignalSource(BlockState state) {
 		return true;
 	}
-
-	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
 
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {

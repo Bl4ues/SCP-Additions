@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.minecraft.server.level.ServerPlayer;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 
@@ -67,7 +69,7 @@ public class Scp294restockProcedure {
 				List<Entity> _entfound = world.getEntitiesOfClass(Entity.class, new AABB(_center, _center).inflate(10 / 2d), e -> true);
 				for (Entity entityiterator : _entfound) {
 					if (entityiterator instanceof Player _player)
-						_player.closeContainer();
+						if (_player instanceof ServerPlayer serverPlayer) serverPlayer.closeContainer();
 				}
 			}
 			ScpAdditionsModVariables.WorldVariables.get(world).Scp294stock = 0;

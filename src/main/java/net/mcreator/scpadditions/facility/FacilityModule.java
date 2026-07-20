@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.world.level.LevelReader;
@@ -177,7 +179,7 @@ public final class FacilityModule {
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
 
     public static final Supplier<CreativeModeTab> SCP_UNITY_BLOCKS = TABS.register("scp_unity_blocks", () ->
-            CreativeModeTab.builder()
+            FabricItemGroup.builder()
                     .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
                     .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
                     .displayItems((parameters, output) ->
@@ -551,7 +553,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
             return new ItemStack(ALARM_LAMP.get());
         }
     }
@@ -626,7 +628,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
             return new ItemStack(WALLLIGHT.get());
         }
     }
@@ -1009,7 +1011,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
             return new ItemStack(family().closed().get());
         }
     }
@@ -1113,7 +1115,7 @@ public final class FacilityModule {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
             return new ItemStack(buttonState == ButtonState.LOCKED
                     ? BUTTON_LOCKED.get() : BUTTON_CLOSED.get());
         }

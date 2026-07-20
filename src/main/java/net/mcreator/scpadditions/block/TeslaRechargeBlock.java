@@ -133,11 +133,7 @@ public class TeslaRechargeBlock extends Block implements SimpleWaterloggedBlock 
         return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
 
-    @Override
-    public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+    
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         List<ItemStack> original = super.getDrops(state, builder);
@@ -147,7 +143,7 @@ public class TeslaRechargeBlock extends Block implements SimpleWaterloggedBlock 
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
         return new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get());
     }
 

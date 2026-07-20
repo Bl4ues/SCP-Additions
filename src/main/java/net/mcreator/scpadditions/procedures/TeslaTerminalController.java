@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.minecraft.server.level.ServerPlayer;
+
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -40,7 +42,7 @@ public final class TeslaTerminalController {
 
 	public static void logout(Player player) {
 		if (player != null) {
-			player.closeContainer();
+			if (player instanceof ServerPlayer serverPlayer) serverPlayer.closeContainer();
 		}
 	}
 

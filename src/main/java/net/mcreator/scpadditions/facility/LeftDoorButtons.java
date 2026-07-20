@@ -222,7 +222,7 @@ public final class LeftDoorButtons {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState blockState, HitResult target, LevelReader level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState blockState) {
             return new ItemStack(state == State.LOCKED
                     ? FacilityModule.BUTTON_LOCKED.get()
                     : FacilityModule.BUTTON_CLOSED.get());

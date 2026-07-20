@@ -142,11 +142,7 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
         return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
 
-    @Override
-    public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+    
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         List<ItemStack> original = super.getDrops(state, builder);

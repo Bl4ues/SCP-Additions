@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.minecraft.server.level.ServerPlayer;
+
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -46,7 +48,7 @@ public class Scp294drinkGiveProcedure {
 
 		Scp294DrinkManager.MatchResult match = Scp294DrinkManager.findByInput(input);
 		if (!match.found()) {
-			player.closeContainer();
+			if (player instanceof ServerPlayer serverPlayer) serverPlayer.closeContainer();
 			showOutOfRangeScreen(world, x, y, z);
 			playSound(world, x, y, z, ResourceLocation.parse("scp_additions:scp294outofrange"));
 			return;
@@ -66,7 +68,7 @@ public class Scp294drinkGiveProcedure {
 			player.containerMenu.broadcastChanges();
 		}
 
-		player.closeContainer();
+		if (player instanceof ServerPlayer serverPlayer) serverPlayer.closeContainer();
 		playSound(world, x, y, z, drink.sound());
 		ListTag dispenseActions = Scp294DrinkManager.actionsToTag(drink.dispenseActions());
 		Scp294ActionExecutor.executeActions(world, x, y, z, player, dispenseActions);

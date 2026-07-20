@@ -1,5 +1,8 @@
 package net.mcreator.scpadditions.block;
 
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuData;
+import net.mcreator.scpadditions.fabric.menu.LegacyMenuProvider;
+
 import net.minecraft.world.item.Item;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -142,11 +145,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 		return super.updateShape(state, facing, facingState, world, currentPos, facingPos);
 	}
 
-	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
-        return player.getMainHandItem().isCorrectToolForDrops(state);
-    }
-
+	
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
 		List<ItemStack> dropsOriginal = super.getDrops(state, builder);
@@ -160,24 +159,14 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 		if (entity instanceof ServerPlayer player) {
 			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
 			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
-			player.openMenu( new MenuProvider() {
-				@Override
-				public Component getDisplayName() {
-					return Component.literal("Tesla Terminal");
-				}
-
-				@Override
-				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-					FriendlyByteBuf data = new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos);
-					data.writeBoolean(teslaOn);
-					data.writeBoolean(manualOverride);
-					return new TeslaTerminalMenu(id, inventory, data);
-				}
-			}, data -> {
-				data.writeBlockPos(pos);
-				data.writeBoolean(teslaOn);
-				data.writeBoolean(manualOverride);
-			});
+			player.openMenu(new LegacyMenuProvider(
+                    Component.literal("Tesla Terminal"),
+                    (id, inventory, menuPlayer, data) -> new TeslaTerminalMenu(id, inventory, data.toBuffer()),
+                    () -> LegacyMenuData.create(data -> {
+                        data.writeBlockPos(pos);
+                        data.writeBoolean(teslaOn);
+                        data.writeBoolean(manualOverride);
+                    })));
 		}
 		return InteractionResult.SUCCESS;
 	}

@@ -1,5 +1,6 @@
 package com.bl4ues.scpinventory.capability;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
 /**
@@ -15,11 +16,11 @@ public final class ScpInventoryProvider {
         return backend;
     }
 
-    public CompoundTag serializeNBT() {
-        return backend.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider registries) {
+        return backend.serializeNBT(registries);
     }
 
-    public void deserializeNBT(CompoundTag nbt) {
-        backend.deserializeNBT(nbt);
+    public void deserializeNBT(CompoundTag nbt, HolderLookup.Provider registries) {
+        backend.deserializeNBT(nbt, registries);
     }
 }

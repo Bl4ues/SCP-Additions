@@ -46,6 +46,9 @@ import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
+import net.mcreator.scpadditions.init.ScpAdditionsModArmorMaterials;
+import net.mcreator.scpadditions.item.LegacyDrinkItemMappings;
+import net.mcreator.scpadditions.facility.FacilityLegacyMappings;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -68,8 +71,12 @@ public class ScpAdditionsMod {
         Scp173Sounds.REGISTRY.register(bus);
         ScpAdditionsModBlocks.REGISTRY.register(bus);
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
+        ScpAdditionsModArmorMaterials.REGISTRY.register(bus);
+        LegacyDrinkItemMappings.registerAliases();
+        FacilityLegacyMappings.registerAliases();
         ScpAdditionsModItems.REGISTRY.register(bus);
         ScpInventoryCapability.REGISTRY.register(bus);
+        ScpAdditionsModVariables.ATTACHMENTS.register(bus);
         Scp714Items.REGISTRY.register(bus);
         Scp012Module.register(bus);
         UnifiedReaderItems.REGISTRY.register(bus);

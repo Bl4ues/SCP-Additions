@@ -3,7 +3,9 @@ package com.bl4ues.scpinventory.capability;
 import com.bl4ues.scpinventory.debug.ScpInventoryDebug;
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
 
@@ -332,7 +334,7 @@ public class ScpInventory implements IScpInventory {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
+    public CompoundTag serializeNBT(HolderLookup.Provider registries) {
         purgeActiveUsableCopiesFromMainInventory();
         debugUsable("serializeNBT mainCount={} active={} caller={}",
                 countMainInventoryItems(),
@@ -342,14 +344,14 @@ public class ScpInventory implements IScpInventory {
 
         tag.putInt("MaxMainSlots", maxMainSlots);
         tag.putInt("CoinCount", coinCount);
-        tag.put("Inventory", saveStackList(inventory, true));
-        tag.put("Keys", saveStackList(keys, false));
-        tag.put("Documents", saveStackList(documents, false));
-        saveEquipment(tag, "ActiveUsable", activeUsable);
+        tag.put("Inventory", saveStackList(inventory, true, registries));
+        tag.put("Keys", saveStackList(keys, false, registries));
+        tag.put("Documents", saveStackList(documents, false, registries));
+        saveEquipment(tag, "ActiveUsable", activeUsable, registries);
 
         CompoundTag equipTag = new CompoundTag();
         for (ScpEquipmentSlot slot : ScpEquipmentSlot.values()) {
-            saveEquipment(equipTag, slot.getTagName(), getEquipment(slot));
+            saveEquipment(equipTag, slot.getTagName(), getEquipment(slot), registries);
         }
         tag.put("Equipment", equipTag);
 
@@ -357,19 +359,19 @@ public class ScpInventory implements IScpInventory {
     }
 
     @Override
-    public void deserializeNBT(CompoundTag tag) {
+    public void deserializeNBT(CompoundTag tag, HolderLookup.Provider registries) {
         maxMainSlots = tag.contains("MaxMainSlots")
                 ? clampSlots(tag.getInt("MaxMainSlots"))
                 : DEFAULT_MAIN_SLOT_COUNT;
         coinCount = tag.contains("CoinCount")
                 ? Math.max(0, Math.min(ScpPickupRouter.MAX_COIN_COUNT, tag.getInt("CoinCount")))
                 : 0;
-        activeUsable = toSingleItemOrEmpty(loadEquipment(tag, "ActiveUsable"));
+        activeUsable = toSingleItemOrEmpty(loadEquipment(tag, "ActiveUsable", registries));
 
         inventory.clear();
         ListTag invList = tag.getList("Inventory", 10);
         for (int i = 0; i < maxMainSlots; i++) {
-            if (i < invList.size()) inventory.add(toMainInventoryStack(ItemStack.of(invList.getCompound(i))));
+            if (i < invList.size()) inventory.add(toMainInventoryStack(ItemStack.parseOptional(registries, invList.getCompound(i))));
             else inventory.add(ItemStack.EMPTY);
         }
         normalizeMainInventorySize();
@@ -381,18 +383,18 @@ public class ScpInventory implements IScpInventory {
                 ScpInventoryDebug.caller());
 
         keys.clear();
-        loadKeyList(keys, tag.getList("Keys", 10));
+        loadKeyList(keys, tag.getList("Keys", 10), registries);
 
         documents.clear();
-        loadStackList(documents, tag.getList("Documents", 10));
+        loadStackList(documents, tag.getList("Documents", 10), registries);
 
         resetEquipmentSlots();
         CompoundTag equipTag = tag.getCompound("Equipment");
         for (ScpEquipmentSlot slot : ScpEquipmentSlot.values()) {
-            equipment.put(slot, loadEquipment(equipTag, slot.getTagName()));
+            equipment.put(slot, loadEquipment(equipTag, slot.getTagName(), registries));
         }
 
-        migrateLegacyEquipment(equipTag);
+        migrateLegacyEquipment(equipTag, registries);
     }
 
     private int firstEmptyMainSlot() {
@@ -420,32 +422,32 @@ public class ScpInventory implements IScpInventory {
         }
     }
 
-    private void migrateLegacyEquipment(CompoundTag equipTag) {
+    private void migrateLegacyEquipment(CompoundTag equipTag, HolderLookup.Provider registries) {
         if (getEquipment(ScpEquipmentSlot.HEAD).isEmpty()) {
-            equipment.put(ScpEquipmentSlot.HEAD, loadEquipment(equipTag, "Head"));
+            equipment.put(ScpEquipmentSlot.HEAD, loadEquipment(equipTag, "Head", registries));
         }
 
         if (getEquipment(ScpEquipmentSlot.BODY).isEmpty()) {
-            equipment.put(ScpEquipmentSlot.BODY, loadEquipment(equipTag, "Chest"));
+            equipment.put(ScpEquipmentSlot.BODY, loadEquipment(equipTag, "Chest", registries));
         }
 
         if (getEquipment(ScpEquipmentSlot.ACCESSORY).isEmpty()) {
-            ItemStack legacyAccessory = loadEquipment(equipTag, "Accessory");
+            ItemStack legacyAccessory = loadEquipment(equipTag, "Accessory", registries);
             if (legacyAccessory.isEmpty()) {
-                legacyAccessory = loadEquipment(equipTag, "Trinket");
+                legacyAccessory = loadEquipment(equipTag, "Trinket", registries);
             }
             equipment.put(ScpEquipmentSlot.ACCESSORY, legacyAccessory);
         }
 
         if (getEquipment(ScpEquipmentSlot.WEAPON).isEmpty()) {
-            equipment.put(ScpEquipmentSlot.WEAPON, loadEquipment(equipTag, "Weapon"));
+            equipment.put(ScpEquipmentSlot.WEAPON, loadEquipment(equipTag, "Weapon", registries));
         }
     }
 
     private boolean isActiveUsableCopy(ItemStack stack) {
         ItemStack active = normalizeForActiveUsableComparison(activeUsable);
         ItemStack incoming = normalizeForActiveUsableComparison(stack);
-        return !active.isEmpty() && !incoming.isEmpty() && ItemStack.isSameItemSameTags(incoming, active);
+        return !active.isEmpty() && !incoming.isEmpty() && ItemStack.isSameItemSameComponents(incoming, active);
     }
 
     private ItemStack normalizeForActiveUsableComparison(ItemStack stack) {
@@ -522,40 +524,65 @@ public class ScpInventory implements IScpInventory {
         }
     }
 
-    private static ListTag saveStackList(List<ItemStack> stacks, boolean keepEmptySlots) {
+    private static ListTag saveStackList(
+            List<ItemStack> stacks,
+            boolean keepEmptySlots,
+            HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (ItemStack stack : stacks) {
             if (stack.isEmpty() && !keepEmptySlots) continue;
-            CompoundTag stackTag = new CompoundTag();
-            if (!stack.isEmpty()) stack.save(stackTag);
-            list.add(stackTag);
+            list.add(saveStack(stack, registries));
         }
         return list;
     }
 
-    private static void loadStackList(List<ItemStack> target, ListTag list) {
+    private static void loadStackList(
+            List<ItemStack> target,
+            ListTag list,
+            HolderLookup.Provider registries) {
         for (int i = 0; i < list.size(); i++) {
-            ItemStack stack = ItemStack.of(list.getCompound(i));
+            ItemStack stack = ItemStack.parseOptional(registries, list.getCompound(i));
             if (!stack.isEmpty()) target.add(stack);
         }
     }
 
-    private static void loadKeyList(List<ItemStack> target, ListTag list) {
+    private static void loadKeyList(
+            List<ItemStack> target,
+            ListTag list,
+            HolderLookup.Provider registries) {
         for (int i = 0; i < list.size() && target.size() < MAX_KEY_COUNT; i++) {
-            ItemStack stack = toSingleItemOrEmpty(ItemStack.of(list.getCompound(i)));
+            ItemStack stack = toSingleItemOrEmpty(
+                    ItemStack.parseOptional(registries, list.getCompound(i)));
             if (!stack.isEmpty()) target.add(stack);
         }
     }
 
-    private static void saveEquipment(CompoundTag parent, String key, ItemStack stack) {
+    private static void saveEquipment(
+            CompoundTag parent,
+            String key,
+            ItemStack stack,
+            HolderLookup.Provider registries) {
         if (!stack.isEmpty()) {
-            CompoundTag stackTag = new CompoundTag();
-            stack.save(stackTag);
-            parent.put(key, stackTag);
+            parent.put(key, saveStack(stack, registries));
         }
     }
 
-    private static ItemStack loadEquipment(CompoundTag parent, String key) {
-        return parent.contains(key) ? ItemStack.of(parent.getCompound(key)) : ItemStack.EMPTY;
+    private static ItemStack loadEquipment(
+            CompoundTag parent,
+            String key,
+            HolderLookup.Provider registries) {
+        return parent.contains(key)
+                ? ItemStack.parseOptional(registries, parent.getCompound(key))
+                : ItemStack.EMPTY;
     }
+
+    private static CompoundTag saveStack(
+            ItemStack stack,
+            HolderLookup.Provider registries) {
+        if (stack == null || stack.isEmpty()) return new CompoundTag();
+        Tag saved = stack.saveOptional(registries);
+        if (saved instanceof CompoundTag compound) return compound;
+        throw new IllegalStateException("ItemStack did not serialize to a CompoundTag: " + stack);
+    }
+
 }

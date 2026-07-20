@@ -605,7 +605,7 @@ public final class ScpInventoryMaintenanceEvents {
         ItemStack offhand = player.getOffhandItem();
 
         if (!equippedAccessory.isEmpty() && ScpItemClassifier.isAccessoryHand(equippedAccessory)) {
-            if (offhand.isEmpty() || !ItemStack.isSameItemSameTags(normalizeSingle(offhand), normalizeSingle(equippedAccessory))) {
+            if (offhand.isEmpty() || !ItemStack.isSameItemSameComponents(normalizeSingle(offhand), normalizeSingle(equippedAccessory))) {
                 InventoryActionPacket.syncVanillaEquipmentSlot(player, ScpEquipmentSlot.ACCESSORY, equippedAccessory);
                 return true;
             }
@@ -636,7 +636,7 @@ public final class ScpInventoryMaintenanceEvents {
         ItemStack mirror = vanillaInventory.items.get(mirrorSlot);
         ItemStack normalizedMirror = normalizeSingle(mirror);
         ItemStack normalizedEquipped = normalizeSingle(equippedWeapon);
-        if (!ItemStack.isSameItemSameTags(normalizedMirror, normalizedEquipped)) {
+        if (!ItemStack.isSameItemSameComponents(normalizedMirror, normalizedEquipped)) {
             inventory.setEquipment(ScpEquipmentSlot.WEAPON, normalizedMirror);
             return true;
         }
@@ -664,7 +664,7 @@ public final class ScpInventoryMaintenanceEvents {
     }
 
     private static boolean isSameSingleItem(ItemStack left, ItemStack right) {
-        return ItemStack.isSameItemSameTags(normalizeSingle(left), normalizeSingle(right));
+        return ItemStack.isSameItemSameComponents(normalizeSingle(left), normalizeSingle(right));
     }
 
     private static ItemStack normalizeSingle(ItemStack stack) {

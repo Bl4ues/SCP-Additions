@@ -11,7 +11,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
-import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.bus.api.Event;
@@ -69,7 +69,7 @@ public final class HazmatExternalEffectEvents {
     }
 
     @SubscribeEvent
-    public static void onPotionDamage(LivingHurtEvent event) {
+    public static void onPotionDamage(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)
                 || !isProtectedExternalPotionContext(player)) {
             return;

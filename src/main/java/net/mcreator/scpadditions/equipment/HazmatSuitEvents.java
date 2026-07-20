@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.equipment;
 
+import net.minecraft.core.component.DataComponents;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.minecraft.network.chat.Component;
@@ -171,7 +173,7 @@ public final class HazmatSuitEvents {
         }
 
         UseAnim animation = stack.getUseAnimation();
-        return stack.isEdible()
+        return stack.has(DataComponents.FOOD)
                 || animation == UseAnim.EAT
                 || animation == UseAnim.DRINK;
     }

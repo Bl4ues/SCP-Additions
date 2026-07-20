@@ -21,7 +21,7 @@ public class Scp1176honeyPlayerFinishesUsingItemProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
 		if (entity == null)
 			return;
-		if ((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
+		if ((ScpAdditionsModVariables.getPlayerVariables(entity).orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
 			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide()) {
 				_entity.addEffect(new MobEffectInstance(MobEffects.SATURATION, 12000, 10, false, false));
 				_entity.addEffect(new MobEffectInstance(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get(), 12000, 0, false, false, false));

@@ -1,23 +1,12 @@
 package net.mcreator.scpadditions.item;
 
-import net.neoforged.fml.common.EventBusSubscriber;
+import java.util.Set;
 
-import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.neoforged.neoforge.registries.MissingMappingsEvent;
+import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 
-import java.util.Set;
-
-/**
- * Preserves old-world inventory loading after the pre-3.0 SCP-294 drink items
- * were consolidated into the configurable, NBT-backed generic cup.
- */
-@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
+/** Preserves old SCP-294 drink ids through NeoForge registry aliases. */
 public final class LegacyDrinkItemMappings {
     private static final Set<String> LEGACY_DRINK_ITEMS = Set.of(
             "aloe",
@@ -85,14 +74,14 @@ public final class LegacyDrinkItemMappings {
     private LegacyDrinkItemMappings() {
     }
 
-    @SubscribeEvent
-    public static void remapLegacyDrinkItems(MissingMappingsEvent event) {
-        Item replacement = ScpAdditionsModItems.CUP_OF_COFFEE.get();
-        for (MissingMappingsEvent.Mapping<Item> mapping :
-                event.getMappings(Registries.ITEM, ScpAdditionsMod.MODID)) {
-            if (LEGACY_DRINK_ITEMS.contains(mapping.getKey().getPath())) {
-                mapping.remap(replacement);
-            }
+    public static void registerAliases() {
+        ResourceLocation replacement = ResourceLocation.fromNamespaceAndPath(
+                ScpAdditionsMod.MODID, "cup_of_coffee");
+        for (String oldPath : LEGACY_DRINK_ITEMS) {
+            ScpAdditionsModItems.REGISTRY.addAlias(
+                    ResourceLocation.fromNamespaceAndPath(
+                            ScpAdditionsMod.MODID, oldPath),
+                    replacement);
         }
     }
 }

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client.color;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.neoforged.api.distmarker.Dist;
@@ -23,8 +25,8 @@ public final class Scp294CupColorHandler {
 			if (tintIndex != 1) {
 				return 0xFFFFFF;
 			}
-			if (stack.hasTag() && stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
-				return stack.getTag().getCompound("Scp294Drink").getInt("cup_color") & 0xFFFFFF;
+			if (LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+				return LegacyItemTags.getTag(stack).getCompound("Scp294Drink").getInt("cup_color") & 0xFFFFFF;
 			}
 			return 0xFFFFFF;
 		}, ScpAdditionsModItems.CUP_OF_COFFEE.get());

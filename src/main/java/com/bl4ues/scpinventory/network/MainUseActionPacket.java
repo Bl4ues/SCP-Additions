@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
+import net.minecraft.core.component.DataComponents;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
@@ -82,7 +84,7 @@ public class MainUseActionPacket {
 
     private static boolean isVanillaConsumable(ItemStack stack) {
         UseAnim animation = stack.getUseAnimation();
-        return stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+        return stack.has(DataComponents.FOOD) || animation == UseAnim.EAT || animation == UseAnim.DRINK;
     }
 
     private static void consume(ServerPlayer player, IScpInventory inventory, int slot, ItemStack stack) {

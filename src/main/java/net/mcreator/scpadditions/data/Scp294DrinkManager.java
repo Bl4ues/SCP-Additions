@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.data;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -381,7 +383,7 @@ public final class Scp294DrinkManager {
 		}
 
 		ItemStack stack = new ItemStack(item, drink.resultCount());
-		CompoundTag tag = stack.getOrCreateTag();
+		CompoundTag tag = LegacyItemTags.getOrCreateTag(stack);
 		CompoundTag drinkTag = new CompoundTag();
 		drinkTag.putString("id", drink.id().toString());
 		drinkTag.putInt("cup_color", drink.cupColor());

@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
+import net.minecraft.core.component.DataComponents;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
@@ -109,7 +111,7 @@ public class InventoryActionPacket {
         }
 
         UseAnim animation = stack.getUseAnimation();
-        boolean hasVanillaUseResult = stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+        boolean hasVanillaUseResult = stack.has(DataComponents.FOOD) || animation == UseAnim.EAT || animation == UseAnim.DRINK;
         if (!hasVanillaUseResult) {
             inventory.removeInventoryItem(slot);
             return;

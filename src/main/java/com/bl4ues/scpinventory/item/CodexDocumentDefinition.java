@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.item;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -137,7 +139,7 @@ public final class CodexDocumentDefinition {
         if (stack == null || stack.isEmpty()) return false;
         ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (!itemId.equals(stackId)) return false;
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (isUnique()) {
             if (codexId.isBlank() || tag == null || !tag.contains(UNIQUE_TAG, Tag.TAG_STRING)
                     || !codexId.equals(tag.getString(UNIQUE_TAG))) return false;

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
@@ -1073,7 +1075,7 @@ public final class UnityConfigurationUiEvents {
         ItemStack stack = new ItemStack(ScpAdditionsModItems.CUP_OF_COFFEE.get());
         CompoundTag drink = new CompoundTag();
         drink.putInt("cup_color", parseColor(hex, 0xFFFFFF));
-        stack.getOrCreateTag().put("Scp294Drink", drink);
+        LegacyItemTags.getOrCreateTag(stack).put("Scp294Drink", drink);
         return stack;
     }
 

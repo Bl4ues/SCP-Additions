@@ -32,7 +32,7 @@ public final class ClientPacketHandlers {
             return;
         }
         ScpInventoryCapability.get(minecraft.player).ifPresent(inventory -> {
-            inventory.deserializeNBT(inventoryTag.copy());
+            inventory.deserializeNBT(inventoryTag.copy(), minecraft.player.registryAccess());
             UsableHotbarSessionClient.filterActiveSourceSlot(inventory);
         });
     }

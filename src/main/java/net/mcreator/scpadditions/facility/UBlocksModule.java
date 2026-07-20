@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -93,6 +94,23 @@ public final class UBlocksModule {
             "vent_open", DirectionalShape.VENT, SoundType.METAL);
 
     private UBlocksModule() {
+    }
+
+    public static void registerLegacyAliases() {
+        BLOCKS.getEntries().forEach(entry -> {
+            String oldPath = entry.getId().getPath();
+            BLOCKS.addAlias(
+                    ResourceLocation.fromNamespaceAndPath(LEGACY_MODID, oldPath),
+                    ResourceLocation.fromNamespaceAndPath(MODID, oldPath));
+        });
+        ITEMS.getEntries().forEach(entry -> {
+            String oldPath = entry.getId().getPath();
+            if (!isLegacyWallDetailPath(oldPath)) {
+                ITEMS.addAlias(
+                        ResourceLocation.fromNamespaceAndPath(LEGACY_MODID, oldPath),
+                        ResourceLocation.fromNamespaceAndPath(MODID, oldPath));
+            }
+        });
     }
 
     public static void register(IEventBus modBus) {

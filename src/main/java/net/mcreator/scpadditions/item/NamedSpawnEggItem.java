@@ -7,13 +7,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.ForgeSpawnEggItem;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class NamedSpawnEggItem extends ForgeSpawnEggItem {
+public class NamedSpawnEggItem extends DeferredSpawnEggItem {
     private final Component displayName;
     private final Component subtitle;
 

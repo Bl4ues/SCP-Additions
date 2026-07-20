@@ -76,7 +76,7 @@ public final class Scp914SkinManager {
         }
 
         String selected = skins.get(player.getRandom().nextInt(skins.size()));
-        player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
+        ScpAdditionsModVariables.getPlayerVariables(player)
                 .ifPresent(variables -> {
                     clearLegacyFlags(variables);
                     variables.scp914Skin = selected;

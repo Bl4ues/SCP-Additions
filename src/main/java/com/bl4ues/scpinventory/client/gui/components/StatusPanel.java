@@ -405,7 +405,7 @@ public class StatusPanel {
     private String getBloodType() {
         String unknown = Component.translatable("status.scp_additions.blood_type_unknown").getString();
         if (mc.player == null) return unknown;
-        return mc.player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
+        return ScpAdditionsModVariables.getPlayerVariables(mc.player)
                 .resolve()
                 .map(variables -> {
                     if (variables.Oneg) return "O-";

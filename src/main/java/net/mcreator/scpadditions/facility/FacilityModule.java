@@ -184,6 +184,15 @@ public final class FacilityModule {
     private FacilityModule() {
     }
 
+    public static void registerLegacyAliases() {
+        BLOCKS_BY_PATH.keySet().forEach(oldPath -> BLOCKS.addAlias(
+                ResourceLocation.fromNamespaceAndPath(LEGACY_MODID, oldPath),
+                ResourceLocation.fromNamespaceAndPath(MODID, oldPath)));
+        ITEMS_BY_PATH.keySet().forEach(oldPath -> ITEMS.addAlias(
+                ResourceLocation.fromNamespaceAndPath(LEGACY_MODID, oldPath),
+                ResourceLocation.fromNamespaceAndPath(MODID, oldPath)));
+    }
+
     public static void register(IEventBus modBus) {
         SOUNDS.register(modBus);
         BLOCKS.register(modBus);

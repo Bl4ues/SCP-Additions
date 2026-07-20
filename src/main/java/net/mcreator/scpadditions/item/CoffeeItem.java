@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.item;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -37,8 +39,8 @@ public class CoffeeItem extends Item {
 
 	@Override
 	public Component getName(ItemStack stack) {
-		if (stack.hasTag() && stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
-			String id = stack.getTag().getCompound("Scp294Drink").getString("id");
+		if (LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+			String id = LegacyItemTags.getTag(stack).getCompound("Scp294Drink").getString("id");
 			if (!id.isBlank()) {
 				String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
 				return Component.literal("Cup of " + toTitleCase(path.replace('_', ' ')));
@@ -55,8 +57,8 @@ public class CoffeeItem extends Item {
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (stack.hasTag() && stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
-			CompoundTag drinkTag = stack.getTag().getCompound("Scp294Drink");
+		if (LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+			CompoundTag drinkTag = LegacyItemTags.getTag(stack).getCompound("Scp294Drink");
 			if (drinkTag.contains("drinkable", Tag.TAG_BYTE) && !drinkTag.getBoolean("drinkable")) {
 				if (!world.isClientSide()) {
 					String message = drinkTag.getString("refuse_message");

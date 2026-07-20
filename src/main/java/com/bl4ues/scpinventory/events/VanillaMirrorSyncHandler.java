@@ -94,7 +94,7 @@ public class VanillaMirrorSyncHandler {
         ItemStack normalized = vanillaStack.copy();
         normalized.setCount(1);
 
-        if (!ItemStack.isSameItemSameTags(customStack, normalized) || customStack.getCount() != 1) {
+        if (!ItemStack.isSameItemSameComponents(customStack, normalized) || customStack.getCount() != 1) {
             inventory.setEquipment(customSlot, normalized);
             InventoryActionPacket.syncVanillaEquipmentSlot(player, customSlot, normalized);
             return true;
@@ -162,7 +162,7 @@ public class VanillaMirrorSyncHandler {
         ItemStack activeUsable = inventory == null ? ItemStack.EMPTY : inventory.getActiveUsable();
         return stack.getCount() == 1
                 && !activeUsable.isEmpty()
-                && ItemStack.isSameItemSameTags(
+                && ItemStack.isSameItemSameComponents(
                         normalizeRouterComparable(stack),
                         normalizeRouterComparable(activeUsable));
     }
@@ -210,7 +210,7 @@ public class VanillaMirrorSyncHandler {
         ItemStack equipped = inventory.getEquipment(slot);
         ItemStack normalized = vanillaStack.copy();
         normalized.setCount(1);
-        return !equipped.isEmpty() && ItemStack.isSameItemSameTags(equipped, normalized);
+        return !equipped.isEmpty() && ItemStack.isSameItemSameComponents(equipped, normalized);
     }
 
     private static boolean syncEquipmentFromMirror(IScpInventory inventory, ScpEquipmentSlot slot, ItemStack vanillaStack) {
@@ -218,7 +218,7 @@ public class VanillaMirrorSyncHandler {
         normalized.setCount(1);
         ItemStack equipped = inventory.getEquipment(slot);
 
-        if (equipped.getCount() != 1 || !ItemStack.isSameItemSameTags(equipped, normalized)) {
+        if (equipped.getCount() != 1 || !ItemStack.isSameItemSameComponents(equipped, normalized)) {
             inventory.setEquipment(slot, normalized);
             return true;
         }
@@ -278,7 +278,7 @@ public class VanillaMirrorSyncHandler {
 
             ItemStack normalizedCandidate = candidate.copy();
             normalizedCandidate.setCount(1);
-            if (ItemStack.isSameItemSameTags(normalizedCandidate, normalizedExpected)) {
+            if (ItemStack.isSameItemSameComponents(normalizedCandidate, normalizedExpected)) {
                 return i;
             }
         }

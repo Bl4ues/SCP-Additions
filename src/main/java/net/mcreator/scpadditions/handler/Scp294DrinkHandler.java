@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.handler;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.minecraft.nbt.CompoundTag;
@@ -29,12 +31,12 @@ public final class Scp294DrinkHandler {
 	@SubscribeEvent
 	public static void onDrinkFinished(LivingEntityUseItemEvent.Finish event) {
 		ItemStack stack = event.getItem();
-		if (!stack.hasTag() || !stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+		if (!LegacyItemTags.hasTag(stack) || !LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
 			return;
 		}
 
 		LivingEntity entity = event.getEntity();
-		CompoundTag drinkTag = stack.getTag().getCompound("Scp294Drink");
+		CompoundTag drinkTag = LegacyItemTags.getTag(stack).getCompound("Scp294Drink");
 		showActionbar(entity, drinkTag);
 		applyConfiguredEffects(entity, drinkTag);
 		executeDrinkActions(entity, drinkTag);

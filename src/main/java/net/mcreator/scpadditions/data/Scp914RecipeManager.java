@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.data;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -361,7 +363,7 @@ public final class Scp914RecipeManager {
 			return ItemStack.EMPTY;
 		}
 		ItemStack result = new ItemStack(item, output.count());
-		if (copyInputNbt && inputStack != null && inputStack.hasTag()) result.setTag(inputStack.getTag().copy());
+		if (copyInputNbt && inputStack != null && LegacyItemTags.hasTag(inputStack)) LegacyItemTags.setTag(result, LegacyItemTags.getTag(inputStack).copy());
 		return result;
 	}
 

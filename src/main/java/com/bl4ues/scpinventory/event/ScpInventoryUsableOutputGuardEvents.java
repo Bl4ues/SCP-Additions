@@ -78,7 +78,7 @@ public final class ScpInventoryUsableOutputGuardEvents {
 
         if (ItemStack.isSameItem(current, expected)) {
             ItemStack normalizedCurrent = normalizeSingle(current);
-            if (!ItemStack.isSameItemSameTags(normalizedCurrent, expected)) {
+            if (!ItemStack.isSameItemSameComponents(normalizedCurrent, expected)) {
                 activeStacks.put(id, normalizedCurrent);
             }
             return;

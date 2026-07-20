@@ -3,6 +3,7 @@ package com.bl4ues.scpinventory.capability;
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import com.bl4ues.scpinventory.item.ScpItemType;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
@@ -56,8 +57,8 @@ public interface IScpInventory {
     ItemStack extractActiveUsable();
     boolean clearActiveUsable();
 
-    CompoundTag serializeNBT();
-    void deserializeNBT(CompoundTag tag);
+    CompoundTag serializeNBT(HolderLookup.Provider registries);
+    void deserializeNBT(CompoundTag tag, HolderLookup.Provider registries);
 
     default int getInventoryCount() {
         int count = 0;

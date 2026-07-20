@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.keycard;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import net.minecraft.core.BlockPos;
@@ -52,7 +54,7 @@ public final class KeycardReaderInteractionEvents {
         }
 
         if (controlDown) {
-            int savedLevel = screwdriver.hasTag() ? screwdriver.getTag().getInt(SAVED_LEVEL_TAG) : 0;
+            int savedLevel = LegacyItemTags.hasTag(screwdriver) ? LegacyItemTags.getTag(screwdriver).getInt(SAVED_LEVEL_TAG) : 0;
             if (savedLevel < 1 || savedLevel > 6) {
                 player.displayClientMessage(Component.translatable(
                         "message.scp_additions.keycard_reader_no_saved_level")
@@ -64,7 +66,7 @@ public final class KeycardReaderInteractionEvents {
                         .withStyle(ChatFormatting.GREEN), true);
             }
         } else if (shiftDown) {
-            screwdriver.getOrCreateTag().putInt(SAVED_LEVEL_TAG, descriptor.level());
+            LegacyItemTags.getOrCreateTag(screwdriver).putInt(SAVED_LEVEL_TAG, descriptor.level());
             player.displayClientMessage(Component.translatable(
                     "message.scp_additions.keycard_reader_level_copied", descriptor.level())
                     .withStyle(ChatFormatting.GREEN), true);

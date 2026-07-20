@@ -265,7 +265,7 @@ public final class UsableHotbarSessionClient {
     }
 
     private static boolean isSameSingleItem(ItemStack left, ItemStack right) {
-        return ItemStack.isSameItemSameTags(normalizedSingle(left), normalizedSingle(right));
+        return ItemStack.isSameItemSameComponents(normalizedSingle(left), normalizedSingle(right));
     }
 
     private static ItemStack normalizedSingle(ItemStack stack) {

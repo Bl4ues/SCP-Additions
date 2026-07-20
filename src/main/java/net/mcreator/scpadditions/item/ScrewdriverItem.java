@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.item;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -20,8 +22,8 @@ public final class ScrewdriverItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip,
                                 TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        int savedLevel = stack.hasTag()
-                ? stack.getTag().getInt(KeycardReaderInteractionEvents.SAVED_LEVEL_TAG) : 0;
+        int savedLevel = LegacyItemTags.hasTag(stack)
+                ? LegacyItemTags.getTag(stack).getInt(KeycardReaderInteractionEvents.SAVED_LEVEL_TAG) : 0;
         if (savedLevel >= 1 && savedLevel <= 6) {
             tooltip.add(Component.translatable("tooltip.scp_additions.screwdriver.saved_level", savedLevel)
                     .withStyle(ChatFormatting.GREEN));

@@ -186,7 +186,7 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 				}
 				Slot slot = this.slots.get(i);
 				ItemStack itemstack = slot.getItem();
-				if (slot.mayPlace(itemstack) && !itemstack.isEmpty() && ItemStack.isSameItemSameTags(p_38904_, itemstack)) {
+				if (slot.mayPlace(itemstack) && !itemstack.isEmpty() && ItemStack.isSameItemSameComponents(p_38904_, itemstack)) {
 					int j = itemstack.getCount() + p_38904_.getCount();
 					int maxSize = Math.min(slot.getMaxStackSize(), p_38904_.getMaxStackSize());
 					if (j <= maxSize) {

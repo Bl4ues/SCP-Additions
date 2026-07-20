@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.events;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.neoforged.fml.common.EventBusSubscriber;
 
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
@@ -124,8 +126,8 @@ public class BlockPickupHandler {
     }
 
     private static boolean stripTransientInventoryTags(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !stack.hasTag()) return false;
-        CompoundTag tag = stack.getTag();
+        if (stack == null || stack.isEmpty() || !LegacyItemTags.hasTag(stack)) return false;
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (tag == null) return false;
         boolean changed = tag.contains(ScpPickupRouter.NO_MERGE_TAG)
                 || tag.contains(ScpPickupRouter.USABLE_SESSION_TAG)

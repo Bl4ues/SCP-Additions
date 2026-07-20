@@ -20,9 +20,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
-import net.minecraftforge.client.ConfigScreenHandler;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -72,9 +72,12 @@ public final class ConfigCenterClient {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(() -> ModLoadingContext.get().registerExtensionPoint(
-                    ConfigScreenHandler.ConfigScreenFactory.class,
-                    () -> new ConfigScreenHandler.ConfigScreenFactory(ConfigCenterClient::openFromMods)));
+            event.enqueueWork(() -> ModList.get()
+                    .getModContainerById(ScpAdditionsMod.MODID)
+                    .ifPresent(container -> container.registerExtensionPoint(
+                            IConfigScreenFactory.class,
+                            () -> (ignored, parent) -> openFromMods(
+                                    Minecraft.getInstance(), parent))));
         }
     }
 

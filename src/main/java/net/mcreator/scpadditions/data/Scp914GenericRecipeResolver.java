@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.data;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -384,7 +386,7 @@ public final class Scp914GenericRecipeResolver {
         Map<StackKey, ItemStack> combined = new LinkedHashMap<>();
         for (ItemStack stack : stacks) {
             if (stack == null || stack.isEmpty()) continue;
-            StackKey key = new StackKey(stack.getItem(), stack.getTag() == null ? "" : stack.getTag().toString());
+            StackKey key = new StackKey(stack.getItem(), LegacyItemTags.getTag(stack) == null ? "" : LegacyItemTags.getTag(stack).toString());
             ItemStack existing = combined.get(key);
             if (existing == null) combined.put(key, stack.copy());
             else existing.grow(stack.getCount());

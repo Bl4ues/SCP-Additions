@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.item;
 
+import net.minecraft.core.component.DataComponents;
+
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -251,7 +253,7 @@ public final class ScpItemClassifier {
         if (isThrownPotion(stack)) {
             return false;
         }
-        if (stack.isEdible()) {
+        if (stack.has(DataComponents.FOOD)) {
             return true;
         }
 

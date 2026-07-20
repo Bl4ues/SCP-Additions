@@ -27,14 +27,14 @@ public final class ScpInventoryCapability {
                         public IScpInventory read(IAttachmentHolder holder,
                                 CompoundTag tag, HolderLookup.Provider provider) {
                             ScpInventory inventory = new ScpInventory();
-                            inventory.deserializeNBT(tag);
+                            inventory.deserializeNBT(tag, provider);
                             return inventory;
                         }
 
                         @Override
                         public CompoundTag write(IScpInventory inventory,
                                 HolderLookup.Provider provider) {
-                            return inventory.serializeNBT();
+                            return inventory.serializeNBT(provider);
                         }
                     })
                     .copyOnDeath()

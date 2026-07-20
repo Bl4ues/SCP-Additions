@@ -168,6 +168,6 @@ public final class InventoryModuleStateEvents {
 
     private static boolean sameSingle(ItemStack first, ItemStack second) {
         if (first == null || first.isEmpty() || second == null || second.isEmpty()) return false;
-        return ItemStack.isSameItemSameTags(normalized(first), normalized(second));
+        return ItemStack.isSameItemSameComponents(normalized(first), normalized(second));
     }
 }

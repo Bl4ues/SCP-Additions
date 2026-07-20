@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.config.ui;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import com.bl4ues.scpinventory.capability.ScpInventoryProvider;
 import com.bl4ues.scpinventory.item.CodexDocumentDefinition;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
@@ -108,7 +110,7 @@ public final class CodexAssetStorage {
         Item item = id == null ? null : BuiltInRegistries.ITEM.getValue(id);
         if (item == null) return false;
         ItemStack stack = new ItemStack(item);
-        stack.getOrCreateTag().putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());
+        LegacyItemTags.getOrCreateTag(stack).putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());
         if (displayName != null && !displayName.isBlank()) {
             stack.setHoverName(Component.literal(displayName.trim()));
         }

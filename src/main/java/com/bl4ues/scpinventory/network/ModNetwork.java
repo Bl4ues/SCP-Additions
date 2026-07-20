@@ -63,7 +63,7 @@ public final class ModNetwork {
         if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
         if (player != null && inventory != null) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                    new SyncInventoryPacket(inventory.serializeNBT()));
+                    new SyncInventoryPacket(inventory.serializeNBT(player.registryAccess())));
         }
     }
 

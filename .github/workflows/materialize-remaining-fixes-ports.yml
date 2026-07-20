@@ -1,0 +1,61 @@
+name: Materialize remaining fixes on 1.21.1 ports
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/MATERIALIZE_PORT_FIXES_NOW
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - neoforge-1.21.1-port-3.0.7
+          - fabric-1.21.1-port-3.0.7
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply shared source fixes
+        shell: bash
+        run: |
+          git fetch origin master
+          git show origin/master:tools/hotfix/fix_remaining_3_0_7_v2.py > /tmp/fix_remaining_3_0_7.py
+          python3 /tmp/fix_remaining_3_0_7.py
+      - name: Commit source fixes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java
+          git commit -m "Fix live item rules, context targets, SCP-294 names and SCP-173 damage" || true
+          git push origin HEAD:${{ matrix.branch }}
+
+  cleanup:
+    if: always()
+    needs: materialize
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove temporary materializer
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/materialize-remaining-fixes-ports.yml tools/hotfix/MATERIALIZE_PORT_FIXES_NOW
+          git commit -m "Remove temporary port fixes materializer [skip ci]"
+          git push origin HEAD:master

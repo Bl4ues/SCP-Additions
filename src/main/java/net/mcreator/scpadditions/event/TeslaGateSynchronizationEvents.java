@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,10 +50,11 @@ public final class TeslaGateSynchronizationEvents {
             return;
         }
 
-        boolean enabled = level.getGameRules()
-                .getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
-        boolean override = level.getGameRules()
-                .getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+        GameRules rules = level.getGameRules();
+        boolean enabled = getBooleanOrDefault(rules,
+                ScpAdditionsModGameRules.TESLAGATEON, true);
+        boolean override = getBooleanOrDefault(rules,
+                ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE, false);
         Set<BlockPos> visited = new HashSet<>();
         for (ServerPlayer player : level.players()) {
             BlockPos center = player.blockPosition();
@@ -92,6 +94,20 @@ public final class TeslaGateSynchronizationEvents {
         TRANSITION_OBSERVATIONS.entrySet().removeIf(entry ->
                 entry.getKey().dimension().equals(level.dimension())
                         && entry.getValue().lastSeen() < staleBefore);
+    }
+
+    private static boolean getBooleanOrDefault(GameRules rules,
+            GameRules.Key<GameRules.BooleanValue> key, boolean fallback) {
+        GameRules.BooleanValue value = rules.getRule(key);
+        if (value != null) {
+            return value.get();
+        }
+        // This should be unreachable after the early bootstrap, but keeping the
+        // tick loop defensive prevents a malformed or legacy world from crashing.
+        ScpAdditionsMod.LOGGER.error(
+                "Missing registered gamerule {} while ticking a Tesla Gate; using {}",
+                key, fallback);
+        return fallback;
     }
 
     private static void recoverStuckTransition(ServerLevel level, BlockPos pos,

@@ -1,0 +1,181 @@
+name: Sync Master Hotfix to Fabric 1.21.1
+
+on:
+  push:
+    branches:
+      - fabric-1.21.1-port-3.0.7
+    paths:
+      - '.github/workflows/sync-master-hotfix-fabric.yml'
+      - 'tools/fabric_port/resolve_master_multiplayer_hotfix.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+
+    steps:
+      - name: Checkout Fabric branch
+        uses: actions/checkout@v4
+        with:
+          ref: fabric-1.21.1-port-3.0.7
+          fetch-depth: 0
+
+      - name: Fetch validated Forge baseline
+        run: git fetch --no-tags origin master:refs/remotes/origin/master
+
+      - name: Apply master hotfix as a three-way patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --binary \
+            26308ad9dbbdca536a7095c102902576789c0a6f \
+            origin/master -- \
+            config/scpinventory/context_interactions.json \
+            src/main/java/com/bl4ues/scpinventory \
+            src/main/java/net/mcreator/scpadditions/config/ScpAdditionsReloadCommand.java \
+            src/main/java/net/mcreator/scpadditions/data/Scp294DrinkManager.java \
+            src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java \
+            src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java \
+            src/main/java/net/mcreator/scpadditions/procedures/TeslaGateUpdateTickProcedure.java \
+            src/main/java/net/mcreator/scpadditions/procedures/TeslaGateVolume.java \
+            src/main/resources/assets/scp_additions/lang/en_us.json \
+            > master-multiplayer-hotfix.patch
+          set +e
+          git apply --3way --whitespace=nowarn master-multiplayer-hotfix.patch \
+            > fabric-hotfix-apply.log 2>&1
+          status=$?
+          git status --short | tee -a fabric-hotfix-apply.log
+          if test "$status" != "0"; then
+            cp fabric-hotfix-apply.log /tmp/fabric-hotfix-apply.log
+            git diff --name-only --diff-filter=U > /tmp/fabric-hotfix-conflicts.txt
+            git reset --hard HEAD
+            mkdir -p .port-sync
+            cp /tmp/fabric-hotfix-apply.log .port-sync/fabric-hotfix-apply.log
+            cp /tmp/fabric-hotfix-conflicts.txt .port-sync/fabric-hotfix-conflicts.txt
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add .port-sync
+            git commit -m 'Record Fabric hotfix synchronization conflict [skip ci]'
+            git push origin HEAD:fabric-1.21.1-port-3.0.7
+            exit "$status"
+          fi
+          set -e
+
+      - name: Reapply Fabric 1.21.1 migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > fabric-hotfix-migration.log
+          scripts=(
+            apply_fabric_bridge.py
+            patch_fabric_api_round2_idempotence.py
+            apply_fabric_api_round2.py
+            materialize_fabric_api_round3.py
+            apply_fabric_api_round3.py
+            apply_fabric_api_round4.py
+            apply_fabric_api_round5.py
+            apply_fabric_api_round6.py
+            apply_fabric_api_round7.py
+            apply_fabric_api_round8.py
+            apply_fabric_api_round9.py
+            apply_fabric_api_round10.py
+            apply_fabric_api_round11.py
+            apply_fabric_api_round12.py
+            apply_fabric_api_round13.py
+          )
+          for script in "${scripts[@]}"; do
+            echo "=== $script ===" | tee -a fabric-hotfix-migration.log
+            python3 "tools/fabric_port/$script" 2>&1 | tee -a fabric-hotfix-migration.log
+          done
+          git diff --check
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build Fabric hotfix
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee fabric-hotfix-build.log
+
+      - name: Launch dedicated server smoke test
+        shell: bash
+        run: |
+          set +e
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+          setsid ./gradlew runServer --no-daemon --console=plain > fabric-hotfix-server.log 2>&1 &
+          pid=$!
+          started=0
+          for second in $(seq 1 300); do
+            if test -f run/server/logs/latest.log && grep -Fq 'Done (' run/server/logs/latest.log; then started=1; break; fi
+            kill -0 "$pid" 2>/dev/null || break
+            sleep 1
+          done
+          kill -INT -- "-$pid" 2>/dev/null || true
+          sleep 5
+          kill -KILL -- "-$pid" 2>/dev/null || true
+          wait "$pid" 2>/dev/null || true
+          test "$started" = "1" || { tail -n 500 fabric-hotfix-server.log; exit 1; }
+          ! grep -Eqi 'Exception in server tick loop|Failed to start the minecraft server|Could not execute entrypoint' \
+            fabric-hotfix-server.log run/server/logs/latest.log 2>/dev/null
+
+      - name: Launch graphical client smoke test
+        shell: bash
+        run: |
+          set +e
+          if ! command -v xvfb-run >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y xvfb; fi
+          timeout --signal=INT --kill-after=20s 180s \
+            xvfb-run -a -s '-screen 0 1280x720x24' \
+            ./gradlew runClient --no-daemon --console=plain > fabric-hotfix-client.log 2>&1
+          status=$?
+          if test "$status" != "124" && test "$status" != "130"; then tail -n 500 fabric-hotfix-client.log; exit 1; fi
+          grep -Eqi 'Sound engine started|OpenAL initialized|Created: [0-9]+x[0-9]+x[0-9]+ minecraft:textures/atlas' \
+            fabric-hotfix-client.log run/client/logs/latest.log 2>/dev/null || exit 1
+          ! grep -Eqi 'Could not execute entrypoint|Exception in thread "Render thread"|The game crashed whilst|Description: Initializing game' \
+            fabric-hotfix-client.log run/client/logs/latest.log 2>/dev/null
+
+      - name: Commit validated Fabric hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -rf .port-sync
+          git add -A .port-sync config src/main
+          if git diff --cached --quiet; then
+            echo 'Fabric multiplayer hotfix is already materialized.'
+          else
+            git commit -m 'Port multiplayer hotfix to Fabric 1.21.1 [skip ci]'
+            git push origin HEAD:fabric-1.21.1-port-3.0.7
+          fi
+
+      - name: Upload hotfix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-master-hotfix-${{ github.sha }}
+          path: |
+            master-multiplayer-hotfix.patch
+            fabric-hotfix-apply.log
+            fabric-hotfix-migration.log
+            fabric-hotfix-build.log
+            fabric-hotfix-server.log
+            fabric-hotfix-client.log
+            run/server/logs/latest.log
+            run/client/logs/latest.log
+            build/libs/*.jar
+          if-no-files-found: warn

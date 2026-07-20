@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.vitals.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,11 +15,11 @@ import net.mcreator.scpadditions.vitals.VitalsModule;
 /** SCP Inventory's lower-left health and stamina HUD, with independent toggles. */
 public final class PlayerVitalsOverlay {
     private static final ResourceLocation STAMINA_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/stamina.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/stamina.png");
     private static final ResourceLocation HEALTH_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/healthlogo.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/healthlogo.png");
     private static final ResourceLocation ROBOTO_FONT =
-            new ResourceLocation("scpinventory", "roboto");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "roboto");
 
     private static final int ICON_SOURCE_SIZE = 128;
     private static final int ICON_SIZE = 17;
@@ -72,8 +74,7 @@ public final class PlayerVitalsOverlay {
             float health = Math.max(0.0F, player.getHealth());
             float maxHealth = Math.max(1.0F, player.getMaxHealth());
             float healthRatio = Math.max(0.0F, Math.min(1.0F, health / maxHealth));
-            boolean bleeding = player.hasEffect(
-                    ScpAdditionsModMobEffects.BLEEDING.get());
+            boolean bleeding = player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()));
             int healthColor = bleeding
                     ? BLEEDING_HEALTH_RIGHT : getHealthColor(healthRatio);
             int healthDark = bleeding

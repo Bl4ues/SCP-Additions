@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.effect;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.AreaEffectCloud;
@@ -7,14 +9,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.ProjectileImpactEvent;
-import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.living.MobEffectEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
@@ -31,7 +32,7 @@ import java.util.UUID;
  * command effects, internal SCP effects, and deliberately granted buffs working
  * unless their own system explicitly checks sealed protection.</p>
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class HazmatExternalEffectEvents {
     private static final double SPLASH_RADIUS = 4.25D;
     private static final double CLOUD_SEARCH_RADIUS = 8.0D;
@@ -62,12 +63,12 @@ public final class HazmatExternalEffectEvents {
     public static void onEffectApplicable(MobEffectEvent.Applicable event) {
         if (event.getEntity() instanceof Player player
                 && isProtectedExternalPotionContext(player)) {
-            event.setResult(Event.Result.DENY);
+            event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
         }
     }
 
     @SubscribeEvent
-    public static void onPotionDamage(LivingHurtEvent event) {
+    public static void onPotionDamage(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)
                 || !isProtectedExternalPotionContext(player)) {
             return;

@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.scp012;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -10,12 +14,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
@@ -27,8 +31,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /** Server-authoritative attraction and contact sequence for SCP-012. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = EventBusSubscriber.Bus.GAME)
 public final class Scp012InfluenceEvents {
     public static final int INFLUENCE_RADIUS = 10;
     private static final int TARGET_SEARCH_INTERVAL_TICKS = 10;
@@ -221,9 +225,8 @@ public final class Scp012InfluenceEvents {
 
     private static void applyBleeding(ServerPlayer player) {
         player.getPersistentData().putBoolean(BLEEDING_TAG, true);
-        if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
-            player.addEffect(new MobEffectInstance(
-                    ScpAdditionsModMobEffects.BLEEDING.get(),
+        if (!player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()))) {
+            player.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()),
                     Integer.MAX_VALUE, 0, false, false, true));
         }
     }

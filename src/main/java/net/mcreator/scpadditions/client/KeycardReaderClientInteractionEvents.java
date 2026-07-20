@@ -1,21 +1,24 @@
 package net.mcreator.scpadditions.client;
 
+import net.neoforged.neoforge.common.util.TriState;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 import net.mcreator.scpadditions.keycard.KeycardReaderLevels;
 import net.mcreator.scpadditions.network.KeycardReaderApplySavedLevelPacket;
 import net.mcreator.scpadditions.network.KeycardReaderCopyLevelPacket;
 
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public final class KeycardReaderClientInteractionEvents {
     private KeycardReaderClientInteractionEvents() {
     }
@@ -30,8 +33,8 @@ public final class KeycardReaderClientInteractionEvents {
                 || event.getEntity().getOffhandItem().is(UnifiedReaderItems.SCREWDRIVER.get());
         if (!hasScrewdriver || KeycardReaderLevels.describe(event.getLevel().getBlockState(event.getPos())) == null) return;
 
-        event.setUseBlock(Event.Result.DENY);
-        event.setUseItem(Event.Result.DENY);
+        event.setUseBlock(TriState.FALSE);
+        event.setUseItem(TriState.FALSE);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
         if (applySavedLevel) {

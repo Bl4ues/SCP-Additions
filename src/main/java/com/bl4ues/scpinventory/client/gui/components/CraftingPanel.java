@@ -493,9 +493,9 @@ public final class CraftingPanel {
         Optional<CraftingRecipe> recipe = ScpCraftingRecipeHelper.findMatching(
                 mc.level, ScpCraftingClientState.getGrid());
         if (recipe.isEmpty()) return ItemStack.EMPTY;
-        TransientCraftingContainer container = ScpCraftingRecipeHelper
-                .createContainer(ScpCraftingClientState.getGrid());
-        return recipe.get().assemble(container, mc.level.registryAccess());
+        return recipe.get().assemble(
+                ScpCraftingRecipeHelper.createInput(ScpCraftingClientState.getGrid()),
+                mc.level.registryAccess());
     }
 
     private void finishDrag(double mouseX, double mouseY) {
@@ -546,7 +546,7 @@ public final class CraftingPanel {
 
     private IScpInventory getInventory() {
         if (mc.player == null) return null;
-        return mc.player.getCapability(ScpInventoryCapability.INSTANCE)
+        return ScpInventoryCapability.get(mc.player)
                 .resolve().orElse(null);
     }
 

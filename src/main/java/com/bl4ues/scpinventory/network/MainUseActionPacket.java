@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
+import net.minecraft.core.component.DataComponents;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
@@ -16,7 +18,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -42,7 +44,7 @@ public class MainUseActionPacket {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (!inventory.isValidMainSlot(msg.slot)) {
                     ModNetwork.syncTo(player, inventory);
                     return;
@@ -82,7 +84,7 @@ public class MainUseActionPacket {
 
     private static boolean isVanillaConsumable(ItemStack stack) {
         UseAnim animation = stack.getUseAnimation();
-        return stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+        return stack.has(DataComponents.FOOD) || animation == UseAnim.EAT || animation == UseAnim.DRINK;
     }
 
     private static void consume(ServerPlayer player, IScpInventory inventory, int slot, ItemStack stack) {

@@ -1,17 +1,20 @@
 package net.mcreator.scpadditions;
 
+import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.common.MinecraftForge;
+import com.bl4ues.scpadditions.compat.network.SimpleChannel;
+import com.bl4ues.scpadditions.compat.network.NetworkRegistry;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.IEventBus;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
@@ -19,6 +22,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.mcreator.scpadditions.config.Scp714ConfigBootstrap;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
+import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.data.Scp914SkinManager;
@@ -45,7 +49,11 @@ import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
+import net.mcreator.scpadditions.block.entity.Scp294Capabilities;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
+import net.mcreator.scpadditions.init.ScpAdditionsModArmorMaterials;
+import net.mcreator.scpadditions.item.LegacyDrinkItemMappings;
+import net.mcreator.scpadditions.facility.FacilityLegacyMappings;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -61,15 +69,20 @@ public class ScpAdditionsMod {
     public static final Logger LOGGER = LogManager.getLogger(ScpAdditionsMod.class);
     public static final String MODID = "scp_additions";
 
-    public ScpAdditionsMod() {
-        MinecraftForge.EVENT_BUS.register(this);
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+    public ScpAdditionsMod(IEventBus bus) {
+        NeoForge.EVENT_BUS.register(this);
         ScpAdditionsModSounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
         ScpAdditionsModBlocks.REGISTRY.register(bus);
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
+        bus.addListener(Scp294Capabilities::register);
+        ScpAdditionsModArmorMaterials.REGISTRY.register(bus);
+        LegacyDrinkItemMappings.registerAliases();
+        FacilityLegacyMappings.registerAliases();
         ScpAdditionsModItems.REGISTRY.register(bus);
+        ScpInventoryCapability.REGISTRY.register(bus);
+        ScpAdditionsModVariables.ATTACHMENTS.register(bus);
         Scp714Items.REGISTRY.register(bus);
         Scp012Module.register(bus);
         UnifiedReaderItems.REGISTRY.register(bus);
@@ -102,7 +115,7 @@ public class ScpAdditionsMod {
     private static final String PROTOCOL_VERSION = "8";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
-                    new ResourceLocation(MODID, MODID),
+                    ResourceLocation.fromNamespaceAndPath(MODID, MODID),
                     () -> PROTOCOL_VERSION,
                     PROTOCOL_VERSION::equals,
                     PROTOCOL_VERSION::equals);

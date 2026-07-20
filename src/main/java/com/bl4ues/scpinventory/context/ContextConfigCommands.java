@@ -1,15 +1,17 @@
 package com.bl4ues.scpinventory.context;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public final class ContextConfigCommands {
     private ContextConfigCommands() {
     }

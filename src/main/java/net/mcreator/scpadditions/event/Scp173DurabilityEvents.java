@@ -1,16 +1,20 @@
 package net.mcreator.scpadditions.event;
 
+import net.minecraft.core.Holder;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class Scp173DurabilityEvents {
     private static final double MAX_HEALTH = 1730.0D;
     private static final double ARMOR = 80.0D;
@@ -33,7 +37,7 @@ public final class Scp173DurabilityEvents {
     }
 
     @SubscribeEvent
-    public static void onLivingHurt(LivingHurtEvent event) {
+    public static void onLivingHurt(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof Scp173Entity)) return;
         float amount = event.getAmount();
         if (amount <= 0.0F) {
@@ -43,7 +47,7 @@ public final class Scp173DurabilityEvents {
         event.setAmount(Math.max(MIN_SURVIVABLE_DAMAGE, amount * DAMAGE_MULTIPLIER));
     }
 
-    private static void setBaseAttribute(Scp173Entity scp173, Attribute attribute, double value) {
+    private static void setBaseAttribute(Scp173Entity scp173, Holder<Attribute> attribute, double value) {
         AttributeInstance instance = scp173.getAttribute(attribute);
         if (instance != null && instance.getBaseValue() != value) instance.setBaseValue(value);
     }

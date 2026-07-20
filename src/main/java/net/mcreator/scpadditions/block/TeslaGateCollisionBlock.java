@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.level.LevelReader;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -177,8 +179,7 @@ public final class TeslaGateCollisionBlock extends Block implements SimpleWaterl
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level,
-            BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
         return new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get());
     }
 

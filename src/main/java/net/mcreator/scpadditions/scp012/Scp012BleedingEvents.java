@@ -1,16 +1,21 @@
 package net.mcreator.scpadditions.scp012;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
+import java.util.function.Supplier;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.RegistryObject;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
@@ -20,8 +25,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /** Persistent post-exposure blood loss and authored bleeding cues. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = EventBusSubscriber.Bus.GAME)
 public final class Scp012BleedingEvents {
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
     private static final int DAMAGE_INTERVAL_TICKS = 40;
@@ -51,9 +56,8 @@ public final class Scp012BleedingEvents {
 
         // SCP-714 does not cure a physical wound. The bleeding state remains
         // until the player receives real healing from any source.
-        if (!player.hasEffect(ScpAdditionsModMobEffects.BLEEDING.get())) {
-            player.addEffect(new MobEffectInstance(
-                    ScpAdditionsModMobEffects.BLEEDING.get(),
+        if (!player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()))) {
+            player.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()),
                     Integer.MAX_VALUE, 0, false, false, true));
         }
 
@@ -87,12 +91,12 @@ public final class Scp012BleedingEvents {
 
     private static void playBleedCue(ServerPlayer player) {
         @SuppressWarnings("unchecked")
-        RegistryObject<SoundEvent>[] sounds = new RegistryObject[]{
+        Supplier<SoundEvent>[] sounds = new Supplier[]{
                 ScpAdditionsModSounds.SCP012_BLEED_1,
                 ScpAdditionsModSounds.SCP012_BLEED_2,
                 ScpAdditionsModSounds.SCP012_BLEED_3
         };
-        RegistryObject<SoundEvent> selected = sounds[
+        Supplier<SoundEvent> selected = sounds[
                 player.getRandom().nextInt(sounds.length)];
         float pitch = 0.94F + player.getRandom().nextFloat() * 0.12F;
         player.playNotifySound(selected.get(), SoundSource.PLAYERS,
@@ -103,7 +107,7 @@ public final class Scp012BleedingEvents {
         STATES.remove(player.getUUID());
         player.getPersistentData().remove(BLEEDING_TAG);
         if (removeEffect) {
-            player.removeEffect(ScpAdditionsModMobEffects.BLEEDING.get());
+            player.removeEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.BLEEDING.get()));
         }
     }
 

@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.events;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
@@ -12,17 +14,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public class VanillaMirrorSyncHandler {
 
     private static final int VANILLA_HOTBAR_START = 0;
@@ -51,7 +53,7 @@ public class VanillaMirrorSyncHandler {
             return;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             boolean changed = false;
             changed |= syncEquipmentSlot(player, inventory, ScpEquipmentSlot.HEAD, EquipmentSlot.HEAD);
             changed |= syncEquipmentSlot(player, inventory, ScpEquipmentSlot.CHEST, EquipmentSlot.CHEST);
@@ -92,7 +94,7 @@ public class VanillaMirrorSyncHandler {
         ItemStack normalized = vanillaStack.copy();
         normalized.setCount(1);
 
-        if (!ItemStack.isSameItemSameTags(customStack, normalized) || customStack.getCount() != 1) {
+        if (!ItemStack.isSameItemSameComponents(customStack, normalized) || customStack.getCount() != 1) {
             inventory.setEquipment(customSlot, normalized);
             InventoryActionPacket.syncVanillaEquipmentSlot(player, customSlot, normalized);
             return true;
@@ -160,7 +162,7 @@ public class VanillaMirrorSyncHandler {
         ItemStack activeUsable = inventory == null ? ItemStack.EMPTY : inventory.getActiveUsable();
         return stack.getCount() == 1
                 && !activeUsable.isEmpty()
-                && ItemStack.isSameItemSameTags(
+                && ItemStack.isSameItemSameComponents(
                         normalizeRouterComparable(stack),
                         normalizeRouterComparable(activeUsable));
     }
@@ -208,7 +210,7 @@ public class VanillaMirrorSyncHandler {
         ItemStack equipped = inventory.getEquipment(slot);
         ItemStack normalized = vanillaStack.copy();
         normalized.setCount(1);
-        return !equipped.isEmpty() && ItemStack.isSameItemSameTags(equipped, normalized);
+        return !equipped.isEmpty() && ItemStack.isSameItemSameComponents(equipped, normalized);
     }
 
     private static boolean syncEquipmentFromMirror(IScpInventory inventory, ScpEquipmentSlot slot, ItemStack vanillaStack) {
@@ -216,7 +218,7 @@ public class VanillaMirrorSyncHandler {
         normalized.setCount(1);
         ItemStack equipped = inventory.getEquipment(slot);
 
-        if (equipped.getCount() != 1 || !ItemStack.isSameItemSameTags(equipped, normalized)) {
+        if (equipped.getCount() != 1 || !ItemStack.isSameItemSameComponents(equipped, normalized)) {
             inventory.setEquipment(slot, normalized);
             return true;
         }
@@ -276,7 +278,7 @@ public class VanillaMirrorSyncHandler {
 
             ItemStack normalizedCandidate = candidate.copy();
             normalizedCandidate.setCount(1);
-            if (ItemStack.isSameItemSameTags(normalizedCandidate, normalizedExpected)) {
+            if (ItemStack.isSameItemSameComponents(normalizedCandidate, normalizedExpected)) {
                 return i;
             }
         }

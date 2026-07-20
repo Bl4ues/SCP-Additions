@@ -1,5 +1,9 @@
 package com.bl4ues.scpinventory.events;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -8,16 +12,16 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
+import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public class BlockPickupHandler {
 
     @SubscribeEvent
@@ -36,7 +40,7 @@ public class BlockPickupHandler {
         ItemStack stack = itemEntity.getItem();
         // A controlled USABLE mirror stops being an inventory mirror as soon as
         // it becomes a real world item. Jukebox ejection and similar block/item
-        // outputs may preserve the mirror NBT; leaving it attached makes the
+        // outputs may preserve the mirror data; leaving it attached makes the
         // pickup router reject the stack forever as an active session copy.
         if (ScpPickupRouter.isUsableSession(stack)) {
             ScpPickupRouter.stripUsableSession(stack);
@@ -78,17 +82,17 @@ public class BlockPickupHandler {
     }
 
     @SubscribeEvent
-    public static void onItemPickup(EntityItemPickupEvent event) {
-        Player player = event.getEntity();
+    public static void onItemPickup(ItemEntityPickupEvent.Pre event) {
+        Player player = event.getPlayer();
         if (player.level().isClientSide()) return;
 
-        ItemStack stack = event.getItem().getItem();
+        ItemStack stack = event.getItemEntity().getItem();
         if (!ScpAdditionsModulesConfig.get().inventory.enabled || player.isCreative() || player.isSpectator()) {
-            if (stripTransientInventoryTags(stack)) event.getItem().setItem(stack);
+            stripTransientInventoryTags(stack);
             return;
         }
 
-        event.setCanceled(true);
+        event.setCanPickup(TriState.FALSE);
     }
 
     @SubscribeEvent
@@ -122,8 +126,8 @@ public class BlockPickupHandler {
     }
 
     private static boolean stripTransientInventoryTags(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !stack.hasTag()) return false;
-        CompoundTag tag = stack.getTag();
+        if (stack == null || stack.isEmpty() || !LegacyItemTags.hasTag(stack)) return false;
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (tag == null) return false;
         boolean changed = tag.contains(ScpPickupRouter.NO_MERGE_TAG)
                 || tag.contains(ScpPickupRouter.USABLE_SESSION_TAG)

@@ -6,13 +6,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.mcreator.scpadditions.client.HazmatArmorRenderer;
+import net.mcreator.scpadditions.init.ScpAdditionsModArmorMaterials;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -23,7 +24,7 @@ public final class HazmatArmorItem extends ArmorItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public HazmatArmorItem(Type type) {
-        super(HazmatArmorMaterial.INSTANCE, type,
+        super(ScpAdditionsModArmorMaterials.HAZMAT, type,
                 new Item.Properties().stacksTo(1));
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
     }

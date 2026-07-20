@@ -1,6 +1,9 @@
 package net.mcreator.scpadditions.item;
 
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.nbt.NbtAccounter;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -51,8 +54,8 @@ public class Scp914AssemblyKitItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, world, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 		tooltip.add(Component.literal("Places SCP-914. Blocked space is marked red."));
 	}
 
@@ -123,7 +126,7 @@ public class Scp914AssemblyKitItem extends Item {
 			if (stream == null) {
 				return null;
 			}
-			CompoundTag root = NbtIo.readCompressed(stream);
+			CompoundTag root = NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
 			ListTag paletteTag = root.getList("palette", Tag.TAG_COMPOUND);
 			List<BlockState> palette = new ArrayList<>();
 			for (int i = 0; i < paletteTag.size(); i++) {
@@ -150,8 +153,8 @@ public class Scp914AssemblyKitItem extends Item {
 	}
 
 	private static BlockState readState(CompoundTag tag) {
-		ResourceLocation id = new ResourceLocation(tag.getString("Name"));
-		Block block = ForgeRegistries.BLOCKS.getValue(id);
+		ResourceLocation id = ResourceLocation.parse(tag.getString("Name"));
+		Block block = BuiltInRegistries.BLOCK.get(id);
 		if (block == null) {
 			return Blocks.AIR.defaultBlockState();
 		}

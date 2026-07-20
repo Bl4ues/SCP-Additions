@@ -1,6 +1,8 @@
 
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.item.Item;
+
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -43,8 +45,8 @@ public class Scp914bodyBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 		list.add(Component.literal("The Clockworks"));
 	}
 
@@ -106,11 +108,9 @@ public class Scp914bodyBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
-		if (player.getInventory().getSelected().getItem() instanceof PickaxeItem tieredItem)
-			return tieredItem.getTier().getLevel() >= 1;
-		return false;
-	}
+	public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
+        return player.getMainHandItem().isCorrectToolForDrops(state);
+    }
 
 	@Override
 	public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {

@@ -23,7 +23,7 @@ import org.joml.Vector3f;
 import java.util.List;
 
 public final class PickupPromptClient {
-    private static final ResourceLocation PICKUP_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/pickup.png");
+    private static final ResourceLocation PICKUP_ICON = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "textures/gui/pickup.png");
 
     private static final int ICON_SOURCE_SIZE = 128;
     private static final int ICON_SIZE = 82;
@@ -149,7 +149,7 @@ public final class PickupPromptClient {
         poseStack.translate(cx, cy, cz);
         poseStack.scale(MODEL_OUTLINE_SCALE, MODEL_OUTLINE_SCALE, MODEL_OUTLINE_SCALE);
         poseStack.translate(-cx, -cy, -cz);
-        mc.getEntityRenderDispatcher().render(target, x, y, z, target.getYRot(), mc.getFrameTime(), poseStack, outline, LightTexture.FULL_BRIGHT);
+        mc.getEntityRenderDispatcher().render(target, x, y, z, target.getYRot(), mc.getTimer().getGameTimeDeltaPartialTick(false), poseStack, outline, LightTexture.FULL_BRIGHT);
         poseStack.popPose();
 
         outline.endOutlineBatch();

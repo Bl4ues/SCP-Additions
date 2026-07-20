@@ -1,5 +1,11 @@
 package net.mcreator.scpadditions.keycard;
 
+import net.neoforged.neoforge.common.util.TriState;
+
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -7,11 +13,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
@@ -20,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class KeycardReaderInteractionEvents {
     public static final String SAVED_LEVEL_TAG = "ScpAdditionsKeycardReaderLevel";
     private static final Map<UUID, SuppressedInteraction> SUPPRESSED_INTERACTIONS = new HashMap<>();
@@ -50,7 +55,7 @@ public final class KeycardReaderInteractionEvents {
         }
 
         if (controlDown) {
-            int savedLevel = screwdriver.hasTag() ? screwdriver.getTag().getInt(SAVED_LEVEL_TAG) : 0;
+            int savedLevel = LegacyItemTags.hasTag(screwdriver) ? LegacyItemTags.getTag(screwdriver).getInt(SAVED_LEVEL_TAG) : 0;
             if (savedLevel < 1 || savedLevel > 6) {
                 player.displayClientMessage(Component.translatable(
                         "message.scp_additions.keycard_reader_no_saved_level")
@@ -62,7 +67,7 @@ public final class KeycardReaderInteractionEvents {
                         .withStyle(ChatFormatting.GREEN), true);
             }
         } else if (shiftDown) {
-            screwdriver.getOrCreateTag().putInt(SAVED_LEVEL_TAG, descriptor.level());
+            LegacyItemTags.getOrCreateTag(screwdriver).putInt(SAVED_LEVEL_TAG, descriptor.level());
             player.displayClientMessage(Component.translatable(
                     "message.scp_additions.keycard_reader_level_copied", descriptor.level())
                     .withStyle(ChatFormatting.GREEN), true);
@@ -94,8 +99,8 @@ public final class KeycardReaderInteractionEvents {
 
         // Stop the normal keycard swipe procedure from running underneath the
         // configuration interaction.
-        event.setUseBlock(Event.Result.DENY);
-        event.setUseItem(Event.Result.DENY);
+        event.setUseBlock(TriState.FALSE);
+        event.setUseItem(TriState.FALSE);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
 

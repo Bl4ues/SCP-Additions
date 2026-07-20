@@ -13,7 +13,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 public final class Scp012Damage {
     public static final ResourceKey<DamageType> TYPE = ResourceKey.create(
             Registries.DAMAGE_TYPE,
-            new ResourceLocation(ScpAdditionsMod.MODID, "scp_012"));
+            ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "scp_012"));
 
     private Scp012Damage() {
     }

@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.equipment;
 
+import net.minecraft.core.component.DataComponents;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -9,20 +13,20 @@ import net.minecraft.world.item.LingeringPotionItem;
 import net.minecraft.world.item.SplashPotionItem;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.block.CakeBlock;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.event.entity.living.LivingDropsEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class HazmatSuitEvents {
     private HazmatSuitEvents() {
     }
@@ -169,7 +173,7 @@ public final class HazmatSuitEvents {
         }
 
         UseAnim animation = stack.getUseAnimation();
-        return stack.isEdible()
+        return stack.has(DataComponents.FOOD)
                 || animation == UseAnim.EAT
                 || animation == UseAnim.DRINK;
     }

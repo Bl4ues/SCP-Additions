@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.network;
 
+import net.minecraft.core.component.DataComponents;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
@@ -19,7 +21,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -58,7 +60,7 @@ public class InventoryActionPacket {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (!inventory.isValidMainSlot(msg.slot)) {
                     ModNetwork.syncTo(player, inventory);
                     return;
@@ -109,7 +111,7 @@ public class InventoryActionPacket {
         }
 
         UseAnim animation = stack.getUseAnimation();
-        boolean hasVanillaUseResult = stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+        boolean hasVanillaUseResult = stack.has(DataComponents.FOOD) || animation == UseAnim.EAT || animation == UseAnim.DRINK;
         if (!hasVanillaUseResult) {
             inventory.removeInventoryItem(slot);
             return;

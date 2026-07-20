@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.client;
 
+import net.minecraft.client.Minecraft;
+
 import com.bl4ues.scpinventory.crafting.ScpCraftingState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +19,13 @@ public final class ScpCraftingClientState {
     }
 
     public static void apply(CompoundTag tag) {
-        state = ScpCraftingState.fromTag(tag == null ? new CompoundTag() : tag);
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            state = new ScpCraftingState.Data();
+        } else {
+            state = ScpCraftingState.fromTag(
+                    tag == null ? new CompoundTag() : tag, minecraft.level.registryAccess());
+        }
         revision++;
     }
 

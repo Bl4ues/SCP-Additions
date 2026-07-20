@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.commands;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
@@ -14,13 +16,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
 import java.util.Collection;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public class ScpInventoryCommands {
 
     @SubscribeEvent
@@ -83,7 +85,7 @@ public class ScpInventoryCommands {
     }
 
     private static int resetSingle(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.resetAll();
             clearMirroredVanillaEquipment(player);
             ModNetwork.syncTo(player, inventory);
@@ -109,7 +111,7 @@ public class ScpInventoryCommands {
     }
 
     private static int clearMainSingle(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.resetMainInventory();
             ModNetwork.syncTo(player, inventory);
         });
@@ -128,7 +130,7 @@ public class ScpInventoryCommands {
     }
 
     private static int setMaxSingle(ServerPlayer player, int slots) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.setMaxMainSlots(slots);
             ModNetwork.syncTo(player, inventory);
             player.sendSystemMessage(Component.literal("SCP max main slots set to " + inventory.getMaxMainSlots() + "."));
@@ -147,7 +149,7 @@ public class ScpInventoryCommands {
     }
 
     private static int getMax(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
+        ScpInventoryCapability.get(player).ifPresent(inventory ->
                 player.sendSystemMessage(Component.literal(
                         "SCP main slots: " + inventory.getInventoryCount() + "/" + inventory.getMaxMainSlots()
                                 + ", keys: " + inventory.getKeyCount() + "/" + IScpInventory.MAX_KEY_COUNT

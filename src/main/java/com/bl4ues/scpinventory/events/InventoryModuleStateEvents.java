@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.events;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
@@ -9,10 +11,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.HashSet;
@@ -24,7 +26,7 @@ import java.util.UUID;
  * Synchronizes the authoritative module state and safely releases custom
  * inventory contents when the module is disabled at runtime.
  */
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public final class InventoryModuleStateEvents {
     private static final Set<UUID> RELEASED_WHILE_DISABLED = new HashSet<>();
 
@@ -64,7 +66,7 @@ public final class InventoryModuleStateEvents {
     }
 
     private static void releaseStoredItems(ServerPlayer player) {
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             Inventory vanilla = player.getInventory();
 
             // Tagged harmful/usable stacks are mirrors of capability-owned data.
@@ -166,6 +168,6 @@ public final class InventoryModuleStateEvents {
 
     private static boolean sameSingle(ItemStack first, ItemStack second) {
         if (first == null || first.isEmpty() || second == null || second.isEmpty()) return false;
-        return ItemStack.isSameItemSameTags(normalized(first), normalized(second));
+        return ItemStack.isSameItemSameComponents(normalized(first), normalized(second));
     }
 }

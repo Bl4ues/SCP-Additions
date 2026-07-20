@@ -1,7 +1,8 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -35,7 +36,7 @@ public class Scp294drinkGiveProcedure {
 			return;
 		}
 
-		playSound(world, x, y, z, new ResourceLocation("scp_additions:scp294enter"));
+		playSound(world, x, y, z, ResourceLocation.parse("scp_additions:scp294enter"));
 
 		Slot coinSlot = getCoinSlot(player);
 		if (coinSlot == null || !PlayerCurrencyAccess.isCurrency(
@@ -47,7 +48,7 @@ public class Scp294drinkGiveProcedure {
 		if (!match.found()) {
 			player.closeContainer();
 			showOutOfRangeScreen(world, x, y, z);
-			playSound(world, x, y, z, new ResourceLocation("scp_additions:scp294outofrange"));
+			playSound(world, x, y, z, ResourceLocation.parse("scp_additions:scp294outofrange"));
 			return;
 		}
 
@@ -111,7 +112,7 @@ public class Scp294drinkGiveProcedure {
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		CompoundTag blockEntityTag = null;
 		if (blockEntity != null) {
-			blockEntityTag = blockEntity.saveWithFullMetadata();
+			blockEntityTag = blockEntity.saveWithFullMetadata(world.registryAccess());
 			blockEntity.setRemoved();
 		}
 		world.setBlock(pos, newState, 3);
@@ -119,7 +120,7 @@ public class Scp294drinkGiveProcedure {
 			BlockEntity newBlockEntity = world.getBlockEntity(pos);
 			if (newBlockEntity != null) {
 				try {
-					newBlockEntity.load(blockEntityTag);
+					newBlockEntity.loadWithComponents(blockEntityTag, world.registryAccess());
 				} catch (Exception ignored) {
 				}
 			}
@@ -144,9 +145,9 @@ public class Scp294drinkGiveProcedure {
 	private static void playSound(LevelAccessor world, double x, double y, double z, ResourceLocation sound) {
 		if (world instanceof Level level) {
 			if (!level.isClientSide()) {
-				level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(sound), SoundSource.NEUTRAL, 1, 1);
+				level.playSound(null, BlockPos.containing(x, y, z), BuiltInRegistries.SOUND_EVENT.get(sound), SoundSource.NEUTRAL, 1, 1);
 			} else {
-				level.playLocalSound(x, y, z, ForgeRegistries.SOUND_EVENTS.getValue(sound), SoundSource.NEUTRAL, 1, 1, false);
+				level.playLocalSound(x, y, z, BuiltInRegistries.SOUND_EVENT.get(sound), SoundSource.NEUTRAL, 1, 1, false);
 			}
 		}
 	}

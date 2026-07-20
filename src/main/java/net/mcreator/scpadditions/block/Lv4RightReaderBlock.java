@@ -1,6 +1,12 @@
 
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.phys.HitResult;
+
+import net.minecraft.world.level.LevelReader;
+
+import net.minecraft.world.item.Item;
+
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -48,8 +54,8 @@ public class Lv4RightReaderBlock extends Block implements SimpleWaterloggedBlock
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 	}
 
 	@Override
@@ -118,14 +124,12 @@ public class Lv4RightReaderBlock extends Block implements SimpleWaterloggedBlock
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
-			BlockGetter world, BlockPos pos, Player player) {
+	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader world, BlockPos pos, Player player) {
 		return new ItemStack(net.mcreator.scpadditions.init.UnifiedReaderItems.KEYCARD_READER.get());
 	}
 
 	@Override
-	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
+	protected InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
 		int x = pos.getX();
 		int y = pos.getY();
 		int z = pos.getZ();

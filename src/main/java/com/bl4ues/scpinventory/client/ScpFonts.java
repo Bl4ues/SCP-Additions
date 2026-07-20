@@ -6,8 +6,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 public final class ScpFonts {
-    public static final ResourceLocation ROBOTO = new ResourceLocation(ScpInventoryMod.MODID, "roboto");
-    public static final ResourceLocation MONTSERRAT = new ResourceLocation(ScpInventoryMod.MODID, "montserrat");
+    public static final ResourceLocation ROBOTO = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "roboto");
+    public static final ResourceLocation MONTSERRAT = ResourceLocation.fromNamespaceAndPath(ScpInventoryMod.MODID, "montserrat");
 
     private ScpFonts() {
     }

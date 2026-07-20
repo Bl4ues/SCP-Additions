@@ -25,9 +25,9 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 	private static final double MIN_DIAL_ANGLE = -87.0D;
 	private static final double MAX_DIAL_ANGLE = 89.2D;
 	private static final double SNAP_THRESHOLD = 12.0D;
-	private static final ResourceLocation BACKGROUND = new ResourceLocation("scp_additions:textures/screens/scp_914_gui.png");
-	private static final ResourceLocation DIAL = new ResourceLocation("scp_additions:textures/screens/scp_914_dial.png");
-	private static final ResourceLocation DIAL_HOVER = new ResourceLocation("scp_additions:textures/screens/scp_914_dial_hover.png");
+	private static final ResourceLocation BACKGROUND = ResourceLocation.parse("scp_additions:textures/screens/scp_914_gui.png");
+	private static final ResourceLocation DIAL = ResourceLocation.parse("scp_additions:textures/screens/scp_914_dial.png");
+	private static final ResourceLocation DIAL_HOVER = ResourceLocation.parse("scp_additions:textures/screens/scp_914_dial_hover.png");
 
 	private final Level world;
 	private final int x, y, z;
@@ -57,7 +57,7 @@ public class Scp914GuiScreen extends AbstractContainerScreen<Scp914GuiMenu> {
 			dragAngle = selected.angle();
 			initializedSetting = true;
 		}
-		this.renderBackground(guiGraphics);
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
 		renderPanel(guiGraphics, mouseX, mouseY);
 		renderHoverTooltip(guiGraphics, mouseX, mouseY);
 	}

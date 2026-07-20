@@ -90,7 +90,7 @@ public class ItemConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g);
+        renderBackground(g, mouseX, mouseY, partialTick);
         int left = panelLeft();
         int top = panelTop();
 

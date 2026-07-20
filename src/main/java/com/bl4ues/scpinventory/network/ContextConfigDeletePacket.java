@@ -5,8 +5,8 @@ import com.bl4ues.scpinventory.context.ContextEntityConfigManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
 import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
 import java.util.function.Supplier;

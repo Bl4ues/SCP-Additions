@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.event;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
@@ -15,17 +17,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public final class ScpInventoryMaintenanceEvents {
 
     private static final int VANILLA_HOTBAR_START = 0;
@@ -127,7 +129,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ItemStack returning = cleanForScpStorage(inventory.extractActiveUsable());
             if (returning.isEmpty()) {
                 returning = cleanForScpStorage(getHotbarOrTrackedSessionStack(player, hotbarSlot, id));
@@ -154,7 +156,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ItemStack dropStack = cleanForExternalWorld(inventory.extractActiveUsable());
             if (dropStack.isEmpty()) {
                 dropStack = cleanForExternalWorld(getHotbarOrTrackedSessionStack(player, hotbarSlot, id));
@@ -187,7 +189,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.clearActiveUsable();
             clearActiveUsableMirrors(player, activeStack);
             ModNetwork.syncTo(player, inventory);
@@ -398,7 +400,7 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             inventory.clearActiveUsable();
             clearActiveUsableMirrors(player, activeStack);
             ModNetwork.syncTo(player, inventory);
@@ -417,7 +419,7 @@ public final class ScpInventoryMaintenanceEvents {
             return;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             boolean changed = false;
             if (!player.isCreative()) {
                 if (ScpItemEffects.hasNoStaminaModifierEquipped(player, inventory)) {
@@ -603,7 +605,7 @@ public final class ScpInventoryMaintenanceEvents {
         ItemStack offhand = player.getOffhandItem();
 
         if (!equippedAccessory.isEmpty() && ScpItemClassifier.isAccessoryHand(equippedAccessory)) {
-            if (offhand.isEmpty() || !ItemStack.isSameItemSameTags(normalizeSingle(offhand), normalizeSingle(equippedAccessory))) {
+            if (offhand.isEmpty() || !ItemStack.isSameItemSameComponents(normalizeSingle(offhand), normalizeSingle(equippedAccessory))) {
                 InventoryActionPacket.syncVanillaEquipmentSlot(player, ScpEquipmentSlot.ACCESSORY, equippedAccessory);
                 return true;
             }
@@ -634,7 +636,7 @@ public final class ScpInventoryMaintenanceEvents {
         ItemStack mirror = vanillaInventory.items.get(mirrorSlot);
         ItemStack normalizedMirror = normalizeSingle(mirror);
         ItemStack normalizedEquipped = normalizeSingle(equippedWeapon);
-        if (!ItemStack.isSameItemSameTags(normalizedMirror, normalizedEquipped)) {
+        if (!ItemStack.isSameItemSameComponents(normalizedMirror, normalizedEquipped)) {
             inventory.setEquipment(ScpEquipmentSlot.WEAPON, normalizedMirror);
             return true;
         }
@@ -662,7 +664,7 @@ public final class ScpInventoryMaintenanceEvents {
     }
 
     private static boolean isSameSingleItem(ItemStack left, ItemStack right) {
-        return ItemStack.isSameItemSameTags(normalizeSingle(left), normalizeSingle(right));
+        return ItemStack.isSameItemSameComponents(normalizeSingle(left), normalizeSingle(right));
     }
 
     private static ItemStack normalizeSingle(ItemStack stack) {

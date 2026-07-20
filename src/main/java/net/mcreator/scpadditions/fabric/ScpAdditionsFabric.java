@@ -1,0 +1,17 @@
+package net.mcreator.scpadditions.fabric;
+
+import net.fabricmc.api.ModInitializer;
+import net.neoforged.bus.api.SimpleEventBus;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.mcreator.scpadditions.ScpAdditionsMod;
+
+public final class ScpAdditionsFabric implements ModInitializer {
+    public static final SimpleEventBus MOD_BUS = new SimpleEventBus();
+    @Override
+    public void onInitialize() {
+        new ScpAdditionsMod(MOD_BUS);
+        FabricSubscriberBootstrap.registerAll(MOD_BUS);
+        MOD_BUS.post(new FMLCommonSetupEvent());
+        FabricGameEventBridge.register();
+    }
+}

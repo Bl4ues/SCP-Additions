@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.data;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -14,8 +16,9 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.loading.FMLPaths;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
@@ -38,7 +41,7 @@ public final class Scp294DrinkManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("scpadditions").resolve("294drinks.json");
 	private static final String BUNDLED_CONFIG = "config/scpadditions/294drinks.json";
-	private static final ResourceLocation GENERIC_CUP = new ResourceLocation("scp_additions", "cup_of_coffee");
+	private static final ResourceLocation GENERIC_CUP = ResourceLocation.fromNamespaceAndPath("scp_additions", "cup_of_coffee");
 	private static final Set<String> LEGACY_DRINK_ITEM_PATHS = Set.of(
 			"aloe",
 			"amnesia",
@@ -236,14 +239,14 @@ public final class Scp294DrinkManager {
 	}
 
 	private static DrinkDefinition parseDrink(JsonObject json) {
-		ResourceLocation id = new ResourceLocation(GsonHelper.getAsString(json, "id"));
+		ResourceLocation id = ResourceLocation.parse(GsonHelper.getAsString(json, "id"));
 		List<String> aliases = readAliases(id, json);
 		JsonObject result = json.has("result") ? GsonHelper.getAsJsonObject(json, "result") : new JsonObject();
-		ResourceLocation resultItem = normalizeLegacyDrinkItem(new ResourceLocation(
+		ResourceLocation resultItem = normalizeLegacyDrinkItem(ResourceLocation.parse(
 				GsonHelper.getAsString(result, "item", GENERIC_CUP.toString())));
 		int resultCount = Math.max(1, GsonHelper.getAsInt(result, "count", 1));
 		int delayTicks = Math.max(0, GsonHelper.getAsInt(json, "delay_ticks", 40));
-		ResourceLocation sound = new ResourceLocation(GsonHelper.getAsString(json, "sound", "scp_additions:scp294pouring"));
+		ResourceLocation sound = ResourceLocation.parse(GsonHelper.getAsString(json, "sound", "scp_additions:scp294pouring"));
 		boolean consumesCoin = GsonHelper.getAsBoolean(json, "consumes_coin", true);
 		boolean giveResult = GsonHelper.getAsBoolean(json, "give_result", true);
 		boolean drinkable = GsonHelper.getAsBoolean(json, "drinkable", true);
@@ -294,7 +297,7 @@ public final class Scp294DrinkManager {
 		for (JsonElement element : array) {
 			JsonObject effect = GsonHelper.convertToJsonObject(element, "SCP-294 effect");
 			effects.add(new ConfiguredEffect(
-					new ResourceLocation(GsonHelper.getAsString(effect, "id")),
+					ResourceLocation.parse(GsonHelper.getAsString(effect, "id")),
 					Math.max(1, GsonHelper.getAsInt(effect, "duration", 200)),
 					Math.max(0, GsonHelper.getAsInt(effect, "amplifier", 0)),
 					GsonHelper.getAsBoolean(effect, "ambient", false),
@@ -373,14 +376,14 @@ public final class Scp294DrinkManager {
 	}
 
 	public static ItemStack createResult(DrinkDefinition drink) {
-		Item item = ForgeRegistries.ITEMS.getValue(drink.resultItem());
+		Item item = BuiltInRegistries.ITEM.get(drink.resultItem());
 		if (item == null || item == Items.AIR) {
 			ScpAdditionsMod.LOGGER.warn("SCP-294 drink {} points to missing item {}", drink.id(), drink.resultItem());
 			return ItemStack.EMPTY;
 		}
 
 		ItemStack stack = new ItemStack(item, drink.resultCount());
-		CompoundTag tag = stack.getOrCreateTag();
+		CompoundTag tag = LegacyItemTags.getOrCreateTag(stack);
 		CompoundTag drinkTag = new CompoundTag();
 		drinkTag.putString("id", drink.id().toString());
 		drinkTag.putInt("cup_color", drink.cupColor());

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,8 +14,8 @@ import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.network.BlinkInputStatePacket;
 
 public final class BlinkClient {
-    private static final ResourceLocation EYE_ICON = new ResourceLocation("scpinventory", "textures/gui/eye.png");
-    private static final ResourceLocation VIGNETTE = new ResourceLocation("scpinventory", "textures/gui/vignette.png");
+    private static final ResourceLocation EYE_ICON = ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/eye.png");
+    private static final ResourceLocation VIGNETTE = ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/vignette.png");
     private static final int VIGNETTE_SOURCE_WIDTH = 1920;
     private static final int VIGNETTE_SOURCE_HEIGHT = 1080;
     private static final int BASE_BLINK_INTERVAL_TICKS = 200;
@@ -200,12 +202,12 @@ public final class BlinkClient {
     }
 
     private static boolean hasEyeSore(Minecraft mc) {
-        return mc != null && mc.player != null && mc.player.hasEffect(ScpAdditionsModMobEffects.EYE_SORE.get());
+        return mc != null && mc.player != null && mc.player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.EYE_SORE.get()));
     }
 
     private static boolean hasLubricatedEye(Minecraft mc) {
         return mc != null && mc.player != null
-                && mc.player.hasEffect(ScpAdditionsModMobEffects.LUBRICATED_EYE.get());
+                && mc.player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.LUBRICATED_EYE.get()));
     }
 
     private static int getBlinkIntervalTicks(Minecraft mc) {

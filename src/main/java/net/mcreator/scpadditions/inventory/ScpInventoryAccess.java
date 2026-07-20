@@ -11,7 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.LazyOptional;
+import com.bl4ues.scpadditions.compat.LazyOptional;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import java.util.List;
 
 public final class ScpInventoryAccess {
     private static final ResourceLocation CANONICAL_SCP_294_COIN =
-            new ResourceLocation("scp_additions", "coin");
+            ResourceLocation.fromNamespaceAndPath("scp_additions", "coin");
 
     private ScpInventoryAccess() {
     }
@@ -27,7 +27,7 @@ public final class ScpInventoryAccess {
     public static LazyOptional<IScpInventory> get(Player player) {
         return player == null
                 ? LazyOptional.empty()
-                : player.getCapability(ScpInventoryCapability.INSTANCE);
+                : ScpInventoryCapability.get(player);
     }
 
     public static Iterable<ItemStack> visibleStacks(Player player) {

@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
+import net.minecraft.core.component.DataComponents;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,10 +25,10 @@ public class Scp1176honeyPlayerFinishesUsingItemProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity) {
 		if (entity == null)
 			return;
-		if ((entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
+		if ((ScpAdditionsModVariables.getPlayerVariables(entity).orElse(new ScpAdditionsModVariables.PlayerVariables())).ABpos) {
 			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide()) {
 				_entity.addEffect(new MobEffectInstance(MobEffects.SATURATION, 12000, 10, false, false));
-				_entity.addEffect(new MobEffectInstance(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get(), 12000, 0, false, false, false));
+				_entity.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get()), 12000, 0, false, false, false));
 			}
 			if (entity instanceof LivingEntity _entity)
 				_entity.removeEffect(MobEffects.POISON);
@@ -37,7 +41,7 @@ public class Scp1176honeyPlayerFinishesUsingItemProcedure {
 				_entity.addEffect(new MobEffectInstance(MobEffects.HUNGER, 1360, 1, false, false));
 				_entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 1360, 1, false, false));
 				_entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1360, 3, false, false));
-				_entity.addEffect(new MobEffectInstance(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get(), 1360, 0, false, false, false));
+				_entity.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ScpAdditionsModMobEffects.SCP_1176_HONEYED.get()), 1360, 0, false, false, false));
 			}
 			ScpAdditionsMod.queueServerWork(1360, () -> {
 				if (entity instanceof LivingEntity _entity)
@@ -54,7 +58,7 @@ public class Scp1176honeyPlayerFinishesUsingItemProcedure {
 								ItemStack _itemstack = ItemStack.EMPTY;
 								if (this.getEntity() instanceof LivingEntity _livingentity)
 									_itemstack = _livingentity.getMainHandItem();
-								return !_itemstack.isEmpty() && _itemstack.hasCustomHoverName()
+								return !_itemstack.isEmpty() && _itemstack.has(DataComponents.CUSTOM_NAME)
 										? Component.translatable(_translatekey + ".item", _msgEntity.getDisplayName(), _component, _itemstack.getDisplayName())
 										: Component.translatable(_translatekey, _msgEntity.getDisplayName(), _component);
 							}

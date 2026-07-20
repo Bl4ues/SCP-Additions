@@ -12,7 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.loading.FMLPaths;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
@@ -396,7 +396,7 @@ public final class ConfigCenterService {
 
     private static void validateId(String raw, String label, List<String> errors, List<String> warnings, boolean allowMissing) {
         if (raw == null || raw.isBlank()) { errors.add(label + " is required"); return; }
-        try { new ResourceLocation(raw.trim()); }
+        try { ResourceLocation.parse(raw.trim()); }
         catch (Exception exception) { errors.add(label + " has invalid resource id '" + raw + "'"); }
     }
 

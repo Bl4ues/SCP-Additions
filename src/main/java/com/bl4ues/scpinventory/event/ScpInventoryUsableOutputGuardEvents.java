@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.event;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
@@ -9,17 +11,17 @@ import com.bl4ues.scpinventory.network.ModNetwork;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public final class ScpInventoryUsableOutputGuardEvents {
     private static final int VANILLA_HOTBAR_START = 0;
     private static final int VANILLA_HOTBAR_END_EXCLUSIVE = 9;
@@ -76,7 +78,7 @@ public final class ScpInventoryUsableOutputGuardEvents {
 
         if (ItemStack.isSameItem(current, expected)) {
             ItemStack normalizedCurrent = normalizeSingle(current);
-            if (!ItemStack.isSameItemSameTags(normalizedCurrent, expected)) {
+            if (!ItemStack.isSameItemSameComponents(normalizedCurrent, expected)) {
                 activeStacks.put(id, normalizedCurrent);
             }
             return;
@@ -86,7 +88,7 @@ public final class ScpInventoryUsableOutputGuardEvents {
             return;
         }
 
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ItemStack routing = current.copy();
             ScpPickupRouter.stripUsableSession(routing);
             ScpPickupRouter.stripNoMergeMarker(routing);

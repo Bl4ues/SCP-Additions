@@ -4,11 +4,8 @@
  */
 package net.mcreator.scpadditions.init;
 
-import net.minecraftforge.fml.common.Mod;
-
 import net.minecraft.world.level.GameRules;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModGameRules {
 	public static final GameRules.Key<GameRules.BooleanValue> TESLAGATEON = GameRules.register("teslaGateOn", GameRules.Category.MISC, GameRules.BooleanValue.create(true));
 	public static final GameRules.Key<GameRules.BooleanValue> TESLAGATEMANUALOVERRIDE = GameRules.register("teslaGateManualOverride", GameRules.Category.MISC, GameRules.BooleanValue.create(false));

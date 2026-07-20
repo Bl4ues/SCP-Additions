@@ -1,7 +1,7 @@
 package net.mcreator.scpadditions.data;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.loading.FMLPaths;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
@@ -76,7 +76,7 @@ public final class Scp914SkinManager {
         }
 
         String selected = skins.get(player.getRandom().nextInt(skins.size()));
-        player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
+        ScpAdditionsModVariables.getPlayerVariables(player)
                 .ifPresent(variables -> {
                     clearLegacyFlags(variables);
                     variables.scp914Skin = selected;

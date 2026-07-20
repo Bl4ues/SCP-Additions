@@ -9,7 +9,7 @@ import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
 /** First-person view through the sealed Hazmat Suit mask. */
 public final class HazmatVisorOverlay {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             "scp_additions", "textures/gui/hazmat_suit_overlay.png");
     private static final int TEXTURE_WIDTH = 1920;
     private static final int TEXTURE_HEIGHT = 1080;

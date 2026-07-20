@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.handler;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -10,15 +14,16 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.data.Scp294ActionExecutor;
 
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class Scp294DrinkHandler {
 	private Scp294DrinkHandler() {
 	}
@@ -26,12 +31,12 @@ public final class Scp294DrinkHandler {
 	@SubscribeEvent
 	public static void onDrinkFinished(LivingEntityUseItemEvent.Finish event) {
 		ItemStack stack = event.getItem();
-		if (!stack.hasTag() || !stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+		if (!LegacyItemTags.hasTag(stack) || !LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
 			return;
 		}
 
 		LivingEntity entity = event.getEntity();
-		CompoundTag drinkTag = stack.getTag().getCompound("Scp294Drink");
+		CompoundTag drinkTag = LegacyItemTags.getTag(stack).getCompound("Scp294Drink");
 		showActionbar(entity, drinkTag);
 		applyConfiguredEffects(entity, drinkTag);
 		executeDrinkActions(entity, drinkTag);
@@ -56,13 +61,13 @@ public final class Scp294DrinkHandler {
 		ListTag effects = drinkTag.getList("effects", Tag.TAG_COMPOUND);
 		for (int i = 0; i < effects.size(); i++) {
 			CompoundTag effectTag = effects.getCompound(i);
-			MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation(effectTag.getString("id")));
+			MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(ResourceLocation.parse(effectTag.getString("id")));
 			if (effect == null) {
 				continue;
 			}
 
 			entity.addEffect(new MobEffectInstance(
-					effect,
+					BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect),
 					Math.max(1, effectTag.getInt("duration")),
 					Math.max(0, effectTag.getInt("amplifier")),
 					effectTag.getBoolean("ambient"),

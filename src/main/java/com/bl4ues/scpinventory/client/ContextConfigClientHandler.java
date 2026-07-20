@@ -4,8 +4,8 @@ import com.bl4ues.scpinventory.client.gui.ContextConfigScreen;
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpinventory.network.ContextConfigOpenPacket;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public final class ContextConfigClientHandler {

@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.debug;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
@@ -28,7 +30,7 @@ public final class ScpInventoryDebug {
         if (stack.isEmpty()) {
             return "empty";
         }
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         return stack.getItem()
                 + " x" + stack.getCount()
                 + " tag=" + (tag == null ? "{}" : tag.toString());

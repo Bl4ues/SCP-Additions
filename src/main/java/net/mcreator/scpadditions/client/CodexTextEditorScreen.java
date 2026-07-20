@@ -181,15 +181,15 @@ public final class CodexTextEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         syncVisible();
         int visible = Math.max(5, (Math.min(460, height - 16) - 112) / 22);
         int next = Math.max(0, Math.min(Math.max(0, lines.size() - visible),
-                scroll + (delta < 0 ? 1 : -1)));
+                scroll + (scrollY < 0 ? 1 : -1)));
         if (next != scroll) {
             scroll = next; focusLine = -1; rebuild(); return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override
@@ -221,7 +221,7 @@ public final class CodexTextEditorScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
                        float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         int panelWidth = Math.min(720, width - 20);
         int panelHeight = Math.min(460, height - 16);
         int left = (width - panelWidth) / 2;

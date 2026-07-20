@@ -10,7 +10,7 @@ import net.minecraft.util.Mth;
 /** SCP-styled notice panel used by the Eye Pods in the standalone mod. */
 public final class Scp131NoticeOverlay {
     private static final ResourceLocation POD_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/131logo.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/131logo.png");
 
     private static final long VISIBLE_DURATION = 4000L;
     private static final long FADE_IN_TIME = 150L;

@@ -1,5 +1,9 @@
 package com.bl4ues.scpinventory.crafting;
 
+import net.minecraft.nbt.Tag;
+
+import net.minecraft.core.HolderLookup;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -27,23 +31,23 @@ public final class ScpCraftingState {
         if (player == null) return new Data();
         CompoundTag persisted = player.getPersistentData()
                 .getCompound(Player.PERSISTED_NBT_TAG);
-        return fromTag(persisted.getCompound(ROOT_KEY));
+        return fromTag(persisted.getCompound(ROOT_KEY), player.registryAccess());
     }
 
     public static void save(Player player, Data data) {
         if (player == null || data == null) return;
         CompoundTag root = player.getPersistentData();
         CompoundTag persisted = root.getCompound(Player.PERSISTED_NBT_TAG);
-        persisted.put(ROOT_KEY, toTag(data));
+        persisted.put(ROOT_KEY, toTag(data, player.registryAccess()));
         root.put(Player.PERSISTED_NBT_TAG, persisted);
     }
 
-    public static CompoundTag toTag(Data data) {
+    public static CompoundTag toTag(Data data, HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
         ListTag gridTag = new ListTag();
         for (int i = 0; i < GRID_SIZE; i++) {
             ItemStack stack = data.getGridItem(i);
-            gridTag.add(stack.isEmpty() ? new CompoundTag() : stack.save(new CompoundTag()));
+            gridTag.add(saveStack(stack, registries));
         }
         tag.put(GRID_KEY, gridTag);
         tag.put(LEARNT_KEY, saveIds(data.learntRecipes));
@@ -51,20 +55,26 @@ public final class ScpCraftingState {
         return tag;
     }
 
-    public static Data fromTag(CompoundTag tag) {
+    public static Data fromTag(CompoundTag tag, HolderLookup.Provider registries) {
         Data data = new Data();
         if (tag == null || tag.isEmpty()) return data;
 
         ListTag gridTag = tag.getList(GRID_KEY, 10);
         for (int i = 0; i < GRID_SIZE; i++) {
             data.grid.set(i, i < gridTag.size()
-                    ? copySingle(ItemStack.of(gridTag.getCompound(i)))
+                    ? copySingle(ItemStack.parseOptional(registries, gridTag.getCompound(i)))
                     : ItemStack.EMPTY);
         }
         loadIds(tag.getList(LEARNT_KEY, 8), data.learntRecipes);
         loadIds(tag.getList(PINNED_KEY, 8), data.pinnedRecipes);
         data.pinnedRecipes.retainAll(data.learntRecipes);
         return data;
+    }
+
+    private static CompoundTag saveStack(ItemStack stack, HolderLookup.Provider registries) {
+        if (stack == null || stack.isEmpty()) return new CompoundTag();
+        Tag saved = stack.saveOptional(registries);
+        return saved instanceof CompoundTag compound ? compound : new CompoundTag();
     }
 
     private static ListTag saveIds(Set<ResourceLocation> ids) {

@@ -1,6 +1,10 @@
 package net.mcreator.scpadditions.config.ui;
 
-import com.bl4ues.scpinventory.capability.ScpInventoryProvider;
+import net.minecraft.core.component.DataComponents;
+
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
+import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.CodexDocumentDefinition;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import com.bl4ues.scpinventory.network.ModNetwork;
@@ -11,7 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.io.IOException;
@@ -104,17 +109,17 @@ public final class CodexAssetStorage {
             return false;
         }
         ResourceLocation id = ResourceLocation.tryParse(itemId == null ? "" : itemId);
-        Item item = id == null ? null : ForgeRegistries.ITEMS.getValue(id);
+        Item item = id == null ? null : BuiltInRegistries.ITEM.get(id);
         if (item == null) return false;
         ItemStack stack = new ItemStack(item);
-        stack.getOrCreateTag().putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());
+        LegacyItemTags.getOrCreateTag(stack).putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());
         if (displayName != null && !displayName.isBlank()) {
-            stack.setHoverName(Component.literal(displayName.trim()));
+            stack.set(DataComponents.CUSTOM_NAME, Component.literal(displayName.trim()));
         }
         if (ScpAdditionsModulesConfig.get().inventory.enabled
                 && ScpItemClassifier.getCodexDocument(stack).isPresent()) {
             boolean[] stored = {false};
-            player.getCapability(ScpInventoryProvider.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (inventory.addDocumentItem(stack.copy())) {
                     stored[0] = true;
                     ModNetwork.syncTo(player, inventory);

@@ -63,6 +63,6 @@ public final class HazmatSuitAccess {
     }
 
     private static ResourceLocation id(String path) {
-        return new ResourceLocation(ScpAdditionsMod.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, path);
     }
 }

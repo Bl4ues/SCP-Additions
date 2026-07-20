@@ -31,8 +31,8 @@ public final class ClientPacketHandlers {
         if (minecraft.player == null || inventoryTag == null) {
             return;
         }
-        minecraft.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
-            inventory.deserializeNBT(inventoryTag.copy());
+        ScpInventoryCapability.get(minecraft.player).ifPresent(inventory -> {
+            inventory.deserializeNBT(inventoryTag.copy(), minecraft.player.registryAccess());
             UsableHotbarSessionClient.filterActiveSourceSlot(inventory);
         });
     }
@@ -57,7 +57,7 @@ public final class ClientPacketHandlers {
         }
         minecraft.setScreen(null);
         if (sourceSlot >= 0) {
-            minecraft.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(minecraft.player).ifPresent(inventory -> {
                 if (inventory.isValidMainSlot(sourceSlot)) {
                     inventory.setInventoryItem(sourceSlot, ItemStack.EMPTY);
                 }

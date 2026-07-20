@@ -1,5 +1,15 @@
 package net.mcreator.scpadditions.facility;
 
+import net.minecraft.world.item.enchantment.Enchantments;
+
+import net.minecraft.world.item.enchantment.Enchantment;
+
+import net.minecraft.core.registries.Registries;
+
+import net.minecraft.core.Holder;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -7,12 +17,12 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ToolActions;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.DeferredRegister;
+import net.neoforged.neoforge.common.ItemAbilities;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Collections;
@@ -23,7 +33,7 @@ import java.util.Set;
  * Gives all SCP Unity facility structures, props, doors and panel states
  * brick-equivalent mining resistance while preserving proper pickaxe speed.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class FacilityBlockMiningEvents {
     private static final float BRICK_HARDNESS = 2.0F;
     private static final float WRONG_TO_CORRECT_TOOL_DIVISOR = 100.0F / 30.0F;
@@ -54,7 +64,7 @@ public final class FacilityBlockMiningEvents {
                 * registeredHardness / BRICK_HARDNESS;
 
         ItemStack tool = player.getMainHandItem();
-        if (tool.canPerformAction(ToolActions.PICKAXE_DIG)) {
+        if (tool.canPerformAction(ItemAbilities.PICKAXE_DIG)) {
             float pickaxeSpeed;
             boolean alreadyRecognized = player.hasCorrectToolForDrops(state);
             if (alreadyRecognized) {
@@ -69,7 +79,11 @@ public final class FacilityBlockMiningEvents {
                         / stateBaseSpeed;
                 float referenceSpeed = Math.max(1.0F,
                         tool.getDestroySpeed(Blocks.STONE.defaultBlockState()));
-                int efficiency = EnchantmentHelper.getBlockEfficiency(player);
+                Holder.Reference<Enchantment> efficiencyHolder = player.level()
+                        .registryAccess().registryOrThrow(Registries.ENCHANTMENT)
+                        .getHolderOrThrow(Enchantments.EFFICIENCY);
+                int efficiency = EnchantmentHelper.getItemEnchantmentLevel(
+                        efficiencyHolder, tool);
                 if (referenceSpeed > 1.0F && efficiency > 0) {
                     referenceSpeed += efficiency * efficiency + 1.0F;
                 }

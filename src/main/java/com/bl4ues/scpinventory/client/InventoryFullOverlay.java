@@ -14,9 +14,9 @@ import net.minecraft.world.item.ItemStack;
 public class InventoryFullOverlay {
 
     private static final ResourceLocation INVENTORY_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/inventoryfull.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/inventoryfull.png");
     private static final ResourceLocation POD_ICON =
-            new ResourceLocation("scpinventory", "textures/gui/131logo.png");
+            ResourceLocation.fromNamespaceAndPath("scpinventory", "textures/gui/131logo.png");
 
     private static final long VISIBLE_DURATION = 4000L;
     private static final long FADE_IN_TIME = 150L;
@@ -145,7 +145,7 @@ public class InventoryFullOverlay {
             return false;
         }
         final boolean[] blocked = {false};
-        minecraft.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(minecraft.player).ifPresent(inventory -> {
             if (ScpItemClassifier.isCoin(targetStack)) {
                 blocked[0] = inventory.getFreeMainSlots() <= 0;
                 return;

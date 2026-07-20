@@ -1,34 +1,26 @@
 package com.bl4ues.scpinventory.capability;
 
-import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-public class ScpInventoryProvider implements ICapabilitySerializable<CompoundTag> {
-
-    public static final Capability<IScpInventory> INSTANCE = ScpInventoryCapability.INSTANCE;
-
+/**
+ * Legacy serialization wrapper retained for source and save migration code.
+ * NeoForge 1.21.1 stores the inventory through ScpInventoryCapability's data
+ * attachment, so this class is no longer attached directly to entities.
+ */
+@Deprecated(forRemoval = false)
+public final class ScpInventoryProvider {
     private final IScpInventory backend = new ScpInventory();
-    private final LazyOptional<IScpInventory> optionalData = LazyOptional.of(() -> backend);
 
-    @Nonnull
-    @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == INSTANCE ? optionalData.cast() : LazyOptional.empty();
+    public IScpInventory backend() {
+        return backend;
     }
 
-    @Override
-    public CompoundTag serializeNBT() {
-        return backend.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider registries) {
+        return backend.serializeNBT(registries);
     }
 
-    @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        backend.deserializeNBT(nbt);
+    public void deserializeNBT(CompoundTag nbt, HolderLookup.Provider registries) {
+        backend.deserializeNBT(nbt, registries);
     }
 }

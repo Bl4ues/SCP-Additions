@@ -132,9 +132,6 @@ public class ContextConfigScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        actionBox.tick();
-        nameBox.tick();
-        rangeBox.tick();
         spawnMarkerParticles();
     }
 
@@ -193,8 +190,8 @@ public class ContextConfigScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        nudge(0, delta * step(), 0);
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        nudge(0, scrollY * step(), 0);
         return true;
     }
 

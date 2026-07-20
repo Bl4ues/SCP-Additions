@@ -62,8 +62,7 @@ public final class CodexAssetClient {
         }
         try {
             NativeImage image = NativeImage.read(new ByteArrayInputStream(data));
-            ResourceLocation location = new ResourceLocation("scp_additions",
-                    "world_codex/" + Integer.toHexString(cache.hashCode()));
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath("scp_additions", "world_codex/" + Integer.toHexString(cache.hashCode()));
             Minecraft.getInstance().getTextureManager().register(location,
                     new DynamicTexture(image));
             TEXTURES.put(cache, location);

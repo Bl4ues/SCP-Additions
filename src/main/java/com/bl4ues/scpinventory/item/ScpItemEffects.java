@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class ScpItemEffects {
     private static final ResourceLocation CANONICAL_SCP_714 =
-            new ResourceLocation("scp_additions", "scp_714");
+            ResourceLocation.fromNamespaceAndPath("scp_additions", "scp_714");
 
     private ScpItemEffects() {
     }
@@ -60,7 +60,7 @@ public final class ScpItemEffects {
         }
 
         AtomicBoolean hasEffect = new AtomicBoolean(false);
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory ->
+        ScpInventoryCapability.get(player).ifPresent(inventory ->
                 hasEffect.set(hasEffectEquipped(inventory, effect))
         );
         return hasEffect.get();

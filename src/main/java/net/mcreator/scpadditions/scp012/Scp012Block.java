@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.scp012;
 
+import com.mojang.serialization.MapCodec;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -22,6 +24,11 @@ import java.util.List;
 
 /** One registry block for one visible SCP-012 containment animation stage. */
 public final class Scp012Block extends HorizontalDirectionalBlock {
+    @Override
+    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+        return MapCodec.unit(this);
+    }
+
     /** Four intermediate stages at fifteen ticks each make a three-second cycle. */
     public static final int ANIMATION_STEP_TICKS = 15;
 

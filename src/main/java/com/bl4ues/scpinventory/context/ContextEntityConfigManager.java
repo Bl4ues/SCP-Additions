@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.context;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.network.ContextConfigOpenPacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
@@ -20,11 +22,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.File;
@@ -35,7 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = "scp_additions")
+@EventBusSubscriber(modid = "scp_additions")
 public final class ContextEntityConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final double SELECT_REACH = 6.0D;
@@ -56,7 +59,7 @@ public final class ContextEntityConfigManager {
             return;
         }
 
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         if (id == null) {
             player.sendSystemMessage(Component.literal("[SCP Inventory] No entity selected.").withStyle(ChatFormatting.RED));
             return;
@@ -338,7 +341,7 @@ public final class ContextEntityConfigManager {
 
     private static ResourceLocation parseId(String idText) {
         try {
-            return new ResourceLocation(idText);
+            return ResourceLocation.parse(idText);
         } catch (Exception ignored) {
             return null;
         }

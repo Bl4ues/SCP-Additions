@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.world.item.Item;
+
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -39,8 +41,8 @@ public class SCP079SystemControlBlock extends Block implements SimpleWaterlogged
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, BlockGetter world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 		list.add(Component.literal("Power with redstone to grant SCP-079 control of the facility."));
 		list.add(Component.literal("It may open doors for threats or occasionally close an open door ahead of a player."));
 		list.add(Component.literal("Heavy doors require a functional button, keycard reader, or connected legacy Facility Pulse Node."));

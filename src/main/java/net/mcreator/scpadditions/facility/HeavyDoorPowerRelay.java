@@ -1,5 +1,9 @@
 package net.mcreator.scpadditions.facility;
 
+import java.util.function.Supplier;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -20,13 +24,13 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Collections;
@@ -40,12 +44,12 @@ import java.util.List;
  * both upper levels and exposes it as a normal neighboring signal to the base
  * controller, allowing the existing door state machine to remain unchanged.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = EventBusSubscriber.Bus.GAME)
 public final class HeavyDoorPowerRelay {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
-            ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
+            BuiltInRegistries.BLOCK, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<Block> RELAY = BLOCKS.register(
+    public static final Supplier<Block> RELAY = BLOCKS.register(
             "heavy_door_power_relay", RelayBlock::new);
 
     private HeavyDoorPowerRelay() {

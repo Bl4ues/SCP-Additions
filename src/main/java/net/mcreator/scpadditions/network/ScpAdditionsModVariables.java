@@ -1,19 +1,15 @@
 package net.mcreator.scpadditions.network;
 
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.Capability;
+import net.neoforged.fml.common.EventBusSubscriber;
+
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import com.bl4ues.scpadditions.compat.LazyOptional;
+import net.neoforged.neoforge.common.util.FakePlayer;
 
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -23,18 +19,23 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.core.Direction;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import net.neoforged.neoforge.attachment.IAttachmentSerializer;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.function.Supplier;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModVariables {
 	@SubscribeEvent
 	public static void init(FMLCommonSetupEvent event) {
@@ -42,36 +43,31 @@ public class ScpAdditionsModVariables {
 		ScpAdditionsMod.addNetworkMessage(PlayerVariablesSyncMessage.class, PlayerVariablesSyncMessage::buffer, PlayerVariablesSyncMessage::new, PlayerVariablesSyncMessage::handler);
 	}
 
-	@SubscribeEvent
-	public static void init(RegisterCapabilitiesEvent event) {
-		event.register(PlayerVariables.class);
-	}
 
-	@Mod.EventBusSubscriber
+	@EventBusSubscriber
 	public static class EventBusVariableHandlers {
 		@SubscribeEvent
 		public static void onPlayerLoggedInSyncPlayerVariables(PlayerEvent.PlayerLoggedInEvent event) {
 			if (!event.getEntity().level().isClientSide())
-				((PlayerVariables) event.getEntity().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables())).syncPlayerVariables(event.getEntity());
+				((PlayerVariables) ScpAdditionsModVariables.getPlayerVariables(event.getEntity()).orElse(new PlayerVariables())).syncPlayerVariables(event.getEntity());
 		}
 
 		@SubscribeEvent
 		public static void onPlayerRespawnedSyncPlayerVariables(PlayerEvent.PlayerRespawnEvent event) {
 			if (!event.getEntity().level().isClientSide())
-				((PlayerVariables) event.getEntity().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables())).syncPlayerVariables(event.getEntity());
+				((PlayerVariables) ScpAdditionsModVariables.getPlayerVariables(event.getEntity()).orElse(new PlayerVariables())).syncPlayerVariables(event.getEntity());
 		}
 
 		@SubscribeEvent
 		public static void onPlayerChangedDimensionSyncPlayerVariables(PlayerEvent.PlayerChangedDimensionEvent event) {
 			if (!event.getEntity().level().isClientSide())
-				((PlayerVariables) event.getEntity().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables())).syncPlayerVariables(event.getEntity());
+				((PlayerVariables) ScpAdditionsModVariables.getPlayerVariables(event.getEntity()).orElse(new PlayerVariables())).syncPlayerVariables(event.getEntity());
 		}
 
 		@SubscribeEvent
 		public static void clonePlayer(PlayerEvent.Clone event) {
-			event.getOriginal().revive();
-			PlayerVariables original = ((PlayerVariables) event.getOriginal().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables()));
-			PlayerVariables clone = ((PlayerVariables) event.getEntity().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables()));
+			PlayerVariables original = ((PlayerVariables) ScpAdditionsModVariables.getPlayerVariables(event.getOriginal()).orElse(new PlayerVariables()));
+			PlayerVariables clone = ((PlayerVariables) ScpAdditionsModVariables.getPlayerVariables(event.getEntity()).orElse(new PlayerVariables()));
 			if (!event.isWasDeath()) {
 				clone.Opos = original.Opos;
 				clone.Oneg = original.Oneg;
@@ -101,7 +97,7 @@ public class ScpAdditionsModVariables {
 			if (event.getEntity() instanceof ServerPlayer observer
 					&& event.getTarget() instanceof Player target
 					&& !observer.level().isClientSide()) {
-				target.getCapability(PLAYER_VARIABLES_CAPABILITY, null).ifPresent(variables ->
+				ScpAdditionsModVariables.getPlayerVariables(target).ifPresent(variables ->
 						ScpAdditionsMod.PACKET_HANDLER.send(
 								PacketDistributor.PLAYER.with(() -> observer),
 								new PlayerVariablesSyncMessage(target.getId(), variables)));
@@ -135,7 +131,10 @@ public class ScpAdditionsModVariables {
 		public double Scp294stock = 0;
 		public double coinslot = 0;
 
-		public static WorldVariables load(CompoundTag tag) {
+		public static final SavedData.Factory<WorldVariables> FACTORY =
+				new SavedData.Factory<>(WorldVariables::new, WorldVariables::load);
+
+		public static WorldVariables load(CompoundTag tag, HolderLookup.Provider registries) {
 			WorldVariables data = new WorldVariables();
 			data.read(tag);
 			return data;
@@ -147,7 +146,7 @@ public class ScpAdditionsModVariables {
 		}
 
 		@Override
-		public CompoundTag save(CompoundTag nbt) {
+		public CompoundTag save(CompoundTag nbt, HolderLookup.Provider registries) {
 			nbt.putDouble("Scp294stock", Scp294stock);
 			nbt.putDouble("coinslot", coinslot);
 			return nbt;
@@ -163,7 +162,7 @@ public class ScpAdditionsModVariables {
 
 		public static WorldVariables get(LevelAccessor world) {
 			if (world instanceof ServerLevel level) {
-				return level.getDataStorage().computeIfAbsent(e -> WorldVariables.load(e), WorldVariables::new, DATA_NAME);
+				return level.getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
 			} else {
 				return clientSide;
 			}
@@ -182,7 +181,10 @@ public class ScpAdditionsModVariables {
 		public double RandomY = 0;
 		public double RandomZ = 0;
 
-		public static MapVariables load(CompoundTag tag) {
+		public static final SavedData.Factory<MapVariables> FACTORY =
+				new SavedData.Factory<>(MapVariables::new, MapVariables::load);
+
+		public static MapVariables load(CompoundTag tag, HolderLookup.Provider registries) {
 			MapVariables data = new MapVariables();
 			data.read(tag);
 			return data;
@@ -201,7 +203,7 @@ public class ScpAdditionsModVariables {
 		}
 
 		@Override
-		public CompoundTag save(CompoundTag nbt) {
+		public CompoundTag save(CompoundTag nbt, HolderLookup.Provider registries) {
 			nbt.putBoolean("Scp914Rough", Scp914Rough);
 			nbt.putBoolean("Scp914Coarse", Scp914Coarse);
 			nbt.putBoolean("Scp914OneToOne", Scp914OneToOne);
@@ -224,7 +226,7 @@ public class ScpAdditionsModVariables {
 
 		public static MapVariables get(LevelAccessor world) {
 			if (world instanceof ServerLevelAccessor serverLevelAcc) {
-				return serverLevelAcc.getLevel().getServer().getLevel(Level.OVERWORLD).getDataStorage().computeIfAbsent(e -> MapVariables.load(e), MapVariables::new, DATA_NAME);
+				return serverLevelAcc.getLevel().getServer().getLevel(Level.OVERWORLD).getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
 			} else {
 				return clientSide;
 			}
@@ -254,8 +256,13 @@ public class ScpAdditionsModVariables {
 
 		public static void buffer(SavedDataSyncMessage message, FriendlyByteBuf buffer) {
 			buffer.writeInt(message.type);
-			if (message.data != null)
-				buffer.writeNbt(message.data.save(new CompoundTag()));
+			if (message.data != null) {
+				if (!(buffer instanceof RegistryFriendlyByteBuf registryBuffer)) {
+					throw new IllegalStateException("Saved data sync requires a registry-aware buffer");
+				}
+				buffer.writeNbt(message.data.save(
+						new CompoundTag(), registryBuffer.registryAccess()));
+			}
 		}
 
 		public static void handler(SavedDataSyncMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
@@ -272,34 +279,35 @@ public class ScpAdditionsModVariables {
 		}
 	}
 
-	public static final Capability<PlayerVariables> PLAYER_VARIABLES_CAPABILITY = CapabilityManager.get(new CapabilityToken<PlayerVariables>() {
-	});
+	public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
+			DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES,
+					ScpAdditionsMod.MODID);
 
-	@Mod.EventBusSubscriber
-	private static class PlayerVariablesProvider implements ICapabilitySerializable<Tag> {
-		@SubscribeEvent
-		public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-			if (event.getObject() instanceof Player && !(event.getObject() instanceof FakePlayer))
-				event.addCapability(new ResourceLocation("scp_additions", "player_variables"), new PlayerVariablesProvider());
+	public static final Supplier<AttachmentType<PlayerVariables>> PLAYER_VARIABLES_ATTACHMENT =
+			ATTACHMENTS.register("player_variables", () -> AttachmentType
+					.builder(PlayerVariables::new)
+					.serialize(new IAttachmentSerializer<CompoundTag, PlayerVariables>() {
+						@Override
+						public PlayerVariables read(IAttachmentHolder holder,
+								CompoundTag tag, HolderLookup.Provider provider) {
+							PlayerVariables variables = new PlayerVariables();
+							variables.readNBT(tag);
+							return variables;
+						}
+
+						@Override
+						public CompoundTag write(PlayerVariables variables,
+								HolderLookup.Provider provider) {
+							return (CompoundTag) variables.writeNBT();
+						}
+					})
+					.build());
+
+	public static LazyOptional<PlayerVariables> getPlayerVariables(Entity entity) {
+		if (!(entity instanceof Player player) || entity instanceof FakePlayer) {
+			return LazyOptional.empty();
 		}
-
-		private final PlayerVariables playerVariables = new PlayerVariables();
-		private final LazyOptional<PlayerVariables> instance = LazyOptional.of(() -> playerVariables);
-
-		@Override
-		public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-			return cap == PLAYER_VARIABLES_CAPABILITY ? instance.cast() : LazyOptional.empty();
-		}
-
-		@Override
-		public Tag serializeNBT() {
-			return playerVariables.writeNBT();
-		}
-
-		@Override
-		public void deserializeNBT(Tag nbt) {
-			playerVariables.readNBT(nbt);
-		}
+		return LazyOptional.of(() -> player.getData(PLAYER_VARIABLES_ATTACHMENT));
 	}
 
 	public static class PlayerVariables {
@@ -410,9 +418,8 @@ public class ScpAdditionsModVariables {
 						&& Minecraft.getInstance().level != null) {
 					Entity target = Minecraft.getInstance().level.getEntity(message.entityId);
 					if (target instanceof Player player) {
-						PlayerVariables variables = ((PlayerVariables) player
-								.getCapability(PLAYER_VARIABLES_CAPABILITY, null)
-								.orElse(new PlayerVariables()));
+						PlayerVariables variables = ScpAdditionsModVariables.getPlayerVariables(player)
+								.orElse(new PlayerVariables());
 						variables.Opos = message.data.Opos;
 						variables.Oneg = message.data.Oneg;
 						variables.Apos = message.data.Apos;

@@ -205,17 +205,17 @@ public class StatusPanel {
             effects.add(effect);
         }
 
-        effects.sort(Comparator.comparing(effect -> effect.getEffect().getDisplayName().getString()));
+        effects.sort(Comparator.comparing(effect -> effect.getEffect().value().getDisplayName().getString()));
         return effects;
     }
 
     private boolean isNegativeEffect(MobEffectInstance effect) {
-        return effect.getEffect().getCategory() == MobEffectCategory.HARMFUL;
+        return effect.getEffect().value().getCategory() == MobEffectCategory.HARMFUL;
     }
 
     private boolean isHiddenEffect(MobEffectInstance effect) {
-        if (effect.getEffect() == ScpAdditionsModMobEffects.SCP_1176_HONEYED.get()) return true;
-        ResourceLocation id = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect());
+        if (effect.getEffect().value() == ScpAdditionsModMobEffects.SCP_1176_HONEYED.get()) return true;
+        ResourceLocation id = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect().value());
         if (id == null) return false;
         String idString = id.toString();
         if ("minecraft:bad_omen".equalsIgnoreCase(idString)) return true;
@@ -250,7 +250,7 @@ public class StatusPanel {
         drawIconFrame(g, iconX, iconY);
         renderEffectIcon(g, effect, iconX + 3, iconY + 3);
 
-        String name = effect.getEffect().getDisplayName().getString() + getAmplifierSuffix(effect);
+        String name = effect.getEffect().value().getDisplayName().getString() + getAmplifierSuffix(effect);
         String duration = formatDuration(effect.getDuration());
         int textX = iconX + CONDITION_ICON_SIZE + 10;
         g.drawString(mc.font, ScpFonts.roboto(name), textX, y + 7, TEXT_WHITE, false);
@@ -359,8 +359,9 @@ public class StatusPanel {
         g.fill(previewX, previewY, previewX + previewW, previewY + previewH, PREVIEW_BACKGROUND_INNER);
         drawFrame(g, previewX, previewY, previewW, previewH);
         int playerPreviewY = previewY + previewH - 36;
-        InventoryScreen.renderEntityInInventoryFollowsMouse(g, previewX + previewW / 2, playerPreviewY, 54,
-                previewX + previewW / 2 - mouseX, previewY + 32 - mouseY, mc.player);
+        InventoryScreen.renderEntityInInventoryFollowsMouse(g, previewX, previewY,
+                previewX + previewW, previewY + previewH, 54, 0.0F,
+                mouseX, mouseY, mc.player);
 
         int statX = parametersX + Math.round(parametersWidth * 0.64F);
         int statY = parametersY + Math.round(parametersHeight * 0.13F) + 20;
@@ -395,7 +396,7 @@ public class StatusPanel {
         g.fill(x, y + 31, x + 64, y + 32, LINE_GRAY);
     }
 
-    private String formatAttribute(Attribute attribute) {
+    private String formatAttribute(net.minecraft.core.Holder<Attribute> attribute) {
         if (mc.player == null) return "0";
         double value = mc.player.getAttributeValue(attribute);
         if (attribute == Attributes.ATTACK_DAMAGE) value = Math.max(0.0D, value - 1.0D);
@@ -405,7 +406,7 @@ public class StatusPanel {
     private String getBloodType() {
         String unknown = Component.translatable("status.scp_additions.blood_type_unknown").getString();
         if (mc.player == null) return unknown;
-        return mc.player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
+        return ScpAdditionsModVariables.getPlayerVariables(mc.player)
                 .resolve()
                 .map(variables -> {
                     if (variables.Oneg) return "O-";

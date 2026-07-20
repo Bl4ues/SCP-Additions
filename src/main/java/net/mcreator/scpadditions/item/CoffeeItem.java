@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.item;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -22,7 +24,7 @@ import java.util.List;
 
 public class CoffeeItem extends Item {
 	public CoffeeItem() {
-		super(new Item.Properties().stacksTo(1).rarity(Rarity.COMMON).food((new FoodProperties.Builder()).nutrition(0).saturationMod(0.0f).alwaysEat().build()));
+		super(new Item.Properties().stacksTo(1).rarity(Rarity.COMMON).food((new FoodProperties.Builder()).nutrition(0).saturationModifier(0.0f).alwaysEdible().build()));
 	}
 
 	@Override
@@ -31,14 +33,14 @@ public class CoffeeItem extends Item {
 	}
 
 	@Override
-	public int getUseDuration(ItemStack itemstack) {
+	public int getUseDuration(ItemStack itemstack, LivingEntity user) {
 		return 32;
 	}
 
 	@Override
 	public Component getName(ItemStack stack) {
-		if (stack.hasTag() && stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
-			String id = stack.getTag().getCompound("Scp294Drink").getString("id");
+		if (LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+			String id = LegacyItemTags.getTag(stack).getCompound("Scp294Drink").getString("id");
 			if (!id.isBlank()) {
 				String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
 				return Component.literal("Cup of " + toTitleCase(path.replace('_', ' ')));
@@ -48,15 +50,15 @@ public class CoffeeItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack itemstack, Level world, List<Component> list, TooltipFlag flag) {
-		super.appendHoverText(itemstack, world, list, flag);
+	public void appendHoverText(ItemStack itemstack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
+		super.appendHoverText(itemstack, context, list, flag);
 	}
 
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (stack.hasTag() && stack.getTag().contains("Scp294Drink", Tag.TAG_COMPOUND)) {
-			CompoundTag drinkTag = stack.getTag().getCompound("Scp294Drink");
+		if (LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack).contains("Scp294Drink", Tag.TAG_COMPOUND)) {
+			CompoundTag drinkTag = LegacyItemTags.getTag(stack).getCompound("Scp294Drink");
 			if (drinkTag.contains("drinkable", Tag.TAG_BYTE) && !drinkTag.getBoolean("drinkable")) {
 				if (!world.isClientSide()) {
 					String message = drinkTag.getString("refuse_message");

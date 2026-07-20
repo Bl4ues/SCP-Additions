@@ -1,5 +1,7 @@
 package com.bl4ues.scpinventory.item;
 
+import com.bl4ues.scpadditions.compat.LegacyItemTags;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
@@ -278,14 +280,14 @@ public final class ScpPickupRouter {
         normalizedCoin.setCount(1);
         stripCoinMirror(normalizedCoin);
 
-        return ItemStack.isSameItemSameTags(normalizedCandidate, normalizedCoin);
+        return ItemStack.isSameItemSameComponents(normalizedCandidate, normalizedCoin);
     }
 
     private static boolean sameHarmfulMirror(ItemStack candidate, ItemStack harmful) {
         if (!isHarmfulMirror(candidate) || harmful == null || harmful.isEmpty()) {
             return false;
         }
-        return ItemStack.isSameItemSameTags(normalizeHarmfulComparable(candidate), normalizeHarmfulComparable(harmful));
+        return ItemStack.isSameItemSameComponents(normalizeHarmfulComparable(candidate), normalizeHarmfulComparable(harmful));
     }
 
     private static int countCustomCoins(IScpInventory inventory) {
@@ -309,7 +311,7 @@ public final class ScpPickupRouter {
             ItemStack stack = inventory.getInventoryItem(i);
             if (!stack.isEmpty()
                     && ScpItemClassifier.isHarmful(stack)
-                    && ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
+                    && ItemStack.isSameItemSameComponents(normalizeHarmfulComparable(stack), normalized)) {
                 count += stack.getCount();
             }
         }
@@ -340,7 +342,7 @@ public final class ScpPickupRouter {
             ItemStack stack = inventory.getInventoryItem(i);
             if (stack.isEmpty()
                     || !ScpItemClassifier.isHarmful(stack)
-                    || !ItemStack.isSameItemSameTags(normalizeHarmfulComparable(stack), normalized)) {
+                    || !ItemStack.isSameItemSameComponents(normalizeHarmfulComparable(stack), normalized)) {
                 continue;
             }
             int removed = Math.min(remaining, stack.getCount());
@@ -434,7 +436,7 @@ public final class ScpPickupRouter {
     private static int countSeenHarmful(List<ItemStack> seen, List<Integer> seenCounts, ItemStack harmful) {
         int count = 0;
         for (int i = 0; i < seen.size(); i++) {
-            if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+            if (ItemStack.isSameItemSameComponents(seen.get(i), harmful)) {
                 count += seenCounts.get(i);
             }
         }
@@ -446,7 +448,7 @@ public final class ScpPickupRouter {
             return;
         }
         for (int i = 0; i < seen.size(); i++) {
-            if (ItemStack.isSameItemSameTags(seen.get(i), harmful)) {
+            if (ItemStack.isSameItemSameComponents(seen.get(i), harmful)) {
                 seenCounts.set(i, seenCounts.get(i) + count);
                 return;
             }
@@ -548,31 +550,31 @@ public final class ScpPickupRouter {
         normalizedTemplate.setCount(1);
         stripCoinMirror(normalizedTemplate);
 
-        return ItemStack.isSameItemSameTags(normalizedStack, normalizedTemplate);
+        return ItemStack.isSameItemSameComponents(normalizedStack, normalizedTemplate);
     }
 
     public static void markCoinMirror(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return;
         }
-        stack.getOrCreateTag().putBoolean(COIN_MIRROR_TAG, true);
+        LegacyItemTags.getOrCreateTag(stack).putBoolean(COIN_MIRROR_TAG, true);
     }
 
     public static boolean isCoinMirror(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(COIN_MIRROR_TAG);
+        return stack != null && !stack.isEmpty() && LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack) != null && LegacyItemTags.getTag(stack).getBoolean(COIN_MIRROR_TAG);
     }
 
     public static void stripCoinMirror(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+        if (stack == null || stack.isEmpty() || !LegacyItemTags.hasTag(stack)) {
             return;
         }
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (tag == null) {
             return;
         }
         tag.remove(COIN_MIRROR_TAG);
         if (tag.isEmpty()) {
-            stack.setTag(null);
+            LegacyItemTags.setTag(stack, null);
         }
     }
 
@@ -580,24 +582,24 @@ public final class ScpPickupRouter {
         if (stack == null || stack.isEmpty()) {
             return;
         }
-        stack.getOrCreateTag().putBoolean(HARMFUL_MIRROR_TAG, true);
+        LegacyItemTags.getOrCreateTag(stack).putBoolean(HARMFUL_MIRROR_TAG, true);
     }
 
     public static boolean isHarmfulMirror(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(HARMFUL_MIRROR_TAG);
+        return stack != null && !stack.isEmpty() && LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack) != null && LegacyItemTags.getTag(stack).getBoolean(HARMFUL_MIRROR_TAG);
     }
 
     public static void stripHarmfulMirror(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+        if (stack == null || stack.isEmpty() || !LegacyItemTags.hasTag(stack)) {
             return;
         }
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (tag == null) {
             return;
         }
         tag.remove(HARMFUL_MIRROR_TAG);
         if (tag.isEmpty()) {
-            stack.setTag(null);
+            LegacyItemTags.setTag(stack, null);
         }
     }
 
@@ -633,28 +635,28 @@ public final class ScpPickupRouter {
             return;
         }
 
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = LegacyItemTags.getOrCreateTag(stack);
         tag.putBoolean(USABLE_SESSION_TAG, true);
         tag.putInt(USABLE_START_TICK_TAG, startTick);
     }
 
     public static boolean isUsableSession(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && stack.hasTag() && stack.getTag() != null && stack.getTag().getBoolean(USABLE_SESSION_TAG);
+        return stack != null && !stack.isEmpty() && LegacyItemTags.hasTag(stack) && LegacyItemTags.getTag(stack) != null && LegacyItemTags.getTag(stack).getBoolean(USABLE_SESSION_TAG);
     }
 
     public static int getUsableSessionStartTick(ItemStack stack) {
-        if (!isUsableSession(stack) || stack.getTag() == null) {
+        if (!isUsableSession(stack) || LegacyItemTags.getTag(stack) == null) {
             return 0;
         }
-        return stack.getTag().getInt(USABLE_START_TICK_TAG);
+        return LegacyItemTags.getTag(stack).getInt(USABLE_START_TICK_TAG);
     }
 
     public static void stripUsableSession(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+        if (stack == null || stack.isEmpty() || !LegacyItemTags.hasTag(stack)) {
             return;
         }
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (tag == null) {
             return;
         }
@@ -662,7 +664,7 @@ public final class ScpPickupRouter {
         tag.remove(USABLE_SESSION_TAG);
         tag.remove(USABLE_START_TICK_TAG);
         if (tag.isEmpty()) {
-            stack.setTag(null);
+            LegacyItemTags.setTag(stack, null);
         }
     }
 
@@ -670,22 +672,22 @@ public final class ScpPickupRouter {
         if (stack == null || stack.isEmpty() || marker == null || marker.isEmpty()) {
             return;
         }
-        stack.getOrCreateTag().putString(NO_MERGE_TAG, marker);
+        LegacyItemTags.getOrCreateTag(stack).putString(NO_MERGE_TAG, marker);
     }
 
     public static void stripNoMergeMarker(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+        if (stack == null || stack.isEmpty() || !LegacyItemTags.hasTag(stack)) {
             return;
         }
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = LegacyItemTags.getTag(stack);
         if (tag == null || !tag.contains(NO_MERGE_TAG)) {
             return;
         }
 
         tag.remove(NO_MERGE_TAG);
         if (tag.isEmpty()) {
-            stack.setTag(null);
+            LegacyItemTags.setTag(stack, null);
         }
     }
 

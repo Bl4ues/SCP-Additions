@@ -1,5 +1,9 @@
 package com.bl4ues.scpinventory.crafting;
 
+import net.minecraft.world.item.crafting.RecipeHolder;
+
+import net.minecraft.world.item.crafting.CraftingInput;
+
 import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.network.CraftingActionPacket;
@@ -12,7 +16,7 @@ import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.network.PacketDistributor;
+import com.bl4ues.scpadditions.compat.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +31,7 @@ public final class ScpCraftingService {
     public static void handle(ServerPlayer player, int action, int source,
                               int target, ResourceLocation recipeId) {
         if (player == null || player.isSpectator()) return;
-        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+        ScpInventoryCapability.get(player).ifPresent(inventory -> {
             ScpCraftingState.Data state = ScpCraftingState.load(player);
             boolean changed = switch (action) {
                 case CraftingActionPacket.MOVE_MAIN_TO_GRID ->
@@ -70,7 +74,7 @@ public final class ScpCraftingService {
     public static void syncState(ServerPlayer player, ScpCraftingState.Data state) {
         if (player == null || state == null) return;
         ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new CraftingStateSyncPacket(ScpCraftingState.toTag(state)));
+                new CraftingStateSyncPacket(ScpCraftingState.toTag(state, player.registryAccess())));
     }
 
     private static boolean moveMainToGrid(IScpInventory inventory,
@@ -179,17 +183,17 @@ public final class ScpCraftingService {
     private static boolean craft(ServerPlayer player,
                                  IScpInventory inventory,
                                  ScpCraftingState.Data state) {
-        TransientCraftingContainer container = ScpCraftingRecipeHelper
-                .createContainer(state.getGrid());
-        Optional<CraftingRecipe> optional = player.level().getRecipeManager()
+        CraftingInput input = ScpCraftingRecipeHelper.createInput(state.getGrid());
+        Optional<RecipeHolder<CraftingRecipe>> optional = player.level().getRecipeManager()
                 .getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING,
-                        container, player.level());
+                        input, player.level());
         if (optional.isEmpty()) return false;
 
-        CraftingRecipe recipe = optional.get();
-        ItemStack output = recipe.assemble(container, player.level().registryAccess());
+        RecipeHolder<CraftingRecipe> recipeHolder = optional.get();
+        CraftingRecipe recipe = recipeHolder.value();
+        ItemStack output = recipe.assemble(input, player.level().registryAccess());
         if (output.isEmpty()) return false;
-        NonNullList<ItemStack> remaining = recipe.getRemainingItems(container);
+        NonNullList<ItemStack> remaining = recipe.getRemainingItems(input);
 
         List<ItemStack> nextGrid = new ArrayList<>(ScpCraftingState.GRID_SIZE);
         List<ItemStack> overflowRemaining = new ArrayList<>();
@@ -219,7 +223,7 @@ public final class ScpCraftingService {
         inventory.addInventoryItems(output.copy());
         for (ItemStack stack : overflowRemaining) inventory.addInventoryItems(stack);
         output.onCraftedBy(player.level(), player, output.getCount());
-        state.learn(recipe.getId());
+        state.learn(recipeHolder.id());
         return true;
     }
 

@@ -43,12 +43,12 @@ public final class KeycardReaderConfigScreen extends Screen {
 
     private static ResourceLocation texture(String file) {
         // These assets intentionally live directly in assets/scp_additions/gui.
-        return new ResourceLocation("scp_additions", "gui/" + file);
+        return ResourceLocation.fromNamespaceAndPath("scp_additions", "gui/" + file);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         updateLayout();
 
         RenderSystem.enableBlend();

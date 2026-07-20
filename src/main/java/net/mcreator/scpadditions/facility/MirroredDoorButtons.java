@@ -1,5 +1,11 @@
 package net.mcreator.scpadditions.facility;
 
+import com.mojang.serialization.MapCodec;
+
+import net.minecraft.world.level.LevelReader;
+
+import java.util.function.Supplier;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -25,10 +31,10 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.Collections;
@@ -45,13 +51,13 @@ public final class MirroredDoorButtons {
     private static final int TRANSITION_TICKS = 21;
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
-            ForgeRegistries.BLOCKS, ScpAdditionsMod.MODID);
+            BuiltInRegistries.BLOCK, ScpAdditionsMod.MODID);
 
-    public static final RegistryObject<Block> BUTTON_LOCKED = register("button_locked_mirrored", State.LOCKED);
-    public static final RegistryObject<Block> BUTTON_CLOSED = register("button_closed_mirrored", State.CLOSED);
-    public static final RegistryObject<Block> BUTTON_OPENING = register("button_opening_mirrored", State.OPENING);
-    public static final RegistryObject<Block> BUTTON_OPEN = register("button_open_mirrored", State.OPEN);
-    public static final RegistryObject<Block> BUTTON_CLOSING = register("button_closing_mirrored", State.CLOSING);
+    public static final Supplier<Block> BUTTON_LOCKED = register("button_locked_mirrored", State.LOCKED);
+    public static final Supplier<Block> BUTTON_CLOSED = register("button_closed_mirrored", State.CLOSED);
+    public static final Supplier<Block> BUTTON_OPENING = register("button_opening_mirrored", State.OPENING);
+    public static final Supplier<Block> BUTTON_OPEN = register("button_open_mirrored", State.OPEN);
+    public static final Supplier<Block> BUTTON_CLOSING = register("button_closing_mirrored", State.CLOSING);
 
     private MirroredDoorButtons() {
     }
@@ -60,7 +66,7 @@ public final class MirroredDoorButtons {
         BLOCKS.register(modBus);
     }
 
-    private static RegistryObject<Block> register(String path, State state) {
+    private static Supplier<Block> register(String path, State state) {
         return BLOCKS.register(path, () -> new MirroredDoorButtonBlock(state));
     }
 
@@ -105,6 +111,11 @@ public final class MirroredDoorButtons {
     }
 
     private static final class MirroredDoorButtonBlock extends HorizontalDirectionalBlock {
+        @Override
+        protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+            return MapCodec.unit(this);
+        }
+
         private final State state;
 
         private MirroredDoorButtonBlock(State state) {
@@ -151,8 +162,7 @@ public final class MirroredDoorButtons {
         }
 
         @Override
-        public InteractionResult use(BlockState blockState, Level level, BlockPos pos,
-                Player player, InteractionHand hand, BlockHitResult hit) {
+        protected InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult hit) {
             if (state != State.CLOSED && state != State.OPEN) {
                 return InteractionResult.PASS;
             }
@@ -210,8 +220,7 @@ public final class MirroredDoorButtons {
         }
 
         @Override
-        public ItemStack getCloneItemStack(BlockState blockState, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
+        public ItemStack getCloneItemStack(BlockState blockState, HitResult target, LevelReader level, BlockPos pos, Player player) {
             return new ItemStack(state == State.LOCKED
                     ? FacilityModule.BUTTON_LOCKED.get()
                     : FacilityModule.BUTTON_CLOSED.get());

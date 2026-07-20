@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.effect;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -10,16 +12,16 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 /** Server-authoritative exhaustion, immobilization and coma cycle for SCP-714. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class Scp714ExposureManager {
     public static final int FADE_DURATION_TICKS = 120 * 20;
     public static final int COMA_GRACE_TICKS = 5 * 20;
@@ -32,8 +34,7 @@ public final class Scp714ExposureManager {
     private static final String EXPOSURE_TAG = "Scp714ExposureTicks";
     private static final ResourceKey<DamageType> COMA_DAMAGE_TYPE =
             ResourceKey.create(Registries.DAMAGE_TYPE,
-                    new ResourceLocation(ScpAdditionsMod.MODID,
-                            "scp_714_coma"));
+                    ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "scp_714_coma"));
 
     private Scp714ExposureManager() {
     }

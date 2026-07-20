@@ -6,8 +6,8 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Shared font resources migrated from SCP Inventory. */
 public final class ScpFonts {
-    public static final ResourceLocation ROBOTO = new ResourceLocation("scpinventory", "roboto");
-    public static final ResourceLocation MONTSERRAT = new ResourceLocation("scpinventory", "montserrat");
+    public static final ResourceLocation ROBOTO = ResourceLocation.fromNamespaceAndPath("scpinventory", "roboto");
+    public static final ResourceLocation MONTSERRAT = ResourceLocation.fromNamespaceAndPath("scpinventory", "montserrat");
 
     private ScpFonts() {
     }

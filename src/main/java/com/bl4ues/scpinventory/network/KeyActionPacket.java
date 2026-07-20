@@ -4,7 +4,7 @@ import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.function.Supplier;
@@ -38,7 +38,7 @@ public class KeyActionPacket {
                 return;
             }
 
-            player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
+            ScpInventoryCapability.get(player).ifPresent(inventory -> {
                 if (ACTION_DROP.equals(msg.action)) {
                     ItemStack key = inventory.extractKeyItem(msg.index);
                     if (!key.isEmpty()) {

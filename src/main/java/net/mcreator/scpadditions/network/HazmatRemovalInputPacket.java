@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.bl4ues.scpadditions.compat.network.NetworkEvent;
 import net.mcreator.scpadditions.equipment.HazmatSuitManager;
 
 import java.util.function.Supplier;

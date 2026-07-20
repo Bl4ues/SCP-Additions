@@ -1,12 +1,14 @@
 package net.mcreator.scpadditions.vitals;
 
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpadditions.compat.TickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 
@@ -15,7 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /** Server-authoritative copy of the final SCP Inventory stamina controller. */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
+@EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class PlayerStaminaEvents {
     private static final float MAX_STAMINA = 100.0F;
     private static final float STAMINA_DRAIN_PER_TICK = MAX_STAMINA / (5.0F * 20.0F);

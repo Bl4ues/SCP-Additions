@@ -53,7 +53,7 @@ def add_forced_inventory_reload() -> None:
     changed = 0
     already = 0
     for source in JAVA.rglob("*.java"):
-        if source == path:
+        if source == path or "/client/" in source.as_posix():
             continue
         text = read(source)
         old_count = text.count("ScpInventoryConfig.reload();")
@@ -86,7 +86,7 @@ def add_forced_context_reload() -> None:
     changed = 0
     already = 0
     for source in JAVA.rglob("*.java"):
-        if source == path:
+        if source == path or "/client/" in source.as_posix():
             continue
         text = read(source)
         old_count = text.count("ContextInteractionRegistry.reload();")
@@ -149,6 +149,26 @@ def ignore_missing_context_targets() -> None:
             entityType = BuiltInRegistries.ENTITY_TYPE.get(id);
             if (entityType == null) {
 """
+
+    forge_block_guard = """            if (!ForgeRegistries.BLOCKS.containsKey(id)) {
+                return null;
+            }
+"""
+    forge_entity_guard = """            if (!ForgeRegistries.ENTITY_TYPES.containsKey(id)) {
+                return null;
+            }
+"""
+    modern_block_guard = """            if (!BuiltInRegistries.BLOCK.containsKey(id)) {
+                return null;
+            }
+"""
+    modern_entity_guard = """            if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
+                return null;
+            }
+"""
+    for guard in (forge_block_guard, forge_entity_guard, modern_block_guard, modern_entity_guard):
+        while guard + guard in text:
+            text = text.replace(guard + guard, guard)
 
     if forge_block in text and forge_entity in text:
         text = text.replace(forge_block, forge_block_new, 1)

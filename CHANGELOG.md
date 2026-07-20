@@ -17,6 +17,11 @@
 ## Gameplay fixes and refinements
 
 - Corrected SCP-294 cups having missing-texture outputs;
+- Corrected duplicated `Cup of Cup of` names on configurable SCP-294 drinks;
+- Made item category changes update immediately after saving them through the in-game editor;
+- Made context interactions ignore missing block and entity IDs instead of incorrectly assigning them to vanilla entries;
+- Made SCP-173 immune to attacks dealing 6 damage or less while allowing stronger weapons to damage and eventually destroy it, without making it vulnerable to knockback;
+- Prevented damaged SCP-173 instances from restoring all health when their chunk or world is loaded again;
 - Corrected SCP-173 observer handling so players retain broad on-screen observation, configured generic mobs must face the statue directly, and SCP-131 uses its own intentional viewing threshold;
 - Changed the SCP-572 advancement title to **The Chosen One**;
 - Removed the bundled legacy context rule and ignored exact obsolete copies so old defaults do not reappear;

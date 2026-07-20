@@ -17,7 +17,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -79,16 +79,16 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Compile NeoForge port and preserve frontier
+      - name: Build NeoForge port and preserve frontier
         if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
         shell: bash
         run: |
           set +e
-          ./gradlew clean compileJava --no-daemon --stacktrace > neoforge-compile.log 2>&1
+          ./gradlew clean build --no-daemon --stacktrace > neoforge-build.log 2>&1
           status=$?
-          echo "$status" > neoforge-compile.exitcode
-          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" neoforge-compile.log | head -n 2000 > neoforge-compile-errors.log || true
-          tail -n 500 neoforge-compile.log
+          echo "$status" > neoforge-build.exitcode
+          grep -E "^.*error:|FAILURE:|What went wrong|BUILD (SUCCESSFUL|FAILED)" neoforge-build.log | head -n 2500 > neoforge-build-errors.log || true
+          tail -n 600 neoforge-build.log
           exit 0
 
       - name: Build Forge branches
@@ -102,17 +102,32 @@ jobs:
           zip -qr neoforge-transformed-source.zip . \
             -x '.git/*' 'build/*' '.gradle/*' 'run/*' '*.zip'
 
-      - name: Upload NeoForge compiler frontier
-        if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
+      - name: Upload NeoForge build frontier
+        if: always() && startsWith(github.head_ref, 'neoforge-1.21.1-port')
         uses: actions/upload-artifact@v4
         with:
-          name: neoforge-frontier-${{ github.event.pull_request.head.sha }}
+          name: neoforge-build-${{ github.event.pull_request.head.sha }}
           path: |
-            neoforge-compile.log
-            neoforge-compile-errors.log
-            neoforge-compile.exitcode
+            neoforge-build.log
+            neoforge-build-errors.log
+            neoforge-build.exitcode
             neoforge-transformed.patch
             neoforge-transformed-source.zip
+            build/libs/*.jar
+            build/reports/**
+          if-no-files-found: error
+
+      - name: Verify NeoForge build result
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port')
+        shell: bash
+        run: test "$(cat neoforge-build.exitcode)" = "0"
+
+      - name: Upload NeoForge compiled JAR
+        if: startsWith(github.head_ref, 'neoforge-1.21.1-port') && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp-additions-neoforge-${{ github.event.pull_request.head.sha }}
+          path: build/libs/*.jar
           if-no-files-found: error
 
       - name: Upload compiled JAR

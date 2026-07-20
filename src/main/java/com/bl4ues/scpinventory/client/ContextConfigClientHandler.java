@@ -18,7 +18,8 @@ public final class ContextConfigClientHandler {
     }
 
     public static void reloadContextConfig() {
-        ContextInteractionRegistry.reloadFromDisk();
+        // Keep the synchronized host snapshot authoritative on remote servers.
+        ContextInteractionRegistry.reload();
         ContextPromptIcons.reload();
         ContextPromptClient.clear();
     }

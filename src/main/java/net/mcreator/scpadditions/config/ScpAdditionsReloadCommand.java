@@ -70,6 +70,7 @@ public final class ScpAdditionsReloadCommand {
             Scp914RecipeManager.loadFromConfig();
             ContextInteractionRegistry.reload();
             ModNetwork.syncModuleState(source.getServer().getPlayerList().getPlayers());
+            ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
             source.sendSuccess(() -> Component.literal("SCP Additions configurations reloaded successfully.")
                     .withStyle(ChatFormatting.GREEN), true);
             if (!validation.warnings().isEmpty()) {

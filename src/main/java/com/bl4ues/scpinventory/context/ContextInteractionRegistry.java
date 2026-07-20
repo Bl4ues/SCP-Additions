@@ -33,6 +33,7 @@ public final class ContextInteractionRegistry {
     private static final Map<Block, List<Rule>> BLOCK_RULES = new HashMap<>();
     private static final Map<EntityType<?>, List<Rule>> ENTITY_RULES = new HashMap<>();
     private static boolean loaded = false;
+    private static volatile String serverSnapshotJson;
     private static double maxBlockRange = 0.0D;
     private static double maxEntityRange = 0.0D;
 
@@ -43,6 +44,18 @@ public final class ContextInteractionRegistry {
         if (!loaded) {
             load();
         }
+    }
+
+    public static synchronized void applyServerSnapshot(String json) {
+        serverSnapshotJson = json == null ? "" : json;
+        loaded = false;
+        load();
+    }
+
+    public static synchronized void clearServerSnapshot() {
+        serverSnapshotJson = null;
+        loaded = false;
+        load();
     }
 
     public static void reload() {
@@ -87,9 +100,14 @@ public final class ContextInteractionRegistry {
         maxEntityRange = 0.0D;
 
         try {
-            File file = ContextConfigManager.ensureConfigFile();
-
-            JsonObject root = JsonParser.parseReader(new FileReader(file)).getAsJsonObject();
+            String snapshot = serverSnapshotJson;
+            JsonObject root;
+            if (snapshot != null && !snapshot.isBlank()) {
+                root = JsonParser.parseString(snapshot).getAsJsonObject();
+            } else {
+                File file = ContextConfigManager.ensureConfigFile();
+                root = JsonParser.parseReader(new FileReader(file)).getAsJsonObject();
+            }
             JsonArray interactions = root.has("interactions") && root.get("interactions").isJsonArray()
                     ? root.getAsJsonArray("interactions")
                     : new JsonArray();
@@ -121,6 +139,11 @@ public final class ContextInteractionRegistry {
         String type = getString(obj, "type", "").toLowerCase(Locale.ROOT);
         String idText = getString(obj, "id", "");
         if (type.isEmpty() || idText.isEmpty()) {
+            return null;
+        }
+        // The old default 1499 entity rule resolves to a vanilla pig in the
+        // external gas-mask mod. Ignore it even in pre-hotfix user configs.
+        if ("entity".equals(type) && "gas_mask:scp_1499".equals(idText)) {
             return null;
         }
 

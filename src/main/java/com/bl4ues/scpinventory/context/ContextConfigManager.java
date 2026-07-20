@@ -25,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import com.bl4ues.scpadditions.compat.network.PacketDistributor;
@@ -416,6 +417,7 @@ public final class ContextConfigManager {
 
     public static int reload(CommandSourceStack source) {
         ContextInteractionRegistry.reload();
+        ModNetwork.syncServerConfig(source.getServer().getPlayerList().getPlayers());
         source.sendSuccess(() -> Component.literal("[SCP Inventory] Context interactions reloaded.").withStyle(ChatFormatting.GREEN), false);
         return 1;
     }
@@ -539,6 +541,16 @@ public final class ContextConfigManager {
         }
     }
 
+    public static String readConfigJson() {
+        try {
+            return Files.readString(ensureConfigFile().toPath(), StandardCharsets.UTF_8);
+        } catch (Exception exception) {
+            ScpInventoryMod.LOGGER.error(
+                    "Failed to read context interaction configuration", exception);
+            return "{\"interactions\":[]}";
+        }
+    }
+
     static File ensureConfigFile() {
         File file = configFile();
         if (!file.exists()) {
@@ -575,6 +587,10 @@ public final class ContextConfigManager {
             file.getParentFile().mkdirs();
             ConfigFilePersistence.writeWithBackup(file.toPath(),
                     GSON.toJson(root) + System.lineSeparator());
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                ModNetwork.syncServerConfig(server.getPlayerList().getPlayers());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

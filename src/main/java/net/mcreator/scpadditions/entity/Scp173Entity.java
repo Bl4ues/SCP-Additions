@@ -57,10 +57,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private static final ResourceKey<DamageType> NECK_SNAP_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE,
             ResourceLocation.fromNamespaceAndPath(ScpAdditionsMod.MODID, "scp_173_neck_snap"));
-    // The client camera is authoritative for whether SCP-173 is on screen. A
-    // zero threshold deliberately covers the complete forward hemisphere so
-    // every visible screen edge remains safe at any configured field of view.
-    private static final double OBSERVED_DOT_THRESHOLD = 0.0D;
+    // Player camera observation covers the full forward hemisphere. Generic
+    // mobs must face the statue directly instead of freezing it from behind.
+    private static final double PLAYER_OBSERVED_DOT_THRESHOLD = 0.0D;
+    private static final double MOB_OBSERVED_DOT_THRESHOLD = 0.8660254037844386D;
+    private static final double SCP_131_OBSERVED_DOT_THRESHOLD = 0.70D;
     private static final double DIRECT_STEP_PER_TICK = 1.20D;
     // Per-tick motion controls how smoothly the statue advances. Automatic
     // blinks also have a hard total-distance budget below, so packet timing can
@@ -483,29 +484,38 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private boolean isObservedGeometry(LivingEntity observer) {
         Vec3 eye = observer.getEyePosition(1.0F);
         Vec3 look = observer.getViewVector(1.0F).normalize();
-        return isObservedGeometry(eye, look);
+        double threshold = observer instanceof Player
+                ? PLAYER_OBSERVED_DOT_THRESHOLD
+                : observer instanceof AbstractScp131Entity
+                        ? SCP_131_OBSERVED_DOT_THRESHOLD
+                        : MOB_OBSERVED_DOT_THRESHOLD;
+        return isObservedGeometry(eye, look, threshold);
     }
 
     private boolean isObservedGeometry(Vec3 eye, Vec3 look) {
+        return isObservedGeometry(eye, look, PLAYER_OBSERVED_DOT_THRESHOLD);
+    }
+
+    private boolean isObservedGeometry(Vec3 eye, Vec3 look, double dotThreshold) {
         AABB box = getBoundingBox();
         double minX = box.minX + VISIBILITY_EPSILON, midX = (box.minX + box.maxX) * 0.5D, maxX = box.maxX - VISIBILITY_EPSILON;
         double minY = box.minY + VISIBILITY_EPSILON, midY = (box.minY + box.maxY) * 0.5D, maxY = box.maxY - VISIBILITY_EPSILON;
         double minZ = box.minZ + VISIBILITY_EPSILON, midZ = (box.minZ + box.maxZ) * 0.5D, maxZ = box.maxZ - VISIBILITY_EPSILON;
-        return isVisibleSample(eye, look, new Vec3(midX, midY, midZ))
-                || isVisibleSample(eye, look, new Vec3(midX, maxY, midZ))
-                || isVisibleSample(eye, look, new Vec3(midX, minY, midZ))
-                || isVisibleSample(eye, look, new Vec3(minX, midY, midZ))
-                || isVisibleSample(eye, look, new Vec3(maxX, midY, midZ))
-                || isVisibleSample(eye, look, new Vec3(midX, midY, minZ))
-                || isVisibleSample(eye, look, new Vec3(midX, midY, maxZ))
-                || isVisibleSample(eye, look, new Vec3(minX, minY, minZ))
-                || isVisibleSample(eye, look, new Vec3(minX, minY, maxZ))
-                || isVisibleSample(eye, look, new Vec3(minX, maxY, minZ))
-                || isVisibleSample(eye, look, new Vec3(minX, maxY, maxZ))
-                || isVisibleSample(eye, look, new Vec3(maxX, minY, minZ))
-                || isVisibleSample(eye, look, new Vec3(maxX, minY, maxZ))
-                || isVisibleSample(eye, look, new Vec3(maxX, maxY, minZ))
-                || isVisibleSample(eye, look, new Vec3(maxX, maxY, maxZ));
+        return isVisibleSample(eye, look, dotThreshold, new Vec3(midX, midY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, maxY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, minY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, midY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, midY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, midY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, midY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, minY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, minY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, maxY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, maxY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, minY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, minY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, maxY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, maxY, maxZ));
     }
 
     private void reportClientObservation(boolean observed) {
@@ -518,12 +528,12 @@ public class Scp173Entity extends BlinkWatcherEntity {
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(new Scp173ObservationPacket(getId(), observed));
     }
 
-    private boolean isVisibleSample(Vec3 eye, Vec3 look, Vec3 point) {
+    private boolean isVisibleSample(Vec3 eye, Vec3 look, double dotThreshold, Vec3 point) {
         Vec3 toPoint = point.subtract(eye);
         double distance = toPoint.length();
         if (distance <= 0.001D) return true;
         double dot = look.dot(toPoint.scale(1.0D / distance));
-        return dot >= OBSERVED_DOT_THRESHOLD && hasVisualLineOfSightThroughTransparentBlocks(eye, point);
+        return dot >= dotThreshold && hasVisualLineOfSightThroughTransparentBlocks(eye, point);
     }
 
     private boolean hasVisualLineOfSightThroughTransparentBlocks(Vec3 start, Vec3 end) {

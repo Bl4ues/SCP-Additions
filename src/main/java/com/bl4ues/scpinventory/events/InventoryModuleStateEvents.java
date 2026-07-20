@@ -37,6 +37,7 @@ public final class InventoryModuleStateEvents {
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         ModNetwork.syncModuleState(player);
+        ModNetwork.syncServerConfig(player);
         updateDisabledState(player);
     }
 

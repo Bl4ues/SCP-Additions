@@ -23,6 +23,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import com.bl4ues.scpadditions.compat.network.PacketDistributor;
@@ -301,6 +302,10 @@ public final class ContextEntityConfigManager {
             file.getParentFile().mkdirs();
             ConfigFilePersistence.writeWithBackup(file.toPath(),
                     GSON.toJson(root) + System.lineSeparator());
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                ModNetwork.syncServerConfig(server.getPlayerList().getPlayers());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

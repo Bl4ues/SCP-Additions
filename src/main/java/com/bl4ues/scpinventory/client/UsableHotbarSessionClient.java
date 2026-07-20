@@ -182,7 +182,10 @@ public final class UsableHotbarSessionClient {
         }
 
         ItemStack active = player.getInventory().items.get(activeSlot);
-        if (!active.isEmpty() && isSameSingleItem(active, activeStack)) {
+        if (!active.isEmpty()) {
+            if (isSameMutableUsableItem(active, activeStack)) {
+                activeStack = normalizedSingle(active);
+            }
             return;
         }
 
@@ -197,7 +200,7 @@ public final class UsableHotbarSessionClient {
     }
 
     private static boolean shouldClientReapplySessionCopy(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && stack.getUseAnimation() == UseAnim.SPYGLASS;
+        return stack != null && !stack.isEmpty();
     }
 
     private static boolean isHotbarMirrorStillActive() {

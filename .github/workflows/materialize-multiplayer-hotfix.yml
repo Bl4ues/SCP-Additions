@@ -51,6 +51,9 @@ jobs:
           git diff --check
           git diff --binary > multiplayer-hotfix.patch
 
+      - name: Validate multiplayer regression surface
+        run: python3 tools/hotfix/validate_multiplayer_hotfix_3_0_7.py
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 

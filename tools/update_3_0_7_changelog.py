@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Triggered after the temporary documentation workflow is present.
 from pathlib import Path
 
 path = Path("CHANGELOG.md")

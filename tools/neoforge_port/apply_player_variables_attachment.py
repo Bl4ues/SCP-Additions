@@ -28,9 +28,6 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 """
 if "import net.neoforged.neoforge.attachment.AttachmentType;" not in text:
     text = text.replace(
-        "import net.minecraft.core.Direction;\n",
-        attachment_imports,
-    ) if "import net.minecraft.core.Direction;\n" in text else text.replace(
         "import net.minecraft.client.Minecraft;\n",
         "import net.minecraft.client.Minecraft;\n" + attachment_imports,
     )
@@ -90,18 +87,33 @@ text = GET_CAPABILITY.sub(
     text,
 )
 text = text.replace("\t\t\tevent.getOriginal().revive();\n", "")
-
 TARGET.write_text(text, encoding="utf-8")
 
 changed = 1
 for path in JAVA_ROOT.rglob("*.java"):
-    if path == TARGET:
-        continue
     source = path.read_text(encoding="utf-8")
     updated = GET_CAPABILITY.sub(
         lambda match: f"ScpAdditionsModVariables.getPlayerVariables({match.group('expr')})",
         source,
     )
+
+    updated = updated.replace(
+        "mc.player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)",
+        "ScpAdditionsModVariables.getPlayerVariables(mc.player)",
+    )
+    updated = updated.replace(
+        "player.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)",
+        "ScpAdditionsModVariables.getPlayerVariables(player)",
+    )
+    updated = updated.replace(
+        "target.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)",
+        "ScpAdditionsModVariables.getPlayerVariables(target)",
+    )
+    updated = updated.replace(
+        "player\n                                .getCapability(PLAYER_VARIABLES_CAPABILITY, null)",
+        "ScpAdditionsModVariables.getPlayerVariables(player)",
+    )
+
     if updated != source:
         path.write_text(updated, encoding="utf-8")
         changed += 1
@@ -122,11 +134,11 @@ if updated != source:
 remaining = []
 for path in JAVA_ROOT.rglob("*.java"):
     source = path.read_text(encoding="utf-8")
-    if "PLAYER_VARIABLES_CAPABILITY" in source:
+    if "Capability<PlayerVariables> PLAYER_VARIABLES_CAPABILITY" in source:
         remaining.append(str(path.relative_to(ROOT)))
 
 print(f"Updated {changed} files for player variable attachments")
 if remaining:
-    print("Unconverted player capability references:")
+    print("Unconverted player capability declarations:")
     print("\n".join(remaining))
     raise SystemExit(1)

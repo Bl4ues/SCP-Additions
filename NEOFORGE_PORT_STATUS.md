@@ -15,7 +15,7 @@ This port starts from the audited SCP Additions 3.0.7 master cleanup, including 
 - GeckoLib NeoForge 4.9.2
 - NeoForge metadata and retained access transformer
 - Original custom resource-processing pipeline retained
-- Mechanical Forge-to-NeoForge migration touched 245 of 511 Java files
+- Mechanical Forge-to-NeoForge migration touched 0 of 511 Java files
 
 ## Completion rule
 

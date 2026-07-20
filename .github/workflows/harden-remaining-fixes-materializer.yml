@@ -1,0 +1,54 @@
+name: Harden remaining-fixes materializer
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/HARDEN_REMAINING_MATERIALIZER
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Make the shared materializer client-safe and idempotent
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/hotfix/fix_remaining_3_0_7_v2.py')
+          text = path.read_text()
+
+          old_loop = '''    for source in JAVA.rglob("*.java"):\n        if source == path:\n            continue\n'''
+          new_loop = '''    for source in JAVA.rglob("*.java"):\n        if source == path or "/client/" in source.as_posix():\n            continue\n'''
+          if old_loop in text:
+              text = text.replace(old_loop, new_loop)
+
+          anchor = '''    modern_entity_new = """            if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {\n                return null;\n            }\n            entityType = BuiltInRegistries.ENTITY_TYPE.get(id);\n            if (entityType == null) {\n"""\n\n'''
+          addition = anchor + '''    forge_block_guard = """            if (!ForgeRegistries.BLOCKS.containsKey(id)) {\n                return null;\n            }\n"""\n    forge_entity_guard = """            if (!ForgeRegistries.ENTITY_TYPES.containsKey(id)) {\n                return null;\n            }\n"""\n    modern_block_guard = """            if (!BuiltInRegistries.BLOCK.containsKey(id)) {\n                return null;\n            }\n"""\n    modern_entity_guard = """            if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {\n                return null;\n            }\n"""\n    for guard in (forge_block_guard, forge_entity_guard, modern_block_guard, modern_entity_guard):\n        while guard + guard in text:\n            text = text.replace(guard + guard, guard)\n\n'''
+          if 'for guard in (forge_block_guard' not in text:
+              if anchor not in text:
+                  raise RuntimeError('Could not find registry guard insertion point')
+              text = text.replace(anchor, addition, 1)
+
+          path.write_text(text)
+          PY
+      - name: Commit hardened materializer and remove patch workflow
+        shell: bash
+        run: |
+          rm tools/hotfix/HARDEN_REMAINING_MATERIALIZER
+          rm .github/workflows/harden-remaining-fixes-materializer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/hotfix/fix_remaining_3_0_7_v2.py tools/hotfix/HARDEN_REMAINING_MATERIALIZER .github/workflows/harden-remaining-fixes-materializer.yml
+          git commit -m "Harden remaining-fixes materializer"
+          git push origin HEAD:master

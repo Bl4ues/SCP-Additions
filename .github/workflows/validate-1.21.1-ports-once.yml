@@ -1,0 +1,152 @@
+name: Validate Minecraft 1.21.1 ports once
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/port_1_21/VALIDATE_NOW
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - loader: NeoForge
+            branch: neoforge-1.21.1-port-3.0.7
+            pr: 42
+            log: neoforge-world-smoke.log
+          - loader: Fabric
+            branch: fabric-1.21.1-port-3.0.7
+            pr: 43
+            log: fabric-world-smoke.log
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Synchronize changelog and normalize 1.21.1 data
+        shell: bash
+        run: |
+          git fetch origin master
+          git show origin/master:CHANGELOG.md > CHANGELOG.md
+          python3 tools/port_1_21/migrate_data_resources.py
+
+      - name: Commit materialized data and documentation
+        shell: bash
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add CHANGELOG.md src/main/resources/data src/main/resources/pack.mcmeta
+            git commit -m "Migrate 1.21.1 datapack resources and sync changelog"
+            git push origin HEAD:${{ matrix.branch }}
+          fi
+
+      - name: Build ${{ matrix.loader }} port
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Validate migrated data tree
+        shell: bash
+        run: |
+          test -f build/resources/main/data/scp_additions/advancement/scp_additions_ach.json
+          test -d build/resources/main/data/scp_additions/recipe
+          test ! -d build/resources/main/data/scp_additions/advancements
+          test ! -d build/resources/main/data/scp_additions/recipes
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('build/resources/main')
+          meta = json.loads((root / 'pack.mcmeta').read_text())
+          assert meta['pack']['pack_format'] == 48
+          for path in (root / 'data').rglob('*.json'):
+              json.loads(path.read_text())
+          root_adv = root / 'data/scp_additions/advancement/scp_additions_ach.json'
+          advancement = json.loads(root_adv.read_text())
+          assert advancement['display']['icon']['id'] == 'scp_additions:tesla_gate'
+          assert 'item' not in advancement['display']['icon']
+          PY
+
+      - name: Create and tick a dedicated world
+        shell: bash
+        run: |
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+          set +e
+          timeout 150s ./gradlew runServer --no-daemon > '${{ matrix.log }}' 2>&1
+          status=$?
+          set -e
+          cat '${{ matrix.log }}'
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
+          grep -q "Done (" '${{ matrix.log }}'
+          ! grep -q "Encountered an unexpected exception" '${{ matrix.log }}'
+          ! grep -q "Exception in server tick loop" '${{ matrix.log }}'
+          ! grep -q "Unable to award missing root advancement" '${{ matrix.log }}'
+          ! grep -q "Missing registered gamerule" '${{ matrix.log }}'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.loader }}-1.21.1-validation
+          path: |
+            build/libs/*.jar
+            ${{ matrix.log }}
+            run/server/logs/latest.log
+
+      - name: Report result on draft PR
+        if: always()
+        shell: bash
+        run: |
+          head_sha=$(git rev-parse HEAD)
+          gh pr comment '${{ matrix.pr }}' --repo '${{ github.repository }}' --body "### ${{ matrix.loader }} 1.21.1 world validation: **${{ job.status }}**
+
+          - Branch: \`${{ matrix.branch }}\`
+          - Tested head: \`$head_sha\`
+          - Checks: migrated datapack layout, JSON validation, clean build, dedicated world creation, and post-start server ticks
+          - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          The port remains draft until manual feature-parity QA is complete."
+
+  cleanup:
+    if: always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove temporary validator
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/validate-1.21.1-ports-once.yml tools/port_1_21/VALIDATE_NOW
+          git commit -m "Remove temporary 1.21.1 port validator [skip ci]"
+          git push origin HEAD:master

@@ -259,18 +259,17 @@ jobs:
           view-distance=4
           simulation-distance=4
           EOF
-          ./gradlew runServer --no-daemon --console=plain > flow-server.log 2>&1 &
-          server_pid=$!
-          ready=0
-          for i in $(seq 1 100); do
-            if grep -q 'Done (' flow-server.log; then ready=1; break; fi
-            kill -0 "$server_pid" 2>/dev/null || { cat flow-server.log; wait "$server_pid"; exit $?; }
-            sleep 1
-          done
-          [ "$ready" -eq 1 ] || { cat flow-server.log; exit 90; }
-          kill -INT "$server_pid" 2>/dev/null || true
-          wait "$server_pid" || true
+          set +e
+          timeout --signal=INT --kill-after=20s 100s \
+            ./gradlew runServer --no-daemon --console=plain \
+            > flow-server.log 2>&1
+          status=$?
+          set -e
           cat flow-server.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
+            exit "$status"
+          fi
+          grep -q 'Done (' flow-server.log
           test -f run/server/FlowTest/level.dat
           mkdir -p run/client/saves
           cp -a run/server/FlowTest run/client/saves/FlowTest

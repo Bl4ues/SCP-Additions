@@ -71,5 +71,8 @@ public final class Scp173ClientModEvents {
         event.registerSpriteSet(
                 ScpAdditionsModParticleTypes.DECONTAMINATION_GAS.get(),
                 DecontaminationGasParticle.Provider::new);
+        event.registerSpriteSet(
+                ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                Scp106CorrosionParticle.Provider::new);
     }
 }

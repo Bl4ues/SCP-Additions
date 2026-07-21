@@ -1,0 +1,56 @@
+name: Apply runtime fixes from PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-build:
+    if: startsWith(github.head_ref, 'fix/neoforge-1.21.1-runtime-regressions-3.0.7') || startsWith(github.head_ref, 'fix/fabric-1.21.1-runtime-regressions-3.0.7')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract and apply repair script
+        shell: bash
+        run: |
+          awk '
+            /python <<'"'"'PY'"'"'/ { capture=1; next }
+            capture && /^          PY$/ { capture=0; exit }
+            capture { sub(/^          /, ""); print }
+          ' .github/workflows/apply-runtime-regression-fixes.yml > /tmp/apply_runtime_fixes.py
+          test -s /tmp/apply_runtime_fixes.py
+          python /tmp/apply_runtime_fixes.py
+
+      - name: Build corrected port
+        shell: bash
+        run: ./gradlew clean build --stacktrace
+
+      - name: Validate packaged runtime resources
+        shell: bash
+        run: |
+          JAR="$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          jar tf "$JAR" | grep -q '^data/scp_additions/structure/scp_914_full.nbt$'
+          jar tf "$JAR" | grep -q '^assets/scp_additions/blockstates/sl_1_floor_1.json$'
+          jar tf "$JAR" | grep -q '^assets/scp_additions/models/item/sl_1_floor_detail_small.json$'
+
+      - name: Commit corrected sources
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Fix 1.21.1 runtime regressions"
+          git push origin "HEAD:${{ github.head_ref }}"

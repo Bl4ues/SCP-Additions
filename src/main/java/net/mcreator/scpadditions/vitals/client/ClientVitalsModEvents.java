@@ -21,5 +21,9 @@ public final class ClientVitalsModEvents {
         event.registerAboveAll("scp_079_energy_debug",
                 (gui, graphics, partialTick, width, height) ->
                         Scp079EnergyOverlay.render(graphics, width, height, partialTick));
+        event.registerAboveAll("scp_spawn_timers_debug",
+                (gui, graphics, partialTick, width, height) ->
+                        ScpSpawnTimersOverlay.render(graphics, width, height,
+                                partialTick));
     }
 }

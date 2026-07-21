@@ -15,6 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorControlPanelAccess;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog;
 import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
 
 import java.util.HashSet;
@@ -119,13 +120,20 @@ public final class Scp012DoorAccess {
                         double cost = attemptCost(attempts);
                         if (!Scp079ProcessingManager.canAfford(level,
                                 cost + reservedPower)) {
-                            if (activeContest) abandon(key, time);
+                            if (activeContest) {
+                                abandon(level, key, pos, time, player,
+                                        "insufficient processing for the next attempt");
+                            }
                             continue;
                         }
-                        if (activeContest && !worthContinuing(level, player,
-                                scpPos, contest, cost)) {
-                            abandon(key, time);
-                            continue;
+                        if (activeContest) {
+                            String rejection = continuationRejection(level,
+                                    player, scpPos, contest, cost);
+                            if (rejection != null) {
+                                abandon(level, key, pos, time, player,
+                                        rejection);
+                                continue;
+                            }
                         }
 
                         double distance = player.distanceToSqr(
@@ -150,6 +158,11 @@ public final class Scp012DoorAccess {
                 || HeavyDoorControlPanelAccess.openConnectedControls(level,
                 best.match().pos()) <= 0) {
             Scp079ProcessingManager.refund(level, best.cost());
+            Scp079DecisionLog.record(level,
+                    Scp079DecisionLog.DecisionType.ABORTED_ACTION,
+                    Scp079DecisionLog.DecisionOutcome.ABORTED,
+                    best.match().pos(), 0.0D,
+                    "SCP-012 route changed before override · processing refunded");
             return false;
         }
 
@@ -169,17 +182,26 @@ public final class Scp012DoorAccess {
                 + (previous == null ? 0.0D : previous.processingSpent());
         CONTESTS.put(best.key(), new ContestState(player.getUUID(), attempts,
                 spent, time + CONTEST_MEMORY_TICKS));
+        Scp079DecisionLog.record(level,
+                Scp079DecisionLog.DecisionType.OPEN_SCP_012_ROUTE,
+                Scp079DecisionLog.DecisionOutcome.EXECUTED,
+                best.match().pos(), best.cost(),
+                "attempt " + attempts + " for "
+                        + player.getGameProfile().getName()
+                        + " · contest total " + Math.round(spent) + " AP");
         return true;
     }
 
-    private static boolean worthContinuing(ServerLevel level,
+    private static String continuationRejection(ServerLevel level,
             ServerPlayer player, BlockPos scpPos, ContestState contest,
             double nextCost) {
         boolean protectedBy714 = Scp714ProtectionAccess.isProtected(player);
 
         // The first re-open remains a plausible precaution against SCP-714, but
         // repeatedly fighting a protected player is recognized as wasteful.
-        if (protectedBy714 && contest.attempts() >= 2) return false;
+        if (protectedBy714 && contest.attempts() >= 2) {
+            return "SCP-714 made further contention wasteful";
+        }
 
         double distance = player.position().distanceTo(
                 Scp012Module.attractionPoint(level, scpPos));
@@ -189,7 +211,8 @@ public final class Scp012DoorAccess {
         if (Scp079ProcessingManager.getPower(level) < 30.0F) utility -= 10.0D;
         utility -= nextCost * 0.35D;
         utility -= contest.processingSpent() * 0.12D;
-        return utility >= 20.0D;
+        return utility >= 20.0D ? null
+                : "expected utility fell below the processing cost";
     }
 
     private static double attemptCost(int completedAttempts) {
@@ -197,9 +220,14 @@ public final class Scp012DoorAccess {
         return ATTEMPT_COSTS[index];
     }
 
-    private static void abandon(DoorKey key, long time) {
+    private static void abandon(ServerLevel level, DoorKey key,
+            BlockPos pos, long time, ServerPlayer player, String reason) {
         CONTESTS.remove(key);
         COOLDOWNS.put(key, time + ABANDONED_DEVICE_COOLDOWN_TICKS);
+        Scp079DecisionLog.record(level,
+                Scp079DecisionLog.DecisionType.ABANDON_SCP_012_CONTEST,
+                Scp079DecisionLog.DecisionOutcome.ABANDONED, pos, 0.0D,
+                reason + " · " + player.getGameProfile().getName());
     }
 
     private static void clean(ServerLevel level, long time) {

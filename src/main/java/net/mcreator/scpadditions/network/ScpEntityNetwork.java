@@ -1,10 +1,15 @@
 package net.mcreator.scpadditions.network;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.network.Scp079EnergyPacket.SpawnStatus;
+import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
+import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class ScpEntityNetwork {
     private static boolean registered;
@@ -147,14 +152,23 @@ public final class ScpEntityNetwork {
 
     public static void syncDebugState(ServerPlayer player,
             boolean energyVisible, boolean active, float energy,
-            boolean spawnTimersVisible, int scp173RemainingTicks,
-            SpawnStatus scp173Status) {
+            boolean spawnTimersVisible,
+            List<RoamerDebugSnapshot> snapshots) {
         if (player == null) return;
+        MinecraftServer server = player.getServer();
+        int currentTick = server == null ? 0 : server.getTickCount();
+        List<RoamerEntry> entries = new ArrayList<>();
+        if (snapshots != null) {
+            for (RoamerDebugSnapshot snapshot : snapshots) {
+                entries.add(new RoamerEntry(snapshot.type(), snapshot.state(),
+                        snapshot.result(),
+                        snapshot.remainingTicks(currentTick)));
+            }
+        }
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new Scp079EnergyPacket(energyVisible, active, energy,
-                        spawnTimersVisible, scp173RemainingTicks,
-                        scp173Status));
+                        spawnTimersVisible, entries));
     }
 
     public static void playScare(ServerPlayer player) {

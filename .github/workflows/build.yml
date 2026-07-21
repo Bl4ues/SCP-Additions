@@ -35,7 +35,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        run: ./gradlew clean build --stacktrace
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --stacktrace > build-output.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 220 build-output.log
+          fi
+          exit "$status"
 
       - name: Upload compiled JAR
         if: success()

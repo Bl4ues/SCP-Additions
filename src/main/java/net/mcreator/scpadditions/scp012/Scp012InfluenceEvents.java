@@ -18,6 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog;
 import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
@@ -86,7 +87,20 @@ public final class Scp012InfluenceEvents {
             }
             if (boxClosed && Scp079ProcessingManager.trySpend(level,
                     SCP_012_BOX_OPEN_COST)) {
-                Scp012Module.open(level, nearby);
+                if (Scp012Module.open(level, nearby)) {
+                    String protection = Scp714ProtectionAccess.isProtected(player)
+                            ? " · SCP-714 detected" : "";
+                    Scp079DecisionLog.record(level,
+                            Scp079DecisionLog.DecisionType.OPEN_SCP_012_BOX,
+                            Scp079DecisionLog.DecisionOutcome.EXECUTED,
+                            nearby, SCP_012_BOX_OPEN_COST,
+                            "precautionary trap for "
+                                    + player.getGameProfile().getName()
+                                    + protection);
+                } else {
+                    Scp079ProcessingManager.refund(level,
+                            SCP_012_BOX_OPEN_COST);
+                }
             }
         }
 

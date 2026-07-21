@@ -11,11 +11,8 @@
 - Added a lightweight client-side trail of sparse black mucus-like particles while SCP-106 walks, inspired by its corrosive trail in SCP: Unity;
 - Changed the custom Health Bar to a grotesque near-black and dark-brown gradient while the player has Wither.
 
-## Entity presentation and fixes
+## SCP-173
 
-- Added the missing SCP-106 spawn egg item model;
-- Corrected SCP-106 pursuit failing to move toward players;
-- Replaced its translucent render pass with a stable cutout pass and gave zero-thickness model planes minimal depth, removing visible Z-fighting without changing its silhouette or UV layout;
 - Reduced SCP-173's rendered height to approximately two blocks.
 
 # SCP Additions 3.0.7 — Hotfix

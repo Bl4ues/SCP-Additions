@@ -10,11 +10,12 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
-import net.mcreator.scpadditions.event.Scp173SpawnEvents;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
-import net.mcreator.scpadditions.network.Scp079EnergyPacket.SpawnStatus;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
+import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
+import net.mcreator.scpadditions.roamer.RoamerManager;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -120,24 +121,18 @@ public final class Scp079ProcessingManager {
                 ScpAdditionsModulesConfig.get().debug;
         boolean energyVisible = debug.showScp079EnergyHud;
         boolean spawnTimersVisible = debug.showScpSpawnTimersHud;
-        boolean active = isActive(player.serverLevel());
+        boolean active = energyVisible && isActive(player.serverLevel());
         int roundedPower = energyVisible
                 ? Math.round(getPower(player.serverLevel())) : 0;
-        Scp173SpawnEvents.DebugSnapshot spawn =
-                Scp173SpawnEvents.debugSnapshot(player);
-        int currentTick = player.getServer() == null
-                ? 0 : player.getServer().getTickCount();
+        List<RoamerDebugSnapshot> roamers = spawnTimersVisible
+                ? RoamerManager.debugSnapshots(player) : List.of();
 
         ClientSnapshot next = new ClientSnapshot(energyVisible, active,
-                roundedPower, spawnTimersVisible, spawn.nextCheckTick(),
-                spawn.status());
+                roundedPower, spawnTimersVisible, roamers);
         ClientSnapshot previous = LAST_CLIENT_SYNC.put(player.getUUID(), next);
         if (!next.equals(previous)) {
-            int remainingTicks = spawn.status().showsTimer()
-                    ? Math.max(0, spawn.nextCheckTick() - currentTick) : -1;
             ScpEntityNetwork.syncDebugState(player, energyVisible, active,
-                    roundedPower, spawnTimersVisible, remainingTicks,
-                    spawn.status());
+                    roundedPower, spawnTimersVisible, roamers);
         }
     }
 
@@ -174,7 +169,10 @@ public final class Scp079ProcessingManager {
     }
 
     private record ClientSnapshot(boolean energyVisible, boolean active,
-            int roundedPower, boolean spawnTimersVisible, int nextCheckTick,
-            SpawnStatus spawnStatus) {
+            int roundedPower, boolean spawnTimersVisible,
+            List<RoamerDebugSnapshot> roamers) {
+        private ClientSnapshot {
+            roamers = roamers == null ? List.of() : List.copyOf(roamers);
+        }
     }
 }

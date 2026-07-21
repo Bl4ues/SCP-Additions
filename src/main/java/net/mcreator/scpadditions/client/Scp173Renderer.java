@@ -11,6 +11,7 @@ public class Scp173Renderer extends GeoEntityRenderer<Scp173Entity> {
     public Scp173Renderer(EntityRendererProvider.Context context) {
         super(context, new Scp173Model<>());
         this.shadowRadius = 0.45F;
+        this.scaleHeight = 0.939F;
     }
 
     @Override

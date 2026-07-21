@@ -282,7 +282,8 @@ public class ScpInventoryScreen extends Screen {
             return;
         }
 
-        renderBackground(g, mouseX, mouseY, partialTick);
+        // Preserve the sharp 1.20.1 inventory presentation; the 1.21 helper blurs the world.
+        renderTransparentBackground(g);
         renderPanels(g);
         renderHealthStatus(g);
 

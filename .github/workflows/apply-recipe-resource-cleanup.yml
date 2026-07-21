@@ -1,0 +1,75 @@
+name: Apply recipe resource cleanup
+
+on:
+  push:
+    branches:
+      - fix/neoforge-1.21.1-runtime-regressions-3.0.7
+      - fix/fabric-1.21.1-runtime-regressions-3.0.7
+    paths:
+      - .github/workflows/apply-recipe-resource-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Exclude obsolete generated recipes using 1.21 datapack paths
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('build.gradle')
+          text = path.read_text(encoding='utf-8')
+          old = """    exclude('data/scp_additions/recipes/button_left_swap.json')
+              exclude('data/scp_additions/recipes/button_right_swap.json')
+          """
+          new = """    // 1.21 datapacks use singular recipe/. These generated legacy
+              // recipes target removed per-level public reader items; readers are now
+              // configured in-world through the unified reader and screwdriver.
+              exclude('data/scp_additions/recipe/lv_*_kr_right.json')
+              exclude('data/scp_additions/recipe/lv_*_lto_r.json')
+              exclude('data/scp_additions/recipe/lv_*_rto_l.json')
+              exclude('data/scp_additions/recipe/lv_2_kr_left.json')
+              exclude('data/scp_additions/recipe/lv_3_kr_left.json')
+              exclude('data/scp_additions/recipe/lv_4_kr_left.json')
+              exclude('data/scp_additions/recipe/lv_5_kr_left.json')
+              exclude('data/scp_additions/recipe/lv_6_kr_left.json')
+              exclude('data/scp_additions/recipe/spray_recipe.json')
+              exclude('data/scp_additions/recipe/button_left_swap.json')
+              exclude('data/scp_additions/recipe/button_right_swap.json')
+          """
+          if old not in text:
+              raise SystemExit('Expected plural recipe exclusion block was not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Build and inspect packaged recipes
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+          JAR="$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          ! jar tf "$JAR" | grep -Eq '^data/scp_additions/recipe/(lv_[2-6]_kr_left|lv_.*_(kr_right|lto_r|rto_l)|spray_recipe|button_(left|right)_swap)\.json$'
+          jar tf "$JAR" | grep -q '^data/scp_additions/recipe/lv_1_kr_left.json$'
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build.gradle
+          git commit -m "Exclude obsolete 1.21 recipe resources"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

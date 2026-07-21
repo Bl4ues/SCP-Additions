@@ -1,0 +1,57 @@
+name: Start SCP Additions 3.0.8
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/start-3.0.8.yml
+
+permissions:
+  contents: write
+
+jobs:
+  initialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Bump development version and open changelog section
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          build = Path('build.gradle')
+          build_text = build.read_text(encoding='utf-8')
+          old_version = "version = '3.0.7'"
+          new_version = "version = '3.0.8'"
+          if old_version not in build_text:
+              raise SystemExit('Expected 3.0.7 project version was not found')
+          build.write_text(build_text.replace(old_version, new_version, 1), encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          changelog_text = changelog.read_text(encoding='utf-8')
+          heading = "# Changelog\n\n"
+          section = (
+              "# SCP Additions 3.0.8 — In Development\n\n"
+              "Development for 3.0.8 has begun. New features and fixes will be documented here as they are implemented.\n\n"
+          )
+          if '# SCP Additions 3.0.8' not in changelog_text:
+              if not changelog_text.startswith(heading):
+                  raise SystemExit('Unexpected changelog header')
+              changelog.write_text(heading + section + changelog_text[len(heading):], encoding='utf-8')
+          PY
+
+      - name: Commit 3.0.8 development start
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/start-3.0.8.yml
+          git add build.gradle CHANGELOG.md
+          git commit -m "Start SCP Additions 3.0.8 development"
+          git push origin HEAD:master

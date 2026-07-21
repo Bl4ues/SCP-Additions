@@ -82,13 +82,23 @@ public final class PickupPromptClient {
             return;
         }
 
-        ScreenPoint point = projectToScreen(mc, target.getBoundingBox().getCenter().add(0.0D, -0.08D, 0.0D), screenWidth, screenHeight);
+        float uiScale = ReferenceGuiScale.factor(mc);
+        int logicalWidth = ReferenceGuiScale.logicalSize(
+                screenWidth, uiScale);
+        int logicalHeight = ReferenceGuiScale.logicalSize(
+                screenHeight, uiScale);
+        ScreenPoint point = projectToScreen(mc,
+                target.getBoundingBox().getCenter().add(0.0D, -0.08D, 0.0D),
+                logicalWidth, logicalHeight);
         if (point == null) {
-            point = new ScreenPoint(screenWidth / 2, screenHeight / 2);
+            return;
         }
 
-        int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
-        int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
+        g.pose().pushPose();
+        g.pose().scale(uiScale, uiScale, 1.0F);
+
+        int screenX = Mth.clamp(point.x(), 28, logicalWidth - 28);
+        int screenY = Mth.clamp(point.y(), 28, logicalHeight - 28);
 
         int iconX = screenX - (ICON_SIZE / 2) - 3;
         int iconY = screenY - (ICON_SIZE / 2) + 8;
@@ -96,9 +106,11 @@ public final class PickupPromptClient {
         int pickupY = iconY + 22;
         int itemY = pickupY + 32;
 
-        int itemWidth = Math.round(mc.font.width(ScpFonts.roboto(target.getItem().getHoverName().getString())) * ITEM_TEXT_SCALE);
-        if (textX + itemWidth > screenWidth - 8) {
-            textX = Math.max(8, screenWidth - itemWidth - 8);
+        int itemWidth = Math.round(mc.font.width(ScpFonts.roboto(
+                target.getItem().getHoverName().getString()))
+                * ITEM_TEXT_SCALE);
+        if (textX + itemWidth > logicalWidth - 8) {
+            textX = Math.max(8, logicalWidth - itemWidth - 8);
             iconX = Math.max(6, textX - ICON_SIZE - 4);
         }
         if (iconX < 6) {
@@ -110,15 +122,19 @@ public final class PickupPromptClient {
             pickupY = iconY + 22;
             itemY = pickupY + 32;
         }
-        if (iconY + ICON_SIZE > screenHeight - 6) {
-            iconY = screenHeight - ICON_SIZE - 6;
+        if (iconY + ICON_SIZE > logicalHeight - 6) {
+            iconY = logicalHeight - ICON_SIZE - 6;
             pickupY = iconY + 22;
             itemY = pickupY + 32;
         }
 
         drawIcon(g, iconX, iconY);
-        drawScaledString(g, mc, "Pickup", textX, pickupY, PICKUP_TEXT_SCALE, TEXT_GRAY);
-        drawScaledString(g, mc, target.getItem().getHoverName().getString(), textX, itemY, ITEM_TEXT_SCALE, TEXT_WHITE);
+        drawScaledString(g, mc, "Pickup", textX, pickupY,
+                PICKUP_TEXT_SCALE, TEXT_GRAY);
+        drawScaledString(g, mc,
+                target.getItem().getHoverName().getString(),
+                textX, itemY, ITEM_TEXT_SCALE, TEXT_WHITE);
+        g.pose().popPose();
     }
 
     public static void renderWorldOutline(PoseStack poseStack, Camera camera) {
@@ -202,14 +218,17 @@ public final class PickupPromptClient {
         Vector3f transformed = new Vector3f((float) relative.x, (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
 
-        double depth = Math.abs(transformed.z());
+        double depth = -transformed.z();
         if (depth < 0.05D) return null;
 
         double fov = mc.options.fov().get();
-        double scale = screenHeight / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+        double scale = screenHeight
+                / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
 
-        int x = (int) Math.round((screenWidth / 2.0D) - (transformed.x() * scale / depth));
-        int y = (int) Math.round((screenHeight / 2.0D) - (transformed.y() * scale / depth));
+        int x = (int) Math.round((screenWidth / 2.0D)
+                + (transformed.x() * scale / depth));
+        int y = (int) Math.round((screenHeight / 2.0D)
+                - (transformed.y() * scale / depth));
         return new ScreenPoint(x, y);
     }
 

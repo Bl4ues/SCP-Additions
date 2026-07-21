@@ -39,6 +39,7 @@ public final class Scp012InfluenceEvents {
     private static final int TARGET_DISCOVERY_RADIUS = INFLUENCE_RADIUS + 3;
     private static final double DAMAGE_RADIUS = 1.25D;
     private static final int FATAL_CONTACT_TICKS = 15 * 20;
+    private static final int RESPAWN_GRACE_TICKS = 40;
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
 
     private static final Map<UUID, ContactState> CONTACT_STATES = new HashMap<>();
@@ -46,6 +47,8 @@ public final class Scp012InfluenceEvents {
     private static final Map<UUID, DiscoveredTarget> DISCOVERED_TARGETS =
             new HashMap<>();
     private static final Map<UUID, Long> NEXT_TARGET_SEARCH = new HashMap<>();
+    private static final Map<UUID, Integer> LAST_ENTITY_IDS = new HashMap<>();
+    private static final Map<UUID, Long> RESPAWN_GRACE_UNTIL = new HashMap<>();
 
     private Scp012InfluenceEvents() {
     }
@@ -56,12 +59,33 @@ public final class Scp012InfluenceEvents {
                 || !(event.player instanceof ServerPlayer player)) {
             return;
         }
-        if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+        UUID playerId = player.getUUID();
+        ServerLevel level = player.serverLevel();
+        Integer previousEntityId = LAST_ENTITY_IDS.put(
+                playerId, player.getId());
+        if (previousEntityId != null
+                && previousEntityId.intValue() != player.getId()) {
+            clearAll(player);
+            RESPAWN_GRACE_UNTIL.put(playerId,
+                    level.getGameTime() + RESPAWN_GRACE_TICKS);
+            forceClientClear(player);
+        }
+
+        if (!player.isAlive() || player.isCreative()
+                || player.isSpectator()) {
             clearAll(player);
             return;
         }
 
-        ServerLevel level = player.serverLevel();
+        Long graceUntil = RESPAWN_GRACE_UNTIL.get(playerId);
+        if (graceUntil != null) {
+            if (level.getGameTime() < graceUntil) {
+                clearInfluence(player);
+                return;
+            }
+            RESPAWN_GRACE_UNTIL.remove(playerId);
+        }
+
         BlockPos nearby = findNearby(level, player);
         if (nearby == null) {
             clearInfluence(player);
@@ -239,6 +263,11 @@ public final class Scp012InfluenceEvents {
         }
     }
 
+    private static void forceClientClear(ServerPlayer player) {
+        ScpEntityNetwork.syncScp012Influence(player, false,
+                BlockPos.ZERO, 0.0F, false);
+    }
+
     private static void clearInfluence(ServerPlayer player) {
         UUID id = player.getUUID();
         boolean wasActive = ACTIVE_TARGETS.remove(id) != null;
@@ -259,12 +288,20 @@ public final class Scp012InfluenceEvents {
 
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            UUID id = player.getUUID();
+            clearAll(player);
+            LAST_ENTITY_IDS.remove(id);
+            RESPAWN_GRACE_UNTIL.remove(id);
+        }
     }
 
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            clearAll(player);
+            forceClientClear(player);
+        }
     }
 
     private record DiscoveredTarget(ResourceKey<Level> dimension, BlockPos pos) {

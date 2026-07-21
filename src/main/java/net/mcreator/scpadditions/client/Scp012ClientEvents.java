@@ -17,6 +17,8 @@ import net.mcreator.scpadditions.scp012.Scp012InfluenceEvents;
 @EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public final class Scp012ClientEvents {
+    private static Player lastPlayer;
+
     private Scp012ClientEvents() {
     }
 
@@ -24,9 +26,18 @@ public final class Scp012ClientEvents {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) {
+        Player player = minecraft.player;
+        if (minecraft.level == null || player == null) {
             Scp012ClientState.clear();
+            lastPlayer = null;
             return;
+        }
+        if (lastPlayer != player || !player.isAlive()) {
+            Scp012ClientState.clear();
+            lastPlayer = player;
+            if (!player.isAlive()) {
+                return;
+            }
         }
 
         if (!Scp012ClientState.isActive()) {
@@ -35,7 +46,6 @@ public final class Scp012ClientEvents {
             return;
         }
 
-        Player player = minecraft.player;
         Vec3 target = Vec3.atCenterOf(Scp012ClientState.target());
         Vec3 delta = target.subtract(player.getEyePosition());
         double distance = delta.length();

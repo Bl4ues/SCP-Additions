@@ -282,8 +282,7 @@ public class ScpInventoryScreen extends Screen {
             return;
         }
 
-        // Preserve the sharp 1.20.1 inventory presentation; the 1.21 helper blurs the world.
-        renderTransparentBackground(g);
+        renderSharpWorldBackdrop(g);
         renderPanels(g);
         renderHealthStatus(g);
 
@@ -347,6 +346,10 @@ public class ScpInventoryScreen extends Screen {
         dropPreviewTransparentRender = false;
         dropPreviewRenderAlpha = 1.0F;
         renderDraggedStack(g, mouseX, mouseY);
+    }
+
+    private void renderSharpWorldBackdrop(GuiGraphics g) {
+        g.fill(0, 0, width, height, 0xA8000000);
     }
 
     private void renderPreviewBackgroundDim(GuiGraphics g) {

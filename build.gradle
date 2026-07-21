@@ -88,6 +88,243 @@ processResources {
     from('config') {
         into 'config'
     }
+
+    doLast {
+        def parser = new groovy.json.JsonSlurper()
+        def writeJson = { File target, Object data ->
+            target.parentFile.mkdirs()
+            target.setText(
+                    groovy.json.JsonOutput.prettyPrint(
+                            groovy.json.JsonOutput.toJson(data)) + System.lineSeparator(),
+                    'UTF-8')
+        }
+
+        def scpConfigDir = file("$buildDir/resources/main/config/scpadditions")
+        if (scpConfigDir.exists()) {
+            fileTree(scpConfigDir).matching {
+                include '*.json'
+            }.each { jsonFile ->
+                def raw = jsonFile.getText('UTF-8')
+                jsonFile.setText(groovy.json.JsonOutput.prettyPrint(raw) + System.lineSeparator(), 'UTF-8')
+            }
+        }
+
+        // Facility registry IDs now live under scp_additions, while the original
+        // models and textures remain a read-only resource library in the legacy
+        // namespace. Duplicate only the registry-facing resource files.
+        def legacyAssets = file("$buildDir/resources/main/assets/scp_unity_extra_blocks")
+        def additionsAssets = file("$buildDir/resources/main/assets/scp_additions")
+        if (legacyAssets.exists()) {
+            project.copy {
+                from new File(legacyAssets, 'blockstates')
+                into new File(additionsAssets, 'blockstates')
+            }
+            project.copy {
+                from new File(legacyAssets, 'models/item')
+                into new File(additionsAssets, 'models/item')
+            }
+
+            // Registry-facing copies now live under scp_additions. Remove the
+            // duplicate legacy copies from processed resources while retaining
+            // the legacy custom/block models, textures and sounds they reference.
+            project.delete(new File(legacyAssets, 'blockstates'))
+            project.delete(new File(legacyAssets, 'models/item'))
+
+            // The original Unity button has geometry only for one lateral
+            // offset. Generate reflected geometry for the opposite half while
+            // keeping the texture UVs readable rather than mirroring the text.
+            ['button_locked', 'button_closed', 'button_opening',
+             'button_open', 'button_closing'].each { buttonName ->
+                File sourceCustom = new File(legacyAssets,
+                        "models/custom/${buttonName}.json")
+                File mirroredCustom = new File(legacyAssets,
+                        "models/custom/${buttonName}_mirrored.json")
+
+                if (sourceCustom.exists()) {
+                    def model = parser.parse(sourceCustom)
+                    model.elements?.each { element ->
+                        if (element.from instanceof List && element.to instanceof List
+                                && element.from.size() >= 3 && element.to.size() >= 3) {
+                            def oldFromX = element.from[0] as BigDecimal
+                            def oldToX = element.to[0] as BigDecimal
+                            element.from[0] = 16.0G - oldToX
+                            element.to[0] = 16.0G - oldFromX
+                        }
+
+                        if (element.rotation instanceof Map
+                                && element.rotation.origin instanceof List
+                                && element.rotation.origin.size() >= 3) {
+                            element.rotation.origin[0] = 16.0G
+                                    - (element.rotation.origin[0] as BigDecimal)
+                            String axis = element.rotation.axis?.toString()
+                            if ((axis == 'y' || axis == 'z')
+                                    && element.rotation.angle != null) {
+                                element.rotation.angle = -(element.rotation.angle as BigDecimal)
+                            }
+                        }
+
+                        if (element.faces instanceof Map) {
+                            def east = element.faces.get('east')
+                            def west = element.faces.get('west')
+                            if (west == null) element.faces.remove('east')
+                            else element.faces.put('east', west)
+                            if (east == null) element.faces.remove('west')
+                            else element.faces.put('west', east)
+                        }
+                    }
+                    writeJson(mirroredCustom, model)
+                }
+
+                File sourceBlockModel = new File(legacyAssets,
+                        "models/block/${buttonName}.json")
+                if (sourceBlockModel.exists()) {
+                    def blockModel = parser.parse(sourceBlockModel)
+                    String sourceParent = blockModel.parent?.toString()
+                    if (sourceParent?.startsWith('scp_unity_extra_blocks:custom/')) {
+                        blockModel.parent = "${sourceParent}_mirrored"
+                    } else {
+                        blockModel.parent = "scp_unity_extra_blocks:custom/${buttonName}_mirrored"
+                    }
+                    writeJson(new File(legacyAssets,
+                            "models/block/${buttonName}_mirrored.json"), blockModel)
+                }
+
+                def blockState = [variants: [
+                        'facing=north': [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored"],
+                        'facing=east' : [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored", y: 90],
+                        'facing=south': [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored", y: 180],
+                        'facing=west' : [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored", y: 270]
+                ]]
+                writeJson(new File(additionsAssets,
+                        "blockstates/${buttonName}_mirrored.json"), blockState)
+            }
+        }
+
+        // SCP UBlocks follows the same consolidation rule: registry-facing
+        // blockstates and item models are copied into scp_additions, while the
+        // original namespace remains the library for block/custom models and textures.
+        def ublocksAssets = file("$buildDir/resources/main/assets/scp_ublocks")
+        if (ublocksAssets.exists()) {
+            project.copy {
+                from new File(ublocksAssets, 'blockstates')
+                into new File(additionsAssets, 'blockstates')
+            }
+            project.copy {
+                from new File(ublocksAssets, 'models/item')
+                into new File(additionsAssets, 'models/item')
+            }
+            project.delete(new File(ublocksAssets, 'blockstates'))
+            project.delete(new File(ublocksAssets, 'models/item'))
+        }
+
+        // Copy loot tables, recipes and other namespace-owned data into the new
+        // namespace. Also rewrite tag entries under data/minecraft so mineable
+        // and tool tags point to the migrated registry IDs.
+        def legacyData = file("$buildDir/resources/main/data/scp_unity_extra_blocks")
+        def additionsData = file("$buildDir/resources/main/data/scp_additions")
+        if (legacyData.exists()) {
+            project.copy {
+                from legacyData
+                into additionsData
+            }
+            project.delete(legacyData)
+        }
+        def allData = file("$buildDir/resources/main/data")
+        if (allData.exists()) {
+            fileTree(allData).matching {
+                include '**/*.json'
+            }.each { jsonFile ->
+                def raw = jsonFile.getText('UTF-8')
+                if (raw.contains('scp_unity_extra_blocks:')) {
+                    jsonFile.setText(raw.replace('scp_unity_extra_blocks:', 'scp_additions:'), 'UTF-8')
+                }
+            }
+        }
+
+        // Keep new 3.0 translation entries isolated from the generated legacy
+        // language file, then merge both into the single locale Minecraft loads.
+        def langDir = file("$buildDir/resources/main/assets/scp_additions/lang")
+        def baseLangFile = new File(langDir, 'en_us.json')
+        def langPatchFile = file('src/main/resources/assets/scp_additions/lang/en_us_3_0.json')
+        def legacyLangFile = file('src/main/resources/assets/scp_unity_extra_blocks/lang/en_us.json')
+        def ublocksLangFile = file('src/main/resources/assets/scp_ublocks/lang/en_us.json')
+        if (baseLangFile.exists()) {
+            def baseLang = parser.parse(baseLangFile)
+
+            if (legacyLangFile.exists()) {
+                def legacyLang = parser.parse(legacyLangFile)
+                legacyLang.each { key, value ->
+                    if (key.startsWith('block.scp_unity_extra_blocks.')) {
+                        baseLang[key.replace('block.scp_unity_extra_blocks.', 'block.scp_additions.')] = value
+                    }
+                    if (key.startsWith('item.scp_unity_extra_blocks.')) {
+                        baseLang[key.replace('item.scp_unity_extra_blocks.', 'item.scp_additions.')] = value
+                    }
+                }
+            }
+
+            if (ublocksLangFile.exists()) {
+                def ublocksLang = parser.parse(ublocksLangFile)
+                ublocksLang.each { key, value ->
+                    if (key.startsWith('block.scp_ublocks.')) {
+                        baseLang[key.replace('block.scp_ublocks.', 'block.scp_additions.')] = value
+                    }
+                    if (key.startsWith('item.scp_ublocks.')) {
+                        baseLang[key.replace('item.scp_ublocks.', 'item.scp_additions.')] = value
+                    }
+                }
+            }
+
+            if (langPatchFile.exists()) {
+                def langPatch = parser.parse(langPatchFile)
+                langPatch.each { key, value -> baseLang[key] = value }
+            }
+
+            writeJson(baseLangFile, baseLang)
+        }
+
+        // teslagate.png contains the faulty inactive alpha atlas. The active
+        // model uses the corrected teslagate2.png atlas, but also contains a
+        // separate electrical "shock" element. Generate the inactive model
+        // from that corrected base and remove only the electrical element.
+        def modelDir = file("$buildDir/resources/main/assets/scp_additions/models/custom")
+        def activeTeslaModel = new File(modelDir, 'teslagateactive1.json')
+        def inactiveTeslaModel = new File(modelDir, 'teslagateinactive.json')
+        if (activeTeslaModel.exists()) {
+            def model = parser.parse(activeTeslaModel)
+            model.elements = model.elements.findAll { element -> element.name != 'shock' }
+            writeJson(inactiveTeslaModel, model)
+        }
+
+        // The source recordings are intentionally kept untouched. Double the
+        // effective volume of every sound entry from all integrated namespaces
+        // in the processed JAR so the entire mod can be evaluated consistently.
+        ['scp_additions', 'scpinventory', 'scp_unity_extra_blocks', 'scp_ublocks'].each { namespace ->
+            File soundsFile = file("$buildDir/resources/main/assets/${namespace}/sounds.json")
+            if (!soundsFile.exists()) return
+            def definitions = parser.parse(soundsFile)
+            definitions.each { eventName, eventDefinition ->
+                if (eventDefinition instanceof Map
+                        && eventDefinition.sounds instanceof List) {
+                    eventDefinition.sounds = eventDefinition.sounds.collect { sound ->
+                        if (sound instanceof CharSequence) {
+                            return [name: sound.toString(), volume: 2.0G]
+                        }
+                        if (sound instanceof Map) {
+                            def updated = new LinkedHashMap(sound)
+                            BigDecimal originalVolume = updated.containsKey('volume')
+                                    ? updated.volume as BigDecimal
+                                    : 1.0G
+                            updated.volume = originalVolume * 2.0G
+                            return updated
+                        }
+                        return sound
+                    }
+                }
+            }
+            writeJson(soundsFile, definitions)
+        }
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {

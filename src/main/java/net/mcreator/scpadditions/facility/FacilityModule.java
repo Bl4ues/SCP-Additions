@@ -56,9 +56,11 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -182,11 +184,16 @@ public final class FacilityModule {
             FabricItemGroup.builder()
                     .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
                     .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
-                    .displayItems((parameters, output) ->
+                    .displayItems((parameters, output) -> {
+                            Set<Item> seen = Collections.newSetFromMap(
+                                    new IdentityHashMap<>());
                             creativeItemsInDisplayOrder().stream()
-                                    .filter(item -> item.get() != BUTTON_CLOSED.get().asItem()
-                                            && item.get() != BUTTON_LOCKED.get().asItem())
-                                    .forEach(item -> output.accept(item.get())))
+                                    .map(Supplier::get)
+                                    .filter(item -> item != BUTTON_CLOSED.get().asItem()
+                                            && item != BUTTON_LOCKED.get().asItem())
+                                    .filter(seen::add)
+                                    .forEach(output::accept);
+                        })
                     .build());
 
     private FacilityModule() {
@@ -298,8 +305,15 @@ public final class FacilityModule {
         if (item != null) addUnique(ordered, item);
     }
 
-    private static void addUnique(List<Supplier<Item>> ordered, Supplier<Item> item) {
-        if (!ordered.contains(item)) ordered.add(item);
+    private static void addUnique(List<Supplier<Item>> ordered,
+            Supplier<Item> item) {
+        Item candidate = item.get();
+        for (Supplier<Item> existing : ordered) {
+            if (existing.get() == candidate) {
+                return;
+            }
+        }
+        ordered.add(item);
     }
 
     private static Supplier<SoundEvent> sound(String path) {

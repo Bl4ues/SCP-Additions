@@ -18,6 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
+import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
@@ -35,6 +36,7 @@ public final class Scp012InfluenceEvents {
     private static final int TARGET_DISCOVERY_RADIUS = INFLUENCE_RADIUS + 3;
     private static final double DAMAGE_RADIUS = 1.25D;
     private static final int FATAL_CONTACT_TICKS = 15 * 20;
+    private static final double SCP_012_BOX_OPEN_COST = 12.0D;
     private static final String BLEEDING_TAG = "ScpAdditionsScp012Bleeding";
 
     private static final Map<UUID, ContactState> CONTACT_STATES = new HashMap<>();
@@ -69,19 +71,21 @@ public final class Scp012InfluenceEvents {
         Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
         double distance = player.position().distanceTo(attraction);
 
-        // SCP-079 springs the trap as soon as the player enters SCP-012's
-        // influence radius. A controlled heavy door on the route is commanded
-        // first, then the containment box begins opening in the same tick.
-        // These hostile facility actions remain active through SCP-714.
+        // SCP-079 still attempts the physical trap against SCP-714 as a
+        // precaution, but both the route and box now compete for its shared
+        // processing budget. Re-opening a contested route is evaluated by
+        // Scp012DoorAccess instead of happening as a free mechanical loop.
         if (systemControl) {
             Scp012Stage stage = Scp012Module.stageOf(level.getBlockState(nearby));
             boolean boxClosed = stage == Scp012Stage.CLOSED;
             boolean periodicDoorCheck =
                     (level.getGameTime() + player.getId()) % 10L == 0L;
             if (boxClosed || periodicDoorCheck) {
-                Scp012DoorAccess.tryOpen(level, player, nearby);
+                Scp012DoorAccess.tryOpen(level, player, nearby,
+                        boxClosed ? SCP_012_BOX_OPEN_COST : 0.0D);
             }
-            if (boxClosed) {
+            if (boxClosed && Scp079ProcessingManager.trySpend(level,
+                    SCP_012_BOX_OPEN_COST)) {
                 Scp012Module.open(level, nearby);
             }
         }
@@ -229,7 +233,7 @@ public final class Scp012InfluenceEvents {
     }
 
     private static void sync(ServerPlayer player, BlockPos target,
-                             float contactProgress, boolean damageActive) {
+                              float contactProgress, boolean damageActive) {
         if ((player.tickCount + player.getId()) % 3 == 0) {
             ScpEntityNetwork.syncScp012Influence(player, true, target,
                     contactProgress, damageActive);
@@ -264,9 +268,6 @@ public final class Scp012InfluenceEvents {
         if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
     }
 
-    private record DiscoveredTarget(ResourceKey<Level> dimension, BlockPos pos) {
-    }
-
     private static final class ContactState {
         private int ticks;
         private int nextDamageTick;
@@ -276,5 +277,9 @@ public final class Scp012InfluenceEvents {
         private ContactState(int nextDamageTick) {
             this.nextDamageTick = nextDamageTick;
         }
+    }
+
+    private record DiscoveredTarget(ResourceKey<Level> dimension,
+                                    BlockPos pos) {
     }
 }

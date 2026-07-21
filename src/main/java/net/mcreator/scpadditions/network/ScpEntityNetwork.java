@@ -75,6 +75,10 @@ public final class ScpEntityNetwork {
                 Scp012InfluencePacket::encode,
                 Scp012InfluencePacket::decode,
                 Scp012InfluencePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(Scp079EnergyPacket.class,
+                Scp079EnergyPacket::encode,
+                Scp079EnergyPacket::decode,
+                Scp079EnergyPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -138,6 +142,14 @@ public final class ScpEntityNetwork {
                 PacketDistributor.PLAYER.with(() -> player),
                 new Scp012InfluencePacket(active, target, contactProgress,
                         damageActive));
+    }
+
+    public static void syncScp079Energy(ServerPlayer player,
+            boolean visible, boolean active, float energy) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new Scp079EnergyPacket(visible, active, energy));
     }
 
     public static void playScare(ServerPlayer player) {

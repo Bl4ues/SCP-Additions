@@ -4,6 +4,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -11,8 +12,11 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.AABB;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.Scp079TeslaSuppression;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+
+import java.util.List;
 
 public class TeslaGateUpdateTickProcedure {
     public static void execute(LevelAccessor world, double x, double y, double z) {
@@ -37,14 +41,23 @@ public class TeslaGateUpdateTickProcedure {
         float activationVolume = manualOverride ? 2.0F : 1.0F;
 
         AABB volume = TeslaGateVolume.at(x, y, z);
-        if (world.getEntitiesOfClass(LivingEntity.class, volume,
-                entity -> TeslaGateVolume.intersects(entity, volume)).isEmpty()) {
+        List<LivingEntity> occupants = world.getEntitiesOfClass(
+                LivingEntity.class, volume,
+                entity -> TeslaGateVolume.intersects(entity, volume));
+        if (occupants.isEmpty()) {
+            return;
+        }
+
+        BlockPos gatePos = BlockPos.containing(x, y, z);
+        if (world instanceof ServerLevel server
+                && Scp079TeslaSuppression.shouldSuppress(server, gatePos,
+                occupants, manualOverride)) {
             return;
         }
 
         if (world instanceof Level level) {
             if (!level.isClientSide()) {
-                level.playSound(null, BlockPos.containing(x, y, z),
+                level.playSound(null, gatePos,
                         ForgeRegistries.SOUND_EVENTS.getValue(activationSound),
                         SoundSource.HOSTILE, activationVolume,
                         manualOverride ? 1.25F : 1.0F);

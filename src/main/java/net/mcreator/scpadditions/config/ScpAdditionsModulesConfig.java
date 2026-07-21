@@ -78,6 +78,7 @@ public final class ScpAdditionsModulesConfig {
 		public Toggle hud = new Toggle();
 		public Vitals vitals = new Vitals();
 		public Toggle blink = new Toggle();
+		public Debug debug = new Debug();
 
 		@SerializedName("scp_173")
 		public EntityModule scp173 = new EntityModule();
@@ -92,6 +93,7 @@ public final class ScpAdditionsModulesConfig {
 			if (hud == null) hud = new Toggle();
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();
+			if (debug == null) debug = new Debug();
 			if (scp173 == null) scp173 = new EntityModule();
 			return this;
 		}
@@ -120,6 +122,11 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("horror_movement_enabled")
 		public boolean horrorMovementEnabled = true;
+	}
+
+	public static final class Debug {
+		@SerializedName("show_scp_079_energy_hud")
+		public boolean showScp079EnergyHud = false;
 	}
 
 	public static final class EntityModule extends Toggle {

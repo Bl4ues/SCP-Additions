@@ -17,6 +17,17 @@
 
 - Reduced SCP-173's rendered height to approximately two blocks.
 
+## SCP-079
+
+- Added a shared 0–100 processing-power budget for SCP-079 facility decisions, initialized at 50 and regenerated lazily while System Control is active;
+- Replaced the facility-wide action cooldown with processing costs and short per-device reuse limits, allowing deliberate multi-device sequences without mechanical spam on one door;
+- Changed contextual door sabotage to evaluate the nearest active pursuer, choose one useful action, preserve processing at low energy, and use narrower projected-route scans instead of repeated full-area door searches;
+- Added temporary access denial for closed controlled doors: functional buttons show their locked state and connected keycard readers show access denied before safely restoring their exact previous state;
+- Added distinct default, SCP-173, and SCP-106 threat profiles while deliberately leaving SCP-131 separation behavior for a later implementation;
+- Added local Tesla Gate suppression when a hostile pursuer is passing through, including higher processing cost and lower success chance during Emergency Override, without changing the player's global Tesla Gate settings;
+- Turned the SCP-012 route into a processing contest: immediate re-opening remains possible, repeated interference becomes progressively more expensive, and SCP-079 abandons wasteful contention more readily against SCP-714 while still attempting the initial trap as a precaution;
+- Added a **Debug** section to the Configuration Center's Modules screen with an optional white upper-right SCP-079 processing HUD using the SCP-079 item icon and Roboto numerals.
+
 # SCP Additions 3.0.7 — Hotfix
 
 ## Multiplayer and configuration synchronization

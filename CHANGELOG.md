@@ -1,6 +1,6 @@
 # Changelog
 
-# SCP Additions 3.0.7 — In Development
+# SCP Additions 3.0.7 — Hotfix
 
 ## Multiplayer and configuration synchronization
 

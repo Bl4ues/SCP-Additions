@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.roamer;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -27,14 +28,15 @@ public final class RoamerCommands {
         event.getDispatcher().register(Commands.literal("despawnAllRoamers")
                 .requires(source -> source.hasPermission(2))
                 .executes(context -> despawnAll(context.getSource())));
-        event.getDispatcher().register(Commands.literal("despawnRoamer")
-                .requires(source -> source.hasPermission(2))
-                .then(Commands.literal(RoamerType.SCP_173.commandId())
-                        .executes(context -> despawn(context.getSource(),
-                                RoamerType.SCP_173)))
-                .then(Commands.literal(RoamerType.SCP_106.commandId())
-                        .executes(context -> despawn(context.getSource(),
-                                RoamerType.SCP_106))));
+
+        LiteralArgumentBuilder<CommandSourceStack> despawn =
+                Commands.literal("despawnRoamer")
+                        .requires(source -> source.hasPermission(2));
+        for (RoamerType type : RoamerType.values()) {
+            despawn.then(Commands.literal(type.commandId())
+                    .executes(context -> despawn(context.getSource(), type)));
+        }
+        event.getDispatcher().register(despawn);
     }
 
     private static int setAll(CommandSourceStack source, boolean enabled) {

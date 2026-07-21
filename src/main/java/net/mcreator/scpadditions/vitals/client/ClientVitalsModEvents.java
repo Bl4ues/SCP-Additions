@@ -6,7 +6,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Client MOD-bus registration for the custom vitals overlay. */
+/** Client MOD-bus registration for the custom gameplay overlays. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientVitalsModEvents {
@@ -18,5 +18,8 @@ public final class ClientVitalsModEvents {
         event.registerAboveAll("player_vitals_overlay",
                 (gui, graphics, partialTick, width, height) ->
                         PlayerVitalsOverlay.render(graphics, width, height, partialTick));
+        event.registerAboveAll("scp_079_energy_debug",
+                (gui, graphics, partialTick, width, height) ->
+                        Scp079EnergyOverlay.render(graphics, width, height, partialTick));
     }
 }

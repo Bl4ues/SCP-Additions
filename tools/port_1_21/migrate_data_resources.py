@@ -30,17 +30,8 @@ TAG_RENAMES = {
     "damage_types": "damage_type",
 }
 
-LEGACY_RECIPE_GLOBS = (
-    "lv_*_kr_right.json",
-    "lv_*_lto_r.json",
-    "lv_*_rto_l.json",
-)
+LEGACY_RECIPE_GLOBS: tuple[str, ...] = ()
 LEGACY_RECIPE_FILES = (
-    "lv_2_kr_left.json",
-    "lv_3_kr_left.json",
-    "lv_4_kr_left.json",
-    "lv_5_kr_left.json",
-    "lv_6_kr_left.json",
     "button_left_swap.json",
     "button_right_swap.json",
 )

@@ -35,14 +35,31 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Audit repository and compiled JAR
+        shell: bash
         run: |
-          python3 scripts/audit_unused_assets.py
-          git rev-parse HEAD > build/reports/asset-audit/head-sha.txt
-          git rev-parse 'HEAD^{tree}' > build/reports/asset-audit/tree-sha.txt
-          git archive --format=zip --output=build/reports/asset-audit/source-snapshot.zip HEAD
-          cp build/libs/*.jar build/reports/asset-audit/
+          set +e
+          python3 scripts/audit_unused_assets.py > asset-audit-output.log 2>&1
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            git rev-parse HEAD > build/reports/asset-audit/head-sha.txt
+            git rev-parse 'HEAD^{tree}' > build/reports/asset-audit/tree-sha.txt
+            git archive --format=zip --output=build/reports/asset-audit/source-snapshot.zip HEAD
+            cp build/libs/*.jar build/reports/asset-audit/
+          else
+            cat asset-audit-output.log
+          fi
+          exit "$status"
+
+      - name: Upload asset audit diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asset-audit-diagnostics-${{ github.sha }}
+          path: asset-audit-output.log
+          if-no-files-found: error
 
       - name: Upload audit report
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: asset-audit-${{ github.sha }}

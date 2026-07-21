@@ -5,6 +5,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog;
+import net.mcreator.scpadditions.network.Scp079DecisionPacket.DecisionEntry;
 import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
 import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
 
@@ -85,6 +87,10 @@ public final class ScpEntityNetwork {
                 Scp079EnergyPacket::encode,
                 Scp079EnergyPacket::decode,
                 Scp079EnergyPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(Scp079DecisionPacket.class,
+                Scp079DecisionPacket::encode,
+                Scp079DecisionPacket::decode,
+                Scp079DecisionPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -169,6 +175,23 @@ public final class ScpEntityNetwork {
                 PacketDistributor.PLAYER.with(() -> player),
                 new Scp079EnergyPacket(energyVisible, active, energy,
                         spawnTimersVisible, entries));
+    }
+
+    public static void syncScp079Decisions(ServerPlayer player,
+            Scp079DecisionLog.Snapshot snapshot) {
+        if (player == null || snapshot == null) return;
+        MinecraftServer server = player.getServer();
+        long currentTick = server == null ? 0L : server.getTickCount();
+        List<DecisionEntry> entries = new ArrayList<>();
+        for (Scp079DecisionLog.DecisionEntry entry : snapshot.entries()) {
+            entries.add(new DecisionEntry(entry.sequence(), entry.type(),
+                    entry.outcome(), entry.pos(), entry.dimension(),
+                    entry.context(), entry.cost(), (int) Math.max(0L,
+                    currentTick - entry.createdTick())));
+        }
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new Scp079DecisionPacket(entries));
     }
 
     public static void playScare(ServerPlayer player) {

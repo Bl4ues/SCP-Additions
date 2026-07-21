@@ -27,8 +27,8 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         this.gravity = 0.0F;
         this.friction = 1.0F;
         this.hasPhysics = false;
-        this.lifetime = 35 + this.random.nextInt(21);
-        this.quadSize = 0.075F + this.random.nextFloat() * 0.055F;
+        this.lifetime = 45 + this.random.nextInt(26);
+        this.quadSize = 0.22F + this.random.nextFloat() * 0.12F;
         this.setColor(
                 0.045F + this.random.nextFloat() * 0.035F,
                 0.018F + this.random.nextFloat() * 0.020F,
@@ -46,7 +46,7 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
                 this.age / (float) this.lifetime, 0.0F, 1.0F);
         float fade = Mth.clamp(remaining / 0.35F, 0.0F, 1.0F);
         this.setAlpha(MAX_ALPHA * fade);
-        this.quadSize += 0.00045F;
+        this.quadSize += 0.00065F;
     }
 
     @Override

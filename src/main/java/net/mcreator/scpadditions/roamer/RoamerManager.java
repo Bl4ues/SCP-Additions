@@ -246,7 +246,7 @@ public final class RoamerManager {
             for (Entity entity : loaded) {
                 data.activeEntityIds.remove(entity.getUUID());
             }
-            if (data.activeEntityIds.isEmpty()) {
+            if (!loaded.isEmpty() && data.activeEntityIds.isEmpty()) {
                 restartAllSchedules(server, type, data,
                         RoamerResult.DESPAWNED_TIMER_RESET);
             }

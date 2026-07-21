@@ -5,7 +5,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -33,12 +32,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> ATTACKING =
             SynchedEntityData.defineId(Scp106Entity.class, EntityDataSerializers.BOOLEAN);
 
-    public static final double MOVEMENT_SPEED = 0.696D;
+    public static final double MOVEMENT_SPEED = 0.29D;
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
     private static final double PURSUIT_RANGE = 48.0D;
     private static final double PURSUIT_RANGE_SQR = PURSUIT_RANGE * PURSUIT_RANGE;
-    private static final double ATTACK_START_REACH = 0.90D;
-    private static final double ATTACK_HIT_REACH = 1.35D;
+    private static final double ATTACK_START_GAP = 0.16D;
+    private static final double ATTACK_HIT_GAP = 0.38D;
     private static final int PATH_REFRESH_INTERVAL = 3;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
@@ -113,7 +112,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setTarget(player);
         getLookControl().setLookAt(player, 35.0F, 20.0F);
 
-        if (isWithinMeleeReach(player, ATTACK_START_REACH)
+        if (isWithinMeleeGap(player, ATTACK_START_GAP)
                 && hasLineOfSight(player)) {
             startAttack();
             return;
@@ -146,7 +145,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         attackTicks++;
 
         if (attackTicks == ATTACK_HIT_TICK
-                && isWithinMeleeReach(target, ATTACK_HIT_REACH)) {
+                && isWithinMeleeGap(target, ATTACK_HIT_GAP)) {
             doHurtTarget(target);
         }
 
@@ -155,9 +154,21 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
     }
 
-    private boolean isWithinMeleeReach(Entity target, double reach) {
-        return getBoundingBox().inflate(reach, 0.45D, reach)
-                .intersects(target.getBoundingBox());
+    private boolean isWithinMeleeGap(Entity target, double maximumGap) {
+        AABB selfBox = getBoundingBox();
+        AABB targetBox = target.getBoundingBox();
+
+        double xGap = Math.max(0.0D,
+                Math.max(targetBox.minX - selfBox.maxX,
+                        selfBox.minX - targetBox.maxX));
+        double zGap = Math.max(0.0D,
+                Math.max(targetBox.minZ - selfBox.maxZ,
+                        selfBox.minZ - targetBox.maxZ));
+        boolean verticallyAligned = selfBox.maxY + 0.35D >= targetBox.minY
+                && targetBox.maxY + 0.35D >= selfBox.minY;
+
+        return verticallyAligned
+                && xGap * xGap + zGap * zGap <= maximumGap * maximumGap;
     }
 
     private void finishAttack() {
@@ -224,16 +235,16 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return false;
         }
 
-        boolean peaceful = level().getDifficulty() == Difficulty.PEACEFUL;
         boolean hurt = livingTarget.hurt(
-                peaceful ? damageSources().generic() : damageSources().mobAttack(this),
-                5.0F);
-        if (!hurt && !peaceful) {
-            hurt = livingTarget.hurt(damageSources().generic(), 5.0F);
-        }
+                damageSources().mobAttack(this), 5.0F);
         if (hurt) {
             livingTarget.addEffect(new MobEffectInstance(
-                    MobEffects.WITHER, WITHER_DURATION_TICKS, 0), this);
+                    MobEffects.WITHER,
+                    WITHER_DURATION_TICKS,
+                    0,
+                    false,
+                    false,
+                    true), this);
         }
         return hurt;
     }

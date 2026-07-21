@@ -28,9 +28,7 @@
 - Consolidated the pre-3.0 SCP-294 drink items into the configurable generic cup, preserving drink IDs, colors, effects, actions, aliases, delays, and messages while removing 61 obsolete `/give` entries;
 - Added old-world item remapping and legacy SCP-294 config normalization for the removed drink registry IDs;
 - Removed legacy drink classes, item-only procedures, item models, translations, and obsolete crafting/SCP-914 recipes that depended on them;
-- Removed unregistered SCP-059, Delta Radiation, and Geiger resource leftovers, unreachable legacy overlays, and Java helpers with no runtime caller or event-bus role;
-- Consolidated duplicate registry-facing resources from integrated legacy namespaces, shared SCP-294 geometry, byte-identical custom models, and safely redirectable texture copies;
-- Corrected three pre-existing broken resource references uncovered by the audit: the terminal `click_1` sound, the left-button screen texture namespace, and a mirrored closing-button model parent.
+- Removed unregistered SCP-059, Delta Radiation, and Geiger resource leftovers, unreachable legacy overlays, and Java helpers with no runtime caller or event-bus role.
 
 # SCP Additions 3.0.6 — Hazards & Survival Update
 

@@ -1,9 +1,11 @@
 package net.mcreator.scpadditions.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -11,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -34,8 +37,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
     private static final double PURSUIT_RANGE = 48.0D;
     private static final double PURSUIT_RANGE_SQR = PURSUIT_RANGE * PURSUIT_RANGE;
-    private static final double ATTACK_START_REACH = 0.55D;
-    private static final double ATTACK_HIT_REACH = 1.15D;
+    private static final double ATTACK_START_REACH = 0.90D;
+    private static final double ATTACK_HIT_REACH = 1.35D;
     private static final int PATH_REFRESH_INTERVAL = 3;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
@@ -52,6 +55,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     public Scp106Entity(EntityType<? extends Scp106Entity> type, Level level) {
         super(type, level);
         setPersistenceRequired();
+        applyCurrentMovementSpeed();
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -67,6 +71,19 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     protected void defineSynchedData() {
         super.defineSynchedData();
         entityData.define(ATTACKING, false);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        applyCurrentMovementSpeed();
+    }
+
+    private void applyCurrentMovementSpeed() {
+        AttributeInstance movementSpeed = getAttribute(Attributes.MOVEMENT_SPEED);
+        if (movementSpeed != null) {
+            movementSpeed.setBaseValue(MOVEMENT_SPEED);
+        }
     }
 
     @Override
@@ -207,9 +224,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return false;
         }
 
+        boolean peaceful = level().getDifficulty() == Difficulty.PEACEFUL;
         boolean hurt = livingTarget.hurt(
-                damageSources().mobAttack(this), 5.0F);
-        if (!hurt) {
+                peaceful ? damageSources().generic() : damageSources().mobAttack(this),
+                5.0F);
+        if (!hurt && !peaceful) {
             hurt = livingTarget.hurt(damageSources().generic(), 5.0F);
         }
         if (hurt) {

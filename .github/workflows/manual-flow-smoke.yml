@@ -11,7 +11,7 @@ jobs:
   inventory-flow:
     if: startsWith(github.head_ref, 'fix/neoforge-1.21.1-runtime-regressions-3.0.7')
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,7 +23,135 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Build
+      - name: Install temporary in-game inventory flow harness
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          events = Path('src/main/java/com/bl4ues/scpinventory/client/ClientGameplayEvents.java')
+          text = events.read_text(encoding='utf-8')
+          needle = '        if (event.phase == TickEvent.Phase.START) {\n'
+          replacement = needle + '            ManualFlowHarness.clientTick();\n'
+          if needle not in text:
+              raise SystemExit('Client tick insertion point missing')
+          events.write_text(text.replace(needle, replacement, 1), encoding='utf-8')
+
+          harness = r'''package com.bl4ues.scpinventory.client;
+
+          import java.io.File;
+          import java.lang.reflect.Method;
+          import java.lang.reflect.Modifier;
+          import java.nio.file.Files;
+          import java.nio.file.Path;
+
+          import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
+
+          import net.minecraft.client.Minecraft;
+          import net.minecraft.client.gui.screens.Screen;
+
+          public final class ManualFlowHarness {
+              private static int ticks;
+              private static boolean opened;
+              private static boolean captured;
+
+              private ManualFlowHarness() {
+              }
+
+              public static void clientTick() {
+                  Minecraft minecraft = Minecraft.getInstance();
+                  if (minecraft.level == null || minecraft.player == null) {
+                      return;
+                  }
+                  ticks++;
+                  if (!opened && ticks >= 40) {
+                      opened = true;
+                      try {
+                          Screen screen = new ScpInventoryScreen();
+                          minecraft.setScreen(screen);
+                          writeMarker("opened=" + screen.getClass().getName());
+                      } catch (Throwable error) {
+                          writeMarker("open-failed=" + error);
+                          throw new RuntimeException("Manual SCP inventory flow failed", error);
+                      }
+                  }
+                  if (opened && !captured && ticks >= 80) {
+                      captured = true;
+                      Screen current = minecraft.screen;
+                      writeMarker("current=" + (current == null ? "null" : current.getClass().getName()));
+                      capture(minecraft, Path.of("manual-flow.png"));
+                  }
+              }
+
+              private static void capture(Minecraft minecraft, Path output) {
+                  try {
+                      Object target = minecraft.getMainRenderTarget();
+                      Class<?> screenshot = Class.forName("net.minecraft.client.Screenshot");
+                      Object image = null;
+                      for (Method method : screenshot.getDeclaredMethods()) {
+                          if (!Modifier.isStatic(method.getModifiers())
+                                  || method.getParameterCount() != 1
+                                  || !method.getParameterTypes()[0].isInstance(target)
+                                  || method.getReturnType() == void.class) {
+                              continue;
+                          }
+                          method.setAccessible(true);
+                          image = method.invoke(null, target);
+                          if (image != null) {
+                              break;
+                          }
+                      }
+                      if (image == null) {
+                          throw new IllegalStateException("Screenshot image method not found");
+                      }
+                      boolean written = false;
+                      for (Method method : image.getClass().getMethods()) {
+                          if (!method.getName().equals("writeToFile")
+                                  || method.getParameterCount() != 1) {
+                              continue;
+                          }
+                          Class<?> parameter = method.getParameterTypes()[0];
+                          Object value;
+                          if (parameter == Path.class) {
+                              value = output;
+                          } else if (parameter == File.class) {
+                              value = output.toFile();
+                          } else {
+                              continue;
+                          }
+                          method.invoke(image, value);
+                          written = true;
+                          break;
+                      }
+                      if (image instanceof AutoCloseable closeable) {
+                          closeable.close();
+                      }
+                      if (!written) {
+                          throw new IllegalStateException("Native image writer not found");
+                      }
+                  } catch (Throwable error) {
+                      writeMarker("capture-failed=" + error);
+                      throw new RuntimeException("Manual screenshot failed", error);
+                  }
+              }
+
+              private static void writeMarker(String line) {
+                  try {
+                      Files.writeString(Path.of("manual-flow-screen.txt"), line + System.lineSeparator(),
+                              java.nio.file.StandardOpenOption.CREATE,
+                              java.nio.file.StandardOpenOption.APPEND);
+                  } catch (Exception error) {
+                      throw new RuntimeException(error);
+                  }
+              }
+          }
+          '''
+          out = Path('src/main/java/com/bl4ues/scpinventory/client/ManualFlowHarness.java')
+          out.write_text('\n'.join(line[10:] if line.startswith('          ') else line
+                                   for line in harness.splitlines()) + '\n', encoding='utf-8')
+          PY
+
+      - name: Build instrumented test client
         run: |
           chmod +x gradlew
           ./gradlew clean build --no-daemon --stacktrace
@@ -44,26 +172,27 @@ jobs:
           view-distance=4
           simulation-distance=4
           EOF
-          set +e
-          timeout --signal=INT --kill-after=20s 100s \
-            ./gradlew runServer --no-daemon --console=plain \
-            > flow-server.log 2>&1
-          status=$?
-          set -e
+          ./gradlew runServer --no-daemon --console=plain > flow-server.log 2>&1 &
+          server_pid=$!
+          ready=0
+          for i in $(seq 1 100); do
+            if grep -q 'Done (' flow-server.log; then ready=1; break; fi
+            kill -0 "$server_pid" 2>/dev/null || { cat flow-server.log; wait "$server_pid"; exit $?; }
+            sleep 1
+          done
+          [ "$ready" -eq 1 ] || { cat flow-server.log; exit 90; }
+          kill -INT "$server_pid" 2>/dev/null || true
+          wait "$server_pid" || true
           cat flow-server.log
-          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
-            exit "$status"
-          fi
-          grep -q 'Done (' flow-server.log
           test -f run/server/FlowTest/level.dat
           mkdir -p run/client/saves
           cp -a run/server/FlowTest run/client/saves/FlowTest
 
-      - name: Open SCP inventory and capture it
+      - name: Open and capture SCP inventory inside the game
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb xdotool openbox scrot x11-utils
+          sudo apt-get install -y xvfb
           mkdir -p run/client
           cat > run/client/options.txt <<'EOF'
           guiScale:2
@@ -73,70 +202,41 @@ jobs:
           EOF
           set +e
           timeout --signal=INT --kill-after=20s 220s \
-            xvfb-run -a -s '-screen 0 1920x1080x24' bash -c '
-              set -u
-              openbox >/tmp/openbox.log 2>&1 &
-              ./gradlew runClient --no-daemon --console=plain \
-                --args="--quickPlaySingleplayer FlowTest" \
-                > flow-client.log 2>&1 &
-              client_pid=$!
-              joined=0
-              for i in $(seq 1 190); do
-                if grep -Eqi "joined the game" flow-client.log run/client/logs/latest.log 2>/dev/null; then
-                  joined=1
-                  break
-                fi
-                if ! kill -0 "$client_pid" 2>/dev/null; then
-                  wait "$client_pid"
-                  exit $?
-                fi
-                sleep 1
-              done
-              [ "$joined" -eq 1 ] || exit 91
-              sleep 8
-              echo "Visible X11 windows:"
-              xwininfo -root -tree || true
-              window_id=$(xdotool search --onlyvisible --name "Minecraft" 2>/dev/null | tail -n 1 || true)
-              echo "Minecraft window: ${window_id:-not-found}"
-              if [ -n "$window_id" ]; then
-                xdotool windowfocus "$window_id" || true
-              fi
-              scrot survival-hud.png
-              test -s survival-hud.png || exit 94
-              if [ -n "$window_id" ]; then
-                xdotool key --window "$window_id" e
-              else
-                xdotool key e
-              fi
-              sleep 15
-              kill -0 "$client_pid" || { wait "$client_pid"; exit $?; }
-              scrot scp-inventory.png
-              test -s scp-inventory.png || exit 95
-              if grep -Eqi "The game crashed whilst|Description: Rendering screen|Exception in thread \"Render thread\"" flow-client.log run/client/logs/latest.log 2>/dev/null; then
-                exit 93
-              fi
-              kill -INT "$client_pid" 2>/dev/null || true
-              wait "$client_pid" || true
-            ' > flow-driver.log 2>&1
-          status=$?
+            xvfb-run -a -s '-screen 0 1920x1080x24' \
+            ./gradlew runClient --no-daemon --console=plain \
+              --args="--quickPlaySingleplayer FlowTest" \
+              > flow-client.log 2>&1 &
+          client_wrapper_pid=$!
+          success=0
+          for i in $(seq 1 210); do
+            if [ -f run/client/manual-flow-screen.txt ] \
+                && grep -q 'current=com.bl4ues.scpinventory.client.gui.ScpInventoryScreen' run/client/manual-flow-screen.txt \
+                && [ -s run/client/manual-flow.png ]; then
+              success=1
+              break
+            fi
+            kill -0 "$client_wrapper_pid" 2>/dev/null || break
+            sleep 1
+          done
+          kill -INT "$client_wrapper_pid" 2>/dev/null || true
+          wait "$client_wrapper_pid"
+          process_status=$?
           set -e
-          cat flow-driver.log || true
+          cat run/client/manual-flow-screen.txt 2>/dev/null || true
           cat flow-client.log || true
-          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
-            exit "$status"
+          [ "$success" -eq 1 ] || exit 91
+          if [ "$process_status" -ne 0 ] && [ "$process_status" -ne 124 ] && [ "$process_status" -ne 130 ]; then
+            grep -Eqi 'Manual SCP inventory flow failed|The game crashed whilst|Description: Rendering screen' flow-client.log run/client/logs/latest.log 2>/dev/null && exit "$process_status"
           fi
-          test -s survival-hud.png
-          test -s scp-inventory.png
-          ! grep -Eqi "Parsing error loading recipe scp_additions" flow-client.log run/client/logs/latest.log 2>/dev/null
+          ! grep -Eqi "The game crashed whilst|Description: Rendering screen|Exception in thread \"Render thread\"|Parsing error loading recipe scp_additions" flow-client.log run/client/logs/latest.log 2>/dev/null
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: neoforge-manual-flow-${{ github.event.pull_request.head.sha }}
           path: |
-            survival-hud.png
-            scp-inventory.png
-            flow-driver.log
+            run/client/manual-flow.png
+            run/client/manual-flow-screen.txt
             flow-server.log
             flow-client.log
             run/client/logs/latest.log

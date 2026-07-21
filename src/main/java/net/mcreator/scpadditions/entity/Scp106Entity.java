@@ -1,7 +1,6 @@
 package net.mcreator.scpadditions.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,6 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -30,13 +30,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> ATTACKING =
             SynchedEntityData.defineId(Scp106Entity.class, EntityDataSerializers.BOOLEAN);
 
-    public static final double MOVEMENT_SPEED = 0.29D;
+    public static final double MOVEMENT_SPEED = 0.58D;
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
     private static final double PURSUIT_RANGE = 48.0D;
     private static final double PURSUIT_RANGE_SQR = PURSUIT_RANGE * PURSUIT_RANGE;
-    private static final double ATTACK_START_DISTANCE_SQR = 2.35D * 2.35D;
-    private static final double ATTACK_HIT_DISTANCE_SQR = 2.75D * 2.75D;
-    private static final int PATH_REFRESH_INTERVAL = 5;
+    private static final double ATTACK_START_DISTANCE_SQR = 1.45D * 1.45D;
+    private static final double ATTACK_HIT_DISTANCE_SQR = 1.90D * 1.90D;
+    private static final int PATH_REFRESH_INTERVAL = 3;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
     private static final int WITHER_DURATION_TICKS = 5 * 20;
@@ -94,15 +94,17 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         setTarget(player);
-        getLookControl().setLookAt(player, 35.0F, 30.0F);
+        getLookControl().setLookAt(player, 12.0F, 8.0F);
 
-        if (distanceToSqr(player) <= ATTACK_START_DISTANCE_SQR && hasLineOfSight(player)) {
+        if (distanceToSqr(player) <= ATTACK_START_DISTANCE_SQR
+                && hasLineOfSight(player)) {
             startAttack();
             return;
         }
 
         if (getNavigation().isDone() || tickCount % PATH_REFRESH_INTERVAL == 0) {
-            getNavigation().moveTo(player.getX(), player.getY(), player.getZ(), PURSUIT_SPEED_MODIFIER);
+            getNavigation().moveTo(player.getX(), player.getY(), player.getZ(),
+                    PURSUIT_SPEED_MODIFIER);
         }
     }
 
@@ -123,7 +125,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return;
         }
 
-        getLookControl().setLookAt(target, 60.0F, 45.0F);
+        getLookControl().setLookAt(target, 18.0F, 12.0F);
         attackTicks++;
 
         if (attackTicks == ATTACK_HIT_TICK
@@ -164,7 +166,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void spawnCorrosionTrail() {
-        if (isAttacking() || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
+        if (isAttacking() || !onGround()
+                || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
             return;
         }
 
@@ -174,12 +177,16 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return;
         }
 
-        Vec3 behind = horizontal.normalize().scale(-0.42D);
-        double particleX = getX() + behind.x + (random.nextDouble() - 0.5D) * 0.30D;
-        double particleY = getY() + 0.08D;
-        double particleZ = getZ() + behind.z + (random.nextDouble() - 0.5D) * 0.30D;
-        level().addParticle(ParticleTypes.SQUID_INK,
-                particleX, particleY, particleZ, 0.0D, 0.01D, 0.0D);
+        Vec3 behind = horizontal.normalize().scale(-0.28D);
+        Vec3 sideways = new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                .normalize()
+                .scale((random.nextDouble() - 0.5D) * 0.34D);
+        double particleX = getX() + behind.x + sideways.x;
+        double particleY = getY() + 0.018D;
+        double particleZ = getZ() + behind.z + sideways.z;
+
+        level().addParticle(ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                particleX, particleY, particleZ, 0.0D, 0.0D, 0.0D);
     }
 
     public boolean isAttacking() {
@@ -188,8 +195,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean doHurtTarget(Entity target) {
-        boolean hurt = super.doHurtTarget(target);
-        if (hurt && target instanceof LivingEntity livingTarget) {
+        if (!(target instanceof LivingEntity livingTarget)) {
+            return false;
+        }
+
+        boolean hurt = livingTarget.hurt(
+                damageSources().mobAttack(this), 5.0F);
+        if (hurt) {
             livingTarget.addEffect(new MobEffectInstance(
                     MobEffects.WITHER, WITHER_DURATION_TICKS, 0), this);
         }
@@ -211,7 +223,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             if (isAttacking()) {
                 return state.setAndContinue(ATTACK_ANIMATION);
             }
-            return state.setAndContinue(state.isMoving() ? WALK_ANIMATION : IDLE_ANIMATION);
+            return state.setAndContinue(
+                    state.isMoving() ? WALK_ANIMATION : IDLE_ANIMATION);
         }));
     }
 

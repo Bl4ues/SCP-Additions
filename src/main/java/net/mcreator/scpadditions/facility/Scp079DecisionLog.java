@@ -13,7 +13,8 @@ import java.util.WeakHashMap;
 
 /**
  * Event-driven history of meaningful SCP-079 decisions for the developer HUD.
- * Routine evaluations that choose to do nothing are intentionally omitted.
+ * Routine evaluations that choose to do nothing are intentionally omitted, so
+ * the feed reflects actual manipulation and deliberate strategic abandonment.
  */
 public final class Scp079DecisionLog {
     public static final int CLIENT_LIFETIME_TICKS = 300;

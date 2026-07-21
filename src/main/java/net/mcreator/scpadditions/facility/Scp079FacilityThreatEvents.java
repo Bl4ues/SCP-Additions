@@ -109,7 +109,8 @@ public final class Scp079FacilityThreatEvents {
         if (ahead.open() != null
                 && level.getRandom().nextFloat() < UNPROVOKED_CLOSE_CHANCE) {
             execute(level, new Action(ActionType.CLOSE,
-                    ahead.open(), 40.0D, UNPROVOKED_COST, 0), gameTime);
+                    ahead.open(), 40.0D, UNPROVOKED_COST, 0), gameTime,
+                    player, null);
         }
     }
 
@@ -172,7 +173,7 @@ public final class Scp079FacilityThreatEvents {
                 || adjustedUtility(selected, availablePower) < 52.0D) {
             return;
         }
-        execute(level, selected, gameTime);
+        execute(level, selected, gameTime, player, pursuer);
     }
 
     private static double adjustedUtility(Action action, float availablePower) {
@@ -183,7 +184,7 @@ public final class Scp079FacilityThreatEvents {
     }
 
     private static boolean execute(ServerLevel level, Action action,
-            long gameTime) {
+            long gameTime, ServerPlayer player, Mob pursuer) {
         if (!Scp079ProcessingManager.trySpend(level, action.cost())) {
             return false;
         }
@@ -196,6 +197,11 @@ public final class Scp079FacilityThreatEvents {
         };
         if (!success) {
             Scp079ProcessingManager.refund(level, action.cost());
+            Scp079DecisionLog.record(level,
+                    Scp079DecisionLog.DecisionType.ABORTED_ACTION,
+                    Scp079DecisionLog.DecisionOutcome.ABORTED,
+                    action.door().pos(), 0.0D,
+                    "door state changed before execution · processing refunded");
             return false;
         }
 
@@ -203,7 +209,36 @@ public final class Scp079FacilityThreatEvents {
                 ? LOCKED_DOOR_REUSE_TICKS : DOOR_REUSE_TICKS;
         DOOR_COOLDOWNS.put(new DoorKey(level.dimension(),
                 action.door().pos().asLong()), gameTime + reuse);
+        Scp079DecisionLog.record(level, decisionType(action.type()),
+                Scp079DecisionLog.DecisionOutcome.EXECUTED,
+                action.door().pos(), action.cost(),
+                decisionContext(action, player, pursuer));
         return true;
+    }
+
+    private static Scp079DecisionLog.DecisionType decisionType(
+            ActionType type) {
+        return switch (type) {
+            case OPEN -> Scp079DecisionLog.DecisionType.OPEN_DOOR;
+            case CLOSE -> Scp079DecisionLog.DecisionType.CLOSE_DOOR;
+            case DENY -> Scp079DecisionLog.DecisionType.DENY_ACCESS;
+        };
+    }
+
+    private static String decisionContext(Action action,
+            ServerPlayer player, Mob pursuer) {
+        String playerName = player == null ? "player"
+                : player.getGameProfile().getName();
+        String threat = pursuer == null ? ""
+                : pursuer.getDisplayName().getString();
+        return switch (action.type()) {
+            case OPEN -> "for " + threat + " pursuing " + playerName;
+            case CLOSE -> pursuer == null
+                    ? "unprovoked near " + playerName
+                    : "ahead of " + playerName + " fleeing " + threat;
+            case DENY -> "against " + playerName + " fleeing " + threat
+                    + " · " + action.durationTicks() / 20.0D + "s";
+        };
     }
 
     private static AheadDoors findDoorsAhead(ServerLevel level,
@@ -477,7 +512,7 @@ public final class Scp079FacilityThreatEvents {
     }
 
     private record Action(ActionType type, DoorMatch door, double utility,
-                          double cost, int durationTicks) {
+                           double cost, int durationTicks) {
     }
 
     private record AheadDoors(DoorMatch open, DoorMatch closed) {

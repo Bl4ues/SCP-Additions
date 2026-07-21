@@ -10,7 +10,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.event.Scp173SpawnEvents;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.network.Scp079EnergyPacket.SpawnStatus;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.Map;
@@ -22,8 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Shared processing-power budget for SCP-079's facility decisions.
  *
  * The value is updated lazily whenever gameplay needs it, avoiding another
- * permanent server tick loop. Player HUD synchronization is also staggered and
- * sends packets only when the rounded value or visibility state changes.
+ * permanent server tick loop. Developer HUD synchronization is staggered and
+ * sends a packet only when a rounded value, toggle, scheduled tick or result
+ * actually changes; spawn countdown animation remains client-side.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -113,15 +116,28 @@ public final class Scp079ProcessingManager {
             return;
         }
 
-        boolean visible = ScpAdditionsModulesConfig.get().debug
-                .showScp079EnergyHud;
+        ScpAdditionsModulesConfig.Debug debug =
+                ScpAdditionsModulesConfig.get().debug;
+        boolean energyVisible = debug.showScp079EnergyHud;
+        boolean spawnTimersVisible = debug.showScpSpawnTimersHud;
         boolean active = isActive(player.serverLevel());
-        int roundedPower = Math.round(getPower(player.serverLevel()));
-        ClientSnapshot next = new ClientSnapshot(visible, active, roundedPower);
+        int roundedPower = energyVisible
+                ? Math.round(getPower(player.serverLevel())) : 0;
+        Scp173SpawnEvents.DebugSnapshot spawn =
+                Scp173SpawnEvents.debugSnapshot(player);
+        int currentTick = player.getServer() == null
+                ? 0 : player.getServer().getTickCount();
+
+        ClientSnapshot next = new ClientSnapshot(energyVisible, active,
+                roundedPower, spawnTimersVisible, spawn.nextCheckTick(),
+                spawn.status());
         ClientSnapshot previous = LAST_CLIENT_SYNC.put(player.getUUID(), next);
         if (!next.equals(previous)) {
-            ScpEntityNetwork.syncScp079Energy(player, visible, active,
-                    roundedPower);
+            int remainingTicks = spawn.status().showsTimer()
+                    ? Math.max(0, spawn.nextCheckTick() - currentTick) : -1;
+            ScpEntityNetwork.syncDebugState(player, energyVisible, active,
+                    roundedPower, spawnTimersVisible, remainingTicks,
+                    spawn.status());
         }
     }
 
@@ -157,7 +173,8 @@ public final class Scp079ProcessingManager {
         }
     }
 
-    private record ClientSnapshot(boolean visible, boolean active,
-                                  int roundedPower) {
+    private record ClientSnapshot(boolean energyVisible, boolean active,
+            int roundedPower, boolean spawnTimersVisible, int nextCheckTick,
+            SpawnStatus spawnStatus) {
     }
 }

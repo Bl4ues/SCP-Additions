@@ -118,10 +118,10 @@ public final class Scp079ModulesScreenExtension {
 
         @Override
         protected void init() {
-            rebuildWidgets();
+            rebuildModuleWidgets();
         }
 
-        private void rebuildWidgets() {
+        private void rebuildModuleWidgets() {
             clearWidgets();
             int panelWidth = Math.min(560, width - 20);
             int panelHeight = Math.min(400, height - 16);
@@ -167,7 +167,7 @@ public final class Scp079ModulesScreenExtension {
             payload.add(ConfigCenterService.MODULES, working);
             ModNetwork.CHANNEL.sendToServer(new ConfigCenterNetwork.SaveRequest(
                     GSON.toJson(payload)));
-            rebuildWidgets();
+            rebuildModuleWidgets();
         }
 
         private void resetDefaults() {
@@ -177,7 +177,7 @@ public final class Scp079ModulesScreenExtension {
                             row.fallback());
                 }
             }
-            rebuildWidgets();
+            rebuildModuleWidgets();
         }
 
         private String toggleLabel(Row row) {
@@ -191,7 +191,7 @@ public final class Scp079ModulesScreenExtension {
         }
 
         private void rebuild() {
-            rebuildWidgets();
+            rebuildModuleWidgets();
         }
 
         private void goBack() {

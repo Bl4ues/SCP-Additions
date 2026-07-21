@@ -90,6 +90,19 @@ public final class Scp079TeslaSuppression {
         STATES.put(key, new GateState(suppressedUntil,
                 suppressedUntil + DEVICE_REUSE_TICKS, suppressedUntil));
         emitInterference(level, gatePos);
+
+        ServerPlayer target = pursuer.getTarget() instanceof ServerPlayer player
+                ? player : null;
+        String targetName = target == null ? "player"
+                : target.getGameProfile().getName();
+        String mode = manualOverride ? "Emergency Override"
+                : "normal circuit";
+        Scp079DecisionLog.record(level,
+                Scp079DecisionLog.DecisionType.TESLA_SUPPRESSION,
+                Scp079DecisionLog.DecisionOutcome.EXECUTED, gatePos, cost,
+                "for " + pursuer.getDisplayName().getString()
+                        + " pursuing " + targetName + " · " + mode
+                        + " · " + SUPPRESSION_TICKS / 20.0D + "s");
         return true;
     }
 

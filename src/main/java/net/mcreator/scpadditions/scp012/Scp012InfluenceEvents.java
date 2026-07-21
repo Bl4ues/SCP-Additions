@@ -18,6 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog;
 import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
@@ -41,8 +42,7 @@ public final class Scp012InfluenceEvents {
 
     private static final Map<UUID, ContactState> CONTACT_STATES = new HashMap<>();
     private static final Map<UUID, BlockPos> ACTIVE_TARGETS = new HashMap<>();
-    private static final Map<UUID, DiscoveredTarget> DISCOVERED_TARGETS =
-            new HashMap<>();
+    private static final Map<UUID, DiscoveredTarget> DISCOVERED_TARGETS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_TARGET_SEARCH = new HashMap<>();
 
     private Scp012InfluenceEvents() {
@@ -51,9 +51,7 @@ public final class Scp012InfluenceEvents {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END
-                || !(event.player instanceof ServerPlayer player)) {
-            return;
-        }
+                || !(event.player instanceof ServerPlayer player)) return;
         if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
             clearAll(player);
             return;
@@ -71,10 +69,6 @@ public final class Scp012InfluenceEvents {
         Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
         double distance = player.position().distanceTo(attraction);
 
-        // SCP-079 still attempts the physical trap against SCP-714 as a
-        // precaution, but both the route and box now compete for its shared
-        // processing budget. Re-opening a contested route is evaluated by
-        // Scp012DoorAccess instead of happening as a free mechanical loop.
         if (systemControl) {
             Scp012Stage stage = Scp012Module.stageOf(level.getBlockState(nearby));
             boolean boxClosed = stage == Scp012Stage.CLOSED;
@@ -86,12 +80,23 @@ public final class Scp012InfluenceEvents {
             }
             if (boxClosed && Scp079ProcessingManager.trySpend(level,
                     SCP_012_BOX_OPEN_COST)) {
-                Scp012Module.open(level, nearby);
+                if (Scp012Module.open(level, nearby)) {
+                    String protection = Scp714ProtectionAccess.isProtected(player)
+                            ? " · SCP-714 detected" : "";
+                    Scp079DecisionLog.record(level,
+                            Scp079DecisionLog.DecisionType.OPEN_SCP_012_BOX,
+                            Scp079DecisionLog.DecisionOutcome.EXECUTED,
+                            nearby, SCP_012_BOX_OPEN_COST,
+                            "precautionary trap for "
+                                    + player.getGameProfile().getName()
+                                    + protection);
+                } else {
+                    Scp079ProcessingManager.refund(level,
+                            SCP_012_BOX_OPEN_COST);
+                }
             }
         }
 
-        // SCP-714 cancels only SCP-012's anomalous influence. It deliberately
-        // does not close the box, undo SCP-079's door actions, or cure bleeding.
         if (Scp714ProtectionAccess.isProtected(player)) {
             clearInfluence(player);
             return;
@@ -135,14 +140,9 @@ public final class Scp012InfluenceEvents {
         DISCOVERED_TARGETS.remove(id);
 
         long gameTime = level.getGameTime();
-        if (NEXT_TARGET_SEARCH.getOrDefault(id, 0L) > gameTime) {
-            return null;
-        }
+        if (NEXT_TARGET_SEARCH.getOrDefault(id, 0L) > gameTime) return null;
         NEXT_TARGET_SEARCH.put(id, gameTime + TARGET_SEARCH_INTERVAL_TICKS);
 
-        // Discover the box slightly before the player reaches its actual effect
-        // radius. The cached target can then trigger on the exact crossing tick
-        // without restoring the old full-cube scan on every player tick.
         BlockPos found = Scp012Module.findNearest(level, player.position(),
                 TARGET_DISCOVERY_RADIUS, false);
         if (found == null) return null;
@@ -214,9 +214,7 @@ public final class Scp012InfluenceEvents {
                         "You tear open your left wrist and start writing "
                                 + "on the composition with your blood."), true);
             }
-            if (state.damageTaken >= maxHealth * 0.40F) {
-                applyBleeding(player);
-            }
+            if (state.damageTaken >= maxHealth * 0.40F) applyBleeding(player);
         }
 
         return Mth.clamp(state.ticks / (float) FATAL_CONTACT_TICKS,

@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.network.Scp079EnergyPacket.SpawnStatus;
 
 public final class ScpEntityNetwork {
     private static boolean registered;
@@ -144,12 +145,16 @@ public final class ScpEntityNetwork {
                         damageActive));
     }
 
-    public static void syncScp079Energy(ServerPlayer player,
-            boolean visible, boolean active, float energy) {
+    public static void syncDebugState(ServerPlayer player,
+            boolean energyVisible, boolean active, float energy,
+            boolean spawnTimersVisible, int scp173RemainingTicks,
+            SpawnStatus scp173Status) {
         if (player == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new Scp079EnergyPacket(visible, active, energy));
+                new Scp079EnergyPacket(energyVisible, active, energy,
+                        spawnTimersVisible, scp173RemainingTicks,
+                        scp173Status));
     }
 
     public static void playScare(ServerPlayer player) {

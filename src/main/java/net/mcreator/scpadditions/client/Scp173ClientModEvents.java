@@ -19,23 +19,24 @@ public final class Scp173ClientModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-        // View effects are composed in a fixed order below every HUD layer. The
-        // SCP-714 fatigue closes over the world and any worn visor, while health,
-        // hotbar, crosshair, warnings and progress bars remain readable.
+        // Screen-space view effects are composed below every HUD layer. The
+        // blink vignette is rendered first so worn-item overlays such as the
+        // Hazmat visor remain above it; future equipped-item overlays should
+        // follow the same ordering rule. SCP-714 fatigue and SCP-012 influence
+        // preserve their existing order relative to the visor.
         event.registerBelowAll("player_view_effects_overlay",
                 (gui, graphics, partialTick, width, height) -> {
+                    BlinkClient.renderVignette(graphics, width, height);
                     HazmatVisorOverlay.render(graphics, width, height);
                     Scp714VignetteOverlay.render(graphics, width, height,
                             partialTick);
                     Scp012SubliminalOverlay.render(graphics, width, height,
                             partialTick);
                 });
-        event.registerAboveAll("blink_vignette_overlay",
-                (gui, graphics, partialTick, width, height) -> {
-                    BlinkClient.renderVignette(graphics, width, height);
-                    Scp1176HoneyVignette.render(graphics, width, height,
-                            partialTick);
-                });
+        event.registerAboveAll("scp_1176_honey_vignette_overlay",
+                (gui, graphics, partialTick, width, height) ->
+                        Scp1176HoneyVignette.render(graphics, width, height,
+                                partialTick));
         event.registerAboveAll("blink_blackout_overlay",
                 (gui, graphics, partialTick, width, height) ->
                         BlinkClient.renderBlackout(graphics, width, height));

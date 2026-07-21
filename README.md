@@ -10,7 +10,7 @@ SCP Additions is currently developed and released for **Minecraft 1.20.1 with Fo
 
 | Minecraft | Loader | Status | Java | Branch |
 |---|---|---|---|---|
-| 1.20.1 | Forge 47.4.10+ | Stable public edition; 3.0.8 in development | 17 | [`master`](../../tree/master) |
+| 1.20.1 | Forge 47.4.10+ | Stable public edition | 17 | [`master`](../../tree/master) |
 
 ## Links
 

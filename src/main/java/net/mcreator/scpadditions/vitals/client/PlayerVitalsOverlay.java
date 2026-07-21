@@ -29,6 +29,12 @@ public final class PlayerVitalsOverlay {
     private static final int ICON_X = 28;
     private static final int BOTTOM_MARGIN = 70;
     private static final int BAR_GAP = 18;
+    // The established presentation corresponds to 360 GUI pixels (720p at GUI scale 2).
+    // Normalizing to that height prevents Minecraft 1.21's auto-selected GUI scale from
+    // making the physical HUD drastically larger or smaller than the Forge edition.
+    private static final float REFERENCE_GUI_HEIGHT = 360.0F;
+    private static final float MIN_HUD_SCALE = 0.50F;
+    private static final float MAX_HUD_SCALE = 2.00F;
 
     private static final int TRACK = 0x7710181B;
     private static final int TRACK_DARK = 0xAA0B1012;
@@ -55,7 +61,13 @@ public final class PlayerVitalsOverlay {
             return;
         }
 
-        int rowY = screenHeight - BOTTOM_MARGIN;
+        float hudScale = Math.max(MIN_HUD_SCALE,
+                Math.min(MAX_HUD_SCALE, screenHeight / REFERENCE_GUI_HEIGHT));
+        int logicalScreenHeight = Math.max(1, Math.round(screenHeight / hudScale));
+        graphics.pose().pushPose();
+        graphics.pose().scale(hudScale, hudScale, 1.0F);
+
+        int rowY = logicalScreenHeight - BOTTOM_MARGIN;
 
         if (VitalsModule.staminaHudEnabled()) {
             drawIcon(graphics, STAMINA_ICON, ICON_X, rowY - 4);
@@ -90,6 +102,8 @@ public final class PlayerVitalsOverlay {
             graphics.drawString(minecraft.font, healthText,
                     BAR_X + 6, rowY + 3, TEXT, false);
         }
+
+        graphics.pose().popPose();
     }
 
     private static void drawBar(GuiGraphics graphics, int x, int y,

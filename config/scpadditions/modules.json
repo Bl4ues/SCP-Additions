@@ -21,5 +21,8 @@
   "scp_173": {
     "natural_spawn_enabled": true,
     "enabled": true
+  },
+  "debug": {
+    "show_scp_079_energy_hud": false
   }
 }

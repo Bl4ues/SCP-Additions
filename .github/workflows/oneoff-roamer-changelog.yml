@@ -61,3 +61,5 @@ jobs:
           git add CHANGELOG.md
           git commit -m "Document roamer spawn controls"
           git push
+
+# This workflow is intentionally temporary and removed before merge.

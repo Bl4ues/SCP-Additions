@@ -11,6 +11,10 @@ import net.mcreator.scpadditions.item.NamedSpawnEggItem;
 public final class Scp131Items {
     public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
 
+    public static final RegistryObject<Item> SCP_106_SPAWN_EGG = REGISTRY.register("scp_106_spawn_egg", () ->
+            new NamedSpawnEggItem(ScpAdditionsModEntities.SCP_106, 0x0A0A0A, 0x5B3924,
+                    new Item.Properties().rarity(Rarity.EPIC), "SCP-106 Spawn Egg", "tooltip.scp_additions.scp_106_spawn_egg"));
+
     public static final RegistryObject<Item> SCP_131_A_SPAWN_EGG = REGISTRY.register("scp_131_a_spawn_egg", () ->
             new NamedSpawnEggItem(ScpAdditionsModEntities.SCP_131_A, 0xD96724, 0x1F1B18,
                     new Item.Properties().rarity(Rarity.EPIC), "SCP-131-A Spawn Egg", "tooltip.scp_additions.scp_131_a_spawn_egg"));

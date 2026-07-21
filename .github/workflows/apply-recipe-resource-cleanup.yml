@@ -1,22 +1,20 @@
 name: Apply recipe resource cleanup
 
 on:
-  push:
-    branches:
-      - fix/neoforge-1.21.1-runtime-regressions-3.0.7
-      - fix/fabric-1.21.1-runtime-regressions-3.0.7
-    paths:
-      - .github/workflows/apply-recipe-resource-cleanup.yml
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   patch-and-build:
+    if: startsWith(github.head_ref, 'fix/neoforge-1.21.1-runtime-regressions-3.0.7') || startsWith(github.head_ref, 'fix/fabric-1.21.1-runtime-regressions-3.0.7')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - uses: actions/setup-java@v4
@@ -32,10 +30,7 @@ jobs:
 
           path = Path('build.gradle')
           text = path.read_text(encoding='utf-8')
-          old = """    exclude('data/scp_additions/recipes/button_left_swap.json')
-              exclude('data/scp_additions/recipes/button_right_swap.json')
-          """
-          new = """    // 1.21 datapacks use singular recipe/. These generated legacy
+          exclusions = """    // 1.21 datapacks use singular recipe/. These generated legacy
               // recipes target removed per-level public reader items; readers are now
               // configured in-world through the unified reader and screwdriver.
               exclude('data/scp_additions/recipe/lv_*_kr_right.json')
@@ -50,9 +45,20 @@ jobs:
               exclude('data/scp_additions/recipe/button_left_swap.json')
               exclude('data/scp_additions/recipe/button_right_swap.json')
           """
-          if old not in text:
-              raise SystemExit('Expected plural recipe exclusion block was not found')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          if "exclude('data/scp_additions/recipe/lv_2_kr_left.json')" in text:
+              raise SystemExit('Recipe cleanup is already present')
+
+          plural = """    exclude('data/scp_additions/recipes/button_left_swap.json')
+              exclude('data/scp_additions/recipes/button_right_swap.json')
+          """
+          if plural in text:
+              text = text.replace(plural, exclusions, 1)
+          else:
+              marker = "    exclude('src/generated/**/.cache')\n"
+              if marker not in text:
+                  raise SystemExit('Resource exclusion insertion point not found')
+              text = text.replace(marker, marker + exclusions, 1)
+          path.write_text(text, encoding='utf-8')
           PY
 
       - name: Build and inspect packaged recipes
@@ -72,4 +78,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add build.gradle
           git commit -m "Exclude obsolete 1.21 recipe resources"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${{ github.head_ref }}"

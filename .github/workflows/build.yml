@@ -35,23 +35,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        shell: bash
-        run: |
-          set +e
-          ./gradlew clean build --stacktrace > build-output.log 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            tail -n 220 build-output.log
-          fi
-          exit "$status"
-
-      - name: Upload build diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-diagnostics-${{ github.sha }}
-          path: build-output.log
-          if-no-files-found: error
+        run: ./gradlew clean build --stacktrace
 
       - name: Upload compiled JAR
         if: success()

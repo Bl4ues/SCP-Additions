@@ -2,11 +2,6 @@
 
 # SCP Additions 3.0.7 — In Development
 
-## Platform expansion
-
-- Added documentation for the supported Minecraft versions, loaders, Java versions, dependencies, development branches, and current release status;
-- Marked both 1.21.1 editions as alpha ports pending complete runtime and manual feature-parity validation.
-
 ## Multiplayer and configuration synchronization
 
 - Made the host's gameplay configuration authoritative for connected clients, including item rules and effects, hidden Status effects, Codex definitions, contextual interactions, entity interaction rules, and SCP-173 target configuration;

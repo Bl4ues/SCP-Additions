@@ -42,8 +42,8 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
 
         EntityModelData modelData = animationState.getData(
                 DataTickets.ENTITY_MODEL_DATA);
-        float yaw = Mth.clamp(modelData.netHeadYaw(), -7.0F, 7.0F);
-        float pitch = Mth.clamp(modelData.headPitch(), -4.0F, 4.0F);
+        float yaw = Mth.clamp(modelData.netHeadYaw(), -22.0F, 22.0F);
+        float pitch = Mth.clamp(modelData.headPitch(), -10.0F, 10.0F);
 
         head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
         head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);

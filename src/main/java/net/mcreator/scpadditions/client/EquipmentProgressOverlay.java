@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.client.ReferenceGuiScale;
 import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -100,9 +101,17 @@ public final class EquipmentProgressOverlay {
                 elapsedTicks + Math.max(0.0F, partialTick));
         float ratio = Math.max(0.0F,
                 Math.min(1.0F, interpolated / durationTicks));
-        int x = (screenWidth - BAR_WIDTH) / 2;
-        int y = screenHeight - BOTTOM_OFFSET;
+        float uiScale = ReferenceGuiScale.factor(minecraft);
+        int logicalWidth = ReferenceGuiScale.logicalSize(
+                screenWidth, uiScale);
+        int logicalHeight = ReferenceGuiScale.logicalSize(
+                screenHeight, uiScale);
+        graphics.pose().pushPose();
+        graphics.pose().scale(uiScale, uiScale, 1.0F);
+        int x = (logicalWidth - BAR_WIDTH) / 2;
+        int y = logicalHeight - BOTTOM_OFFSET;
         drawBar(graphics, x, y, BAR_WIDTH, BAR_HEIGHT, ratio);
+        graphics.pose().popPose();
     }
 
     private static void drawBar(GuiGraphics graphics, int x, int y,

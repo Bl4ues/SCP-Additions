@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.vitals.client;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.bl4ues.scpinventory.client.ReferenceGuiScale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -29,12 +30,6 @@ public final class PlayerVitalsOverlay {
     private static final int ICON_X = 28;
     private static final int BOTTOM_MARGIN = 70;
     private static final int BAR_GAP = 18;
-    // The established presentation corresponds to 360 GUI pixels (720p at GUI scale 2).
-    // Normalizing to that height prevents Minecraft 1.21's auto-selected GUI scale from
-    // making the physical HUD drastically larger or smaller than the Forge edition.
-    private static final float REFERENCE_GUI_HEIGHT = 360.0F;
-    private static final float MIN_HUD_SCALE = 0.50F;
-    private static final float MAX_HUD_SCALE = 2.00F;
 
     private static final int TRACK = 0x7710181B;
     private static final int TRACK_DARK = 0xAA0B1012;
@@ -61,11 +56,11 @@ public final class PlayerVitalsOverlay {
             return;
         }
 
-        float hudScale = Math.max(MIN_HUD_SCALE,
-                Math.min(MAX_HUD_SCALE, screenHeight / REFERENCE_GUI_HEIGHT));
-        int logicalScreenHeight = Math.max(1, Math.round(screenHeight / hudScale));
+        float uiScale = ReferenceGuiScale.factor(minecraft);
+        int logicalScreenHeight = ReferenceGuiScale.logicalSize(
+                screenHeight, uiScale);
         graphics.pose().pushPose();
-        graphics.pose().scale(hudScale, hudScale, 1.0F);
+        graphics.pose().scale(uiScale, uiScale, 1.0F);
 
         int rowY = logicalScreenHeight - BOTTOM_MARGIN;
 

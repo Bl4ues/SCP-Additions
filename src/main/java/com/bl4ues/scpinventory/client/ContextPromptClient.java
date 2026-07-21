@@ -106,13 +106,22 @@ public final class ContextPromptClient {
             return;
         }
 
-        ScreenPoint point = projectToScreen(mc, target.anchor(), screenWidth, screenHeight);
+        float uiScale = ReferenceGuiScale.factor(mc);
+        int logicalWidth = ReferenceGuiScale.logicalSize(
+                screenWidth, uiScale);
+        int logicalHeight = ReferenceGuiScale.logicalSize(
+                screenHeight, uiScale);
+        ScreenPoint point = projectToScreen(mc, target.anchor(),
+                logicalWidth, logicalHeight);
         if (point == null) {
-            point = new ScreenPoint(screenWidth / 2, screenHeight - 28);
+            return;
         }
 
-        int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
-        int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
+        g.pose().pushPose();
+        g.pose().scale(uiScale, uiScale, 1.0F);
+
+        int screenX = Mth.clamp(point.x(), 28, logicalWidth - 28);
+        int screenY = Mth.clamp(point.y(), 28, logicalHeight - 28);
 
         int iconX = screenX - (ICON_SIZE / 2) - 3;
         int iconY = screenY - (ICON_SIZE / 2) + 8;
@@ -121,8 +130,8 @@ public final class ContextPromptClient {
         int nameY = actionY + 32;
 
         int textWidth = target.maxTextWidth(mc);
-        if (textWidth > 0 && textX + textWidth > screenWidth - 8) {
-            textX = Math.max(8, screenWidth - textWidth - 8);
+        if (textWidth > 0 && textX + textWidth > logicalWidth - 8) {
+            textX = Math.max(8, logicalWidth - textWidth - 8);
             iconX = Math.max(6, textX - ICON_SIZE - 4);
         }
         if (iconX < 6) {
@@ -134,19 +143,23 @@ public final class ContextPromptClient {
             actionY = iconY + 22;
             nameY = actionY + 32;
         }
-        if (iconY + ICON_SIZE > screenHeight - 6) {
-            iconY = screenHeight - ICON_SIZE - 6;
+        if (iconY + ICON_SIZE > logicalHeight - 6) {
+            iconY = logicalHeight - ICON_SIZE - 6;
             actionY = iconY + 22;
             nameY = actionY + 32;
         }
 
         drawIcon(g, target.icon(), iconX, iconY);
         if (target.showAction()) {
-            drawScaledString(g, mc, target.action(), textX, actionY, ACTION_TEXT_SCALE, TEXT_GRAY);
+            drawScaledString(g, mc, target.action(), textX, actionY,
+                    ACTION_TEXT_SCALE, TEXT_GRAY);
         }
         if (target.showName()) {
-            drawScaledString(g, mc, target.name(), textX, target.showAction() ? nameY : actionY + 14, NAME_TEXT_SCALE, TEXT_WHITE);
+            drawScaledString(g, mc, target.name(), textX,
+                    target.showAction() ? nameY : actionY + 14,
+                    NAME_TEXT_SCALE, TEXT_WHITE);
         }
+        g.pose().popPose();
     }
 
     public static void clear() {
@@ -288,16 +301,15 @@ public final class ContextPromptClient {
         double distance = Math.sqrt(distanceSqr);
         Vec3 direction = distance <= 0.001D ? look : toPoint.scale(1.0D / distance);
         double dot = direction.dot(look);
-        double centerPenalty;
-        if (dot > 0.0D) {
-            double alongRay = toPoint.dot(look);
-            Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
-            centerPenalty = closest.distanceToSqr(point);
-        } else {
-            centerPenalty = 0.58D * 0.58D + ((1.0D - dot) * 0.35D);
+        if (dot <= 0.0D) {
+            return Double.MAX_VALUE;
         }
+        double alongRay = toPoint.dot(look);
+        Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+        double centerPenalty = closest.distanceToSqr(point);
 
-        return centerPenalty + (distance * 0.035D) - (priority * 0.01D) - (directHit ? 0.35D : 0.0D);
+        return centerPenalty + (distance * 0.035D)
+                - (priority * 0.01D) - (directHit ? 0.35D : 0.0D);
     }
 
     private static ScreenPoint projectToScreen(Minecraft mc, Vec3 worldPos, int screenWidth, int screenHeight) {
@@ -309,20 +321,17 @@ public final class ContextPromptClient {
         Vector3f transformed = new Vector3f((float) relative.x, (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
 
-        double z = transformed.z();
-        double depth = Math.abs(z);
+        double depth = -transformed.z();
         if (depth < 0.05D) return null;
 
         double fov = mc.options.fov().get();
-        double scale = screenHeight / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+        double scale = screenHeight
+                / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
 
-        int x = (int) Math.round((screenWidth / 2.0D) - (transformed.x() * scale / depth));
-        int y;
-        if (z < 0.0D) {
-            y = screenHeight - 28;
-        } else {
-            y = (int) Math.round((screenHeight / 2.0D) - (transformed.y() * scale / depth));
-        }
+        int x = (int) Math.round((screenWidth / 2.0D)
+                + (transformed.x() * scale / depth));
+        int y = (int) Math.round((screenHeight / 2.0D)
+                - (transformed.y() * scale / depth));
         return new ScreenPoint(x, y);
     }
 

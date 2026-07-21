@@ -54,9 +54,11 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -180,8 +182,14 @@ public final class FacilityModule {
             CreativeModeTab.builder()
                     .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
                     .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
-                    .displayItems((parameters, output) ->
-                            creativeItemsInDisplayOrder().forEach(item -> output.accept(item.get())))
+                    .displayItems((parameters, output) -> {
+                            Set<Item> seen = Collections.newSetFromMap(
+                                    new IdentityHashMap<>());
+                            creativeItemsInDisplayOrder().stream()
+                                    .map(Supplier::get)
+                                    .filter(seen::add)
+                                    .forEach(output::accept);
+                        })
                     .withSearchBar()
                     .build());
 
@@ -294,8 +302,15 @@ public final class FacilityModule {
         if (item != null) addUnique(ordered, item);
     }
 
-    private static void addUnique(List<Supplier<Item>> ordered, Supplier<Item> item) {
-        if (!ordered.contains(item)) ordered.add(item);
+    private static void addUnique(List<Supplier<Item>> ordered,
+            Supplier<Item> item) {
+        Item candidate = item.get();
+        for (Supplier<Item> existing : ordered) {
+            if (existing.get() == candidate) {
+                return;
+            }
+        }
+        ordered.add(item);
     }
 
     private static Supplier<SoundEvent> sound(String path) {

@@ -41,7 +41,7 @@ public class Scp914AssemblyKitItem extends Item {
 	private static final int ANCHOR_Y = 0;
 	private static final int ANCHOR_Z = 6;
 	private static final int PLAYER_CLEARANCE_OFFSET = 4;
-	private static final String STRUCTURE_RESOURCE = "/data/scp_additions/structures/scp_914_full.nbt";
+	private static final String STRUCTURE_RESOURCE = "/data/scp_additions/structure/scp_914_full.nbt";
 	private static StructureData cachedStructure;
 
 	public Scp914AssemblyKitItem() {

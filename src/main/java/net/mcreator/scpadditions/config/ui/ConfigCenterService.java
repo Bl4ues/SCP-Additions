@@ -1,170 +1,178 @@
 package net.mcreator.scpadditions.config.ui;
 
+import com.bl4ues.scpinventory.config.ScpInventoryConfig;
+import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.data.Scp294DrinkManager;
 import net.mcreator.scpadditions.data.Scp914RecipeManager;
 import net.mcreator.scpadditions.entity.Scp173TargetConfig;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
-import com.bl4ues.scpinventory.config.ScpInventoryConfig;
-import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-/** Server-authoritative storage, validation, backup and reload service for the native configuration center. */
+/** Server-owned persistence and validation for the in-game configuration center. */
 public final class ConfigCenterService {
+    public static final int REQUIRED_PERMISSION_LEVEL = 2;
+    public static final int MAX_PAYLOAD_LENGTH = 2_000_000;
+
     public static final String MODULES = "modules";
     public static final String INVENTORY = "inventory";
     public static final String CONTEXT = "context";
-    public static final String DRINKS = "drinks";
-    public static final String RECIPE_MAIN = "recipe:main";
-    public static final String RECIPE_PREFIX = "recipe:";
-    public static final int MAX_PAYLOAD_LENGTH = 2_000_000;
+    public static final String DRINKS = "294";
+    public static final String RECIPE_MAIN = "914/main";
+    public static final String RECIPE_PREFIX = "914/";
+    public static final String EDITOR_FRAGMENT = "in_game_editor.json";
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    private static final Path CONFIG_ROOT = FMLPaths.CONFIGDIR.get();
-    private static final Path SCP_ROOT = CONFIG_ROOT.resolve("scpadditions");
-    private static final Path INVENTORY_ROOT = CONFIG_ROOT.resolve("scpinventory");
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path SCP_ROOT = FMLPaths.CONFIGDIR.get().resolve("scpadditions");
+    private static final Path INVENTORY_ROOT = FMLPaths.CONFIGDIR.get().resolve("scpinventory");
     private static final Path RECIPE_FRAGMENTS = SCP_ROOT.resolve("914recipes.d");
-    private static final Pattern SAFE_FRAGMENT = Pattern.compile("[A-Za-z0-9._-]+\\.json");
-    private static final Set<String> SETTINGS = Set.of("rough", "coarse", "one_to_one", "fine", "very_fine");
+    private static final Pattern SAFE_FRAGMENT = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,95}\\.json");
+    private static final Set<String> SETTINGS = Set.of("rough", "coarse", "1_to_1", "fine", "very_fine");
 
     private ConfigCenterService() {
     }
 
     public static boolean canEdit(ServerPlayer player) {
-        return player != null && (player.getServer() == null || !player.getServer().isDedicatedServer()
-                || player.hasPermissions(2));
+        if (player == null || player.isSpectator()) return false;
+        if (player.hasPermissions(REQUIRED_PERMISSION_LEVEL)) return true;
+        return player.getServer() != null && player.getServer().isSingleplayerOwner(player.getGameProfile());
+    }
+
+    public static boolean requireEdit(ServerPlayer player) {
+        if (canEdit(player)) return true;
+        if (player != null) player.sendSystemMessage(Component.literal(
+                "SCP Additions configuration requires operator permission level 2.")
+                .withStyle(ChatFormatting.RED));
+        return false;
     }
 
     public static JsonObject snapshot() throws IOException {
-        JsonObject snapshot = new JsonObject();
-        snapshot.add(MODULES, readObject(pathFor(MODULES), defaultModules()));
-        snapshot.add(INVENTORY, readObject(pathFor(INVENTORY), defaultInventory()));
-        snapshot.add(CONTEXT, readObject(pathFor(CONTEXT), defaultContext()));
-        snapshot.add(DRINKS, readObject(pathFor(DRINKS), defaultDrinks()));
-        snapshot.add(RECIPE_MAIN, readObject(pathFor(RECIPE_MAIN), defaultRecipes()));
-        for (Path fragment : recipeFragments()) {
-            snapshot.add(RECIPE_PREFIX + fragment.getFileName(), readObject(fragment, defaultRecipeFragment()));
+        JsonObject files = new JsonObject();
+        files.add(MODULES, readObject(pathFor(MODULES), defaultModules()));
+        files.add(INVENTORY, readObject(pathFor(INVENTORY), defaultInventory()));
+        files.add(CONTEXT, readObject(pathFor(CONTEXT), defaultContext()));
+        files.add(DRINKS, readObject(pathFor(DRINKS), defaultDrinks()));
+        files.add(RECIPE_MAIN, readObject(pathFor(RECIPE_MAIN), defaultRecipes(true)));
+
+        Files.createDirectories(RECIPE_FRAGMENTS);
+        try (Stream<Path> stream = Files.list(RECIPE_FRAGMENTS)) {
+            for (Path path : stream.filter(Files::isRegularFile)
+                    .filter(candidate -> SAFE_FRAGMENT.matcher(candidate.getFileName().toString()).matches())
+                    .sorted(Comparator.comparing(candidate -> candidate.getFileName().toString()))
+                    .toList()) {
+                files.add(RECIPE_PREFIX + path.getFileName(), readObject(path, defaultRecipes(false)));
+            }
         }
-        return snapshot;
+        return files;
     }
 
-    public static SaveResult saveBatch(ServerPlayer player, String payload) {
-        if (!canEdit(player)) return SaveResult.failure("Operator permission level 2 is required.");
-        if (payload == null || payload.length() > MAX_PAYLOAD_LENGTH) return SaveResult.failure("Configuration payload is too large.");
+    public static SaveResult saveBatch(ServerPlayer player, String changesText) {
+        if (!canEdit(player)) {
+            return SaveResult.failure("Operator permission level 2 is required.");
+        }
 
         JsonObject changes;
         try {
-            JsonElement parsed = JsonParser.parseString(payload);
-            if (!parsed.isJsonObject()) return SaveResult.failure("Configuration payload must be a JSON object.");
+            JsonElement parsed = JsonParser.parseString(changesText);
+            if (!parsed.isJsonObject()) return SaveResult.failure("The submitted change set is not a JSON object.");
             changes = parsed.getAsJsonObject();
         } catch (Exception exception) {
-            return SaveResult.failure("Invalid configuration payload: " + readable(exception));
+            return SaveResult.failure("The submitted change set is invalid JSON: " + readable(exception));
         }
-        if (changes.size() == 0) return SaveResult.failure("No configuration changes were provided.");
+        if (changes.size() == 0) return SaveResult.failure("No configuration changes were submitted.");
+        if (changes.size() > 16) return SaveResult.failure("Too many configuration files were submitted at once.");
 
-        Map<String, JsonObject> normalized = new LinkedHashMap<>();
-        List<String> errors = new ArrayList<>();
+        LinkedHashMap<Path, String> oldContents = new LinkedHashMap<>();
+        LinkedHashMap<Path, String> newContents = new LinkedHashMap<>();
         List<String> warnings = new ArrayList<>();
-        for (Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-            if (!entry.getValue().isJsonObject()) {
-                errors.add(entry.getKey() + " must be a JSON object");
-                continue;
-            }
-            String key = entry.getKey();
-            if (pathFor(key) == null) {
-                errors.add("Unsupported configuration category: " + key);
-                continue;
-            }
-            JsonObject root = entry.getValue().getAsJsonObject().deepCopy();
-            Validation validation = validate(key, root);
-            errors.addAll(validation.errors());
-            warnings.addAll(validation.warnings());
-            normalized.put(key, root);
-        }
-        if (!errors.isEmpty()) return SaveResult.failure(String.join("\n", errors), warnings);
 
-        Map<Path, byte[]> previous = new LinkedHashMap<>();
         try {
-            for (Map.Entry<String, JsonObject> entry : normalized.entrySet()) {
-                Path path = pathFor(entry.getKey());
-                previous.put(path, Files.exists(path) ? Files.readAllBytes(path) : null);
-                ConfigFilePersistence.writeWithBackup(path, GSON.toJson(entry.getValue()) + System.lineSeparator());
-            }
-            reloadAll();
-            return SaveResult.success("Configuration saved and reloaded.", snapshot(), warnings);
-        } catch (Exception exception) {
-            rollback(previous);
-            try { reloadAll(); } catch (Exception ignored) { }
-            return SaveResult.failure("Configuration save failed and was rolled back: " + readable(exception), warnings);
-        }
-    }
+            for (Map.Entry<String, JsonElement> entry : changes.entrySet()) {
+                String key = entry.getKey();
+                Path target = pathFor(key);
+                if (target == null) return SaveResult.failure("Unknown or unsafe configuration target: " + key);
+                if (!entry.getValue().isJsonObject()) return SaveResult.failure(key + " must contain a JSON object.");
 
-    public static SaveResult deleteRecipeFragment(ServerPlayer player, String fileName) {
-        if (!canEdit(player)) return SaveResult.failure("Operator permission level 2 is required.");
-        if (fileName == null || !SAFE_FRAGMENT.matcher(fileName).matches() || "main".equals(fileName)) {
-            return SaveResult.failure("Invalid recipe fragment name.");
-        }
-        Path path = RECIPE_FRAGMENTS.resolve(fileName).normalize();
-        if (!path.startsWith(RECIPE_FRAGMENTS)) return SaveResult.failure("Invalid recipe fragment path.");
-        try {
-            if (Files.exists(path)) {
-                Path backup = path.resolveSibling(path.getFileName() + ".bak");
-                Files.copy(path, backup, StandardCopyOption.REPLACE_EXISTING);
-                Files.delete(path);
-            }
-            reloadAll();
-            return SaveResult.success("Recipe fragment deleted.", snapshot(), List.of());
-        } catch (Exception exception) {
-            return SaveResult.failure("Could not delete recipe fragment: " + readable(exception));
-        }
-    }
-
-    private static void rollback(Map<Path, byte[]> previous) {
-        for (Map.Entry<Path, byte[]> entry : previous.entrySet()) {
-            try {
-                if (entry.getValue() == null) Files.deleteIfExists(entry.getKey());
-                else {
-                    Files.createDirectories(entry.getKey().getParent());
-                    Files.write(entry.getKey(), entry.getValue());
+                JsonObject root = entry.getValue().getAsJsonObject();
+                Validation validation = validate(key, root);
+                if (!validation.errors().isEmpty()) {
+                    return SaveResult.failure(key + ": " + String.join("; ", validation.errors()));
                 }
-            } catch (Exception ignored) { }
+                warnings.addAll(validation.warnings());
+                oldContents.put(target, Files.exists(target) ? Files.readString(target, StandardCharsets.UTF_8) : null);
+                newContents.put(target, GSON.toJson(root) + System.lineSeparator());
+            }
+
+            for (Map.Entry<Path, String> entry : newContents.entrySet()) {
+                ConfigFilePersistence.writeWithBackup(entry.getKey(), entry.getValue());
+            }
+
+            try {
+                reloadAll();
+            } catch (Exception exception) {
+                rollback(oldContents);
+                reloadAll();
+                return SaveResult.failure("Changes were restored because reload failed: " + readable(exception));
+            }
+
+            JsonObject updated = snapshot();
+            String message = warnings.isEmpty()
+                    ? "Configuration saved and reloaded."
+                    : "Configuration saved with " + warnings.size() + " unavailable reference warning(s).";
+            return SaveResult.success(message, updated, warnings);
+        } catch (Exception exception) {
+            try {
+                rollback(oldContents);
+                reloadAll();
+            } catch (Exception rollbackFailure) {
+                ScpAdditionsMod.LOGGER.error("Configuration center rollback also failed", rollbackFailure);
+            }
+            ScpAdditionsMod.LOGGER.error("Configuration center save failed", exception);
+            return SaveResult.failure("Could not save configuration: " + readable(exception));
         }
     }
 
-    private static void reloadAll() {
+    public static void reloadAll() {
         ScpAdditionsModulesConfig.load();
         ScpInventoryConfig.reloadFromDisk();
-        ContextInteractionRegistry.reloadFromDisk();
         Scp173TargetConfig.load();
         StaminaItemEffectConfig.load();
         Scp294DrinkManager.loadFromConfig();
         Scp914RecipeManager.loadFromConfig();
+        ContextInteractionRegistry.reloadFromDisk();
+    }
+
+    private static void rollback(Map<Path, String> oldContents) throws IOException {
+        for (Map.Entry<Path, String> entry : oldContents.entrySet()) {
+            if (entry.getValue() == null) Files.deleteIfExists(entry.getKey());
+            else ConfigFilePersistence.restoreWithoutBackup(entry.getKey(), entry.getValue());
+        }
     }
 
     private static Path pathFor(String key) {
@@ -212,7 +220,7 @@ public final class ConfigCenterService {
     }
 
     private static void validateModules(JsonObject root, List<String> errors) {
-        for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "scp_173", "debug")) {
+        for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "scp_173")) {
             if (root.has(group) && !root.get(group).isJsonObject()) errors.add(group + " must be an object");
         }
         checkBoolean(root, "inventory", "enabled", errors);
@@ -226,7 +234,6 @@ public final class ConfigCenterService {
         checkBoolean(root, "blink", "enabled", errors);
         checkBoolean(root, "scp_173", "enabled", errors);
         checkBoolean(root, "scp_173", "natural_spawn_enabled", errors);
-        checkBoolean(root, "debug", "show_scp_079_energy_hud", errors);
     }
 
     private static void checkBoolean(JsonObject root, String group, String key, List<String> errors) {
@@ -251,39 +258,42 @@ public final class ConfigCenterService {
                 if (element.isJsonObject()) {
                     JsonObject document = element.getAsJsonObject();
                     String mode = string(document, "match_mode");
-                    if (!mode.isBlank() && !"item".equalsIgnoreCase(mode) && !"unique".equalsIgnoreCase(mode)) {
+                    if (!mode.isBlank() && !"item".equals(mode) && !"unique".equals(mode)) {
                         errors.add("codex_documents[" + index + "].match_mode must be item or unique");
                     }
-                    if ("unique".equalsIgnoreCase(mode) && string(document, "unique_id").isBlank()) {
-                        errors.add("codex_documents[" + index + "].unique_id is required for unique matching");
+                    if ("unique".equals(mode)) {
+                        String codexId = string(document, "codex_id");
+                        if (codexId.isBlank() || codexId.length() > 128
+                                || !codexId.matches("[A-Za-z0-9._:-]+")) {
+                            errors.add("codex_documents[" + index + "].codex_id is invalid");
+                        }
+                    }
+                    for (String assetKey : List.of("world_image", "world_text")) {
+                        String value = string(document, assetKey);
+                        if (!value.isBlank() && !CodexAssetStorage.isSafeKey(value)) {
+                            errors.add("codex_documents[" + index + "]." + assetKey
+                                    + " is not a safe world asset key");
+                        }
                     }
                 }
                 index++;
             }
         }
-        validateObjectIds(root, "scp_173_targets", "entity", errors, warnings, true);
-        if (root.has("hidden_status_effects") && root.get("hidden_status_effects").isJsonArray()) {
-            int index = 0;
-            for (JsonElement element : root.getAsJsonArray("hidden_status_effects")) {
-                String id = element.isJsonPrimitive() ? element.getAsString() : element.isJsonObject() ? string(element.getAsJsonObject(), "id") : "";
-                validateId(id, "hidden_status_effects[" + index + "]", errors, warnings, true);
-                index++;
-            }
-        }
+        validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);
+        validateSimpleIds(root, "scp_173_targets", errors, warnings, true);
     }
 
     private static void validateContext(JsonObject root, List<String> errors, List<String> warnings) {
         if (!requireArray(root, "interactions", errors)) return;
         int index = 0;
         for (JsonElement element : root.getAsJsonArray("interactions")) {
-            String label = "interactions[" + index + "]";
-            if (!element.isJsonObject()) { errors.add(label + " must be an object"); index++; continue; }
-            JsonObject interaction = element.getAsJsonObject();
-            String target = string(interaction, "target");
-            String targetType = string(interaction, "target_type").toLowerCase(Locale.ROOT);
-            if (target.isBlank()) errors.add(label + ".target is required");
-            else if (!target.startsWith("#") && !"item".equals(targetType)) validateId(target, label + ".target", errors, warnings, true);
-            if (interaction.has("icon")) validateId(string(interaction, "icon"), label + ".icon", errors, warnings, true);
+            if (!element.isJsonObject()) { errors.add("interactions[" + index + "] must be an object"); index++; continue; }
+            JsonObject object = element.getAsJsonObject();
+            String type = string(object, "type");
+            if (!"block".equals(type) && !"entity".equals(type)) errors.add("interactions[" + index + "].type must be block or entity");
+            validateId(string(object, "id"), "interactions[" + index + "].id", errors, warnings, false);
+            if (object.has("range")) requireNumber(object, "range", "interactions[" + index + "]", errors);
+            if (object.has("priority")) requireNumber(object, "priority", "interactions[" + index + "]", errors);
             index++;
         }
     }
@@ -339,7 +349,7 @@ public final class ConfigCenterService {
     }
 
     private static void validateRecipeItemArray(JsonObject root, String arrayKey, String idKey, String label,
-                                                 List<String> errors, List<String> warnings) {
+                                                List<String> errors, List<String> warnings) {
         if (!root.has(arrayKey)) return;
         if (!root.get(arrayKey).isJsonArray()) { errors.add(label + "." + arrayKey + " must be an array"); return; }
         int index = 0;
@@ -378,26 +388,26 @@ public final class ConfigCenterService {
         int index = 0;
         for (JsonElement element : root.getAsJsonArray(arrayKey)) {
             String id = element.isJsonPrimitive() ? element.getAsString() : element.isJsonObject() ? string(element.getAsJsonObject(), "id") : "";
-            validateId(id, arrayKey + "[" + index + "]", errors, warnings, allowTag);
+            if (allowTag && id.startsWith("#")) id = id.substring(1);
+            validateId(id, arrayKey + "[" + index + "]", errors, warnings, true);
             index++;
         }
     }
 
-    private static void validateId(String id, String label, List<String> errors, List<String> warnings, boolean allowMissing) {
-        if (id == null || id.isBlank()) { errors.add(label + " is required"); return; }
-        String normalized = id.startsWith("#") ? id.substring(1) : id;
-        ResourceLocation location = ResourceLocation.tryParse(normalized);
-        if (location == null) { errors.add(label + " is not a valid namespaced ID: " + id); return; }
-        if (allowMissing) return;
-        boolean present = ForgeRegistries.ITEMS.containsKey(location) || ForgeRegistries.ENTITY_TYPES.containsKey(location)
-                || ForgeRegistries.BLOCKS.containsKey(location) || ForgeRegistries.MOB_EFFECTS.containsKey(location);
-        if (!present) warnings.add(label + " references an unavailable registry entry and may be skipped: " + id);
+    private static void validateId(String raw, String label, List<String> errors, List<String> warnings, boolean allowMissing) {
+        if (raw == null || raw.isBlank()) { errors.add(label + " is required"); return; }
+        try { new ResourceLocation(raw.trim()); }
+        catch (Exception exception) { errors.add(label + " has invalid resource id '" + raw + "'"); }
     }
 
     private static boolean requireArray(JsonObject root, String key, List<String> errors) {
-        if (!root.has(key)) { errors.add(key + " is required"); return false; }
+        if (!root.has(key)) { root.add(key, new JsonArray()); return true; }
         if (!root.get(key).isJsonArray()) { errors.add(key + " must be an array"); return false; }
         return true;
+    }
+
+    private static void requireNumber(JsonObject root, String key, String label, List<String> errors) {
+        try { root.get(key).getAsDouble(); } catch (Exception ex) { errors.add(label + "." + key + " must be a number"); }
     }
 
     private static boolean nonEmptyArray(JsonObject root, String key) {
@@ -410,72 +420,25 @@ public final class ConfigCenterService {
     }
 
     private static JsonObject defaultModules() {
-        JsonObject root = new JsonObject();
-        root.add("inventory", bools("enabled", true, "remember_ui_state", true));
-        root.add("interactions", bools("enabled", true, "disable_in_creative", false));
-        root.add("hud", bools("enabled", true));
-        root.add("vitals", bools("custom_health_enabled", true, "stamina_enabled", true,
-                "horror_movement_enabled", true));
-        root.add("blink", bools("enabled", true));
-        root.add("scp_173", bools("enabled", true, "natural_spawn_enabled", true));
-        root.add("debug", bools("show_scp_079_energy_hud", false));
-        return root;
+        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"hud\":{\"enabled\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"blink\":{\"enabled\":true},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
     }
 
     private static JsonObject defaultInventory() {
-        JsonObject root = new JsonObject();
-        root.add("item_rules", new JsonArray());
-        root.add("item_effects", new JsonArray());
-        root.add("hidden_status_effects", new JsonArray());
-        root.add("codex_documents", new JsonArray());
-        root.add("scp_173_targets", new JsonArray());
-        return root;
+        return JsonParser.parseString("{\"item_rules\":[],\"item_effects\":[],\"hidden_status_effects\":[],\"codex_documents\":[],\"scp_173_targets\":[]}").getAsJsonObject();
     }
 
     private static JsonObject defaultContext() {
-        JsonObject root = new JsonObject();
-        root.add("interactions", new JsonArray());
-        return root;
+        return JsonParser.parseString("{\"interactions\":[]}").getAsJsonObject();
     }
 
     private static JsonObject defaultDrinks() {
-        JsonObject root = new JsonObject();
-        root.add("drinks", new JsonArray());
+        return JsonParser.parseString("{\"version\":2,\"matching\":{\"allow_partial\":true,\"fuzzy_threshold\":0.66},\"drinks\":[]}").getAsJsonObject();
+    }
+
+    private static JsonObject defaultRecipes(boolean machine) {
+        JsonObject root = JsonParser.parseString("{\"version\":2,\"recipes\":[]}").getAsJsonObject();
+        if (machine) root.add("machine", JsonParser.parseString("{\"intake_offset\":[-5,0,-3],\"output_offset\":[5,0,-3],\"search_radius\":1.5,\"start_delay_ticks\":30,\"finish_delay_ticks\":160}"));
         return root;
-    }
-
-    private static JsonObject defaultRecipes() {
-        JsonObject root = new JsonObject();
-        root.add("machine", new JsonObject());
-        root.add("recipes", new JsonArray());
-        return root;
-    }
-
-    private static JsonObject defaultRecipeFragment() {
-        JsonObject root = new JsonObject();
-        root.add("recipes", new JsonArray());
-        return root;
-    }
-
-    private static JsonObject bools(Object... values) {
-        JsonObject object = new JsonObject();
-        for (int index = 0; index + 1 < values.length; index += 2) {
-            object.addProperty(String.valueOf(values[index]), (Boolean) values[index + 1]);
-        }
-        return object;
-    }
-
-    private static List<Path> recipeFragments() throws IOException {
-        Files.createDirectories(RECIPE_FRAGMENTS);
-        try (var stream = Files.list(RECIPE_FRAGMENTS)) {
-            return stream.filter(path -> SAFE_FRAGMENT.matcher(path.getFileName().toString()).matches())
-                    .sorted().toList();
-        }
-    }
-
-    private static void rollback(Path path, byte[] bytes) throws IOException {
-        if (bytes == null) Files.deleteIfExists(path);
-        else Files.write(path, bytes);
     }
 
     private static String readable(Throwable throwable) {
@@ -483,20 +446,16 @@ public final class ConfigCenterService {
         return message == null || message.isBlank() ? throwable.getClass().getSimpleName() : message;
     }
 
-    public record Validation(List<String> errors, List<String> warnings) {
+    private record Validation(List<String> errors, List<String> warnings) {
     }
 
     public record SaveResult(boolean success, String message, JsonObject snapshot, List<String> warnings) {
-        public static SaveResult success(String message, JsonObject snapshot, List<String> warnings) {
-            return new SaveResult(true, message, snapshot, warnings == null ? List.of() : List.copyOf(warnings));
+        static SaveResult success(String message, JsonObject snapshot, List<String> warnings) {
+            return new SaveResult(true, message, snapshot, List.copyOf(warnings));
         }
 
-        public static SaveResult failure(String message) {
-            return failure(message, List.of());
-        }
-
-        public static SaveResult failure(String message, List<String> warnings) {
-            return new SaveResult(false, message, new JsonObject(), warnings == null ? List.of() : List.copyOf(warnings));
+        static SaveResult failure(String message) {
+            return new SaveResult(false, message, new JsonObject(), List.of());
         }
     }
 }

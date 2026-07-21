@@ -31,7 +31,16 @@ jobs:
             capture { sub(/^          /, ""); print }
           ' .github/workflows/apply-runtime-regression-fixes.yml > /tmp/apply_runtime_fixes.py
           test -s /tmp/apply_runtime_fixes.py
-          python /tmp/apply_runtime_fixes.py
+          if ! python /tmp/apply_runtime_fixes.py > /tmp/apply-error.txt 2>&1; then
+            cp /tmp/apply-error.txt .github/apply-runtime-error.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/apply-runtime-error.txt
+            git commit -m "Record runtime repair failure" || true
+            git push origin "HEAD:${{ github.head_ref }}" || true
+            cat /tmp/apply-error.txt
+            exit 1
+          fi
 
       - name: Build corrected port
         shell: bash

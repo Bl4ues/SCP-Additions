@@ -28,6 +28,20 @@
 - Turned the SCP-012 route into a processing contest: immediate re-opening remains possible, repeated interference becomes progressively more expensive, and SCP-079 abandons wasteful contention more readily against SCP-714 while still attempting the initial trap as a precaution;
 - Added a **Debug** section to the Configuration Center's Modules screen with an optional white upper-right SCP-079 processing HUD using the SCP-079 item icon and Roboto numerals.
 
+## Roamer spawning and developer tools
+
+- Added persistent world gamerules `173spawn` and `106spawn` for individual roamer spawn control; SCP-106 remains reported as disabled until its natural spawn scheduler is implemented;
+- Added `/disableAllRoamers` and `/enableAllRoamers`, which overwrite every registered roamer spawn gamerule, plus `/despawnAllRoamers` and expandable `/despawnRoamer <scp173|scp106>` cleanup commands;
+- Replaced SCP-173's module-level natural-spawn toggle with the `173spawn` gamerule while keeping its behavior module and target configuration separate;
+- Added an extensible roamer lifecycle manager with `DISABLED`, `CONTAINED`, `PAUSED`, `COUNTDOWN`, and `SPAWNED` states, including a future-facing containment flag;
+- Stopped spawn countdowns while any matching roamer instance is active and made a full interval begin only after the final active instance despawns naturally, dies, or is removed by command;
+- Added an optional Roboto-based upper-right **SCP Spawn Timers HUD** to Configuration Center → Modules → Debug, showing each roamer's current state, next check, successful spawn, failed chance, invalid position, and despawn-triggered timer reset;
+- Kept scheduler diagnostics event-driven: countdown animation runs client-side, packets are only sent when synchronized state changes, and entity scans remain limited to actual spawn attempts or explicit despawn commands.
+
+## Interface fixes
+
+- Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.
+
 # SCP Additions 3.0.7 — Hotfix
 
 ## Multiplayer and configuration synchronization

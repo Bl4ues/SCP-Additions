@@ -23,6 +23,7 @@
     "enabled": true
   },
   "debug": {
-    "show_scp_079_energy_hud": false
+    "show_scp_079_energy_hud": false,
+    "show_scp_spawn_timers_hud": false
   }
 }

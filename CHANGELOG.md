@@ -2,7 +2,21 @@
 
 # SCP Additions 3.0.8 — In Development
 
-Development for 3.0.8 has begun. New features and fixes will be documented here as they are implemented.
+## SCP-106
+
+- Added the initial SCP-106 entity, including its model, texture, idle and walking animations, black-and-brown spawn egg, **The Old Man** tooltip, and placement in the SCPs creative tab;
+- Added direct player pursuit at a pace slightly below player sprint speed, with frequent path refreshes and support for Creative-mode testing;
+- Added a synchronized melee attack sequence that makes SCP-106 stop moving, play its attack animation, and strike as its hand extends at approximately 0.76 seconds;
+- Made the melee strike deal 5 damage and apply Wither for five seconds;
+- Added a lightweight client-side trail of sparse black mucus-like particles while SCP-106 walks, inspired by its corrosive trail in SCP: Unity;
+- Changed the custom Health Bar to a grotesque near-black and dark-brown gradient while the player has Wither.
+
+## Entity presentation and fixes
+
+- Added the missing SCP-106 spawn egg item model;
+- Corrected SCP-106 pursuit failing to move toward players;
+- Replaced its translucent render pass with a stable cutout pass and gave zero-thickness model planes minimal depth, removing visible Z-fighting without changing its silhouette or UV layout;
+- Reduced SCP-173's rendered height to approximately two blocks.
 
 # SCP Additions 3.0.7 — Hotfix
 

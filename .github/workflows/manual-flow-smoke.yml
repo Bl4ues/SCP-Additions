@@ -1,0 +1,128 @@
+name: Manual flow smoke
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  inventory-flow:
+    if: startsWith(github.head_ref, 'fix/neoforge-1.21.1-runtime-regressions-3.0.7')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Generate survival singleplayer world
+        shell: bash
+        run: |
+          mkdir -p run/server
+          cat > run/server/eula.txt <<'EOF'
+          eula=true
+          EOF
+          cat > run/server/server.properties <<'EOF'
+          online-mode=false
+          gamemode=survival
+          force-gamemode=true
+          level-name=FlowTest
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          EOF
+          set +e
+          timeout --signal=INT --kill-after=20s 90s \
+            ./gradlew runServer --no-daemon --console=plain \
+            > flow-server.log 2>&1
+          status=$?
+          set -e
+          cat flow-server.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
+            exit "$status"
+          fi
+          grep -q 'Done (' flow-server.log
+          test -f run/server/FlowTest/level.dat
+          mkdir -p run/client/saves
+          cp -a run/server/FlowTest run/client/saves/FlowTest
+
+      - name: Open SCP inventory and capture it
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xdotool openbox imagemagick
+          mkdir -p run/client
+          cat > run/client/options.txt <<'EOF'
+          guiScale:2
+          pauseOnLostFocus:false
+          skipMultiplayerWarning:true
+          joinedFirstServer:true
+          EOF
+          set +e
+          timeout --signal=INT --kill-after=20s 180s \
+            xvfb-run -a -s '-screen 0 1920x1080x24' bash -c '
+              openbox >/tmp/openbox.log 2>&1 &
+              ./gradlew runClient --no-daemon --console=plain \
+                --args="--quickPlaySingleplayer FlowTest" \
+                > flow-client.log 2>&1 &
+              client_pid=$!
+              joined=0
+              for i in $(seq 1 150); do
+                if grep -Eqi "joined the game|Loaded [0-9]+ advancements|Starting integrated minecraft server" flow-client.log run/client/logs/latest.log 2>/dev/null; then
+                  joined=1
+                  break
+                fi
+                if ! kill -0 "$client_pid" 2>/dev/null; then
+                  wait "$client_pid"
+                  exit $?
+                fi
+                sleep 1
+              done
+              [ "$joined" -eq 1 ] || exit 91
+              sleep 12
+              window_id=$(xdotool search --onlyvisible --name "Minecraft" | tail -n 1)
+              [ -n "$window_id" ] || exit 92
+              xdotool windowactivate --sync "$window_id"
+              import -window "$window_id" survival-hud.png
+              xdotool key --window "$window_id" e
+              sleep 12
+              kill -0 "$client_pid" || { wait "$client_pid"; exit $?; }
+              import -window "$window_id" scp-inventory.png
+              grep -Eqi "The game crashed whilst|Description: Rendering screen|Exception in thread \"Render thread\"" flow-client.log run/client/logs/latest.log 2>/dev/null && exit 93
+              kill -INT "$client_pid" 2>/dev/null
+              wait "$client_pid"
+            '
+          status=$?
+          set -e
+          cat flow-client.log || true
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
+            exit "$status"
+          fi
+          test -s survival-hud.png
+          test -s scp-inventory.png
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neoforge-manual-flow-${{ github.event.pull_request.head.sha }}
+          path: |
+            survival-hud.png
+            scp-inventory.png
+            flow-server.log
+            flow-client.log
+            run/client/logs/latest.log
+            build/libs/*.jar
+          if-no-files-found: warn

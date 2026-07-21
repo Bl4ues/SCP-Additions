@@ -31,6 +31,14 @@ jobs:
             capture { sub(/^          /, ""); print }
           ' .github/workflows/apply-runtime-regression-fixes.yml > /tmp/apply_runtime_fixes.py
           test -s /tmp/apply_runtime_fixes.py
+
+          # Apply all common source fixes first. Fabric resource migration is
+          # inserted separately below because its short build.gradle has a
+          # different processResources layout from NeoForge.
+          if [[ "${{ github.head_ref }}" == fix/fabric-* ]]; then
+            sed -i 's/if branch.startswith("fix\/fabric-"):/if False:/' /tmp/apply_runtime_fixes.py
+          fi
+
           if ! python /tmp/apply_runtime_fixes.py > /tmp/apply-error.txt 2>&1; then
             cp /tmp/apply-error.txt .github/apply-runtime-error.txt
             git config user.name "github-actions[bot]"
@@ -41,6 +49,31 @@ jobs:
             cat /tmp/apply-error.txt
             exit 1
           fi
+
+          if [[ "${{ github.head_ref }}" == fix/fabric-* ]]; then
+            python <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          path = Path("build.gradle")
+          fabric = path.read_text(encoding="utf-8")
+          if 'def legacyAssets = file("$buildDir/resources/main/assets/scp_unity_extra_blocks")' not in fabric:
+              neo = subprocess.check_output(
+                  ["git", "show", "origin/neoforge-1.21.1-port-3.0.7:build.gradle"],
+                  text=True)
+              start = neo.index("    doLast {")
+              neo_end_marker = "\n    }\n}\n\ntasks.withType(JavaCompile)"
+              end = neo.index(neo_end_marker, start) + len("\n    }")
+              do_last = neo[start:end]
+
+              fabric_end_marker = "\n}\n\ntasks.withType(JavaCompile)"
+              insert_at = fabric.index(fabric_end_marker)
+              fabric = fabric[:insert_at] + "\n\n" + do_last + fabric[insert_at:]
+              path.write_text(fabric, encoding="utf-8")
+          PY
+          fi
+
+          rm -f .github/apply-runtime-error.txt
 
       - name: Build corrected port
         shell: bash

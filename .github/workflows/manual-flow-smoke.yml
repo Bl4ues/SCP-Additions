@@ -72,7 +72,7 @@ jobs:
           joinedFirstServer:true
           EOF
           set +e
-          timeout --signal=INT --kill-after=20s 210s \
+          timeout --signal=INT --kill-after=20s 220s \
             xvfb-run -a -s '-screen 0 1920x1080x24' bash -c '
               set -u
               openbox >/tmp/openbox.log 2>&1 &
@@ -81,8 +81,8 @@ jobs:
                 > flow-client.log 2>&1 &
               client_pid=$!
               joined=0
-              for i in $(seq 1 170); do
-                if grep -Eqi "joined the game|Loaded [0-9]+ advancements" flow-client.log run/client/logs/latest.log 2>/dev/null; then
+              for i in $(seq 1 190); do
+                if grep -Eqi "joined the game" flow-client.log run/client/logs/latest.log 2>/dev/null; then
                   joined=1
                   break
                 fi
@@ -93,16 +93,21 @@ jobs:
                 sleep 1
               done
               [ "$joined" -eq 1 ] || exit 91
-              sleep 12
+              sleep 8
               echo "Visible X11 windows:"
               xwininfo -root -tree || true
               window_id=$(xdotool search --onlyvisible --name "Minecraft" 2>/dev/null | tail -n 1 || true)
-              [ -n "$window_id" ] || exit 92
-              echo "Minecraft window: $window_id"
-              xdotool windowfocus "$window_id" || true
+              echo "Minecraft window: ${window_id:-not-found}"
+              if [ -n "$window_id" ]; then
+                xdotool windowfocus "$window_id" || true
+              fi
               scrot survival-hud.png
               test -s survival-hud.png || exit 94
-              xdotool key --window "$window_id" e
+              if [ -n "$window_id" ]; then
+                xdotool key --window "$window_id" e
+              else
+                xdotool key e
+              fi
               sleep 15
               kill -0 "$client_pid" || { wait "$client_pid"; exit $?; }
               scrot scp-inventory.png

@@ -45,6 +45,14 @@ jobs:
           fi
           exit "$status"
 
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics-${{ github.sha }}
+          path: build-output.log
+          if-no-files-found: error
+
       - name: Upload compiled JAR
         if: success()
         uses: actions/upload-artifact@v4

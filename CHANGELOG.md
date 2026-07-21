@@ -1,5 +1,9 @@
 # Changelog
 
+# SCP Additions 3.0.8 — In Development
+
+Development for 3.0.8 has begun. New features and fixes will be documented here as they are implemented.
+
 # SCP Additions 3.0.7 — Hotfix
 
 ## Multiplayer and configuration synchronization

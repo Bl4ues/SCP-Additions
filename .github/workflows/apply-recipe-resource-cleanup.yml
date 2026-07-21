@@ -30,38 +30,37 @@ jobs:
 
           path = Path('build.gradle')
           text = path.read_text(encoding='utf-8')
-          exclusion_lines = [
-              "// 1.21 datapacks use singular recipe/. These generated legacy",
-              "// recipes target removed per-level public reader items; readers are now",
-              "// configured in-world through the unified reader and screwdriver.",
-              "exclude('data/scp_additions/recipe/lv_*_kr_right.json')",
-              "exclude('data/scp_additions/recipe/lv_*_lto_r.json')",
-              "exclude('data/scp_additions/recipe/lv_*_rto_l.json')",
-              "exclude('data/scp_additions/recipe/lv_2_kr_left.json')",
-              "exclude('data/scp_additions/recipe/lv_3_kr_left.json')",
-              "exclude('data/scp_additions/recipe/lv_4_kr_left.json')",
-              "exclude('data/scp_additions/recipe/lv_5_kr_left.json')",
-              "exclude('data/scp_additions/recipe/lv_6_kr_left.json')",
-              "exclude('data/scp_additions/recipe/spray_recipe.json')",
-              "exclude('data/scp_additions/recipe/button_left_swap.json')",
-              "exclude('data/scp_additions/recipe/button_right_swap.json')",
-          ]
-          exclusions = ''.join(f'    {line}\n' for line in exclusion_lines)
-          if "exclude('data/scp_additions/recipe/lv_2_kr_left.json')" in text:
-              raise SystemExit('Recipe cleanup is already present')
-
-          plural = (
-              "    exclude('data/scp_additions/recipes/button_left_swap.json')\n"
-              "    exclude('data/scp_additions/recipes/button_right_swap.json')\n"
-          )
-          if plural in text:
-              text = text.replace(plural, exclusions, 1)
-          else:
-              marker = "    exclude('src/generated/**/.cache')\n"
-              if marker not in text:
-                  raise SystemExit('Resource exclusion insertion point not found')
-              text = text.replace(marker, marker + exclusions, 1)
-          path.write_text(text, encoding='utf-8')
+          sentinel = "exclude('data/scp_additions/recipe/lv_2_kr_left.json')"
+          if sentinel not in text:
+              lines = [
+                  "// 1.21 datapacks use singular recipe/. These generated legacy",
+                  "// recipes target removed per-level public reader items; readers are now",
+                  "// configured in-world through the unified reader and screwdriver.",
+                  "exclude('data/scp_additions/recipe/lv_*_kr_right.json')",
+                  "exclude('data/scp_additions/recipe/lv_*_lto_r.json')",
+                  "exclude('data/scp_additions/recipe/lv_*_rto_l.json')",
+                  "exclude('data/scp_additions/recipe/lv_2_kr_left.json')",
+                  "exclude('data/scp_additions/recipe/lv_3_kr_left.json')",
+                  "exclude('data/scp_additions/recipe/lv_4_kr_left.json')",
+                  "exclude('data/scp_additions/recipe/lv_5_kr_left.json')",
+                  "exclude('data/scp_additions/recipe/lv_6_kr_left.json')",
+                  "exclude('data/scp_additions/recipe/spray_recipe.json')",
+                  "exclude('data/scp_additions/recipe/button_left_swap.json')",
+                  "exclude('data/scp_additions/recipe/button_right_swap.json')",
+              ]
+              exclusions = ''.join(f'    {line}\n' for line in lines)
+              plural = (
+                  "    exclude('data/scp_additions/recipes/button_left_swap.json')\n"
+                  "    exclude('data/scp_additions/recipes/button_right_swap.json')\n"
+              )
+              if plural in text:
+                  text = text.replace(plural, exclusions, 1)
+              else:
+                  marker = "    exclude('src/generated/**/.cache')\n"
+                  if marker not in text:
+                      raise SystemExit('Resource exclusion insertion point not found')
+                  text = text.replace(marker, marker + exclusions, 1)
+              path.write_text(text, encoding='utf-8')
           PY
 
       - name: Build and inspect packaged recipes
@@ -74,9 +73,13 @@ jobs:
           ! jar tf "$JAR" | grep -Eq '^data/scp_additions/recipe/(lv_[2-6]_kr_left|lv_.*_(kr_right|lto_r|rto_l)|spray_recipe|button_(left|right)_swap)\.json$'
           jar tf "$JAR" | grep -q '^data/scp_additions/recipe/lv_1_kr_left.json$'
 
-      - name: Commit cleanup
+      - name: Commit cleanup when changed
         shell: bash
         run: |
+          if git diff --quiet -- build.gradle; then
+            echo 'Recipe exclusions already present.'
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add build.gradle

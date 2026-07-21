@@ -11,6 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.entity.Scp106Entity;
 import net.mcreator.scpadditions.entity.Scp131AEntity;
 import net.mcreator.scpadditions.entity.Scp131BEntity;
 import net.mcreator.scpadditions.entity.Scp173Entity;
@@ -18,6 +19,10 @@ import net.mcreator.scpadditions.entity.Scp173Entity;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModEntities {
 	public static final DeferredRegister<EntityType<?>> REGISTRY = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, ScpAdditionsMod.MODID);
+
+	public static final RegistryObject<EntityType<Scp106Entity>> SCP_106 = REGISTRY.register("scp_106",
+			() -> EntityType.Builder.of(Scp106Entity::new, MobCategory.MONSTER)
+					.sized(0.90F, 2.00F).clientTrackingRange(12).updateInterval(2).build("scp_106"));
 
 	public static final RegistryObject<EntityType<Scp131AEntity>> SCP_131_A = REGISTRY.register("scp_131_a",
 			() -> EntityType.Builder.of(Scp131AEntity::new, MobCategory.CREATURE)
@@ -33,6 +38,7 @@ public class ScpAdditionsModEntities {
 
 	@SubscribeEvent
 	public static void createAttributes(EntityAttributeCreationEvent event) {
+		event.put(SCP_106.get(), Scp106Entity.createAttributes().build());
 		event.put(SCP_131_A.get(), AbstractScp131Entity.createAttributes().build());
 		event.put(SCP_131_B.get(), AbstractScp131Entity.createAttributes().build());
 		event.put(SCP_173.get(), Scp173Entity.createAttributes()

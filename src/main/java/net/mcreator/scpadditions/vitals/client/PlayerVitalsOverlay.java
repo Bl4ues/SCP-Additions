@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffects;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.vitals.VitalsModule;
@@ -38,6 +39,8 @@ public final class PlayerVitalsOverlay {
     private static final int HAZMAT_STAMINA_RIGHT = 0xFFE04A3F;
     private static final int BLEEDING_HEALTH_LEFT = 0xCC5A080C;
     private static final int BLEEDING_HEALTH_RIGHT = 0xFFF02632;
+    private static final int WITHER_HEALTH_LEFT = 0xF0060403;
+    private static final int WITHER_HEALTH_RIGHT = 0xFF2A170E;
     private static final int FLASH_RED = 0xFFE01010;
 
     private PlayerVitalsOverlay() {
@@ -72,12 +75,15 @@ public final class PlayerVitalsOverlay {
             float health = Math.max(0.0F, player.getHealth());
             float maxHealth = Math.max(1.0F, player.getMaxHealth());
             float healthRatio = Math.max(0.0F, Math.min(1.0F, health / maxHealth));
+            boolean withered = player.hasEffect(MobEffects.WITHER);
             boolean bleeding = player.hasEffect(
                     ScpAdditionsModMobEffects.BLEEDING.get());
-            int healthColor = bleeding
-                    ? BLEEDING_HEALTH_RIGHT : getHealthColor(healthRatio);
-            int healthDark = bleeding
-                    ? BLEEDING_HEALTH_LEFT : darken(healthColor, 0.62F);
+            int healthColor = withered
+                    ? WITHER_HEALTH_RIGHT
+                    : bleeding ? BLEEDING_HEALTH_RIGHT : getHealthColor(healthRatio);
+            int healthDark = withered
+                    ? WITHER_HEALTH_LEFT
+                    : bleeding ? BLEEDING_HEALTH_LEFT : darken(healthColor, 0.62F);
 
             drawBar(graphics, BAR_X, rowY, BAR_WIDTH, BAR_HEIGHT,
                     healthRatio, healthDark, healthColor,

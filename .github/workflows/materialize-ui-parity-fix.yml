@@ -1,4 +1,4 @@
-name: Materialize Fabric UI parity fix
+name: Materialize Fabric parity fix
 
 on:
   push:
@@ -15,7 +15,7 @@ env:
   TARGET_BRANCH: fix/fabric-1.21.1-parity-3.0.7
 
 jobs:
-  patch-build-and-validate:
+  restore-build-and-validate:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -31,95 +31,39 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Restore 1.20.1 UI presentation parity
-        shell: bash
+      - name: Fetch parity references
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          git fetch origin master:refs/remotes/origin/master
+          git fetch origin neoforge-1.21.1-port-3.0.7:refs/remotes/origin/neoforge-1.21.1-port-3.0.7
 
-          inventory = Path('src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java')
-          source = inventory.read_text(encoding='utf-8')
-          old = '        renderBackground(g, mouseX, mouseY, partialTick);'
-          new = '        // Preserve the sharp 1.20.1 inventory presentation; the 1.21 background helper applies world blur.\n        renderTransparentBackground(g);'
-          if old not in source and new not in source:
-              raise SystemExit('Expected ScpInventoryScreen render background call was not found')
-          source = source.replace(old, new, 1)
-          inventory.write_text(source, encoding='utf-8')
-
-          vitals = Path('src/main/java/net/mcreator/scpadditions/vitals/client/PlayerVitalsOverlay.java')
-          source = vitals.read_text(encoding='utf-8')
-          constants_old = '    private static final int BAR_GAP = 18;'
-          constants_new = '''    private static final int BAR_GAP = 18;
-    // 360 GUI pixels corresponds to the established 1.20.1 presentation at 720p / GUI scale 2.
-    // Scaling from GUI height keeps the physical HUD size stable when the 1.21 client selects another GUI scale.
-    private static final float REFERENCE_GUI_HEIGHT = 360.0F;
-    private static final float MIN_HUD_SCALE = 0.50F;
-    private static final float MAX_HUD_SCALE = 2.00F;'''
-          if 'REFERENCE_GUI_HEIGHT' not in source:
-              if constants_old not in source:
-                  raise SystemExit('Expected PlayerVitalsOverlay constants anchor was not found')
-              source = source.replace(constants_old, constants_new, 1)
-
-          row_old = '        int rowY = screenHeight - BOTTOM_MARGIN;'
-          row_new = '''        float hudScale = Math.max(MIN_HUD_SCALE,
-                Math.min(MAX_HUD_SCALE, screenHeight / REFERENCE_GUI_HEIGHT));
-        int logicalScreenHeight = Math.max(1, Math.round(screenHeight / hudScale));
-        graphics.pose().pushPose();
-        graphics.pose().scale(hudScale, hudScale, 1.0F);
-
-        int rowY = logicalScreenHeight - BOTTOM_MARGIN;'''
-          if 'int logicalScreenHeight' not in source:
-              if row_old not in source:
-                  raise SystemExit('Expected PlayerVitalsOverlay row anchor was not found')
-              source = source.replace(row_old, row_new, 1)
-
-          end_old = '''            graphics.drawString(minecraft.font, healthText,
-                    BAR_X + 6, rowY + 3, TEXT, false);
-        }
-    }
-
-    private static void drawBar'''
-          end_new = '''            graphics.drawString(minecraft.font, healthText,
-                    BAR_X + 6, rowY + 3, TEXT, false);
-        }
-
-        graphics.pose().popPose();
-    }
-
-    private static void drawBar'''
-          if 'graphics.pose().popPose();\n    }\n\n    private static void drawBar' not in source:
-              if end_old not in source:
-                  raise SystemExit('Expected PlayerVitalsOverlay method end anchor was not found')
-              source = source.replace(end_old, end_new, 1)
-          vitals.write_text(source, encoding='utf-8')
-          PY
+      - name: Restore presentation and feature parity
+        run: python3 tools/port_1_21/restore_master_parity.py --loader fabric
 
       - name: Build Fabric source
         run: |
           chmod +x gradlew
           ./gradlew clean build --no-daemon --stacktrace
 
-      - name: Validate complete feature surface against master
+      - name: Validate complete feature and data surface
         run: python3 scripts/validate_port_feature_parity.py --base-ref origin/master
 
-      - name: Commit validated fix
+      - name: Commit validated parity restoration
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java \
-                  src/main/java/net/mcreator/scpadditions/vitals/client/PlayerVitalsOverlay.java
+          git add build.gradle config scripts src tools
           if git diff --cached --quiet; then
-            echo 'UI parity fix is already materialized.'
+            echo 'Fabric parity restoration is already materialized.'
           else
-            git commit -m 'Fix Fabric inventory blur and HUD scaling [skip ci]'
+            git commit -m 'Restore Fabric 1.21.1 feature and UI parity [skip ci]'
             git push origin HEAD:${{ env.TARGET_BRANCH }}
           fi
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fabric-ui-parity-validation
+          name: fabric-parity-materialization
           path: |
             build/libs/*.jar
             build/reports/port-parity/report.json

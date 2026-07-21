@@ -1,0 +1,731 @@
+name: Apply runtime regression fixes
+
+on:
+  push:
+    branches:
+      - fix/neoforge-1.21.1-runtime-regressions-3.0.7
+      - fix/fabric-1.21.1-runtime-regressions-3.0.7
+    paths:
+      - .github/workflows/apply-runtime-regression-fixes.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Apply targeted fixes
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import subprocess
+          import textwrap
+
+          def read(path):
+              return Path(path).read_text(encoding="utf-8")
+
+          def write(path, text):
+              Path(path).parent.mkdir(parents=True, exist_ok=True)
+              Path(path).write_text(text, encoding="utf-8")
+
+          def replace(path, old, new, count=1):
+              text = read(path)
+              found = text.count(old)
+              if found < count:
+                  raise SystemExit(f"{path}: expected at least {count} occurrence(s), found {found}: {old[:120]!r}")
+              text = text.replace(old, new, count)
+              write(path, text)
+
+          helper = textwrap.dedent("""\
+          package com.bl4ues.scpinventory.client;
+
+          import net.minecraft.client.Minecraft;
+
+          /**
+           * Keeps SCP Unity UI elements at the same physical size used by the
+           * Forge 1.20.1 edition, whose reference presentation uses GUI scale 2.
+           */
+          public final class ReferenceGuiScale {
+              private static final double REFERENCE_GUI_SCALE = 2.0D;
+
+              private ReferenceGuiScale() {
+              }
+
+              public static float factor(Minecraft minecraft) {
+                  if (minecraft == null || minecraft.getWindow() == null) {
+                      return 1.0F;
+                  }
+                  double currentScale = Math.max(1.0D,
+                          minecraft.getWindow().getGuiScale());
+                  return (float) (REFERENCE_GUI_SCALE / currentScale);
+              }
+
+              public static int logicalSize(int guiSize, float factor) {
+                  return Math.max(1, Math.round(guiSize
+                          / Math.max(0.0001F, factor)));
+              }
+          }
+          """)
+          write("src/main/java/com/bl4ues/scpinventory/client/ReferenceGuiScale.java", helper)
+
+          # Health/stamina HUD: normalize against Minecraft's actual GUI scale.
+          path = "src/main/java/net/mcreator/scpadditions/vitals/client/PlayerVitalsOverlay.java"
+          text = read(path)
+          if "import com.bl4ues.scpinventory.client.ReferenceGuiScale;" not in text:
+              text = text.replace(
+                  "import com.mojang.blaze3d.systems.RenderSystem;\n",
+                  "import com.mojang.blaze3d.systems.RenderSystem;\n"
+                  "import com.bl4ues.scpinventory.client.ReferenceGuiScale;\n",
+                  1)
+          text = text.replace(
+              "    // The established presentation corresponds to 360 GUI pixels (720p at GUI scale 2).\n"
+              "    // Normalizing to that height prevents Minecraft 1.21's auto-selected GUI scale from\n"
+              "    // making the physical HUD drastically larger or smaller than the Forge edition.\n"
+              "    private static final float REFERENCE_GUI_HEIGHT = 360.0F;\n"
+              "    private static final float MIN_HUD_SCALE = 0.50F;\n"
+              "    private static final float MAX_HUD_SCALE = 2.00F;\n",
+              "")
+          old = """        float hudScale = Math.max(MIN_HUD_SCALE,
+                          Math.min(MAX_HUD_SCALE, screenHeight / REFERENCE_GUI_HEIGHT));
+                  int logicalScreenHeight = Math.max(1, Math.round(screenHeight / hudScale));
+                  graphics.pose().pushPose();
+                  graphics.pose().scale(hudScale, hudScale, 1.0F);
+
+                  int rowY = logicalScreenHeight - BOTTOM_MARGIN;
+          """
+          new = """        float uiScale = ReferenceGuiScale.factor(minecraft);
+                  int logicalScreenHeight = ReferenceGuiScale.logicalSize(
+                          screenHeight, uiScale);
+                  graphics.pose().pushPose();
+                  graphics.pose().scale(uiScale, uiScale, 1.0F);
+
+                  int rowY = logicalScreenHeight - BOTTOM_MARGIN;
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: HUD scale block not found")
+          text = text.replace(old, new, 1)
+          write(path, text)
+
+          # Timed equipment bar uses the same physical reference scale.
+          path = "src/main/java/net/mcreator/scpadditions/client/EquipmentProgressOverlay.java"
+          text = read(path)
+          if "import com.bl4ues.scpinventory.client.ReferenceGuiScale;" not in text:
+              text = text.replace(
+                  "import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;\n",
+                  "import com.bl4ues.scpinventory.client.ReferenceGuiScale;\n"
+                  "import com.bl4ues.scpinventory.client.gui.ScpInventoryScreen;\n",
+                  1)
+          old = """        int x = (screenWidth - BAR_WIDTH) / 2;
+                  int y = screenHeight - BOTTOM_OFFSET;
+                  drawBar(graphics, x, y, BAR_WIDTH, BAR_HEIGHT, ratio);
+          """
+          new = """        float uiScale = ReferenceGuiScale.factor(minecraft);
+                  int logicalWidth = ReferenceGuiScale.logicalSize(
+                          screenWidth, uiScale);
+                  int logicalHeight = ReferenceGuiScale.logicalSize(
+                          screenHeight, uiScale);
+                  graphics.pose().pushPose();
+                  graphics.pose().scale(uiScale, uiScale, 1.0F);
+                  int x = (logicalWidth - BAR_WIDTH) / 2;
+                  int y = logicalHeight - BOTTOM_OFFSET;
+                  drawBar(graphics, x, y, BAR_WIDTH, BAR_HEIGHT, ratio);
+                  graphics.pose().popPose();
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: progress render block not found")
+          write(path, text.replace(old, new, 1))
+
+          # Context prompt: correct world-to-screen handedness, reject behind-camera
+          # targets and render at the 1.20.1 reference GUI scale.
+          path = "src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java"
+          text = read(path)
+          old = """        ScreenPoint point = projectToScreen(mc, target.anchor(), screenWidth, screenHeight);
+                  if (point == null) {
+                      point = new ScreenPoint(screenWidth / 2, screenHeight - 28);
+                  }
+
+                  int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
+                  int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
+
+                  int iconX = screenX - (ICON_SIZE / 2) - 3;
+                  int iconY = screenY - (ICON_SIZE / 2) + 8;
+                  int textX = iconX + ICON_SIZE + 4;
+                  int actionY = iconY + 22;
+                  int nameY = actionY + 32;
+
+                  int textWidth = target.maxTextWidth(mc);
+                  if (textWidth > 0 && textX + textWidth > screenWidth - 8) {
+                      textX = Math.max(8, screenWidth - textWidth - 8);
+                      iconX = Math.max(6, textX - ICON_SIZE - 4);
+                  }
+                  if (iconX < 6) {
+                      iconX = 6;
+                      textX = iconX + ICON_SIZE + 4;
+                  }
+                  if (iconY < 6) {
+                      iconY = 6;
+                      actionY = iconY + 22;
+                      nameY = actionY + 32;
+                  }
+                  if (iconY + ICON_SIZE > screenHeight - 6) {
+                      iconY = screenHeight - ICON_SIZE - 6;
+                      actionY = iconY + 22;
+                      nameY = actionY + 32;
+                  }
+
+                  drawIcon(g, target.icon(), iconX, iconY);
+                  if (target.showAction()) {
+                      drawScaledString(g, mc, target.action(), textX, actionY, ACTION_TEXT_SCALE, TEXT_GRAY);
+                  }
+                  if (target.showName()) {
+                      drawScaledString(g, mc, target.name(), textX, target.showAction() ? nameY : actionY + 14, NAME_TEXT_SCALE, TEXT_WHITE);
+                  }
+          """
+          new = """        float uiScale = ReferenceGuiScale.factor(mc);
+                  int logicalWidth = ReferenceGuiScale.logicalSize(
+                          screenWidth, uiScale);
+                  int logicalHeight = ReferenceGuiScale.logicalSize(
+                          screenHeight, uiScale);
+                  ScreenPoint point = projectToScreen(mc, target.anchor(),
+                          logicalWidth, logicalHeight);
+                  if (point == null) {
+                      return;
+                  }
+
+                  g.pose().pushPose();
+                  g.pose().scale(uiScale, uiScale, 1.0F);
+
+                  int screenX = Mth.clamp(point.x(), 28, logicalWidth - 28);
+                  int screenY = Mth.clamp(point.y(), 28, logicalHeight - 28);
+
+                  int iconX = screenX - (ICON_SIZE / 2) - 3;
+                  int iconY = screenY - (ICON_SIZE / 2) + 8;
+                  int textX = iconX + ICON_SIZE + 4;
+                  int actionY = iconY + 22;
+                  int nameY = actionY + 32;
+
+                  int textWidth = target.maxTextWidth(mc);
+                  if (textWidth > 0 && textX + textWidth > logicalWidth - 8) {
+                      textX = Math.max(8, logicalWidth - textWidth - 8);
+                      iconX = Math.max(6, textX - ICON_SIZE - 4);
+                  }
+                  if (iconX < 6) {
+                      iconX = 6;
+                      textX = iconX + ICON_SIZE + 4;
+                  }
+                  if (iconY < 6) {
+                      iconY = 6;
+                      actionY = iconY + 22;
+                      nameY = actionY + 32;
+                  }
+                  if (iconY + ICON_SIZE > logicalHeight - 6) {
+                      iconY = logicalHeight - ICON_SIZE - 6;
+                      actionY = iconY + 22;
+                      nameY = actionY + 32;
+                  }
+
+                  drawIcon(g, target.icon(), iconX, iconY);
+                  if (target.showAction()) {
+                      drawScaledString(g, mc, target.action(), textX, actionY,
+                              ACTION_TEXT_SCALE, TEXT_GRAY);
+                  }
+                  if (target.showName()) {
+                      drawScaledString(g, mc, target.name(), textX,
+                              target.showAction() ? nameY : actionY + 14,
+                              NAME_TEXT_SCALE, TEXT_WHITE);
+                  }
+                  g.pose().popPose();
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: context render block not found")
+          text = text.replace(old, new, 1)
+          old = """        double dot = direction.dot(look);
+                  double centerPenalty;
+                  if (dot > 0.0D) {
+                      double alongRay = toPoint.dot(look);
+                      Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+                      centerPenalty = closest.distanceToSqr(point);
+                  } else {
+                      centerPenalty = 0.58D * 0.58D + ((1.0D - dot) * 0.35D);
+                  }
+
+                  return centerPenalty + (distance * 0.035D) - (priority * 0.01D) - (directHit ? 0.35D : 0.0D);
+          """
+          new = """        double dot = direction.dot(look);
+                  if (dot <= 0.0D) {
+                      return Double.MAX_VALUE;
+                  }
+                  double alongRay = toPoint.dot(look);
+                  Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+                  double centerPenalty = closest.distanceToSqr(point);
+
+                  return centerPenalty + (distance * 0.035D)
+                          - (priority * 0.01D) - (directHit ? 0.35D : 0.0D);
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: context scoring block not found")
+          text = text.replace(old, new, 1)
+          old = """        double z = transformed.z();
+                  double depth = Math.abs(z);
+                  if (depth < 0.05D) return null;
+
+                  double fov = mc.options.fov().get();
+                  double scale = screenHeight / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+
+                  int x = (int) Math.round((screenWidth / 2.0D) - (transformed.x() * scale / depth));
+                  int y;
+                  if (z < 0.0D) {
+                      y = screenHeight - 28;
+                  } else {
+                      y = (int) Math.round((screenHeight / 2.0D) - (transformed.y() * scale / depth));
+                  }
+                  return new ScreenPoint(x, y);
+          """
+          new = """        double depth = -transformed.z();
+                  if (depth < 0.05D) return null;
+
+                  double fov = mc.options.fov().get();
+                  double scale = screenHeight
+                          / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+
+                  int x = (int) Math.round((screenWidth / 2.0D)
+                          + (transformed.x() * scale / depth));
+                  int y = (int) Math.round((screenHeight / 2.0D)
+                          - (transformed.y() * scale / depth));
+                  return new ScreenPoint(x, y);
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: context projection block not found")
+          write(path, text.replace(old, new, 1))
+
+          # Dropped-item prompt uses the same corrected projection and scale.
+          path = "src/main/java/com/bl4ues/scpinventory/client/PickupPromptClient.java"
+          text = read(path)
+          old = """        ScreenPoint point = projectToScreen(mc, target.getBoundingBox().getCenter().add(0.0D, -0.08D, 0.0D), screenWidth, screenHeight);
+                  if (point == null) {
+                      point = new ScreenPoint(screenWidth / 2, screenHeight / 2);
+                  }
+
+                  int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
+                  int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
+
+                  int iconX = screenX - (ICON_SIZE / 2) - 3;
+                  int iconY = screenY - (ICON_SIZE / 2) + 8;
+                  int textX = iconX + ICON_SIZE + 4;
+                  int pickupY = iconY + 22;
+                  int itemY = pickupY + 32;
+
+                  int itemWidth = Math.round(mc.font.width(ScpFonts.roboto(target.getItem().getHoverName().getString())) * ITEM_TEXT_SCALE);
+                  if (textX + itemWidth > screenWidth - 8) {
+                      textX = Math.max(8, screenWidth - itemWidth - 8);
+                      iconX = Math.max(6, textX - ICON_SIZE - 4);
+                  }
+                  if (iconX < 6) {
+                      iconX = 6;
+                      textX = iconX + ICON_SIZE + 4;
+                  }
+                  if (iconY < 6) {
+                      iconY = 6;
+                      pickupY = iconY + 22;
+                      itemY = pickupY + 32;
+                  }
+                  if (iconY + ICON_SIZE > screenHeight - 6) {
+                      iconY = screenHeight - ICON_SIZE - 6;
+                      pickupY = iconY + 22;
+                      itemY = pickupY + 32;
+                  }
+
+                  drawIcon(g, iconX, iconY);
+                  drawScaledString(g, mc, "Pickup", textX, pickupY, PICKUP_TEXT_SCALE, TEXT_GRAY);
+                  drawScaledString(g, mc, target.getItem().getHoverName().getString(), textX, itemY, ITEM_TEXT_SCALE, TEXT_WHITE);
+          """
+          new = """        float uiScale = ReferenceGuiScale.factor(mc);
+                  int logicalWidth = ReferenceGuiScale.logicalSize(
+                          screenWidth, uiScale);
+                  int logicalHeight = ReferenceGuiScale.logicalSize(
+                          screenHeight, uiScale);
+                  ScreenPoint point = projectToScreen(mc,
+                          target.getBoundingBox().getCenter().add(0.0D, -0.08D, 0.0D),
+                          logicalWidth, logicalHeight);
+                  if (point == null) {
+                      return;
+                  }
+
+                  g.pose().pushPose();
+                  g.pose().scale(uiScale, uiScale, 1.0F);
+
+                  int screenX = Mth.clamp(point.x(), 28, logicalWidth - 28);
+                  int screenY = Mth.clamp(point.y(), 28, logicalHeight - 28);
+
+                  int iconX = screenX - (ICON_SIZE / 2) - 3;
+                  int iconY = screenY - (ICON_SIZE / 2) + 8;
+                  int textX = iconX + ICON_SIZE + 4;
+                  int pickupY = iconY + 22;
+                  int itemY = pickupY + 32;
+
+                  int itemWidth = Math.round(mc.font.width(ScpFonts.roboto(
+                          target.getItem().getHoverName().getString()))
+                          * ITEM_TEXT_SCALE);
+                  if (textX + itemWidth > logicalWidth - 8) {
+                      textX = Math.max(8, logicalWidth - itemWidth - 8);
+                      iconX = Math.max(6, textX - ICON_SIZE - 4);
+                  }
+                  if (iconX < 6) {
+                      iconX = 6;
+                      textX = iconX + ICON_SIZE + 4;
+                  }
+                  if (iconY < 6) {
+                      iconY = 6;
+                      pickupY = iconY + 22;
+                      itemY = pickupY + 32;
+                  }
+                  if (iconY + ICON_SIZE > logicalHeight - 6) {
+                      iconY = logicalHeight - ICON_SIZE - 6;
+                      pickupY = iconY + 22;
+                      itemY = pickupY + 32;
+                  }
+
+                  drawIcon(g, iconX, iconY);
+                  drawScaledString(g, mc, "Pickup", textX, pickupY,
+                          PICKUP_TEXT_SCALE, TEXT_GRAY);
+                  drawScaledString(g, mc,
+                          target.getItem().getHoverName().getString(),
+                          textX, itemY, ITEM_TEXT_SCALE, TEXT_WHITE);
+                  g.pose().popPose();
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: pickup render block not found")
+          text = text.replace(old, new, 1)
+          old = """        double depth = Math.abs(transformed.z());
+                  if (depth < 0.05D) return null;
+
+                  double fov = mc.options.fov().get();
+                  double scale = screenHeight / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+
+                  int x = (int) Math.round((screenWidth / 2.0D) - (transformed.x() * scale / depth));
+                  int y = (int) Math.round((screenHeight / 2.0D) - (transformed.y() * scale / depth));
+                  return new ScreenPoint(x, y);
+          """
+          new = """        double depth = -transformed.z();
+                  if (depth < 0.05D) return null;
+
+                  double fov = mc.options.fov().get();
+                  double scale = screenHeight
+                          / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+
+                  int x = (int) Math.round((screenWidth / 2.0D)
+                          + (transformed.x() * scale / depth));
+                  int y = (int) Math.round((screenHeight / 2.0D)
+                          - (transformed.y() * scale / depth));
+                  return new ScreenPoint(x, y);
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: pickup projection block not found")
+          write(path, text.replace(old, new, 1))
+
+          # Never call the 1.21 Screen background helpers: both can invoke the
+          # post-process blur. Draw the same dark world backdrop directly.
+          path = "src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java"
+          text = read(path)
+          old = """        // Preserve the sharp 1.20.1 inventory presentation; the 1.21 helper blurs the world.
+                  renderTransparentBackground(g);
+          """
+          new = """        renderSharpWorldBackdrop(g);
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: blurred background call not found")
+          text = text.replace(old, new, 1)
+          marker = """    private void renderPreviewBackgroundDim(GuiGraphics g) {
+          """
+          method = """    private void renderSharpWorldBackdrop(GuiGraphics g) {
+                  g.fill(0, 0, width, height, 0xA8000000);
+              }
+
+          """
+          if method not in text:
+              if marker not in text:
+                  raise SystemExit(f"{path}: backdrop insertion marker missing")
+              text = text.replace(marker, method + marker, 1)
+          write(path, text)
+
+          # 1.21 datapacks renamed structures/ to structure/.
+          path = "src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java"
+          replace(path,
+                  'private static final String STRUCTURE_RESOURCE = "/data/scp_additions/structures/scp_914_full.nbt";',
+                  'private static final String STRUCTURE_RESOURCE = "/data/scp_additions/structure/scp_914_full.nbt";')
+
+          # Creative tab must deduplicate resolved Items, not Supplier instances.
+          path = "src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java"
+          text = read(path)
+          if "import java.util.IdentityHashMap;" not in text:
+              text = text.replace("import java.util.Collections;\n",
+                                  "import java.util.Collections;\n"
+                                  "import java.util.IdentityHashMap;\n", 1)
+          if "import java.util.Set;" not in text:
+              text = text.replace("import java.util.Map;\n",
+                                  "import java.util.Map;\n"
+                                  "import java.util.Set;\n", 1)
+          fabric_lambda = """                    .displayItems((parameters, output) ->
+                                      creativeItemsInDisplayOrder().stream()
+                                              .filter(item -> item.get() != BUTTON_CLOSED.get().asItem()
+                                                      && item.get() != BUTTON_LOCKED.get().asItem())
+                                              .forEach(item -> output.accept(item.get())))
+          """
+          fabric_replacement = """                    .displayItems((parameters, output) -> {
+                                      Set<Item> seen = Collections.newSetFromMap(
+                                              new IdentityHashMap<>());
+                                      creativeItemsInDisplayOrder().stream()
+                                              .map(Supplier::get)
+                                              .filter(item -> item != BUTTON_CLOSED.get().asItem()
+                                                      && item != BUTTON_LOCKED.get().asItem())
+                                              .filter(seen::add)
+                                              .forEach(output::accept);
+                                  })
+          """
+          neo_lambda = """                    .displayItems((parameters, output) ->
+                                      creativeItemsInDisplayOrder().forEach(item -> output.accept(item.get())))
+          """
+          neo_replacement = """                    .displayItems((parameters, output) -> {
+                                      Set<Item> seen = Collections.newSetFromMap(
+                                              new IdentityHashMap<>());
+                                      creativeItemsInDisplayOrder().stream()
+                                              .map(Supplier::get)
+                                              .filter(seen::add)
+                                              .forEach(output::accept);
+                                  })
+          """
+          if fabric_lambda in text:
+              text = text.replace(fabric_lambda, fabric_replacement, 1)
+          elif neo_lambda in text:
+              text = text.replace(neo_lambda, neo_replacement, 1)
+          else:
+              raise SystemExit(f"{path}: creative tab lambda not found")
+          old = """    private static void addUnique(List<Supplier<Item>> ordered, Supplier<Item> item) {
+                  if (!ordered.contains(item)) ordered.add(item);
+              }
+          """
+          new = """    private static void addUnique(List<Supplier<Item>> ordered,
+                      Supplier<Item> item) {
+                  Item candidate = item.get();
+                  for (Supplier<Item> existing : ordered) {
+                      if (existing.get() == candidate) {
+                          return;
+                      }
+                  }
+                  ordered.add(item);
+              }
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: addUnique block not found")
+          write(path, text.replace(old, new, 1))
+
+          # SCP-012: force client state clear across the death/respawn entity swap
+          # and briefly suppress immediate reacquisition.
+          path = "src/main/java/net/mcreator/scpadditions/scp012/Scp012InfluenceEvents.java"
+          text = read(path)
+          text = text.replace(
+              "    private static final int FATAL_CONTACT_TICKS = 15 * 20;\n",
+              "    private static final int FATAL_CONTACT_TICKS = 15 * 20;\n"
+              "    private static final int RESPAWN_GRACE_TICKS = 40;\n", 1)
+          text = text.replace(
+              "    private static final Map<UUID, Long> NEXT_TARGET_SEARCH = new HashMap<>();\n",
+              "    private static final Map<UUID, Long> NEXT_TARGET_SEARCH = new HashMap<>();\n"
+              "    private static final Map<UUID, Integer> LAST_ENTITY_IDS = new HashMap<>();\n"
+              "    private static final Map<UUID, Long> RESPAWN_GRACE_UNTIL = new HashMap<>();\n", 1)
+          old = """        if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                      clearAll(player);
+                      return;
+                  }
+
+                  ServerLevel level = player.serverLevel();
+                  BlockPos nearby = findNearby(level, player);
+          """
+          new = """        UUID playerId = player.getUUID();
+                  ServerLevel level = player.serverLevel();
+                  Integer previousEntityId = LAST_ENTITY_IDS.put(
+                          playerId, player.getId());
+                  if (previousEntityId != null
+                          && previousEntityId.intValue() != player.getId()) {
+                      clearAll(player);
+                      RESPAWN_GRACE_UNTIL.put(playerId,
+                              level.getGameTime() + RESPAWN_GRACE_TICKS);
+                      forceClientClear(player);
+                  }
+
+                  if (!player.isAlive() || player.isCreative()
+                          || player.isSpectator()) {
+                      clearAll(player);
+                      return;
+                  }
+
+                  Long graceUntil = RESPAWN_GRACE_UNTIL.get(playerId);
+                  if (graceUntil != null) {
+                      if (level.getGameTime() < graceUntil) {
+                          clearInfluence(player);
+                          return;
+                      }
+                      RESPAWN_GRACE_UNTIL.remove(playerId);
+                  }
+
+                  BlockPos nearby = findNearby(level, player);
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: player tick prelude not found")
+          text = text.replace(old, new, 1)
+          marker = """    private static void clearInfluence(ServerPlayer player) {
+          """
+          method = """    private static void forceClientClear(ServerPlayer player) {
+                  ScpEntityNetwork.syncScp012Influence(player, false,
+                          BlockPos.ZERO, 0.0F, false);
+              }
+
+          """
+          if method not in text:
+              if marker not in text:
+                  raise SystemExit(f"{path}: clear helper marker missing")
+              text = text.replace(marker, method + marker, 1)
+          old = """    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+                  if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
+              }
+
+              @SubscribeEvent
+              public static void onDeath(LivingDeathEvent event) {
+                  if (event.getEntity() instanceof ServerPlayer player) clearAll(player);
+              }
+          """
+          new = """    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+                  if (event.getEntity() instanceof ServerPlayer player) {
+                      UUID id = player.getUUID();
+                      clearAll(player);
+                      LAST_ENTITY_IDS.remove(id);
+                      RESPAWN_GRACE_UNTIL.remove(id);
+                  }
+              }
+
+              @SubscribeEvent
+              public static void onDeath(LivingDeathEvent event) {
+                  if (event.getEntity() instanceof ServerPlayer player) {
+                      clearAll(player);
+                      forceClientClear(player);
+                  }
+              }
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: logout/death block not found")
+          write(path, text.replace(old, new, 1))
+
+          path = "src/main/java/net/mcreator/scpadditions/client/Scp012ClientEvents.java"
+          text = read(path)
+          text = text.replace(
+              "public final class Scp012ClientEvents {\n"
+              "    private Scp012ClientEvents() {\n",
+              "public final class Scp012ClientEvents {\n"
+              "    private static Player lastPlayer;\n\n"
+              "    private Scp012ClientEvents() {\n", 1)
+          old = """        Minecraft minecraft = Minecraft.getInstance();
+                  if (minecraft.level == null || minecraft.player == null) {
+                      Scp012ClientState.clear();
+                      return;
+                  }
+
+                  if (!Scp012ClientState.isActive()) {
+          """
+          new = """        Minecraft minecraft = Minecraft.getInstance();
+                  Player player = minecraft.player;
+                  if (minecraft.level == null || player == null) {
+                      Scp012ClientState.clear();
+                      lastPlayer = null;
+                      return;
+                  }
+                  if (lastPlayer != player || !player.isAlive()) {
+                      Scp012ClientState.clear();
+                      lastPlayer = player;
+                      if (!player.isAlive()) {
+                          return;
+                      }
+                  }
+
+                  if (!Scp012ClientState.isActive()) {
+          """
+          if old not in text:
+              raise SystemExit(f"{path}: client state prelude not found")
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              "        Player player = minecraft.player;\n"
+              "        Vec3 target = Vec3.atCenterOf(Scp012ClientState.target());\n",
+              "        Vec3 target = Vec3.atCenterOf(Scp012ClientState.target());\n",
+              1)
+          write(path, text)
+
+          # Fabric lacked the processed-resource namespace migration that the
+          # NeoForge port already uses. Copy that exact post-processing stage.
+          branch = subprocess.check_output(
+              ["git", "branch", "--show-current"], text=True).strip()
+          if branch.startswith("fix/fabric-"):
+              subprocess.run(
+                  ["git", "fetch", "origin",
+                   "neoforge-1.21.1-port-3.0.7:refs/remotes/origin/neoforge-resource-baseline"],
+                  check=True)
+              neo_gradle = subprocess.check_output(
+                  ["git", "show",
+                   "refs/remotes/origin/neoforge-resource-baseline:build.gradle"],
+                  text=True)
+              start = neo_gradle.index("    doLast {")
+              end_marker = "\n    }\n}\n\ntasks.withType(JavaCompile)"
+              end = neo_gradle.index(end_marker, start) + len("\n    }")
+              do_last = neo_gradle[start:end]
+
+              fabric_path = "build.gradle"
+              fabric_gradle = read(fabric_path)
+              if "def legacyAssets = file(\"$buildDir/resources/main/assets/scp_unity_extra_blocks\")" not in fabric_gradle:
+                  insertion = """    from('config') {
+                      into 'config'
+                  }
+          """
+                  if insertion not in fabric_gradle:
+                      raise SystemExit("Fabric build.gradle: processResources insertion point missing")
+                  fabric_gradle = fabric_gradle.replace(
+                      insertion, insertion + "\n" + do_last + "\n", 1)
+                  write(fabric_path, fabric_gradle)
+
+          # Structural assertions for the exact regressions reported.
+          assert "renderTransparentBackground(g)" not in read(
+              "src/main/java/com/bl4ues/scpinventory/client/gui/ScpInventoryScreen.java")
+          assert "/data/scp_additions/structure/scp_914_full.nbt" in read(
+              "src/main/java/net/mcreator/scpadditions/item/Scp914AssemblyKitItem.java")
+          assert "new IdentityHashMap<>()" in read(
+              "src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java")
+          PY
+
+      - name: Build corrected port
+        shell: bash
+        run: ./gradlew clean build --stacktrace
+
+      - name: Validate packaged runtime resources
+        shell: bash
+        run: |
+          JAR="$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          jar tf "$JAR" | grep -q '^data/scp_additions/structure/scp_914_full.nbt$'
+          jar tf "$JAR" | grep -q '^assets/scp_additions/blockstates/sl_1_floor_1.json$'
+          jar tf "$JAR" | grep -q '^assets/scp_additions/models/item/sl_1_floor_detail_small.json$'
+
+      - name: Commit corrected sources
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Fix 1.21.1 runtime regressions"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

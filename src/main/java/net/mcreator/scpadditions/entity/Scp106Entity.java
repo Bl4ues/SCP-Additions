@@ -36,13 +36,15 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
     private static final double PURSUIT_RANGE = 48.0D;
     private static final double PURSUIT_RANGE_SQR = PURSUIT_RANGE * PURSUIT_RANGE;
+    private static final double DIRECT_PURSUIT_VERTICAL_LIMIT = 1.35D;
     private static final double ATTACK_START_GAP = 0.16D;
     private static final double ATTACK_HIT_GAP = 0.38D;
-    private static final int PATH_REFRESH_INTERVAL = 3;
+    private static final double WALK_ANIMATION_SPEED = 1.5D;
+    private static final int PATH_REFRESH_INTERVAL = 10;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
     private static final int WITHER_DURATION_TICKS = 5 * 20;
-    private static final int TRAIL_PARTICLE_INTERVAL = 4;
+    private static final int TRAIL_PARTICLE_INTERVAL = 5;
 
     private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation WALK_ANIMATION = RawAnimation.begin().thenLoop("walk");
@@ -112,9 +114,15 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setTarget(player);
         getLookControl().setLookAt(player, 35.0F, 20.0F);
 
-        if (isWithinMeleeGap(player, ATTACK_START_GAP)
-                && hasLineOfSight(player)) {
+        boolean hasClearSight = hasLineOfSight(player);
+        if (isWithinMeleeGap(player, ATTACK_START_GAP) && hasClearSight) {
             startAttack();
+            return;
+        }
+
+        if (hasClearSight
+                && Math.abs(player.getY() - getY()) <= DIRECT_PURSUIT_VERTICAL_LIMIT) {
+            pursueDirectly(player);
             return;
         }
 
@@ -122,6 +130,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             getNavigation().moveTo(player.getX(), player.getY(), player.getZ(),
                     PURSUIT_SPEED_MODIFIER);
         }
+    }
+
+    private void pursueDirectly(Player player) {
+        getNavigation().stop();
+        getMoveControl().setWantedPosition(
+                player.getX(), player.getY(), player.getZ(), PURSUIT_SPEED_MODIFIER);
     }
 
     private void startAttack() {
@@ -179,6 +193,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void stopHorizontalMovement() {
         Vec3 movement = getDeltaMovement();
         setDeltaMovement(0.0D, movement.y, 0.0D);
+        setSpeed(0.0F);
     }
 
     private Player findNearestPlayer() {
@@ -260,13 +275,23 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "movement", 2, state -> {
-            if (isAttacking()) {
-                return state.setAndContinue(ATTACK_ANIMATION);
+        AnimationController<Scp106Entity> movementController =
+                new AnimationController<>(this, "movement", 2, state -> {
+                    if (isAttacking()) {
+                        return state.setAndContinue(ATTACK_ANIMATION);
+                    }
+                    return state.setAndContinue(
+                            state.isMoving() ? WALK_ANIMATION : IDLE_ANIMATION);
+                });
+        movementController.setAnimationSpeedHandler(entity -> {
+            if (entity.isAttacking()) {
+                return 1.0D;
             }
-            return state.setAndContinue(
-                    state.isMoving() ? WALK_ANIMATION : IDLE_ANIMATION);
-        }));
+            return entity.getDeltaMovement().horizontalDistanceSqr() > 0.0004D
+                    ? WALK_ANIMATION_SPEED
+                    : 1.0D;
+        });
+        controllers.add(movementController);
     }
 
     @Override

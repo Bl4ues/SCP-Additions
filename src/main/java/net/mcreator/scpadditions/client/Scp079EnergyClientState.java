@@ -6,11 +6,16 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog.DecisionOutcome;
+import net.mcreator.scpadditions.facility.Scp079DecisionLog.DecisionType;
+import net.mcreator.scpadditions.network.Scp079DecisionPacket.DecisionEntry;
 import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
 import net.mcreator.scpadditions.roamer.RoamerResult;
 import net.mcreator.scpadditions.roamer.RoamerState;
 import net.mcreator.scpadditions.roamer.RoamerType;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +29,8 @@ public final class Scp079EnergyClientState {
     private static boolean spawnTimersVisible;
     private static final Map<RoamerType, ClientRoamerSnapshot> ROAMERS =
             new EnumMap<>(RoamerType.class);
+    private static final List<ClientDecisionSnapshot> DECISIONS =
+            new ArrayList<>();
 
     private Scp079EnergyClientState() {
     }
@@ -35,6 +42,7 @@ public final class Scp079EnergyClientState {
         active = systemActive;
         energy = Math.max(0.0F, Math.min(100.0F, currentEnergy));
         spawnTimersVisible = shouldShowSpawnTimers;
+        if (!energyVisible) DECISIONS.clear();
         ROAMERS.clear();
         long now = clientGameTick();
         if (entries != null) {
@@ -43,6 +51,18 @@ public final class Scp079EnergyClientState {
                         entry.state(), entry.result(), entry.remainingTicks(),
                         now));
             }
+        }
+    }
+
+    public static void replaceDecisions(List<DecisionEntry> entries) {
+        DECISIONS.clear();
+        if (entries == null) return;
+        long now = clientGameTick();
+        for (DecisionEntry entry : entries) {
+            DECISIONS.add(new ClientDecisionSnapshot(entry.sequence(),
+                    entry.type(), entry.outcome(), entry.pos(),
+                    entry.dimension(), entry.context(), entry.cost(),
+                    entry.ageTicks(), now));
         }
     }
 
@@ -62,6 +82,18 @@ public final class Scp079EnergyClientState {
         return spawnTimersVisible;
     }
 
+    public static List<ClientDecisionSnapshot> decisions() {
+        long now = clientGameTick();
+        List<ClientDecisionSnapshot> visible = new ArrayList<>();
+        for (ClientDecisionSnapshot decision : DECISIONS) {
+            if (decision.ageTicks(now)
+                    < Scp079DecisionLog.CLIENT_LIFETIME_TICKS) {
+                visible.add(decision);
+            }
+        }
+        return List.copyOf(visible);
+    }
+
     public static ClientRoamerSnapshot roamer(RoamerType type) {
         ClientRoamerSnapshot snapshot = ROAMERS.get(type);
         if (snapshot != null) return snapshot;
@@ -77,6 +109,7 @@ public final class Scp079EnergyClientState {
         energy = 0.0F;
         spawnTimersVisible = false;
         ROAMERS.clear();
+        DECISIONS.clear();
     }
 
     private static long clientGameTick() {
@@ -87,6 +120,31 @@ public final class Scp079EnergyClientState {
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         clear();
+    }
+
+    public record ClientDecisionSnapshot(long sequence, DecisionType type,
+            DecisionOutcome outcome, net.minecraft.core.BlockPos pos,
+            String dimension, String context, float cost,
+            int ageTicksAtSync, long clientTickAtSync) {
+        public ClientDecisionSnapshot {
+            if (type == null) type = DecisionType.ABORTED_ACTION;
+            if (outcome == null) outcome = DecisionOutcome.ABORTED;
+            if (pos == null) pos = net.minecraft.core.BlockPos.ZERO;
+            if (dimension == null) dimension = "";
+            if (context == null) context = "";
+            cost = Math.max(0.0F, cost);
+            ageTicksAtSync = Math.max(0, ageTicksAtSync);
+        }
+
+        public int ageTicks() {
+            return ageTicks(clientGameTick());
+        }
+
+        private int ageTicks(long now) {
+            long elapsed = Math.max(0L, now - clientTickAtSync);
+            return (int) Math.min(Integer.MAX_VALUE,
+                    ageTicksAtSync + elapsed);
+        }
     }
 
     public record ClientRoamerSnapshot(RoamerState state, RoamerResult result,

@@ -39,6 +39,9 @@ jobs:
       - name: Restore presentation and feature parity
         run: python3 tools/port_1_21/restore_master_parity.py --loader fabric
 
+      - name: Stage restored feature surface
+        run: git add build.gradle config scripts src tools
+
       - name: Build Fabric source
         run: |
           chmod +x gradlew
@@ -52,11 +55,10 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add build.gradle config scripts src tools
           if git diff --cached --quiet; then
             echo 'Fabric parity restoration is already materialized.'
           else
-            git commit -m 'Restore Fabric 1.21.1 feature and UI parity [skip ci]'
+            git commit -m 'Restore Fabric 1.21.1 feature and UI parity'
             git push origin HEAD:${{ env.TARGET_BRANCH }}
           fi
 

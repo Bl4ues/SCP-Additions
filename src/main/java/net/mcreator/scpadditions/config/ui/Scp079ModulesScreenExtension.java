@@ -51,7 +51,7 @@ public final class Scp079ModulesScreenExtension {
             }
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not attach the SCP-079 debug section to the configuration center",
+                    "Could not attach the Debug section to the configuration center",
                     exception);
         }
     }
@@ -102,7 +102,9 @@ public final class Scp079ModulesScreenExtension {
                         "Allows the configurable natural spawn system.", true),
                 Row.section("Debug"),
                 Row.toggle("debug", "show_scp_079_energy_hud", "SCP-079 Energy HUD",
-                        "Shows SCP-079 processing power in the upper-right corner for testing.", false)
+                        "Shows SCP-079 processing power in the upper-right corner for testing.", false),
+                Row.toggle("debug", "show_scp_spawn_timers_hud", "SCP Spawn Timers HUD",
+                        "Shows natural-spawn timers and the latest scheduler result for SCP-173 and SCP-106.", false)
         );
 
         private final Screen parent;

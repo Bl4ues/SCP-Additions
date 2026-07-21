@@ -1,0 +1,83 @@
+name: NeoForge port parity PR validation
+
+on:
+  pull_request:
+    branches:
+      - neoforge-1.21.1-port-3.0.7
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-parity-and-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Fetch Forge parity baseline
+        run: git fetch origin master:refs/remotes/origin/master
+
+      - name: Build port
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Validate feature surface against master
+        run: python3 scripts/validate_port_feature_parity.py --base-ref origin/master
+
+      - name: Dedicated-server smoke test
+        shell: bash
+        run: |
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+          set +e
+          timeout 150s ./gradlew runServer --no-daemon --console=plain > neoforge-server-smoke.log 2>&1
+          status=$?
+          set -e
+          cat neoforge-server-smoke.log
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then exit "$status"; fi
+          grep -q 'Done (' neoforge-server-smoke.log
+          ! grep -Eqi 'Encountered an unexpected exception|Exception in server tick loop|Mod loading has failed|Loading errors encountered' neoforge-server-smoke.log
+
+      - name: Client startup smoke test
+        shell: bash
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+          mkdir -p run/client
+          set +e
+          timeout --signal=INT --kill-after=20s 180s \
+            xvfb-run -a -s '-screen 0 1280x720x24' \
+            ./gradlew runClient --no-daemon --console=plain \
+            > neoforge-client-smoke.log 2>&1
+          status=$?
+          set -e
+          cat neoforge-client-smoke.log
+          if [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then exit "$status"; fi
+          grep -Eqi 'Sound engine started|OpenAL initialized|Created: [0-9]+x[0-9]+x[0-9]+ minecraft:textures/atlas' neoforge-client-smoke.log
+          ! grep -Eqi 'Mod loading has failed|Loading errors encountered|Exception in thread "Render thread"|The game crashed whilst|Description: Initializing game' neoforge-client-smoke.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neoforge-port-parity-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            build/libs/*.jar
+            build/reports/port-parity/report.json
+            neoforge-server-smoke.log
+            neoforge-client-smoke.log
+            run/server/logs/latest.log
+            run/client/logs/latest.log
+          if-no-files-found: warn

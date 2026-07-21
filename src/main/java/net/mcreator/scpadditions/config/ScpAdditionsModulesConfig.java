@@ -127,6 +127,9 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Debug {
 		@SerializedName("show_scp_079_energy_hud")
 		public boolean showScp079EnergyHud = false;
+
+		@SerializedName("show_scp_spawn_timers_hud")
+		public boolean showScpSpawnTimersHud = false;
 	}
 
 	public static final class EntityModule extends Toggle {

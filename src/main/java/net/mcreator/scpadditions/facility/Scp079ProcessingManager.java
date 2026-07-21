@@ -12,7 +12,10 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
+import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
+import net.mcreator.scpadditions.roamer.RoamerManager;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -22,8 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Shared processing-power budget for SCP-079's facility decisions.
  *
  * The value is updated lazily whenever gameplay needs it, avoiding another
- * permanent server tick loop. Player HUD synchronization is also staggered and
- * sends packets only when the rounded value or visibility state changes.
+ * permanent server tick loop. Developer HUD synchronization is staggered and
+ * sends a packet only when a rounded value, toggle, scheduled tick or result
+ * actually changes; spawn countdown animation remains client-side.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -113,15 +117,22 @@ public final class Scp079ProcessingManager {
             return;
         }
 
-        boolean visible = ScpAdditionsModulesConfig.get().debug
-                .showScp079EnergyHud;
-        boolean active = isActive(player.serverLevel());
-        int roundedPower = Math.round(getPower(player.serverLevel()));
-        ClientSnapshot next = new ClientSnapshot(visible, active, roundedPower);
+        ScpAdditionsModulesConfig.Debug debug =
+                ScpAdditionsModulesConfig.get().debug;
+        boolean energyVisible = debug.showScp079EnergyHud;
+        boolean spawnTimersVisible = debug.showScpSpawnTimersHud;
+        boolean active = energyVisible && isActive(player.serverLevel());
+        int roundedPower = energyVisible
+                ? Math.round(getPower(player.serverLevel())) : 0;
+        List<RoamerDebugSnapshot> roamers = spawnTimersVisible
+                ? RoamerManager.debugSnapshots(player) : List.of();
+
+        ClientSnapshot next = new ClientSnapshot(energyVisible, active,
+                roundedPower, spawnTimersVisible, roamers);
         ClientSnapshot previous = LAST_CLIENT_SYNC.put(player.getUUID(), next);
         if (!next.equals(previous)) {
-            ScpEntityNetwork.syncScp079Energy(player, visible, active,
-                    roundedPower);
+            ScpEntityNetwork.syncDebugState(player, energyVisible, active,
+                    roundedPower, spawnTimersVisible, roamers);
         }
     }
 
@@ -157,7 +168,11 @@ public final class Scp079ProcessingManager {
         }
     }
 
-    private record ClientSnapshot(boolean visible, boolean active,
-                                  int roundedPower) {
+    private record ClientSnapshot(boolean energyVisible, boolean active,
+            int roundedPower, boolean spawnTimersVisible,
+            List<RoamerDebugSnapshot> roamers) {
+        private ClientSnapshot {
+            roamers = roamers == null ? List.of() : List.copyOf(roamers);
+        }
     }
 }

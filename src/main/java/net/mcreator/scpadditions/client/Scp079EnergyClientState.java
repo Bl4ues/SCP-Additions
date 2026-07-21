@@ -1,30 +1,53 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
+import net.mcreator.scpadditions.roamer.RoamerResult;
+import net.mcreator.scpadditions.roamer.RoamerState;
+import net.mcreator.scpadditions.roamer.RoamerType;
 
-/** Client-only snapshot used by the optional SCP-079 processing HUD. */
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
+/** Client-only snapshot used by the optional developer HUDs. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp079EnergyClientState {
-    private static boolean visible;
+    private static boolean energyVisible;
     private static boolean active;
     private static float energy;
+    private static boolean spawnTimersVisible;
+    private static final Map<RoamerType, ClientRoamerSnapshot> ROAMERS =
+            new EnumMap<>(RoamerType.class);
 
     private Scp079EnergyClientState() {
     }
 
-    public static void update(boolean shouldShow, boolean systemActive,
-            float currentEnergy) {
-        visible = shouldShow;
+    public static void update(boolean shouldShowEnergy, boolean systemActive,
+            float currentEnergy, boolean shouldShowSpawnTimers,
+            List<RoamerEntry> entries) {
+        energyVisible = shouldShowEnergy;
         active = systemActive;
         energy = Math.max(0.0F, Math.min(100.0F, currentEnergy));
+        spawnTimersVisible = shouldShowSpawnTimers;
+        ROAMERS.clear();
+        long now = clientGameTick();
+        if (entries != null) {
+            for (RoamerEntry entry : entries) {
+                ROAMERS.put(entry.type(), new ClientRoamerSnapshot(
+                        entry.state(), entry.result(), entry.remainingTicks(),
+                        now));
+            }
+        }
     }
 
     public static boolean visible() {
-        return visible;
+        return energyVisible;
     }
 
     public static boolean active() {
@@ -35,14 +58,52 @@ public final class Scp079EnergyClientState {
         return energy;
     }
 
+    public static boolean spawnTimersVisible() {
+        return spawnTimersVisible;
+    }
+
+    public static ClientRoamerSnapshot roamer(RoamerType type) {
+        ClientRoamerSnapshot snapshot = ROAMERS.get(type);
+        if (snapshot != null) return snapshot;
+        return new ClientRoamerSnapshot(RoamerState.DISABLED,
+                type != null && !type.spawnImplemented()
+                        ? RoamerResult.NOT_IMPLEMENTED : RoamerResult.NONE,
+                -1, clientGameTick());
+    }
+
     public static void clear() {
-        visible = false;
+        energyVisible = false;
         active = false;
         energy = 0.0F;
+        spawnTimersVisible = false;
+        ROAMERS.clear();
+    }
+
+    private static long clientGameTick() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.level == null ? 0L : minecraft.level.getGameTime();
     }
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         clear();
+    }
+
+    public record ClientRoamerSnapshot(RoamerState state, RoamerResult result,
+            int remainingTicksAtSync, long clientTickAtSync) {
+        public ClientRoamerSnapshot {
+            if (state == null) state = RoamerState.DISABLED;
+            if (result == null) result = RoamerResult.NONE;
+            remainingTicksAtSync = Math.max(-1, remainingTicksAtSync);
+        }
+
+        public int remainingTicks() {
+            if (state != RoamerState.COUNTDOWN || remainingTicksAtSync < 0) {
+                return -1;
+            }
+            long elapsed = Math.max(0L,
+                    clientGameTick() - clientTickAtSync);
+            return (int) Math.max(0L, remainingTicksAtSync - elapsed);
+        }
     }
 }

@@ -81,7 +81,7 @@ public final class ScpAdditionsModulesConfig {
 		public Debug debug = new Debug();
 
 		@SerializedName("scp_173")
-		public EntityModule scp173 = new EntityModule();
+		public Toggle scp173 = new Toggle();
 
 		private static Root defaults() {
 			return new Root();
@@ -94,7 +94,7 @@ public final class ScpAdditionsModulesConfig {
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();
 			if (debug == null) debug = new Debug();
-			if (scp173 == null) scp173 = new EntityModule();
+			if (scp173 == null) scp173 = new Toggle();
 			return this;
 		}
 	}
@@ -127,10 +127,8 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Debug {
 		@SerializedName("show_scp_079_energy_hud")
 		public boolean showScp079EnergyHud = false;
-	}
 
-	public static final class EntityModule extends Toggle {
-		@SerializedName("natural_spawn_enabled")
-		public boolean naturalSpawnEnabled = true;
+		@SerializedName("show_scp_spawn_timers_hud")
+		public boolean showScpSpawnTimersHud = false;
 	}
 }

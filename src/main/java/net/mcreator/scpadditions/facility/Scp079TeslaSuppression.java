@@ -40,14 +40,18 @@ public final class Scp079TeslaSuppression {
      */
     public static boolean shouldSuppress(ServerLevel level, BlockPos gatePos,
             List<LivingEntity> occupants, boolean manualOverride) {
+        GateKey key = key(level, gatePos);
         if (!Scp079ProcessingManager.isActive(level)) {
-            STATES.remove(key(level, gatePos));
+            STATES.remove(key);
             return false;
         }
 
         long now = level.getGameTime();
-        GateKey key = key(level, gatePos);
         GateState state = STATES.get(key);
+        if (state != null && state.expired(now)) {
+            STATES.remove(key, state);
+            state = null;
+        }
         if (state != null && now < state.suppressedUntil()) {
             return true;
         }
@@ -86,7 +90,6 @@ public final class Scp079TeslaSuppression {
         STATES.put(key, new GateState(suppressedUntil,
                 suppressedUntil + DEVICE_REUSE_TICKS, suppressedUntil));
         emitInterference(level, gatePos);
-        clean(level, now);
         return true;
     }
 
@@ -118,14 +121,6 @@ public final class Scp079TeslaSuppression {
                 3, 0.40D, 0.35D, 0.40D, 0.015D);
     }
 
-    private static void clean(ServerLevel level, long now) {
-        if (now % 600L != 0L) return;
-        STATES.entrySet().removeIf(entry ->
-                entry.getKey().dimension().equals(level.dimension())
-                        && entry.getValue().reuseAfter() <= now
-                        && entry.getValue().nextAttempt() <= now);
-    }
-
     private static GateKey key(ServerLevel level, BlockPos pos) {
         return new GateKey(level.dimension(), pos.asLong());
     }
@@ -135,6 +130,10 @@ public final class Scp079TeslaSuppression {
 
     private record GateState(long suppressedUntil, long reuseAfter,
                              long nextAttempt) {
+        private boolean expired(long now) {
+            return now >= suppressedUntil && now >= reuseAfter
+                    && now >= nextAttempt;
+        }
     }
 
     private record ThreatAdjustment(float chanceMultiplier) {

@@ -25,9 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Shared processing-power budget for SCP-079's facility decisions.
  *
  * The value is updated lazily whenever gameplay needs it, avoiding another
- * permanent server tick loop. Developer HUD synchronization is staggered and
- * sends a packet only when a rounded value, toggle, scheduled tick or result
- * actually changes; spawn countdown animation remains client-side.
+ * permanent server tick loop. Developer HUD synchronization is staggered. The
+ * decision feed uses a separate snapshot packet and is only resent when a
+ * meaningful decision changes its history.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -126,14 +126,24 @@ public final class Scp079ProcessingManager {
                 ? Math.round(getPower(player.serverLevel())) : 0;
         List<RoamerDebugSnapshot> roamers = spawnTimersVisible
                 ? RoamerManager.debugSnapshots(player) : List.of();
+        Scp079DecisionLog.Snapshot decisionSnapshot = energyVisible
+                ? Scp079DecisionLog.snapshot(player.getServer())
+                : new Scp079DecisionLog.Snapshot(-1L, List.of());
 
         ClientSnapshot next = new ClientSnapshot(energyVisible, active,
-                roundedPower, spawnTimersVisible, roamers);
-        ClientSnapshot previous = LAST_CLIENT_SYNC.put(player.getUUID(), next);
-        if (!next.equals(previous)) {
+                roundedPower, spawnTimersVisible, roamers,
+                decisionSnapshot.version());
+        ClientSnapshot previous = LAST_CLIENT_SYNC.get(player.getUUID());
+
+        if (previous == null || !next.sameCoreState(previous)) {
             ScpEntityNetwork.syncDebugState(player, energyVisible, active,
                     roundedPower, spawnTimersVisible, roamers);
         }
+        if (energyVisible && (previous == null || !previous.energyVisible()
+                || previous.decisionVersion() != decisionSnapshot.version())) {
+            ScpEntityNetwork.syncScp079Decisions(player, decisionSnapshot);
+        }
+        LAST_CLIENT_SYNC.put(player.getUUID(), next);
     }
 
     @SubscribeEvent
@@ -170,9 +180,18 @@ public final class Scp079ProcessingManager {
 
     private record ClientSnapshot(boolean energyVisible, boolean active,
             int roundedPower, boolean spawnTimersVisible,
-            List<RoamerDebugSnapshot> roamers) {
+            List<RoamerDebugSnapshot> roamers, long decisionVersion) {
         private ClientSnapshot {
             roamers = roamers == null ? List.of() : List.copyOf(roamers);
+        }
+
+        private boolean sameCoreState(ClientSnapshot other) {
+            return other != null
+                    && energyVisible == other.energyVisible
+                    && active == other.active
+                    && roundedPower == other.roundedPower
+                    && spawnTimersVisible == other.spawnTimersVisible
+                    && roamers.equals(other.roamers);
         }
     }
 }

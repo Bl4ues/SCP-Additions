@@ -5,10 +5,12 @@
 ## SCP-106
 
 - Added the initial SCP-106 entity, including its model, texture, idle and walking animations, black-and-brown spawn egg, **The Old Man** tooltip, and placement in the SCPs creative tab;
-- Added direct player pursuit at a pace slightly below player sprint speed, with frequent path refreshes and support for Creative-mode testing;
-- Added a synchronized melee attack sequence that makes SCP-106 stop moving, play its attack animation, and strike as its hand extends at approximately 0.76 seconds;
-- Made the melee strike deal 5 damage and apply Wither for five seconds;
-- Added a lightweight client-side trail of sparse black mucus-like particles while SCP-106 walks, inspired by its corrosive trail in SCP: Unity;
+- Added the missing spawn egg item model, corrected player pursuit, replaced its unstable translucent render pass with cutout rendering, and gave zero-thickness model planes minimal depth to remove visible Z-fighting;
+- Added direct player pursuit with frequent path refreshes and support for Creative-mode testing, then increased its movement speed to `0.58` after in-game testing so it can pressure sprinting players;
+- Added subtle, clamped head tracking toward the pursued player while preserving the model's natural animated head tilt;
+- Added a synchronized melee attack sequence that makes SCP-106 stop moving and strike as its hand extends at approximately 0.76 seconds;
+- Tightened melee activation to close range and made the hit deal 5 damage directly and apply Wither for five seconds;
+- Replaced the oversized ink trail with sparse, compact, ground-hugging near-black and dark-brown corrosion droplets that remain client-side and short-lived for performance;
 - Changed the custom Health Bar to a grotesque near-black and dark-brown gradient while the player has Wither.
 
 ## SCP-173

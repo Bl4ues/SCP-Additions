@@ -17,7 +17,9 @@ import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorControlPanelAccess;
 import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +36,8 @@ public final class Scp012DoorAccess {
             new ConcurrentHashMap<>();
     private static final Map<DoorKey, ContestState> CONTESTS =
             new ConcurrentHashMap<>();
+    private static final Map<ResourceKey<Level>, Long> NEXT_CLEANUP =
+            new ConcurrentHashMap<>();
 
     private Scp012DoorAccess() {
     }
@@ -49,9 +53,12 @@ public final class Scp012DoorAccess {
      */
     public static boolean tryOpen(ServerLevel level, ServerPlayer player,
                                    BlockPos scpPos, double reservedPower) {
-        BlockPos center = player.blockPosition();
         Vec3 playerPosition = player.position();
         Vec3 targetPosition = Scp012Module.attractionPoint(level, scpPos);
+        Vec3 horizontalRoute = new Vec3(targetPosition.x - playerPosition.x,
+                0.0D, targetPosition.z - playerPosition.z);
+        if (horizontalRoute.lengthSqr() < 0.0001D) return false;
+
         DoorCandidate best = null;
         double bestDistance = Double.MAX_VALUE;
         long time = level.getGameTime();
@@ -62,55 +69,73 @@ public final class Scp012DoorAccess {
             return false;
         }
 
-        for (BlockPos mutable : BlockPos.betweenClosed(
-                center.offset(-PLAYER_DOOR_RADIUS, -2, -PLAYER_DOOR_RADIUS),
-                center.offset(PLAYER_DOOR_RADIUS, 3, PLAYER_DOOR_RADIUS))) {
-            BlockPos pos = mutable.immutable();
-            if (Vec3.atCenterOf(pos).distanceToSqr(Vec3.atCenterOf(scpPos))
-                    > SCP_DOOR_RADIUS * SCP_DOOR_RADIUS) {
-                continue;
-            }
+        Vec3 routeDirection = horizontalRoute.normalize();
+        int routeSteps = Math.min(PLAYER_DOOR_RADIUS,
+                Math.max(1, (int) Math.ceil(horizontalRoute.length())));
+        Set<Long> visited = new HashSet<>();
 
-            DoorMatch match = matchClosedDoor(level, pos);
-            if (match == null
-                    || !HeavyDoorControlPanelAccess.hasControllableInterface(
-                    level, pos)
-                    || !liesOnRoute(match.state(), pos, playerPosition,
-                    targetPosition)) {
-                continue;
-            }
+        // Probe only the narrow route toward SCP-012. The previous full
+        // 11x6x11 cube was unnecessary during the twice-per-second trap check.
+        for (int step = 1; step <= routeSteps; step++) {
+            Vec3 sample = playerPosition.add(routeDirection.scale(step));
+            BlockPos sampleCenter = BlockPos.containing(sample);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -2; dy <= 3; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos pos = sampleCenter.offset(dx, dy, dz);
+                        if (!visited.add(pos.asLong())) continue;
+                        if (Vec3.atCenterOf(pos).distanceToSqr(
+                                Vec3.atCenterOf(scpPos))
+                                > SCP_DOOR_RADIUS * SCP_DOOR_RADIUS) {
+                            continue;
+                        }
 
-            DoorKey key = new DoorKey(level.dimension(), pos.asLong());
-            ContestState contest = CONTESTS.get(key);
-            boolean activeContest = contest != null
-                    && contest.player().equals(player.getUUID())
-                    && contest.expiresAt() >= time;
-            if (contest != null && contest.expiresAt() >= time
-                    && !contest.player().equals(player.getUUID())) {
-                continue;
-            }
-            if (!activeContest
-                    && COOLDOWNS.getOrDefault(key, 0L) > time) {
-                continue;
-            }
+                        DoorMatch match = matchClosedDoor(level, pos);
+                        if (match == null
+                                || !HeavyDoorControlPanelAccess
+                                .hasControllableInterface(level, pos)
+                                || !liesOnRoute(match.state(), pos,
+                                playerPosition, targetPosition)) {
+                            continue;
+                        }
 
-            int attempts = activeContest ? contest.attempts() : 0;
-            double cost = attemptCost(attempts);
-            if (!Scp079ProcessingManager.canAfford(level,
-                    cost + reservedPower)) {
-                if (activeContest) abandon(key, time);
-                continue;
-            }
-            if (activeContest && !worthContinuing(level, player, scpPos,
-                    contest, cost)) {
-                abandon(key, time);
-                continue;
-            }
+                        DoorKey key = new DoorKey(level.dimension(),
+                                pos.asLong());
+                        ContestState contest = CONTESTS.get(key);
+                        boolean activeContest = contest != null
+                                && contest.player().equals(player.getUUID())
+                                && contest.expiresAt() >= time;
+                        if (contest != null && contest.expiresAt() >= time
+                                && !contest.player().equals(player.getUUID())) {
+                            continue;
+                        }
+                        if (!activeContest
+                                && COOLDOWNS.getOrDefault(key, 0L) > time) {
+                            continue;
+                        }
 
-            double distance = player.distanceToSqr(Vec3.atCenterOf(pos));
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = new DoorCandidate(match, key, contest, cost);
+                        int attempts = activeContest
+                                ? contest.attempts() : 0;
+                        double cost = attemptCost(attempts);
+                        if (!Scp079ProcessingManager.canAfford(level,
+                                cost + reservedPower)) {
+                            if (activeContest) abandon(key, time);
+                            continue;
+                        }
+                        if (activeContest && !worthContinuing(level, player,
+                                scpPos, contest, cost)) {
+                            abandon(key, time);
+                            continue;
+                        }
+
+                        double distance = player.distanceToSqr(
+                                Vec3.atCenterOf(pos));
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            best = new DoorCandidate(match, key, contest, cost);
+                        }
+                    }
+                }
             }
         }
 
@@ -163,6 +188,7 @@ public final class Scp012DoorAccess {
         if (protectedBy714) utility -= 35.0D;
         if (Scp079ProcessingManager.getPower(level) < 30.0F) utility -= 10.0D;
         utility -= nextCost * 0.35D;
+        utility -= contest.processingSpent() * 0.12D;
         return utility >= 20.0D;
     }
 
@@ -177,9 +203,12 @@ public final class Scp012DoorAccess {
     }
 
     private static void clean(ServerLevel level, long time) {
-        if (time % 20L != 0L) return;
+        ResourceKey<Level> dimension = level.dimension();
+        if (NEXT_CLEANUP.getOrDefault(dimension, 0L) > time) return;
+        NEXT_CLEANUP.put(dimension, time + 20L);
+
         CONTESTS.entrySet().removeIf(entry -> {
-            if (!entry.getKey().dimension().equals(level.dimension())
+            if (!entry.getKey().dimension().equals(dimension)
                     || entry.getValue().expiresAt() > time) {
                 return false;
             }
@@ -188,7 +217,7 @@ public final class Scp012DoorAccess {
             return true;
         });
         COOLDOWNS.entrySet().removeIf(entry ->
-                entry.getKey().dimension().equals(level.dimension())
+                entry.getKey().dimension().equals(dimension)
                         && entry.getValue() <= time);
     }
 

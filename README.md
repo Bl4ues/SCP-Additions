@@ -2,19 +2,15 @@
 
 ![SCP Additions banner](https://cdn.modrinth.com/data/cached_images/b9d834bc5afc41d56f44146c8c8521d6170d723c_0.webp)
 
-SCP Additions is an SCP survival-horror and facility-building mod. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
+SCP Additions is an SCP survival-horror and facility-building mod for Minecraft 1.20.1. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
 
-The current public edition remains **Forge for Minecraft 1.20.1**, while native **NeoForge and Fabric ports for Minecraft 1.21.1** are being developed and validated in separate branches.
+## Development status
 
-## Editions and development status
+SCP Additions is currently developed and released for **Minecraft 1.20.1 with Forge**.
 
 | Minecraft | Loader | Status | Java | Branch |
 |---|---|---|---|---|
-| 1.20.1 | Forge 47.4.10+ | Stable public edition | 17 | [`master`](../../tree/master) |
-| 1.21.1 | NeoForge 21.1.235 | Alpha port in active validation | 21 | [`neoforge-1.21.1-port-3.0.7`](../../tree/neoforge-1.21.1-port-3.0.7) |
-| 1.21.1 | Fabric Loader 0.17.3+ | Alpha port in active validation | 21 | [`fabric-1.21.1-port-3.0.7`](../../tree/fabric-1.21.1-port-3.0.7) |
-
-The 1.21.1 branches are intended to reach feature parity with the Forge edition, but they should not be treated as stable releases until their runtime and manual QA are complete. Loader branches remain isolated and are not merged into `master`.
+| 1.20.1 | Forge 47.4.10+ | Stable public edition; 3.0.8 in development | 17 | [`master`](../../tree/master) |
 
 ## Links
 
@@ -27,29 +23,14 @@ The 1.21.1 branches are intended to reach feature parity with the Forge edition,
 
 ## Requirements
 
-### Forge 1.20.1
-
 - Minecraft **1.20.1**
-- Forge **47.4.10**
-- GeckoLib **4.4.9**
-
-### NeoForge 1.21.1 alpha
-
-- Minecraft **1.21.1**
-- NeoForge **21.1.235**
-- GeckoLib **4.9.2**
-
-### Fabric 1.21.1 alpha
-
-- Minecraft **1.21.1**
-- Fabric Loader **0.17.3**
-- Fabric API **0.116.14+1.21.1**
-- GeckoLib **4.9.2**
+- Forge **47.4.10 or newer**
+- GeckoLib **4.4.9 or newer**
 
 Optional client integrations:
 
-- [Kleiders Custom Renderer API](https://modrinth.com/mod/kleiders-custom-renderer-api) renders SCP-914 **1:1** player skins when a compatible edition is available. All other SCP-914 behavior works without it.
-- [MoreMcmeta Emissive Textures](https://modrinth.com/mod/moremcmeta-emissive) enables supported emissive facility textures where the loader and Minecraft version are compatible. Its MoreMcmeta base dependency is also required.
+- [Kleiders Custom Renderer API](https://modrinth.com/mod/kleiders-custom-renderer-api) renders custom SCP-914 **1:1** player skins. All other SCP-914 behavior works without it.
+- [MoreMcmeta Emissive Textures](https://modrinth.com/mod/moremcmeta-emissive) enables supported emissive facility textures. Its MoreMcmeta base dependency is also required.
 
 ## Main features
 
@@ -62,12 +43,10 @@ Optional client integrations:
 
 ## Installation
 
-1. Choose the edition matching the exact Minecraft version and loader of the instance.
-2. Install the required GeckoLib edition and, for Fabric, Fabric API.
-3. Place the matching SCP Additions JAR in the instance's `mods` folder.
-4. Install optional integrations only when compatible versions exist for the selected loader.
-
-Do not use a Forge JAR on NeoForge or Fabric, or mix the 1.20.1 and 1.21.1 editions.
+1. Install Minecraft **1.20.1** with Forge **47.4.10 or newer**.
+2. Install GeckoLib **4.4.9 or newer**.
+3. Place the SCP Additions JAR in the instance's `mods` folder.
+4. Install optional integrations only when compatible versions are available for Minecraft 1.20.1 Forge.
 
 The complete usage guide, controls, commands, configuration reference, and troubleshooting information are maintained in the [Wiki](https://github.com/Bl4ues/SCP-Additions/wiki). A source mirror is kept in [`docs/wiki`](docs/wiki/Home.md).
 
@@ -89,18 +68,20 @@ The integrated single-player owner and operators with permission level 2 or high
 
 ## Building from source
 
-Clone or open the branch for the intended loader, then use its included Gradle wrapper:
+Clone the repository or open the `master` branch, then use the included Gradle wrapper with Java 17:
 
 ```bash
 ./gradlew clean build
 ```
 
-Preferably use Java 17 for `master` and Java 21 for both 1.21.1 branches. The compiled JAR is written to `build/libs`.
+The compiled JAR is written to `build/libs`.
 
-Development runs are available through each branch's Gradle configuration:
+Development runs are available through ForgeGradle:
 
-- Forge and NeoForge: `runClient` and `runServer`.
-- Fabric: `runClient` and `runServer` through Fabric Loom.
+```bash
+./gradlew runClient
+./gradlew runServer
+```
 
 ## License and attribution
 

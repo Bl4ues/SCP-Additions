@@ -14,6 +14,9 @@ public final class ScpAdditionsModParticleTypes {
     public static final RegistryObject<SimpleParticleType> DECONTAMINATION_GAS = REGISTRY.register(
             "decontamination_gas", () -> new SimpleParticleType(false));
 
+    public static final RegistryObject<SimpleParticleType> SCP_106_CORROSION = REGISTRY.register(
+            "scp_106_corrosion", () -> new SimpleParticleType(false));
+
     private ScpAdditionsModParticleTypes() {
     }
 }

@@ -49,6 +49,7 @@ public class ScpAdditionsModTabs {
             () -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_sc_ps")).icon(() -> new ItemStack(ScpAdditionsModBlocks.SCP_1176.get())).displayItems((parameters, tabData) -> {
                 tabData.accept(Scp012Module.SCP_012_ITEM.get());
                 tabData.accept(ScpAdditionsModBlocks.SCP_079ON.get().asItem());
+                tabData.accept(Scp131Items.SCP_106_SPAWN_EGG.get());
                 tabData.accept(Scp131Items.SCP_131_A_SPAWN_EGG.get());
                 tabData.accept(Scp131Items.SCP_131_B_SPAWN_EGG.get());
                 tabData.accept(Scp131Items.SCP_173_SPAWN_EGG.get());

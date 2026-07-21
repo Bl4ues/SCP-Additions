@@ -10,7 +10,8 @@ import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
-import org.joml.Quaternionf;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 public final class Scp106CorrosionParticle extends TextureSheetParticle {
     private static final float MAX_ALPHA = 0.76F;
@@ -51,9 +52,40 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
     @Override
     public void render(VertexConsumer vertexConsumer, Camera camera,
             float partialTick) {
-        Quaternionf floorRotation = new Quaternionf();
-        floorRotation.rotateX(-1.5707964F);
-        this.renderRotatedQuad(vertexConsumer, camera, floorRotation, partialTick);
+        Vec3 cameraPosition = camera.getPosition();
+        float renderX = (float) (Mth.lerp(partialTick, this.xo, this.x)
+                - cameraPosition.x());
+        float renderY = (float) (Mth.lerp(partialTick, this.yo, this.y)
+                - cameraPosition.y());
+        float renderZ = (float) (Mth.lerp(partialTick, this.zo, this.z)
+                - cameraPosition.z());
+
+        Vector3f[] corners = new Vector3f[] {
+                new Vector3f(-1.0F, 0.0F, -1.0F),
+                new Vector3f(-1.0F, 0.0F, 1.0F),
+                new Vector3f(1.0F, 0.0F, 1.0F),
+                new Vector3f(1.0F, 0.0F, -1.0F)
+        };
+        float size = getQuadSize(partialTick);
+        for (Vector3f corner : corners) {
+            corner.mul(size);
+            corner.add(renderX, renderY, renderZ);
+        }
+
+        float minU = getU0();
+        float maxU = getU1();
+        float minV = getV0();
+        float maxV = getV1();
+        int light = getLightColor(partialTick);
+
+        vertexConsumer.vertex(corners[0].x(), corners[0].y(), corners[0].z())
+                .uv(maxU, maxV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
+        vertexConsumer.vertex(corners[1].x(), corners[1].y(), corners[1].z())
+                .uv(maxU, minV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
+        vertexConsumer.vertex(corners[2].x(), corners[2].y(), corners[2].z())
+                .uv(minU, minV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
+        vertexConsumer.vertex(corners[3].x(), corners[3].y(), corners[3].z())
+                .uv(minU, maxV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
     }
 
     @Override

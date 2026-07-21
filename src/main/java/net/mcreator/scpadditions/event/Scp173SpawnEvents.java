@@ -15,7 +15,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
@@ -51,9 +50,8 @@ public final class Scp173SpawnEvents {
         if (event.phase != TickEvent.Phase.END
                 || event.player.level().isClientSide
                 || !(event.player instanceof ServerPlayer player)
-                || !ScpAdditionsModulesConfig.get().scp173.enabled
-                || !RoamerManager.pollSpawnCheck(player, RoamerType.SCP_173,
-                SPAWN_CHECK_INTERVAL_TICKS)) {
+                || !RoamerManager.pollSpawnCheck(player,
+                RoamerType.SCP_173)) {
             return;
         }
 

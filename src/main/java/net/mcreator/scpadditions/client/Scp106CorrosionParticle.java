@@ -11,11 +11,17 @@ import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 
 public final class Scp106CorrosionParticle extends TextureSheetParticle {
-    private static final float MAX_ALPHA = 0.76F;
+    private static final float MAX_ALPHA = 0.78F;
+    private static final float UV_CROP = 0.32F;
+
     private final SpriteSet sprites;
+    private final float puddleRotation;
+    private final float firstLobeAngle;
+    private final float secondLobeAngle;
+    private final float firstLobeDistance;
+    private final float secondLobeDistance;
 
     private Scp106CorrosionParticle(ClientLevel level, double x, double y, double z,
             SpriteSet sprites) {
@@ -27,12 +33,19 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         this.gravity = 0.0F;
         this.friction = 1.0F;
         this.hasPhysics = false;
-        this.lifetime = 45 + this.random.nextInt(26);
-        this.quadSize = 0.22F + this.random.nextFloat() * 0.12F;
+        this.lifetime = 60 + this.random.nextInt(31);
+        this.quadSize = 0.34F + this.random.nextFloat() * 0.14F;
+        this.puddleRotation = this.random.nextFloat() * ((float) Math.PI * 2.0F);
+        this.firstLobeAngle = this.puddleRotation
+                + 1.75F + this.random.nextFloat() * 0.75F;
+        this.secondLobeAngle = this.puddleRotation
+                + 3.85F + this.random.nextFloat() * 0.85F;
+        this.firstLobeDistance = 0.48F + this.random.nextFloat() * 0.20F;
+        this.secondLobeDistance = 0.42F + this.random.nextFloat() * 0.18F;
         this.setColor(
-                0.045F + this.random.nextFloat() * 0.035F,
-                0.018F + this.random.nextFloat() * 0.020F,
-                0.010F + this.random.nextFloat() * 0.012F);
+                0.040F + this.random.nextFloat() * 0.030F,
+                0.015F + this.random.nextFloat() * 0.018F,
+                0.008F + this.random.nextFloat() * 0.012F);
         this.setAlpha(MAX_ALPHA);
         this.setSpriteFromAge(sprites);
     }
@@ -44,9 +57,9 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
 
         float remaining = 1.0F - Mth.clamp(
                 this.age / (float) this.lifetime, 0.0F, 1.0F);
-        float fade = Mth.clamp(remaining / 0.35F, 0.0F, 1.0F);
+        float fade = Mth.clamp(remaining / 0.32F, 0.0F, 1.0F);
         this.setAlpha(MAX_ALPHA * fade);
-        this.quadSize += 0.00065F;
+        this.quadSize += 0.00055F;
     }
 
     @Override
@@ -59,33 +72,74 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
                 - cameraPosition.y());
         float renderZ = (float) (Mth.lerp(partialTick, this.zo, this.z)
                 - cameraPosition.z());
-
-        Vector3f[] corners = new Vector3f[] {
-                new Vector3f(-1.0F, 0.0F, -1.0F),
-                new Vector3f(-1.0F, 0.0F, 1.0F),
-                new Vector3f(1.0F, 0.0F, 1.0F),
-                new Vector3f(1.0F, 0.0F, -1.0F)
-        };
         float size = getQuadSize(partialTick);
-        for (Vector3f corner : corners) {
-            corner.mul(size);
-            corner.add(renderX, renderY, renderZ);
-        }
 
-        float minU = getU0();
-        float maxU = getU1();
-        float minV = getV0();
-        float maxV = getV1();
+        float fullMinU = getU0();
+        float fullMaxU = getU1();
+        float fullMinV = getV0();
+        float fullMaxV = getV1();
+        float minU = Mth.lerp(UV_CROP, fullMinU, fullMaxU);
+        float maxU = Mth.lerp(1.0F - UV_CROP, fullMinU, fullMaxU);
+        float minV = Mth.lerp(UV_CROP, fullMinV, fullMaxV);
+        float maxV = Mth.lerp(1.0F - UV_CROP, fullMinV, fullMaxV);
         int light = getLightColor(partialTick);
 
-        vertexConsumer.vertex(corners[0].x(), corners[0].y(), corners[0].z())
-                .uv(maxU, maxV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
-        vertexConsumer.vertex(corners[1].x(), corners[1].y(), corners[1].z())
-                .uv(maxU, minV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
-        vertexConsumer.vertex(corners[2].x(), corners[2].y(), corners[2].z())
-                .uv(minU, minV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
-        vertexConsumer.vertex(corners[3].x(), corners[3].y(), corners[3].z())
-                .uv(minU, maxV).color(rCol, gCol, bCol, alpha).uv2(light).endVertex();
+        renderLobe(vertexConsumer,
+                renderX, renderY, renderZ,
+                size * 1.22F, size * 0.82F,
+                puddleRotation,
+                minU, maxU, minV, maxV,
+                light, 1.0F);
+
+        renderLobe(vertexConsumer,
+                renderX + Mth.cos(firstLobeAngle) * size * firstLobeDistance,
+                renderY + 0.0004F,
+                renderZ + Mth.sin(firstLobeAngle) * size * firstLobeDistance,
+                size * 0.76F, size * 0.57F,
+                puddleRotation + 0.68F,
+                minU, maxU, minV, maxV,
+                light, 0.92F);
+
+        renderLobe(vertexConsumer,
+                renderX + Mth.cos(secondLobeAngle) * size * secondLobeDistance,
+                renderY + 0.0008F,
+                renderZ + Mth.sin(secondLobeAngle) * size * secondLobeDistance,
+                size * 0.63F, size * 0.50F,
+                puddleRotation - 0.54F,
+                minU, maxU, minV, maxV,
+                light, 0.86F);
+    }
+
+    private void renderLobe(VertexConsumer vertexConsumer,
+            float centerX, float centerY, float centerZ,
+            float radiusX, float radiusZ, float rotation,
+            float minU, float maxU, float minV, float maxV,
+            int light, float alphaMultiplier) {
+        float cos = Mth.cos(rotation);
+        float sin = Mth.sin(rotation);
+
+        float x0 = centerX + (-radiusX * cos - -radiusZ * sin);
+        float z0 = centerZ + (-radiusX * sin + -radiusZ * cos);
+        float x1 = centerX + (-radiusX * cos - radiusZ * sin);
+        float z1 = centerZ + (-radiusX * sin + radiusZ * cos);
+        float x2 = centerX + (radiusX * cos - radiusZ * sin);
+        float z2 = centerZ + (radiusX * sin + radiusZ * cos);
+        float x3 = centerX + (radiusX * cos - -radiusZ * sin);
+        float z3 = centerZ + (radiusX * sin + -radiusZ * cos);
+        float renderedAlpha = alpha * alphaMultiplier;
+
+        vertexConsumer.vertex(x0, centerY, z0)
+                .uv(maxU, maxV).color(rCol, gCol, bCol, renderedAlpha)
+                .uv2(light).endVertex();
+        vertexConsumer.vertex(x1, centerY, z1)
+                .uv(maxU, minV).color(rCol, gCol, bCol, renderedAlpha)
+                .uv2(light).endVertex();
+        vertexConsumer.vertex(x2, centerY, z2)
+                .uv(minU, minV).color(rCol, gCol, bCol, renderedAlpha)
+                .uv2(light).endVertex();
+        vertexConsumer.vertex(x3, centerY, z3)
+                .uv(minU, maxV).color(rCol, gCol, bCol, renderedAlpha)
+                .uv2(light).endVertex();
     }
 
     @Override

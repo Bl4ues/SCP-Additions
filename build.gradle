@@ -17,6 +17,20 @@ sourceSets.main.resources {
     srcDir('src/generated/resources')
     exclude('**/*.bbmodel')
     exclude('src/generated/**/.cache')
+    // 1.21 datapacks use singular recipe/. These generated legacy
+    // recipes target removed per-level public reader items; readers are now
+    // configured in-world through the unified reader and screwdriver.
+    exclude('data/scp_additions/recipe/lv_*_kr_right.json')
+    exclude('data/scp_additions/recipe/lv_*_lto_r.json')
+    exclude('data/scp_additions/recipe/lv_*_rto_l.json')
+    exclude('data/scp_additions/recipe/lv_2_kr_left.json')
+    exclude('data/scp_additions/recipe/lv_3_kr_left.json')
+    exclude('data/scp_additions/recipe/lv_4_kr_left.json')
+    exclude('data/scp_additions/recipe/lv_5_kr_left.json')
+    exclude('data/scp_additions/recipe/lv_6_kr_left.json')
+    exclude('data/scp_additions/recipe/spray_recipe.json')
+    exclude('data/scp_additions/recipe/button_left_swap.json')
+    exclude('data/scp_additions/recipe/button_right_swap.json')
 }
 
 minecraft.accessTransformers.file rootProject.file('src/main/resources/META-INF/accesstransformer.cfg')

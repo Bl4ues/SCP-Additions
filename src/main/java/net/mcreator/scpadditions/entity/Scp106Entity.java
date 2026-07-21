@@ -30,12 +30,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> ATTACKING =
             SynchedEntityData.defineId(Scp106Entity.class, EntityDataSerializers.BOOLEAN);
 
-    public static final double MOVEMENT_SPEED = 0.58D;
+    public static final double MOVEMENT_SPEED = 0.696D;
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
     private static final double PURSUIT_RANGE = 48.0D;
     private static final double PURSUIT_RANGE_SQR = PURSUIT_RANGE * PURSUIT_RANGE;
-    private static final double ATTACK_START_DISTANCE_SQR = 1.45D * 1.45D;
-    private static final double ATTACK_HIT_DISTANCE_SQR = 1.90D * 1.90D;
+    private static final double ATTACK_START_REACH = 0.55D;
+    private static final double ATTACK_HIT_REACH = 1.15D;
     private static final int PATH_REFRESH_INTERVAL = 3;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
@@ -94,9 +94,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         setTarget(player);
-        getLookControl().setLookAt(player, 12.0F, 8.0F);
+        getLookControl().setLookAt(player, 35.0F, 20.0F);
 
-        if (distanceToSqr(player) <= ATTACK_START_DISTANCE_SQR
+        if (isWithinMeleeReach(player, ATTACK_START_REACH)
                 && hasLineOfSight(player)) {
             startAttack();
             return;
@@ -125,18 +125,22 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return;
         }
 
-        getLookControl().setLookAt(target, 18.0F, 12.0F);
+        getLookControl().setLookAt(target, 45.0F, 25.0F);
         attackTicks++;
 
         if (attackTicks == ATTACK_HIT_TICK
-                && distanceToSqr(target) <= ATTACK_HIT_DISTANCE_SQR
-                && hasLineOfSight(target)) {
+                && isWithinMeleeReach(target, ATTACK_HIT_REACH)) {
             doHurtTarget(target);
         }
 
         if (attackTicks >= ATTACK_DURATION_TICKS) {
             finishAttack();
         }
+    }
+
+    private boolean isWithinMeleeReach(Entity target, double reach) {
+        return getBoundingBox().inflate(reach, 0.45D, reach)
+                .intersects(target.getBoundingBox());
     }
 
     private void finishAttack() {
@@ -198,9 +202,16 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         if (!(target instanceof LivingEntity livingTarget)) {
             return false;
         }
+        if (livingTarget instanceof Player player
+                && (player.isCreative() || player.isSpectator())) {
+            return false;
+        }
 
         boolean hurt = livingTarget.hurt(
                 damageSources().mobAttack(this), 5.0F);
+        if (!hurt) {
+            hurt = livingTarget.hurt(damageSources().generic(), 5.0F);
+        }
         if (hurt) {
             livingTarget.addEffect(new MobEffectInstance(
                     MobEffects.WITHER, WITHER_DURATION_TICKS, 0), this);

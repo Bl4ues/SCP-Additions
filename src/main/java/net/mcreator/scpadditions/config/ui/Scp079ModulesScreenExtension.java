@@ -200,7 +200,8 @@ public final class Scp079ModulesScreenExtension {
             rebuildWidgets();
         }
 
-        private void rebuildWidgets() {
+        @Override
+        protected void rebuildWidgets() {
             clearWidgets();
             buttons.clear();
             labels.clear();

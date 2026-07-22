@@ -1,0 +1,78 @@
+name: Temporary SCP-131 Final Geometry
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.head_ref == 'feature/scp079-scp131-separation' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/scp079-scp131-separation
+          fetch-depth: 0
+      - name: Correct separation geometry and lock subjects
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+          '''            if (route.lengthSqr() < 2.25D
+                              || route.normalize().dot(travelDirection) < 0.25D) {
+                          continue;
+                      }
+          ''':
+          '''            if (route.lengthSqr() < 2.25D
+                              || route.normalize().dot(travelDirection) > -0.25D) {
+                          continue;
+                      }
+          ''',
+          '''                && playerSide * followerSide < 0.0D
+                          && followerSide * scp173Side > 0.0D;
+          ''':
+          '''                && playerSide * followerSide < 0.0D
+                          && playerSide * scp173Side > 0.0D;
+          ''',
+          '''        Scp079SustainedDoorLocks.begin(level, opportunity.door().pos(),
+                          player.getUUID(), scp173.getUUID(),
+                          Scp079SustainedDoorLocks.LockReason.SCP_131_SEPARATION,
+                          SCP_131_MAX_LOCK_TICKS);
+          ''':
+          '''        Scp079SustainedDoorLocks.begin(level, opportunity.door().pos(),
+                          player.getUUID(), opportunity.follower().getUUID(),
+                          scp173.getUUID(),
+                          Scp079SustainedDoorLocks.LockReason.SCP_131_SEPARATION,
+                          SCP_131_MAX_LOCK_TICKS);
+          ''',
+          '''            Scp079SustainedDoorLocks.begin(level, action.door().pos(),
+                              player.getUUID(), pursuer.getUUID(),
+                              Scp079SustainedDoorLocks.LockReason.PURSUIT,
+                              action.maximumDurationTicks());
+          ''':
+          '''            Scp079SustainedDoorLocks.begin(level, action.door().pos(),
+                              player.getUUID(), pursuer.getUUID(),
+                              pursuer.getUUID(),
+                              Scp079SustainedDoorLocks.LockReason.PURSUIT,
+                              action.maximumDurationTicks());
+          '''}
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit('Expected geometry block not found:\n' + old)
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+      - name: Commit correction
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java
+          git commit -m "Correct SCP-131 separation geometry"
+          git pull --rebase origin feature/scp079-scp131-separation
+          git push origin HEAD:feature/scp079-scp131-separation

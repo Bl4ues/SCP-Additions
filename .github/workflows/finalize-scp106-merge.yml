@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
           ref: feature/scp106-roamer-encounter
 
-      - name: Simplify changelog and remove workflow
+      - name: Simplify changelog and remove temporary files
         shell: bash
         run: |
           set -euo pipefail
@@ -72,6 +72,7 @@ jobs:
           PY
 
           rm -f .github/workflows/finalize-scp106-merge.yml
-          git add CHANGELOG.md .github/workflows/finalize-scp106-merge.yml
+          rm -f .github/scp106-finalize-trigger
+          git add CHANGELOG.md .github/workflows/finalize-scp106-merge.yml .github/scp106-finalize-trigger
           git commit -m "Simplify SCP-106 and roamer changelog"
           git push origin HEAD:feature/scp106-roamer-encounter

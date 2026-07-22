@@ -1,0 +1,165 @@
+name: Temporary Decontamination Offset Hotfix
+
+on:
+  push:
+    branches:
+      - hotfix/decontamination-signed-offsets
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/decontamination-signed-offsets
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Encode signed blockstate offsets
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Expected block not found in {path}:\n{old}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          collision = Path('src/main/java/net/mcreator/scpadditions/block/DecontaminationCollisionBlock.java')
+          text = collision.read_text(encoding='utf-8')
+          text = text.replace('"offset_x", -1, 1);', '"offset_x", 0, 2);')
+          text = text.replace('"offset_y", -1, 1);', '"offset_y", 0, 2);')
+          text = text.replace('"offset_z", -1, 1);', '"offset_z", 0, 2);')
+          text = text.replace('.setValue(OFFSET_X, -1)', '.setValue(OFFSET_X, encodeOffset(-1))')
+          text = text.replace('.setValue(OFFSET_Y, -1)', '.setValue(OFFSET_Y, encodeOffset(-1))')
+          text = text.replace('.setValue(OFFSET_Z, -1)', '.setValue(OFFSET_Z, encodeOffset(-1))')
+          marker = '''    @Override
+              protected void createBlockStateDefinition(
+          '''
+          helpers = '''    public static int encodeOffset(int offset) {
+                  if (offset < -1 || offset > 1) {
+                      throw new IllegalArgumentException(
+                              "Decontamination offset must be between -1 and 1: "
+                                      + offset);
+                  }
+                  return offset + 1;
+              }
+
+              public static int decodeOffset(int storedOffset) {
+                  return storedOffset - 1;
+              }
+
+              @Override
+              protected void createBlockStateDefinition(
+          '''
+          if marker not in text:
+              raise SystemExit('Could not locate collision helper insertion point')
+          text = text.replace(marker, helpers, 1)
+          old_shape = '''                state.getValue(OFFSET_X),
+                          state.getValue(OFFSET_Y),
+                          state.getValue(OFFSET_Z));
+          '''
+          new_shape = '''                decodeOffset(state.getValue(OFFSET_X)),
+                          decodeOffset(state.getValue(OFFSET_Y)),
+                          decodeOffset(state.getValue(OFFSET_Z)));
+          '''
+          if old_shape not in text:
+              raise SystemExit('Could not locate collision shape offsets')
+          text = text.replace(old_shape, new_shape, 1)
+          collision.write_text(text, encoding='utf-8')
+
+          structure = Path('src/main/java/net/mcreator/scpadditions/block/DecontaminationStructure.java')
+          text = structure.read_text(encoding='utf-8')
+          old_read = '''        int offsetX = partState.getValue(
+                          DecontaminationCollisionBlock.OFFSET_X);
+                  int offsetY = partState.getValue(
+                          DecontaminationCollisionBlock.OFFSET_Y);
+                  int offsetZ = partState.getValue(
+                          DecontaminationCollisionBlock.OFFSET_Z);
+          '''
+          new_read = '''        int offsetX = DecontaminationCollisionBlock.decodeOffset(
+                          partState.getValue(DecontaminationCollisionBlock.OFFSET_X));
+                  int offsetY = DecontaminationCollisionBlock.decodeOffset(
+                          partState.getValue(DecontaminationCollisionBlock.OFFSET_Y));
+                  int offsetZ = DecontaminationCollisionBlock.decodeOffset(
+                          partState.getValue(DecontaminationCollisionBlock.OFFSET_Z));
+          '''
+          if old_read not in text:
+              raise SystemExit('Could not locate collision offset reads')
+          text = text.replace(old_read, new_read, 1)
+
+          old_controller = '''        return partPos.offset(
+                          -partState.getValue(DecontaminationCollisionBlock.OFFSET_X),
+                          -partState.getValue(DecontaminationCollisionBlock.OFFSET_Y),
+                          -partState.getValue(DecontaminationCollisionBlock.OFFSET_Z));
+          '''
+          new_controller = '''        return partPos.offset(
+                          -DecontaminationCollisionBlock.decodeOffset(partState.getValue(
+                                  DecontaminationCollisionBlock.OFFSET_X)),
+                          -DecontaminationCollisionBlock.decodeOffset(partState.getValue(
+                                  DecontaminationCollisionBlock.OFFSET_Y)),
+                          -DecontaminationCollisionBlock.decodeOffset(partState.getValue(
+                                  DecontaminationCollisionBlock.OFFSET_Z)));
+          '''
+          if old_controller not in text:
+              raise SystemExit('Could not locate controller position offsets')
+          text = text.replace(old_controller, new_controller, 1)
+
+          old_match = '''                && state.getValue(DecontaminationCollisionBlock.OFFSET_X)
+                          == offsetX
+                          && state.getValue(DecontaminationCollisionBlock.OFFSET_Y)
+                          == offsetY
+                          && state.getValue(DecontaminationCollisionBlock.OFFSET_Z)
+                          == offsetZ;
+          '''
+          new_match = '''                && DecontaminationCollisionBlock.decodeOffset(state.getValue(
+                          DecontaminationCollisionBlock.OFFSET_X)) == offsetX
+                          && DecontaminationCollisionBlock.decodeOffset(state.getValue(
+                          DecontaminationCollisionBlock.OFFSET_Y)) == offsetY
+                          && DecontaminationCollisionBlock.decodeOffset(state.getValue(
+                          DecontaminationCollisionBlock.OFFSET_Z)) == offsetZ;
+          '''
+          if old_match not in text:
+              raise SystemExit('Could not locate collision matching offsets')
+          text = text.replace(old_match, new_match, 1)
+
+          old_write = '''                .setValue(DecontaminationCollisionBlock.OFFSET_X, offsetX)
+                          .setValue(DecontaminationCollisionBlock.OFFSET_Y, offsetY)
+                          .setValue(DecontaminationCollisionBlock.OFFSET_Z, offsetZ)
+          '''
+          new_write = '''                .setValue(DecontaminationCollisionBlock.OFFSET_X,
+                                  DecontaminationCollisionBlock.encodeOffset(offsetX))
+                          .setValue(DecontaminationCollisionBlock.OFFSET_Y,
+                                  DecontaminationCollisionBlock.encodeOffset(offsetY))
+                          .setValue(DecontaminationCollisionBlock.OFFSET_Z,
+                                  DecontaminationCollisionBlock.encodeOffset(offsetZ))
+          '''
+          if old_write not in text:
+              raise SystemExit('Could not locate collision state offset writes')
+          text = text.replace(old_write, new_write, 1)
+          structure.write_text(text, encoding='utf-8')
+
+          Path('.github/workflows/temporary-decontamination-offset-hotfix.yml').unlink()
+      - name: Compile
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava --stacktrace
+      - name: Commit hotfix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/block/DecontaminationCollisionBlock.java
+          git add src/main/java/net/mcreator/scpadditions/block/DecontaminationStructure.java
+          git add .github/workflows/temporary-decontamination-offset-hotfix.yml
+          git commit -m "Fix decontamination collision offset registration"
+          git push origin HEAD:hotfix/decontamination-signed-offsets

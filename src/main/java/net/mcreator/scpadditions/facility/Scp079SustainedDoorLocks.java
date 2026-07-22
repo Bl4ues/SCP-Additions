@@ -99,9 +99,10 @@ public final class Scp079SustainedDoorLocks {
 
     private static boolean isStrategicallyUseful(ServerLevel level,
             BlockPos doorPos, ActiveLock lock) {
+        BlockState doorState = level.getBlockState(doorPos);
         if (!level.getGameRules().getBoolean(
                 ScpAdditionsModGameRules.SCP079CONTROLON)
-                || !isClosedOrClosingDoor(level.getBlockState(doorPos))) {
+                || !isClosedOrClosingDoor(doorState)) {
             return false;
         }
 
@@ -113,16 +114,18 @@ public final class Scp079SustainedDoorLocks {
                 || player.distanceToSqr(Vec3.atCenterOf(doorPos))
                 > RELEVANCE_DISTANCE_SQR
                 || threat.distanceToSqr(Vec3.atCenterOf(doorPos))
-                > RELEVANCE_DISTANCE_SQR
-                || !oppositeSides(level.getBlockState(doorPos), doorPos,
-                player.position(), threat.position())) {
+                > RELEVANCE_DISTANCE_SQR) {
             return false;
         }
 
         return switch (lock.reason()) {
             case PURSUIT -> threat instanceof Mob mob
-                    && mob.getTarget() == player;
-            case SCP_131_SEPARATION -> threat instanceof Scp173Entity;
+                    && mob.getTarget() == player
+                    && sameDoorSide(doorState, doorPos, player.position(),
+                    threat.position());
+            case SCP_131_SEPARATION -> threat instanceof Scp173Entity
+                    && oppositeDoorSides(doorState, doorPos, player.position(),
+                    threat.position());
         };
     }
 
@@ -143,20 +146,39 @@ public final class Scp079SustainedDoorLocks {
         return false;
     }
 
-    private static boolean oppositeSides(BlockState doorState, BlockPos doorPos,
+    private static boolean sameDoorSide(BlockState doorState, BlockPos doorPos,
+            Vec3 first, Vec3 second) {
+        DoorSides sides = doorSides(doorState, doorPos, first, second);
+        return sides != null
+                && Math.abs(sides.first()) >= 0.35D
+                && Math.abs(sides.second()) >= 0.35D
+                && sides.first() * sides.second() > 0.0D;
+    }
+
+    private static boolean oppositeDoorSides(BlockState doorState,
+            BlockPos doorPos, Vec3 first, Vec3 second) {
+        DoorSides sides = doorSides(doorState, doorPos, first, second);
+        return sides != null
+                && Math.abs(sides.first()) >= 0.55D
+                && Math.abs(sides.second()) >= 0.55D
+                && sides.first() * sides.second() < 0.0D;
+    }
+
+    private static DoorSides doorSides(BlockState doorState, BlockPos doorPos,
             Vec3 first, Vec3 second) {
         if (!doorState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return false;
+            return null;
         }
         Direction facing = doorState.getValue(HorizontalDirectionalBlock.FACING);
         Vec3 center = Vec3.atCenterOf(doorPos);
-        double firstSide = (first.x - center.x) * facing.getStepX()
-                + (first.z - center.z) * facing.getStepZ();
-        double secondSide = (second.x - center.x) * facing.getStepX()
-                + (second.z - center.z) * facing.getStepZ();
-        return Math.abs(firstSide) >= 0.55D
-                && Math.abs(secondSide) >= 0.55D
-                && firstSide * secondSide < 0.0D;
+        return new DoorSides(signedSide(center, facing, first),
+                signedSide(center, facing, second));
+    }
+
+    private static double signedSide(Vec3 center, Direction facing,
+            Vec3 position) {
+        return (position.x - center.x) * facing.getStepX()
+                + (position.z - center.z) * facing.getStepZ();
     }
 
     private static void remove(MinecraftServer server, DoorKey key,
@@ -179,6 +201,9 @@ public final class Scp079SustainedDoorLocks {
 
     private record ActiveLock(long generation, UUID playerId, UUID threatId,
             LockReason reason, long endTick) {
+    }
+
+    private record DoorSides(double first, double second) {
     }
 
     private record DoorKey(ResourceKey<Level> dimension, long pos) {

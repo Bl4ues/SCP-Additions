@@ -18,7 +18,10 @@ jobs:
           ref: feature/scp079-scp131-separation
           fetch-depth: 0
       - name: Apply implementation
-        run: python tools/temporary_scp131_separation_patch.py
+        shell: bash
+        run: |
+          set -o pipefail
+          python tools/temporary_scp131_separation_patch.py 2>&1 | tail -40
       - name: Commit implementation
         shell: bash
         run: |

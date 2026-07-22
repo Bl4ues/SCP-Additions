@@ -98,6 +98,8 @@ public final class ScpSpawnTimersOverlay {
             case DESPAWNED_TIMER_RESET ->
                     "DESPAWNED · FULL TIMER RESTARTED";
             case CHANCE_FAILED -> "LAST CHECK: CHANCE FAILED";
+            case CHANCE_FAILED_OTHER_ROAMER ->
+                    "LAST CHECK: OTHER ROAMER REDUCED CHANCE";
             case NO_VALID_POSITION -> "LAST CHECK: NO VALID POSITION";
             case BLOCKED_BY_EXISTING ->
                     "EXISTING INSTANCE · TIMER STOPPED";

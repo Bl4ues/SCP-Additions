@@ -4,8 +4,15 @@
 
 ## SCP-106
 
-- Added the SCP-106 entity;
-- Changed the custom Health Bar to a grotesque near-black and dark-brown gradient while the player has Wither.
+- Added the SCP-106 entity, including its model, texture, animations, black-and-brown spawn egg, **The Old Man** tooltip, and placement in the SCPs creative tab;
+- Added direct player pursuit, close-contact melee attacks dealing 5 damage and five seconds of particle-free Wither, subtle head tracking, and a grotesque near-black and dark-brown Wither Health Bar;
+- Added sparse, irregular black-brown corrosion pools while SCP-106 walks;
+- Added a natural roamer cycle with its first check two minutes after a Survival player enters the world, followed by the same five-minute recurring interval and 1-in-3 base chance used by SCP-173;
+- Added floor and wall emergence using dedicated animations and large corrosive portal pools before SCP-106 begins an immediate pursuit;
+- Added organic hunt interest lasting from short encounters below 30 seconds to pursuits of up to three minutes, with successful attacks capable of briefly extending the hunt;
+- Added solid-matter phasing with in-wall suffocation immunity, 50% phase movement speed, collision bypass only while entering or occupying solid blocks, and normal gravity across open gaps;
+- Added distance-pressure ambushes that make SCP-106 sink away and re-emerge ahead of a fleeing target near the target's current height;
+- Integrated SCP-106 with the shared roamer debug HUD, gamerule controls, containment state, and despawn commands.
 
 ## SCP-173
 
@@ -24,11 +31,13 @@
 
 ## Roamer spawning and developer tools
 
-- Added persistent world gamerules `173spawn` and `106spawn` for individual roamer spawn control; SCP-106 remains reported as disabled until its natural spawn scheduler is implemented;
+- Added persistent world gamerules `173spawn` and `106spawn` for individual roamer spawn control, with both natural spawn schedulers now implemented;
 - Added `/disableAllRoamers` and `/enableAllRoamers`, which overwrite every registered roamer spawn gamerule, plus `/despawnAllRoamers` and expandable `/despawnRoamer <scp173|scp106>` cleanup commands;
 - Replaced SCP-173's module-level natural-spawn toggle with the `173spawn` gamerule while keeping its behavior module and target configuration separate;
 - Added an extensible roamer lifecycle manager with `DISABLED`, `CONTAINED`, `PAUSED`, `COUNTDOWN`, and `SPAWNED` states, including a future-facing containment flag;
 - Stopped spawn countdowns while any matching roamer instance is active and made a full interval begin only after the final active instance despawns naturally, dies, or is removed by command;
+- Offset SCP-106's initial two-minute check from SCP-173 while keeping both roamers on five-minute recurring checks afterward;
+- Reduced either roamer's spawn chance from 1-in-3 to 1-in-9 while the other is active, preserving rare but survivable double-encounter possibilities and reporting the penalty in the debug HUD;
 - Added an optional **SCP Spawn Timers HUD** under Configuration Center → Debug Tools, showing each roamer's current state, next spawn check, and latest result;
 - Kept scheduler diagnostics event-driven: countdown animation runs client-side, packets are only sent when synchronized state changes, and entity scans remain limited to actual spawn attempts or explicit despawn commands.
 

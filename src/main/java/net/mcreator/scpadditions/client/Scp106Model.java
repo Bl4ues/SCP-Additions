@@ -13,7 +13,10 @@ import software.bernie.geckolib.model.data.EntityModelData;
 public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
     private static final ResourceLocation MODEL = new ResourceLocation(ScpAdditionsMod.MODID, "geo/entity/scp106.geo.json");
     private static final ResourceLocation TEXTURE = new ResourceLocation(ScpAdditionsMod.MODID, "textures/entities/scp106.png");
-    private static final ResourceLocation ANIMATION = new ResourceLocation(ScpAdditionsMod.MODID, "animations/entity/scp106.animation.json");
+    private static final ResourceLocation BASE_ANIMATION = new ResourceLocation(ScpAdditionsMod.MODID, "animations/entity/scp106.animation.json");
+    private static final ResourceLocation PHASE_GROUND_ANIMATION = new ResourceLocation(ScpAdditionsMod.MODID, "animations/entity/scp106_phase_ground.animation.json");
+    private static final ResourceLocation EMERGE_GROUND_ANIMATION = new ResourceLocation(ScpAdditionsMod.MODID, "animations/entity/scp106_emerge_ground.animation.json");
+    private static final ResourceLocation EMERGE_WALL_ANIMATION = new ResourceLocation(ScpAdditionsMod.MODID, "animations/entity/scp106_emerge_wall.animation.json");
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
@@ -27,18 +30,22 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return ANIMATION;
+        return switch (animatable.getEncounterState()) {
+            case 1 -> EMERGE_GROUND_ANIMATION;
+            case 2 -> EMERGE_WALL_ANIMATION;
+            case 4 -> PHASE_GROUND_ANIMATION;
+            default -> BASE_ANIMATION;
+        };
     }
 
     @Override
     public void setCustomAnimations(T animatable, long instanceId,
             AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
+        if (!animatable.allowsHeadTracking()) return;
 
         CoreGeoBone head = getAnimationProcessor().getBone("head");
-        if (head == null) {
-            return;
-        }
+        if (head == null) return;
 
         EntityModelData modelData = animationState.getData(
                 DataTickets.ENTITY_MODEL_DATA);

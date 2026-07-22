@@ -1,0 +1,197 @@
+package net.mcreator.scpadditions.roamer;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+/** Finds grounded floor or wall exits for SCP-106 without altering terrain. */
+public final class Scp106EmergenceLocator {
+    private static final Direction[] HORIZONTAL_DIRECTIONS = {
+            Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST
+    };
+    private static final double ENTITY_HALF_WIDTH = 0.45D;
+    private static final double ENTITY_HEIGHT = 2.0D;
+    private static final int INITIAL_ATTEMPTS = 96;
+    private static final int AMBUSH_ATTEMPTS = 72;
+
+    private Scp106EmergenceLocator() {
+    }
+
+    public enum Emergence {
+        GROUND,
+        WALL
+    }
+
+    public record Placement(Vec3 position, float yaw, Emergence emergence) {
+        public Placement {
+            if (position == null) position = Vec3.ZERO;
+            if (emergence == null) emergence = Emergence.GROUND;
+        }
+    }
+
+    public static Placement findInitial(ServerLevel level, Player target,
+            RandomSource random) {
+        if (level == null || target == null || random == null) return null;
+
+        Vec3 forward = horizontal(target.getLookAngle());
+        if (forward.lengthSqr() < 0.0001D) {
+            forward = new Vec3(0.0D, 0.0D, 1.0D);
+        }
+        Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
+        int targetY = target.blockPosition().getY();
+
+        for (int attempt = 0; attempt < INITIAL_ATTEMPTS; attempt++) {
+            Vec3 candidate;
+            if (attempt < 64) {
+                double distance = 6.0D + random.nextDouble() * 8.0D;
+                double side = (random.nextDouble() - 0.5D) * 12.0D;
+                candidate = target.position().add(forward.scale(distance))
+                        .add(right.scale(side));
+            } else {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double distance = 6.0D + random.nextDouble() * 8.0D;
+                candidate = target.position().add(Math.cos(angle) * distance,
+                        0.0D, Math.sin(angle) * distance);
+            }
+
+            BlockPos standing = findStandingPosition(level,
+                    Mth.floor(candidate.x), targetY, Mth.floor(candidate.z),
+                    4, 8);
+            if (standing == null) continue;
+
+            boolean preferWall = random.nextFloat() < 0.58F;
+            Placement wall = wallPlacement(level, standing, target, random);
+            if (preferWall && wall != null) return wall;
+
+            Placement ground = groundPlacement(standing, target);
+            if (ground != null) return ground;
+            if (wall != null) return wall;
+        }
+        return null;
+    }
+
+    public static Placement findAmbush(ServerLevel level, Player target,
+            RandomSource random) {
+        if (level == null || target == null || random == null) return null;
+
+        Vec3 forward = horizontal(target.getDeltaMovement());
+        if (forward.lengthSqr() < 0.0025D) {
+            forward = horizontal(target.getLookAngle());
+        }
+        if (forward.lengthSqr() < 0.0001D) {
+            forward = new Vec3(0.0D, 0.0D, 1.0D);
+        }
+        Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
+        int targetY = target.blockPosition().getY();
+
+        for (int attempt = 0; attempt < AMBUSH_ATTEMPTS; attempt++) {
+            double distance = 5.0D + random.nextDouble() * 5.0D;
+            double side = (random.nextDouble() - 0.5D) * 5.0D;
+            Vec3 candidate = target.position().add(forward.scale(distance))
+                    .add(right.scale(side));
+            BlockPos standing = findStandingPosition(level,
+                    Mth.floor(candidate.x), targetY, Mth.floor(candidate.z),
+                    3, 5);
+            if (standing == null) continue;
+
+            Placement wall = wallPlacement(level, standing, target, random);
+            if (wall != null && random.nextFloat() < 0.68F) return wall;
+
+            Placement ground = groundPlacement(standing, target);
+            if (ground != null) return ground;
+            if (wall != null) return wall;
+        }
+        return null;
+    }
+
+    private static Placement groundPlacement(BlockPos standing, Player target) {
+        Vec3 position = Vec3.atBottomCenterOf(standing);
+        Vec3 toTarget = target.position().subtract(position);
+        return new Placement(position, yawFor(toTarget.x, toTarget.z),
+                Emergence.GROUND);
+    }
+
+    private static Placement wallPlacement(ServerLevel level,
+            BlockPos standing, Player target, RandomSource random) {
+        Vec3 center = Vec3.atBottomCenterOf(standing);
+        int start = random.nextInt(HORIZONTAL_DIRECTIONS.length);
+        for (int offset = 0; offset < HORIZONTAL_DIRECTIONS.length; offset++) {
+            Direction outward = HORIZONTAL_DIRECTIONS[
+                    (start + offset) % HORIZONTAL_DIRECTIONS.length];
+            BlockPos wallBase = standing.relative(outward.getOpposite());
+            BlockPos wallUpper = wallBase.above();
+            if (!hasCollision(level, wallBase)
+                    || !hasCollision(level, wallUpper)) {
+                continue;
+            }
+
+            Vec3 toTarget = target.position().subtract(center);
+            double frontDot = toTarget.x * outward.getStepX()
+                    + toTarget.z * outward.getStepZ();
+            if (frontDot < -0.5D) continue;
+
+            return new Placement(center,
+                    yawFor(outward.getStepX(), outward.getStepZ()),
+                    Emergence.WALL);
+        }
+        return null;
+    }
+
+    private static BlockPos findStandingPosition(ServerLevel level, int x,
+            int targetY, int z, int scanUp, int scanDown) {
+        int maximum = Math.max(scanUp, scanDown);
+        for (int offset = 0; offset <= maximum; offset++) {
+            if (offset <= scanDown) {
+                BlockPos down = new BlockPos(x, targetY - offset, z);
+                if (isValidStandingPosition(level, down)) return down;
+            }
+            if (offset > 0 && offset <= scanUp) {
+                BlockPos up = new BlockPos(x, targetY + offset, z);
+                if (isValidStandingPosition(level, up)) return up;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isValidStandingPosition(ServerLevel level,
+            BlockPos position) {
+        if (!level.getWorldBorder().isWithinBounds(position)) return false;
+        BlockPos floorPos = position.below();
+        BlockState floor = level.getBlockState(floorPos);
+        if (!floor.isFaceSturdy(level, floorPos, Direction.UP)) return false;
+        if (!level.getFluidState(position).isEmpty()
+                || !level.getFluidState(position.above()).isEmpty()) {
+            return false;
+        }
+
+        double x = position.getX() + 0.5D;
+        double y = position.getY();
+        double z = position.getZ() + 0.5D;
+        AABB box = new AABB(x - ENTITY_HALF_WIDTH, y,
+                z - ENTITY_HALF_WIDTH, x + ENTITY_HALF_WIDTH,
+                y + ENTITY_HEIGHT, z + ENTITY_HALF_WIDTH);
+        return level.noCollision(box);
+    }
+
+    private static boolean hasCollision(ServerLevel level, BlockPos position) {
+        return !level.getBlockState(position)
+                .getCollisionShape(level, position).isEmpty();
+    }
+
+    private static Vec3 horizontal(Vec3 vector) {
+        Vec3 horizontal = new Vec3(vector.x, 0.0D, vector.z);
+        double length = horizontal.length();
+        return length <= 0.0001D ? horizontal
+                : horizontal.scale(1.0D / length);
+    }
+
+    private static float yawFor(double x, double z) {
+        return (float) (Mth.atan2(z, x) * Mth.RAD_TO_DEG) - 90.0F;
+    }
+}

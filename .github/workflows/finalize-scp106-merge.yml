@@ -1,0 +1,79 @@
+name: Finalize SCP-106 Merge
+
+on:
+  push:
+    branches:
+      - master
+      - feature/scp106-roamer-encounter
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Simplify changelog and remove temporary files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('CHANGELOG.md')
+          text = path.read_text(encoding='utf-8')
+
+          start = text.index('## SCP-106\n')
+          end = text.index('## Interface fixes\n', start)
+
+          replacement = '''## SCP-106
+
+- Added SCP-106 as a new roaming threat, including its model, animations, spawn egg, and **The Old Man** tooltip;
+- SCP-106 can now appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
+- Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
+- SCP-106 can phase through solid blocks, moving more slowly while inside them and returning to normal movement after reaching open space;
+- If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
+- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target.
+
+## SCP-173
+
+- Reduced SCP-173's rendered height to approximately two blocks.
+
+## SCP-079
+
+- Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
+- SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
+- Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
+- Added optional Debug Tools displays for SCP-079's power, its recent decisions, and roamer spawn timers.
+
+## Roamer spawning and developer tools
+
+- Added natural spawn cycles for both SCP-173 and SCP-106, with separate `173spawn` and `106spawn` gamerules;
+- SCP-106 begins checking for a possible encounter earlier than SCP-173, while both continue with recurring checks afterward;
+- When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
+- Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
+- Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, and `/despawnRoamer <scp173|scp106>`;
+- Added an optional **SCP Spawn Timers HUD** under Configuration Center → Debug Tools, showing each roamer's state, next check, and latest result.
+
+'''
+
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/finalize-scp106-merge.yml
+          rm -f .github/scp106-finalize-trigger
+          git add CHANGELOG.md .github/workflows/finalize-scp106-merge.yml .github/scp106-finalize-trigger
+          git commit -m "Simplify SCP-106 and roamer changelog"
+          git push origin HEAD:${GITHUB_REF_NAME}

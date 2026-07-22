@@ -27,6 +27,7 @@ import net.mcreator.scpadditions.roamer.RoamerType;
 public final class Scp173SpawnEvents {
     public static final int SPAWN_CHECK_INTERVAL_TICKS = 6000;
     private static final int SPAWN_CHANCE_BOUND = 3;
+    private static final int OTHER_ROAMER_CHANCE_BOUND = 9;
     private static final int SPAWN_ATTEMPTS = 96;
     private static final int FRONT_ATTEMPTS = 64;
     private static final int LOCAL_Y_SCAN_UP = 4;
@@ -64,10 +65,17 @@ public final class Scp173SpawnEvents {
             return;
         }
 
+        MinecraftServer server = player.getServer();
+        boolean otherRoamerActive = RoamerManager.hasOtherActive(server,
+                RoamerType.SCP_173);
+        int chanceBound = otherRoamerActive
+                ? OTHER_ROAMER_CHANCE_BOUND : SPAWN_CHANCE_BOUND;
         RandomSource random = player.getRandom();
-        if (random.nextInt(SPAWN_CHANCE_BOUND) != 0) {
+        if (random.nextInt(chanceBound) != 0) {
             RoamerManager.recordResult(player, RoamerType.SCP_173,
-                    RoamerResult.CHANCE_FAILED);
+                    otherRoamerActive
+                            ? RoamerResult.CHANCE_FAILED_OTHER_ROAMER
+                            : RoamerResult.CHANCE_FAILED);
             return;
         }
 

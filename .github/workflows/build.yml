@@ -35,7 +35,19 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        run: ./gradlew clean build --stacktrace
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --stacktrace 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics-${{ github.sha }}
+          path: build.log
+          if-no-files-found: error
 
       - name: Upload compiled JAR
         if: success()

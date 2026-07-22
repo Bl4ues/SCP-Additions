@@ -13,7 +13,7 @@
 
 ## SCP-079
 
-- SCP-079 now starts with 25 processing power and recovers 0.5 power per second, making its facility actions more limited and forcing it to choose its strategies more carefully;
+- SCP-079 now has a processing power which starts with 25 processing power and recovers 0.5 power per second, making its facility actions more limited and forcing it to choose its strategies more carefully;
 - Replaced the facility-wide action cooldown with processing costs and short per-device reuse limits, allowing deliberate multi-device sequences without mechanical spam on one door;
 - Changed contextual door sabotage to evaluate the nearest active pursuer, choose one useful action, preserve processing at low energy, and use narrower projected-route scans instead of repeated full-area door searches;
 - Added temporary access denial for closed controlled doors: functional buttons show their locked state and connected keycard readers show access denied before safely restoring their exact previous state;

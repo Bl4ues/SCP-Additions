@@ -3,6 +3,7 @@ name: Finalize SCP-106 Merge
 on:
   push:
     branches:
+      - master
       - feature/scp106-roamer-encounter
 
 permissions:
@@ -14,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout branch
+      - name: Checkout current branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: feature/scp106-roamer-encounter
+          ref: ${{ github.ref_name }}
 
       - name: Simplify changelog and remove temporary files
         shell: bash
@@ -75,4 +76,4 @@ jobs:
           rm -f .github/scp106-finalize-trigger
           git add CHANGELOG.md .github/workflows/finalize-scp106-merge.yml .github/scp106-finalize-trigger
           git commit -m "Simplify SCP-106 and roamer changelog"
-          git push origin HEAD:feature/scp106-roamer-encounter
+          git push origin HEAD:${GITHUB_REF_NAME}

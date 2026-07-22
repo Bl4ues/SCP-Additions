@@ -128,6 +128,9 @@ public final class ScpAdditionsModulesConfig {
 		@SerializedName("show_scp_079_energy_hud")
 		public boolean showScp079EnergyHud = false;
 
+		@SerializedName("show_scp_079_decision_log_hud")
+		public boolean showScp079DecisionLogHud = false;
+
 		@SerializedName("show_scp_spawn_timers_hud")
 		public boolean showScpSpawnTimersHud = false;
 	}

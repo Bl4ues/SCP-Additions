@@ -18,18 +18,30 @@ jobs:
           ref: feature/scp079-scp131-separation
           fetch-depth: 0
       - name: Apply implementation
+        id: patch
         shell: bash
         run: |
-          set -o pipefail
-          python tools/temporary_scp131_separation_patch.py 2>&1 | tail -40
-      - name: Commit implementation
+          set +e
+          python tools/temporary_scp131_separation_patch.py > patch-output.txt 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -ne 0 ]; then
+            cp patch-output.txt .github/SCP131_PATCH_ERROR.txt
+          fi
+      - name: Commit result
         shell: bash
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ "${{ steps.patch.outputs.status }}" != "0" ]; then
+            git add .github/SCP131_PATCH_ERROR.txt
+            git commit -m "Capture SCP-131 patch error"
+            git push origin HEAD:feature/scp079-scp131-separation
+            exit 0
+          fi
           if git diff --quiet; then
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md src/main/java
           git commit -m "Add SCP-079 SCP-131 separation strategy"
           git push origin HEAD:feature/scp079-scp131-separation

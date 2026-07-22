@@ -106,7 +106,7 @@ public final class RoamerManager {
             int currentTick = server.getTickCount();
             int nextTick = data.nextCheckTicks.get(player.getUUID());
             if (currentTick < nextTick) return false;
-            // Reserve the next interval before evaluating this attempt so a
+            // Reserve the regular interval before evaluating this attempt so a
             // failed chance or invalid position cannot retrigger every tick.
             data.nextCheckTicks.put(player.getUUID(), currentTick
                     + Math.max(1, type.spawnIntervalTicks()));
@@ -147,6 +147,27 @@ public final class RoamerManager {
                 restartAllSchedules(server, type, data,
                         RoamerResult.DESPAWNED_TIMER_RESET);
             }
+        }
+    }
+
+    public static boolean hasActive(MinecraftServer server, RoamerType type) {
+        if (server == null || type == null) return false;
+        synchronized (STATES) {
+            return !data(server, type).activeEntityIds.isEmpty();
+        }
+    }
+
+    public static boolean hasOtherActive(MinecraftServer server,
+            RoamerType excludedType) {
+        if (server == null || excludedType == null) return false;
+        synchronized (STATES) {
+            for (RoamerType type : RoamerType.values()) {
+                if (type != excludedType
+                        && !data(server, type).activeEntityIds.isEmpty()) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -203,7 +224,7 @@ public final class RoamerManager {
                                 : RoamerResult.RULE_DISABLED;
                 setResultForAll(server, data, result);
             } else if (data.activeEntityIds.isEmpty() && !data.contained) {
-                restartAllSchedules(server, type, data,
+                scheduleAll(server, type, data, type.initialSpawnDelayTicks(),
                         RoamerResult.TIMER_STARTED);
             }
         }
@@ -221,7 +242,7 @@ public final class RoamerManager {
             } else if (data.activeEntityIds.isEmpty()
                     && isSpawnRuleEnabled(server, type)
                     && type.spawnImplemented() && moduleEnabled(type)) {
-                restartAllSchedules(server, type, data,
+                scheduleAll(server, type, data, type.initialSpawnDelayTicks(),
                         RoamerResult.TIMER_STARTED);
             }
         }
@@ -302,7 +323,7 @@ public final class RoamerManager {
 
         if (!data.nextCheckTicks.containsKey(playerId)) {
             data.nextCheckTicks.put(playerId, player.getServer().getTickCount()
-                    + Math.max(1, type.spawnIntervalTicks()));
+                    + Math.max(1, type.initialSpawnDelayTicks()));
             RoamerResult previous = data.lastResults.get(playerId);
             if (previous == null || previous == RoamerResult.RULE_DISABLED
                     || previous == RoamerResult.MODULE_DISABLED
@@ -330,9 +351,13 @@ public final class RoamerManager {
 
     private static void restartAllSchedules(MinecraftServer server,
             RoamerType type, RoamerData data, RoamerResult result) {
+        scheduleAll(server, type, data, type.spawnIntervalTicks(), result);
+    }
+
+    private static void scheduleAll(MinecraftServer server, RoamerType type,
+            RoamerData data, int delayTicks, RoamerResult result) {
         data.nextCheckTicks.clear();
-        int next = server.getTickCount()
-                + Math.max(1, type.spawnIntervalTicks());
+        int next = server.getTickCount() + Math.max(1, delayTicks);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             data.lastResults.put(player.getUUID(), result);
             if (type.spawnImplemented() && moduleEnabled(type)

@@ -1,0 +1,238 @@
+name: Temporary SCP-131 Separation Patch
+
+on:
+  push:
+    branches:
+      - feature/scp079-scp131-separation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/scp079-scp131-separation
+          fetch-depth: 0
+
+      - name: Apply SCP-131 separation and sustained locks
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, old, new):
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              if old not in text:
+                  raise SystemExit(f"Expected block not found in {path}:\n{old[:240]}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          path = "src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java"
+          replace(path,
+          '''        if (wasWatchingScp173) {
+                      wasWatchingScp173 = false;
+                      teleportToOwnerIfTooFar();
+                  }
+          ''',
+          '''        if (wasWatchingScp173) {
+                      wasWatchingScp173 = false;
+                  }
+          ''')
+          replace(path,
+          '''    private void teleportToOwnerIfTooFar() {
+                  if (followOwner == null) {
+                      return;
+                  }
+          
+                  Player owner = level().getPlayerByUUID(followOwner);
+                  if (owner == null || owner.isRemoved() || !owner.isAlive() || distanceToSqr(owner) <= OWNER_RETURN_DISTANCE_SQR) {
+                      return;
+                  }
+          
+                  teleportNearOwner(owner);
+              }
+          
+              private void teleportNearOwner(Player owner) {
+                  getNavigation().stop();
+                  Vec3 behindOwner = owner.position().subtract(owner.getLookAngle().normalize().scale(1.15D));
+                  moveTo(behindOwner.x, owner.getY(), behindOwner.z, owner.getYRot(), 0.0F);
+                  scheduleNextOwnerRoam(8);
+              }
+          
+          ''',
+          '''    private void dismissGroupWhenOwnerIsTooFar(Player owner) {
+                  if (owner == null || distanceToSqr(owner) <= OWNER_RETURN_DISTANCE_SQR) {
+                      return;
+                  }
+                  if (stopFollowersFor(owner) && owner instanceof ServerPlayer serverPlayer) {
+                      ScpEntityNetwork.showScp131Notice(serverPlayer, false);
+                  }
+              }
+          
+          ''')
+          replace(path,
+          '''        double distanceSqr = distanceToSqr(owner);
+                  if (distanceSqr > OWNER_RETURN_DISTANCE_SQR) {
+                      teleportNearOwner(owner);
+                      return;
+                  }
+          ''',
+          '''        double distanceSqr = distanceToSqr(owner);
+                  if (distanceSqr > OWNER_RETURN_DISTANCE_SQR) {
+                      dismissGroupWhenOwnerIsTooFar(owner);
+                      return;
+                  }
+          ''')
+
+          path = "src/main/java/net/mcreator/scpadditions/facility/HeavyDoorControlPanelAccess.java"
+          replace(path,
+          '''        int changed = 0;
+                  for (BlockPos buttonPos : controls.buttons()) {
+                      if (denyButton(level, buttonPos, durationTicks)) changed++;
+                  }
+                  for (BlockPos readerPos : controls.readers()) {
+                      if (denyReader(level, readerPos, durationTicks)) changed++;
+                  }
+                  return changed;
+              }
+          ''',
+          '''        int changed = 0;
+                  for (BlockPos buttonPos : controls.buttons()) {
+                      if (extendActiveDenial(level, buttonPos, durationTicks)
+                              || denyButton(level, buttonPos, durationTicks)) {
+                          changed++;
+                      }
+                  }
+                  for (BlockPos readerPos : controls.readers()) {
+                      if (extendActiveDenial(level, readerPos, durationTicks)
+                              || denyReader(level, readerPos, durationTicks)) {
+                          changed++;
+                      }
+                  }
+                  return changed;
+              }
+          
+              private static boolean extendActiveDenial(ServerLevel level,
+                      BlockPos pos, int durationTicks) {
+                  PanelKey key = new PanelKey(level.dimension(), pos.asLong());
+                  DenialState previous = ACTIVE_DENIALS.get(key);
+                  if (previous == null
+                          || level.getBlockState(pos).getBlock()
+                          != previous.deniedBlock()) {
+                      return false;
+                  }
+                  long generation = DENIAL_GENERATION.incrementAndGet();
+                  DenialState extended = new DenialState(previous.originalState(),
+                          previous.deniedBlock(), generation);
+                  ACTIVE_DENIALS.put(key, extended);
+                  scheduleRestore(level, pos, key, extended,
+                          Math.max(1, durationTicks));
+                  return true;
+              }
+          ''')
+          replace(path,
+          '''                Block block = level.getBlockState(candidate).getBlock();
+                          if (isFunctionalButton(block)) {
+                              buttons.add(candidate.immutable());
+                          } else if (readerBasePath(block) != null) {
+                              readers.add(candidate.immutable());
+                          } else if (isLegacyNode(block)) {
+                              legacyNodes.add(candidate.immutable());
+                          }
+          ''',
+          '''                Block block = level.getBlockState(candidate).getBlock();
+                          DenialState active = ACTIVE_DENIALS.get(new PanelKey(
+                                  level.dimension(), candidate.asLong()));
+                          if (isFunctionalButton(block)
+                                  || isActiveDeniedButton(block, active)) {
+                              buttons.add(candidate.immutable());
+                          } else if (readerBasePath(block) != null
+                                  || isActiveDeniedReader(block, active)) {
+                              readers.add(candidate.immutable());
+                          } else if (isLegacyNode(block)) {
+                              legacyNodes.add(candidate.immutable());
+                          }
+          ''')
+          replace(path,
+          '''    private static boolean isFunctionalButton(Block block) {
+          ''',
+          '''    private static boolean isActiveDeniedButton(Block block,
+                      DenialState active) {
+                  return active != null && block == active.deniedBlock()
+                          && deniedButton(active.originalState().getBlock()) != null;
+              }
+          
+              private static boolean isActiveDeniedReader(Block block,
+                      DenialState active) {
+                  return active != null && block == active.deniedBlock()
+                          && readerBasePath(active.originalState().getBlock()) != null;
+              }
+          
+              private static boolean isFunctionalButton(Block block) {
+          ''')
+
+          path = "src/main/java/net/mcreator/scpadditions/facility/Scp079DecisionLog.java"
+          replace(path,
+          '''        ABANDON_SCP_012_CONTEST,
+                  ABORTED_ACTION
+          ''',
+          '''        ABANDON_SCP_012_CONTEST,
+                  SEPARATE_SCP_131,
+                  ABORTED_ACTION
+          ''')
+
+          path = "src/main/java/net/mcreator/scpadditions/vitals/client/Scp079EnergyOverlay.java"
+          replace(path,
+          '''            case ABANDON_SCP_012_CONTEST ->
+                              "ABANDONED SCP-012 CONTEST";
+                          case ABORTED_ACTION -> "ABORTED ACTION";
+          ''',
+          '''            case ABANDON_SCP_012_CONTEST ->
+                              "ABANDONED SCP-012 CONTEST";
+                          case SEPARATE_SCP_131 -> "SEPARATED SCP-131";
+                          case ABORTED_ACTION -> "ABORTED ACTION";
+          ''')
+
+          path = "src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java"
+          replace(path,
+          '''    private static final String PROTOCOL_VERSION = "12";
+          ''',
+          '''    private static final String PROTOCOL_VERSION = "13";
+          ''')
+
+          path = "CHANGELOG.md"
+          replace(path,
+          '''- Added separate optional debug displays for SCP-079's power, its recent decisions, and roamer spawn timers under the new **Debug Tools** configuration screen.
+          ''',
+          '''- Added separate optional debug displays for SCP-079's power, its recent decisions, and roamer spawn timers under the new **Debug Tools** configuration screen;
+          - SCP-079 can now exploit an open door to separate following SCP-131 instances from their owner when SCP-173 is waiting ahead, closing and locking the route before dismissing them;
+          - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep.
+          ''')
+          replace(path,
+          '''## SCP-173
+          
+          - Reduced SCP-173's rendered height to approximately two blocks.
+          ''',
+          '''## SCP-173
+          
+          - Reduced SCP-173's rendered height to approximately two blocks.
+          
+          ## SCP-131
+          
+          - SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally.
+          ''')
+
+      - name: Commit implementation
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md src/main/java
+          git commit -m "Add SCP-079 SCP-131 separation strategy"
+          git push origin HEAD:feature/scp079-scp131-separation

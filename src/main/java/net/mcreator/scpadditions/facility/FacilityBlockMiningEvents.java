@@ -37,12 +37,19 @@ public final class FacilityBlockMiningEvents {
     public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
         BlockState state = event.getState();
         Player player = event.getEntity();
-        if (state == null || player == null || player.isCreative()
-                || !facilityBlocks().contains(state.getBlock())) {
+        if (state == null || player == null) {
             return;
         }
 
         BlockPos position = event.getPosition().orElse(player.blockPosition());
+        FacilityStructureBreakGuard.observeMining(player.level(), position,
+                state);
+
+        if (player.isCreative()
+                || !facilityBlocks().contains(state.getBlock())) {
+            return;
+        }
+
         float registeredHardness = state.getDestroySpeed(player.level(), position);
         if (registeredHardness < 0.0F) {
             return;

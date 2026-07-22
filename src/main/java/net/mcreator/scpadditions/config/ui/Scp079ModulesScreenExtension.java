@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,15 +26,51 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Adds the developer HUD toggles to General & Modules while preserving the
- * exact SCP Unity presentation used by the native Configuration Center.
+ * Preserves the SCP Unity presentation for General & Modules and exposes
+ * developer-only HUD controls through a separate Debug Tools screen.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp079ModulesScreenExtension {
     private static final String MODULES_SCREEN =
             "net.mcreator.scpadditions.config.ui.ConfigCenterClient$ModulesScreen";
+    private static final String HOME_SCREEN =
+            "net.mcreator.scpadditions.config.ui.ConfigCenterClient$HomeScreen";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting()
             .disableHtmlEscaping().create();
+
+    private static final List<Row> GENERAL_ROWS = List.of(
+            new Row("inventory", "enabled", "SCP Inventory",
+                    "Enables the custom survival-horror inventory.", true),
+            new Row("inventory", "remember_ui_state", "Remember UI State",
+                    "Remembers the selected panel, document and scroll positions until leaving the world.", true),
+            new Row("interactions", "enabled", "Contextual Interactions",
+                    "Enables SCP Unity-style interaction prompts.", true),
+            new Row("interactions", "disable_in_creative", "Hide Prompts in Creative",
+                    "Disables custom prompts for Creative players.", false),
+            new Row("hud", "enabled", "Custom HUD",
+                    "Shows the SCP Additions health, stamina and blink presentation.", true),
+            new Row("vitals", "custom_health_enabled", "Custom Health",
+                    "Enables custom health behavior.", true),
+            new Row("vitals", "stamina_enabled", "Stamina",
+                    "Enables stamina drain and regeneration.", true),
+            new Row("vitals", "horror_movement_enabled", "Survival-Horror Movement",
+                    "Uses slower walking and committed sprinting.", true),
+            new Row("blink", "enabled", "Blink System",
+                    "Enables automatic and manual blinking.", true),
+            new Row("scp_173", "enabled", "SCP-173",
+                    "Enables SCP-173 behavior. Natural spawning uses the 173spawn gamerule.", true)
+    );
+
+    private static final List<Row> DEBUG_ROWS = List.of(
+            new Row("debug", "show_scp_079_energy_hud", "SCP-079 Energy HUD",
+                    "Shows SCP-079 processing power in the upper-right corner.", false),
+            new Row("debug", "show_scp_079_decision_log_hud",
+                    "SCP-079 Decision Log HUD",
+                    "Shows recent SCP-079 decisions, costs, context and manipulated devices.", false),
+            new Row("debug", "show_scp_spawn_timers_hud",
+                    "SCP Spawn Timers HUD",
+                    "Shows each roamer's state, countdown and latest scheduler result.", false)
+    );
 
     private Scp079ModulesScreenExtension() {
     }
@@ -51,21 +88,83 @@ public final class Scp079ModulesScreenExtension {
             workingField.setAccessible(true);
             Object value = workingField.get(incoming);
             if (value instanceof JsonObject working) {
-                event.setNewScreen(new ExtendedModulesScreen(
-                        event.getCurrentScreen(), working));
+                event.setNewScreen(new ExtendedToggleScreen(
+                        event.getCurrentScreen(), working,
+                        "General & Modules", GENERAL_ROWS));
             }
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not attach Debug settings to General & Modules",
+                    "Could not apply the extended General & Modules screen",
                     exception);
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onHomeScreenInit(ScreenEvent.Init.Post event) {
+        Screen screen = event.getScreen();
+        if (screen == null || !HOME_SCREEN.equals(screen.getClass().getName())) {
+            return;
+        }
+
+        Button reload = null;
+        Button done = null;
+        for (GuiEventListener listener : event.getListenersList()) {
+            if (!(listener instanceof Button button)) continue;
+            String label = button.getMessage().getString();
+            if ("Reload Snapshot".equals(label)) reload = button;
+            if ("Done".equals(label)) done = button;
+        }
+        if (reload == null || done == null) return;
+
+        int debugX = Math.min(reload.getX(), done.getX());
+        int debugRight = Math.max(reload.getX() + reload.getWidth(),
+                done.getX() + done.getWidth());
+        int debugY = Math.max(reload.getY(), done.getY());
+        int shiftedY = debugY + 31;
+        if (shiftedY + Math.max(reload.getHeight(), done.getHeight())
+                > screen.height - 8) {
+            return;
+        }
+
+        reload.setY(shiftedY);
+        done.setY(shiftedY);
+        Button debug = Button.builder(ScpFonts.roboto("Debug Tools"),
+                button -> openDebugScreen(screen))
+                .bounds(debugX, debugY, debugRight - debugX, 24).build();
+        event.addListener(debug);
+    }
+
+    private static void openDebugScreen(Screen parent) {
+        Minecraft.getInstance().setScreen(new ExtendedToggleScreen(parent,
+                moduleSnapshot(parent), "Debug Tools", DEBUG_ROWS));
+    }
+
+    private static JsonObject moduleSnapshot(Screen home) {
+        Class<?> owner = home == null ? null : home.getClass().getDeclaringClass();
+        if (owner == null) return new JsonObject();
+        try {
+            Field filesField = owner.getDeclaredField("files");
+            filesField.setAccessible(true);
+            Object value = filesField.get(null);
+            if (value instanceof JsonObject files
+                    && files.has(ConfigCenterService.MODULES)
+                    && files.get(ConfigCenterService.MODULES).isJsonObject()) {
+                return files.getAsJsonObject(
+                        ConfigCenterService.MODULES).deepCopy();
+            }
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not read the module snapshot for Debug Tools",
+                    exception);
+        }
+        return new JsonObject();
     }
 
     private record Row(String group, String key, String label,
                        String description, boolean fallback) {
     }
 
-    private static final class ExtendedModulesScreen extends Screen {
+    private static final class ExtendedToggleScreen extends Screen {
         private static final int PANEL = 0xEE111317;
         private static final int HEADER = 0xEE24282E;
         private static final int NAVY = 0xFF081022;
@@ -80,67 +179,44 @@ public final class Scp079ModulesScreenExtension {
         private static final int MUTED = 0xFF9CA3AF;
         private static final int ROW_HEIGHT = 34;
 
-        private static final List<Row> ROWS = List.of(
-                new Row("inventory", "enabled", "SCP Inventory",
-                        "Enables the custom survival-horror inventory.", true),
-                new Row("inventory", "remember_ui_state", "Remember UI State",
-                        "Remembers the selected panel, document and scroll positions until leaving the world.", true),
-                new Row("interactions", "enabled", "Contextual Interactions",
-                        "Enables SCP Unity-style interaction prompts.", true),
-                new Row("interactions", "disable_in_creative", "Hide Prompts in Creative",
-                        "Disables custom prompts for Creative players.", false),
-                new Row("hud", "enabled", "Custom HUD",
-                        "Shows the SCP Additions health, stamina and blink presentation.", true),
-                new Row("vitals", "custom_health_enabled", "Custom Health",
-                        "Enables custom health behavior.", true),
-                new Row("vitals", "stamina_enabled", "Stamina",
-                        "Enables stamina drain and regeneration.", true),
-                new Row("vitals", "horror_movement_enabled", "Survival-Horror Movement",
-                        "Uses slower walking and committed sprinting.", true),
-                new Row("blink", "enabled", "Blink System",
-                        "Enables automatic and manual blinking.", true),
-                new Row("scp_173", "enabled", "SCP-173",
-                        "Enables SCP-173 behavior. Natural spawning uses the 173spawn gamerule.", true),
-                new Row("debug", "show_scp_079_energy_hud", "SCP-079 Energy HUD",
-                        "Shows SCP-079 processing power in the upper-right corner for testing.", false),
-                new Row("debug", "show_scp_spawn_timers_hud", "SCP Spawn Timers HUD",
-                        "Shows each roamer's state, countdown and latest scheduler result.", false)
-        );
-
         private final Screen parent;
         private final JsonObject working;
+        private final List<Row> rows;
         private final List<Button> buttons = new ArrayList<>();
         private final Map<Button, Component> labels = new IdentityHashMap<>();
         private int scroll;
         private boolean saving;
 
-        private ExtendedModulesScreen(Screen parent, JsonObject working) {
-            super(ScpFonts.roboto("General & Modules"));
+        private ExtendedToggleScreen(Screen parent, JsonObject working,
+                String title, List<Row> rows) {
+            super(ScpFonts.roboto(title));
             this.parent = parent;
-            this.working = working;
+            this.working = working == null ? new JsonObject() : working;
+            this.rows = rows == null ? List.of() : List.copyOf(rows);
         }
 
         @Override
         protected void init() {
-            rebuildModuleWidgets();
+            rebuildWidgets();
         }
 
-        private void rebuildModuleWidgets() {
+        @Override
+        protected void rebuildWidgets() {
             clearWidgets();
             buttons.clear();
             labels.clear();
 
             int panelWidth = Math.min(560, width - 20);
-            int panelHeight = Math.min(380, height - 16);
+            int panelHeight = panelHeight();
             int panelX = Math.max(8, (width - panelWidth) / 2);
             int panelY = Math.max(8, (height - panelHeight) / 2);
             int contentX = panelX + 16;
             int contentY = panelY + 44;
             int visible = visibleRows();
-            int end = Math.min(ROWS.size(), scroll + visible);
+            int end = Math.min(rows.size(), scroll + visible);
 
             for (int i = scroll; i < end; i++) {
-                Row row = ROWS.get(i);
+                Row row = rows.get(i);
                 int rowY = contentY + (i - scroll) * ROW_HEIGHT;
                 Button button = Button.builder(ScpFonts.roboto(toggleLabel(row)),
                         clicked -> {
@@ -152,8 +228,7 @@ public final class Scp079ModulesScreenExtension {
                 register(button, toggleLabel(row));
             }
 
-            int bottom = Math.min(height - 30,
-                    contentY + visible * ROW_HEIGHT + 8);
+            int bottom = panelY + panelHeight - 30;
             register(Button.builder(ScpFonts.roboto("Defaults"),
                     button -> resetDefaults())
                     .bounds(contentX, bottom, 90, 20).build(), "Defaults");
@@ -190,15 +265,15 @@ public final class Scp079ModulesScreenExtension {
             payload.add(ConfigCenterService.MODULES, working);
             ModNetwork.CHANNEL.sendToServer(new ConfigCenterNetwork.SaveRequest(
                     GSON.toJson(payload)));
-            rebuildModuleWidgets();
+            rebuildWidgets();
         }
 
         private void resetDefaults() {
-            for (Row row : ROWS) {
+            for (Row row : rows) {
                 object(working, row.group()).addProperty(row.key(),
                         row.fallback());
             }
-            rebuildModuleWidgets();
+            rebuildWidgets();
         }
 
         private String toggleLabel(Row row) {
@@ -207,12 +282,14 @@ public final class Scp079ModulesScreenExtension {
                     row.fallback()) ? "ON" : "OFF");
         }
 
-        private int visibleRows() {
-            return Math.max(4, Math.min(8, (height - 118) / ROW_HEIGHT));
+        private int panelHeight() {
+            int preferred = rows.size() <= 4 ? 240 : 380;
+            return Math.min(preferred, height - 16);
         }
 
-        private void rebuild() {
-            rebuildModuleWidgets();
+        private int visibleRows() {
+            return Math.max(1, Math.min(8,
+                    (panelHeight() - 100) / ROW_HEIGHT));
         }
 
         private void goBack() {
@@ -232,12 +309,12 @@ public final class Scp079ModulesScreenExtension {
         @Override
         public boolean mouseScrolled(double mouseX, double mouseY,
                                      double delta) {
-            int max = Math.max(0, ROWS.size() - visibleRows());
+            int max = Math.max(0, rows.size() - visibleRows());
             int next = Math.max(0, Math.min(max,
                     scroll + (delta < 0.0D ? 1 : -1)));
             if (next != scroll) {
                 scroll = next;
-                rebuild();
+                rebuildWidgets();
                 return true;
             }
             return super.mouseScrolled(mouseX, mouseY, delta);
@@ -248,7 +325,7 @@ public final class Scp079ModulesScreenExtension {
                            float partialTick) {
             renderBackground(graphics);
             int panelWidth = Math.min(560, width - 20);
-            int panelHeight = Math.min(380, height - 16);
+            int panelHeight = panelHeight();
             int panelX = Math.max(8, (width - panelWidth) / 2);
             int panelY = Math.max(8, (height - panelHeight) / 2);
 
@@ -258,16 +335,18 @@ public final class Scp079ModulesScreenExtension {
                     panelY + 26, HEADER);
             graphics.drawString(font, ScpFonts.roboto(title), panelX + 10,
                     panelY + 9, WHITE, false);
-            graphics.drawString(font,
-                    ScpFonts.roboto("Mouse wheel: scroll options"),
-                    panelX + panelWidth - 160, panelY + 31, MUTED, false);
 
             int visible = visibleRows();
+            if (rows.size() > visible) {
+                graphics.drawString(font,
+                        ScpFonts.roboto("Mouse wheel: scroll options"),
+                        panelX + panelWidth - 160, panelY + 31, MUTED, false);
+            }
             int startY = panelY + 68;
-            int end = Math.min(ROWS.size(), scroll + visible);
+            int end = Math.min(rows.size(), scroll + visible);
             for (int i = scroll; i < end; i++) {
                 graphics.drawString(font,
-                        ScpFonts.roboto(compact(ROWS.get(i).description(), 80)),
+                        ScpFonts.roboto(compact(rows.get(i).description(), 80)),
                         panelX + 18,
                         startY + (i - scroll) * ROW_HEIGHT,
                         MUTED, false);

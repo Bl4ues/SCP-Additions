@@ -14,21 +14,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-/** Server-to-client snapshot of the event-driven SCP-079 decision feed. */
+/** Server-to-client snapshot of the optional SCP-079 decision feed. */
 public final class Scp079DecisionPacket {
     private static final int MAX_ENTRIES = 12;
     private static final int MAX_DIMENSION_LENGTH = 96;
     private static final int MAX_CONTEXT_LENGTH = 160;
 
+    private final boolean visible;
     private final List<DecisionEntry> entries;
 
-    public Scp079DecisionPacket(List<DecisionEntry> entries) {
-        this.entries = entries == null ? List.of() : List.copyOf(entries);
+    public Scp079DecisionPacket(boolean visible, List<DecisionEntry> entries) {
+        this.visible = visible;
+        this.entries = visible && entries != null
+                ? List.copyOf(entries) : List.of();
     }
 
     public static void encode(Scp079DecisionPacket message,
             FriendlyByteBuf buffer) {
-        int size = Math.min(MAX_ENTRIES, message.entries.size());
+        buffer.writeBoolean(message.visible);
+        int size = message.visible
+                ? Math.min(MAX_ENTRIES, message.entries.size()) : 0;
         buffer.writeVarInt(size);
         for (int index = 0; index < size; index++) {
             DecisionEntry entry = message.entries.get(index);
@@ -46,6 +51,7 @@ public final class Scp079DecisionPacket {
     }
 
     public static Scp079DecisionPacket decode(FriendlyByteBuf buffer) {
+        boolean visible = buffer.readBoolean();
         int size = Mth.clamp(buffer.readVarInt(), 0, MAX_ENTRIES);
         List<DecisionEntry> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
@@ -64,7 +70,7 @@ public final class Scp079DecisionPacket {
             entries.add(new DecisionEntry(sequence, type, outcome, pos,
                     dimension, context, cost, ageTicks));
         }
-        return new Scp079DecisionPacket(entries);
+        return new Scp079DecisionPacket(visible, entries);
     }
 
     public static void handle(Scp079DecisionPacket message,
@@ -72,7 +78,7 @@ public final class Scp079DecisionPacket {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                 () -> () -> Scp079EnergyClientState.replaceDecisions(
-                        message.entries)));
+                        message.visible, message.entries)));
         context.setPacketHandled(true);
     }
 

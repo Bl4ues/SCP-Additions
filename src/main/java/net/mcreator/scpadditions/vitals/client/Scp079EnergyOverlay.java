@@ -16,7 +16,7 @@ import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import java.util.List;
 import java.util.Locale;
 
-/** White upper-right developer HUD for SCP-079 processing and decisions. */
+/** Independent upper-right developer HUDs for SCP-079 energy and decisions. */
 public final class Scp079EnergyOverlay {
     private static final ResourceLocation ROBOTO_FONT =
             new ResourceLocation("scpinventory", "roboto");
@@ -43,24 +43,35 @@ public final class Scp079EnergyOverlay {
     }
 
     public static int occupiedHeight() {
-        if (!Scp079EnergyClientState.visible()) return 0;
-        int rows = Math.max(1, Math.min(MAX_VISIBLE_ENTRIES,
-                Scp079EnergyClientState.decisions().size()));
-        return ENERGY_HEIGHT + GAP + FEED_HEADER_HEIGHT + rows * ENTRY_HEIGHT;
+        boolean energy = Scp079EnergyClientState.visible();
+        boolean decisions = Scp079EnergyClientState.decisionLogVisible();
+        if (!energy && !decisions) return 0;
+
+        int height = energy ? ENERGY_HEIGHT : 0;
+        if (decisions) {
+            if (height > 0) height += GAP;
+            int rows = Math.max(1, Math.min(MAX_VISIBLE_ENTRIES,
+                    Scp079EnergyClientState.decisions().size()));
+            height += FEED_HEADER_HEIGHT + rows * ENTRY_HEIGHT;
+        }
+        return height;
     }
 
     public static void render(GuiGraphics graphics, int screenWidth,
             int screenHeight, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!Scp079EnergyClientState.visible()
+        boolean energy = Scp079EnergyClientState.visible();
+        boolean decisions = Scp079EnergyClientState.decisionLogVisible();
+        if ((!energy && !decisions)
                 || minecraft.player == null
                 || minecraft.screen != null
                 || minecraft.options.hideGui) {
             return;
         }
 
-        renderEnergy(graphics, minecraft, screenWidth);
-        renderDecisionFeed(graphics, minecraft, screenWidth);
+        if (energy) renderEnergy(graphics, minecraft, screenWidth);
+        if (decisions) renderDecisionFeed(graphics, minecraft, screenWidth,
+                energy ? MARGIN + ENERGY_HEIGHT + GAP : MARGIN);
     }
 
     private static void renderEnergy(GuiGraphics graphics,
@@ -95,14 +106,13 @@ public final class Scp079EnergyOverlay {
     }
 
     private static void renderDecisionFeed(GuiGraphics graphics,
-            Minecraft minecraft, int screenWidth) {
+            Minecraft minecraft, int screenWidth, int y) {
         List<ClientDecisionSnapshot> decisions =
                 Scp079EnergyClientState.decisions();
         int visible = Math.min(MAX_VISIBLE_ENTRIES, decisions.size());
         int rows = Math.max(1, visible);
         int height = FEED_HEADER_HEIGHT + rows * ENTRY_HEIGHT;
         int x = screenWidth - FEED_WIDTH - MARGIN;
-        int y = MARGIN + ENERGY_HEIGHT + GAP;
 
         graphics.fill(x, y, x + FEED_WIDTH, y + height, PANEL);
         border(graphics, x, y, FEED_WIDTH, height, WHITE);

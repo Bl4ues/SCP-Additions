@@ -166,12 +166,12 @@ public final class DecontaminationStructure {
             return false;
         }
 
-        int offsetX = partState.getValue(
-                DecontaminationCollisionBlock.OFFSET_X);
-        int offsetY = partState.getValue(
-                DecontaminationCollisionBlock.OFFSET_Y);
-        int offsetZ = partState.getValue(
-                DecontaminationCollisionBlock.OFFSET_Z);
+        int offsetX = DecontaminationCollisionBlock.decodeOffset(
+                partState.getValue(DecontaminationCollisionBlock.OFFSET_X));
+        int offsetY = DecontaminationCollisionBlock.decodeOffset(
+                partState.getValue(DecontaminationCollisionBlock.OFFSET_Y));
+        int offsetZ = DecontaminationCollisionBlock.decodeOffset(
+                partState.getValue(DecontaminationCollisionBlock.OFFSET_Z));
         if (isControllerOffset(offsetX, offsetY, offsetZ)) {
             return false;
         }
@@ -197,9 +197,12 @@ public final class DecontaminationStructure {
     public static BlockPos controllerPosition(BlockPos partPos,
             BlockState partState) {
         return partPos.offset(
-                -partState.getValue(DecontaminationCollisionBlock.OFFSET_X),
-                -partState.getValue(DecontaminationCollisionBlock.OFFSET_Y),
-                -partState.getValue(DecontaminationCollisionBlock.OFFSET_Z));
+                -DecontaminationCollisionBlock.decodeOffset(partState.getValue(
+                        DecontaminationCollisionBlock.OFFSET_X)),
+                -DecontaminationCollisionBlock.decodeOffset(partState.getValue(
+                        DecontaminationCollisionBlock.OFFSET_Y)),
+                -DecontaminationCollisionBlock.decodeOffset(partState.getValue(
+                        DecontaminationCollisionBlock.OFFSET_Z)));
     }
 
     public static boolean isController(BlockState state) {
@@ -226,12 +229,12 @@ public final class DecontaminationStructure {
         return state.getBlock() == DecontaminationStructureBlocks.collision()
                 && state.getValue(DecontaminationCollisionBlock.FACING)
                 == facing
-                && state.getValue(DecontaminationCollisionBlock.OFFSET_X)
-                == offsetX
-                && state.getValue(DecontaminationCollisionBlock.OFFSET_Y)
-                == offsetY
-                && state.getValue(DecontaminationCollisionBlock.OFFSET_Z)
-                == offsetZ;
+                && DecontaminationCollisionBlock.decodeOffset(state.getValue(
+                DecontaminationCollisionBlock.OFFSET_X)) == offsetX
+                && DecontaminationCollisionBlock.decodeOffset(state.getValue(
+                DecontaminationCollisionBlock.OFFSET_Y)) == offsetY
+                && DecontaminationCollisionBlock.decodeOffset(state.getValue(
+                DecontaminationCollisionBlock.OFFSET_Z)) == offsetZ;
     }
 
     private static BlockState collisionState(Level level, BlockPos pos,
@@ -239,9 +242,12 @@ public final class DecontaminationStructure {
         return DecontaminationStructureBlocks.collision()
                 .defaultBlockState()
                 .setValue(DecontaminationCollisionBlock.FACING, facing)
-                .setValue(DecontaminationCollisionBlock.OFFSET_X, offsetX)
-                .setValue(DecontaminationCollisionBlock.OFFSET_Y, offsetY)
-                .setValue(DecontaminationCollisionBlock.OFFSET_Z, offsetZ)
+                .setValue(DecontaminationCollisionBlock.OFFSET_X,
+                        DecontaminationCollisionBlock.encodeOffset(offsetX))
+                .setValue(DecontaminationCollisionBlock.OFFSET_Y,
+                        DecontaminationCollisionBlock.encodeOffset(offsetY))
+                .setValue(DecontaminationCollisionBlock.OFFSET_Z,
+                        DecontaminationCollisionBlock.encodeOffset(offsetZ))
                 .setValue(DecontaminationCollisionBlock.WATERLOGGED,
                         level.getFluidState(pos).getType() == Fluids.WATER);
     }

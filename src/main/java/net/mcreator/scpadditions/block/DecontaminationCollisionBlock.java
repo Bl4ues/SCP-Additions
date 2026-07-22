@@ -46,11 +46,11 @@ public final class DecontaminationCollisionBlock extends Block
     public static final DirectionProperty FACING =
             HorizontalDirectionalBlock.FACING;
     public static final IntegerProperty OFFSET_X = IntegerProperty.create(
-            "offset_x", -1, 1);
+            "offset_x", 0, 2);
     public static final IntegerProperty OFFSET_Y = IntegerProperty.create(
-            "offset_y", -1, 1);
+            "offset_y", 0, 2);
     public static final IntegerProperty OFFSET_Z = IntegerProperty.create(
-            "offset_z", -1, 1);
+            "offset_z", 0, 2);
     public static final BooleanProperty WATERLOGGED =
             BlockStateProperties.WATERLOGGED;
 
@@ -64,10 +64,23 @@ public final class DecontaminationCollisionBlock extends Block
                 .isRedstoneConductor((state, level, pos) -> false));
         registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
-                .setValue(OFFSET_X, -1)
-                .setValue(OFFSET_Y, -1)
-                .setValue(OFFSET_Z, -1)
+                .setValue(OFFSET_X, encodeOffset(-1))
+                .setValue(OFFSET_Y, encodeOffset(-1))
+                .setValue(OFFSET_Z, encodeOffset(-1))
                 .setValue(WATERLOGGED, false));
+    }
+
+    public static int encodeOffset(int offset) {
+        if (offset < -1 || offset > 1) {
+            throw new IllegalArgumentException(
+                    "Decontamination offset must be between -1 and 1: "
+                            + offset);
+        }
+        return offset + 1;
+    }
+
+    public static int decodeOffset(int storedOffset) {
+        return storedOffset - 1;
     }
 
     @Override
@@ -110,9 +123,9 @@ public final class DecontaminationCollisionBlock extends Block
         return DecontaminationShapeHelper.localShape(
                 state.getValue(FACING),
                 DecontaminationStructure.isClosedController(controllerState),
-                state.getValue(OFFSET_X),
-                state.getValue(OFFSET_Y),
-                state.getValue(OFFSET_Z));
+                decodeOffset(state.getValue(OFFSET_X)),
+                decodeOffset(state.getValue(OFFSET_Y)),
+                decodeOffset(state.getValue(OFFSET_Z)));
     }
 
     @Override

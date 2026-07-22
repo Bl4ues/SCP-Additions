@@ -178,20 +178,22 @@ public final class ScpEntityNetwork {
     }
 
     public static void syncScp079Decisions(ServerPlayer player,
-            Scp079DecisionLog.Snapshot snapshot) {
-        if (player == null || snapshot == null) return;
+            boolean visible, Scp079DecisionLog.Snapshot snapshot) {
+        if (player == null) return;
         MinecraftServer server = player.getServer();
         long currentTick = server == null ? 0L : server.getTickCount();
         List<DecisionEntry> entries = new ArrayList<>();
-        for (Scp079DecisionLog.DecisionEntry entry : snapshot.entries()) {
-            entries.add(new DecisionEntry(entry.sequence(), entry.type(),
-                    entry.outcome(), entry.pos(), entry.dimension(),
-                    entry.context(), entry.cost(), (int) Math.max(0L,
-                    currentTick - entry.createdTick())));
+        if (visible && snapshot != null) {
+            for (Scp079DecisionLog.DecisionEntry entry : snapshot.entries()) {
+                entries.add(new DecisionEntry(entry.sequence(), entry.type(),
+                        entry.outcome(), entry.pos(), entry.dimension(),
+                        entry.context(), entry.cost(), (int) Math.max(0L,
+                        currentTick - entry.createdTick())));
+            }
         }
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new Scp079DecisionPacket(entries));
+                new Scp079DecisionPacket(visible, entries));
     }
 
     public static void playScare(ServerPlayer player) {

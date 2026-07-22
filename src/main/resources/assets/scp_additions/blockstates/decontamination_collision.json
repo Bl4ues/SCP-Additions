@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "scp_additions:block/decontamination_collision"
+      }
+    }
+  ]
+}

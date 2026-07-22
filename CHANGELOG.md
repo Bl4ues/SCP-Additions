@@ -35,7 +35,7 @@
 - When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, and `/despawnRoamer <scp173|scp106>`;
-- Added an optional Debug Tools displays showing each roamer's state, next check, and latest result.
+- Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
 
 ## Interface fixes
 

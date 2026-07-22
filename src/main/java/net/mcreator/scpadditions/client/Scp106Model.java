@@ -34,11 +34,10 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
     public void setCustomAnimations(T animatable, long instanceId,
             AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
+        if (!animatable.allowsHeadTracking()) return;
 
         CoreGeoBone head = getAnimationProcessor().getBone("head");
-        if (head == null) {
-            return;
-        }
+        if (head == null) return;
 
         EntityModelData modelData = animationState.getData(
                 DataTickets.ENTITY_MODEL_DATA);

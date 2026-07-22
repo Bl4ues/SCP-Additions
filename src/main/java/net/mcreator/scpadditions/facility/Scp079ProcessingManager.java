@@ -33,8 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079ProcessingManager {
     public static final float MAX_POWER = 100.0F;
-    public static final float INITIAL_POWER = 50.0F;
-    public static final float REGEN_PER_SECOND = 1.5F;
+    public static final float INITIAL_POWER = 25.0F;
+    public static final float REGEN_PER_SECOND = 0.5F;
 
     private static final double REGEN_PER_TICK = REGEN_PER_SECOND / 20.0D;
     private static final Map<MinecraftServer, State> STATES = new WeakHashMap<>();
@@ -120,18 +120,19 @@ public final class Scp079ProcessingManager {
         ScpAdditionsModulesConfig.Debug debug =
                 ScpAdditionsModulesConfig.get().debug;
         boolean energyVisible = debug.showScp079EnergyHud;
+        boolean decisionVisible = debug.showScp079DecisionLogHud;
         boolean spawnTimersVisible = debug.showScpSpawnTimersHud;
         boolean active = energyVisible && isActive(player.serverLevel());
         int roundedPower = energyVisible
                 ? Math.round(getPower(player.serverLevel())) : 0;
         List<RoamerDebugSnapshot> roamers = spawnTimersVisible
                 ? RoamerManager.debugSnapshots(player) : List.of();
-        Scp079DecisionLog.Snapshot decisionSnapshot = energyVisible
+        Scp079DecisionLog.Snapshot decisionSnapshot = decisionVisible
                 ? Scp079DecisionLog.snapshot(player.getServer())
                 : new Scp079DecisionLog.Snapshot(-1L, List.of());
 
-        ClientSnapshot next = new ClientSnapshot(energyVisible, active,
-                roundedPower, spawnTimersVisible, roamers,
+        ClientSnapshot next = new ClientSnapshot(energyVisible, decisionVisible,
+                active, roundedPower, spawnTimersVisible, roamers,
                 decisionSnapshot.version());
         ClientSnapshot previous = LAST_CLIENT_SYNC.get(player.getUUID());
 
@@ -139,10 +140,19 @@ public final class Scp079ProcessingManager {
             ScpEntityNetwork.syncDebugState(player, energyVisible, active,
                     roundedPower, spawnTimersVisible, roamers);
         }
-        if (energyVisible && (previous == null || !previous.energyVisible()
-                || previous.decisionVersion() != decisionSnapshot.version())) {
-            ScpEntityNetwork.syncScp079Decisions(player, decisionSnapshot);
+
+        if (decisionVisible) {
+            if (previous == null || !previous.decisionVisible()
+                    || previous.decisionVersion()
+                    != decisionSnapshot.version()) {
+                ScpEntityNetwork.syncScp079Decisions(player, true,
+                        decisionSnapshot);
+            }
+        } else if (previous != null && previous.decisionVisible()) {
+            ScpEntityNetwork.syncScp079Decisions(player, false,
+                    new Scp079DecisionLog.Snapshot(-1L, List.of()));
         }
+
         LAST_CLIENT_SYNC.put(player.getUUID(), next);
     }
 
@@ -178,9 +188,10 @@ public final class Scp079ProcessingManager {
         }
     }
 
-    private record ClientSnapshot(boolean energyVisible, boolean active,
-            int roundedPower, boolean spawnTimersVisible,
-            List<RoamerDebugSnapshot> roamers, long decisionVersion) {
+    private record ClientSnapshot(boolean energyVisible,
+            boolean decisionVisible, boolean active, int roundedPower,
+            boolean spawnTimersVisible, List<RoamerDebugSnapshot> roamers,
+            long decisionVersion) {
         private ClientSnapshot {
             roamers = roamers == null ? List.of() : List.copyOf(roamers);
         }

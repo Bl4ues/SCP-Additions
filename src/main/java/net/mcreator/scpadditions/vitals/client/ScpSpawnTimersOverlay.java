@@ -37,9 +37,9 @@ public final class ScpSpawnTimersOverlay {
             return;
         }
 
+        int occupied = Scp079EnergyOverlay.occupiedHeight();
         int x = screenWidth - WIDTH - MARGIN;
-        int y = MARGIN + Scp079EnergyOverlay.occupiedHeight()
-                + (Scp079EnergyClientState.visible() ? 6 : 0);
+        int y = MARGIN + occupied + (occupied > 0 ? 6 : 0);
         graphics.fill(x, y, x + WIDTH, y + HEIGHT, PANEL);
         border(graphics, x, y, WIDTH, HEIGHT);
         draw(graphics, minecraft, "ROAMER SPAWN SCHEDULER", x + 7,

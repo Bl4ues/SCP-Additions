@@ -543,7 +543,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private Player resolveHuntedPlayer() {
         if (level() instanceof ServerLevel serverLevel
                 && huntedPlayerId != null) {
-            ServerPlayer hunted = serverLevel.getPlayerByUUID(huntedPlayerId);
+            Player hunted = serverLevel.getPlayerByUUID(huntedPlayerId);
             if (isValidHuntTarget(hunted)) return hunted;
         }
 

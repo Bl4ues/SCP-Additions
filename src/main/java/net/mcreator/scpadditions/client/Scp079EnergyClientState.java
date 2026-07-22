@@ -24,6 +24,7 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp079EnergyClientState {
     private static boolean energyVisible;
+    private static boolean decisionLogVisible;
     private static boolean active;
     private static float energy;
     private static boolean spawnTimersVisible;
@@ -42,7 +43,6 @@ public final class Scp079EnergyClientState {
         active = systemActive;
         energy = Math.max(0.0F, Math.min(100.0F, currentEnergy));
         spawnTimersVisible = shouldShowSpawnTimers;
-        if (!energyVisible) DECISIONS.clear();
         ROAMERS.clear();
         long now = clientGameTick();
         if (entries != null) {
@@ -54,9 +54,11 @@ public final class Scp079EnergyClientState {
         }
     }
 
-    public static void replaceDecisions(List<DecisionEntry> entries) {
+    public static void replaceDecisions(boolean shouldShow,
+            List<DecisionEntry> entries) {
+        decisionLogVisible = shouldShow;
         DECISIONS.clear();
-        if (entries == null) return;
+        if (!shouldShow || entries == null) return;
         long now = clientGameTick();
         for (DecisionEntry entry : entries) {
             DECISIONS.add(new ClientDecisionSnapshot(entry.sequence(),
@@ -68,6 +70,10 @@ public final class Scp079EnergyClientState {
 
     public static boolean visible() {
         return energyVisible;
+    }
+
+    public static boolean decisionLogVisible() {
+        return decisionLogVisible;
     }
 
     public static boolean active() {
@@ -83,6 +89,7 @@ public final class Scp079EnergyClientState {
     }
 
     public static List<ClientDecisionSnapshot> decisions() {
+        if (!decisionLogVisible) return List.of();
         long now = clientGameTick();
         List<ClientDecisionSnapshot> visible = new ArrayList<>();
         for (ClientDecisionSnapshot decision : DECISIONS) {
@@ -105,6 +112,7 @@ public final class Scp079EnergyClientState {
 
     public static void clear() {
         energyVisible = false;
+        decisionLogVisible = false;
         active = false;
         energy = 0.0F;
         spawnTimersVisible = false;

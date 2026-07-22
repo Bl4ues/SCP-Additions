@@ -4,7 +4,7 @@
 
 ## SCP-106
 
-- Added SCP-106 as a new roaming threat, including its model, animations, spawn egg, and **The Old Man** tooltip;
+- Added SCP-106 as a new roaming threat, including its model, animations, and spawn egg;
 - SCP-106 can now appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
 - Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and returning to normal movement after reaching open space;

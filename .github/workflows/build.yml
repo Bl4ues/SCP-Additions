@@ -66,31 +66,32 @@ jobs:
           from pathlib import Path
 
           entity = Path('src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java')
-          text = entity.read_text()
-          text = text.replace(
+          entity_text = entity.read_text()
+          entity_text = entity_text.replace(
               '            ServerPlayer hunted = serverLevel.getPlayerByUUID(huntedPlayerId);',
               '            Player hunted = serverLevel.getPlayerByUUID(huntedPlayerId);',
               1)
-          entity.write_text(text)
+          entity.write_text(entity_text)
 
           changelog = Path('CHANGELOG.md')
           text = changelog.read_text()
           start = text.index('## SCP-106\n')
           end = text.index('## SCP-173\n', start)
-          scp106 = '''## SCP-106
-
-- Added the SCP-106 entity, including its model, texture, animations, black-and-brown spawn egg, **The Old Man** tooltip, and placement in the SCPs creative tab;
-- Added direct player pursuit, close-contact melee attacks dealing 5 damage and five seconds of particle-free Wither, subtle head tracking, and a grotesque near-black and dark-brown Wither Health Bar;
-- Added sparse, irregular black-brown corrosion pools while SCP-106 walks;
-- Added a natural roamer cycle with its first check two minutes after a Survival player enters the world, followed by the same five-minute recurring interval and 1-in-3 base chance used by SCP-173;
-- Added floor and wall emergence using dedicated animations and large corrosive portal pools before SCP-106 begins an immediate pursuit;
-- Added organic hunt interest lasting from short encounters below 30 seconds to pursuits of up to three minutes, with successful attacks capable of briefly extending the hunt;
-- Added solid-matter phasing with in-wall suffocation immunity, 50% phase movement speed, collision bypass only while entering or occupying solid blocks, and normal gravity across open gaps;
-- Added distance-pressure ambushes that make SCP-106 sink away and re-emerge ahead of a fleeing target near the target's current height;
-- Integrated SCP-106 with the shared roamer debug HUD, gamerule controls, containment state, and despawn commands.
-
-'''
-          text = text[:start] + scp106 + text[end:]
+          scp106_lines = [
+              '## SCP-106',
+              '',
+              '- Added the SCP-106 entity, including its model, texture, animations, black-and-brown spawn egg, **The Old Man** tooltip, and placement in the SCPs creative tab;',
+              '- Added direct player pursuit, close-contact melee attacks dealing 5 damage and five seconds of particle-free Wither, subtle head tracking, and a grotesque near-black and dark-brown Wither Health Bar;',
+              '- Added sparse, irregular black-brown corrosion pools while SCP-106 walks;',
+              '- Added a natural roamer cycle with its first check two minutes after a Survival player enters the world, followed by the same five-minute recurring interval and 1-in-3 base chance used by SCP-173;',
+              '- Added floor and wall emergence using dedicated animations and large corrosive portal pools before SCP-106 begins an immediate pursuit;',
+              '- Added organic hunt interest lasting from short encounters below 30 seconds to pursuits of up to three minutes, with successful attacks capable of briefly extending the hunt;',
+              '- Added solid-matter phasing with in-wall suffocation immunity, 50% phase movement speed, collision bypass only while entering or occupying solid blocks, and normal gravity across open gaps;',
+              '- Added distance-pressure ambushes that make SCP-106 sink away and re-emerge ahead of a fleeing target near the target\'s current height;',
+              '- Integrated SCP-106 with the shared roamer debug HUD, gamerule controls, containment state, and despawn commands.',
+              '',
+          ]
+          text = text[:start] + '\n'.join(scp106_lines) + '\n' + text[end:]
 
           old_roamer = ('- Added persistent world gamerules `173spawn` and `106spawn` for individual roamer spawn control; '
                          'SCP-106 remains reported as disabled until its natural spawn scheduler is implemented;')

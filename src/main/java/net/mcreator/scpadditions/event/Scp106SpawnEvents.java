@@ -21,7 +21,7 @@ import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp106SpawnEvents {
     private static final int NORMAL_CHANCE_BOUND = 3;
-    private static final int OTHER_ROAMER_CHANCE_BOUND = 9;
+    private static final int OTHER_ROAMER_CHANCE_BOUND = 5;
     private static final AABB WORLD_BOUNDS = new AABB(-30000000.0D,
             -2048.0D, -30000000.0D, 30000000.0D, 4096.0D,
             30000000.0D);

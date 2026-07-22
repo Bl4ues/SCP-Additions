@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/scp079-debug-and-power-balance
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: read

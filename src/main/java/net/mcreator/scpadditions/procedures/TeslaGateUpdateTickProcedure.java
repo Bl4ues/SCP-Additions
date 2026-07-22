@@ -12,6 +12,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.AABB;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.FacilityStructureBreakGuard;
 import net.mcreator.scpadditions.facility.Scp079TeslaSuppression;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
@@ -19,7 +20,13 @@ import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import java.util.List;
 
 public class TeslaGateUpdateTickProcedure {
-    public static void execute(LevelAccessor world, double x, double y, double z) {
+    public static void execute(LevelAccessor world, double x, double y,
+            double z) {
+        BlockPos gatePos = BlockPos.containing(x, y, z);
+        if (FacilityStructureBreakGuard.isBeingMined(world, gatePos)) {
+            return;
+        }
+
         boolean manualOverride = world.getLevelData().getGameRules()
                 .getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
         boolean teslaGateOn = world.getLevelData().getGameRules()
@@ -37,7 +44,8 @@ public class TeslaGateUpdateTickProcedure {
 
         int activationDelay = manualOverride ? 1 : 5;
         ResourceLocation activationSound = new ResourceLocation(
-                "scp_additions", manualOverride ? "overcharge" : "teslaactivate");
+                "scp_additions", manualOverride
+                ? "overcharge" : "teslaactivate");
         float activationVolume = manualOverride ? 2.0F : 1.0F;
 
         AABB volume = TeslaGateVolume.at(x, y, z);
@@ -48,7 +56,6 @@ public class TeslaGateUpdateTickProcedure {
             return;
         }
 
-        BlockPos gatePos = BlockPos.containing(x, y, z);
         if (world instanceof ServerLevel server
                 && Scp079TeslaSuppression.shouldSuppress(server, gatePos,
                 occupants, manualOverride)) {

@@ -31,7 +31,9 @@ jobs:
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           if [ "$status" -ne 0 ]; then
-            cp patch-output.txt .github/DECON_PATCH_ERROR.txt
+            cp patch-output.txt /tmp/DECON_PATCH_ERROR.txt
+            git restore .
+            cp /tmp/DECON_PATCH_ERROR.txt .github/DECON_PATCH_ERROR.txt
           else
             rm -f .github/DECON_PATCH_ERROR.txt
           fi

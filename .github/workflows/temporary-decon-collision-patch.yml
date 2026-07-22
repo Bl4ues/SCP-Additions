@@ -47,7 +47,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ "${{ steps.patch.outputs.status }}" != "0" ]; then
-            git add .github/DECON_PATCH_ERROR.txt
+            git add -f .github/DECON_PATCH_ERROR.txt
             git commit -m "Capture decontamination patch error"
           else
             git add CHANGELOG.md src/main/java

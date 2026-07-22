@@ -1,6 +1,0 @@
-Expected block not found in src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:
-                                  int lockDurationTicks,
-                                  double minimumLockDistance) {
-        private static final ThreatProfile DEFAULT = new ThreatProfile(
-                true, true, 0.30F, 0.20F, 0.10F, 60, 5.0D);
-

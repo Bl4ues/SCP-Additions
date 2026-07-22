@@ -73,6 +73,7 @@ public final class Scp079DecisionLog {
         OPEN_SCP_012_ROUTE,
         OPEN_SCP_012_BOX,
         ABANDON_SCP_012_CONTEST,
+        SEPARATE_SCP_131,
         ABORTED_ACTION
     }
 

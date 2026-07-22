@@ -15,11 +15,17 @@
 
 - Reduced SCP-173's rendered height to approximately two blocks.
 
+## SCP-131
+
+- SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally.
+
 ## SCP-079
 
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
 - SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
 - Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
+- SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
+- SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
 - Added optional Debug Tools displays for SCP-079's power, its recent decisions, and roamer spawn timers.
 
 ## Roamer spawning and developer tools

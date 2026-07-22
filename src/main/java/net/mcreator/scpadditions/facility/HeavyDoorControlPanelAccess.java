@@ -128,12 +128,35 @@ public final class HeavyDoorControlPanelAccess {
 
         int changed = 0;
         for (BlockPos buttonPos : controls.buttons()) {
-            if (denyButton(level, buttonPos, durationTicks)) changed++;
+            if (extendActiveDenial(level, buttonPos, durationTicks)
+                    || denyButton(level, buttonPos, durationTicks)) {
+                changed++;
+            }
         }
         for (BlockPos readerPos : controls.readers()) {
-            if (denyReader(level, readerPos, durationTicks)) changed++;
+            if (extendActiveDenial(level, readerPos, durationTicks)
+                    || denyReader(level, readerPos, durationTicks)) {
+                changed++;
+            }
         }
         return changed;
+    }
+
+    private static boolean extendActiveDenial(ServerLevel level,
+            BlockPos pos, int durationTicks) {
+        PanelKey key = new PanelKey(level.dimension(), pos.asLong());
+        DenialState previous = ACTIVE_DENIALS.get(key);
+        if (previous == null || level.getBlockState(pos).getBlock()
+                != previous.deniedBlock()) {
+            return false;
+        }
+        long generation = DENIAL_GENERATION.incrementAndGet();
+        DenialState extended = new DenialState(previous.originalState(),
+                previous.deniedBlock(), generation);
+        ACTIVE_DENIALS.put(key, extended);
+        scheduleRestore(level, pos, key, extended,
+                Math.max(1, durationTicks));
+        return true;
     }
 
     private static boolean denyButton(ServerLevel level, BlockPos pos,
@@ -235,9 +258,13 @@ public final class HeavyDoorControlPanelAccess {
             for (Direction direction : HORIZONTAL) {
                 BlockPos candidate = probe.relative(direction);
                 Block block = level.getBlockState(candidate).getBlock();
-                if (isFunctionalButton(block)) {
+                DenialState active = ACTIVE_DENIALS.get(new PanelKey(
+                        level.dimension(), candidate.asLong()));
+                if (isFunctionalButton(block)
+                        || isActiveDeniedButton(block, active)) {
                     buttons.add(candidate.immutable());
-                } else if (readerBasePath(block) != null) {
+                } else if (readerBasePath(block) != null
+                        || isActiveDeniedReader(block, active)) {
                     readers.add(candidate.immutable());
                 } else if (isLegacyNode(block)) {
                     legacyNodes.add(candidate.immutable());
@@ -245,6 +272,18 @@ public final class HeavyDoorControlPanelAccess {
             }
         }
         return new ControlSnapshot(buttons, readers, legacyNodes);
+    }
+
+    private static boolean isActiveDeniedButton(Block block,
+            DenialState active) {
+        return active != null && block == active.deniedBlock()
+                && deniedButton(active.originalState().getBlock()) != null;
+    }
+
+    private static boolean isActiveDeniedReader(Block block,
+            DenialState active) {
+        return active != null && block == active.deniedBlock()
+                && readerBasePath(active.originalState().getBlock()) != null;
     }
 
     private static boolean isFunctionalButton(Block block) {

@@ -27,7 +27,7 @@ import net.mcreator.scpadditions.roamer.RoamerType;
 public final class Scp173SpawnEvents {
     public static final int SPAWN_CHECK_INTERVAL_TICKS = 6000;
     private static final int SPAWN_CHANCE_BOUND = 3;
-    private static final int OTHER_ROAMER_CHANCE_BOUND = 9;
+    private static final int OTHER_ROAMER_CHANCE_BOUND = 5;
     private static final int SPAWN_ATTEMPTS = 96;
     private static final int FRONT_ATTEMPTS = 64;
     private static final int LOCAL_Y_SCAN_UP = 4;

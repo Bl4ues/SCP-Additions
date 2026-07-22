@@ -4,15 +4,12 @@
 
 ## SCP-106
 
-- Added the SCP-106 entity, including its model, texture, animations, black-and-brown spawn egg, **The Old Man** tooltip, and placement in the SCPs creative tab;
-- Added direct player pursuit, close-contact melee attacks dealing 5 damage and five seconds of particle-free Wither, subtle head tracking, and a grotesque near-black and dark-brown Wither Health Bar;
-- Added sparse, irregular black-brown corrosion pools while SCP-106 walks;
-- Added a natural roamer cycle with its first check two minutes after a Survival player enters the world, followed by the same five-minute recurring interval and 1-in-3 base chance used by SCP-173;
-- Added floor and wall emergence using dedicated animations and large corrosive portal pools before SCP-106 begins an immediate pursuit;
-- Added organic hunt interest lasting from short encounters below 30 seconds to pursuits of up to three minutes, with successful attacks capable of briefly extending the hunt;
-- Added solid-matter phasing with in-wall suffocation immunity, 50% phase movement speed, collision bypass only while entering or occupying solid blocks, and normal gravity across open gaps;
-- Added distance-pressure ambushes that make SCP-106 sink away and re-emerge ahead of a fleeing target near the target's current height;
-- Integrated SCP-106 with the shared roamer debug HUD, gamerule controls, containment state, and despawn commands.
+- Added SCP-106 as a new roaming threat, including its model, animations, spawn egg, and **The Old Man** tooltip;
+- SCP-106 can now appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
+- Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
+- SCP-106 can phase through solid blocks, moving more slowly while inside them and returning to normal movement after reaching open space;
+- If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
+- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target.
 
 ## SCP-173
 
@@ -20,26 +17,19 @@
 
 ## SCP-079
 
-- SCP-079 now has a processing power which starts with 25 processing power and recovers 0.5 power per second, making its facility actions more limited and forcing it to choose its strategies more carefully;
-- Replaced the facility-wide action cooldown with processing costs and short per-device reuse limits, allowing deliberate multi-device sequences without mechanical spam on one door;
-- Changed contextual door sabotage to evaluate the nearest active pursuer, choose one useful action, preserve processing at low energy, and use narrower projected-route scans instead of repeated full-area door searches;
-- Added temporary access denial for closed controlled doors: functional buttons show their locked state and connected keycard readers show access denied before safely restoring their exact previous state;
-- Added distinct default, SCP-173, and SCP-106 threat profiles while deliberately leaving SCP-131 separation behavior for a later implementation;
-- Added local Tesla Gate suppression when a hostile pursuer is passing through, including higher processing cost and lower success chance during Emergency Override, without changing the player's global Tesla Gate settings;
-- Turned the SCP-012 route into a processing contest: immediate re-opening remains possible, repeated interference becomes progressively more expensive, and SCP-079 abandons wasteful contention more readily against SCP-714 while still attempting the initial trap as a precaution;
-- Added separate optional debug displays for SCP-079's power, its recent decisions, and roamer spawn timers under the new **Debug Tools** configuration screen.
+- Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
+- SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
+- Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
+- Added optional Debug Tools displays for SCP-079's power, its recent decisions, and roamer spawn timers.
 
 ## Roamer spawning and developer tools
 
-- Added persistent world gamerules `173spawn` and `106spawn` for individual roamer spawn control, with both natural spawn schedulers now implemented;
-- Added `/disableAllRoamers` and `/enableAllRoamers`, which overwrite every registered roamer spawn gamerule, plus `/despawnAllRoamers` and expandable `/despawnRoamer <scp173|scp106>` cleanup commands;
-- Replaced SCP-173's module-level natural-spawn toggle with the `173spawn` gamerule while keeping its behavior module and target configuration separate;
-- Added an extensible roamer lifecycle manager with `DISABLED`, `CONTAINED`, `PAUSED`, `COUNTDOWN`, and `SPAWNED` states, including a future-facing containment flag;
-- Stopped spawn countdowns while any matching roamer instance is active and made a full interval begin only after the final active instance despawns naturally, dies, or is removed by command;
-- Offset SCP-106's initial two-minute check from SCP-173 while keeping both roamers on five-minute recurring checks afterward;
-- Reduced either roamer's spawn chance from 1-in-3 to 1-in-9 while the other is active, preserving rare but survivable double-encounter possibilities and reporting the penalty in the debug HUD;
-- Added an optional **SCP Spawn Timers HUD** under Configuration Center → Debug Tools, showing each roamer's current state, next spawn check, and latest result;
-- Kept scheduler diagnostics event-driven: countdown animation runs client-side, packets are only sent when synchronized state changes, and entity scans remain limited to actual spawn attempts or explicit despawn commands.
+- Added natural spawn cycles for both SCP-173 and SCP-106, with separate `173spawn` and `106spawn` gamerules;
+- SCP-106 begins checking for a possible encounter earlier than SCP-173, while both continue with recurring checks afterward;
+- When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
+- Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
+- Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, and `/despawnRoamer <scp173|scp106>`;
+- Added an optional **SCP Spawn Timers HUD** under Configuration Center → Debug Tools, showing each roamer's state, next check, and latest result.
 
 ## Interface fixes
 

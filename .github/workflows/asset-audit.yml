@@ -35,14 +35,20 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Audit repository and compiled JAR
+        shell: bash
         run: |
-          python3 scripts/audit_unused_assets.py
+          set +e
+          mkdir -p build/reports/asset-audit
+          python3 scripts/audit_unused_assets.py 2>&1 | tee build/reports/asset-audit/audit.log
+          status=${PIPESTATUS[0]}
           git rev-parse HEAD > build/reports/asset-audit/head-sha.txt
           git rev-parse 'HEAD^{tree}' > build/reports/asset-audit/tree-sha.txt
           git archive --format=zip --output=build/reports/asset-audit/source-snapshot.zip HEAD
           cp build/libs/*.jar build/reports/asset-audit/
+          exit $status
 
       - name: Upload audit report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: asset-audit-${{ github.sha }}

@@ -125,3 +125,14 @@ replace(
     "    }\n",
     "\n",
 )
+
+changelog = "CHANGELOG.md"
+replace(
+    changelog,
+    "## Interface fixes\n\n"
+    "- Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.\n",
+    "## Interface fixes\n\n"
+    "- Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;\n"
+    "- Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;\n"
+    "- Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.\n",
+)

@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
@@ -28,9 +29,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * The initial action pays its normal fixed cost. Once per second, this manager
  * spends additional processing to extend the denied controls. The lock ends as
- * soon as its maximum duration is reached, the relevant player/threat geometry
- * stops being useful, System Control is disabled, the door is no longer closed,
- * or SCP-079 cannot afford another upkeep payment.
+ * soon as its maximum duration is reached, the relevant geometry stops being
+ * useful, System Control is disabled, the door is no longer closed, or SCP-079
+ * cannot afford another upkeep payment.
  */
 public final class Scp079SustainedDoorLocks {
     public static final double UPKEEP_COST_PER_SECOND = 1.5D;
@@ -46,11 +47,12 @@ public final class Scp079SustainedDoorLocks {
     }
 
     public static void begin(ServerLevel level, BlockPos doorPos,
-            UUID playerId, UUID threatId, LockReason reason,
-            int maximumDurationTicks) {
+            UUID playerId, UUID separatedEntityId, UUID threatId,
+            LockReason reason, int maximumDurationTicks) {
         MinecraftServer server = level == null ? null : level.getServer();
         if (server == null || doorPos == null || playerId == null
-                || threatId == null || reason == null
+                || separatedEntityId == null || threatId == null
+                || reason == null
                 || maximumDurationTicks <= CHARGE_INTERVAL_TICKS) {
             return;
         }
@@ -58,7 +60,8 @@ public final class Scp079SustainedDoorLocks {
         long now = server.getTickCount();
         DoorKey key = new DoorKey(level.dimension(), doorPos.asLong());
         ActiveLock lock = new ActiveLock(GENERATIONS.incrementAndGet(),
-                playerId, threatId, reason, now + maximumDurationTicks);
+                playerId, separatedEntityId, threatId, reason,
+                now + maximumDurationTicks);
         synchronized (ACTIVE) {
             ACTIVE.computeIfAbsent(server, ignored -> new HashMap<>())
                     .put(key, lock);
@@ -108,24 +111,33 @@ public final class Scp079SustainedDoorLocks {
 
         ServerPlayer player = level.getServer().getPlayerList()
                 .getPlayer(lock.playerId());
+        Entity separated = level.getEntity(lock.separatedEntityId());
         Entity threat = level.getEntity(lock.threatId());
+        Vec3 center = Vec3.atCenterOf(doorPos);
         if (player == null || player.serverLevel() != level
-                || !player.isAlive() || threat == null || !threat.isAlive()
-                || player.distanceToSqr(Vec3.atCenterOf(doorPos))
-                > RELEVANCE_DISTANCE_SQR
-                || threat.distanceToSqr(Vec3.atCenterOf(doorPos))
-                > RELEVANCE_DISTANCE_SQR) {
+                || !player.isAlive() || separated == null
+                || !separated.isAlive() || threat == null || !threat.isAlive()
+                || player.distanceToSqr(center) > RELEVANCE_DISTANCE_SQR
+                || separated.distanceToSqr(center) > RELEVANCE_DISTANCE_SQR
+                || threat.distanceToSqr(center) > RELEVANCE_DISTANCE_SQR) {
             return false;
         }
 
         return switch (lock.reason()) {
-            case PURSUIT -> threat instanceof Mob mob
+            case PURSUIT -> separated == threat
+                    && threat instanceof Mob mob
                     && mob.getTarget() == player
                     && sameDoorSide(doorState, doorPos, player.position(),
                     threat.position());
-            case SCP_131_SEPARATION -> threat instanceof Scp173Entity
-                    && oppositeDoorSides(doorState, doorPos, player.position(),
-                    threat.position());
+            case SCP_131_SEPARATION ->
+                    separated instanceof AbstractScp131Entity scp131
+                    && !scp131.isFollowingPlayer(player)
+                    && threat instanceof Scp173Entity scp173
+                    && scp173.getTarget() == player
+                    && oppositeDoorSides(doorState, doorPos,
+                    player.position(), scp131.position())
+                    && sameDoorSide(doorState, doorPos,
+                    player.position(), scp173.position());
         };
     }
 
@@ -199,8 +211,9 @@ public final class Scp079SustainedDoorLocks {
         SCP_131_SEPARATION
     }
 
-    private record ActiveLock(long generation, UUID playerId, UUID threatId,
-            LockReason reason, long endTick) {
+    private record ActiveLock(long generation, UUID playerId,
+            UUID separatedEntityId, UUID threatId, LockReason reason,
+            long endTick) {
     }
 
     private record DoorSides(double first, double second) {

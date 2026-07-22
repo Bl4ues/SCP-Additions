@@ -1,16 +1,19 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.FacilityStructureBreakGuard;
 
 /**
  * Makes every visible or invisible part behave as one Tesla Gate structure.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TeslaGateStructureEvents {
     private TeslaGateStructureEvents() {
     }
@@ -23,13 +26,17 @@ public final class TeslaGateStructureEvents {
 
         BlockState state = event.getState();
         if (state.getBlock() == TeslaGateStructureBlocks.collision()) {
+            BlockPos controllerPos = TeslaGateStructure.controllerPosition(
+                    event.getPos(), state);
             event.setCanceled(true);
+            FacilityStructureBreakGuard.clear(level, controllerPos);
             TeslaGateStructure.destroyFromCollision(level, event.getPos(), state,
                     !event.getPlayer().isCreative());
             return;
         }
 
         if (TeslaGateStructure.isController(state)) {
+            FacilityStructureBreakGuard.clear(level, event.getPos());
             TeslaGateStructure.removeCollisionParts(level, event.getPos(), state);
         }
     }

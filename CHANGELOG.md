@@ -13,14 +13,14 @@
 
 ## SCP-079
 
-- Added a shared 0–100 processing-power budget for SCP-079 facility decisions, initialized at 50 and regenerated lazily while System Control is active;
+- SCP-079 now starts with 25 processing power and recovers 0.5 power per second, making its facility actions more limited and forcing it to choose its strategies more carefully;
 - Replaced the facility-wide action cooldown with processing costs and short per-device reuse limits, allowing deliberate multi-device sequences without mechanical spam on one door;
 - Changed contextual door sabotage to evaluate the nearest active pursuer, choose one useful action, preserve processing at low energy, and use narrower projected-route scans instead of repeated full-area door searches;
 - Added temporary access denial for closed controlled doors: functional buttons show their locked state and connected keycard readers show access denied before safely restoring their exact previous state;
 - Added distinct default, SCP-173, and SCP-106 threat profiles while deliberately leaving SCP-131 separation behavior for a later implementation;
 - Added local Tesla Gate suppression when a hostile pursuer is passing through, including higher processing cost and lower success chance during Emergency Override, without changing the player's global Tesla Gate settings;
 - Turned the SCP-012 route into a processing contest: immediate re-opening remains possible, repeated interference becomes progressively more expensive, and SCP-079 abandons wasteful contention more readily against SCP-714 while still attempting the initial trap as a precaution;
-- Added a **Debug** section to the Configuration Center's Modules screen with an optional white upper-right SCP-079 processing HUD using the SCP-079 item icon and Roboto numerals.
+- Added separate optional debug displays for SCP-079's power, its recent decisions, and roamer spawn timers under the new **Debug Tools** configuration screen.
 
 ## Roamer spawning and developer tools
 
@@ -29,7 +29,7 @@
 - Replaced SCP-173's module-level natural-spawn toggle with the `173spawn` gamerule while keeping its behavior module and target configuration separate;
 - Added an extensible roamer lifecycle manager with `DISABLED`, `CONTAINED`, `PAUSED`, `COUNTDOWN`, and `SPAWNED` states, including a future-facing containment flag;
 - Stopped spawn countdowns while any matching roamer instance is active and made a full interval begin only after the final active instance despawns naturally, dies, or is removed by command;
-- Added an optional Roboto-based upper-right **SCP Spawn Timers HUD** to Configuration Center → Modules → Debug, showing each roamer's current state, next check, successful spawn, failed chance, invalid position, and despawn-triggered timer reset;
+- Added an optional **SCP Spawn Timers HUD** under Configuration Center → Debug Tools, showing each roamer's current state, next spawn check, and latest result;
 - Kept scheduler diagnostics event-driven: countdown animation runs client-side, packets are only sent when synchronized state changes, and entity scans remain limited to actual spawn attempts or explicit despawn commands.
 
 ## Interface fixes

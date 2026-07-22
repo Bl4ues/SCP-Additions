@@ -24,6 +24,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.ArrayList;
 import java.util.Comparator;

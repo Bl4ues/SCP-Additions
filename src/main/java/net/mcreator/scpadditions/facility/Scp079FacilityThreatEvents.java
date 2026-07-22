@@ -189,7 +189,8 @@ public final class Scp079FacilityThreatEvents {
                 opportunity.door().pos().asLong()),
                 gameTime + LOCKED_DOOR_REUSE_TICKS);
         Scp079SustainedDoorLocks.begin(level, opportunity.door().pos(),
-                player.getUUID(), scp173.getUUID(),
+                player.getUUID(), opportunity.follower().getUUID(),
+                scp173.getUUID(),
                 Scp079SustainedDoorLocks.LockReason.SCP_131_SEPARATION,
                 SCP_131_MAX_LOCK_TICKS);
         Scp079DecisionLog.record(level,
@@ -242,7 +243,7 @@ public final class Scp079FacilityThreatEvents {
             Vec3 route = horizontal(
                     follower.position().subtract(player.position()));
             if (route.lengthSqr() < 2.25D
-                    || route.normalize().dot(travelDirection) < 0.25D) {
+                    || route.normalize().dot(travelDirection) > -0.25D) {
                 continue;
             }
             int steps = Math.min(SCP_131_DOOR_RADIUS,
@@ -300,7 +301,7 @@ public final class Scp079FacilityThreatEvents {
                 && Math.abs(followerSide) >= 0.70D
                 && Math.abs(scp173Side) >= 0.35D
                 && playerSide * followerSide < 0.0D
-                && followerSide * scp173Side > 0.0D;
+                && playerSide * scp173Side > 0.0D;
     }
 
     private static double signedDoorSide(Vec3 center, Direction facing,
@@ -408,6 +409,7 @@ public final class Scp079FacilityThreatEvents {
                 && action.maximumDurationTicks() > action.durationTicks()) {
             Scp079SustainedDoorLocks.begin(level, action.door().pos(),
                     player.getUUID(), pursuer.getUUID(),
+                    pursuer.getUUID(),
                     Scp079SustainedDoorLocks.LockReason.PURSUIT,
                     action.maximumDurationTicks());
         }

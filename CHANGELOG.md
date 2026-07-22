@@ -26,7 +26,7 @@
 - Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
-- Added optional Debug Tools displays for SCP-079's power, its recent decisions, and roamer spawn timers.
+- Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## Roamer spawning and developer tools
 
@@ -35,7 +35,7 @@
 - When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, and `/despawnRoamer <scp173|scp106>`;
-- Added an optional **SCP Spawn Timers HUD** under Configuration Center → Debug Tools, showing each roamer's state, next check, and latest result.
+- Added an optional Debug Tools displays showing each roamer's state, next check, and latest result.
 
 ## Interface fixes
 

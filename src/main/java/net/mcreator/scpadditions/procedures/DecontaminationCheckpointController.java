@@ -77,8 +77,11 @@ public final class DecontaminationCheckpointController {
         LATCHED_UNTIL_EXIT.add(key);
         ScpAdditionsMod.queueServerWork(CLOSE_DELAY_TICKS, () -> {
             BlockState current = level.getBlockState(pos);
-            if (!current.is(ScpAdditionsModBlocks.DECON_OPEN.get())
-                    || FacilityStructureBreakGuard.isBeingMined(level, pos)) {
+            if (!current.is(ScpAdditionsModBlocks.DECON_OPEN.get())) {
+                return;
+            }
+            if (FacilityStructureBreakGuard.isBeingMined(level, pos)) {
+                LATCHED_UNTIL_EXIT.remove(key);
                 return;
             }
             if (playersInside(level, pos, current).isEmpty()) {

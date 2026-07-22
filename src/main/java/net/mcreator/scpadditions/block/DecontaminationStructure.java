@@ -33,8 +33,6 @@ public final class DecontaminationStructure {
             return false;
         }
 
-        forEachPart(facing, (offsetX, offsetY, offsetZ) -> {
-        });
         for (int offsetX = MIN_OFFSET; offsetX <= MAX_OFFSET; offsetX++) {
             for (int offsetY = MIN_OFFSET; offsetY <= MAX_OFFSET; offsetY++) {
                 for (int offsetZ = MIN_OFFSET; offsetZ <= MAX_OFFSET; offsetZ++) {
@@ -253,22 +251,4 @@ public final class DecontaminationStructure {
         return offsetX == 0 && offsetY == 0 && offsetZ == 0;
     }
 
-    private static void forEachPart(Direction facing, PartConsumer consumer) {
-        for (int offsetX = MIN_OFFSET; offsetX <= MAX_OFFSET; offsetX++) {
-            for (int offsetY = MIN_OFFSET; offsetY <= MAX_OFFSET; offsetY++) {
-                for (int offsetZ = MIN_OFFSET; offsetZ <= MAX_OFFSET; offsetZ++) {
-                    if (!isControllerOffset(offsetX, offsetY, offsetZ)
-                            && DecontaminationShapeHelper.hasStructurePart(
-                            facing, offsetX, offsetY, offsetZ)) {
-                        consumer.accept(offsetX, offsetY, offsetZ);
-                    }
-                }
-            }
-        }
-    }
-
-    @FunctionalInterface
-    private interface PartConsumer {
-        void accept(int offsetX, int offsetY, int offsetZ);
-    }
 }

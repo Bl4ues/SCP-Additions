@@ -20,6 +20,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.effect.EyeProtectionAccess;
+import net.mcreator.scpadditions.facility.FacilityStructureBreakGuard;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
@@ -60,7 +61,10 @@ public final class DecontaminationCheckpointController {
         if (!(world instanceof ServerLevel level)) return;
         BlockPos pos = BlockPos.containing(x, y, z);
         BlockState state = level.getBlockState(pos);
-        if (!state.is(ScpAdditionsModBlocks.DECON_OPEN.get())) return;
+        if (!state.is(ScpAdditionsModBlocks.DECON_OPEN.get())
+                || FacilityStructureBreakGuard.isBeingMined(level, pos)) {
+            return;
+        }
 
         CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
         List<ServerPlayer> players = playersInside(level, pos, state);
@@ -73,7 +77,10 @@ public final class DecontaminationCheckpointController {
         LATCHED_UNTIL_EXIT.add(key);
         ScpAdditionsMod.queueServerWork(CLOSE_DELAY_TICKS, () -> {
             BlockState current = level.getBlockState(pos);
-            if (!current.is(ScpAdditionsModBlocks.DECON_OPEN.get())) return;
+            if (!current.is(ScpAdditionsModBlocks.DECON_OPEN.get())
+                    || FacilityStructureBreakGuard.isBeingMined(level, pos)) {
+                return;
+            }
             if (playersInside(level, pos, current).isEmpty()) {
                 LATCHED_UNTIL_EXIT.remove(key);
                 return;
@@ -124,10 +131,17 @@ public final class DecontaminationCheckpointController {
 
     public static void finishClosed(ServerLevel level, BlockPos pos) {
         CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
-        try {
-            BlockState current = level.getBlockState(pos);
-            if (!current.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) return;
+        BlockState current = level.getBlockState(pos);
+        if (!current.is(ScpAdditionsModBlocks.DECON_CLOSED.get())) {
+            PROCESSING.remove(key);
+            return;
+        }
+        if (FacilityStructureBreakGuard.isBeingMined(level, pos)) {
+            level.scheduleTick(pos, ScpAdditionsModBlocks.DECON_CLOSED.get(), 10);
+            return;
+        }
 
+        try {
             level.playSound(null, BlockPos.containing(chamberCenter(pos, current)), ScpAdditionsModSounds.DOOROPEN.get(),
                     SoundSource.BLOCKS, 1.0F, 1.0F);
             level.setBlock(pos, copyCommonState(
@@ -142,8 +156,19 @@ public final class DecontaminationCheckpointController {
         BlockPos pos = BlockPos.containing(x, y, z);
         BlockState state = level.getBlockState(pos);
         if (!state.is(ScpAdditionsModBlocks.DECON_OPEN_RELOAD.get())) return;
+        if (FacilityStructureBreakGuard.isBeingMined(level, pos)) {
+            level.scheduleTick(pos, ScpAdditionsModBlocks.DECON_OPEN_RELOAD.get(), 10);
+            return;
+        }
         level.setBlock(pos, copyCommonState(
                 ScpAdditionsModBlocks.DECON_OPEN.get().defaultBlockState(), state), 3);
+    }
+
+    public static void forget(Level level, BlockPos pos) {
+        if (level == null || pos == null) return;
+        CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
+        LATCHED_UNTIL_EXIT.remove(key);
+        PROCESSING.remove(key);
     }
 
     private static void decontaminate(ServerLevel level, ServerPlayer player) {

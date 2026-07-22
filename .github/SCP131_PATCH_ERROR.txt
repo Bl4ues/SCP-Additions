@@ -1,0 +1,6 @@
+Expected block not found in src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:
+        scheduleInitialAmbientNoise();
+        maybePlayAmbientNoise();
+
+        Scp173Entity scp173 = findNearestScp173();
+

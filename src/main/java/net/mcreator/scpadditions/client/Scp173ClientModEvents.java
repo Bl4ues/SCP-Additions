@@ -75,5 +75,8 @@ public final class Scp173ClientModEvents {
         event.registerSpriteSet(
                 ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
                 Scp106CorrosionParticle.Provider::new);
+        event.registerSpriteSet(
+                ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
+                Scp106PortalParticle.Provider::new);
     }
 }

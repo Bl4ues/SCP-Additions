@@ -1,5 +1,0 @@
-Expected block not found in src/main/java/net/mcreator/scpadditions/procedures/DecontaminationCheckpointController.java:
-        if (!state.is(ScpAdditionsModBlocks.DECON_OPEN.get())) return;
-
-        CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
-

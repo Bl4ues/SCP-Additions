@@ -5,6 +5,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -70,6 +72,9 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     private static final int IDLE_A_ROAM_INTERVAL_TICKS = 34;
     private static final double GROUP_TOGGLE_RANGE = 24.0D;
     private static final double GROUP_TOGGLE_RANGE_SQR = GROUP_TOGGLE_RANGE * GROUP_TOGGLE_RANGE;
+    private static final AABB WORLD_BOUNDS = new AABB(-30000000.0D,
+            -2048.0D, -30000000.0D, 30000000.0D, 4096.0D,
+            30000000.0D);
     private static final int AMBIENT_NOISE_MIN_TICKS = 260;
     private static final int AMBIENT_NOISE_RANDOM_TICKS = 420;
     private static final double RANDOM_ROAM_SPEED = 0.36D;
@@ -127,6 +132,10 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
         scheduleInitialAmbientNoise();
         maybePlayAmbientNoise();
 
+        if (isFollowing() && dismissGroupWhenOwnerIsTooFar()) {
+            return;
+        }
+
         Scp173Entity scp173 = findNearestScp173();
         if (scp173 != null) {
             wasWatchingScp173 = true;
@@ -136,7 +145,6 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
         if (wasWatchingScp173) {
             wasWatchingScp173 = false;
-            teleportToOwnerIfTooFar();
         }
 
         if (isFollowing()) {
@@ -224,11 +232,26 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
             return false;
         }
         boolean stoppedAny = false;
-        AABB area = player.getBoundingBox().inflate(64.0D);
-        for (AbstractScp131Entity scp131 : player.level().getEntitiesOfClass(AbstractScp131Entity.class, area,
-                entity -> entity.isAlive() && entity.isFollowingPlayer(player))) {
-            scp131.stopFollowing();
-            stoppedAny = true;
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            for (AbstractScp131Entity scp131 : player.level().getEntitiesOfClass(
+                    AbstractScp131Entity.class, WORLD_BOUNDS,
+                    entity -> entity.isAlive()
+                            && entity.isFollowingPlayer(player))) {
+                scp131.stopFollowing();
+                stoppedAny = true;
+            }
+            return stoppedAny;
+        }
+
+        for (ServerLevel level : server.getAllLevels()) {
+            for (AbstractScp131Entity scp131 : level.getEntitiesOfClass(
+                    AbstractScp131Entity.class, WORLD_BOUNDS,
+                    entity -> entity.isAlive()
+                            && entity.isFollowingPlayer(player))) {
+                scp131.stopFollowing();
+                stoppedAny = true;
+            }
         }
         return stoppedAny;
     }
@@ -315,24 +338,28 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
         return scp173.position().add(direction.scale(SCP_173_WATCH_DISTANCE));
     }
 
-    private void teleportToOwnerIfTooFar() {
+    private boolean dismissGroupWhenOwnerIsTooFar() {
         if (followOwner == null) {
-            return;
+            return false;
+        }
+        MinecraftServer server = level().getServer();
+        ServerPlayer owner = server == null ? null
+                : server.getPlayerList().getPlayer(followOwner);
+        if (owner == null || owner.isRemoved() || !owner.isAlive()) {
+            return false;
+        }
+        boolean differentLevel = owner.serverLevel() != level();
+        if (!differentLevel
+                && distanceToSqr(owner) <= OWNER_RETURN_DISTANCE_SQR) {
+            return false;
         }
 
-        Player owner = level().getPlayerByUUID(followOwner);
-        if (owner == null || owner.isRemoved() || !owner.isAlive() || distanceToSqr(owner) <= OWNER_RETURN_DISTANCE_SQR) {
-            return;
+        boolean stopped = stopFollowersFor(owner);
+        if (!stopped) {
+            stopFollowing();
         }
-
-        teleportNearOwner(owner);
-    }
-
-    private void teleportNearOwner(Player owner) {
-        getNavigation().stop();
-        Vec3 behindOwner = owner.position().subtract(owner.getLookAngle().normalize().scale(1.15D));
-        moveTo(behindOwner.x, owner.getY(), behindOwner.z, owner.getYRot(), 0.0F);
-        scheduleNextOwnerRoam(8);
+        ScpEntityNetwork.showScp131Notice(owner, false);
+        return true;
     }
 
     private void followOwner() {
@@ -349,7 +376,7 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
         double distanceSqr = distanceToSqr(owner);
         if (distanceSqr > OWNER_RETURN_DISTANCE_SQR) {
-            teleportNearOwner(owner);
+            dismissGroupWhenOwnerIsTooFar();
             return;
         }
 

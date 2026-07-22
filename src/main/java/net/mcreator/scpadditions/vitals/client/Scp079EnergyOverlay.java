@@ -197,6 +197,7 @@ public final class Scp079EnergyOverlay {
             case OPEN_SCP_012_BOX -> "OPENED SCP-012";
             case ABANDON_SCP_012_CONTEST ->
                     "ABANDONED SCP-012 CONTEST";
+            case SEPARATE_SCP_131 -> "SEPARATED SCP-131";
             case ABORTED_ACTION -> "ABORTED ACTION";
         };
     }

@@ -59,12 +59,19 @@ jobs:
           git commit -m "Fix SCP-106 pursuit persistence and SCP-012 path gating"
           git push origin HEAD:master
 
+      - name: Collect patch diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          cp /tmp/apply_fix.py ./apply_fix.py || true
+          cp /tmp/patch-output.txt ./patch-output.txt || true
+
       - name: Upload patch diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: scp106-012-patch-diagnostics
           path: |
-            /tmp/apply_fix.py
-            /tmp/patch-output.txt
-          if-no-files-found: warn
+            apply_fix.py
+            patch-output.txt
+          if-no-files-found: error

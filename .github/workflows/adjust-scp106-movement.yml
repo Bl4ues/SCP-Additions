@@ -1,0 +1,40 @@
+name: Adjust SCP-106 Movement
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  adjust:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Adjust movement values
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('public static final double MOVEMENT_SPEED = 0.265D;',
+                              'public static final double MOVEMENT_SPEED = 0.245D;')
+          text = text.replace('private static final double ATTACK_PURSUIT_SPEED_MODIFIER = 0.72D;',
+                              'private static final double ATTACK_PURSUIT_SPEED_MODIFIER = 0.84D;')
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm -f .github/workflows/adjust-scp106-movement.yml
+          rm -f .github/scp106-movement-trigger
+          git add src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java .github/workflows/adjust-scp106-movement.yml .github/scp106-movement-trigger
+          git commit -m "Tune SCP-106 pursuit and attack movement"
+          git push origin HEAD:master

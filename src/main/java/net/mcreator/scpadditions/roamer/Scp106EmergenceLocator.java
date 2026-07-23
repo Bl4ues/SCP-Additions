@@ -44,7 +44,7 @@ public final class Scp106EmergenceLocator {
         int targetY = target.blockPosition().getY();
         for (int attempt = 0; attempt < INITIAL_ATTEMPTS; attempt++) {
             double angle = random.nextDouble() * Math.PI * 2.0D;
-            double distance = 3.0D + random.nextDouble() * 5.0D;
+            double distance = 2.25D + random.nextDouble() * 3.25D;
             Vec3 candidate = target.position().add(
                     Math.cos(angle) * distance, 0.0D,
                     Math.sin(angle) * distance);
@@ -107,12 +107,38 @@ public final class Scp106EmergenceLocator {
         Vec3 targetEye = target.getEyePosition();
         Vec3 emergenceCenter = Vec3.atBottomCenterOf(standing)
                 .add(0.0D, 1.0D, 0.0D);
-        if (Math.abs(emergenceCenter.y - targetEye.y) > 3.0D) {
+        Vec3 horizontal = emergenceCenter.subtract(targetEye)
+                .multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.lengthSqr() > 36.0D
+                || Math.abs(emergenceCenter.y - targetEye.y) > 3.0D) {
             return false;
         }
 
+        Vec3 perpendicular = horizontal.lengthSqr() < 0.0001D
+                ? new Vec3(0.35D, 0.0D, 0.0D)
+                : new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                        .normalize().scale(0.35D);
+        int clearRays = 0;
+        if (hasClearRoomRay(level, target, targetEye, emergenceCenter)) {
+            clearRays++;
+        }
+        if (hasClearRoomRay(level, target,
+                targetEye.add(perpendicular.scale(0.45D)),
+                emergenceCenter.add(perpendicular))) {
+            clearRays++;
+        }
+        if (hasClearRoomRay(level, target,
+                targetEye.subtract(perpendicular.scale(0.45D)),
+                emergenceCenter.subtract(perpendicular))) {
+            clearRays++;
+        }
+        return clearRays >= 2;
+    }
+
+    private static boolean hasClearRoomRay(ServerLevel level, Player target,
+            Vec3 start, Vec3 end) {
         HitResult obstruction = level.clip(new ClipContext(
-                targetEye, emergenceCenter,
+                start, end,
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
                 target));

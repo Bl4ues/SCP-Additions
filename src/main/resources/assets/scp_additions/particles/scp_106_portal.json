@@ -1,5 +1,7 @@
 {
-    "textures": [
-        "minecraft:generic_0"
-    ]
+  "textures": [
+    "scp_additions:scp_106_puddle_0",
+    "scp_additions:scp_106_puddle_1",
+    "scp_additions:scp_106_puddle_2"
+  ]
 }

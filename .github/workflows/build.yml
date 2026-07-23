@@ -36,11 +36,8 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build
-        run: ./gradlew clean build --stacktrace
-
-      - name: Apply SCP-106 pursuit refinements
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && github.event.head_commit.message == 'Prepare SCP-106 pursuit refinements'
+      - name: Apply SCP-106 and SCP-012 fixes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && github.event.head_commit.message == 'Prepare SCP-106 pursuit and SCP-012 path fixes'
         shell: bash
         run: |
           set -euo pipefail
@@ -50,8 +47,6 @@ jobs:
           git checkout -B master origin/master
 
           python - <<'PY'
-          import base64
-          import binascii
           import math
           import random
           import re
@@ -66,368 +61,288 @@ jobs:
 
           entity_path = Path('src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java')
           entity = entity_path.read_text(encoding='utf-8')
-          entity = replace_once(
-              entity,
-              '    public static final double MOVEMENT_SPEED = 0.29D;\n'
-              '    private static final double PURSUIT_SPEED_MODIFIER = 1.0D;\n',
-              '    public static final double MOVEMENT_SPEED = 0.265D;\n'
-              '    private static final double PURSUIT_SPEED_MODIFIER = 1.0D;\n'
-              '    private static final double ATTACK_PURSUIT_SPEED_MODIFIER = 0.72D;\n',
-              'SCP-106 movement speed constants')
-          entity = replace_once(
-              entity,
-              '    private static final double WALK_ANIMATION_SPEED = 1.5D;\n',
-              '    private static final double WALK_ANIMATION_SPEED = 1.38D;\n',
-              'SCP-106 walk animation speed')
-          entity = replace_once(
-              entity,
-              '        if (isAttacking()) {\n'
-              '            getNavigation().stop();\n'
-              '            stopHorizontalMovement();\n'
-              '        }\n',
-              '',
-              'attack movement freeze in physics preparation')
-          entity = replace_once(
-              entity,
-              '        if (state == HUNTING && !isAttacking()) {\n'
-              '            spawnCorrosionTrail();\n'
-              '        }\n',
-              '        if (state == HUNTING) {\n'
-              '            spawnCorrosionTrail();\n'
-              '        }\n',
-              'corrosion trail attack exclusion')
-          entity = replace_once(
-              entity,
-              '    private void startAttack() {\n'
-              '        attackTicks = 0;\n'
-              '        entityData.set(ATTACKING, true);\n'
-              '        getNavigation().stop();\n'
-              '        stopHorizontalMovement();\n'
-              '    }\n\n'
-              '    private void tickAttack(LivingEntity target) {\n'
-              '        getNavigation().stop();\n'
-              '        stopHorizontalMovement();\n'
-              '        getLookControl().setLookAt(target, 45.0F, 25.0F);\n'
-              '        attackTicks++;\n\n'
-              '        if (attackTicks == ATTACK_HIT_TICK\n'
-              '                && isWithinMeleeGap(target, ATTACK_HIT_GAP)) {\n'
-              '            doHurtTarget(target);\n'
-              '        }\n\n'
-              '        if (attackTicks >= ATTACK_DURATION_TICKS) {\n'
-              '            attackTicks = 0;\n'
-              '            entityData.set(ATTACKING, false);\n'
-              '        }\n'
-              '    }\n',
-              '    private void startAttack() {\n'
-              '        attackTicks = 0;\n'
-              '        entityData.set(ATTACKING, true);\n'
-              '    }\n\n'
-              '    private void tickAttack(LivingEntity target) {\n'
-              '        getLookControl().setLookAt(target, 45.0F, 25.0F);\n'
-              '        pursueDuringAttack(target);\n'
-              '        attackTicks++;\n\n'
-              '        if (attackTicks == ATTACK_HIT_TICK\n'
-              '                && isWithinMeleeGap(target, ATTACK_HIT_GAP)) {\n'
-              '            doHurtTarget(target);\n'
-              '        }\n\n'
-              '        if (attackTicks >= ATTACK_DURATION_TICKS) {\n'
-              '            attackTicks = 0;\n'
-              '            entityData.set(ATTACKING, false);\n'
-              '        }\n'
-              '    }\n\n'
-              '    private void pursueDuringAttack(LivingEntity target) {\n'
-              '        if (hasLineOfSight(target)\n'
-              '                && Math.abs(target.getY() - getY())\n'
-              '                <= DIRECT_PURSUIT_VERTICAL_LIMIT) {\n'
-              '            getNavigation().stop();\n'
-              '            getMoveControl().setWantedPosition(target.getX(),\n'
-              '                    target.getY(), target.getZ(),\n'
-              '                    ATTACK_PURSUIT_SPEED_MODIFIER);\n'
+          entity = replace_once(entity,
+              'import net.minecraft.util.Mth;\n',
+              'import net.minecraft.util.Mth;\nimport net.minecraft.world.Difficulty;\n',
+              'Difficulty import')
+          entity = replace_once(entity,
+              '    private static final double AMBUSH_DISTANCE = 22.0D;\n',
+              '    private static final double AMBUSH_DISTANCE = 16.0D;\n',
+              'ambush distance')
+          entity = replace_once(entity,
+              '    private static final int AMBUSH_DISTANCE_TICKS = 40;\n'
+              '    private static final int AMBUSH_COOLDOWN_TICKS = 12 * 20;\n'
+              '    private static final int TARGET_LOST_DESPAWN_TICKS = 40;\n',
+              '    private static final int AMBUSH_DISTANCE_TICKS = 20;\n'
+              '    private static final int AMBUSH_COOLDOWN_TICKS = 8 * 20;\n'
+              '    private static final int TARGET_LOST_DESPAWN_TICKS = 10 * 20;\n',
+              'ambush timing')
+          entity = replace_once(entity,
+              '        ambushCooldownTicks = AMBUSH_COOLDOWN_TICKS;\n'
+              '        startEmergence(emergence);\n',
+              '        ambushCooldownTicks = 0;\n'
+              '        startEmergence(emergence);\n',
+              'initial ambush cooldown')
+          entity = replace_once(entity,
+              '        if (ambushCooldownTicks > 0) ambushCooldownTicks--;\n\n'
+              '        switch (getEncounterState()) {\n',
+              '        if (level().getDifficulty() == Difficulty.PEACEFUL) {\n'
+              '            discard();\n'
               '            return;\n'
               '        }\n\n'
-              '        if (getNavigation().isDone() || tickCount % 5 == 0) {\n'
-              '            getNavigation().moveTo(target.getX(), target.getY(),\n'
-              '                    target.getZ(), ATTACK_PURSUIT_SPEED_MODIFIER);\n'
-              '        }\n'
-              '    }\n',
-              'SCP-106 melee attack movement')
+              '        if (ambushCooldownTicks > 0) ambushCooldownTicks--;\n\n'
+              '        switch (getEncounterState()) {\n',
+              'Peaceful despawn')
+          entity = replace_once(entity,
+              '        boolean playerEscaping = player.getDeltaMovement()\n'
+              '                .horizontalDistanceSqr() > 0.004D;\n'
+              '        if (distanceToSqr(player) >= AMBUSH_DISTANCE_SQR\n'
+              '                && playerEscaping) {\n',
+              '        if (distanceToSqr(player) >= AMBUSH_DISTANCE_SQR) {\n',
+              'ambush pressure condition')
           entity_path.write_text(entity, encoding='utf-8')
 
-          model_path = Path('src/main/java/net/mcreator/scpadditions/client/Scp106Model.java')
-          model = model_path.read_text(encoding='utf-8')
-          old_model_method = '''    @Override
-              public void setCustomAnimations(T animatable, long instanceId,
-                      AnimationState<T> animationState) {
-                  super.setCustomAnimations(animatable, instanceId, animationState);
-                  if (!animatable.allowsHeadTracking()) return;
+          particle_path = Path('src/main/java/net/mcreator/scpadditions/client/Scp106CorrosionParticle.java')
+          particle = particle_path.read_text(encoding='utf-8')
+          render_pattern = re.compile(
+              r'    @Override\n    public void render\(VertexConsumer vertexConsumer, Camera camera,\n'
+              r'            float partialTick\) \{.*?\n    @Override\n'
+              r'    public ParticleRenderType getRenderType\(\)', re.DOTALL)
+          render_replacement = '''    @Override
+              public void render(VertexConsumer vertexConsumer, Camera camera,
+                      float partialTick) {
+                  Vec3 cameraPosition = camera.getPosition();
+                  float renderX = (float) (Mth.lerp(partialTick, this.xo, this.x)
+                          - cameraPosition.x());
+                  float renderY = (float) (Mth.lerp(partialTick, this.yo, this.y)
+                          - cameraPosition.y());
+                  float renderZ = (float) (Mth.lerp(partialTick, this.zo, this.z)
+                          - cameraPosition.z());
+                  float size = getQuadSize(partialTick);
+                  int light = getLightColor(partialTick);
 
-                  CoreGeoBone head = getAnimationProcessor().getBone("head");
-                  if (head == null) return;
-
-                  EntityModelData modelData = animationState.getData(
-                          DataTickets.ENTITY_MODEL_DATA);
-                  float yaw = Mth.clamp(modelData.netHeadYaw(), -30.0F, 30.0F);
-                  float pitch = Mth.clamp(modelData.headPitch(), -12.0F, 12.0F);
-
-                  head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
-                  head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
-              }
-          '''.replace('              ', '')
-          new_model_method = '''    @Override
-              public void setCustomAnimations(T animatable, long instanceId,
-                      AnimationState<T> animationState) {
-                  super.setCustomAnimations(animatable, instanceId, animationState);
-                  applyAttackWalkCycle(animatable);
-
-                  if (!animatable.allowsHeadTracking()) return;
-                  CoreGeoBone head = getAnimationProcessor().getBone("head");
-                  if (head == null) return;
-
-                  EntityModelData modelData = animationState.getData(
-                          DataTickets.ENTITY_MODEL_DATA);
-                  float yaw = Mth.clamp(modelData.netHeadYaw(), -30.0F, 30.0F);
-                  float pitch = Mth.clamp(modelData.headPitch(), -12.0F, 12.0F);
-
-                  head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
-                  head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
+                  renderLobe(vertexConsumer, renderX, renderY, renderZ,
+                          size * 1.22F, size * 0.82F, puddleRotation,
+                          light, 1.0F);
+                  renderLobe(vertexConsumer,
+                          renderX + Mth.cos(firstLobeAngle) * size * firstLobeDistance,
+                          renderY + 0.0004F,
+                          renderZ + Mth.sin(firstLobeAngle) * size * firstLobeDistance,
+                          size * 0.76F, size * 0.57F,
+                          puddleRotation + 0.68F, light, 0.92F);
+                  renderLobe(vertexConsumer,
+                          renderX + Mth.cos(secondLobeAngle) * size * secondLobeDistance,
+                          renderY + 0.0008F,
+                          renderZ + Mth.sin(secondLobeAngle) * size * secondLobeDistance,
+                          size * 0.63F, size * 0.50F,
+                          puddleRotation - 0.54F, light, 0.86F);
               }
 
-              private void applyAttackWalkCycle(T animatable) {
-                  if (!animatable.isAttacking()
-                          || animatable.getDeltaMovement().horizontalDistanceSqr()
-                          < 0.0004D) {
-                      return;
-                  }
+              private void renderLobe(VertexConsumer vertexConsumer,
+                      float centerX, float centerY, float centerZ,
+                      float radiusX, float radiusZ, float rotation,
+                      int light, float alphaMultiplier) {
+                  float cos = Mth.cos(rotation);
+                  float sin = Mth.sin(rotation);
+                  float x0 = centerX + (-radiusX * cos + radiusZ * sin);
+                  float z0 = centerZ + (-radiusX * sin - radiusZ * cos);
+                  float x1 = centerX + (-radiusX * cos - radiusZ * sin);
+                  float z1 = centerZ + (-radiusX * sin + radiusZ * cos);
+                  float x2 = centerX + (radiusX * cos - radiusZ * sin);
+                  float z2 = centerZ + (radiusX * sin + radiusZ * cos);
+                  float x3 = centerX + (radiusX * cos + radiusZ * sin);
+                  float z3 = centerZ + (radiusX * sin - radiusZ * cos);
+                  float renderedAlpha = alpha * alphaMultiplier;
 
-                  CoreGeoBone leftLeg = getAnimationProcessor().getBone("left_leg");
-                  CoreGeoBone rightLeg = getAnimationProcessor().getBone("right_leg");
-                  CoreGeoBone leftFoot = getAnimationProcessor().getBone("left_feet");
-                  CoreGeoBone rightFoot = getAnimationProcessor().getBone("right_feet");
-                  if (leftLeg == null || rightLeg == null
-                          || leftFoot == null || rightFoot == null) {
-                      return;
-                  }
-
-                  float gait = animatable.walkAnimation.position() * 0.6662F;
-                  float strength = Mth.clamp(
-                          animatable.walkAnimation.speed() * 1.35F,
-                          0.0F, 1.0F);
-                  float legSwing = Mth.cos(gait) * 0.48F * strength;
-                  float footSwing = Mth.sin(gait) * 0.18F * strength;
-
-                  leftLeg.setRotX(leftLeg.getRotX() + legSwing);
-                  rightLeg.setRotX(rightLeg.getRotX() - legSwing);
-                  leftFoot.setRotX(leftFoot.getRotX()
-                          - legSwing * 0.42F + footSwing);
-                  rightFoot.setRotX(rightFoot.getRotX()
-                          + legSwing * 0.42F - footSwing);
-              }
-          '''.replace('              ', '')
-          model = replace_once(model, old_model_method, new_model_method,
-                               'SCP-106 model animation method')
-          model_path.write_text(model, encoding='utf-8')
-
-          locator_path = Path('src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java')
-          locator = locator_path.read_text(encoding='utf-8')
-          locator = replace_once(
-              locator,
-              'import net.minecraft.world.entity.player.Player;\n'
-              'import net.minecraft.world.level.block.state.BlockState;\n'
-              'import net.minecraft.world.phys.AABB;\n'
-              'import net.minecraft.world.phys.Vec3;\n',
-              'import net.minecraft.world.entity.player.Player;\n'
-              'import net.minecraft.world.level.ClipContext;\n'
-              'import net.minecraft.world.level.block.state.BlockState;\n'
-              'import net.minecraft.world.phys.AABB;\n'
-              'import net.minecraft.world.phys.HitResult;\n'
-              'import net.minecraft.world.phys.Vec3;\n',
-              'emergence locator visibility imports')
-          initial_pattern = re.compile(
-              r'    public static Placement findInitial\(ServerLevel level, Player target,\n'
-              r'            RandomSource random\) \{.*?\n'
-              r'    \}\n\n'
-              r'    public static Placement findAmbush',
-              re.DOTALL)
-          initial_replacement = '''    public static Placement findInitial(ServerLevel level, Player target,
-                      RandomSource random) {
-                  if (level == null || target == null || random == null) return null;
-
-                  int targetY = target.blockPosition().getY();
-                  for (int attempt = 0; attempt < INITIAL_ATTEMPTS; attempt++) {
-                      double angle = random.nextDouble() * Math.PI * 2.0D;
-                      double distance = 3.0D + random.nextDouble() * 5.0D;
-                      Vec3 candidate = target.position().add(
-                              Math.cos(angle) * distance, 0.0D,
-                              Math.sin(angle) * distance);
-
-                      BlockPos standing = findStandingPosition(level,
-                              Mth.floor(candidate.x), targetY,
-                              Mth.floor(candidate.z), 2, 2);
-                      if (standing == null
-                              || !sharesVisibleRoom(level, target, standing)) {
-                          continue;
-                      }
-
-                      boolean preferWall = random.nextFloat() < 0.65F;
-                      Placement wall = wallPlacement(level, standing, target, random);
-                      if (preferWall && wall != null) return wall;
-
-                      Placement ground = groundPlacement(standing, target);
-                      if (ground != null) return ground;
-                      if (wall != null) return wall;
-                  }
-                  return null;
+                  vertexConsumer.vertex(x0, centerY, z0).uv(getU1(), getV1())
+                          .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                  vertexConsumer.vertex(x1, centerY, z1).uv(getU1(), getV0())
+                          .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                  vertexConsumer.vertex(x2, centerY, z2).uv(getU0(), getV0())
+                          .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                  vertexConsumer.vertex(x3, centerY, z3).uv(getU0(), getV1())
+                          .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
               }
 
-              public static Placement findAmbush'''.replace('              ', '')
-          locator, count = initial_pattern.subn(initial_replacement, locator, count=1)
+              @Override
+              public ParticleRenderType getRenderType()'''.replace('              ', '')
+          particle, count = render_pattern.subn(render_replacement, particle, count=1)
           if count != 1:
-              raise RuntimeError('Could not replace initial SCP-106 emergence search')
-          marker = '    private static Placement groundPlacement(BlockPos standing, Player target) {'
-          room_helper = '''    private static boolean sharesVisibleRoom(ServerLevel level,
-                      Player target, BlockPos standing) {
-                  Vec3 targetEye = target.getEyePosition();
-                  Vec3 emergenceCenter = Vec3.atBottomCenterOf(standing)
-                          .add(0.0D, 1.0D, 0.0D);
-                  if (Math.abs(emergenceCenter.y - targetEye.y) > 3.0D) {
-                      return false;
-                  }
-
-                  HitResult obstruction = level.clip(new ClipContext(
-                          targetEye, emergenceCenter,
-                          ClipContext.Block.COLLIDER,
-                          ClipContext.Fluid.NONE,
-                          target));
-                  return obstruction.getType() == HitResult.Type.MISS;
-              }
-
-          '''.replace('              ', '')
-          locator = replace_once(locator, marker, room_helper + marker,
-                                 'same-room emergence helper')
-          locator_path.write_text(locator, encoding='utf-8')
-
-          for particle_file in (
-                  'src/main/java/net/mcreator/scpadditions/client/Scp106CorrosionParticle.java',
-                  'src/main/java/net/mcreator/scpadditions/client/Scp106PortalParticle.java'):
-              path = Path(particle_file)
-              text = path.read_text(encoding='utf-8')
-              text = re.sub(r'private static final float UV_CROP = [0-9.]+F;',
-                            'private static final float UV_CROP = 0.0F;', text,
-                            count=1)
-              text = replace_once(text,
-                                  '        this.setSpriteFromAge(sprites);\n',
-                                  '        this.pickSprite(sprites);\n',
-                                  f'initial particle sprite selection in {particle_file}')
-              text = text.replace('        this.setSpriteFromAge(sprites);\n', '', 1)
-              path.write_text(text, encoding='utf-8')
-
-          particle_definition = '''{
-            "textures": [
-              "scp_additions:scp_106_puddle_0",
-              "scp_additions:scp_106_puddle_1",
-              "scp_additions:scp_106_puddle_2"
-            ]
-          }
-          '''
-          Path('src/main/resources/assets/scp_additions/particles/scp_106_corrosion.json').write_text(
-              particle_definition, encoding='utf-8')
-          Path('src/main/resources/assets/scp_additions/particles/scp_106_portal.json').write_text(
-              particle_definition, encoding='utf-8')
-
-          def png_chunk(kind, payload):
-              return (struct.pack('>I', len(payload)) + kind + payload
-                      + struct.pack('>I', binascii.crc32(kind + payload) & 0xffffffff))
-
-          def smooth_alpha(value, edge=0.055):
-              t = max(0.0, min(1.0, value / edge + 0.5))
-              return t * t * (3.0 - 2.0 * t)
-
-          def write_puddle(path, seed):
-              rng = random.Random(seed)
-              width = height = 128
-              phase_a = rng.random() * math.tau
-              phase_b = rng.random() * math.tau
-              phase_c = rng.random() * math.tau
-              blobs = []
-              for _ in range(5):
-                  angle = rng.random() * math.tau
-                  distance = 0.28 + rng.random() * 0.28
-                  blobs.append((
-                      math.cos(angle) * distance,
-                      math.sin(angle) * distance * 0.72,
-                      0.30 + rng.random() * 0.19,
-                      0.22 + rng.random() * 0.15))
-
-              rows = []
-              for py in range(height):
-                  row = bytearray()
-                  y = ((py + 0.5) / height) * 2.0 - 1.0
-                  for px in range(width):
-                      x = ((px + 0.5) / width) * 2.0 - 1.0
-                      theta = math.atan2(y / 0.74, x)
-                      radius = math.sqrt(x * x + (y / 0.74) ** 2)
-                      boundary = (0.69
-                                  + 0.075 * math.sin(theta * 3.0 + phase_a)
-                                  + 0.050 * math.sin(theta * 5.0 + phase_b)
-                                  + 0.028 * math.sin(theta * 9.0 + phase_c))
-                      signed = boundary - radius
-                      for cx, cy, rx, ry in blobs:
-                          blob_radius = math.sqrt(
-                              ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2)
-                          signed = max(signed, (1.0 - blob_radius) * 0.16)
-
-                      alpha = smooth_alpha(signed)
-                      if alpha <= 0.001:
-                          row.extend((255, 255, 255, 0))
-                          continue
-
-                      mottling = (0.94
-                                  + 0.035 * math.sin(x * 19.0 + y * 13.0 + seed)
-                                  + 0.025 * math.sin(x * 31.0 - y * 23.0 + phase_b))
-                      value = max(205, min(255, int(245 * mottling)))
-                      opacity = max(0, min(255, int(255 * alpha)))
-                      row.extend((value, value, value, opacity))
-                  rows.append(b'\x00' + bytes(row))
-
-              raw = b''.join(rows)
-              png = (b'\x89PNG\r\n\x1a\n'
-                     + png_chunk(b'IHDR', struct.pack('>IIBBBBB',
-                         width, height, 8, 6, 0, 0, 0))
-                     + png_chunk(b'IDAT', zlib.compress(raw, 9))
-                     + png_chunk(b'IEND', b''))
-              path.parent.mkdir(parents=True, exist_ok=True)
-              path.write_bytes(png)
+              raise RuntimeError('Could not replace corrosion particle renderer')
+          particle_path.write_text(particle, encoding='utf-8')
 
           texture_dir = Path('src/main/resources/assets/scp_additions/textures/particle')
-          for index, seed in enumerate((10631, 10657, 10693)):
-              write_puddle(texture_dir / f'scp_106_puddle_{index}.png', seed)
+          texture_dir.mkdir(parents=True, exist_ok=True)
+          width = height = 64
+          random.seed(106)
+          harmonics = [(random.uniform(0, math.tau), random.uniform(0.025, 0.075), n)
+                       for n in (2, 3, 5, 7, 9)]
+          rows = []
+          for y in range(height):
+              row = bytearray([0])
+              for x in range(width):
+                  dx = (x + 0.5 - width / 2) / (width / 2)
+                  dy = (y + 0.5 - height / 2) / (height / 2)
+                  angle = math.atan2(dy, dx)
+                  radius = math.hypot(dx, dy)
+                  boundary = 0.79
+                  for phase, amplitude, frequency in harmonics:
+                      boundary += math.sin(angle * frequency + phase) * amplitude
+                  softness = 0.12
+                  alpha = max(0.0, min(1.0, (boundary - radius) / softness))
+                  alpha = alpha * alpha * (3.0 - 2.0 * alpha)
+                  edge_noise = 0.92 + 0.08 * math.sin(x * 0.73 + y * 0.41)
+                  a = int(255 * alpha * edge_noise)
+                  row.extend((24, 8, 4, a))
+              rows.append(bytes(row))
+          raw = b''.join(rows)
+          def chunk(kind, data):
+              return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
+          png = (b'\x89PNG\r\n\x1a\n'
+                 + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
+                 + chunk(b'IDAT', zlib.compress(raw, 9))
+                 + chunk(b'IEND', b''))
+          (texture_dir / 'scp_106_puddle.png').write_bytes(png)
+
+          Path('src/main/resources/assets/scp_additions/particles/scp_106_corrosion.json').write_text(
+              '{\n  "textures": [\n    "scp_additions:scp_106_puddle"\n  ]\n}\n', encoding='utf-8')
+
+          pathfinder_path = Path('src/main/java/net/mcreator/scpadditions/scp012/Scp012Pathfinder.java')
+          pathfinder = pathfinder_path.read_text(encoding='utf-8')
+          pathfinder = replace_once(pathfinder,
+              '    private static final Map<UUID, CachedPath> CACHE = new HashMap<>();\n',
+              '    private static final Map<UUID, CachedPath> CACHE = new HashMap<>();\n'
+              '    private static final Map<UUID, CachedReachability> REACHABILITY = new HashMap<>();\n',
+              'SCP-012 reachability cache')
+          marker = '    public static Vec3 nextWaypoint(ServerLevel level, ServerPlayer player,\n'
+          reachability_method = '''    public static boolean hasOpenPath(ServerLevel level,
+                      ServerPlayer player, Vec3 goal) {
+                  if (directlyReachable(level, player, goal)) return true;
+
+                  UUID id = player.getUUID();
+                  BlockPos goalPos = BlockPos.containing(goal.x, goal.y, goal.z);
+                  long time = level.getGameTime();
+                  CachedReachability cached = REACHABILITY.get(id);
+                  if (cached != null && cached.expiresAt >= time
+                          && cached.goal.equals(goalPos)) {
+                      return cached.reachable;
+                  }
+
+                  List<BlockPos> path = find(level, player, goalPos);
+                  boolean reachable = !path.isEmpty()
+                          && path.get(path.size() - 1).distManhattan(goalPos) <= 1;
+                  REACHABILITY.put(id, new CachedReachability(
+                          goalPos, reachable, time + 6));
+                  return reachable;
+              }
+
+          '''.replace('              ', '')
+          pathfinder = replace_once(pathfinder, marker,
+              reachability_method + marker, 'SCP-012 reachability method')
+          pathfinder = replace_once(pathfinder,
+              '    public static void clear(ServerPlayer player) {\n'
+              '        if (player != null) CACHE.remove(player.getUUID());\n'
+              '    }\n',
+              '    public static void clear(ServerPlayer player) {\n'
+              '        if (player == null) return;\n'
+              '        CACHE.remove(player.getUUID());\n'
+              '        REACHABILITY.remove(player.getUUID());\n'
+              '    }\n',
+              'SCP-012 cache clear')
+          pathfinder = replace_once(pathfinder,
+              '    private record CachedPath(BlockPos goal, List<BlockPos> nodes,\n'
+              '                              long expiresAt, int index) {\n',
+              '    private record CachedReachability(BlockPos goal, boolean reachable,\n'
+              '                                      long expiresAt) {\n'
+              '    }\n\n'
+              '    private record CachedPath(BlockPos goal, List<BlockPos> nodes,\n'
+              '                              long expiresAt, int index) {\n',
+              'SCP-012 reachability record')
+          pathfinder_path.write_text(pathfinder, encoding='utf-8')
+
+          influence_path = Path('src/main/java/net/mcreator/scpadditions/scp012/Scp012InfluenceEvents.java')
+          influence = influence_path.read_text(encoding='utf-8')
+          influence = replace_once(influence,
+              '        if (Scp714ProtectionAccess.isProtected(player)) {\n',
+              '        if (!Scp012Pathfinder.hasOpenPath(level, player, attraction)) {\n'
+              '            clearInfluence(player);\n'
+              '            return;\n'
+              '        }\n\n'
+              '        if (Scp714ProtectionAccess.isProtected(player)) {\n',
+              'SCP-012 open path gate')
+          influence_path.write_text(influence, encoding='utf-8')
 
           changelog_path = Path('CHANGELOG.md')
           changelog = changelog_path.read_text(encoding='utf-8')
-          changelog = replace_once(
-              changelog,
-              '- SCP-106 can now appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;\n',
-              "- SCP-106 can now appear naturally after the player has spent some time in the world, preferring nearby floors and walls within the player's current room before immediately beginning a hunt;\n",
-              'SCP-106 spawn changelog entry')
-          changelog = replace_once(
-              changelog,
-              '- Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;\n',
-              '- Added close-range attacks that keep advancing instead of freezing in place, with the legs continuing their walking motion during the strike;\n'
-              '- Added more organic and varied dark corrosion pools while SCP-106 moves and emerges;\n',
-              'SCP-106 attack and corrosion changelog entry')
+          changelog = changelog.replace(
+              '- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target.\n',
+              '- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.\n', 1)
+          if '## SCP-012\n' not in changelog:
+              changelog = changelog.replace(
+                  '## Interface fixes\n',
+                  '## SCP-012\n\n- SCP-012 now begins manipulating a nearby player only when an open, traversable path exists between the player and the composition.\n\n## Interface fixes\n', 1)
           changelog_path.write_text(changelog, encoding='utf-8')
 
-          original_build = base64.b64decode(
-              'bmFtZTogQnVpbGQKCm9uOgogIHB1c2g6CiAgICBicmFuY2hlczoKICAgICAgLSBtYXN0ZXIKICAgICAgLSBpbnRlZ3JhdGlvbi9zY3AtYWRkaXRpb25zLTMuMAogICAgICAtICdmZWF0dXJlLyoqJwogIHB1bGxfcmVxdWVzdDoKICAgIGJyYW5jaGVzOgogICAgICAtIG1hc3RlcgogICAgICAtIGludGVncmF0aW9uL3NjcC1hZGRpdGlvbnMtMy4wCgpwZXJtaXNzaW9uczoKICBjb250ZW50czogcmVhZAoKam9iczoKICBidWlsZDoKICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKCiAgICBzdGVwczoKICAgICAgLSBuYW1lOiBDaGVja291dAogICAgICAgIHVzZXM6IGFjdGlvbnMvY2hlY2tvdXRAdjQKCiAgICAgIC0gbmFtZTogU2V0IHVwIEphdmEgMTcKICAgICAgICB1c2VzOiBhY3Rpb25zL3NldHVwLWphdmFAdjQKICAgICAgICB3aXRoOgogICAgICAgICAgZGlzdHJpYnV0aW9uOiB0ZW11cmluCiAgICAgICAgICBqYXZhLXZlcnNpb246ICcxNycKCiAgICAgIC0gbmFtZTogU2V0IHVwIEdyYWRsZQogICAgICAgIHVzZXM6IGdyYWRsZS9hY3Rpb25zL3NldHVwLWdyYWRsZUB2NAoKICAgICAgLSBuYW1lOiBNYWtlIEdyYWRsZSB3cmFwcGVyIGV4ZWN1dGFibGUKICAgICAgICBydW46IGNobW9kICt4IGdyYWRsZXcKCiAgICAgIC0gbmFtZTogQnVpbGQKICAgICAgICBydW46IC4vZ3JhZGxldyBjbGVhbiBidWlsZCAtLXN0YWNrdHJhY2UKCiAgICAgIC0gbmFtZTogVXBsb2FkIGNvbXBpbGVkIEpBUgogICAgICAgIGlmOiBzdWNjZXNzKCkKICAgICAgICB1c2VzOiBhY3Rpb25zL3VwbG9hZC1hcnRpZmFjdEB2NAogICAgICAgIHdpdGg6CiAgICAgICAgICBuYW1lOiBzY3AtYWRkaXRpb25zLSR7eyBnaXRodWIuc2hhIH19CiAgICAgICAgICBwYXRoOiBidWlsZC9saWJzLyouamFyCiAgICAgICAgICBpZi1uby1maWxlcy1mb3VuZDogZXJyb3IK')
-          Path('.github/workflows/build.yml').write_bytes(original_build)
-          PY
+          Path('.github/workflows/build.yml').write_text('''name: Build
 
-          ./gradlew clean build --stacktrace
-          git add -A
-          git commit -m "Refine SCP-106 pursuit and emergence behavior"
-          git fetch origin master
-          git rebase origin/master
+on:
+  push:
+    branches:
+      - master
+      - integration/scp-additions-3.0
+      - 'feature/**'
+  pull_request:
+    branches:
+      - master
+      - integration/scp-additions-3.0
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build
+        run: ./gradlew clean build --stacktrace
+
+      - name: Upload compiled JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp-additions-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error
+''', encoding='utf-8')
+
+          git add .github/workflows/build.yml CHANGELOG.md \
+            src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java \
+            src/main/java/net/mcreator/scpadditions/client/Scp106CorrosionParticle.java \
+            src/main/java/net/mcreator/scpadditions/scp012/Scp012Pathfinder.java \
+            src/main/java/net/mcreator/scpadditions/scp012/Scp012InfluenceEvents.java \
+            src/main/resources/assets/scp_additions/particles/scp_106_corrosion.json \
+            src/main/resources/assets/scp_additions/textures/particle/scp_106_puddle.png
+          git commit -m "Fix SCP-106 pursuit persistence and SCP-012 path gating"
           git push origin HEAD:master
+
+      - name: Build
+        run: ./gradlew clean build --stacktrace
 
       - name: Upload compiled JAR
         if: success()

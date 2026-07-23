@@ -42,11 +42,19 @@ jobs:
                            for line in code.splitlines())
           Path('/tmp/apply_fix.py').write_text(code + '\n', encoding='utf-8')
           PY
-          python /tmp/apply_fix.py
+
+          if ! python /tmp/apply_fix.py > /tmp/patch-output.txt 2>&1; then
+            cp /tmp/patch-output.txt .github/scp106-012-patch-error.txt
+            git add .github/scp106-012-patch-error.txt
+            git commit -m "Record SCP-106 and SCP-012 patch failure"
+            git push origin HEAD:master
+            exit 1
+          fi
 
           rm -f .github/workflows/apply-scp106-012-fix.yml
           rm -f .github/scp106-012-fix-trigger
-          git add .github/workflows/build.yml .github/workflows/apply-scp106-012-fix.yml .github/scp106-012-fix-trigger CHANGELOG.md \
+          rm -f .github/scp106-012-patch-error.txt
+          git add .github/workflows/build.yml .github/workflows/apply-scp106-012-fix.yml .github/scp106-012-fix-trigger .github/scp106-012-patch-error.txt CHANGELOG.md \
             src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java \
             src/main/java/net/mcreator/scpadditions/client/Scp106CorrosionParticle.java \
             src/main/java/net/mcreator/scpadditions/scp012/Scp012Pathfinder.java \

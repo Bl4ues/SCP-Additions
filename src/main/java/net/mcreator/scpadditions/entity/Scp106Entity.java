@@ -53,9 +53,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final byte PHASE_TRAVEL = 3;
     private static final byte VANISHING = 4;
 
-    public static final double MOVEMENT_SPEED = 0.265D;
+    public static final double MOVEMENT_SPEED = 0.245D;
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
-    private static final double ATTACK_PURSUIT_SPEED_MODIFIER = 0.72D;
+    private static final double ATTACK_PURSUIT_SPEED_MODIFIER = 0.84D;
     private static final double PURSUIT_RANGE = 128.0D;
     private static final double PURSUIT_RANGE_SQR =
             PURSUIT_RANGE * PURSUIT_RANGE;

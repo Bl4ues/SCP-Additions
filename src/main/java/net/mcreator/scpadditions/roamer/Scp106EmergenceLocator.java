@@ -6,8 +6,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /** Finds grounded floor or wall exits for SCP-106 without altering terrain. */
@@ -39,33 +41,23 @@ public final class Scp106EmergenceLocator {
             RandomSource random) {
         if (level == null || target == null || random == null) return null;
 
-        Vec3 forward = horizontal(target.getLookAngle());
-        if (forward.lengthSqr() < 0.0001D) {
-            forward = new Vec3(0.0D, 0.0D, 1.0D);
-        }
-        Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
         int targetY = target.blockPosition().getY();
-
         for (int attempt = 0; attempt < INITIAL_ATTEMPTS; attempt++) {
-            Vec3 candidate;
-            if (attempt < 64) {
-                double distance = 6.0D + random.nextDouble() * 8.0D;
-                double side = (random.nextDouble() - 0.5D) * 12.0D;
-                candidate = target.position().add(forward.scale(distance))
-                        .add(right.scale(side));
-            } else {
-                double angle = random.nextDouble() * Math.PI * 2.0D;
-                double distance = 6.0D + random.nextDouble() * 8.0D;
-                candidate = target.position().add(Math.cos(angle) * distance,
-                        0.0D, Math.sin(angle) * distance);
-            }
+            double angle = random.nextDouble() * Math.PI * 2.0D;
+            double distance = 3.0D + random.nextDouble() * 5.0D;
+            Vec3 candidate = target.position().add(
+                    Math.cos(angle) * distance, 0.0D,
+                    Math.sin(angle) * distance);
 
             BlockPos standing = findStandingPosition(level,
-                    Mth.floor(candidate.x), targetY, Mth.floor(candidate.z),
-                    4, 8);
-            if (standing == null) continue;
+                    Mth.floor(candidate.x), targetY,
+                    Mth.floor(candidate.z), 2, 2);
+            if (standing == null
+                    || !sharesVisibleRoom(level, target, standing)) {
+                continue;
+            }
 
-            boolean preferWall = random.nextFloat() < 0.58F;
+            boolean preferWall = random.nextFloat() < 0.65F;
             Placement wall = wallPlacement(level, standing, target, random);
             if (preferWall && wall != null) return wall;
 
@@ -108,6 +100,23 @@ public final class Scp106EmergenceLocator {
             if (wall != null) return wall;
         }
         return null;
+    }
+
+    private static boolean sharesVisibleRoom(ServerLevel level,
+            Player target, BlockPos standing) {
+        Vec3 targetEye = target.getEyePosition();
+        Vec3 emergenceCenter = Vec3.atBottomCenterOf(standing)
+                .add(0.0D, 1.0D, 0.0D);
+        if (Math.abs(emergenceCenter.y - targetEye.y) > 3.0D) {
+            return false;
+        }
+
+        HitResult obstruction = level.clip(new ClipContext(
+                targetEye, emergenceCenter,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                target));
+        return obstruction.getType() == HitResult.Type.MISS;
     }
 
     private static Placement groundPlacement(BlockPos standing, Player target) {

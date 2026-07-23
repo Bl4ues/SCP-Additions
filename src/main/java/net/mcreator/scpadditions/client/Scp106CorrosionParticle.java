@@ -74,96 +74,55 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
             float partialTick) {
         Vec3 cameraPosition = camera.getPosition();
         float renderX = (float) (Mth.lerp(partialTick, this.xo, this.x)
-                - cameraPosition.x());
+  - cameraPosition.x());
         float renderY = (float) (Mth.lerp(partialTick, this.yo, this.y)
-                - cameraPosition.y());
+  - cameraPosition.y());
         float renderZ = (float) (Mth.lerp(partialTick, this.zo, this.z)
-                - cameraPosition.z());
+  - cameraPosition.z());
         float size = getQuadSize(partialTick);
         int light = getLightColor(partialTick);
 
-        renderOrganicLobe(vertexConsumer, renderX, renderY, renderZ,
-                size * 1.22F, size * 0.82F, puddleRotation,
-                light, 1.0F, 0);
-        renderOrganicLobe(vertexConsumer,
-                renderX + Mth.cos(firstLobeAngle)
-                        * size * firstLobeDistance,
-                renderY + 0.0004F,
-                renderZ + Mth.sin(firstLobeAngle)
-                        * size * firstLobeDistance,
-                size * 0.76F, size * 0.57F,
-                puddleRotation + 0.68F,
-                light, 0.92F, 4);
-        renderOrganicLobe(vertexConsumer,
-                renderX + Mth.cos(secondLobeAngle)
-                        * size * secondLobeDistance,
-                renderY + 0.0008F,
-                renderZ + Mth.sin(secondLobeAngle)
-                        * size * secondLobeDistance,
-                size * 0.63F, size * 0.50F,
-                puddleRotation - 0.54F,
-                light, 0.86F, 9);
+        renderLobe(vertexConsumer, renderX, renderY, renderZ,
+  size * 1.22F, size * 0.82F, puddleRotation,
+  light, 1.0F);
+        renderLobe(vertexConsumer,
+  renderX + Mth.cos(firstLobeAngle) * size * firstLobeDistance,
+  renderY + 0.0004F,
+  renderZ + Mth.sin(firstLobeAngle) * size * firstLobeDistance,
+  size * 0.76F, size * 0.57F,
+  puddleRotation + 0.68F, light, 0.92F);
+        renderLobe(vertexConsumer,
+  renderX + Mth.cos(secondLobeAngle) * size * secondLobeDistance,
+  renderY + 0.0008F,
+  renderZ + Mth.sin(secondLobeAngle) * size * secondLobeDistance,
+  size * 0.63F, size * 0.50F,
+  puddleRotation - 0.54F, light, 0.86F);
     }
 
-    private void renderOrganicLobe(VertexConsumer vertexConsumer,
+    private void renderLobe(VertexConsumer vertexConsumer,
             float centerX, float centerY, float centerZ,
             float radiusX, float radiusZ, float rotation,
-            int light, float alphaMultiplier, int variationOffset) {
-        float centerU = (getU0() + getU1()) * 0.5F;
-        float centerV = (getV0() + getV1()) * 0.5F;
-        float halfU = (getU1() - getU0()) * 0.5F;
-        float halfV = (getV1() - getV0()) * 0.5F;
+            int light, float alphaMultiplier) {
+        float cos = Mth.cos(rotation);
+        float sin = Mth.sin(rotation);
+        float x0 = centerX + (-radiusX * cos + radiusZ * sin);
+        float z0 = centerZ + (-radiusX * sin - radiusZ * cos);
+        float x1 = centerX + (-radiusX * cos - radiusZ * sin);
+        float z1 = centerZ + (-radiusX * sin + radiusZ * cos);
+        float x2 = centerX + (radiusX * cos - radiusZ * sin);
+        float z2 = centerZ + (radiusX * sin + radiusZ * cos);
+        float x3 = centerX + (radiusX * cos + radiusZ * sin);
+        float z3 = centerZ + (radiusX * sin - radiusZ * cos);
         float renderedAlpha = alpha * alphaMultiplier;
-        float cosRotation = Mth.cos(rotation);
-        float sinRotation = Mth.sin(rotation);
 
-        for (int segment = 0; segment < EDGE_SEGMENTS; segment++) {
-            int next = (segment + 1) % EDGE_SEGMENTS;
-            float angleA = (float) (Math.PI * 2.0D * segment
-                    / EDGE_SEGMENTS);
-            float angleB = (float) (Math.PI * 2.0D * next
-                    / EDGE_SEGMENTS);
-            float variationA = edgeVariation[
-                    (segment + variationOffset) % EDGE_SEGMENTS];
-            float variationB = edgeVariation[
-                    (next + variationOffset) % EDGE_SEGMENTS];
-
-            float localXA = Mth.cos(angleA) * radiusX * variationA;
-            float localZA = Mth.sin(angleA) * radiusZ * variationA;
-            float localXB = Mth.cos(angleB) * radiusX * variationB;
-            float localZB = Mth.sin(angleB) * radiusZ * variationB;
-
-            float edgeAX = centerX
-                    + localXA * cosRotation - localZA * sinRotation;
-            float edgeAZ = centerZ
-                    + localXA * sinRotation + localZA * cosRotation;
-            float edgeBX = centerX
-                    + localXB * cosRotation - localZB * sinRotation;
-            float edgeBZ = centerZ
-                    + localXB * sinRotation + localZB * cosRotation;
-
-            float uA = centerU + Mth.cos(angleA) * halfU;
-            float vA = centerV + Mth.sin(angleA) * halfV;
-            float uB = centerU + Mth.cos(angleB) * halfU;
-            float vB = centerV + Mth.sin(angleB) * halfV;
-
-            vertexConsumer.vertex(centerX, centerY, centerZ)
-                    .uv(centerU, centerV)
-                    .color(rCol, gCol, bCol, renderedAlpha)
-                    .uv2(light).endVertex();
-            vertexConsumer.vertex(edgeAX, centerY, edgeAZ)
-                    .uv(uA, vA)
-                    .color(rCol, gCol, bCol, renderedAlpha)
-                    .uv2(light).endVertex();
-            vertexConsumer.vertex(edgeBX, centerY, edgeBZ)
-                    .uv(uB, vB)
-                    .color(rCol, gCol, bCol, renderedAlpha)
-                    .uv2(light).endVertex();
-            vertexConsumer.vertex(centerX, centerY, centerZ)
-                    .uv(centerU, centerV)
-                    .color(rCol, gCol, bCol, renderedAlpha)
-                    .uv2(light).endVertex();
-        }
+        vertexConsumer.vertex(x0, centerY, z0).uv(getU1(), getV1())
+  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+        vertexConsumer.vertex(x1, centerY, z1).uv(getU1(), getV0())
+  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+        vertexConsumer.vertex(x2, centerY, z2).uv(getU0(), getV0())
+  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+        vertexConsumer.vertex(x3, centerY, z3).uv(getU0(), getV1())
+  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
     }
 
     @Override

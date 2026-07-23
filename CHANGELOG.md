@@ -9,7 +9,7 @@
 - Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and returning to normal movement after reaching open space;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
-- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target.
+- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
 ## SCP-173
 

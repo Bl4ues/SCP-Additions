@@ -8,6 +8,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -65,7 +66,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double WALK_ANIMATION_SPEED = 1.38D;
     private static final double PHASE_MOVEMENT_SPEED =
             MOVEMENT_SPEED * 0.5D;
-    private static final double AMBUSH_DISTANCE = 22.0D;
+    private static final double AMBUSH_DISTANCE = 16.0D;
     private static final double AMBUSH_DISTANCE_SQR =
             AMBUSH_DISTANCE * AMBUSH_DISTANCE;
     private static final int PATH_REFRESH_INTERVAL = 10;
@@ -80,9 +81,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int STUCK_PHASE_DELAY_TICKS = 30;
     private static final int PHASE_ENTRY_GRACE_TICKS = 12;
     private static final int PHASE_EXIT_CLEAR_TICKS = 6;
-    private static final int AMBUSH_DISTANCE_TICKS = 40;
-    private static final int AMBUSH_COOLDOWN_TICKS = 12 * 20;
-    private static final int TARGET_LOST_DESPAWN_TICKS = 40;
+    private static final int AMBUSH_DISTANCE_TICKS = 20;
+    private static final int AMBUSH_COOLDOWN_TICKS = 8 * 20;
+    private static final int TARGET_LOST_DESPAWN_TICKS = 10 * 20;
 
     private static final RawAnimation IDLE_ANIMATION =
             RawAnimation.begin().thenLoop("idle");
@@ -183,7 +184,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         huntedPlayerId = target.getUUID();
         setTarget(target);
         interestTicksRemaining = rollInterestTicks();
-        ambushCooldownTicks = AMBUSH_COOLDOWN_TICKS;
+        ambushCooldownTicks = 0;
         startEmergence(emergence);
     }
 
@@ -205,6 +206,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
         if (level().isClientSide) {
             tickClientVisuals();
+            return;
+        }
+
+        if (level().getDifficulty() == Difficulty.PEACEFUL) {
+            discard();
             return;
         }
 
@@ -378,10 +384,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void updateAmbushPressure(Player player) {
-        boolean playerEscaping = player.getDeltaMovement()
-                .horizontalDistanceSqr() > 0.004D;
-        if (distanceToSqr(player) >= AMBUSH_DISTANCE_SQR
-                && playerEscaping) {
+        if (distanceToSqr(player) >= AMBUSH_DISTANCE_SQR) {
             farDistanceTicks++;
         } else {
             farDistanceTicks = Math.max(0, farDistanceTicks - 3);

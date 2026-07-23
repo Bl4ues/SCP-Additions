@@ -97,6 +97,11 @@ public final class Scp012InfluenceEvents {
             }
         }
 
+        if (!Scp012Pathfinder.hasOpenPath(level, player, attraction)) {
+            clearInfluence(player);
+            return;
+        }
+
         if (Scp714ProtectionAccess.isProtected(player)) {
             clearInfluence(player);
             return;

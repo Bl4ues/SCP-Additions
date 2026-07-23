@@ -22,8 +22,30 @@ public final class Scp012Pathfinder {
     private static final int MAX_VISITED = 700;
     private static final int CACHE_TICKS = 12;
     private static final Map<UUID, CachedPath> CACHE = new HashMap<>();
+    private static final Map<UUID, CachedReachability> REACHABILITY = new HashMap<>();
 
     private Scp012Pathfinder() {
+    }
+
+    public static boolean hasOpenPath(ServerLevel level,
+            ServerPlayer player, Vec3 goal) {
+        if (directlyReachable(level, player, goal)) return true;
+
+        UUID id = player.getUUID();
+        BlockPos goalPos = BlockPos.containing(goal.x, goal.y, goal.z);
+        long time = level.getGameTime();
+        CachedReachability cached = REACHABILITY.get(id);
+        if (cached != null && cached.expiresAt >= time
+  && cached.goal.equals(goalPos)) {
+            return cached.reachable;
+        }
+
+        List<BlockPos> path = find(level, player, goalPos);
+        boolean reachable = !path.isEmpty()
+  && path.get(path.size() - 1).distManhattan(goalPos) <= 1;
+        REACHABILITY.put(id, new CachedReachability(
+  goalPos, reachable, time + 6));
+        return reachable;
     }
 
     public static Vec3 nextWaypoint(ServerLevel level, ServerPlayer player,
@@ -57,7 +79,9 @@ public final class Scp012Pathfinder {
     }
 
     public static void clear(ServerPlayer player) {
-        if (player != null) CACHE.remove(player.getUUID());
+        if (player == null) return;
+        CACHE.remove(player.getUUID());
+        REACHABILITY.remove(player.getUUID());
     }
 
     private static boolean directlyReachable(ServerLevel level,
@@ -164,6 +188,10 @@ public final class Scp012Pathfinder {
     }
 
     private record Node(BlockPos pos, double score) {
+    }
+
+    private record CachedReachability(BlockPos goal, boolean reachable,
+                                      long expiresAt) {
     }
 
     private record CachedPath(BlockPos goal, List<BlockPos> nodes,

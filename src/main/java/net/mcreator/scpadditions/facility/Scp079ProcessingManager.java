@@ -26,9 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Shared processing-power budget for SCP-079's facility decisions.
  *
- * The power value is stored in the world's SavedData. Regeneration remains
- * lazy, so no permanent server tick loop is needed, and restarting the world
- * neither resets the budget nor grants offline regeneration. Developer HUD
+ * The power value is stored in the world's SavedData. Active System Control
+ * regenerates toward 100 AP, while inactive System Control drains surplus
+ * power toward the 25 AP baseline. Both directions are evaluated lazily, so no
+ * permanent server tick loop is needed, and restarting the world neither
+ * resets the budget nor advances it while the world is closed. Developer HUD
  * synchronization is staggered. The decision feed uses a separate snapshot
  * packet and is only resent when a meaningful decision changes its history.
  */
@@ -38,8 +40,11 @@ public final class Scp079ProcessingManager {
     public static final float MAX_POWER = 100.0F;
     public static final float INITIAL_POWER = 25.0F;
     public static final float REGEN_PER_SECOND = 0.5F;
+    public static final float OFFLINE_DECAY_PER_SECOND = 0.5F;
 
     private static final double REGEN_PER_TICK = REGEN_PER_SECOND / 20.0D;
+    private static final double OFFLINE_DECAY_PER_TICK =
+            OFFLINE_DECAY_PER_SECOND / 20.0D;
     private static final Map<MinecraftServer, State> STATES = new WeakHashMap<>();
     private static final Map<UUID, ClientSnapshot> LAST_CLIENT_SYNC =
             new ConcurrentHashMap<>();
@@ -165,7 +170,7 @@ public final class Scp079ProcessingManager {
         LAST_CLIENT_SYNC.remove(event.getEntity().getUUID());
     }
 
-    /** Capture any lazily accrued power before the world's final save. */
+    /** Capture any lazily accrued or drained power before the final save. */
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
         MinecraftServer server = event.getServer();
@@ -192,9 +197,14 @@ public final class Scp079ProcessingManager {
     private static void update(MinecraftServer server, State state) {
         long now = server.getTickCount();
         long elapsed = Math.max(0L, now - state.lastTick);
-        if (state.active && elapsed > 0L) {
-            state.data.setPower(state.data.power()
-                    + elapsed * REGEN_PER_TICK);
+        if (elapsed > 0L) {
+            double power = state.data.power();
+            if (state.active) {
+                state.data.setPower(power + elapsed * REGEN_PER_TICK);
+            } else if (power > INITIAL_POWER) {
+                state.data.setPower(Math.max(INITIAL_POWER,
+                        power - elapsed * OFFLINE_DECAY_PER_TICK));
+            }
         }
         state.lastTick = now;
     }

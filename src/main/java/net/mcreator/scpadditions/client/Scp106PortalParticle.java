@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 /** A large irregular SCP-106 portal laid on a floor or against a wall. */
 public final class Scp106PortalParticle extends TextureSheetParticle {
     private static final float MAX_ALPHA = 0.82F;
-    private static final float UV_CROP = 0.38F;
+    private static final float UV_CROP = 0.0F;
 
     private final SpriteSet sprites;
     private final Vec3 normal;
@@ -70,13 +70,12 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
                 0.022F + this.random.nextFloat() * 0.018F,
                 0.010F + this.random.nextFloat() * 0.012F);
         this.setAlpha(MAX_ALPHA);
-        this.setSpriteFromAge(sprites);
+        this.pickSprite(sprites);
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.setSpriteFromAge(sprites);
         float remaining = 1.0F - Mth.clamp(
                 this.age / (float) this.lifetime, 0.0F, 1.0F);
         float fade = Mth.clamp(remaining / 0.28F, 0.0F, 1.0F);

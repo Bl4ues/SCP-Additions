@@ -31,7 +31,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          awk '/^[[:space:]]*python - <<'"'"'PY'"'"'/{capture=1; next} capture && /^[[:space:]]*PY$/{exit} capture{sub(/^[[:space:]]{10}/, ""); print}' .github/workflows/build.yml > /tmp/apply_fix.py
+          python - <<'PY'
+          from pathlib import Path
+          workflow = Path('.github/workflows/build.yml').read_text(encoding='utf-8')
+          marker = "          python - <<'PY'\n"
+          start = workflow.index(marker) + len(marker)
+          end = workflow.index("\n          PY", start)
+          code = workflow[start:end]
+          code = '\n'.join(line[10:] if line.startswith('          ') else line
+                           for line in code.splitlines())
+          Path('/tmp/apply_fix.py').write_text(code + '\n', encoding='utf-8')
+          PY
           python /tmp/apply_fix.py
 
           rm -f .github/workflows/apply-scp106-012-fix.yml

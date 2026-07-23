@@ -43,11 +43,30 @@ jobs:
           Path('/tmp/apply_fix.py').write_text(code + '\n', encoding='utf-8')
           PY
 
-          python /tmp/apply_fix.py
+          {
+            python /tmp/apply_fix.py
+            rm -f .github/workflows/apply-scp106-012-fix.yml
+            rm -f .github/scp106-012-fix-trigger
+            rm -f .github/scp106-012-patch-error.txt
+            git add -A
+            git status --short
+            git commit -m "Fix SCP-106 pursuit persistence and SCP-012 path gating"
+            git push origin HEAD:master
+          } > /tmp/patch-output.txt 2>&1
 
-          rm -f .github/workflows/apply-scp106-012-fix.yml
-          rm -f .github/scp106-012-fix-trigger
-          rm -f .github/scp106-012-patch-error.txt
-          git add -A
-          git commit -m "Fix SCP-106 pursuit persistence and SCP-012 path gating"
-          git push origin HEAD:master
+      - name: Collect patch diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          cp /tmp/apply_fix.py ./apply_fix.py || true
+          cp /tmp/patch-output.txt ./patch-output.txt || true
+
+      - name: Upload patch diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp106-012-patch-diagnostics-final
+          path: |
+            apply_fix.py
+            patch-output.txt
+          if-no-files-found: error

@@ -6,6 +6,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -24,10 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Shared processing-power budget for SCP-079's facility decisions.
  *
- * The value is updated lazily whenever gameplay needs it, avoiding another
- * permanent server tick loop. Developer HUD synchronization is staggered. The
- * decision feed uses a separate snapshot packet and is only resent when a
- * meaningful decision changes its history.
+ * The power value is stored in the world's SavedData. Regeneration remains
+ * lazy, so no permanent server tick loop is needed, and restarting the world
+ * neither resets the budget nor grants offline regeneration. Developer HUD
+ * synchronization is staggered. The decision feed uses a separate snapshot
+ * packet and is only resent when a meaningful decision changes its history.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -76,7 +79,7 @@ public final class Scp079ProcessingManager {
             State state = state(server, isActive(level));
             state.active = isActive(level);
             update(server, state);
-            return (float) state.power;
+            return (float) state.data.power();
         }
     }
 
@@ -91,8 +94,9 @@ public final class Scp079ProcessingManager {
             State state = state(server, true);
             state.active = true;
             update(server, state);
-            if (state.power + 0.0001D < cost) return false;
-            state.power = Math.max(0.0D, state.power - cost);
+            double power = state.data.power();
+            if (power + 0.0001D < cost) return false;
+            state.data.setPower(power - cost);
             return true;
         }
     }
@@ -105,7 +109,7 @@ public final class Scp079ProcessingManager {
             State state = state(server, isActive(level));
             state.active = isActive(level);
             update(server, state);
-            state.power = Math.min(MAX_POWER, state.power + amount);
+            state.data.setPower(state.data.power() + amount);
         }
     }
 
@@ -161,28 +165,48 @@ public final class Scp079ProcessingManager {
         LAST_CLIENT_SYNC.remove(event.getEntity().getUUID());
     }
 
+    /** Capture any lazily accrued power before the world's final save. */
+    @SubscribeEvent
+    public static void onServerStopping(ServerStoppingEvent event) {
+        MinecraftServer server = event.getServer();
+        synchronized (STATES) {
+            State state = STATES.get(server);
+            if (state != null) update(server, state);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        synchronized (STATES) {
+            STATES.remove(event.getServer());
+        }
+        LAST_CLIENT_SYNC.clear();
+    }
+
     private static State state(MinecraftServer server, boolean active) {
         return STATES.computeIfAbsent(server,
-                ignored -> new State(INITIAL_POWER, server.getTickCount(), active));
+                ignored -> new State(Scp079ProcessingSavedData.get(server),
+                        server.getTickCount(), active));
     }
 
     private static void update(MinecraftServer server, State state) {
         long now = server.getTickCount();
         long elapsed = Math.max(0L, now - state.lastTick);
         if (state.active && elapsed > 0L) {
-            state.power = Math.min(MAX_POWER,
-                    state.power + elapsed * REGEN_PER_TICK);
+            state.data.setPower(state.data.power()
+                    + elapsed * REGEN_PER_TICK);
         }
         state.lastTick = now;
     }
 
     private static final class State {
-        private double power;
+        private final Scp079ProcessingSavedData data;
         private long lastTick;
         private boolean active;
 
-        private State(double power, long lastTick, boolean active) {
-            this.power = power;
+        private State(Scp079ProcessingSavedData data, long lastTick,
+                boolean active) {
+            this.data = data;
             this.lastTick = lastTick;
             this.active = active;
         }

@@ -42,7 +42,7 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
     public void setCustomAnimations(T animatable, long instanceId,
             AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-        applyAttackWalkCycle(animatable);
+        applyAttackWalkCycle(animatable, animationState);
 
         if (!animatable.allowsHeadTracking()) return;
         CoreGeoBone head = getAnimationProcessor().getBone("head");
@@ -57,10 +57,11 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
         head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
     }
 
-    private void applyAttackWalkCycle(T animatable) {
+    private void applyAttackWalkCycle(T animatable,
+            AnimationState<T> animationState) {
         if (!animatable.isAttacking()
                 || animatable.getDeltaMovement().horizontalDistanceSqr()
-                < 0.0004D) {
+                < 0.00008D) {
             return;
         }
 
@@ -73,18 +74,20 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
             return;
         }
 
-        float gait = animatable.walkAnimation.position() * 0.6662F;
-        float strength = Mth.clamp(
-                animatable.walkAnimation.speed() * 1.35F,
-                0.0F, 1.0F);
-        float legSwing = Mth.cos(gait) * 0.48F * strength;
-        float footSwing = Mth.sin(gait) * 0.18F * strength;
+        float time = animatable.tickCount
+                + animationState.getPartialTick();
+        float gait = time * 0.46F;
+        float movement = (float) Math.sqrt(animatable.getDeltaMovement()
+                .horizontalDistanceSqr());
+        float strength = Mth.clamp(movement * 9.0F, 0.25F, 0.82F);
+        float legSwing = Mth.cos(gait) * 0.50F * strength;
+        float footSwing = Mth.sin(gait) * 0.20F * strength;
 
         leftLeg.setRotX(leftLeg.getRotX() + legSwing);
         rightLeg.setRotX(rightLeg.getRotX() - legSwing);
         leftFoot.setRotX(leftFoot.getRotX()
-                - legSwing * 0.42F + footSwing);
+                - legSwing * 0.44F + footSwing);
         rightFoot.setRotX(rightFoot.getRotX()
-                + legSwing * 0.42F - footSwing);
+                + legSwing * 0.44F - footSwing);
     }
 }

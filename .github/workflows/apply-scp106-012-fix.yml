@@ -25,6 +25,7 @@ jobs:
           ref: master
 
       - name: Apply prepared patch
+        id: patch
         shell: bash
         run: |
           set -euo pipefail
@@ -43,13 +44,7 @@ jobs:
           Path('/tmp/apply_fix.py').write_text(code + '\n', encoding='utf-8')
           PY
 
-          if ! python /tmp/apply_fix.py > /tmp/patch-output.txt 2>&1; then
-            cp /tmp/patch-output.txt .github/scp106-012-patch-error.txt
-            git add .github/scp106-012-patch-error.txt
-            git commit -m "Record SCP-106 and SCP-012 patch failure"
-            git push origin HEAD:master
-            exit 1
-          fi
+          python /tmp/apply_fix.py > /tmp/patch-output.txt 2>&1
 
           rm -f .github/workflows/apply-scp106-012-fix.yml
           rm -f .github/scp106-012-fix-trigger
@@ -63,3 +58,13 @@ jobs:
             src/main/resources/assets/scp_additions/textures/particle/scp_106_puddle.png
           git commit -m "Fix SCP-106 pursuit persistence and SCP-012 path gating"
           git push origin HEAD:master
+
+      - name: Upload patch diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp106-012-patch-diagnostics
+          path: |
+            /tmp/apply_fix.py
+            /tmp/patch-output.txt
+          if-no-files-found: warn

@@ -53,15 +53,18 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final byte PHASE_TRAVEL = 3;
     private static final byte VANISHING = 4;
 
-    public static final double MOVEMENT_SPEED = 0.29D;
+    public static final double MOVEMENT_SPEED = 0.265D;
     private static final double PURSUIT_SPEED_MODIFIER = 1.0D;
+    private static final double ATTACK_PURSUIT_SPEED_MODIFIER = 0.72D;
     private static final double PURSUIT_RANGE = 128.0D;
-    private static final double PURSUIT_RANGE_SQR = PURSUIT_RANGE * PURSUIT_RANGE;
+    private static final double PURSUIT_RANGE_SQR =
+            PURSUIT_RANGE * PURSUIT_RANGE;
     private static final double DIRECT_PURSUIT_VERTICAL_LIMIT = 1.35D;
     private static final double ATTACK_START_GAP = 0.16D;
     private static final double ATTACK_HIT_GAP = 0.38D;
-    private static final double WALK_ANIMATION_SPEED = 1.5D;
-    private static final double PHASE_MOVEMENT_SPEED = MOVEMENT_SPEED * 0.5D;
+    private static final double WALK_ANIMATION_SPEED = 1.38D;
+    private static final double PHASE_MOVEMENT_SPEED =
+            MOVEMENT_SPEED * 0.5D;
     private static final double AMBUSH_DISTANCE = 22.0D;
     private static final double AMBUSH_DISTANCE_SQR =
             AMBUSH_DISTANCE * AMBUSH_DISTANCE;
@@ -167,7 +170,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void applyCurrentMovementSpeed() {
-        AttributeInstance movementSpeed = getAttribute(Attributes.MOVEMENT_SPEED);
+        AttributeInstance movementSpeed =
+                getAttribute(Attributes.MOVEMENT_SPEED);
         if (movementSpeed != null) {
             movementSpeed.setBaseValue(MOVEMENT_SPEED);
         }
@@ -236,10 +240,6 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
         noPhysics = false;
         setNoGravity(false);
-        if (isAttacking()) {
-            getNavigation().stop();
-            stopHorizontalMovement();
-        }
     }
 
     private void tickClientVisuals() {
@@ -253,7 +253,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             clientPreviousState = state;
         }
 
-        if (state == HUNTING && !isAttacking()) {
+        if (state == HUNTING) {
             spawnCorrosionTrail();
         }
     }
@@ -265,7 +265,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         double z = getZ();
         if (wall) {
             float yaw = getYRot() * Mth.DEG_TO_RAD;
-            Vec3 outward = new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
+            Vec3 outward =
+                    new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
             normal = outward;
             x -= outward.x * 0.46D;
             y = getY() + 1.0D;
@@ -275,7 +276,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             y = getY() + 0.018D;
         }
 
-        level().addParticle(ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
+        level().addParticle(
+                ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
                 x, y, z, normal.x, normal.y, normal.z);
     }
 
@@ -335,8 +337,10 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             blockedSightTicks = 0;
         }
 
-        double movementSqr = getDeltaMovement().horizontalDistanceSqr();
-        if (distanceToSqr(player) > 16.0D && movementSqr < 0.0004D) {
+        double movementSqr =
+                getDeltaMovement().horizontalDistanceSqr();
+        if (distanceToSqr(player) > 16.0D
+                && movementSqr < 0.0004D) {
             stuckTicks++;
         } else {
             stuckTicks = Math.max(0, stuckTicks - 2);
@@ -355,8 +359,10 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return;
         }
 
-        if (getNavigation().isDone() || tickCount % PATH_REFRESH_INTERVAL == 0) {
-            getNavigation().moveTo(player.getX(), player.getY(), player.getZ(),
+        if (getNavigation().isDone()
+                || tickCount % PATH_REFRESH_INTERVAL == 0) {
+            getNavigation().moveTo(
+                    player.getX(), player.getY(), player.getZ(),
                     PURSUIT_SPEED_MODIFIER);
         }
     }
@@ -374,7 +380,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void updateAmbushPressure(Player player) {
         boolean playerEscaping = player.getDeltaMovement()
                 .horizontalDistanceSqr() > 0.004D;
-        if (distanceToSqr(player) >= AMBUSH_DISTANCE_SQR && playerEscaping) {
+        if (distanceToSqr(player) >= AMBUSH_DISTANCE_SQR
+                && playerEscaping) {
             farDistanceTicks++;
         } else {
             farDistanceTicks = Math.max(0, farDistanceTicks - 3);
@@ -383,21 +390,19 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     private void pursueDirectly(Player player) {
         getNavigation().stop();
-        getMoveControl().setWantedPosition(player.getX(), player.getY(),
-                player.getZ(), PURSUIT_SPEED_MODIFIER);
+        getMoveControl().setWantedPosition(
+                player.getX(), player.getY(), player.getZ(),
+                PURSUIT_SPEED_MODIFIER);
     }
 
     private void startAttack() {
         attackTicks = 0;
         entityData.set(ATTACKING, true);
-        getNavigation().stop();
-        stopHorizontalMovement();
     }
 
     private void tickAttack(LivingEntity target) {
-        getNavigation().stop();
-        stopHorizontalMovement();
         getLookControl().setLookAt(target, 45.0F, 25.0F);
+        pursueDuringAttack(target);
         attackTicks++;
 
         if (attackTicks == ATTACK_HIT_TICK
@@ -408,6 +413,24 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         if (attackTicks >= ATTACK_DURATION_TICKS) {
             attackTicks = 0;
             entityData.set(ATTACKING, false);
+        }
+    }
+
+    private void pursueDuringAttack(LivingEntity target) {
+        if (hasLineOfSight(target)
+                && Math.abs(target.getY() - getY())
+                <= DIRECT_PURSUIT_VERTICAL_LIMIT) {
+            getNavigation().stop();
+            getMoveControl().setWantedPosition(
+                    target.getX(), target.getY(), target.getZ(),
+                    ATTACK_PURSUIT_SPEED_MODIFIER);
+            return;
+        }
+
+        if (getNavigation().isDone() || tickCount % 5 == 0) {
+            getNavigation().moveTo(
+                    target.getX(), target.getY(), target.getZ(),
+                    ATTACK_PURSUIT_SPEED_MODIFIER);
         }
     }
 
@@ -444,7 +467,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         Vec3 toTarget = player.position().subtract(position());
         Vec3 horizontal = new Vec3(toTarget.x, 0.0D, toTarget.z);
         if (horizontal.lengthSqr() > 0.0001D) {
-            horizontal = horizontal.normalize().scale(PHASE_MOVEMENT_SPEED);
+            horizontal = horizontal.normalize()
+                    .scale(PHASE_MOVEMENT_SPEED);
         }
 
         Vec3 currentMovement = getDeltaMovement();
@@ -454,8 +478,10 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
         setDeltaMovement(horizontal.x, vertical, horizontal.z);
 
-        boolean safelyOut = !insideSolid && phaseEntryGraceTicks <= 0
-                && onGround() && hasLineOfSight(player);
+        boolean safelyOut = !insideSolid
+                && phaseEntryGraceTicks <= 0
+                && onGround()
+                && hasLineOfSight(player);
         if (safelyOut) {
             phaseExitClearTicks++;
         } else {
@@ -499,11 +525,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         Player player = resolveHuntedPlayer();
         Placement placement = null;
         if (player != null && level() instanceof ServerLevel serverLevel) {
-            placement = Scp106EmergenceLocator.findAmbush(serverLevel,
-                    player, random);
+            placement = Scp106EmergenceLocator.findAmbush(
+                    serverLevel, player, random);
             if (placement == null) {
-                placement = Scp106EmergenceLocator.findInitial(serverLevel,
-                        player, random);
+                placement = Scp106EmergenceLocator.findInitial(
+                        serverLevel, player, random);
             }
         }
 
@@ -543,12 +569,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private Player resolveHuntedPlayer() {
         if (level() instanceof ServerLevel serverLevel
                 && huntedPlayerId != null) {
-            Player hunted = serverLevel.getPlayerByUUID(huntedPlayerId);
+            Player hunted =
+                    serverLevel.getPlayerByUUID(huntedPlayerId);
             if (isValidHuntTarget(hunted)) return hunted;
         }
 
         LivingEntity current = getTarget();
-        if (current instanceof Player player && isValidHuntTarget(player)) {
+        if (current instanceof Player player
+                && isValidHuntTarget(player)) {
             huntedPlayerId = player.getUUID();
             return player;
         }
@@ -559,8 +587,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private boolean isValidHuntTarget(Player player) {
-        return player != null && player.isAlive() && !player.isRemoved()
-                && !player.isSpectator() && player.level() == level();
+        return player != null
+                && player.isAlive()
+                && !player.isRemoved()
+                && !player.isSpectator()
+                && player.level() == level();
     }
 
     private Player findNearestPlayer() {
@@ -568,8 +599,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         Player nearest = null;
         double nearestDistanceSqr = PURSUIT_RANGE_SQR;
 
-        for (Player player : level().getEntitiesOfClass(Player.class, area,
-                this::isValidHuntTarget)) {
+        for (Player player : level().getEntitiesOfClass(
+                Player.class, area, this::isValidHuntTarget)) {
             double distanceSqr = distanceToSqr(player);
             if (distanceSqr < nearestDistanceSqr) {
                 nearest = player;
@@ -587,14 +618,17 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         int maxX = Mth.floor(box.maxX - 1.0E-7D);
         int maxY = Mth.floor(box.maxY - 1.0E-7D);
         int maxZ = Mth.floor(box.maxZ - 1.0E-7D);
-        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos mutable =
+                new BlockPos.MutableBlockPos();
 
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     mutable.set(x, y, z);
-                    BlockState state = level().getBlockState(mutable);
-                    VoxelShape shape = state.getCollisionShape(level(), mutable);
+                    BlockState state =
+                            level().getBlockState(mutable);
+                    VoxelShape shape =
+                            state.getCollisionShape(level(), mutable);
                     if (shape.isEmpty()) continue;
                     for (AABB shapeBox : shape.toAabbs()) {
                         if (shapeBox.move(x, y, z).intersects(box)) {
@@ -607,7 +641,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         return false;
     }
 
-    private boolean isWithinMeleeGap(Entity target, double maximumGap) {
+    private boolean isWithinMeleeGap(
+            Entity target, double maximumGap) {
         AABB selfBox = getBoundingBox();
         AABB targetBox = target.getBoundingBox();
 
@@ -617,11 +652,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         double zGap = Math.max(0.0D,
                 Math.max(targetBox.minZ - selfBox.maxZ,
                         selfBox.minZ - targetBox.maxZ));
-        boolean verticallyAligned = selfBox.maxY + 0.35D >= targetBox.minY
+        boolean verticallyAligned =
+                selfBox.maxY + 0.35D >= targetBox.minY
                 && targetBox.maxY + 0.35D >= selfBox.minY;
 
         return verticallyAligned
-                && xGap * xGap + zGap * zGap <= maximumGap * maximumGap;
+                && xGap * xGap + zGap * zGap
+                <= maximumGap * maximumGap;
     }
 
     private void stopHorizontalMovement() {
@@ -631,24 +668,29 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void spawnCorrosionTrail() {
-        if (!onGround() || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
+        if (!onGround()
+                || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
             return;
         }
 
         Vec3 movement = getDeltaMovement();
-        Vec3 horizontal = new Vec3(movement.x, 0.0D, movement.z);
+        Vec3 horizontal =
+                new Vec3(movement.x, 0.0D, movement.z);
         if (horizontal.lengthSqr() < 0.0004D) return;
 
         Vec3 behind = horizontal.normalize().scale(-0.28D);
-        Vec3 sideways = new Vec3(-horizontal.z, 0.0D, horizontal.x)
-                .normalize()
-                .scale((random.nextDouble() - 0.5D) * 0.34D);
+        Vec3 sideways =
+                new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                        .normalize()
+                        .scale((random.nextDouble() - 0.5D) * 0.34D);
         double particleX = getX() + behind.x + sideways.x;
         double particleY = getY() + 0.018D;
         double particleZ = getZ() + behind.z + sideways.z;
 
-        level().addParticle(ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
-                particleX, particleY, particleZ, 0.0D, 0.0D, 0.0D);
+        level().addParticle(
+                ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                particleX, particleY, particleZ,
+                0.0D, 0.0D, 0.0D);
     }
 
     public boolean isAttacking() {
@@ -670,7 +712,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean doHurtTarget(Entity target) {
-        if (!(target instanceof LivingEntity livingTarget)) return false;
+        if (!(target instanceof LivingEntity livingTarget)) {
+            return false;
+        }
         if (livingTarget instanceof Player player
                 && (player.isCreative() || player.isSpectator())) {
             return false;
@@ -687,8 +731,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                     false,
                     true), this);
             if (interestTicksRemaining > 0) {
-                interestTicksRemaining = Math.min(180 * 20,
-                        interestTicksRemaining + 10 * 20);
+                interestTicksRemaining =
+                        Math.min(180 * 20,
+                                interestTicksRemaining + 10 * 20);
             }
         }
         return hurt;
@@ -706,7 +751,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     @Override
-    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+    public boolean removeWhenFarAway(
+            double distanceToClosestPlayer) {
         return false;
     }
 
@@ -718,32 +764,43 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     public void registerControllers(
             AnimatableManager.ControllerRegistrar controllers) {
         AnimationController<Scp106Entity> movementController =
-                new AnimationController<>(this, "movement", 2, state -> {
+                new AnimationController<>(
+                        this, "movement", 2, state -> {
                     byte encounterState = getEncounterState();
                     if (encounterState == EMERGING_GROUND) {
-                        return state.setAndContinue(EMERGE_GROUND_ANIMATION);
+                        return state.setAndContinue(
+                                EMERGE_GROUND_ANIMATION);
                     }
                     if (encounterState == EMERGING_WALL) {
-                        return state.setAndContinue(EMERGE_WALL_ANIMATION);
+                        return state.setAndContinue(
+                                EMERGE_WALL_ANIMATION);
                     }
                     if (encounterState == VANISHING) {
-                        return state.setAndContinue(PHASE_GROUND_ANIMATION);
+                        return state.setAndContinue(
+                                PHASE_GROUND_ANIMATION);
                     }
                     if (isAttacking()) {
-                        return state.setAndContinue(ATTACK_ANIMATION);
+                        return state.setAndContinue(
+                                ATTACK_ANIMATION);
                     }
-                    return state.setAndContinue(state.isMoving()
-                            ? WALK_ANIMATION : IDLE_ANIMATION);
+                    return state.setAndContinue(
+                            state.isMoving()
+                                    ? WALK_ANIMATION
+                                    : IDLE_ANIMATION);
                 });
         movementController.setAnimationSpeedHandler(entity -> {
             byte state = entity.getEncounterState();
-            if (state == EMERGING_GROUND || state == EMERGING_WALL
-                    || state == VANISHING || entity.isAttacking()) {
+            if (state == EMERGING_GROUND
+                    || state == EMERGING_WALL
+                    || state == VANISHING
+                    || entity.isAttacking()) {
                 return 1.0D;
             }
             if (state == PHASE_TRAVEL) return 0.75D;
-            return entity.getDeltaMovement().horizontalDistanceSqr() > 0.0004D
-                    ? WALK_ANIMATION_SPEED : 1.0D;
+            return entity.getDeltaMovement()
+                    .horizontalDistanceSqr() > 0.0004D
+                    ? WALK_ANIMATION_SPEED
+                    : 1.0D;
         });
         controllers.add(movementController);
     }

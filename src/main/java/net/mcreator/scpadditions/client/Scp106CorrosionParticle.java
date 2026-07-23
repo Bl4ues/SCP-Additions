@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class Scp106CorrosionParticle extends TextureSheetParticle {
     private static final float MAX_ALPHA = 0.78F;
-    private static final float UV_CROP = 0.32F;
+    private static final float UV_CROP = 0.0F;
 
     private final SpriteSet sprites;
     private final float puddleRotation;
@@ -47,13 +47,12 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
                 0.015F + this.random.nextFloat() * 0.018F,
                 0.008F + this.random.nextFloat() * 0.012F);
         this.setAlpha(MAX_ALPHA);
-        this.setSpriteFromAge(sprites);
+        this.pickSprite(sprites);
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.setSpriteFromAge(sprites);
 
         float remaining = 1.0F - Mth.clamp(
                 this.age / (float) this.lifetime, 0.0F, 1.0F);

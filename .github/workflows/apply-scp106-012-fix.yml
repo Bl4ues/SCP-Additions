@@ -37,7 +37,7 @@ jobs:
           workflow = Path('.github/workflows/build.yml').read_text(encoding='utf-8')
           marker = "          python - <<'PY'\n"
           start = workflow.index(marker) + len(marker)
-          end = workflow.index("\n          PY", start)
+          end = workflow.index("\n          git add .github/workflows/build.yml", start)
           code = workflow[start:end]
           code = '\n'.join(line[10:] if line.startswith('          ') else line
                            for line in code.splitlines())

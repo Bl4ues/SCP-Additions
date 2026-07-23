@@ -42,8 +42,9 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
     public void setCustomAnimations(T animatable, long instanceId,
             AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-        if (!animatable.allowsHeadTracking()) return;
+        applyAttackWalkCycle(animatable);
 
+        if (!animatable.allowsHeadTracking()) return;
         CoreGeoBone head = getAnimationProcessor().getBone("head");
         if (head == null) return;
 
@@ -54,5 +55,36 @@ public class Scp106Model<T extends Scp106Entity> extends GeoModel<T> {
 
         head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
         head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
+    }
+
+    private void applyAttackWalkCycle(T animatable) {
+        if (!animatable.isAttacking()
+                || animatable.getDeltaMovement().horizontalDistanceSqr()
+                < 0.0004D) {
+            return;
+        }
+
+        CoreGeoBone leftLeg = getAnimationProcessor().getBone("left_leg");
+        CoreGeoBone rightLeg = getAnimationProcessor().getBone("right_leg");
+        CoreGeoBone leftFoot = getAnimationProcessor().getBone("left_feet");
+        CoreGeoBone rightFoot = getAnimationProcessor().getBone("right_feet");
+        if (leftLeg == null || rightLeg == null
+                || leftFoot == null || rightFoot == null) {
+            return;
+        }
+
+        float gait = animatable.walkAnimation.position() * 0.6662F;
+        float strength = Mth.clamp(
+                animatable.walkAnimation.speed() * 1.35F,
+                0.0F, 1.0F);
+        float legSwing = Mth.cos(gait) * 0.48F * strength;
+        float footSwing = Mth.sin(gait) * 0.18F * strength;
+
+        leftLeg.setRotX(leftLeg.getRotX() + legSwing);
+        rightLeg.setRotX(rightLeg.getRotX() - legSwing);
+        leftFoot.setRotX(leftFoot.getRotX()
+                - legSwing * 0.42F + footSwing);
+        rightFoot.setRotX(rightFoot.getRotX()
+                + legSwing * 0.42F - footSwing);
     }
 }

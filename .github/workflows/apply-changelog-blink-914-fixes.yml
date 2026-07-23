@@ -1,0 +1,47 @@
+name: Apply changelog Blink and SCP-914 fixes
+
+on:
+  push:
+    branches:
+      - chore/changelog-blink-914-fixes
+
+permissions:
+  contents: write
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: chore/changelog-blink-914-fixes
+
+      - name: Add changelog entries
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("CHANGELOG.md")
+          text = path.read_text(encoding="utf-8")
+          anchor = "- Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays."
+          additions = """- Fixed SCP-914 recipe selection when several compatible items are placed in the intake, preferring the transformation that uses the complete input instead of whichever matching recipe appears first;
+          - Fixed the Blink system remaining active after being disabled or appearing in Creative and Spectator modes, with the server now clearing stale blink states and enforcing the module setting."""
+
+          if additions not in text:
+              if anchor not in text:
+                  raise SystemExit("Expected changelog anchor was not found")
+              text = text.replace(anchor, anchor + "\n" + additions, 1)
+              path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Remove temporary workflow
+        run: rm .github/workflows/apply-changelog-blink-914-fixes.yml
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md .github/workflows/apply-changelog-blink-914-fixes.yml
+          git commit -m "Document SCP-914 and Blink fixes"
+          git push

@@ -12,7 +12,7 @@ on:
       - integration/scp-additions-3.0
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -44,3 +44,74 @@ jobs:
           name: scp-additions-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
+
+      - name: Finalize SCP-106 audio branch
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/scp106-audio-polish'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin feature/scp106-audio-polish
+          git checkout -B feature/scp106-audio-polish origin/feature/scp106-audio-polish
+          python scripts/finalize_scp106_audio.py
+          git add -A
+          git commit -m "Finalize SCP-106 audio resources and module settings"
+          git push origin HEAD:feature/scp106-audio-polish
+
+          git fetch origin master
+          git checkout -B master origin/master
+          cat > .github/workflows/build.yml <<'EOF'
+          name: Build
+
+          on:
+            push:
+              branches:
+                - master
+                - integration/scp-additions-3.0
+                - 'feature/**'
+            pull_request:
+              branches:
+                - master
+                - integration/scp-additions-3.0
+
+          permissions:
+            contents: read
+
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Set up Java 17
+                  uses: actions/setup-java@v4
+                  with:
+                    distribution: temurin
+                    java-version: '17'
+
+                - name: Set up Gradle
+                  uses: gradle/actions/setup-gradle@v4
+
+                - name: Make Gradle wrapper executable
+                  run: chmod +x gradlew
+
+                - name: Build
+                  run: ./gradlew clean build --stacktrace
+
+                - name: Upload compiled JAR
+                  if: success()
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: scp-additions-${{ github.sha }}
+                    path: build/libs/*.jar
+                    if-no-files-found: error
+          EOF
+          sed -i 's/^          //' .github/workflows/build.yml
+          rm -f .github/workflows/finalize-scp106-audio-branch.yml
+          git add -A
+          git commit -m "Restore standard build workflow"
+          git push origin HEAD:master

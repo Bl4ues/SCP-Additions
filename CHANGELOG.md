@@ -7,7 +7,7 @@
 - Added SCP-106 as a new roaming threat, including its model, animations, and spawn egg;
 - SCP-106 can now appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
 - Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
-- SCP-106 can phase through solid blocks, moving more slowly while inside them and returning to normal movement after reaching open space;
+- SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving short-lived corrosive portals on the exact surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
@@ -34,7 +34,7 @@
 - SCP-106 begins checking for a possible encounter earlier than SCP-173, while both continue with recurring checks afterward;
 - When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
-- Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, and `/despawnRoamer <scp173|scp106>`;
+- Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
 
 ## Bug Fixes

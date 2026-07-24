@@ -92,6 +92,34 @@ public final class Scp173SpawnEvents {
                 RoamerResult.SPAWNED);
     }
 
+    public static RoamerResult forceSpawn(ServerPlayer player) {
+        if (player == null || player.getServer() == null) {
+            return RoamerResult.NO_VALID_POSITION;
+        }
+
+        Scp173Entity existing = findAnyScp173(player);
+        if (existing != null) {
+            RoamerManager.markSpawned(player.getServer(), RoamerType.SCP_173,
+                    existing.getUUID());
+            RoamerManager.recordResult(player, RoamerType.SCP_173,
+                    RoamerResult.BLOCKED_BY_EXISTING);
+            return RoamerResult.BLOCKED_BY_EXISTING;
+        }
+
+        Scp173Entity spawned = trySpawnNearPlayer(player, player.getRandom());
+        if (spawned == null) {
+            RoamerManager.recordResult(player, RoamerType.SCP_173,
+                    RoamerResult.NO_VALID_POSITION);
+            return RoamerResult.NO_VALID_POSITION;
+        }
+
+        RoamerManager.markSpawned(player.getServer(), RoamerType.SCP_173,
+                spawned.getUUID());
+        RoamerManager.recordResult(player, RoamerType.SCP_173,
+                RoamerResult.SPAWNED);
+        return RoamerResult.SPAWNED;
+    }
+
     private static Scp173Entity findAnyScp173(ServerPlayer player) {
         MinecraftServer server = player.getServer();
         if (server == null) return null;

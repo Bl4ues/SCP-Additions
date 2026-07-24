@@ -35,6 +35,9 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         super(level, x, y, z);
         this.sprites = sprites;
         Vec3 requestedNormal = new Vec3(normalX, normalY, normalZ);
+        double normalStrength = requestedNormal.length();
+        boolean transientSurface = normalStrength > 0.0001D
+                && normalStrength < 0.75D;
         this.normal = requestedNormal.lengthSqr() < 0.0001D
                 ? new Vec3(0.0D, 1.0D, 0.0D)
                 : requestedNormal.normalize();
@@ -53,8 +56,12 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         this.gravity = 0.0F;
         this.friction = 1.0F;
         this.hasPhysics = false;
-        this.lifetime = 90 + this.random.nextInt(41);
-        this.quadSize = 0.95F + this.random.nextFloat() * 0.25F;
+        this.lifetime = transientSurface
+                ? 30 + this.random.nextInt(17)
+                : 90 + this.random.nextInt(41);
+        this.quadSize = transientSurface
+                ? 0.58F + this.random.nextFloat() * 0.18F
+                : 0.95F + this.random.nextFloat() * 0.25F;
         this.rotation = this.random.nextFloat() * ((float) Math.PI * 2.0F);
         this.lobeAngleA = rotation + 1.05F
                 + this.random.nextFloat() * 0.45F;

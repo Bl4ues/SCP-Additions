@@ -86,6 +86,43 @@ public final class Scp106SpawnEvents {
                 RoamerResult.SPAWNED);
     }
 
+    public static RoamerResult forceSpawn(ServerPlayer player) {
+        if (player == null) return RoamerResult.NO_VALID_POSITION;
+        MinecraftServer server = player.getServer();
+        if (server == null) return RoamerResult.NO_VALID_POSITION;
+
+        Scp106Entity existing = findAnyScp106(server);
+        if (existing != null) {
+            RoamerManager.markSpawned(server, RoamerType.SCP_106,
+                    existing.getUUID());
+            RoamerManager.recordResult(player, RoamerType.SCP_106,
+                    RoamerResult.BLOCKED_BY_EXISTING);
+            return RoamerResult.BLOCKED_BY_EXISTING;
+        }
+
+        Scp106EmergenceLocator.Placement placement =
+                Scp106EmergenceLocator.findInitial(player.serverLevel(),
+                        player, player.getRandom());
+        if (placement == null) {
+            RoamerManager.recordResult(player, RoamerType.SCP_106,
+                    RoamerResult.NO_VALID_POSITION);
+            return RoamerResult.NO_VALID_POSITION;
+        }
+
+        Scp106Entity spawned = spawn106(player, placement);
+        if (spawned == null) {
+            RoamerManager.recordResult(player, RoamerType.SCP_106,
+                    RoamerResult.NO_VALID_POSITION);
+            return RoamerResult.NO_VALID_POSITION;
+        }
+
+        RoamerManager.markSpawned(server, RoamerType.SCP_106,
+                spawned.getUUID());
+        RoamerManager.recordResult(player, RoamerType.SCP_106,
+                RoamerResult.SPAWNED);
+        return RoamerResult.SPAWNED;
+    }
+
     private static Scp106Entity findAnyScp106(MinecraftServer server) {
         for (ServerLevel level : server.getAllLevels()) {
             var entities = level.getEntitiesOfClass(Scp106Entity.class,

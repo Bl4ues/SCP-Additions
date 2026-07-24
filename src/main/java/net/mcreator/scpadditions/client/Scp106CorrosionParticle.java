@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class Scp106CorrosionParticle extends TextureSheetParticle {
     private static final int EDGE_SEGMENTS = 14;
-    private static final float MAX_ALPHA = 0.78F;
+    private static final float MAX_ALPHA = 0.84F;
 
     private final SpriteSet sprites;
     private final float puddleRotation;
@@ -52,9 +52,9 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
                     + this.random.nextFloat() * 0.28F;
         }
         this.setColor(
-                0.040F + this.random.nextFloat() * 0.030F,
-                0.015F + this.random.nextFloat() * 0.018F,
-                0.008F + this.random.nextFloat() * 0.012F);
+                0.095F + this.random.nextFloat() * 0.055F,
+                0.030F + this.random.nextFloat() * 0.030F,
+                0.012F + this.random.nextFloat() * 0.018F);
         this.setAlpha(MAX_ALPHA);
         this.pickSprite(sprites);
     }

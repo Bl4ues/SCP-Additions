@@ -1,1 +1,1 @@
-Trigger PR validation after the workflow file was added.
+Trigger final SCP-106 refinement build after the complete ranged animation was supplied.

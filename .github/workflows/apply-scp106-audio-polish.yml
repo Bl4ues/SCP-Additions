@@ -1,16 +1,20 @@
-name: Apply SCP-106 Audio Polish
+name: Finalize SCP-106 Audio Polish
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/scp106-audio-polish
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
 
 jobs:
-  apply:
-    if: github.actor != 'github-actions[bot]'
+  finalize:
+    if: github.head_ref == 'feature/scp106-audio-polish' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
@@ -19,152 +23,27 @@ jobs:
           ref: feature/scp106-audio-polish
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - uses: gradle/actions/setup-gradle@v4
-
-      - name: Apply integration changes
+      - name: Finalize resources and configuration
         shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
           import json
           from pathlib import Path
 
-          def replace(path_text, old, new):
-              path = Path(path_text)
+          def replace(path_name, old, new):
+              path = Path(path_name)
               text = path.read_text(encoding='utf-8')
               if old not in text:
-                  raise SystemExit(f'Missing replacement in {path_text}: {old[:160]!r}')
+                  raise RuntimeError(f'Missing replacement in {path_name}: {old[:120]!r}')
               path.write_text(text.replace(old, new, 1), encoding='utf-8')
 
-          replace(
-              'src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java',
-              'import net.mcreator.scpadditions.init.ScpAdditionsModSounds;\n',
-              'import net.mcreator.scpadditions.init.ScpAdditionsModSounds;\nimport net.mcreator.scpadditions.init.Scp106Sounds;\n')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java',
-              '        ScpAdditionsModSounds.REGISTRY.register(bus);\n',
-              '        ScpAdditionsModSounds.REGISTRY.register(bus);\n        Scp106Sounds.REGISTRY.register(bus);\n')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java',
-              '    private static final String PROTOCOL_VERSION = "13";',
-              '    private static final String PROTOCOL_VERSION = "14";')
-
-          replace(
-              'src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java',
-              '''        ScpAdditionsMod.addNetworkMessage(Scp079DecisionPacket.class,
-                Scp079DecisionPacket::encode,
-                Scp079DecisionPacket::decode,
-                Scp079DecisionPacket::handle);
-''',
-              '''        ScpAdditionsMod.addNetworkMessage(Scp079DecisionPacket.class,
-                Scp079DecisionPacket::encode,
-                Scp079DecisionPacket::decode,
-                Scp079DecisionPacket::handle);
-        ScpAdditionsMod.addNetworkMessage(Scp106ChasePacket.class,
-                Scp106ChasePacket::encode,
-                Scp106ChasePacket::decode,
-                Scp106ChasePacket::handle);
-''')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java',
-              '''    public static void openKeycardReaderScreen(ServerPlayer player,
-''',
-              '''    public static void setScp106Chase(ServerPlayer player,
-            boolean active) {
-        if (player == null) return;
-        ScpAdditionsMod.PACKET_HANDLER.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                new Scp106ChasePacket(active));
-    }
-
-    public static void playEnterSound(ServerPlayer player) {
-        if (player == null) return;
-        ScpAdditionsMod.PACKET_HANDLER.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                new EnterSoundPacket());
-    }
-
-    public static void openKeycardReaderScreen(ServerPlayer player,
-''')
-
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ScpAdditionsModulesConfig.java',
-              '''		public Toggle blink = new Toggle();
-		public Debug debug = new Debug();
-''',
-              '''		public Toggle blink = new Toggle();
-		public Audio audio = new Audio();
-		public Debug debug = new Debug();
-''')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ScpAdditionsModulesConfig.java',
-              '''			if (blink == null) blink = new Toggle();
-			if (debug == null) debug = new Debug();
-''',
-              '''			if (blink == null) blink = new Toggle();
-			if (audio == null) audio = new Audio();
-			if (debug == null) debug = new Debug();
-''')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ScpAdditionsModulesConfig.java',
-              '''	public static final class Debug {
-''',
-              '''	public static final class Audio {
-		@SerializedName("enter_sound_enabled")
-		public boolean enterSoundEnabled = true;
-	}
-
-	public static final class Debug {
-''')
-
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java',
-              'for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "scp_173"))',
-              'for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "audio", "scp_173"))')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java',
-              '''        checkBoolean(root, "blink", "enabled", errors);
-        checkBoolean(root, "scp_173", "enabled", errors);
-''',
-              '''        checkBoolean(root, "blink", "enabled", errors);
-        checkBoolean(root, "audio", "enter_sound_enabled", errors);
-        checkBoolean(root, "scp_173", "enabled", errors);
-''')
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java',
-              '''return JsonParser.parseString("{\\"inventory\\":{\\"enabled\\":true,\\"remember_ui_state\\":true},\\"interactions\\":{\\"enabled\\":true,\\"disable_in_creative\\":false},\\"hud\\":{\\"enabled\\":true},\\"vitals\\":{\\"custom_health_enabled\\":true,\\"stamina_enabled\\":true,\\"horror_movement_enabled\\":true},\\"blink\\":{\\"enabled\\":true},\\"scp_173\\":{\\"enabled\\":true,\\"natural_spawn_enabled\\":true}}").getAsJsonObject();''',
-              '''return JsonParser.parseString("{\\"inventory\\":{\\"enabled\\":true,\\"remember_ui_state\\":true},\\"interactions\\":{\\"enabled\\":true,\\"disable_in_creative\\":false},\\"hud\\":{\\"enabled\\":true},\\"vitals\\":{\\"custom_health_enabled\\":true,\\"stamina_enabled\\":true,\\"horror_movement_enabled\\":true},\\"blink\\":{\\"enabled\\":true},\\"audio\\":{\\"enter_sound_enabled\\":true},\\"scp_173\\":{\\"enabled\\":true,\\"natural_spawn_enabled\\":true}}").getAsJsonObject();''')
-
-          replace(
-              'src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java',
-              '''                new ToggleSpec("blink", "enabled", "Blink System", "Enables automatic and manual blinking.", true),
-                new ToggleSpec("scp_173", "enabled", "SCP-173", "Enables SCP-173 behavior.", true),
-''',
-              '''                new ToggleSpec("blink", "enabled", "Blink System", "Enables automatic and manual blinking.", true),
-                new ToggleSpec("audio", "enter_sound_enabled", "World Entry Sound", "Plays enter.ogg after joining or opening a world.", true),
-                new ToggleSpec("scp_173", "enabled", "SCP-173", "Enables SCP-173 behavior.", true),
-''')
-
-          replace(
-              'src/main/java/net/mcreator/scpadditions/event/Scp106SpawnEvents.java',
-              'if (Scp106SpawnSuppression.isSuppressed(server)) {',
-              'if (Scp106SpawnSuppression.consumeSuppressedCheck(server)) {')
-
-          replace(
-              'src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java',
-              '''            return new Placement(center,
-                    yawFor(outward.getStepX(), outward.getStepZ()),
-                    Emergence.WALL);
-''',
-              '''            return new Placement(center,
-                    Mth.wrapDegrees(yawFor(outward.getStepX(),
-                            outward.getStepZ()) + 180.0F),
-                    Emergence.WALL);
-''')
+          # Correct the uploaded filename so all three random variants share
+          # the same stable naming convention.
+          wrong = Path('src/main/resources/assets/scp_additions/sounds/10phase_2.ogg')
+          correct = Path('src/main/resources/assets/scp_additions/sounds/106phase_2.ogg')
+          if wrong.exists() and not correct.exists():
+              wrong.rename(correct)
 
           sounds_path = Path('src/main/resources/assets/scp_additions/sounds.json')
           sounds = json.loads(sounds_path.read_text(encoding='utf-8'))
@@ -172,7 +51,7 @@ jobs:
               'subtitle': 'subtitles.scp_additions.scp_106_phase',
               'sounds': [
                   {'name': 'scp_additions:106phase_1', 'stream': False, 'volume': 1.0},
-                  {'name': 'scp_additions:10phase_2', 'stream': False, 'volume': 1.0},
+                  {'name': 'scp_additions:106phase_2', 'stream': False, 'volume': 1.0},
                   {'name': 'scp_additions:106phase_3', 'stream': False, 'volume': 1.0}
               ]
           }
@@ -188,14 +67,46 @@ jobs:
           sounds_path.write_text(json.dumps(sounds, ensure_ascii=False,
                   separators=(',', ':')) + '\n', encoding='utf-8')
 
-          for lang_name, subtitle in (
-                  ('en_us.json', 'SCP-106 phases through a surface'),
-                  ('pt_br.json', 'SCP-106 atravessa uma superfície')):
-              path = Path('src/main/resources/assets/scp_additions/lang') / lang_name
+          translations = {
+              'en_us.json': 'SCP-106 phases through a surface',
+              'pt_br.json': 'SCP-106 atravessa uma superfície'
+          }
+          lang_root = Path('src/main/resources/assets/scp_additions/lang')
+          for filename, subtitle in translations.items():
+              path = lang_root / filename
               if not path.exists():
                   continue
               data = json.loads(path.read_text(encoding='utf-8'))
               data['subtitles.scp_additions.scp_106_phase'] = subtitle
+              path.write_text(json.dumps(data, ensure_ascii=False, indent=2)
+                      + '\n', encoding='utf-8')
+
+          service = 'src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java'
+          replace(service,
+              'for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "scp_173"))',
+              'for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "audio", "scp_173"))')
+          replace(service,
+              '        checkBoolean(root, "blink", "enabled", errors);\n        checkBoolean(root, "scp_173", "enabled", errors);',
+              '        checkBoolean(root, "blink", "enabled", errors);\n        checkBoolean(root, "audio", "enter_sound_enabled", errors);\n        checkBoolean(root, "scp_173", "enabled", errors);')
+          replace(service,
+              '\\"blink\\":{\\"enabled\\":true},\\"scp_173\\"',
+              '\\"blink\\":{\\"enabled\\":true},\\"audio\\":{\\"enter_sound_enabled\\":true},\\"scp_173\\"')
+
+          extension = 'src/main/java/net/mcreator/scpadditions/config/ui/Scp079ModulesScreenExtension.java'
+          replace(extension,
+              '            new Row("blink", "enabled", "Blink System",\n                    "Enables automatic and manual blinking.", true),\n            new Row("scp_173", "enabled", "SCP-173",',
+              '            new Row("blink", "enabled", "Blink System",\n                    "Enables automatic and manual blinking.", true),\n            new Row("audio", "enter_sound_enabled", "World Entry Sound",\n                    "Plays enter.ogg after joining or opening a world.", true),\n            new Row("scp_173", "enabled", "SCP-173",')
+
+          # The direct row above replaces the temporary reflection helper.
+          Path('src/main/java/net/mcreator/scpadditions/config/ui/Scp106AudioModulesExtension.java').unlink(missing_ok=True)
+
+          # Update bundled defaults when the project contains a packaged copy.
+          for path in Path('src/main/resources').rglob('modules.json'):
+              try:
+                  data = json.loads(path.read_text(encoding='utf-8'))
+              except Exception:
+                  continue
+              data.setdefault('audio', {})['enter_sound_enabled'] = True
               path.write_text(json.dumps(data, ensure_ascii=False, indent=2)
                       + '\n', encoding='utf-8')
 
@@ -218,20 +129,20 @@ jobs:
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
 '''
-          changelog.write_text(text[:start] + section + text[end:],
-                  encoding='utf-8')
+          text = text[:start] + section + text[end:]
+          marker = '## Bug Fixes\n'
+          entry = ('## Audio and presentation\n\n'
+                   '- Reintroduced the world-entry sound and added a General & Modules option to disable it.\n\n')
+          if entry not in text:
+              text = text.replace(marker, entry + marker, 1)
+          changelog.write_text(text, encoding='utf-8')
           PY
 
-      - name: Remove temporary workflow
-        run: rm .github/workflows/apply-scp106-audio-polish.yml
+          rm -f .github/scp106-audio-trigger
+          rm -f .github/workflows/apply-scp106-audio-polish.yml
 
-      - name: Build
-        run: chmod +x gradlew && ./gradlew clean build --stacktrace
-
-      - name: Commit integrated changes
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/main/java src/main/resources CHANGELOG.md .github/workflows/apply-scp106-audio-polish.yml
-          git commit -m "Integrate SCP-106 audio and encounter polish"
+          git add -A
+          git commit -m "Finalize SCP-106 audio resources and module settings"
           git push origin HEAD:feature/scp106-audio-polish

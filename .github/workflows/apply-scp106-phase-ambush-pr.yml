@@ -30,14 +30,15 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import textwrap
 
           workflow = Path('.github/workflows/apply-scp106-phase-ambush.yml')
           text = workflow.read_text(encoding='utf-8')
           marker = "          python - <<'PY'\n"
           start = text.index(marker) + len(marker)
           end = text.index("\n          PY\n", start)
-          code = textwrap.dedent(text[start:end])
+          code = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in text[start:end].splitlines())
           Path('/tmp/apply_scp106_phase.py').write_text(
                   code + '\n', encoding='utf-8')
           PY

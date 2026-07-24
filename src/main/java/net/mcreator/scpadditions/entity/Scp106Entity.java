@@ -29,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
+import net.mcreator.scpadditions.roamer.Scp106PhasePortalTracker;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator.Emergence;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator.Placement;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -69,6 +70,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double AMBUSH_DISTANCE = 16.0D;
     private static final double AMBUSH_DISTANCE_SQR =
             AMBUSH_DISTANCE * AMBUSH_DISTANCE;
+    private static final double AMBUSH_HARD_DISTANCE = 26.0D;
+    private static final double AMBUSH_HARD_DISTANCE_SQR =
+            AMBUSH_HARD_DISTANCE * AMBUSH_HARD_DISTANCE;
     private static final int PATH_REFRESH_INTERVAL = 10;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
@@ -81,7 +85,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int STUCK_PHASE_DELAY_TICKS = 30;
     private static final int PHASE_ENTRY_GRACE_TICKS = 12;
     private static final int PHASE_EXIT_CLEAR_TICKS = 6;
-    private static final int AMBUSH_DISTANCE_TICKS = 20;
+    private static final int AMBUSH_DISTANCE_TICKS = 12;
+    private static final int AMBUSH_RETRY_TICKS = 8;
     private static final int AMBUSH_COOLDOWN_TICKS = 8 * 20;
     private static final int TARGET_LOST_DESPAWN_TICKS = 10 * 20;
 
@@ -259,6 +264,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             clientPreviousState = state;
         }
 
+        Scp106PhasePortalTracker.tick(this, state == PHASE_TRAVEL);
         if (state == HUNTING) {
             spawnCorrosionTrail();
         }
@@ -319,6 +325,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setTarget(player);
         getLookControl().setLookAt(player, 35.0F, 20.0F);
 
+        updateAmbushPressure(player);
+        if (shouldAmbush(player)) {
+            beginVanish(false);
+            return;
+        }
+
         if (isAttacking()) {
             tickAttack(player);
             return;
@@ -327,13 +339,6 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         boolean hasClearSight = hasLineOfSight(player);
         if (isWithinMeleeGap(player, ATTACK_START_GAP) && hasClearSight) {
             startAttack();
-            return;
-        }
-
-        updateAmbushPressure(player);
-        if (farDistanceTicks >= AMBUSH_DISTANCE_TICKS
-                && ambushCooldownTicks <= 0) {
-            beginVanish(false);
             return;
         }
 
@@ -389,6 +394,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         } else {
             farDistanceTicks = Math.max(0, farDistanceTicks - 3);
         }
+    }
+
+    private boolean shouldAmbush(Player player) {
+        double distanceSqr = distanceToSqr(player);
+        return distanceSqr >= AMBUSH_HARD_DISTANCE_SQR
+                || (farDistanceTicks >= AMBUSH_DISTANCE_TICKS
+                && ambushCooldownTicks <= 0);
     }
 
     private void pursueDirectly(Player player) {
@@ -464,6 +476,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setTarget(player);
         getLookControl().setLookAt(player, 24.0F, 16.0F);
 
+        updateAmbushPressure(player);
+        if (shouldAmbush(player)) {
+            beginVanish(false);
+            return;
+        }
+
         boolean insideSolid = overlapsSolidBlock();
         if (phaseEntryGraceTicks > 0) phaseEntryGraceTicks--;
 
@@ -526,8 +544,18 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         Player player = resolveHuntedPlayer();
+        if (player == null) {
+            if (++noTargetTicks >= TARGET_LOST_DESPAWN_TICKS) {
+                discard();
+            } else {
+                stateTicks = AMBUSH_RETRY_TICKS;
+            }
+            return;
+        }
+        noTargetTicks = 0;
+
         Placement placement = null;
-        if (player != null && level() instanceof ServerLevel serverLevel) {
+        if (level() instanceof ServerLevel serverLevel) {
             placement = Scp106EmergenceLocator.findAmbush(
                     serverLevel, player, random);
             if (placement == null) {
@@ -537,9 +565,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         if (placement == null) {
-            startEmergence(Emergence.GROUND);
-            ambushCooldownTicks = AMBUSH_COOLDOWN_TICKS;
-            farDistanceTicks = 0;
+            // Stay below the surface and retry near the hunted player instead
+            // of re-emerging at the old, already escaped position.
+            stateTicks = AMBUSH_RETRY_TICKS;
             return;
         }
 

@@ -20,7 +20,9 @@ public final class Scp106EmergenceLocator {
     private static final double ENTITY_HALF_WIDTH = 0.45D;
     private static final double ENTITY_HEIGHT = 2.0D;
     private static final int INITIAL_ATTEMPTS = 96;
-    private static final int AMBUSH_ATTEMPTS = 72;
+    private static final int AMBUSH_ATTEMPTS = 120;
+    private static final int AMBUSH_ROOM_ATTEMPTS = 80;
+    private static final int AMBUSH_FRONT_ATTEMPTS = 96;
 
     private Scp106EmergenceLocator() {
     }
@@ -83,17 +85,32 @@ public final class Scp106EmergenceLocator {
         int targetY = target.blockPosition().getY();
 
         for (int attempt = 0; attempt < AMBUSH_ATTEMPTS; attempt++) {
-            double distance = 5.0D + random.nextDouble() * 5.0D;
-            double side = (random.nextDouble() - 0.5D) * 5.0D;
-            Vec3 candidate = target.position().add(forward.scale(distance))
-                    .add(right.scale(side));
+            Vec3 candidate;
+            if (attempt < AMBUSH_FRONT_ATTEMPTS) {
+                double distance = 3.5D + random.nextDouble() * 4.0D;
+                double side = (random.nextDouble() - 0.5D) * 4.5D;
+                candidate = target.position().add(forward.scale(distance))
+                        .add(right.scale(side));
+            } else {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double distance = 2.5D + random.nextDouble() * 3.5D;
+                candidate = target.position().add(
+                        Math.cos(angle) * distance, 0.0D,
+                        Math.sin(angle) * distance);
+            }
+
             BlockPos standing = findStandingPosition(level,
                     Mth.floor(candidate.x), targetY, Mth.floor(candidate.z),
-                    3, 5);
+                    2, 3);
             if (standing == null) continue;
+            if (attempt < AMBUSH_ROOM_ATTEMPTS
+                    && !sharesVisibleRoom(level, target, standing)) {
+                continue;
+            }
 
+            boolean preferWall = random.nextFloat() < 0.68F;
             Placement wall = wallPlacement(level, standing, target, random);
-            if (wall != null && random.nextFloat() < 0.68F) return wall;
+            if (preferWall && wall != null) return wall;
 
             Placement ground = groundPlacement(standing, target);
             if (ground != null) return ground;
@@ -102,7 +119,7 @@ public final class Scp106EmergenceLocator {
         return null;
     }
 
-    private static boolean sharesVisibleRoom(ServerLevel level,
+private static boolean sharesVisibleRoom(ServerLevel level,
             Player target, BlockPos standing) {
         Vec3 targetEye = target.getEyePosition();
         Vec3 emergenceCenter = Vec3.atBottomCenterOf(standing)

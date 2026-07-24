@@ -11,10 +11,13 @@ import net.mcreator.scpadditions.init.Scp106Sounds;
 
 /** Head-relative chase music heard only by the hunted local player. */
 public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
-    private static final int FADE_OUT_TICKS = 40;
+    private static final int FADE_OUT_TICKS = 32;
+    private static final int STOP_CUE_LEAD_TICKS = 14;
+    private static final float STOP_CUE_VOLUME = 0.34F;
 
     private int fadeTicksRemaining = -1;
     private boolean playStopCue;
+    private boolean stopCuePlayed;
 
     public Scp106ChaseSound() {
         super(Scp106Sounds.CHASE.get(), SoundSource.MUSIC,
@@ -36,15 +39,17 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
         }
 
         if (fadeTicksRemaining < 0) return;
+        if (playStopCue && !stopCuePlayed
+                && fadeTicksRemaining <= STOP_CUE_LEAD_TICKS
+                && minecraft.player != null && minecraft.level != null) {
+            minecraft.getSoundManager().play(
+                    SimpleSoundInstance.forUI(Scp106Sounds.STOP.get(),
+                            1.0F, STOP_CUE_VOLUME));
+            stopCuePlayed = true;
+        }
         if (fadeTicksRemaining == 0) {
             volume = 0.0F;
             stop();
-            if (playStopCue && minecraft.player != null
-                    && minecraft.level != null) {
-                minecraft.getSoundManager().play(
-                        SimpleSoundInstance.forUI(Scp106Sounds.STOP.get(),
-                                1.0F, 1.0F));
-            }
             return;
         }
 

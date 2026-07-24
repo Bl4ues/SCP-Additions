@@ -17,6 +17,7 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
     private static final float MAX_ALPHA = 0.84F;
 
     private final SpriteSet sprites;
+    private final float maximumAlpha;
     private final float puddleRotation;
     private final float firstLobeAngle;
     private final float secondLobeAngle;
@@ -25,7 +26,8 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
     private final float[] edgeVariation = new float[EDGE_SEGMENTS];
 
     private Scp106CorrosionParticle(ClientLevel level, double x, double y,
-            double z, double sizeScale, SpriteSet sprites) {
+            double z, double sizeScale, double opacityScale,
+            SpriteSet sprites) {
         super(level, x, y, z);
         this.sprites = sprites;
         this.xd = 0.0D;
@@ -35,7 +37,10 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         this.friction = 1.0F;
         this.hasPhysics = false;
         this.lifetime = 120 + this.random.nextInt(61);
-        float safeScale = (float) Mth.clamp(sizeScale, 0.75D, 1.45D);
+        float safeScale = (float) Mth.clamp(sizeScale, 0.30D, 1.45D);
+        float safeOpacity = (float) Mth.clamp(
+                opacityScale > 0.0D ? opacityScale : 1.0D, 0.25D, 1.0D);
+        this.maximumAlpha = MAX_ALPHA * safeOpacity;
         this.quadSize = (0.34F + this.random.nextFloat() * 0.14F)
                 * safeScale;
         this.puddleRotation = this.random.nextFloat()
@@ -57,7 +62,7 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
                 0.095F + this.random.nextFloat() * 0.055F,
                 0.030F + this.random.nextFloat() * 0.030F,
                 0.012F + this.random.nextFloat() * 0.018F);
-        this.setAlpha(MAX_ALPHA);
+        this.setAlpha(maximumAlpha);
         this.pickSprite(sprites);
     }
 
@@ -67,7 +72,7 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         float remaining = 1.0F - Mth.clamp(
                 this.age / (float) this.lifetime, 0.0F, 1.0F);
         float fade = Mth.clamp(remaining / 0.32F, 0.0F, 1.0F);
-        this.setAlpha(MAX_ALPHA * fade);
+        this.setAlpha(maximumAlpha * fade);
         this.quadSize += 0.00055F;
     }
 
@@ -145,8 +150,10 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
                 ClientLevel level, double x, double y, double z,
                 double velocityX, double velocityY, double velocityZ) {
             double sizeScale = velocityX > 0.0D ? velocityX : 1.0D;
+            double opacityScale = velocityY > 0.0D
+                    ? velocityY : 1.0D;
             return new Scp106CorrosionParticle(level, x, y, z,
-                    sizeScale, sprites);
+                    sizeScale, opacityScale, sprites);
         }
     }
 }

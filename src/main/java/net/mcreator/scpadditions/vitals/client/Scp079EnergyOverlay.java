@@ -69,18 +69,19 @@ public final class Scp079EnergyOverlay {
             return;
         }
 
-        if (energy) renderEnergy(graphics, minecraft, screenWidth);
+        int roamerHeight = ScpSpawnTimersOverlay.occupiedHeight();
+        int baseY = MARGIN + roamerHeight + (roamerHeight > 0 ? GAP : 0);
+        if (energy) renderEnergy(graphics, minecraft, screenWidth, baseY);
         if (decisions) renderDecisionFeed(graphics, minecraft, screenWidth,
-                energy ? MARGIN + ENERGY_HEIGHT + GAP : MARGIN);
+                energy ? baseY + ENERGY_HEIGHT + GAP : baseY);
     }
 
     private static void renderEnergy(GuiGraphics graphics,
-            Minecraft minecraft, int screenWidth) {
+            Minecraft minecraft, int screenWidth, int y) {
         boolean active = Scp079EnergyClientState.active();
         float energy = Math.max(0.0F,
                 Math.min(100.0F, Scp079EnergyClientState.energy()));
         int x = screenWidth - ENERGY_WIDTH - MARGIN;
-        int y = MARGIN;
 
         graphics.fill(x, y, x + ENERGY_WIDTH, y + ENERGY_HEIGHT,
                 active ? PANEL : PANEL_INACTIVE);

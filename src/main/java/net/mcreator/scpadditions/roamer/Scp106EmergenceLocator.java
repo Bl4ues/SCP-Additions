@@ -188,9 +188,9 @@ public final class Scp106EmergenceLocator {
                     + toTarget.z * outward.getStepZ();
             if (frontDot < -0.5D) continue;
 
-            // emerge_wall is authored opposite the normal entity forward axis.
-            float wallYaw = Mth.wrapDegrees(yawFor(outward.getStepX(),
-                    outward.getStepZ()) + 180.0F);
+            // Face the open side directly. The animation begins behind
+            // the model on local +Z, so its initial pose remains inside the wall.
+            float wallYaw = yawFor(outward.getStepX(), outward.getStepZ());
             return new Placement(center, wallYaw, Emergence.WALL);
         }
         return null;

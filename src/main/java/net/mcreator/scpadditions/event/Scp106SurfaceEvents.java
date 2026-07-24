@@ -69,14 +69,18 @@ public final class Scp106SurfaceEvents {
         double surfaceY = findGroundSurfaceY(level, scp106);
         level.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
-                scp106.getX(), surfaceY + 0.045D, scp106.getZ(),
+                scp106.getX(), surfaceY + 0.065D, scp106.getZ(),
                 0, 0.0D, 0.90D, 0.0D, 1.0D);
     }
 
     private static void spawnWallPortal(ServerLevel level,
             Scp106Entity scp106, float placementYaw) {
         float yaw = placementYaw * Mth.DEG_TO_RAD;
-        Vec3 outward = new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
+        Vec3 modelForward = new Vec3(-Mth.sin(yaw), 0.0D,
+                Mth.cos(yaw));
+        // The wall emergence animation moves opposite the model's ordinary
+        // forward axis, so its real surface normal is the inverse direction.
+        Vec3 outward = modelForward.scale(-1.0D);
         Vec3 position = scp106.position()
                 .subtract(outward.scale(0.49D))
                 .add(0.0D, 1.0D, 0.0D);

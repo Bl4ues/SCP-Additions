@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.roamer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -19,6 +20,38 @@ public final class Scp106PhasePortalTracker {
             new WeakHashMap<>();
 
     private Scp106PhasePortalTracker() {
+    }
+
+    public static void begin(Scp106Entity entity) {
+        if (entity == null || entity.level().isClientSide
+                || !(entity.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        AABB currentBox = entity.getBoundingBox().deflate(0.025D);
+        Vec3 direction = entity.getDeltaMovement();
+        LivingEntity target = entity.getTarget();
+        if (target != null) {
+            direction = target.position().subtract(entity.position());
+        }
+        direction = new Vec3(direction.x, 0.0D, direction.z);
+        if (direction.lengthSqr() < 1.0E-6D) {
+            direction = entity.getLookAngle().multiply(1.0D, 0.0D, 1.0D);
+        }
+        if (direction.lengthSqr() < 1.0E-6D) return;
+
+        direction = direction.normalize().scale(1.35D);
+        AABB anticipatedBox = currentBox.move(direction);
+        Surface entry = findSurface(entity, currentBox,
+                anticipatedBox, true, false);
+        if (entry != null) {
+            spawnSurfacePortal(serverLevel, entry);
+        }
+
+        TrackingState state = new TrackingState(currentBox,
+                intersectsSolid(entity, currentBox));
+        state.lastEntryPortalTick = entity.tickCount;
+        STATES.put(entity, state);
     }
 
     public static void tick(Scp106Entity entity, boolean phasing) {
@@ -63,7 +96,7 @@ public final class Scp106PhasePortalTracker {
         }
 
         if (movement.lengthSqr() > 1.0E-6D) {
-            AABB anticipatedBox = currentBox.move(movement.scale(1.35D));
+            AABB anticipatedBox = currentBox.move(movement.scale(1.75D));
             boolean anticipatedInside = intersectsSolid(entity, anticipatedBox);
 
             if (!insideSolid && anticipatedInside
@@ -250,7 +283,7 @@ public final class Scp106PhasePortalTracker {
             Surface surface) {
         if (surface == null) return;
         Vec3 normal = surface.normal();
-        Vec3 position = surface.position().add(normal.scale(0.018D));
+        Vec3 position = surface.position().add(normal.scale(0.045D));
         Vec3 encodedNormal = normal.scale(0.55D);
         level.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),

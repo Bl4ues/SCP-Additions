@@ -24,13 +24,10 @@ jobs:
           fetch-depth: 0
           ref: feature/scp106-phase-ambush-command
 
-      - name: Apply, build, and commit implementation
+      - name: Extract implementation script
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           python - <<'PY'
           from pathlib import Path
           import textwrap
@@ -45,13 +42,38 @@ jobs:
                   code + '\n', encoding='utf-8')
           PY
 
-          python /tmp/apply_scp106_phase.py
+      - name: Apply implementation
+        shell: bash
+        run: |
+          set -o pipefail
+          python /tmp/apply_scp106_phase.py 2>&1 | tee /tmp/apply.log
+
+      - name: Build implementation
+        shell: bash
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace 2>&1 | tee /tmp/build.log
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp106-phase-runner-diagnostics
+          path: |
+            /tmp/apply_scp106_phase.py
+            /tmp/apply.log
+            /tmp/build.log
+          if-no-files-found: warn
+
+      - name: Commit implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -f .github/workflows/apply-scp106-phase-ambush.yml
           rm -f .github/scp106-phase-trigger
-
-          chmod +x gradlew
-          ./gradlew clean build --stacktrace
-
           git add CHANGELOG.md \
             src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java \
             src/main/java/net/mcreator/scpadditions/roamer/Scp106PhasePortalTracker.java \

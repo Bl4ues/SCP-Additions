@@ -96,7 +96,7 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
                 Mth.lerp(partialTick, this.xo, this.x) - cameraPosition.x,
                 Mth.lerp(partialTick, this.yo, this.y) - cameraPosition.y,
                 Mth.lerp(partialTick, this.zo, this.z) - cameraPosition.z)
-                .add(normal.scale(0.012D));
+                .add(normal.scale(0.025D));
         float size = getQuadSize(partialTick);
 
         float fullMinU = getU0();
@@ -114,22 +114,23 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
                 minU, maxU, minV, maxV, light, 1.0F);
         renderOffsetLobe(vertexConsumer, center, size, lobeAngleA,
                 lobeDistanceA, 0.82F, 0.58F, rotation + 0.57F,
-                minU, maxU, minV, maxV, light, 0.95F);
+                minU, maxU, minV, maxV, light, 0.95F, 0.0015D);
         renderOffsetLobe(vertexConsumer, center, size, lobeAngleB,
                 lobeDistanceB, 0.76F, 0.52F, rotation - 0.71F,
-                minU, maxU, minV, maxV, light, 0.90F);
+                minU, maxU, minV, maxV, light, 0.90F, 0.0030D);
         renderOffsetLobe(vertexConsumer, center, size, lobeAngleC,
                 lobeDistanceC, 0.68F, 0.48F, rotation + 1.08F,
-                minU, maxU, minV, maxV, light, 0.86F);
+                minU, maxU, minV, maxV, light, 0.86F, 0.0045D);
     }
 
     private void renderOffsetLobe(VertexConsumer vertexConsumer, Vec3 center,
             float size, float angle, float distance,
             float scaleU, float scaleV, float lobeRotation,
             float minU, float maxU, float minV, float maxV,
-            int light, float alphaMultiplier) {
+            int light, float alphaMultiplier, double layerOffset) {
         Vec3 offset = rotatedAxis(angle, planeU, planeV)
-                .scale(size * distance);
+                .scale(size * distance)
+                .add(normal.scale(layerOffset));
         renderLobe(vertexConsumer, center.add(offset),
                 size * scaleU, size * scaleV, lobeRotation,
                 minU, maxU, minV, maxV, light, alphaMultiplier);
@@ -191,8 +192,6 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
                 double normalX, double normalY, double normalZ) {
             double normalStrength = Math.sqrt(normalX * normalX
                     + normalY * normalY + normalZ * normalZ);
-            // Legacy client-side state particles used a unit normal. The
-            // server now owns all portals, so suppress those duplicates.
             if (normalStrength >= 0.98D) return null;
             return new Scp106PortalParticle(level, x, y, z,
                     normalX, normalY, normalZ, sprites);

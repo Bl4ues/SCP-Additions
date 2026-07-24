@@ -57,6 +57,8 @@ public final class Scp079ModulesScreenExtension {
                     "Uses slower walking and committed sprinting.", true),
             new Row("blink", "enabled", "Blink System",
                     "Enables automatic and manual blinking.", true),
+            new Row("audio", "enter_sound_enabled", "World Entry Sound",
+                    "Plays enter.ogg after joining or opening a world.", true),
             new Row("scp_173", "enabled", "SCP-173",
                     "Enables SCP-173 behavior. Natural spawning uses the 173spawn gamerule.", true)
     );

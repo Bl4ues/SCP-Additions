@@ -1,0 +1,63 @@
+name: Run SCP-106 Audio Implementation V4
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]' && github.head_ref == 'feature/scp106-audio-and-hunt-polish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/scp106-audio-and-hunt-polish
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Prepare current changelog and optional translation
+        run: |
+          printf '{}\n' > src/main/resources/assets/scp_additions/lang/pt_br.json
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('CHANGELOG.md')
+          text = path.read_text(encoding='utf-8')
+          tesla = '- Tesla Gates now repel SCP-106 instead of killing it, forcing it to sink away and preventing another natural encounter for ten minutes;\n'
+          hunt = '- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.\n'
+          if tesla not in text:
+              if hunt not in text:
+                  raise SystemExit('Could not find SCP-106 hunt changelog entry')
+              text = text.replace(hunt, tesla + hunt, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Apply implementation
+        run: |
+          python -m pip install --quiet pyyaml
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          workflow = yaml.safe_load(Path('.github/workflows/apply-scp106-audio.yml').read_text())
+          steps = workflow['jobs']['apply']['steps']
+          script = next(step['run'] for step in steps if step.get('name') == 'Apply implementation')
+          Path('/tmp/apply-scp106-audio.sh').write_text('set -e\n' + script)
+          PY
+          bash -e /tmp/apply-scp106-audio.sh
+          rm -f src/main/resources/assets/scp_additions/lang/pt_br.json
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --stacktrace
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add SCP-106 audio and world entry cue"
+          git push origin HEAD:feature/scp106-audio-and-hunt-polish

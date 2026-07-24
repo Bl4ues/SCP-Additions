@@ -37,10 +37,26 @@ public final class Scp106PhasePortalTracker {
 
         if (!state.insideSolid && insideSolid) {
             spawnSurfacePortal(entity, findSurface(entity,
-                    state.previousBox, currentBox, true));
+                    state.previousBox, currentBox, true, true));
         } else if (state.insideSolid && !insideSolid) {
             spawnSurfacePortal(entity, findSurface(entity,
-                    state.previousBox, currentBox, false));
+                    state.previousBox, currentBox, false, true));
+        } else if (!state.insideSolid && !insideSolid
+                && entity.tickCount - state.lastSweptPortalTick > 2) {
+            // Thin collision shapes can be crossed between two client ticks
+            // without the entity ever ending a tick inside them. The swept
+            // hitbox still identifies both real faces of the crossed shape.
+            Surface entry = findSurface(entity,
+                    state.previousBox, currentBox, true, false);
+            Surface exit = findSurface(entity,
+                    state.previousBox, currentBox, false, false);
+            if (entry != null && exit != null
+                    && entry.position().distanceToSqr(exit.position())
+                    > 0.0025D) {
+                spawnSurfacePortal(entity, entry);
+                spawnSurfacePortal(entity, exit);
+                state.lastSweptPortalTick = entity.tickCount;
+            }
         }
 
         state.previousBox = currentBox;
@@ -73,7 +89,8 @@ public final class Scp106PhasePortalTracker {
     }
 
     private static Surface findSurface(Scp106Entity entity,
-            AABB previousBox, AABB currentBox, boolean entering) {
+            AABB previousBox, AABB currentBox, boolean entering,
+            boolean requireEndpointContact) {
         Vec3 previousCenter = center(previousBox);
         Vec3 currentCenter = center(currentBox);
         Vec3 movement = currentCenter.subtract(previousCenter);
@@ -90,7 +107,9 @@ public final class Scp106PhasePortalTracker {
                 Math.max(previousBox.maxY, currentBox.maxY),
                 Math.max(previousBox.maxZ, currentBox.maxZ)).inflate(0.08D);
         AABB relevantBox = entering ? currentBox : previousBox;
-        Vec3 reference = entering ? currentCenter : previousCenter;
+        Vec3 reference = requireEndpointContact
+                ? (entering ? currentCenter : previousCenter)
+                : (entering ? previousCenter : currentCenter);
 
         int minX = Mth.floor(swept.minX);
         int minY = Mth.floor(swept.minY);
@@ -111,14 +130,24 @@ public final class Scp106PhasePortalTracker {
                             entity.level(), mutable);
                     for (AABB local : shape.toAabbs()) {
                         AABB worldShape = local.move(x, y, z);
-                        if (!worldShape.intersects(swept)
-                                || !worldShape.inflate(0.04D)
+                        if (!worldShape.intersects(swept)) continue;
+                        if (requireEndpointContact
+                                && !worldShape.inflate(0.04D)
                                 .intersects(relevantBox)) {
                             continue;
                         }
+                        if (!requireEndpointContact
+                                && (worldShape.inflate(0.01D)
+                                .intersects(previousBox)
+                                || worldShape.inflate(0.01D)
+                                .intersects(currentBox))) {
+                            continue;
+                        }
+
                         Surface candidate = surfaceFor(worldShape,
                                 reference, movement, entering);
-                        double score = candidate.position.distanceToSqr(reference);
+                        double score = candidate.position()
+                                .distanceToSqr(reference);
                         if (score < bestScore) {
                             best = candidate;
                             bestScore = score;
@@ -179,16 +208,18 @@ public final class Scp106PhasePortalTracker {
     private static void spawnSurfacePortal(Scp106Entity entity,
             Surface surface) {
         if (surface == null) return;
-        Vec3 encodedNormal = surface.normal.scale(0.55D);
+        Vec3 encodedNormal = surface.normal().scale(0.55D);
         entity.level().addParticle(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
-                surface.position.x, surface.position.y, surface.position.z,
+                surface.position().x, surface.position().y,
+                surface.position().z,
                 encodedNormal.x, encodedNormal.y, encodedNormal.z);
     }
 
     private static final class TrackingState {
         private AABB previousBox;
         private boolean insideSolid;
+        private int lastSweptPortalTick = Integer.MIN_VALUE;
 
         private TrackingState(AABB previousBox, boolean insideSolid) {
             this.previousBox = previousBox;

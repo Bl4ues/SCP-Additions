@@ -1,0 +1,43 @@
+name: Inspect SCP-106 Audio Patch
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    if: github.actor != 'github-actions[bot]' && github.head_ref == 'feature/scp106-audio-and-hunt-polish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/scp106-audio-and-hunt-polish
+      - name: Apply prepared implementation
+        run: |
+          python -m pip install --quiet pyyaml
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          workflow = yaml.safe_load(Path('.github/workflows/apply-scp106-audio.yml').read_text())
+          steps = workflow['jobs']['apply']['steps']
+          script = next(step['run'] for step in steps if step.get('name') == 'Apply implementation')
+          Path('/tmp/apply-scp106-audio.sh').write_text(script)
+          PY
+          bash /tmp/apply-scp106-audio.sh
+      - name: Capture patch state
+        run: |
+          mkdir -p patch-inspection
+          git diff --binary > patch-inspection/applied.patch
+          git status --short > patch-inspection/status.txt
+          cp src/main/java/net/mcreator/scpadditions/config/ScpAdditionsModulesConfig.java patch-inspection/
+          cp src/main/java/net/mcreator/scpadditions/network/ClientPacketExecutor.java patch-inspection/
+          cp src/main/java/net/mcreator/scpadditions/network/ScpEntityNetwork.java patch-inspection/
+          cp src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java patch-inspection/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scp106-audio-patch-inspection
+          path: patch-inspection

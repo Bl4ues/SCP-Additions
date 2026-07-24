@@ -27,8 +27,6 @@ public final class Scp106SurfaceEvents {
     private static final byte EMERGING_WALL = 2;
     private static final byte PHASE_TRAVEL = 3;
     private static final byte VANISHING = 4;
-    private static final String WALL_FACING_CORRECTED_KEY =
-            "Scp106WallFacingCorrected";
 
     private static final Map<Scp106Entity, Byte> PREVIOUS_STATES =
             new WeakHashMap<>();
@@ -45,10 +43,6 @@ public final class Scp106SurfaceEvents {
         }
 
         byte state = scp106.getEncounterState();
-        if (state != EMERGING_WALL) {
-            scp106.getPersistentData().remove(WALL_FACING_CORRECTED_KEY);
-        }
-
         Byte previousState = PREVIOUS_STATES.put(scp106, state);
         boolean changed = previousState == null
                 || previousState.byteValue() != state;
@@ -57,9 +51,7 @@ public final class Scp106SurfaceEvents {
             if (state == EMERGING_GROUND || state == VANISHING) {
                 spawnGroundPortal(level, scp106);
             } else if (state == EMERGING_WALL) {
-                float placementYaw = scp106.getYRot();
-                spawnWallPortal(level, scp106, placementYaw);
-                correctWallEmergenceFacing(scp106, placementYaw);
+                spawnWallPortal(level, scp106, scp106.getYRot());
             }
 
             if (state == HUNTING && previousState != null
@@ -72,27 +64,12 @@ public final class Scp106SurfaceEvents {
         Scp106PhasePortalTracker.tick(scp106, state == PHASE_TRAVEL);
     }
 
-    private static void correctWallEmergenceFacing(Scp106Entity scp106,
-            float placementYaw) {
-        if (scp106.getPersistentData().getBoolean(
-                WALL_FACING_CORRECTED_KEY)) {
-            return;
-        }
-
-        float correctedYaw = Mth.wrapDegrees(placementYaw + 180.0F);
-        scp106.setYRot(correctedYaw);
-        scp106.setYBodyRot(correctedYaw);
-        scp106.setYHeadRot(correctedYaw);
-        scp106.getPersistentData().putBoolean(
-                WALL_FACING_CORRECTED_KEY, true);
-    }
-
     private static void spawnGroundPortal(ServerLevel level,
             Scp106Entity scp106) {
         double surfaceY = findGroundSurfaceY(level, scp106);
         level.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
-                scp106.getX(), surfaceY + 0.018D, scp106.getZ(),
+                scp106.getX(), surfaceY + 0.045D, scp106.getZ(),
                 0, 0.0D, 0.90D, 0.0D, 1.0D);
     }
 
@@ -101,7 +78,7 @@ public final class Scp106SurfaceEvents {
         float yaw = placementYaw * Mth.DEG_TO_RAD;
         Vec3 outward = new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
         Vec3 position = scp106.position()
-                .subtract(outward.scale(0.46D))
+                .subtract(outward.scale(0.49D))
                 .add(0.0D, 1.0D, 0.0D);
         Vec3 encodedNormal = outward.scale(0.90D);
         level.sendParticles(

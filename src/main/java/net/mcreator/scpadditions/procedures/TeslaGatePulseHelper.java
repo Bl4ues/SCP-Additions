@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.entity.Scp106Entity;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
 import java.util.List;
@@ -48,6 +49,11 @@ public final class TeslaGatePulseHelper {
                 LivingEntity.class, volume,
                 entity -> TeslaGateVolume.intersects(entity, volume));
         for (LivingEntity living : entities) {
+            if (living instanceof Scp106Entity scp106) {
+                scp106.onTeslaGateHit();
+                continue;
+            }
+
             living.hurt(new DamageSource(living.level().registryAccess()
                     .registryOrThrow(Registries.DAMAGE_TYPE)
                     .getHolderOrThrow(DamageTypes.GENERIC)) {

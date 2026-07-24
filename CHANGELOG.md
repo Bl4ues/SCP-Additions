@@ -4,11 +4,16 @@
 
 ## SCP-106
 
-- Added SCP-106 as a new roaming threat, including its model, animations, and spawn egg;
-- SCP-106 can now appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
-- Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
-- SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving short-lived corrosive portals on the exact surfaces it enters and exits;
-- If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
+- Added SCP-106 as a new roaming threat, including its model, animations, sounds, and spawn egg;
+- SCP-106 can appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
+- Added close-range attacks that deal damage and apply Wither;
+- Added a ranged attack that throws a straight trail of corrosion across the floor when the player creates distance but remains in clear view, dealing damage, Wither, and Slowness on a direct hit;
+- Corrosion left by SCP-106 remains for longer and continuously slows Survival players who walk over it;
+- SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
+- If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path, while sometimes using its ranged attack instead when it has a clear shot;
+- Added positional phasing sounds and a private chase soundtrack heard only by the hunted player, with a smooth fade and ending cue when the hunt finishes;
+- SCP-106 ignores Creative and Spectator players, and disappears when its target dies if no other valid player is nearby;
+- Tesla Gates repel SCP-106 instead of killing it, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
 ## SCP-173
@@ -36,6 +41,10 @@
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
+
+## Audio and presentation
+
+- Reintroduced the world-entry sound and added a General & Modules option to disable it.
 
 ## Bug Fixes
 

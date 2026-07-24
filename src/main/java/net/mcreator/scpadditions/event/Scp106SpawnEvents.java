@@ -42,7 +42,7 @@ public final class Scp106SpawnEvents {
 
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        if (Scp106SpawnSuppression.isSuppressed(server)) {
+        if (Scp106SpawnSuppression.consumeSuppressedCheck(server)) {
             RoamerManager.recordResult(player, RoamerType.SCP_106,
                     RoamerResult.DESPAWNED_TIMER_RESET);
             return;

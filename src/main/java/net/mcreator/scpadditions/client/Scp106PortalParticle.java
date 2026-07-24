@@ -16,6 +16,7 @@ import net.minecraft.world.phys.Vec3;
 public final class Scp106PortalParticle extends TextureSheetParticle {
     private static final float MAX_ALPHA = 0.82F;
     private static final float UV_CROP = 0.0F;
+    private static final double SURFACE_OFFSET = 0.055D;
 
     private final SpriteSet sprites;
     private final Vec3 normal;
@@ -96,7 +97,7 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
                 Mth.lerp(partialTick, this.xo, this.x) - cameraPosition.x,
                 Mth.lerp(partialTick, this.yo, this.y) - cameraPosition.y,
                 Mth.lerp(partialTick, this.zo, this.z) - cameraPosition.z)
-                .add(normal.scale(0.025D));
+                .add(normal.scale(SURFACE_OFFSET));
         float size = getQuadSize(partialTick);
 
         float fullMinU = getU0();
@@ -114,13 +115,13 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
                 minU, maxU, minV, maxV, light, 1.0F);
         renderOffsetLobe(vertexConsumer, center, size, lobeAngleA,
                 lobeDistanceA, 0.82F, 0.58F, rotation + 0.57F,
-                minU, maxU, minV, maxV, light, 0.95F, 0.0015D);
+                minU, maxU, minV, maxV, light, 0.95F, 0.012D);
         renderOffsetLobe(vertexConsumer, center, size, lobeAngleB,
                 lobeDistanceB, 0.76F, 0.52F, rotation - 0.71F,
-                minU, maxU, minV, maxV, light, 0.90F, 0.0030D);
+                minU, maxU, minV, maxV, light, 0.90F, 0.024D);
         renderOffsetLobe(vertexConsumer, center, size, lobeAngleC,
                 lobeDistanceC, 0.68F, 0.48F, rotation + 1.08F,
-                minU, maxU, minV, maxV, light, 0.86F, 0.0045D);
+                minU, maxU, minV, maxV, light, 0.86F, 0.036D);
     }
 
     private void renderOffsetLobe(VertexConsumer vertexConsumer, Vec3 center,

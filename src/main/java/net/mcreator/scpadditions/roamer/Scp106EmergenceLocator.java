@@ -119,7 +119,7 @@ public final class Scp106EmergenceLocator {
         return null;
     }
 
-private static boolean sharesVisibleRoom(ServerLevel level,
+    private static boolean sharesVisibleRoom(ServerLevel level,
             Player target, BlockPos standing) {
         Vec3 targetEye = target.getEyePosition();
         Vec3 emergenceCenter = Vec3.atBottomCenterOf(standing)
@@ -188,9 +188,10 @@ private static boolean sharesVisibleRoom(ServerLevel level,
                     + toTarget.z * outward.getStepZ();
             if (frontDot < -0.5D) continue;
 
-            return new Placement(center,
-                    yawFor(outward.getStepX(), outward.getStepZ()),
-                    Emergence.WALL);
+            // emerge_wall is authored opposite the normal entity forward axis.
+            float wallYaw = Mth.wrapDegrees(yawFor(outward.getStepX(),
+                    outward.getStepZ()) + 180.0F);
+            return new Placement(center, wallYaw, Emergence.WALL);
         }
         return null;
     }

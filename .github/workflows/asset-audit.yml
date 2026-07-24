@@ -4,13 +4,13 @@ on:
   pull_request:
     branches:
       - master
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit:
+    if: github.actor != 'github-actions[bot]' && github.head_ref == 'fix/scp106-ranged-audio-debug-order'
     runs-on: ubuntu-latest
 
     steps:
@@ -20,36 +20,96 @@ jobs:
           ref: fix/scp106-ranged-audio-debug-order
           fetch-depth: 0
 
-      - name: Capture complete apply diagnostics
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Apply prepared SCP-106 refinements
         shell: bash
         run: |
-          set +e
-          {
-            python - <<'PY'
+          set -e
+          python - <<'PY'
           from pathlib import Path
-          raw = Path('.github/workflows/build.yml').read_text()
-          step = raw.index('      - name: Apply SCP-106 fixes and animation')
+
+          raw = Path('.github/workflows/apply-scp106-ranged-test-fixes.yml').read_text()
+          step = raw.index('      - name: Apply fixes')
           start_marker = '        run: |\n'
           start = raw.index(start_marker, step) + len(start_marker)
-          end = raw.index('\n      - name: Make Gradle wrapper executable', start)
+          end = raw.index('\n      - name: Build', start)
           lines = []
           for line in raw[start:end].splitlines():
               lines.append(line[10:] if line.startswith('          ') else line)
-          Path('/tmp/apply-complete-scp106.sh').write_text('set -e\n' + '\n'.join(lines) + '\n')
+          Path('/tmp/apply-scp106-ranged.sh').write_text(
+                  'set -e\n' + '\n'.join(lines) + '\n')
           PY
-            bash -e /tmp/apply-complete-scp106.sh
-          } > scp106-complete-apply.log 2>&1
-          status=$?
-          echo "$status" > scp106-complete-apply.status
-          cat scp106-complete-apply.log
-          exit 0
+          bash -e /tmp/apply-scp106-ranged.sh
 
-      - name: Upload complete apply diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: scp106-complete-apply-diagnostics
-          path: |
-            scp106-complete-apply.log
-            scp106-complete-apply.status
-          if-no-files-found: error
+      - name: Correct wall emergence orientation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              file = Path(path)
+              text = file.read_text(encoding='utf-8')
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'Expected block not found in {path}')
+              file.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          replace(
+              'src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java',
+              '''            // emerge_wall is authored opposite the normal entity forward axis.
+            float wallYaw = Mth.wrapDegrees(yawFor(outward.getStepX(),
+                    outward.getStepZ()) + 180.0F);
+            return new Placement(center, wallYaw, Emergence.WALL);''',
+              '''            // Face the open side directly. The animation begins behind
+            // the model on local +Z, so its initial pose remains inside the wall.
+            float wallYaw = yawFor(outward.getStepX(), outward.getStepZ());
+            return new Placement(center, wallYaw, Emergence.WALL);''')
+
+          replace(
+              'src/main/java/net/mcreator/scpadditions/event/Scp106SurfaceEvents.java',
+              '''        // The wall emergence animation moves opposite the model's ordinary
+        // forward axis, so its real surface normal is the inverse direction.
+        Vec3 outward = modelForward.scale(-1.0D);''',
+              '''        // The model faces the open side, so its forward vector is the
+        // actual outward normal used by the wall portal.
+        Vec3 outward = modelForward;''')
+          PY
+
+      - name: Verify supplied animation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('src/main/resources/assets/scp_additions/animations/entity/scp106.animation.json')
+          animations = json.loads(path.read_text(encoding='utf-8'))['animations']
+          ranged = animations.get('ranged_attack')
+          if not ranged:
+              raise SystemExit('ranged_attack is missing')
+          length = float(ranged.get('animation_length', 0.0))
+          if not 3.35 <= length <= 3.50:
+              raise SystemExit(f'Unexpected ranged_attack length: {length}')
+          print('Using supplied ranged_attack animation:', length, 'seconds')
+          PY
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refine SCP-106 ranged attack and emergence"
+          git push origin HEAD:fix/scp106-ranged-audio-debug-order

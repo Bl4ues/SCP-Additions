@@ -25,7 +25,7 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
     private final float[] edgeVariation = new float[EDGE_SEGMENTS];
 
     private Scp106CorrosionParticle(ClientLevel level, double x, double y,
-            double z, SpriteSet sprites) {
+            double z, double sizeScale, SpriteSet sprites) {
         super(level, x, y, z);
         this.sprites = sprites;
         this.xd = 0.0D;
@@ -34,8 +34,10 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         this.gravity = 0.0F;
         this.friction = 1.0F;
         this.hasPhysics = false;
-        this.lifetime = 60 + this.random.nextInt(31);
-        this.quadSize = 0.34F + this.random.nextFloat() * 0.14F;
+        this.lifetime = 120 + this.random.nextInt(61);
+        float safeScale = (float) Mth.clamp(sizeScale, 0.75D, 1.45D);
+        this.quadSize = (0.34F + this.random.nextFloat() * 0.14F)
+                * safeScale;
         this.puddleRotation = this.random.nextFloat()
                 * ((float) Math.PI * 2.0F);
         this.firstLobeAngle = this.puddleRotation
@@ -74,29 +76,29 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
             float partialTick) {
         Vec3 cameraPosition = camera.getPosition();
         float renderX = (float) (Mth.lerp(partialTick, this.xo, this.x)
-  - cameraPosition.x());
+                - cameraPosition.x());
         float renderY = (float) (Mth.lerp(partialTick, this.yo, this.y)
-  - cameraPosition.y());
+                - cameraPosition.y());
         float renderZ = (float) (Mth.lerp(partialTick, this.zo, this.z)
-  - cameraPosition.z());
+                - cameraPosition.z());
         float size = getQuadSize(partialTick);
         int light = getLightColor(partialTick);
 
         renderLobe(vertexConsumer, renderX, renderY, renderZ,
-  size * 1.22F, size * 0.82F, puddleRotation,
-  light, 1.0F);
+                size * 1.22F, size * 0.82F, puddleRotation,
+                light, 1.0F);
         renderLobe(vertexConsumer,
-  renderX + Mth.cos(firstLobeAngle) * size * firstLobeDistance,
-  renderY + 0.0004F,
-  renderZ + Mth.sin(firstLobeAngle) * size * firstLobeDistance,
-  size * 0.76F, size * 0.57F,
-  puddleRotation + 0.68F, light, 0.92F);
+                renderX + Mth.cos(firstLobeAngle) * size * firstLobeDistance,
+                renderY + 0.0004F,
+                renderZ + Mth.sin(firstLobeAngle) * size * firstLobeDistance,
+                size * 0.76F, size * 0.57F,
+                puddleRotation + 0.68F, light, 0.92F);
         renderLobe(vertexConsumer,
-  renderX + Mth.cos(secondLobeAngle) * size * secondLobeDistance,
-  renderY + 0.0008F,
-  renderZ + Mth.sin(secondLobeAngle) * size * secondLobeDistance,
-  size * 0.63F, size * 0.50F,
-  puddleRotation - 0.54F, light, 0.86F);
+                renderX + Mth.cos(secondLobeAngle) * size * secondLobeDistance,
+                renderY + 0.0008F,
+                renderZ + Mth.sin(secondLobeAngle) * size * secondLobeDistance,
+                size * 0.63F, size * 0.50F,
+                puddleRotation - 0.54F, light, 0.86F);
     }
 
     private void renderLobe(VertexConsumer vertexConsumer,
@@ -116,13 +118,13 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         float renderedAlpha = alpha * alphaMultiplier;
 
         vertexConsumer.vertex(x0, centerY, z0).uv(getU1(), getV1())
-  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
         vertexConsumer.vertex(x1, centerY, z1).uv(getU1(), getV0())
-  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
         vertexConsumer.vertex(x2, centerY, z2).uv(getU0(), getV0())
-  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
         vertexConsumer.vertex(x3, centerY, z3).uv(getU0(), getV1())
-  .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
+                .color(rCol, gCol, bCol, renderedAlpha).uv2(light).endVertex();
     }
 
     @Override
@@ -142,7 +144,9 @@ public final class Scp106CorrosionParticle extends TextureSheetParticle {
         public Particle createParticle(SimpleParticleType type,
                 ClientLevel level, double x, double y, double z,
                 double velocityX, double velocityY, double velocityZ) {
-            return new Scp106CorrosionParticle(level, x, y, z, sprites);
+            double sizeScale = velocityX > 0.0D ? velocityX : 1.0D;
+            return new Scp106CorrosionParticle(level, x, y, z,
+                    sizeScale, sprites);
         }
     }
 }

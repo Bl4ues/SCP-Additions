@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -22,9 +23,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
@@ -78,8 +81,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double AMBUSH_HARD_DISTANCE = 20.0D;
     private static final double AMBUSH_HARD_DISTANCE_SQR =
             AMBUSH_HARD_DISTANCE * AMBUSH_HARD_DISTANCE;
-    private static final double RANGED_MIN_DISTANCE_SQR = 6.0D * 6.0D;
-    private static final double RANGED_MAX_DISTANCE_SQR = 12.0D * 12.0D;
+    private static final double RANGED_MIN_DISTANCE_SQR = 6.5D * 6.5D;
+    private static final double RANGED_MAX_DISTANCE_SQR = 11.5D * 11.5D;
     private static final int PATH_REFRESH_INTERVAL = 10;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
@@ -95,13 +98,15 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int AMBUSH_DISTANCE_TICKS = 12;
     private static final int AMBUSH_RETRY_TICKS = 8;
     private static final int AMBUSH_COOLDOWN_TICKS = 8 * 20;
-    private static final int RANGED_PREPARE_TICKS = 8;
+    private static final int RANGED_PREPARE_TICKS = 20;
     private static final int RANGED_AIM_LOCK_TICK = 38;
     private static final int RANGED_RELEASE_TICK = 42;
     private static final int RANGED_ATTACK_DURATION_TICKS = 69;
     private static final int RANGED_SEGMENTS = 15;
     private static final double RANGED_SEGMENT_SPACING = 0.65D;
-    private static final int RANGED_COOLDOWN_TICKS = 8 * 20;
+    private static final int RANGED_COOLDOWN_TICKS = 14 * 20;
+    private static final int RANGED_ABORT_COOLDOWN_TICKS = 4 * 20;
+    private static final int RANGED_HAND_PARTICLE_START_TICK = 26;
     private static final int TESLA_SUPPRESSION_TICKS = 10 * 60 * 20;
 
     private static final RawAnimation IDLE_ANIMATION =
@@ -139,6 +144,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private boolean vanishForDespawn;
     private Vec3 rangedLockedDirection = Vec3.ZERO;
     private boolean rangedHit;
+    private boolean rangedBlocked;
+    private float emergenceYaw;
 
     public Scp106Entity(EntityType<? extends Scp106Entity> type, Level level) {
         super(type, level);
@@ -173,6 +180,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         tag.putInt("Scp106RangedCooldown", rangedCooldownTicks);
         tag.putInt("Scp106FarDistanceTicks", farDistanceTicks);
         tag.putBoolean("Scp106VanishForDespawn", vanishForDespawn);
+        tag.putFloat("Scp106EmergenceYaw", emergenceYaw);
         if (huntedPlayerId != null) {
             tag.putUUID("Scp106HuntedPlayer", huntedPlayerId);
         }
@@ -194,6 +202,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         farDistanceTicks = Math.max(0,
                 tag.getInt("Scp106FarDistanceTicks"));
         vanishForDespawn = tag.getBoolean("Scp106VanishForDespawn");
+        emergenceYaw = tag.contains("Scp106EmergenceYaw")
+                ? tag.getFloat("Scp106EmergenceYaw") : getYRot();
         huntedPlayerId = tag.hasUUID("Scp106HuntedPlayer")
                 ? tag.getUUID("Scp106HuntedPlayer") : null;
         entityData.set(ATTACKING, false);
@@ -289,6 +299,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void tickEmergence() {
         getNavigation().stop();
         stopHorizontalMovement();
+        lockEmergenceRotation();
         if (stateTicks > 0) stateTicks--;
         if (stateTicks > 0) return;
 
@@ -589,6 +600,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     private void startEmergence(Emergence emergence) {
         vanishForDespawn = false;
+        emergenceYaw = getYRot();
+        if (emergence == Emergence.GROUND) alignGroundEmergencePosition();
         entityData.set(ATTACKING, false);
         attackTicks = 0;
         cancelRangedAttack();
@@ -696,7 +709,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     private boolean isRangedOpportunity(Player player) {
         if (player == null || rangedCooldownTicks > 0 || !onGround()
-                || !hasLineOfSight(player)) {
+                || !hasClearRangedPath(player)) {
             return false;
         }
         double distanceSqr = distanceToSqr(player);
@@ -712,15 +725,24 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         rangedAttackTicks = 0;
         rangedOpportunityTicks = 0;
         rangedHit = false;
+        rangedBlocked = false;
         rangedLockedDirection = horizontalDirectionTo(target);
         getNavigation().stop();
         stopHorizontalMovement();
+        triggerAnim("movement", "ranged_attack");
     }
 
     private void tickRangedAttack(Player target) {
         getNavigation().stop();
         stopHorizontalMovement();
         rangedAttackTicks++;
+
+        if (rangedAttackTicks < RANGED_AIM_LOCK_TICK
+                && !hasClearRangedPath(target)) {
+            cancelRangedAttack();
+            rangedCooldownTicks = RANGED_ABORT_COOLDOWN_TICKS;
+            return;
+        }
 
         if (rangedAttackTicks <= RANGED_AIM_LOCK_TICK) {
             rangedLockedDirection = horizontalDirectionTo(target);
@@ -730,8 +752,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             faceDirection(rangedLockedDirection);
         }
 
+        if (rangedAttackTicks >= RANGED_HAND_PARTICLE_START_TICK
+                && rangedAttackTicks <= RANGED_RELEASE_TICK + 2) {
+            spawnRangedHandParticles();
+        }
+
         int segment = rangedAttackTicks - RANGED_RELEASE_TICK;
-        if (segment >= 0 && segment < RANGED_SEGMENTS) {
+        if (segment >= 0 && segment < RANGED_SEGMENTS && !rangedBlocked) {
             spawnRangedSegment(segment);
         }
 
@@ -771,15 +798,28 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         double distance = 0.75D + segment * RANGED_SEGMENT_SPACING;
+        double previousDistance = Math.max(0.30D,
+                distance - RANGED_SEGMENT_SPACING);
+        Vec3 rayStart = position().add(0.0D, 0.38D, 0.0D)
+                .add(rangedLockedDirection.scale(previousDistance));
+        Vec3 rayEnd = position().add(0.0D, 0.38D, 0.0D)
+                .add(rangedLockedDirection.scale(distance));
+        if (!hasClearBlockRay(rayStart, rayEnd)) {
+            rangedBlocked = true;
+            return;
+        }
+
         Vec3 point = position().add(rangedLockedDirection.scale(distance));
         double surfaceY = findCorrosionSurfaceY(point.x, point.y, point.z);
         Vec3 puddle = new Vec3(point.x, surfaceY + 0.025D, point.z);
-        double sizeScale = 1.25D - segment * (0.35D / (RANGED_SEGMENTS - 1));
+        double progress = segment / (double) (RANGED_SEGMENTS - 1);
+        double sizeScale = Mth.lerp(progress, 1.25D, 0.38D);
+        double opacityScale = Mth.lerp(progress, 1.0D, 0.28D);
 
         serverLevel.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
                 puddle.x, puddle.y, puddle.z,
-                0, sizeScale, 0.0D, 0.0D, 1.0D);
+                0, sizeScale, opacityScale, 0.0D, 1.0D);
         Scp106CorrosionFieldManager.addRanged(serverLevel, puddle);
 
         if (rangedHit) return;
@@ -798,6 +838,101 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 break;
             }
         }
+    }
+
+    private boolean hasClearRangedPath(Player target) {
+        if (target == null || !hasLineOfSight(target)) return false;
+        Vec3 start = position().add(0.0D, 0.72D, 0.0D);
+        Vec3 targetCenter = target.position().add(0.0D, 0.55D, 0.0D);
+        Vec3 motion = target.getDeltaMovement();
+        Vec3 predicted = targetCenter.add(motion.x * 6.0D, 0.0D,
+                motion.z * 6.0D);
+        return hasClearRangedCorridor(start, targetCenter)
+                && hasClearRangedCorridor(start, predicted);
+    }
+
+    private boolean hasClearRangedCorridor(Vec3 start, Vec3 end) {
+        Vec3 horizontal = end.subtract(start).multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.lengthSqr() < 1.0E-6D) {
+            return hasClearBlockRay(start, end);
+        }
+        Vec3 side = new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                .normalize().scale(0.22D);
+        return hasClearBlockRay(start, end)
+                && hasClearBlockRay(start.add(side), end.add(side))
+                && hasClearBlockRay(start.subtract(side), end.subtract(side));
+    }
+
+    private boolean hasClearBlockRay(Vec3 start, Vec3 end) {
+        HitResult obstruction = level().clip(new ClipContext(start, end,
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        return obstruction.getType() == HitResult.Type.MISS;
+    }
+
+    private void spawnRangedHandParticles() {
+        if (!(level() instanceof ServerLevel serverLevel)) return;
+        Vec3 forward = rangedLockedDirection.lengthSqr() < 1.0E-6D
+                ? getLookAngle().multiply(1.0D, 0.0D, 1.0D).normalize()
+                : rangedLockedDirection;
+        Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
+        double progress = Mth.clamp((rangedAttackTicks
+                - RANGED_HAND_PARTICLE_START_TICK)
+                / (double) Math.max(1, RANGED_RELEASE_TICK
+                - RANGED_HAND_PARTICLE_START_TICK), 0.0D, 1.0D);
+        Vec3 hand = position()
+                .add(0.0D, Mth.lerp(progress, 1.28D, 0.48D), 0.0D)
+                .add(forward.scale(Mth.lerp(progress, 0.18D, 0.72D)))
+                .add(right.scale(0.36D));
+        serverLevel.sendParticles(ParticleTypes.SQUID_INK,
+                hand.x, hand.y, hand.z, 2,
+                0.055D, 0.055D, 0.055D, 0.008D);
+        serverLevel.sendParticles(ParticleTypes.SMOKE,
+                hand.x, hand.y, hand.z, 1,
+                0.035D, 0.035D, 0.035D, 0.004D);
+    }
+
+    private void alignGroundEmergencePosition() {
+        AABB box = getBoundingBox().deflate(0.025D);
+        double originalY = getY();
+        double bestSurfaceY = Double.NEGATIVE_INFINITY;
+        int x = Mth.floor(getX());
+        int z = Mth.floor(getZ());
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        for (int y = Mth.floor(originalY) + 1;
+                y >= Mth.floor(originalY) - 2; y--) {
+            mutable.set(x, y, z);
+            BlockState state = level().getBlockState(mutable);
+            VoxelShape shape = state.getCollisionShape(level(), mutable);
+            for (AABB local : shape.toAabbs()) {
+                double top = y + local.maxY;
+                if (top >= originalY - 0.15D
+                        && top <= originalY + 1.10D
+                        && top > bestSurfaceY) {
+                    bestSurfaceY = top;
+                }
+            }
+        }
+        if (bestSurfaceY > Double.NEGATIVE_INFINITY) {
+            double lift = bestSurfaceY - originalY;
+            AABB aligned = box.move(0.0D, lift, 0.0D);
+            if (level().noCollision(this, aligned)) {
+                setPos(getX(), bestSurfaceY, getZ());
+                return;
+            }
+        }
+        if (level().noCollision(this, box)) return;
+        for (double lift = 0.10D; lift <= 1.60D; lift += 0.10D) {
+            if (level().noCollision(this, box.move(0.0D, lift, 0.0D))) {
+                setPos(getX(), originalY + lift, getZ());
+                return;
+            }
+        }
+    }
+
+    private void lockEmergenceRotation() {
+        setYRot(emergenceYaw);
+        setYBodyRot(emergenceYaw);
+        setYHeadRot(emergenceYaw);
     }
 
     private double findCorrosionSurfaceY(double x, double referenceY,
@@ -834,6 +969,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         rangedOpportunityTicks = 0;
         rangedLockedDirection = Vec3.ZERO;
         rangedHit = false;
+        rangedBlocked = false;
     }
 
     private boolean overlapsSolidBlock() {
@@ -1027,6 +1163,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                     ? WALK_ANIMATION_SPEED
                     : 1.0D;
         });
+        movementController.triggerableAnim("ranged_attack",
+                RANGED_ATTACK_ANIMATION);
         controllers.add(movementController);
     }
 

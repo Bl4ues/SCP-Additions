@@ -78,9 +78,9 @@ public final class Scp106SurfaceEvents {
         float yaw = placementYaw * Mth.DEG_TO_RAD;
         Vec3 modelForward = new Vec3(-Mth.sin(yaw), 0.0D,
                 Mth.cos(yaw));
-        // The wall emergence animation moves opposite the model's ordinary
-        // forward axis, so its real surface normal is the inverse direction.
-        Vec3 outward = modelForward.scale(-1.0D);
+        // The model faces the open side, so its forward vector is the
+        // actual outward normal used by the wall portal.
+        Vec3 outward = modelForward;
         Vec3 position = scp106.position()
                 .subtract(outward.scale(0.49D))
                 .add(0.0D, 1.0D, 0.0D);

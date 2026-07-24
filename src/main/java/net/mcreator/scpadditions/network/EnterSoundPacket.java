@@ -14,8 +14,9 @@ public final class EnterSoundPacket {
     }
 
     public static void handle(EnterSoundPacket message,
-                              Supplier<NetworkEvent.Context> supplier) {
+            Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
+        context.enqueueWork(() -> ClientPacketExecutor.run("playEnterSound"));
         context.setPacketHandled(true);
     }
 }

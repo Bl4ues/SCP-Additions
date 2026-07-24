@@ -46,30 +46,42 @@ public final class Scp106PhasePortalTracker {
 
         if (!state.insideSolid && insideSolid
                 && entity.tickCount - state.lastEntryPortalTick > 2) {
-            spawnSurfacePortal(serverLevel, findSurface(entity,
-                    state.previousBox, currentBox, true, true));
-            state.lastEntryPortalTick = entity.tickCount;
+            Surface entry = findSurface(entity,
+                    state.previousBox, currentBox, true, true);
+            if (entry != null) {
+                spawnSurfacePortal(serverLevel, entry);
+                state.lastEntryPortalTick = entity.tickCount;
+            }
         } else if (state.insideSolid && !insideSolid
                 && entity.tickCount - state.lastExitPortalTick > 2) {
-            spawnSurfacePortal(serverLevel, findSurface(entity,
-                    state.previousBox, currentBox, false, true));
-            state.lastExitPortalTick = entity.tickCount;
+            Surface exit = findSurface(entity,
+                    state.previousBox, currentBox, false, true);
+            if (exit != null) {
+                spawnSurfacePortal(serverLevel, exit);
+                state.lastExitPortalTick = entity.tickCount;
+            }
         }
 
         if (movement.lengthSqr() > 1.0E-6D) {
-            AABB anticipatedBox = currentBox.move(movement);
+            AABB anticipatedBox = currentBox.move(movement.scale(1.35D));
             boolean anticipatedInside = intersectsSolid(entity, anticipatedBox);
 
             if (!insideSolid && anticipatedInside
                     && entity.tickCount - state.lastEntryPortalTick > 2) {
-                spawnSurfacePortal(serverLevel, findSurface(entity,
-                        currentBox, anticipatedBox, true, false));
-                state.lastEntryPortalTick = entity.tickCount;
+                Surface entry = findSurface(entity,
+                        currentBox, anticipatedBox, true, true);
+                if (entry != null) {
+                    spawnSurfacePortal(serverLevel, entry);
+                    state.lastEntryPortalTick = entity.tickCount;
+                }
             } else if (insideSolid && !anticipatedInside
                     && entity.tickCount - state.lastExitPortalTick > 2) {
-                spawnSurfacePortal(serverLevel, findSurface(entity,
-                        currentBox, anticipatedBox, false, false));
-                state.lastExitPortalTick = entity.tickCount;
+                Surface exit = findSurface(entity,
+                        currentBox, anticipatedBox, false, true);
+                if (exit != null) {
+                    spawnSurfacePortal(serverLevel, exit);
+                    state.lastExitPortalTick = entity.tickCount;
+                }
             } else if (!insideSolid && !anticipatedInside
                     && entity.tickCount - state.lastSweptPortalTick > 2) {
                 Surface entry = findSurface(entity,

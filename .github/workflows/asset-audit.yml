@@ -32,6 +32,21 @@ jobs:
       - name: Apply SCP-106 refinements
         run: python3 scripts/apply_scp106_ranged_refinement.py
 
+      - name: Correct generated HUD local variable
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/net/mcreator/scpadditions/vitals/client/Scp079EnergyOverlay.java')
+          text = path.read_text(encoding='utf-8')
+          old = '        int x = screenWidth - ENERGY_WIDTH - MARGIN;\n        int y = MARGIN;'
+          new = '        int x = screenWidth - ENERGY_WIDTH - MARGIN;'
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('Could not normalize SCP-079 energy HUD position')
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Capture build diagnostics
         shell: bash
         run: |

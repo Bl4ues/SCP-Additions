@@ -52,7 +52,7 @@ public final class Scp106CorrosionFieldManager {
 
             for (Field field : fields) {
                 if (Math.abs(field.position.y - position.y) <= 0.35D
-                        && field.position.distanceToSqr(position) <= 0.16D) {
+                        && field.position.distanceToSqr(position) <= 0.04D) {
                     field.position = position;
                     field.radius = Math.max(field.radius, radius);
                     field.expiresAt = Math.max(field.expiresAt, expiresAt);

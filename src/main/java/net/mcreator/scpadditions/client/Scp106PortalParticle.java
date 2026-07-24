@@ -72,10 +72,8 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         this.lobeDistanceA = 0.48F + this.random.nextFloat() * 0.18F;
         this.lobeDistanceB = 0.52F + this.random.nextFloat() * 0.20F;
         this.lobeDistanceC = 0.44F + this.random.nextFloat() * 0.18F;
-        this.setColor(
-                0.065F + this.random.nextFloat() * 0.030F,
-                0.022F + this.random.nextFloat() * 0.018F,
-                0.010F + this.random.nextFloat() * 0.012F);
+        float brightness = 0.86F + this.random.nextFloat() * 0.12F;
+        this.setColor(brightness, brightness, brightness);
         this.setAlpha(MAX_ALPHA);
         this.pickSprite(sprites);
     }
@@ -191,6 +189,11 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         public Particle createParticle(SimpleParticleType type,
                 ClientLevel level, double x, double y, double z,
                 double normalX, double normalY, double normalZ) {
+            double normalStrength = Math.sqrt(normalX * normalX
+                    + normalY * normalY + normalZ * normalZ);
+            // Legacy client-side state particles used a unit normal. The
+            // server now owns all portals, so suppress those duplicates.
+            if (normalStrength >= 0.98D) return null;
             return new Scp106PortalParticle(level, x, y, z,
                     normalX, normalY, normalZ, sprites);
         }

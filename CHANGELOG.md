@@ -9,6 +9,9 @@
 - Added close-range attacks that deal damage and apply Wither, along with dark corrosion pools left behind while it moves and emerges;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving short-lived corrosive portals on the exact surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
+- Tesla Gates now repel SCP-106 instead of killing it, forcing it to sink away and preventing another natural encounter for ten minutes;
+- Added randomized positional phase sounds for SCP-106 emerging, sinking, passing through surfaces, and using its ranged corrosion attack;
+- Added a local chase soundtrack heard only by SCP-106's current target, with a smooth fade and ending cue when the hunt stops;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
 ## SCP-173
@@ -39,6 +42,7 @@
 
 ## Bug Fixes
 
+- Restored the optional ambient sound played when entering a world, with a new toggle in General & Modules;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;
 - Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;
 - Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.

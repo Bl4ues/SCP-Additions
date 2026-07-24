@@ -91,6 +91,10 @@ public final class ScpEntityNetwork {
                 Scp079DecisionPacket::encode,
                 Scp079DecisionPacket::decode,
                 Scp079DecisionPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(Scp106ChaseMusicPacket.class,
+                Scp106ChaseMusicPacket::encode,
+                Scp106ChaseMusicPacket::decode,
+                Scp106ChaseMusicPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -194,6 +198,21 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new Scp079DecisionPacket(visible, entries));
+    }
+
+    public static void playEnterSound(ServerPlayer player) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new EnterSoundPacket());
+    }
+
+    public static void setScp106ChaseMusic(ServerPlayer player,
+            java.util.UUID sourceId, boolean active) {
+        if (player == null || sourceId == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new Scp106ChaseMusicPacket(sourceId, active));
     }
 
     public static void playScare(ServerPlayer player) {

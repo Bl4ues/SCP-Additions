@@ -76,4 +76,8 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> SCP012_BLEED_2 = REGISTRY.register("scp012_bleed_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_bleed_2")));
 	public static final RegistryObject<SoundEvent> SCP012_BLEED_3 = REGISTRY.register("scp012_bleed_3", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_bleed_3")));
 	public static final RegistryObject<SoundEvent> SCP012_ON_MOUNT_GOLGOTHA = REGISTRY.register("scp012_on_mount_golgotha", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp012_on_mount_golgotha")));
+	public static final RegistryObject<SoundEvent> SCP_106_PHASE = REGISTRY.register("scp106_phase", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp106_phase")));
+	public static final RegistryObject<SoundEvent> SCP_106_CHASE = REGISTRY.register("scp106_chase", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp106_chase")));
+	public static final RegistryObject<SoundEvent> SCP_106_STOP = REGISTRY.register("scp106_stop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp106_stop")));
+	public static final RegistryObject<SoundEvent> ENTER = REGISTRY.register("enter", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "enter")));
 }

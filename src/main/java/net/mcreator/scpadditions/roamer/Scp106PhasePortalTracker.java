@@ -289,6 +289,7 @@ public final class Scp106PhasePortalTracker {
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
                 position.x, position.y, position.z,
                 0, encodedNormal.x, encodedNormal.y, encodedNormal.z, 1.0D);
+        Scp106Audio.playPhase(level, position, 0.70F);
     }
 
     private static final class TrackingState {

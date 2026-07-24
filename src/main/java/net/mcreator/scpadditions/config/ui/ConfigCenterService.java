@@ -220,7 +220,7 @@ public final class ConfigCenterService {
     }
 
     private static void validateModules(JsonObject root, List<String> errors) {
-        for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "scp_173")) {
+        for (String group : List.of("inventory", "interactions", "hud", "vitals", "blink", "audio", "scp_173")) {
             if (root.has(group) && !root.get(group).isJsonObject()) errors.add(group + " must be an object");
         }
         checkBoolean(root, "inventory", "enabled", errors);
@@ -232,6 +232,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "vitals", "stamina_enabled", errors);
         checkBoolean(root, "vitals", "horror_movement_enabled", errors);
         checkBoolean(root, "blink", "enabled", errors);
+        checkBoolean(root, "audio", "play_enter_sound", errors);
         checkBoolean(root, "scp_173", "enabled", errors);
         checkBoolean(root, "scp_173", "natural_spawn_enabled", errors);
     }

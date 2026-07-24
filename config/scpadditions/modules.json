@@ -25,5 +25,8 @@
     "show_scp_079_energy_hud": false,
     "show_scp_079_decision_log_hud": false,
     "show_scp_spawn_timers_hud": false
+  },
+  "audio": {
+    "play_enter_sound": true
   }
 }

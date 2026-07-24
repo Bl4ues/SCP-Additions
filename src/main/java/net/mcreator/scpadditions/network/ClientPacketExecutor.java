@@ -6,6 +6,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,6 +31,18 @@ public final class ClientPacketExecutor {
             if (method != null) method.invoke(null);
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.error("Could not execute client packet action {}", action, exception);
+        }
+    }
+
+    public static void setScp106ChaseMusic(UUID sourceId, boolean active) {
+        if (FMLEnvironment.dist != Dist.CLIENT || sourceId == null) return;
+        try {
+            Method method = Class.forName(TARGET).getMethod(
+                    "setScp106ChaseMusic", UUID.class, boolean.class);
+            method.invoke(null, sourceId, active);
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.error(
+                    "Could not update SCP-106 chase music", exception);
         }
     }
 

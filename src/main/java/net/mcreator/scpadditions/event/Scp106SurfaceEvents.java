@@ -13,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp106Entity;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
+import net.mcreator.scpadditions.roamer.Scp106Audio;
 import net.mcreator.scpadditions.roamer.Scp106PhasePortalTracker;
 
 import java.util.Map;
@@ -67,10 +68,13 @@ public final class Scp106SurfaceEvents {
     private static void spawnGroundPortal(ServerLevel level,
             Scp106Entity scp106) {
         double surfaceY = findGroundSurfaceY(level, scp106);
+        Vec3 position = new Vec3(scp106.getX(),
+                surfaceY + 0.045D, scp106.getZ());
         level.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
-                scp106.getX(), surfaceY + 0.045D, scp106.getZ(),
+                position.x, position.y, position.z,
                 0, 0.0D, 0.90D, 0.0D, 1.0D);
+        Scp106Audio.playPhase(level, position, 0.82F);
     }
 
     private static void spawnWallPortal(ServerLevel level,
@@ -86,6 +90,7 @@ public final class Scp106SurfaceEvents {
                 position.x, position.y, position.z,
                 0, encodedNormal.x, encodedNormal.y,
                 encodedNormal.z, 1.0D);
+        Scp106Audio.playPhase(level, position, 0.82F);
     }
 
     private static void settleAfterEmergence(ServerLevel level,

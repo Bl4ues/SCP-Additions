@@ -28,6 +28,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
+import net.mcreator.scpadditions.roamer.Scp106Audio;
 import net.mcreator.scpadditions.roamer.Scp106CorrosionFieldManager;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
 import net.mcreator.scpadditions.roamer.Scp106PhasePortalTracker;
@@ -657,6 +658,10 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         Player hunted = rawHuntedPlayer();
+        if (hunted == null && huntedPlayerId == null && getTarget() == null) {
+            hunted = findNearestCreativePlayer();
+            if (hunted != null) huntedPlayerId = hunted.getUUID();
+        }
         if (hunted == null || !hunted.isAlive() || !hunted.isCreative()
                 || hunted.level() != level()) {
             return false;
@@ -677,6 +682,37 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return serverLevel.getPlayerByUUID(huntedPlayerId);
         }
         return getTarget() instanceof Player player ? player : null;
+    }
+
+    private Player findNearestCreativePlayer() {
+        AABB area = getBoundingBox().inflate(PURSUIT_RANGE);
+        Player nearest = null;
+        double nearestDistanceSqr = PURSUIT_RANGE_SQR;
+        for (Player player : level().getEntitiesOfClass(Player.class, area,
+                candidate -> candidate.isAlive() && !candidate.isRemoved()
+                        && candidate.isCreative() && !candidate.isSpectator())) {
+            double distanceSqr = distanceToSqr(player);
+            if (distanceSqr < nearestDistanceSqr) {
+                nearest = player;
+                nearestDistanceSqr = distanceSqr;
+            }
+        }
+        return nearest;
+    }
+
+    public UUID getHuntedPlayerId() {
+        return huntedPlayerId;
+    }
+
+    public boolean shouldPlayChaseMusic() {
+        if (level().isClientSide || vanishForDespawn
+                || huntedPlayerId == null
+                || !(level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        Player hunted = serverLevel.getServer().getPlayerList()
+                .getPlayer(huntedPlayerId);
+        return isValidHuntTarget(hunted);
     }
 
     private void idleForCreativeTarget() {
@@ -731,6 +767,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         int segment = rangedAttackTicks - RANGED_RELEASE_TICK;
+        if (segment == 0 && level() instanceof ServerLevel serverLevel) {
+            Scp106Audio.playPhase(serverLevel, position(), 0.42F);
+        }
         if (segment >= 0 && segment < RANGED_SEGMENTS) {
             spawnRangedSegment(segment);
         }

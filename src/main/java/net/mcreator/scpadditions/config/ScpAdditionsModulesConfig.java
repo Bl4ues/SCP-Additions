@@ -78,6 +78,7 @@ public final class ScpAdditionsModulesConfig {
 		public Toggle hud = new Toggle();
 		public Vitals vitals = new Vitals();
 		public Toggle blink = new Toggle();
+		public Audio audio = new Audio();
 		public Debug debug = new Debug();
 
 		@SerializedName("scp_173")
@@ -93,6 +94,7 @@ public final class ScpAdditionsModulesConfig {
 			if (hud == null) hud = new Toggle();
 			if (vitals == null) vitals = new Vitals();
 			if (blink == null) blink = new Toggle();
+			if (audio == null) audio = new Audio();
 			if (debug == null) debug = new Debug();
 			if (scp173 == null) scp173 = new Toggle();
 			return this;
@@ -122,6 +124,11 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("horror_movement_enabled")
 		public boolean horrorMovementEnabled = true;
+	}
+
+	public static final class Audio {
+		@SerializedName("enter_sound_enabled")
+		public boolean enterSoundEnabled = true;
 	}
 
 	public static final class Debug {

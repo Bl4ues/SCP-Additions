@@ -15,6 +15,7 @@ import net.mcreator.scpadditions.roamer.RoamerManager;
 import net.mcreator.scpadditions.roamer.RoamerResult;
 import net.mcreator.scpadditions.roamer.RoamerType;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
+import net.mcreator.scpadditions.roamer.Scp106SpawnSuppression;
 
 /** Natural SCP-106 encounter checks and aggressive emergence spawning. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -41,6 +42,11 @@ public final class Scp106SpawnEvents {
 
         MinecraftServer server = player.getServer();
         if (server == null) return;
+        if (Scp106SpawnSuppression.isSuppressed(server)) {
+            RoamerManager.recordResult(player, RoamerType.SCP_106,
+                    RoamerResult.DESPAWNED_TIMER_RESET);
+            return;
+        }
 
         Scp106Entity existing = findAnyScp106(server);
         if (existing != null) {

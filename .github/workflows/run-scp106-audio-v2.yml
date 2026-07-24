@@ -1,0 +1,52 @@
+name: Run SCP-106 Audio Implementation V2
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]' && github.head_ref == 'feature/scp106-audio-and-hunt-polish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/scp106-audio-and-hunt-polish
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Apply implementation
+        run: |
+          python -m pip install --quiet pyyaml
+          python - <<'PY'
+          from pathlib import Path
+          import re, yaml
+          workflow = yaml.safe_load(Path('.github/workflows/apply-scp106-audio.yml').read_text())
+          steps = workflow['jobs']['apply']['steps']
+          script = next(step['run'] for step in steps if step.get('name') == 'Apply implementation')
+          pattern = r"(?m)^(\s*)data = json\.loads\(path\.read_text\(encoding='utf-8'\)\)$"
+          replacement = r"\1if not path.exists():\n\1    continue\n\1data = json.loads(path.read_text(encoding='utf-8'))"
+          script, count = re.subn(pattern, replacement, script, count=1)
+          if count != 1:
+              raise SystemExit('Could not make optional language handling resilient')
+          Path('/tmp/apply-scp106-audio.sh').write_text('set -e\n' + script)
+          PY
+          bash -e /tmp/apply-scp106-audio.sh
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --stacktrace
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add SCP-106 audio and world entry cue"
+          git push origin HEAD:feature/scp106-audio-and-hunt-polish

@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.roamer;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -21,7 +22,10 @@ public final class Scp106PhasePortalTracker {
     }
 
     public static void tick(Scp106Entity entity, boolean phasing) {
-        if (entity == null || !entity.level().isClientSide) return;
+        if (entity == null || entity.level().isClientSide
+                || !(entity.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
         if (!phasing) {
             STATES.remove(entity);
             return;
@@ -35,27 +39,52 @@ public final class Scp106PhasePortalTracker {
             return;
         }
 
-        if (!state.insideSolid && insideSolid) {
-            spawnSurfacePortal(entity, findSurface(entity,
+        Vec3 movement = center(currentBox).subtract(center(state.previousBox));
+        if (movement.lengthSqr() < 1.0E-6D) {
+            movement = entity.getDeltaMovement();
+        }
+
+        if (!state.insideSolid && insideSolid
+                && entity.tickCount - state.lastEntryPortalTick > 2) {
+            spawnSurfacePortal(serverLevel, findSurface(entity,
                     state.previousBox, currentBox, true, true));
-        } else if (state.insideSolid && !insideSolid) {
-            spawnSurfacePortal(entity, findSurface(entity,
+            state.lastEntryPortalTick = entity.tickCount;
+        } else if (state.insideSolid && !insideSolid
+                && entity.tickCount - state.lastExitPortalTick > 2) {
+            spawnSurfacePortal(serverLevel, findSurface(entity,
                     state.previousBox, currentBox, false, true));
-        } else if (!state.insideSolid && !insideSolid
-                && entity.tickCount - state.lastSweptPortalTick > 2) {
-            // Thin collision shapes can be crossed between two client ticks
-            // without the entity ever ending a tick inside them. The swept
-            // hitbox still identifies both real faces of the crossed shape.
-            Surface entry = findSurface(entity,
-                    state.previousBox, currentBox, true, false);
-            Surface exit = findSurface(entity,
-                    state.previousBox, currentBox, false, false);
-            if (entry != null && exit != null
-                    && entry.position().distanceToSqr(exit.position())
-                    > 0.0025D) {
-                spawnSurfacePortal(entity, entry);
-                spawnSurfacePortal(entity, exit);
-                state.lastSweptPortalTick = entity.tickCount;
+            state.lastExitPortalTick = entity.tickCount;
+        }
+
+        if (movement.lengthSqr() > 1.0E-6D) {
+            AABB anticipatedBox = currentBox.move(movement);
+            boolean anticipatedInside = intersectsSolid(entity, anticipatedBox);
+
+            if (!insideSolid && anticipatedInside
+                    && entity.tickCount - state.lastEntryPortalTick > 2) {
+                spawnSurfacePortal(serverLevel, findSurface(entity,
+                        currentBox, anticipatedBox, true, false));
+                state.lastEntryPortalTick = entity.tickCount;
+            } else if (insideSolid && !anticipatedInside
+                    && entity.tickCount - state.lastExitPortalTick > 2) {
+                spawnSurfacePortal(serverLevel, findSurface(entity,
+                        currentBox, anticipatedBox, false, false));
+                state.lastExitPortalTick = entity.tickCount;
+            } else if (!insideSolid && !anticipatedInside
+                    && entity.tickCount - state.lastSweptPortalTick > 2) {
+                Surface entry = findSurface(entity,
+                        currentBox, anticipatedBox, true, false);
+                Surface exit = findSurface(entity,
+                        currentBox, anticipatedBox, false, false);
+                if (entry != null && exit != null
+                        && entry.position().distanceToSqr(exit.position())
+                        > 0.0025D) {
+                    spawnSurfacePortal(serverLevel, entry);
+                    spawnSurfacePortal(serverLevel, exit);
+                    state.lastSweptPortalTick = entity.tickCount;
+                    state.lastEntryPortalTick = entity.tickCount;
+                    state.lastExitPortalTick = entity.tickCount;
+                }
             }
         }
 
@@ -205,20 +234,23 @@ public final class Scp106PhasePortalTracker {
                 (box.minZ + box.maxZ) * 0.5D);
     }
 
-    private static void spawnSurfacePortal(Scp106Entity entity,
+    private static void spawnSurfacePortal(ServerLevel level,
             Surface surface) {
         if (surface == null) return;
-        Vec3 encodedNormal = surface.normal().scale(0.55D);
-        entity.level().addParticle(
+        Vec3 normal = surface.normal();
+        Vec3 position = surface.position().add(normal.scale(0.018D));
+        Vec3 encodedNormal = normal.scale(0.55D);
+        level.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
-                surface.position().x, surface.position().y,
-                surface.position().z,
-                encodedNormal.x, encodedNormal.y, encodedNormal.z);
+                position.x, position.y, position.z,
+                0, encodedNormal.x, encodedNormal.y, encodedNormal.z, 1.0D);
     }
 
     private static final class TrackingState {
         private AABB previousBox;
         private boolean insideSolid;
+        private int lastEntryPortalTick = Integer.MIN_VALUE;
+        private int lastExitPortalTick = Integer.MIN_VALUE;
         private int lastSweptPortalTick = Integer.MIN_VALUE;
 
         private TrackingState(AABB previousBox, boolean insideSolid) {

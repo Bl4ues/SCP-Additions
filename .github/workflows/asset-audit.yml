@@ -32,13 +32,33 @@ jobs:
       - name: Apply SCP-106 refinements
         run: python3 scripts/apply_scp106_ranged_refinement.py
 
-      - name: Build
+      - name: Capture build diagnostics
+        shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew clean build --stacktrace
+          set +e
+          ./gradlew clean build --stacktrace > scp106-refinement-build.log 2>&1
+          status=$?
+          echo "$status" > scp106-refinement-build.status
+          tail -n 300 scp106-refinement-build.log
+          exit 0
+
+      - name: Upload build diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: scp106-refinement-build-diagnostics
+          path: |
+            scp106-refinement-build.log
+            scp106-refinement-build.status
+          if-no-files-found: error
 
       - name: Restore standard workflow and commit implementation
+        shell: bash
         run: |
+          if [ "$(cat scp106-refinement-build.status)" != "0" ]; then
+            exit 0
+          fi
+          rm -f scp106-refinement-build.log scp106-refinement-build.status
           git checkout origin/master -- .github/workflows/asset-audit.yml
           rm -f scripts/apply_scp106_ranged_refinement.py
           git config user.name "github-actions[bot]"
@@ -48,6 +68,7 @@ jobs:
           git push origin HEAD:fix/scp106-ranged-emergence-final
 
       - name: Upload compiled JAR
+        if: success() && hashFiles('build/libs/*.jar') != ''
         uses: actions/upload-artifact@v4
         with:
           name: scp106-ranged-refinement-${{ github.sha }}

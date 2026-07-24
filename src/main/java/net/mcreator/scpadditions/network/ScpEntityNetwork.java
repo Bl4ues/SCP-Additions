@@ -91,6 +91,10 @@ public final class ScpEntityNetwork {
                 Scp079DecisionPacket::encode,
                 Scp079DecisionPacket::decode,
                 Scp079DecisionPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(Scp106ChasePacket.class,
+                Scp106ChasePacket::encode,
+                Scp106ChasePacket::decode,
+                Scp106ChasePacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -208,6 +212,21 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new Scp1176MusicPacket());
+    }
+
+    public static void setScp106Chase(ServerPlayer player,
+            boolean active) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new Scp106ChasePacket(active));
+    }
+
+    public static void playEnterSound(ServerPlayer player) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new EnterSoundPacket());
     }
 
     public static void openKeycardReaderScreen(ServerPlayer player,

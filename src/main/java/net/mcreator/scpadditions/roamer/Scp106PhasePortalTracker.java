@@ -1,14 +1,20 @@
 package net.mcreator.scpadditions.roamer;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.entity.Scp106Entity;
+import net.mcreator.scpadditions.init.Scp106Sounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 
 import java.util.Map;
@@ -40,10 +46,13 @@ public final class Scp106PhasePortalTracker {
         }
         if (direction.lengthSqr() < 1.0E-6D) return;
 
-        direction = direction.normalize().scale(1.50D);
-        AABB anticipatedBox = currentBox.move(direction);
+        Vec3 unitDirection = direction.normalize();
+        AABB anticipatedBox = currentBox.move(unitDirection.scale(1.50D));
         Surface entry = findSurface(entity, currentBox,
                 anticipatedBox, true, true);
+        if (entry == null) {
+            entry = raycastSurface(entity, unitDirection, 2.75D);
+        }
 
         TrackingState state = new TrackingState(currentBox,
                 intersectsSolid(entity, currentBox));
@@ -135,6 +144,22 @@ public final class Scp106PhasePortalTracker {
 
         state.previousBox = currentBox;
         state.insideSolid = insideSolid;
+    }
+
+    private static Surface raycastSurface(Scp106Entity entity,
+            Vec3 direction, double distance) {
+        Vec3 start = entity.position().add(0.0D,
+                entity.getBbHeight() * 0.52D, 0.0D);
+        Vec3 end = start.add(direction.scale(distance));
+        BlockHitResult hit = entity.level().clip(new ClipContext(
+                start, end, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, entity));
+        if (hit.getType() != HitResult.Type.BLOCK) return null;
+
+        Direction face = hit.getDirection();
+        Vec3 normal = new Vec3(face.getStepX(), face.getStepY(),
+                face.getStepZ());
+        return new Surface(hit.getLocation(), normal);
     }
 
     private static boolean intersectsSolid(Scp106Entity entity, AABB box) {
@@ -283,12 +308,15 @@ public final class Scp106PhasePortalTracker {
             Surface surface) {
         if (surface == null) return;
         Vec3 normal = surface.normal();
-        Vec3 position = surface.position().add(normal.scale(0.045D));
+        Vec3 position = surface.position().add(normal.scale(0.065D));
         Vec3 encodedNormal = normal.scale(0.55D);
         level.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
                 position.x, position.y, position.z,
                 0, encodedNormal.x, encodedNormal.y, encodedNormal.z, 1.0D);
+        level.playSound(null, position.x, position.y, position.z,
+                Scp106Sounds.PHASE.get(), SoundSource.HOSTILE,
+                0.82F, 0.94F + level.random.nextFloat() * 0.12F);
     }
 
     private static final class TrackingState {

@@ -28,8 +28,10 @@ jobs:
       - name: Capture patch diagnostics
         shell: bash
         run: |
-          python -m pip install --quiet pyyaml
-          python - <<'PY'
+          set +e
+          {
+            python -m pip install --quiet pyyaml
+            python - <<'PY'
           from pathlib import Path
           import yaml
           workflow = yaml.safe_load(Path('.github/workflows/apply-scp106-ranged-test-fixes.yml').read_text())
@@ -37,13 +39,15 @@ jobs:
           script = next(step['run'] for step in steps if step.get('name') == 'Apply fixes')
           Path('/tmp/apply-scp106-ranged.sh').write_text('set -e\n' + script)
           PY
-          set +e
-          bash -e /tmp/apply-scp106-ranged.sh > scp106-ranged-patch.log 2>&1
-          echo $? > scp106-ranged-patch.status
-          set -e
+            bash -e /tmp/apply-scp106-ranged.sh
+          } > scp106-ranged-patch.log 2>&1
+          status=$?
+          echo "$status" > scp106-ranged-patch.status
           cat scp106-ranged-patch.log
+          exit 0
 
       - name: Upload patch diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: scp106-ranged-patch-diagnostics

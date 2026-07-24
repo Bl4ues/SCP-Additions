@@ -1,0 +1,549 @@
+name: Apply SCP-106 Ranged Combat
+
+on:
+  push:
+    branches:
+      - feature/scp106-ranged-combat
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/scp106-ranged-combat
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Patch SCP-106 combat
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java')
+          text = path.read_text()
+
+          def rep(old, new):
+              global text
+              if old not in text:
+                  raise SystemExit('missing replacement target:\n' + old[:200])
+              text = text.replace(old, new, 1)
+
+          rep('import net.minecraft.world.level.Level;\n',
+              'import net.minecraft.world.level.Level;\nimport net.minecraft.world.level.ClipContext;\n')
+          rep('import net.minecraft.world.phys.AABB;\n',
+              'import net.minecraft.world.phys.AABB;\nimport net.minecraft.world.phys.HitResult;\n')
+          rep('import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;\n',
+              'import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;\nimport net.mcreator.scpadditions.roamer.Scp106CorrosionFieldManager;\nimport net.mcreator.scpadditions.roamer.Scp106SpawnSuppression;\n')
+
+          rep('''    private static final EntityDataAccessor<Byte> ENCOUNTER_STATE =
+            SynchedEntityData.defineId(Scp106Entity.class,
+                    EntityDataSerializers.BYTE);
+''', '''    private static final EntityDataAccessor<Byte> ENCOUNTER_STATE =
+            SynchedEntityData.defineId(Scp106Entity.class,
+                    EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Boolean> RANGED_ATTACKING =
+            SynchedEntityData.defineId(Scp106Entity.class,
+                    EntityDataSerializers.BOOLEAN);
+''')
+
+          text = text.replace('private static final double AMBUSH_DISTANCE = 16.0D;',
+                              'private static final double AMBUSH_DISTANCE = 8.0D;')
+          text = text.replace('private static final double AMBUSH_HARD_DISTANCE = 26.0D;',
+                              'private static final double AMBUSH_HARD_DISTANCE = 20.0D;')
+          rep('''    private static final int TARGET_LOST_DESPAWN_TICKS = 10 * 20;
+''', '''    private static final int TARGET_LOST_DESPAWN_TICKS = 10 * 20;
+    private static final double RANGED_MIN_DISTANCE_SQR = 6.0D * 6.0D;
+    private static final double RANGED_MAX_DISTANCE_SQR = 12.0D * 12.0D;
+    private static final int RANGED_PREPARE_TICKS = 8;
+    private static final int RANGED_AIM_LOCK_TICK = 38;
+    private static final int RANGED_RELEASE_TICK = 42;
+    private static final int RANGED_ATTACK_DURATION_TICKS = 69;
+    private static final int RANGED_SEGMENTS = 15;
+    private static final double RANGED_SEGMENT_SPACING = 0.65D;
+    private static final int RANGED_COOLDOWN_TICKS = 8 * 20;
+    private static final int TESLA_SUPPRESSION_TICKS = 10 * 60 * 20;
+''')
+
+          rep('''    private static final RawAnimation ATTACK_ANIMATION =
+            RawAnimation.begin().thenPlay("attack");
+''', '''    private static final RawAnimation ATTACK_ANIMATION =
+            RawAnimation.begin().thenPlay("attack");
+    private static final RawAnimation RANGED_ATTACK_ANIMATION =
+            RawAnimation.begin().thenPlay("ranged_attack");
+''')
+
+          rep('''    private int attackTicks;
+    private int stateTicks;
+''', '''    private int attackTicks;
+    private int rangedAttackTicks;
+    private int rangedCooldownTicks;
+    private int rangedOpportunityTicks;
+    private Vec3 rangedLockedDirection = Vec3.ZERO;
+    private boolean rangedHit;
+    private int stateTicks;
+''')
+
+          rep('''        entityData.define(ATTACKING, false);
+        entityData.define(ENCOUNTER_STATE, HUNTING);
+''', '''        entityData.define(ATTACKING, false);
+        entityData.define(ENCOUNTER_STATE, HUNTING);
+        entityData.define(RANGED_ATTACKING, false);
+''')
+          rep('''        tag.putInt("Scp106FarDistanceTicks", farDistanceTicks);
+''', '''        tag.putInt("Scp106FarDistanceTicks", farDistanceTicks);
+        tag.putInt("Scp106RangedCooldown", rangedCooldownTicks);
+''')
+          rep('''        farDistanceTicks = Math.max(0,
+                tag.getInt("Scp106FarDistanceTicks"));
+''', '''        farDistanceTicks = Math.max(0,
+                tag.getInt("Scp106FarDistanceTicks"));
+        rangedCooldownTicks = Math.max(0,
+                tag.getInt("Scp106RangedCooldown"));
+''')
+          rep('''        entityData.set(ATTACKING, false);
+''', '''        entityData.set(ATTACKING, false);
+        entityData.set(RANGED_ATTACKING, false);
+''')
+
+          rep('''        if (ambushCooldownTicks > 0) ambushCooldownTicks--;
+
+        switch (getEncounterState()) {
+''', '''        if (shouldIdleForCreativeTarget()) {
+            idleForCreativeTarget();
+            return;
+        }
+
+        if (ambushCooldownTicks > 0) ambushCooldownTicks--;
+        if (rangedCooldownTicks > 0) rangedCooldownTicks--;
+
+        switch (getEncounterState()) {
+''')
+          rep('''            default -> tickHunt();
+        }
+    }
+''', '''            default -> tickHunt();
+        }
+
+        if (getEncounterState() == HUNTING
+                && !isRangedAttacking()) {
+            spawnCorrosionTrail();
+        }
+    }
+''')
+
+          rep('''        Player player = resolveHuntedPlayer();
+        if (player == null) {
+            setTarget(null);
+            getNavigation().stop();
+            if (++noTargetTicks >= TARGET_LOST_DESPAWN_TICKS) {
+                beginVanish(true);
+            }
+            return;
+        }
+''', '''        Player player = resolveHuntedPlayer();
+        if (player == null) {
+            setTarget(null);
+            getNavigation().stop();
+            beginVanish(true);
+            return;
+        }
+''')
+
+          rep('''        updateAmbushPressure(player);
+        if (shouldAmbush(player)) {
+            beginVanish(false);
+            return;
+        }
+
+        if (isAttacking()) {
+''', '''        updateAmbushPressure(player);
+        if (isRangedAttacking()) {
+            tickRangedAttack(player);
+            return;
+        }
+        if (distanceToSqr(player) >= AMBUSH_HARD_DISTANCE_SQR) {
+            beginVanish(false);
+            return;
+        }
+        if (isRangedOpportunity(player)) {
+            rangedOpportunityTicks++;
+        } else {
+            rangedOpportunityTicks = 0;
+        }
+        if (rangedOpportunityTicks >= RANGED_PREPARE_TICKS) {
+            startRangedAttack(player);
+            return;
+        }
+        if (shouldAmbush(player)) {
+            beginVanish(false);
+            return;
+        }
+
+        if (isAttacking()) {
+''')
+
+          rep('''        setEncounterState(PHASE_TRAVEL);
+        phaseEntryGraceTicks = PHASE_ENTRY_GRACE_TICKS;
+''', '''        setEncounterState(PHASE_TRAVEL);
+        cancelRangedAttack();
+        phaseEntryGraceTicks = PHASE_ENTRY_GRACE_TICKS;
+''')
+          rep('''        noPhysics = true;
+    }
+
+    private void tickPhaseTravel() {
+''', '''        noPhysics = true;
+        Scp106PhasePortalTracker.begin(this);
+    }
+
+    private void tickPhaseTravel() {
+''')
+
+          rep('''        Player player = resolveHuntedPlayer();
+        if (player == null) {
+            if (++noTargetTicks >= TARGET_LOST_DESPAWN_TICKS) {
+                beginVanish(true);
+            }
+            return;
+        }
+''', '''        Player player = resolveHuntedPlayer();
+        if (player == null) {
+            beginVanish(true);
+            return;
+        }
+''')
+
+          rep('''        entityData.set(ATTACKING, false);
+        attackTicks = 0;
+        getNavigation().stop();
+''', '''        entityData.set(ATTACKING, false);
+        attackTicks = 0;
+        cancelRangedAttack();
+        getNavigation().stop();
+''')
+
+          rep('''        return player != null
+                && player.isAlive()
+                && !player.isRemoved()
+                && !player.isSpectator()
+                && player.level() == level();
+''', '''        return player != null
+                && player.isAlive()
+                && !player.isRemoved()
+                && !player.isCreative()
+                && !player.isSpectator()
+                && player.level() == level();
+''')
+
+          rep('''    private boolean overlapsSolidBlock() {
+''', '''    private boolean shouldIdleForCreativeTarget() {
+        if (getEncounterState() == EMERGING_GROUND
+                || getEncounterState() == EMERGING_WALL
+                || (getEncounterState() == VANISHING && vanishForDespawn)) {
+            return false;
+        }
+        Player player = rawHuntedPlayer();
+        return player != null && player.isAlive() && player.isCreative()
+                && player.level() == level();
+    }
+
+    private Player rawHuntedPlayer() {
+        if (level() instanceof ServerLevel serverLevel
+                && huntedPlayerId != null) {
+            return serverLevel.getPlayerByUUID(huntedPlayerId);
+        }
+        return getTarget() instanceof Player player ? player : null;
+    }
+
+    private void idleForCreativeTarget() {
+        setEncounterState(HUNTING);
+        setTarget(null);
+        entityData.set(ATTACKING, false);
+        attackTicks = 0;
+        cancelRangedAttack();
+        getNavigation().stop();
+        stopHorizontalMovement();
+        noPhysics = false;
+        setNoGravity(false);
+        farDistanceTicks = 0;
+        blockedSightTicks = 0;
+        stuckTicks = 0;
+    }
+
+    private boolean isRangedOpportunity(Player player) {
+        if (player == null || rangedCooldownTicks > 0 || !onGround()
+                || !hasLineOfSight(player)) {
+            return false;
+        }
+        double distanceSqr = distanceToSqr(player);
+        return distanceSqr >= RANGED_MIN_DISTANCE_SQR
+                && distanceSqr <= RANGED_MAX_DISTANCE_SQR
+                && Math.abs(player.getY() - getY()) <= 1.75D;
+    }
+
+    private void startRangedAttack(Player target) {
+        entityData.set(ATTACKING, false);
+        attackTicks = 0;
+        entityData.set(RANGED_ATTACKING, true);
+        rangedAttackTicks = 0;
+        rangedOpportunityTicks = 0;
+        rangedHit = false;
+        rangedLockedDirection = horizontalDirectionTo(target);
+        getNavigation().stop();
+        stopHorizontalMovement();
+    }
+
+    private void tickRangedAttack(Player target) {
+        getNavigation().stop();
+        stopHorizontalMovement();
+        rangedAttackTicks++;
+
+        if (rangedAttackTicks <= RANGED_AIM_LOCK_TICK) {
+            rangedLockedDirection = horizontalDirectionTo(target);
+            faceDirection(rangedLockedDirection);
+            getLookControl().setLookAt(target, 50.0F, 25.0F);
+        } else {
+            faceDirection(rangedLockedDirection);
+        }
+
+        int segment = rangedAttackTicks - RANGED_RELEASE_TICK;
+        if (segment >= 0 && segment < RANGED_SEGMENTS) {
+            spawnRangedSegment(segment);
+        }
+
+        if (rangedAttackTicks >= RANGED_ATTACK_DURATION_TICKS) {
+            entityData.set(RANGED_ATTACKING, false);
+            rangedAttackTicks = 0;
+            rangedCooldownTicks = RANGED_COOLDOWN_TICKS;
+            farDistanceTicks = 0;
+            ambushCooldownTicks = Math.max(ambushCooldownTicks, 3 * 20);
+        }
+    }
+
+    private Vec3 horizontalDirectionTo(Entity target) {
+        Vec3 direction = target.position().subtract(position());
+        direction = new Vec3(direction.x, 0.0D, direction.z);
+        if (direction.lengthSqr() < 1.0E-6D) {
+            direction = getLookAngle().multiply(1.0D, 0.0D, 1.0D);
+        }
+        return direction.lengthSqr() < 1.0E-6D
+                ? new Vec3(0.0D, 0.0D, 1.0D)
+                : direction.normalize();
+    }
+
+    private void faceDirection(Vec3 direction) {
+        if (direction.lengthSqr() < 1.0E-6D) return;
+        float yaw = (float) (Mth.atan2(direction.z, direction.x)
+                * Mth.RAD_TO_DEG) - 90.0F;
+        setYRot(yaw);
+        setYBodyRot(yaw);
+        setYHeadRot(yaw);
+    }
+
+    private void spawnRangedSegment(int segment) {
+        if (!(level() instanceof ServerLevel serverLevel)
+                || rangedLockedDirection.lengthSqr() < 1.0E-6D) {
+            return;
+        }
+        double distance = 0.75D + segment * RANGED_SEGMENT_SPACING;
+        Vec3 point = position().add(rangedLockedDirection.scale(distance));
+        double surfaceY = findCorrosionSurfaceY(point.x, point.y, point.z);
+        Vec3 puddle = new Vec3(point.x, surfaceY + 0.025D, point.z);
+        serverLevel.sendParticles(
+                ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                puddle.x, puddle.y, puddle.z,
+                0, 1.20D, 0.0D, 0.0D, 1.0D);
+        Scp106CorrosionFieldManager.addRanged(serverLevel, puddle);
+
+        if (rangedHit) return;
+        AABB hitbox = new AABB(puddle.x - 0.68D, puddle.y - 0.15D,
+                puddle.z - 0.68D, puddle.x + 0.68D,
+                puddle.y + 1.15D, puddle.z + 0.68D);
+        for (Player player : serverLevel.getEntitiesOfClass(Player.class,
+                hitbox, this::isValidHuntTarget)) {
+            if (player.hurt(damageSources().mobAttack(this), 8.0F)) {
+                player.addEffect(new MobEffectInstance(MobEffects.WITHER,
+                        5 * 20, 0, false, false, true), this);
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN,
+                        5 * 20, 0, false, false, true), this);
+                rangedHit = true;
+                break;
+            }
+        }
+    }
+
+    private double findCorrosionSurfaceY(double x, double referenceY,
+            double z) {
+        double best = referenceY;
+        double bestDistance = Double.MAX_VALUE;
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        int centerY = Mth.floor(referenceY);
+        for (int y = centerY + 1; y >= centerY - 3; y--) {
+            mutable.set(Mth.floor(x), y, Mth.floor(z));
+            BlockState state = level().getBlockState(mutable);
+            VoxelShape shape = state.getCollisionShape(level(), mutable);
+            for (AABB local : shape.toAabbs()) {
+                AABB world = local.move(mutable);
+                if (x < world.minX || x > world.maxX
+                        || z < world.minZ || z > world.maxZ) {
+                    continue;
+                }
+                double distance = Math.abs(world.maxY - referenceY);
+                if (world.maxY <= referenceY + 1.25D
+                        && distance < bestDistance) {
+                    best = world.maxY;
+                    bestDistance = distance;
+                }
+            }
+        }
+        return best;
+    }
+
+    private void cancelRangedAttack() {
+        entityData.set(RANGED_ATTACKING, false);
+        rangedAttackTicks = 0;
+        rangedOpportunityTicks = 0;
+        rangedLockedDirection = Vec3.ZERO;
+        rangedHit = false;
+    }
+
+    private boolean overlapsSolidBlock() {
+''')
+
+          rep('''    private void spawnCorrosionTrail() {
+        if (!onGround()
+                || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
+            return;
+        }
+
+        Vec3 movement = getDeltaMovement();
+        Vec3 horizontal =
+                new Vec3(movement.x, 0.0D, movement.z);
+        if (horizontal.lengthSqr() < 0.0004D) return;
+
+        Vec3 behind = horizontal.normalize().scale(-0.28D);
+        Vec3 sideways =
+                new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                        .normalize()
+                        .scale((random.nextDouble() - 0.5D) * 0.34D);
+        double particleX = getX() + behind.x + sideways.x;
+        double particleY = getY() + 0.018D;
+        double particleZ = getZ() + behind.z + sideways.z;
+
+        level().addParticle(
+                ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                particleX, particleY, particleZ,
+                0.0D, 0.0D, 0.0D);
+    }
+''', '''    private void spawnCorrosionTrail() {
+        if (!(level() instanceof ServerLevel serverLevel) || !onGround()
+                || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
+            return;
+        }
+
+        Vec3 movement = getDeltaMovement();
+        Vec3 horizontal = new Vec3(movement.x, 0.0D, movement.z);
+        if (horizontal.lengthSqr() < 0.0004D) return;
+
+        Vec3 behind = horizontal.normalize().scale(-0.28D);
+        Vec3 sideways = new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                .normalize()
+                .scale((random.nextDouble() - 0.5D) * 0.34D);
+        Vec3 puddle = new Vec3(getX() + behind.x + sideways.x,
+                getY() + 0.025D, getZ() + behind.z + sideways.z);
+
+        serverLevel.sendParticles(
+                ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                puddle.x, puddle.y, puddle.z,
+                0, 1.0D, 0.0D, 0.0D, 1.0D);
+        Scp106CorrosionFieldManager.addTrail(serverLevel, puddle);
+    }
+''')
+
+          rep('''    public boolean isAttacking() {
+        return entityData.get(ATTACKING);
+    }
+''', '''    public boolean isAttacking() {
+        return entityData.get(ATTACKING);
+    }
+
+    public boolean isRangedAttacking() {
+        return entityData.get(RANGED_ATTACKING);
+    }
+
+    public void onTeslaGateHit() {
+        if (!(level() instanceof ServerLevel serverLevel)) return;
+        Scp106SpawnSuppression.suppress(serverLevel.getServer(),
+                TESLA_SUPPRESSION_TICKS);
+        beginVanish(true);
+    }
+''')
+
+          rep('''                    if (isAttacking()) {
+                        return state.setAndContinue(
+                                ATTACK_ANIMATION);
+                    }
+''', '''                    if (isRangedAttacking()) {
+                        return state.setAndContinue(
+                                RANGED_ATTACK_ANIMATION);
+                    }
+                    if (isAttacking()) {
+                        return state.setAndContinue(
+                                ATTACK_ANIMATION);
+                    }
+''')
+          rep('''                    || state == VANISHING
+                    || entity.isAttacking()) {
+''', '''                    || state == VANISHING
+                    || entity.isAttacking()
+                    || entity.isRangedAttacking()) {
+''')
+
+          path.write_text(text)
+
+          tesla = Path('src/main/java/net/mcreator/scpadditions/procedures/TeslaGatePulseHelper.java')
+          t = tesla.read_text()
+          t = t.replace('import net.mcreator.scpadditions.ScpAdditionsMod;\n',
+                        'import net.mcreator.scpadditions.ScpAdditionsMod;\nimport net.mcreator.scpadditions.entity.Scp106Entity;\n')
+          needle = '''        for (LivingEntity living : entities) {
+            living.hurt(new DamageSource(living.level().registryAccess()
+'''
+          replacement = '''        for (LivingEntity living : entities) {
+            if (living instanceof Scp106Entity scp106) {
+                scp106.onTeslaGateHit();
+                continue;
+            }
+            living.hurt(new DamageSource(living.level().registryAccess()
+'''
+          if needle not in t:
+              raise SystemExit('missing Tesla target')
+          tesla.write_text(t.replace(needle, replacement, 1))
+          PY
+
+      - name: Remove temporary workflow
+        run: rm .github/workflows/apply-scp106-ranged-combat.yml
+
+      - name: Build
+        run: chmod +x gradlew && ./gradlew clean build --stacktrace
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java .github/workflows/apply-scp106-ranged-combat.yml
+          git commit -m "Add SCP-106 ranged corrosion combat"
+          git push origin HEAD:feature/scp106-ranged-combat

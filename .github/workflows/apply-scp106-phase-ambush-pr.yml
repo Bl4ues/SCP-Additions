@@ -36,11 +36,24 @@ jobs:
           marker = "          python - <<'PY'\n"
           start = text.index(marker) + len(marker)
           end = text.index("\n          PY\n", start)
-          code = '\n'.join(
-              line[10:] if line.startswith('          ') else line
-              for line in text[start:end].splitlines())
+
+          output = []
+          inside_triple = False
+          for raw in text[start:end].splitlines():
+              if inside_triple:
+                  if "'''" in raw:
+                      line = raw.lstrip()
+                      inside_triple = False
+                  else:
+                      line = raw
+              else:
+                  line = raw[10:] if raw.startswith('          ') else raw
+                  if line.count("'''") % 2 == 1:
+                      inside_triple = True
+              output.append(line)
+
           Path('/tmp/apply_scp106_phase.py').write_text(
-                  code + '\n', encoding='utf-8')
+                  '\n'.join(output) + '\n', encoding='utf-8')
           PY
 
       - name: Apply implementation

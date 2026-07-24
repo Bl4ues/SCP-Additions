@@ -12,7 +12,7 @@ on:
       - integration/scp-additions-3.0
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -25,33 +25,50 @@ jobs:
           ref: fix/scp106-ranged-audio-debug-order
           fetch-depth: 0
 
-      - name: Capture patch diagnostics
-        shell: bash
-        run: |
-          set +e
-          {
-            python -m pip install --quiet pyyaml
-            python - <<'PY'
-          from pathlib import Path
-          import yaml
-          workflow = yaml.safe_load(Path('.github/workflows/apply-scp106-ranged-test-fixes.yml').read_text())
-          steps = workflow['jobs']['apply']['steps']
-          script = next(step['run'] for step in steps if step.get('name') == 'Apply fixes')
-          Path('/tmp/apply-scp106-ranged.sh').write_text('set -e\n' + script)
-          PY
-            bash -e /tmp/apply-scp106-ranged.sh
-          } > scp106-ranged-patch.log 2>&1
-          status=$?
-          echo "$status" > scp106-ranged-patch.status
-          cat scp106-ranged-patch.log
-          exit 0
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-      - name: Upload patch diagnostics
-        if: always()
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Extract and apply SCP-106 fixes
+        if: github.actor != 'github-actions[bot]'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          raw = Path('.github/workflows/apply-scp106-ranged-test-fixes.yml').read_text()
+          start_marker = '        run: |\n'
+          start = raw.index(start_marker, raw.index('      - name: Apply fixes')) + len(start_marker)
+          end = raw.index('\n      - name: Build', start)
+          lines = []
+          for line in raw[start:end].splitlines():
+              lines.append(line[10:] if line.startswith('          ') else line)
+          Path('/tmp/apply-scp106-ranged.sh').write_text('set -e\n' + '\n'.join(lines) + '\n')
+          PY
+          bash -e /tmp/apply-scp106-ranged.sh
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build
+        run: ./gradlew clean build --stacktrace
+
+      - name: Commit implementation
+        if: github.actor != 'github-actions[bot]'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refine SCP-106 ranged attack and emergence"
+          git push origin HEAD:fix/scp106-ranged-audio-debug-order
+
+      - name: Upload compiled JAR
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: scp106-ranged-patch-diagnostics
-          path: |
-            scp106-ranged-patch.log
-            scp106-ranged-patch.status
+          name: scp-additions-${{ github.sha }}
+          path: build/libs/*.jar
           if-no-files-found: error

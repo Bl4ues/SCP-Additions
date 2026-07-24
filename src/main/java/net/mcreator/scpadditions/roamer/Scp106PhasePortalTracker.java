@@ -40,17 +40,17 @@ public final class Scp106PhasePortalTracker {
         }
         if (direction.lengthSqr() < 1.0E-6D) return;
 
-        direction = direction.normalize().scale(1.35D);
+        direction = direction.normalize().scale(1.50D);
         AABB anticipatedBox = currentBox.move(direction);
         Surface entry = findSurface(entity, currentBox,
-                anticipatedBox, true, false);
-        if (entry != null) {
-            spawnSurfacePortal(serverLevel, entry);
-        }
+                anticipatedBox, true, true);
 
         TrackingState state = new TrackingState(currentBox,
                 intersectsSolid(entity, currentBox));
-        state.lastEntryPortalTick = entity.tickCount;
+        if (entry != null) {
+            spawnSurfacePortal(serverLevel, entry);
+            state.lastEntryPortalTick = entity.tickCount;
+        }
         STATES.put(entity, state);
     }
 

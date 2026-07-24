@@ -28,8 +28,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
+import net.mcreator.scpadditions.roamer.Scp106CorrosionFieldManager;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
 import net.mcreator.scpadditions.roamer.Scp106PhasePortalTracker;
+import net.mcreator.scpadditions.roamer.Scp106SpawnSuppression;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator.Emergence;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator.Placement;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -43,6 +45,9 @@ import java.util.UUID;
 
 public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> ATTACKING =
+            SynchedEntityData.defineId(Scp106Entity.class,
+                    EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> RANGED_ATTACKING =
             SynchedEntityData.defineId(Scp106Entity.class,
                     EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Byte> ENCOUNTER_STATE =
@@ -67,12 +72,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double WALK_ANIMATION_SPEED = 1.38D;
     private static final double PHASE_MOVEMENT_SPEED =
             MOVEMENT_SPEED * 0.5D;
-    private static final double AMBUSH_DISTANCE = 16.0D;
+    private static final double AMBUSH_DISTANCE = 8.0D;
     private static final double AMBUSH_DISTANCE_SQR =
             AMBUSH_DISTANCE * AMBUSH_DISTANCE;
-    private static final double AMBUSH_HARD_DISTANCE = 26.0D;
+    private static final double AMBUSH_HARD_DISTANCE = 20.0D;
     private static final double AMBUSH_HARD_DISTANCE_SQR =
             AMBUSH_HARD_DISTANCE * AMBUSH_HARD_DISTANCE;
+    private static final double RANGED_MIN_DISTANCE_SQR = 6.0D * 6.0D;
+    private static final double RANGED_MAX_DISTANCE_SQR = 12.0D * 12.0D;
     private static final int PATH_REFRESH_INTERVAL = 10;
     private static final int ATTACK_HIT_TICK = 15;
     private static final int ATTACK_DURATION_TICKS = 34;
@@ -88,7 +95,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int AMBUSH_DISTANCE_TICKS = 12;
     private static final int AMBUSH_RETRY_TICKS = 8;
     private static final int AMBUSH_COOLDOWN_TICKS = 8 * 20;
-    private static final int TARGET_LOST_DESPAWN_TICKS = 10 * 20;
+    private static final int RANGED_PREPARE_TICKS = 8;
+    private static final int RANGED_AIM_LOCK_TICK = 38;
+    private static final int RANGED_RELEASE_TICK = 42;
+    private static final int RANGED_ATTACK_DURATION_TICKS = 69;
+    private static final int RANGED_SEGMENTS = 15;
+    private static final double RANGED_SEGMENT_SPACING = 0.65D;
+    private static final int RANGED_COOLDOWN_TICKS = 8 * 20;
+    private static final int TESLA_SUPPRESSION_TICKS = 10 * 60 * 20;
 
     private static final RawAnimation IDLE_ANIMATION =
             RawAnimation.begin().thenLoop("idle");
@@ -96,6 +110,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             RawAnimation.begin().thenLoop("walk");
     private static final RawAnimation ATTACK_ANIMATION =
             RawAnimation.begin().thenPlay("attack");
+    private static final RawAnimation RANGED_ATTACK_ANIMATION =
+            RawAnimation.begin().thenPlay("ranged_attack");
     private static final RawAnimation PHASE_GROUND_ANIMATION =
             RawAnimation.begin().thenPlay("phase_ground");
     private static final RawAnimation EMERGE_GROUND_ANIMATION =
@@ -107,6 +123,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             GeckoLibUtil.createInstanceCache(this);
 
     private int attackTicks;
+    private int rangedAttackTicks;
+    private int rangedCooldownTicks;
+    private int rangedOpportunityTicks;
     private int stateTicks;
     private int interestTicksRemaining = -1;
     private int farDistanceTicks;
@@ -118,7 +137,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private int ambushCooldownTicks;
     private UUID huntedPlayerId;
     private boolean vanishForDespawn;
-    private byte clientPreviousState = -1;
+    private Vec3 rangedLockedDirection = Vec3.ZERO;
+    private boolean rangedHit;
 
     public Scp106Entity(EntityType<? extends Scp106Entity> type, Level level) {
         super(type, level);
@@ -139,6 +159,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     protected void defineSynchedData() {
         super.defineSynchedData();
         entityData.define(ATTACKING, false);
+        entityData.define(RANGED_ATTACKING, false);
         entityData.define(ENCOUNTER_STATE, HUNTING);
     }
 
@@ -149,6 +170,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         tag.putInt("Scp106StateTicks", stateTicks);
         tag.putInt("Scp106InterestTicks", interestTicksRemaining);
         tag.putInt("Scp106AmbushCooldown", ambushCooldownTicks);
+        tag.putInt("Scp106RangedCooldown", rangedCooldownTicks);
         tag.putInt("Scp106FarDistanceTicks", farDistanceTicks);
         tag.putBoolean("Scp106VanishForDespawn", vanishForDespawn);
         if (huntedPlayerId != null) {
@@ -167,12 +189,15 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 ? tag.getInt("Scp106InterestTicks") : -1;
         ambushCooldownTicks = Math.max(0,
                 tag.getInt("Scp106AmbushCooldown"));
+        rangedCooldownTicks = Math.max(0,
+                tag.getInt("Scp106RangedCooldown"));
         farDistanceTicks = Math.max(0,
                 tag.getInt("Scp106FarDistanceTicks"));
         vanishForDespawn = tag.getBoolean("Scp106VanishForDespawn");
         huntedPlayerId = tag.hasUUID("Scp106HuntedPlayer")
                 ? tag.getUUID("Scp106HuntedPlayer") : null;
         entityData.set(ATTACKING, false);
+        entityData.set(RANGED_ATTACKING, false);
     }
 
     private void applyCurrentMovementSpeed() {
@@ -190,6 +215,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setTarget(target);
         interestTicksRemaining = rollInterestTicks();
         ambushCooldownTicks = 0;
+        rangedCooldownTicks = 0;
         startEmergence(emergence);
     }
 
@@ -209,23 +235,30 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         preparePhysicsForCurrentState();
         super.tick();
 
-        if (level().isClientSide) {
-            tickClientVisuals();
-            return;
-        }
+        if (level().isClientSide) return;
 
         if (level().getDifficulty() == Difficulty.PEACEFUL) {
             discard();
             return;
         }
 
+        if (shouldIdleForCreativeTarget()) {
+            idleForCreativeTarget();
+            return;
+        }
+
         if (ambushCooldownTicks > 0) ambushCooldownTicks--;
+        if (rangedCooldownTicks > 0) rangedCooldownTicks--;
 
         switch (getEncounterState()) {
             case EMERGING_GROUND, EMERGING_WALL -> tickEmergence();
             case PHASE_TRAVEL -> tickPhaseTravel();
             case VANISHING -> tickVanish();
             default -> tickHunt();
+        }
+
+        if (getEncounterState() == HUNTING && !isRangedAttacking()) {
+            spawnCorrosionTrail();
         }
     }
 
@@ -253,46 +286,6 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setNoGravity(false);
     }
 
-    private void tickClientVisuals() {
-        byte state = getEncounterState();
-        if (state != clientPreviousState) {
-            if (state == EMERGING_GROUND || state == VANISHING) {
-                spawnPortalParticle(false);
-            } else if (state == EMERGING_WALL) {
-                spawnPortalParticle(true);
-            }
-            clientPreviousState = state;
-        }
-
-        Scp106PhasePortalTracker.tick(this, state == PHASE_TRAVEL);
-        if (state == HUNTING) {
-            spawnCorrosionTrail();
-        }
-    }
-
-    private void spawnPortalParticle(boolean wall) {
-        Vec3 normal;
-        double x = getX();
-        double y;
-        double z = getZ();
-        if (wall) {
-            float yaw = getYRot() * Mth.DEG_TO_RAD;
-            Vec3 outward =
-                    new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
-            normal = outward;
-            x -= outward.x * 0.46D;
-            y = getY() + 1.0D;
-            z -= outward.z * 0.46D;
-        } else {
-            normal = new Vec3(0.0D, 1.0D, 0.0D);
-            y = getY() + 0.018D;
-        }
-
-        level().addParticle(
-                ScpAdditionsModParticleTypes.SCP_106_PORTAL.get(),
-                x, y, z, normal.x, normal.y, normal.z);
-    }
-
     private void tickEmergence() {
         getNavigation().stop();
         stopHorizontalMovement();
@@ -315,17 +308,35 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         if (player == null) {
             setTarget(null);
             getNavigation().stop();
-            if (++noTargetTicks >= TARGET_LOST_DESPAWN_TICKS) {
-                beginVanish(true);
-            }
+            beginVanish(true);
             return;
         }
         noTargetTicks = 0;
 
         setTarget(player);
         getLookControl().setLookAt(player, 35.0F, 20.0F);
-
         updateAmbushPressure(player);
+
+        if (isRangedAttacking()) {
+            tickRangedAttack(player);
+            return;
+        }
+
+        if (distanceToSqr(player) >= AMBUSH_HARD_DISTANCE_SQR) {
+            beginVanish(false);
+            return;
+        }
+
+        if (isRangedOpportunity(player)) {
+            rangedOpportunityTicks++;
+        } else {
+            rangedOpportunityTicks = 0;
+        }
+        if (rangedOpportunityTicks >= RANGED_PREPARE_TICKS) {
+            startRangedAttack(player);
+            return;
+        }
+
         if (shouldAmbush(player)) {
             beginVanish(false);
             return;
@@ -411,6 +422,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void startAttack() {
+        cancelRangedAttack();
         attackTicks = 0;
         entityData.set(ATTACKING, true);
     }
@@ -452,6 +464,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void beginPhaseTravel() {
         entityData.set(ATTACKING, false);
         attackTicks = 0;
+        cancelRangedAttack();
         setEncounterState(PHASE_TRAVEL);
         phaseEntryGraceTicks = PHASE_ENTRY_GRACE_TICKS;
         phaseExitClearTicks = 0;
@@ -460,6 +473,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         getNavigation().stop();
         setNoGravity(false);
         noPhysics = true;
+        Scp106PhasePortalTracker.begin(this);
     }
 
     private void tickPhaseTravel() {
@@ -467,9 +481,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
         Player player = resolveHuntedPlayer();
         if (player == null) {
-            if (++noTargetTicks >= TARGET_LOST_DESPAWN_TICKS) {
-                beginVanish(true);
-            }
+            beginVanish(true);
             return;
         }
         noTargetTicks = 0;
@@ -526,6 +538,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setEncounterState(VANISHING);
         entityData.set(ATTACKING, false);
         attackTicks = 0;
+        cancelRangedAttack();
         getNavigation().stop();
         stopHorizontalMovement();
         noPhysics = true;
@@ -545,11 +558,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
         Player player = resolveHuntedPlayer();
         if (player == null) {
-            if (++noTargetTicks >= TARGET_LOST_DESPAWN_TICKS) {
-                discard();
-            } else {
-                stateTicks = AMBUSH_RETRY_TICKS;
-            }
+            discard();
             return;
         }
         noTargetTicks = 0;
@@ -565,8 +574,6 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
 
         if (placement == null) {
-            // Stay below the surface and retry near the hunted player instead
-            // of re-emerging at the old, already escaped position.
             stateTicks = AMBUSH_RETRY_TICKS;
             return;
         }
@@ -584,6 +591,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         vanishForDespawn = false;
         entityData.set(ATTACKING, false);
         attackTicks = 0;
+        cancelRangedAttack();
         if (emergence == Emergence.WALL) {
             setEncounterState(EMERGING_WALL);
             stateTicks = EMERGE_WALL_TICKS;
@@ -600,8 +608,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private Player resolveHuntedPlayer() {
         if (level() instanceof ServerLevel serverLevel
                 && huntedPlayerId != null) {
-            Player hunted =
-                    serverLevel.getPlayerByUUID(huntedPlayerId);
+            Player hunted = serverLevel.getPlayerByUUID(huntedPlayerId);
             if (isValidHuntTarget(hunted)) return hunted;
         }
 
@@ -621,6 +628,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         return player != null
                 && player.isAlive()
                 && !player.isRemoved()
+                && !player.isCreative()
                 && !player.isSpectator()
                 && player.level() == level();
     }
@@ -641,6 +649,193 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         return nearest;
     }
 
+    private boolean shouldIdleForCreativeTarget() {
+        if (getEncounterState() == EMERGING_GROUND
+                || getEncounterState() == EMERGING_WALL
+                || (getEncounterState() == VANISHING && vanishForDespawn)) {
+            return false;
+        }
+
+        Player hunted = rawHuntedPlayer();
+        if (hunted == null || !hunted.isAlive() || !hunted.isCreative()
+                || hunted.level() != level()) {
+            return false;
+        }
+
+        Player replacement = findNearestPlayer();
+        if (replacement != null) {
+            huntedPlayerId = replacement.getUUID();
+            setTarget(replacement);
+            return false;
+        }
+        return true;
+    }
+
+    private Player rawHuntedPlayer() {
+        if (level() instanceof ServerLevel serverLevel
+                && huntedPlayerId != null) {
+            return serverLevel.getPlayerByUUID(huntedPlayerId);
+        }
+        return getTarget() instanceof Player player ? player : null;
+    }
+
+    private void idleForCreativeTarget() {
+        setEncounterState(HUNTING);
+        setTarget(null);
+        entityData.set(ATTACKING, false);
+        attackTicks = 0;
+        cancelRangedAttack();
+        getNavigation().stop();
+        stopHorizontalMovement();
+        noPhysics = false;
+        setNoGravity(false);
+        farDistanceTicks = 0;
+        blockedSightTicks = 0;
+        stuckTicks = 0;
+    }
+
+    private boolean isRangedOpportunity(Player player) {
+        if (player == null || rangedCooldownTicks > 0 || !onGround()
+                || !hasLineOfSight(player)) {
+            return false;
+        }
+        double distanceSqr = distanceToSqr(player);
+        return distanceSqr >= RANGED_MIN_DISTANCE_SQR
+                && distanceSqr <= RANGED_MAX_DISTANCE_SQR
+                && Math.abs(player.getY() - getY()) <= 1.75D;
+    }
+
+    private void startRangedAttack(Player target) {
+        entityData.set(ATTACKING, false);
+        attackTicks = 0;
+        entityData.set(RANGED_ATTACKING, true);
+        rangedAttackTicks = 0;
+        rangedOpportunityTicks = 0;
+        rangedHit = false;
+        rangedLockedDirection = horizontalDirectionTo(target);
+        getNavigation().stop();
+        stopHorizontalMovement();
+    }
+
+    private void tickRangedAttack(Player target) {
+        getNavigation().stop();
+        stopHorizontalMovement();
+        rangedAttackTicks++;
+
+        if (rangedAttackTicks <= RANGED_AIM_LOCK_TICK) {
+            rangedLockedDirection = horizontalDirectionTo(target);
+            faceDirection(rangedLockedDirection);
+            getLookControl().setLookAt(target, 50.0F, 25.0F);
+        } else {
+            faceDirection(rangedLockedDirection);
+        }
+
+        int segment = rangedAttackTicks - RANGED_RELEASE_TICK;
+        if (segment >= 0 && segment < RANGED_SEGMENTS) {
+            spawnRangedSegment(segment);
+        }
+
+        if (rangedAttackTicks >= RANGED_ATTACK_DURATION_TICKS) {
+            entityData.set(RANGED_ATTACKING, false);
+            rangedAttackTicks = 0;
+            rangedCooldownTicks = RANGED_COOLDOWN_TICKS;
+            farDistanceTicks = 0;
+            ambushCooldownTicks = Math.max(ambushCooldownTicks, 3 * 20);
+        }
+    }
+
+    private Vec3 horizontalDirectionTo(Entity target) {
+        Vec3 direction = target.position().subtract(position());
+        direction = new Vec3(direction.x, 0.0D, direction.z);
+        if (direction.lengthSqr() < 1.0E-6D) {
+            direction = getLookAngle().multiply(1.0D, 0.0D, 1.0D);
+        }
+        return direction.lengthSqr() < 1.0E-6D
+                ? new Vec3(0.0D, 0.0D, 1.0D)
+                : direction.normalize();
+    }
+
+    private void faceDirection(Vec3 direction) {
+        if (direction.lengthSqr() < 1.0E-6D) return;
+        float yaw = (float) (Mth.atan2(direction.z, direction.x)
+                * Mth.RAD_TO_DEG) - 90.0F;
+        setYRot(yaw);
+        setYBodyRot(yaw);
+        setYHeadRot(yaw);
+    }
+
+    private void spawnRangedSegment(int segment) {
+        if (!(level() instanceof ServerLevel serverLevel)
+                || rangedLockedDirection.lengthSqr() < 1.0E-6D) {
+            return;
+        }
+
+        double distance = 0.75D + segment * RANGED_SEGMENT_SPACING;
+        Vec3 point = position().add(rangedLockedDirection.scale(distance));
+        double surfaceY = findCorrosionSurfaceY(point.x, point.y, point.z);
+        Vec3 puddle = new Vec3(point.x, surfaceY + 0.025D, point.z);
+        double sizeScale = 1.25D - segment * (0.35D / (RANGED_SEGMENTS - 1));
+
+        serverLevel.sendParticles(
+                ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
+                puddle.x, puddle.y, puddle.z,
+                0, sizeScale, 0.0D, 0.0D, 1.0D);
+        Scp106CorrosionFieldManager.addRanged(serverLevel, puddle);
+
+        if (rangedHit) return;
+        AABB hitbox = new AABB(puddle.x - 0.68D, puddle.y - 0.15D,
+                puddle.z - 0.68D, puddle.x + 0.68D,
+                puddle.y + 1.15D, puddle.z + 0.68D);
+        for (Player player : serverLevel.getEntitiesOfClass(Player.class,
+                hitbox, this::isValidHuntTarget)) {
+            if (player.hurt(damageSources().mobAttack(this), 8.0F)) {
+                player.addEffect(new MobEffectInstance(MobEffects.WITHER,
+                        5 * 20, 0, false, false, true), this);
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN,
+                        5 * 20, 0, false, false, true), this);
+                rangedHit = true;
+                break;
+            }
+        }
+    }
+
+    private double findCorrosionSurfaceY(double x, double referenceY,
+            double z) {
+        double best = referenceY;
+        double bestDistance = Double.MAX_VALUE;
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        int centerY = Mth.floor(referenceY);
+        for (int y = centerY + 1; y >= centerY - 3; y--) {
+            mutable.set(Mth.floor(x), y, Mth.floor(z));
+            BlockState state = level().getBlockState(mutable);
+            VoxelShape shape = state.getCollisionShape(level(), mutable);
+            for (AABB local : shape.toAabbs()) {
+                AABB world = local.move(mutable.getX(), mutable.getY(),
+                        mutable.getZ());
+                if (x < world.minX || x > world.maxX
+                        || z < world.minZ || z > world.maxZ) {
+                    continue;
+                }
+                double distance = Math.abs(world.maxY - referenceY);
+                if (world.maxY <= referenceY + 1.25D
+                        && distance < bestDistance) {
+                    best = world.maxY;
+                    bestDistance = distance;
+                }
+            }
+        }
+        return best;
+    }
+
+    private void cancelRangedAttack() {
+        entityData.set(RANGED_ATTACKING, false);
+        rangedAttackTicks = 0;
+        rangedOpportunityTicks = 0;
+        rangedLockedDirection = Vec3.ZERO;
+        rangedHit = false;
+    }
+
     private boolean overlapsSolidBlock() {
         AABB box = getBoundingBox().deflate(0.06D);
         int minX = Mth.floor(box.minX);
@@ -656,10 +851,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     mutable.set(x, y, z);
-                    BlockState state =
-                            level().getBlockState(mutable);
-                    VoxelShape shape =
-                            state.getCollisionShape(level(), mutable);
+                    BlockState state = level().getBlockState(mutable);
+                    VoxelShape shape = state.getCollisionShape(level(), mutable);
                     if (shape.isEmpty()) continue;
                     for (AABB shapeBox : shape.toAabbs()) {
                         if (shapeBox.move(x, y, z).intersects(box)) {
@@ -672,8 +865,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         return false;
     }
 
-    private boolean isWithinMeleeGap(
-            Entity target, double maximumGap) {
+    private boolean isWithinMeleeGap(Entity target, double maximumGap) {
         AABB selfBox = getBoundingBox();
         AABB targetBox = target.getBoundingBox();
 
@@ -699,33 +891,35 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void spawnCorrosionTrail() {
-        if (!onGround()
+        if (!(level() instanceof ServerLevel serverLevel) || !onGround()
                 || tickCount % TRAIL_PARTICLE_INTERVAL != 0) {
             return;
         }
 
         Vec3 movement = getDeltaMovement();
-        Vec3 horizontal =
-                new Vec3(movement.x, 0.0D, movement.z);
+        Vec3 horizontal = new Vec3(movement.x, 0.0D, movement.z);
         if (horizontal.lengthSqr() < 0.0004D) return;
 
         Vec3 behind = horizontal.normalize().scale(-0.28D);
-        Vec3 sideways =
-                new Vec3(-horizontal.z, 0.0D, horizontal.x)
-                        .normalize()
-                        .scale((random.nextDouble() - 0.5D) * 0.34D);
-        double particleX = getX() + behind.x + sideways.x;
-        double particleY = getY() + 0.018D;
-        double particleZ = getZ() + behind.z + sideways.z;
+        Vec3 sideways = new Vec3(-horizontal.z, 0.0D, horizontal.x)
+                .normalize()
+                .scale((random.nextDouble() - 0.5D) * 0.34D);
+        Vec3 puddle = new Vec3(getX() + behind.x + sideways.x,
+                getY() + 0.025D, getZ() + behind.z + sideways.z);
 
-        level().addParticle(
+        serverLevel.sendParticles(
                 ScpAdditionsModParticleTypes.SCP_106_CORROSION.get(),
-                particleX, particleY, particleZ,
-                0.0D, 0.0D, 0.0D);
+                puddle.x, puddle.y, puddle.z,
+                0, 1.0D, 0.0D, 0.0D, 1.0D);
+        Scp106CorrosionFieldManager.addTrail(serverLevel, puddle);
     }
 
     public boolean isAttacking() {
         return entityData.get(ATTACKING);
+    }
+
+    public boolean isRangedAttacking() {
+        return entityData.get(RANGED_ATTACKING);
     }
 
     public byte getEncounterState() {
@@ -739,6 +933,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     public boolean allowsHeadTracking() {
         byte state = getEncounterState();
         return state == HUNTING || state == PHASE_TRAVEL;
+    }
+
+    public void onTeslaGateHit() {
+        if (!(level() instanceof ServerLevel serverLevel)) return;
+        if (getEncounterState() == VANISHING && vanishForDespawn) return;
+        Scp106SpawnSuppression.suppress(serverLevel.getServer(),
+                TESLA_SUPPRESSION_TICKS);
+        beginVanish(true);
     }
 
     @Override
@@ -757,14 +959,10 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             livingTarget.addEffect(new MobEffectInstance(
                     MobEffects.WITHER,
                     WITHER_DURATION_TICKS,
-                    0,
-                    false,
-                    false,
-                    true), this);
+                    0, false, false, true), this);
             if (interestTicksRemaining > 0) {
-                interestTicksRemaining =
-                        Math.min(180 * 20,
-                                interestTicksRemaining + 10 * 20);
+                interestTicksRemaining = Math.min(180 * 20,
+                        interestTicksRemaining + 10 * 20);
             }
         }
         return hurt;
@@ -782,8 +980,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     @Override
-    public boolean removeWhenFarAway(
-            double distanceToClosestPlayer) {
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
         return false;
     }
 
@@ -795,36 +992,33 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     public void registerControllers(
             AnimatableManager.ControllerRegistrar controllers) {
         AnimationController<Scp106Entity> movementController =
-                new AnimationController<>(
-                        this, "movement", 2, state -> {
+                new AnimationController<>(this, "movement", 2, state -> {
                     byte encounterState = getEncounterState();
                     if (encounterState == EMERGING_GROUND) {
-                        return state.setAndContinue(
-                                EMERGE_GROUND_ANIMATION);
+                        return state.setAndContinue(EMERGE_GROUND_ANIMATION);
                     }
                     if (encounterState == EMERGING_WALL) {
-                        return state.setAndContinue(
-                                EMERGE_WALL_ANIMATION);
+                        return state.setAndContinue(EMERGE_WALL_ANIMATION);
                     }
                     if (encounterState == VANISHING) {
-                        return state.setAndContinue(
-                                PHASE_GROUND_ANIMATION);
+                        return state.setAndContinue(PHASE_GROUND_ANIMATION);
+                    }
+                    if (isRangedAttacking()) {
+                        return state.setAndContinue(RANGED_ATTACK_ANIMATION);
                     }
                     if (isAttacking()) {
-                        return state.setAndContinue(
-                                ATTACK_ANIMATION);
+                        return state.setAndContinue(ATTACK_ANIMATION);
                     }
                     return state.setAndContinue(
-                            state.isMoving()
-                                    ? WALK_ANIMATION
-                                    : IDLE_ANIMATION);
+                            state.isMoving() ? WALK_ANIMATION : IDLE_ANIMATION);
                 });
         movementController.setAnimationSpeedHandler(entity -> {
             byte state = entity.getEncounterState();
             if (state == EMERGING_GROUND
                     || state == EMERGING_WALL
                     || state == VANISHING
-                    || entity.isAttacking()) {
+                    || entity.isAttacking()
+                    || entity.isRangedAttacking()) {
                 return 1.0D;
             }
             if (state == PHASE_TRAVEL) return 0.75D;

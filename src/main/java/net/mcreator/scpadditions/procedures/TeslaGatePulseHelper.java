@@ -19,6 +19,7 @@ import net.minecraft.world.phys.AABB;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp106Entity;
+import net.mcreator.scpadditions.event.Scp106AudioEvents;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
 import java.util.List;
@@ -50,6 +51,7 @@ public final class TeslaGatePulseHelper {
                 entity -> TeslaGateVolume.intersects(entity, volume));
         for (LivingEntity living : entities) {
             if (living instanceof Scp106Entity scp106) {
+                Scp106AudioEvents.stopChaseFor(scp106);
                 scp106.onTeslaGateHit();
                 continue;
             }

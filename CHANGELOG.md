@@ -8,15 +8,11 @@
 - SCP-106 can appear naturally after the player has spent some time in the world, emerging from the ground or nearby walls before immediately beginning a hunt;
 - Added close-range attacks that deal damage and apply Wither;
 - Added a ranged attack that throws a straight trail of corrosion across the floor when the player creates distance but remains in clear view, dealing damage, Wither, and Slowness on a direct hit;
-- Refined the ranged attack so SCP-106 waits for a reliable opening, performs its full throwing animation, and has the corrosion stop at walls instead of passing through them;
-- Added black buildup particles around SCP-106's right hand, while the end of the thrown corrosion now becomes smaller and fainter as it loses strength;
 - Corrosion left by SCP-106 continuously slows Survival players who walk over it;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
-- Made SCP-106's legs commit more clearly to its close-range lunge and stopped the entity from sliding forward during the attack's recovery;
-- Hid SCP-106 only during the brief position interpolation between sinking and re-emerging, preventing its ambush relocation from appearing as a very fast straight-line movement;
 - Added phasing sounds and chase soundtrack;
-- Tesla Gates repel SCP-106 instead of killing it, forcing it to sink away and preventing the next two natural spawn checks;
+- Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
 ## SCP-173
@@ -45,13 +41,12 @@
 - When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
-- Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
-- Reordered the debug HUD stack so roamer information appears first, followed by SCP-079 processing power and its decision log.
+- Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
 
 ## Audio and presentation
 
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
-- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack, including the chase ending cue, has finished.
+- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack has finished.
 
 ## Accessibility
 

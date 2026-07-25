@@ -672,37 +672,27 @@ public final class FacilityModule {
     private static final class SignSupportBlock extends HorizontalWaterloggedPropBlock {
         private SignSupportBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.GLASS)
-                    .strength(1.0F, 10.0F).noCollission());
+                    .strength(1.0F, 10.0F));
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            Direction clickedFace = context.getClickedFace();
+            if (clickedFace.getAxis() == Direction.Axis.Y) return null;
+            boolean waterlogged = context.getLevel().getFluidState(
+                    context.getClickedPos()).getType() == Fluids.WATER;
+            return defaultBlockState().setValue(FACING, clickedFace)
+                    .setValue(WATERLOGGED, waterlogged);
         }
 
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
             return switch (state.getValue(FACING)) {
-                case NORTH -> Shapes.or(box(8.2, -3.75, 15.55, 8.7, -3.25, 16.8),
-                        box(22.8, -3.75, 15.55, 23.3, -3.25, 16.8),
-                        box(22.8, -12.55, 15.55, 23.3, -12.05, 16.8),
-                        box(8.2, -12.55, 15.55, 8.7, -12.05, 16.8),
-                        box(8.2, -13.35, 15.7, 23.7, -12.85, 15.9),
-                        box(8.2, -3.15, 15.7, 23.7, -2.65, 15.9));
-                case EAST -> Shapes.or(box(-0.8, -3.75, 8.2, 0.45, -3.25, 8.7),
-                        box(-0.8, -3.75, 22.8, 0.45, -3.25, 23.3),
-                        box(-0.8, -12.55, 22.8, 0.45, -12.05, 23.3),
-                        box(-0.8, -12.55, 8.2, 0.45, -12.05, 8.7),
-                        box(0.1, -13.35, 8.2, 0.3, -12.85, 23.7),
-                        box(0.1, -3.15, 8.2, 0.3, -2.65, 23.7));
-                case WEST -> Shapes.or(box(15.55, -3.75, 7.3, 16.8, -3.25, 7.8),
-                        box(15.55, -3.75, -7.3, 16.8, -3.25, -6.8),
-                        box(15.55, -12.55, -7.3, 16.8, -12.05, -6.8),
-                        box(15.55, -12.55, 7.3, 16.8, -12.05, 7.8),
-                        box(15.7, -13.35, -7.7, 15.9, -12.85, 7.8),
-                        box(15.7, -3.15, -7.7, 15.9, -2.65, 7.8));
-                default -> Shapes.or(box(7.3, -3.75, -0.8, 7.8, -3.25, 0.45),
-                        box(-7.3, -3.75, -0.8, -6.8, -3.25, 0.45),
-                        box(-7.3, -12.55, -0.8, -6.8, -12.05, 0.45),
-                        box(7.3, -12.55, -0.8, 7.8, -12.05, 0.45),
-                        box(-7.7, -13.35, 0.1, 7.8, -12.85, 0.3),
-                        box(-7.7, -3.15, 0.1, 7.8, -2.65, 0.3));
+                case NORTH -> box(8.2, -13.35, 15.55, 23.7, -2.65, 16.8);
+                case EAST -> box(-0.8, -13.35, 8.2, 0.45, -2.65, 23.7);
+                case WEST -> box(15.55, -13.35, -7.7, 16.8, -2.65, 7.8);
+                default -> box(-7.7, -13.35, -0.8, 7.8, -2.65, 0.45);
             };
         }
     }
@@ -710,7 +700,7 @@ public final class FacilityModule {
     private static final class TvBlock extends DirectionalBlock {
         private TvBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
-                    .strength(1.0F, 10.0F).noCollission().noOcclusion()
+                    .strength(1.0F, 10.0F).noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
         }
@@ -722,8 +712,7 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING,
-                    context.getNearestLookingDirection().getOpposite());
+            return defaultBlockState().setValue(FACING, context.getClickedFace());
         }
 
         @Override
@@ -746,30 +735,12 @@ public final class FacilityModule {
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
             return switch (state.getValue(FACING)) {
-                case NORTH -> Shapes.or(box(-16, -13.05, 15.25, 32, -12.3, 17.75),
-                        box(-16, 12.55, 15.25, 32, 13.3, 17.75),
-                        box(31.225, -12.275, 15.25, 31.975, 12.625, 17.75),
-                        box(-15.975, -12.375, 15.25, -15.225, 12.625, 17.75));
-                case EAST -> Shapes.or(box(-1.75, -13.05, -16, 0.75, -12.3, 32),
-                        box(-1.75, 12.55, -16, 0.75, 13.3, 32),
-                        box(-1.75, -12.275, 31.225, 0.75, 12.625, 31.975),
-                        box(-1.75, -12.375, -15.975, 0.75, 12.625, -15.225));
-                case WEST -> Shapes.or(box(15.25, -13.05, -16, 17.75, -12.3, 32),
-                        box(15.25, 12.55, -16, 17.75, 13.3, 32),
-                        box(15.25, -12.275, -15.975, 17.75, 12.625, -15.225),
-                        box(15.25, -12.375, 31.225, 17.75, 12.625, 31.975));
-                case UP -> Shapes.or(box(-16, -1.75, -13.05, 32, 0.75, -12.3),
-                        box(-16, -1.75, 12.55, 32, 0.75, 13.3),
-                        box(31.225, -1.75, -12.275, 31.975, 0.75, 12.625),
-                        box(-15.975, -1.75, -12.375, -15.225, 0.75, 12.625));
-                case DOWN -> Shapes.or(box(-16, 15.25, 28.3, 32, 17.75, 29.05),
-                        box(-16, 15.25, 2.7, 32, 17.75, 3.45),
-                        box(31.225, 15.25, 3.375, 31.975, 17.75, 28.275),
-                        box(-15.975, 15.25, 3.375, -15.225, 17.75, 28.375));
-                default -> Shapes.or(box(-16, -13.05, -1.75, 32, -12.3, 0.75),
-                        box(-16, 12.55, -1.75, 32, 13.3, 0.75),
-                        box(-15.975, -12.275, -1.75, -15.225, 12.625, 0.75),
-                        box(31.225, -12.375, -1.75, 31.975, 12.625, 0.75));
+                case NORTH -> box(-16, -13.05, 15.25, 32, 13.3, 17.75);
+                case EAST -> box(-1.75, -13.05, -16, 0.75, 13.3, 32);
+                case WEST -> box(15.25, -13.05, -16, 17.75, 13.3, 32);
+                case UP -> box(-16, -1.75, -13.05, 32, 0.75, 13.3);
+                case DOWN -> box(-16, 15.25, 2.7, 32, 17.75, 29.05);
+                default -> box(-16, -13.05, -1.75, 32, 13.3, 0.75);
             };
         }
 
@@ -817,8 +788,8 @@ public final class FacilityModule {
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
             return state.getValue(FACING).getAxis() == Direction.Axis.X
-                    ? box(5.5, 0, 4.25, 10.5, 12, 11.75)
-                    : box(4.25, 0, 5.5, 11.75, 12, 10.5);
+                    ? box(5.5, 0, 4.25, 10.5, 15.61, 11.75)
+                    : box(4.25, 0, 5.5, 11.75, 15.61, 10.5);
         }
 
         @Override

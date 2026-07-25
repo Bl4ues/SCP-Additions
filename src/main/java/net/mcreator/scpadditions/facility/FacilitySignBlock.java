@@ -80,10 +80,12 @@ public final class FacilitySignBlock extends BaseEntityBlock
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        Direction clickedFace = context.getClickedFace();
+        if (clickedFace.getAxis() == Direction.Axis.Y) return null;
         boolean waterlogged = context.getLevel().getFluidState(
                 context.getClickedPos()).getType() == Fluids.WATER;
         return defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(FACING, clickedFace)
                 .setValue(WATERLOGGED, waterlogged);
     }
 

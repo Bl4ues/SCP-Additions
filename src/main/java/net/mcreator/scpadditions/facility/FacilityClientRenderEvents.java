@@ -21,7 +21,7 @@ public final class FacilityClientRenderEvents {
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(
-                    FacilityModule.TRASHBIN.get(), RenderType.translucent());
+                    FacilityModule.TRASHBIN.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.CORE_ROOM_SIGN.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(

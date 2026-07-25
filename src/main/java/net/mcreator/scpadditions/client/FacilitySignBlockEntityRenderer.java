@@ -22,7 +22,32 @@ public final class FacilitySignBlockEntityRenderer
     private static final int CORE_TEXT = 0x3B4247;
     private static final int CORE_OUTLINE = 0xF3F5F6;
     private static final int DOOR_TEXT = 0xF5F7F8;
-    private static final float FONT_HEIGHT = 9.0F;
+    private static final float FONT_BASELINE_HEIGHT = 9.0F;
+    private static final float CORE_RENDER_HEIGHT = 13.0F;
+    private static final float DOOR_RENDER_HEIGHT = 11.0F;
+    private static final float MODEL_PIXEL = 1.0F / 16.0F;
+
+    /*
+     * These rectangles come directly from line_1..3 and number_1..3 in the
+     * supplied Blockbench models. Those elements are authoring guides, not
+     * visible model geometry. Keeping the values here makes that distinction
+     * explicit and lets the renderer place text inside the intended areas.
+     */
+    private static final TextArea[] CORE_LINES = {
+            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.25F),
+            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.25F),
+            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.25F)
+    };
+    private static final TextArea[] DOOR_LINES = {
+            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.0F),
+            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.0F),
+            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.0F)
+    };
+    private static final TextArea[] DOOR_NUMBERS = {
+            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.0F),
+            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.0F),
+            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.0F)
+    };
 
     private final Font font;
 
@@ -55,21 +80,13 @@ public final class FacilitySignBlockEntityRenderer
 
     private void renderCoreRoom(List<FacilitySignData.Entry> entries,
             PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        // Centers of line_1, line_2 and line_3 in the supplied model.
-        float[] centersY = {15.5F, 9.5F, 3.5F};
         for (int row = 0; row < FacilitySignData.ENTRY_COUNT; row++) {
             String value = FacilitySignData.cleanText(
                     FacilitySignBlock.SignType.CORE_ROOM,
                     entries.get(row).text());
             if (value.isEmpty()) continue;
-            Component component = ScpFonts.liberationSans(value);
-            renderOutlinedCentered(component,
-                    0.0F,
-                    centersY[row] / 16.0F,
-                    15.47F / 16.0F,
-                    20.0F / 16.0F,
-                    3.1F / 16.0F,
-                    poseStack, buffer, packedLight);
+            renderOutlinedCentered(ScpFonts.liberationSans(value),
+                    CORE_LINES[row], poseStack, buffer, packedLight);
         }
     }
 
@@ -80,67 +97,55 @@ public final class FacilitySignBlockEntityRenderer
         poseStack.mulPose(Axis.XP.rotationDegrees(-22.5F));
         poseStack.translate(-1.0F / 16.0F, -1.0F / 16.0F, -1.0F / 16.0F);
 
-        float[] centersY = {3.0F, 1.0F, -1.0F};
         for (int row = 0; row < FacilitySignData.ENTRY_COUNT; row++) {
             FacilitySignData.Entry entry = FacilitySignData.sanitize(
                     FacilitySignBlock.SignType.DOOR, entries.get(row));
             if (!entry.number().isEmpty()) {
                 renderFullBrightCentered(
                         ScpFonts.doorSignNumbers(entry.number()),
-                        16.0F / 16.0F,
-                        centersY[row] / 16.0F,
-                        14.27F / 16.0F,
-                        1.8F / 16.0F,
-                        1.3F / 16.0F,
-                        poseStack, buffer);
+                        DOOR_NUMBERS[row], poseStack, buffer);
             }
             if (!entry.text().isEmpty()) {
                 renderFullBrightLeft(
                         ScpFonts.anonymousPro(entry.text()),
-                        -0.65F / 16.0F,
-                        centersY[row] / 16.0F,
-                        14.27F / 16.0F,
-                        14.9F / 16.0F,
-                        1.3F / 16.0F,
-                        poseStack, buffer);
+                        DOOR_LINES[row], poseStack, buffer);
             }
         }
         poseStack.popPose();
     }
 
-    private void renderOutlinedCentered(Component component, float centerX,
-            float centerY, float z, float maxWidth, float maxHeight,
+    private void renderOutlinedCentered(Component component, TextArea area,
             PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         FormattedCharSequence sequence = component.getVisualOrderText();
         float width = Math.max(1.0F, font.width(sequence));
-        float scale = Math.min(maxWidth / width, maxHeight / FONT_HEIGHT);
+        float scale = area.scale(width, CORE_RENDER_HEIGHT);
 
         poseStack.pushPose();
-        poseStack.translate(centerX, centerY, z);
+        poseStack.translate(area.centerX(), area.centerY(), area.z());
         poseStack.scale(scale, -scale, scale);
         font.drawInBatch8xOutline(sequence, -width / 2.0F,
-                -FONT_HEIGHT / 2.0F, CORE_TEXT, CORE_OUTLINE,
+                -FONT_BASELINE_HEIGHT / 2.0F, CORE_TEXT, CORE_OUTLINE,
                 poseStack.last().pose(), buffer, packedLight);
         poseStack.popPose();
     }
 
-    private void renderFullBrightCentered(Component component, float centerX,
-            float centerY, float z, float maxWidth, float maxHeight,
+    private void renderFullBrightCentered(Component component, TextArea area,
             PoseStack poseStack, MultiBufferSource buffer) {
         FormattedCharSequence sequence = component.getVisualOrderText();
         float width = Math.max(1.0F, font.width(sequence));
-        renderFullBright(sequence, -width / 2.0F, centerX, centerY, z,
-                Math.min(maxWidth / width, maxHeight / FONT_HEIGHT),
+        renderFullBright(sequence, -width / 2.0F,
+                area.centerX(), area.centerY(), area.z(),
+                area.scale(width, DOOR_RENDER_HEIGHT),
                 poseStack, buffer);
     }
 
-    private void renderFullBrightLeft(Component component, float leftX,
-            float centerY, float z, float maxWidth, float maxHeight,
+    private void renderFullBrightLeft(Component component, TextArea area,
             PoseStack poseStack, MultiBufferSource buffer) {
         FormattedCharSequence sequence = component.getVisualOrderText();
         float width = Math.max(1.0F, font.width(sequence));
-        renderFullBright(sequence, 0.0F, leftX, centerY, z,
-                Math.min(maxWidth / width, maxHeight / FONT_HEIGHT),
+        renderFullBright(sequence, 0.0F,
+                area.left(), area.centerY(), area.z(),
+                area.scale(width, DOOR_RENDER_HEIGHT),
                 poseStack, buffer);
     }
 
@@ -150,7 +155,7 @@ public final class FacilitySignBlockEntityRenderer
         poseStack.pushPose();
         poseStack.translate(originX, originY, z);
         poseStack.scale(scale, -scale, scale);
-        font.drawInBatch(sequence, x, -FONT_HEIGHT / 2.0F,
+        font.drawInBatch(sequence, x, -FONT_BASELINE_HEIGHT / 2.0F,
                 DOOR_TEXT, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
@@ -164,5 +169,30 @@ public final class FacilitySignBlockEntityRenderer
             case WEST -> 270.0F;
             default -> 0.0F;
         };
+    }
+
+    private record TextArea(float minX, float minY, float maxX, float maxY,
+            float surfaceZ) {
+        private float left() {
+            return minX * MODEL_PIXEL;
+        }
+
+        private float centerX() {
+            return (minX + maxX) * 0.5F * MODEL_PIXEL;
+        }
+
+        private float centerY() {
+            return (minY + maxY) * 0.5F * MODEL_PIXEL;
+        }
+
+        private float z() {
+            return surfaceZ * MODEL_PIXEL;
+        }
+
+        private float scale(float renderedWidth, float renderedHeight) {
+            float maxWidth = (maxX - minX) * MODEL_PIXEL;
+            float maxHeight = (maxY - minY) * MODEL_PIXEL;
+            return Math.min(maxWidth / renderedWidth, maxHeight / renderedHeight);
+        }
     }
 }

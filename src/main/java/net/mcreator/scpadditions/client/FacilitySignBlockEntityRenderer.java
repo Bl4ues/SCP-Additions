@@ -122,6 +122,7 @@ public final class FacilitySignBlockEntityRenderer
 
         poseStack.pushPose();
         poseStack.translate(area.centerX(), area.centerY(), area.z());
+        faceTextTowardSignFront(poseStack);
         poseStack.scale(scale, -scale, scale);
         font.drawInBatch8xOutline(sequence, -width / 2.0F,
                 -FONT_BASELINE_HEIGHT / 2.0F, CORE_TEXT, CORE_OUTLINE,
@@ -154,12 +155,23 @@ public final class FacilitySignBlockEntityRenderer
             PoseStack poseStack, MultiBufferSource buffer) {
         poseStack.pushPose();
         poseStack.translate(originX, originY, z);
+        faceTextTowardSignFront(poseStack);
         poseStack.scale(scale, -scale, scale);
         font.drawInBatch(sequence, x, -FONT_BASELINE_HEIGHT / 2.0F,
                 DOOR_TEXT, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
         poseStack.popPose();
+    }
+
+    private static void faceTextTowardSignFront(PoseStack poseStack) {
+        /*
+         * Font glyph quads face the opposite direction from the north faces
+         * used by the supplied Blockbench models. Rotating around the text's
+         * own origin changes only which side is visible: its anchor, scale,
+         * guide-derived position and Door Sign inclination remain unchanged.
+         */
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
     }
 
     private static float rotationDegrees(Direction direction) {

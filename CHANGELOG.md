@@ -70,6 +70,7 @@
 - Fixed Sign Support placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed TV placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, and expanded its collision to include the upper structure.
+- Fixed Core Room Sign and Door Sign text quads facing into the models, making their text invisible from the front and visible only from side or rear angles.
 
 # SCP Additions 3.0.7 — Hotfix
 

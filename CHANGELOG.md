@@ -57,6 +57,7 @@
 
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 ceiling lamp that emits light while powered by redstone.
+- Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 
 ## Accessibility
 

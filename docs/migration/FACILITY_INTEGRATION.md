@@ -7,7 +7,6 @@ All migrated block, item, sound-event and creative-tab registry IDs are owned by
 Examples:
 
 - `scp_additions:tesla_bottom`
-- `scp_additions:alarm_lamp`
 - `scp_additions:default_door`
 - `scp_additions:button_closed`
 

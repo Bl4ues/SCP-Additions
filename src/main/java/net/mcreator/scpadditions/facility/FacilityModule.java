@@ -114,10 +114,6 @@ public final class FacilityModule {
     public static final RegistryObject<Block> SECURITY_TOP = structure("security_top");
 
     // Props and lights.
-    public static final RegistryObject<Block> ALARM_LAMP = registerBlock("alarm_lamp",
-            () -> new AlarmLampBlock(false), true);
-    public static final RegistryObject<Block> ALARM_LAMP_ON = registerBlock("alarm_lamp_on",
-            () -> new AlarmLampBlock(true), false);
     public static final RegistryObject<Block> WALLLIGHT = registerBlock("walllight",
             () -> new WallLightBlock(false), true);
     public static final RegistryObject<Block> WALLLIGHT_2 = registerBlock("walllight_2",
@@ -261,6 +257,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(ordered, "door_sign");
         addFacilityCreativeItem(ordered, "tv");
         addFacilityCreativeItem(ordered, "trashbin");
+        addUBlockCreativeItem(ordered, "vent_open");
 
         // Public closed endpoints for every door family, preserving the
         // original family order from this module.
@@ -529,49 +526,6 @@ public final class FacilityModule {
         @Override
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
             return Collections.singletonList(new ItemStack(this));
-        }
-    }
-
-    private static final class AlarmLampBlock extends Block {
-        private final boolean on;
-
-        private AlarmLampBlock(boolean on) {
-            super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(1.0F, 10.0F)
-                    .lightLevel(state -> on ? 15 : 0).noOcclusion());
-            this.on = on;
-        }
-
-        @Override
-        public void onPlace(BlockState state, Level level, BlockPos pos,
-                BlockState oldState, boolean moving) {
-            super.onPlace(state, level, pos, oldState, moving);
-            level.scheduleTick(pos, this, 1);
-        }
-
-        @Override
-        public void neighborChanged(BlockState state, Level level, BlockPos pos,
-                Block neighbor, BlockPos neighborPos, boolean moving) {
-            level.scheduleTick(pos, this, 1);
-        }
-
-        @Override
-        public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-            boolean powered = level.hasNeighborSignal(pos);
-            if (powered != on) {
-                Block target = powered ? ALARM_LAMP_ON.get() : ALARM_LAMP.get();
-                level.setBlock(pos, target.defaultBlockState(), Block.UPDATE_ALL);
-            }
-        }
-
-        @Override
-        public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-            return Collections.singletonList(new ItemStack(ALARM_LAMP.get()));
-        }
-
-        @Override
-        public ItemStack getCloneItemStack(BlockState state, HitResult target,
-                BlockGetter level, BlockPos pos, Player player) {
-            return new ItemStack(ALARM_LAMP.get());
         }
     }
 

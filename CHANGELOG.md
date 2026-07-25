@@ -13,6 +13,8 @@
 - Corrosion left by SCP-106 continuously slows Survival players who walk over it;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
+- Made SCP-106's legs commit more clearly to its close-range lunge and stopped the entity from sliding forward during the attack's recovery;
+- Hid SCP-106 only during the brief position interpolation between sinking and re-emerging, preventing its ambush relocation from appearing as a very fast straight-line movement;
 - Added phasing sounds and chase soundtrack;
 - Tesla Gates repel SCP-106 instead of killing it, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
@@ -29,6 +31,7 @@
 
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
 - SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
+- Made SCP-079 recognize SCP-106 hunts across the creature's short repositioning window and more reliably close or briefly lock a useful door ahead without bypassing processing costs or per-door cooldowns;
 - Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
@@ -418,4 +421,3 @@
 * Added first-run copying of bundled default configuration files;
 * Existing local configuration files are not overwritten automatically;
 * Kept SCP-294 currency handling exclusive to either the custom inventory or vanilla inventory, depending on the selected inventory mode;
-

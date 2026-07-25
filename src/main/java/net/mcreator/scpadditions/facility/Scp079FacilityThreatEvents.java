@@ -11,6 +11,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Mob;
 import net.mcreator.scpadditions.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.entity.Scp106Entity;
 import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -50,6 +51,7 @@ public final class Scp079FacilityThreatEvents {
     private static final int FLEE_DOOR_RADIUS = 7;
     private static final int PURSUER_DOOR_RADIUS = 6;
     private static final int PURSUER_SEARCH_RADIUS = 14;
+    private static final int SCP_106_PURSUER_SEARCH_RADIUS = 22;
     private static final int DOOR_REUSE_TICKS = 100;
     private static final int LOCKED_DOOR_REUSE_TICKS = 140;
     private static final int SCP_131_SEPARATION_RADIUS = 16;
@@ -98,9 +100,20 @@ public final class Scp079FacilityThreatEvents {
             return;
         }
 
-        List<Mob> pursuers = level.getEntitiesOfClass(Mob.class,
+        List<Mob> pursuers = new ArrayList<>(level.getEntitiesOfClass(
+                Mob.class,
                 player.getBoundingBox().inflate(PURSUER_SEARCH_RADIUS),
-                mob -> mob.isAlive() && mob.getTarget() == player);
+                mob -> mob.isAlive() && mob.getTarget() == player));
+        for (Scp106Entity scp106 : level.getEntitiesOfClass(
+                Scp106Entity.class,
+                player.getBoundingBox().inflate(
+                        SCP_106_PURSUER_SEARCH_RADIUS),
+                entity -> entity.isAlive()
+                        && entity.getTarget() == player)) {
+            if (!pursuers.contains(scp106)) {
+                pursuers.add(scp106);
+            }
+        }
         Mob pursuer = pursuers.stream()
                 .min(Comparator.comparingDouble(player::distanceToSqr))
                 .orElse(null);
@@ -751,7 +764,7 @@ public final class Scp079FacilityThreatEvents {
                 case "scp_173" -> new ThreatProfile(true, true,
                         0.36F, 0.22F, 0.06F, 40, 100, 8.0D);
                 case "scp_106" -> new ThreatProfile(false, true,
-                        0.0F, 0.24F, 0.04F, 35, 80, 10.0D);
+                        0.0F, 0.32F, 0.12F, 35, 80, 6.0D);
                 default -> DEFAULT;
             };
         }

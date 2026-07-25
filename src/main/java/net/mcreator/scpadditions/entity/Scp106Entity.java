@@ -85,6 +85,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double RANGED_MAX_DISTANCE_SQR = 11.5D * 11.5D;
     private static final int PATH_REFRESH_INTERVAL = 10;
     private static final int ATTACK_HIT_TICK = 15;
+    private static final int ATTACK_PURSUIT_END_TICK =
+            ATTACK_HIT_TICK + 3;
     private static final int ATTACK_DURATION_TICKS = 34;
     private static final int WITHER_DURATION_TICKS = 5 * 20;
     private static final int TRAIL_PARTICLE_INTERVAL = 5;
@@ -107,6 +109,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int RANGED_COOLDOWN_TICKS = 14 * 20;
     private static final int RANGED_ABORT_COOLDOWN_TICKS = 4 * 20;
     private static final int RANGED_HAND_PARTICLE_START_TICK = 33;
+    private static final int RELOCATION_HIDE_TICKS = 5;
     private static final int TESLA_SUPPRESSION_TICKS = 10 * 60 * 20;
 
     private static final RawAnimation IDLE_ANIMATION =
@@ -140,6 +143,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private int phaseEntryGraceTicks;
     private int phaseExitClearTicks;
     private int ambushCooldownTicks;
+    private int relocationHiddenTicks;
     private UUID huntedPlayerId;
     private boolean vanishForDespawn;
     private Vec3 rangedLockedDirection = Vec3.ZERO;
@@ -179,6 +183,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         tag.putInt("Scp106AmbushCooldown", ambushCooldownTicks);
         tag.putInt("Scp106RangedCooldown", rangedCooldownTicks);
         tag.putInt("Scp106FarDistanceTicks", farDistanceTicks);
+        tag.putInt("Scp106RelocationHiddenTicks", relocationHiddenTicks);
         tag.putBoolean("Scp106VanishForDespawn", vanishForDespawn);
         tag.putFloat("Scp106EmergenceYaw", emergenceYaw);
         if (huntedPlayerId != null) {
@@ -201,6 +206,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 tag.getInt("Scp106RangedCooldown"));
         farDistanceTicks = Math.max(0,
                 tag.getInt("Scp106FarDistanceTicks"));
+        relocationHiddenTicks = Math.max(0,
+                tag.getInt("Scp106RelocationHiddenTicks"));
         vanishForDespawn = tag.getBoolean("Scp106VanishForDespawn");
         emergenceYaw = tag.contains("Scp106EmergenceYaw")
                 ? tag.getFloat("Scp106EmergenceYaw") : getYRot();
@@ -208,6 +215,10 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 ? tag.getUUID("Scp106HuntedPlayer") : null;
         entityData.set(ATTACKING, false);
         entityData.set(RANGED_ATTACKING, false);
+        boolean emerging = getEncounterState() == EMERGING_GROUND
+                || getEncounterState() == EMERGING_WALL;
+        if (!emerging) relocationHiddenTicks = 0;
+        setInvisible(emerging && relocationHiddenTicks > 0);
     }
 
     private void applyCurrentMovementSpeed() {
@@ -300,9 +311,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         getNavigation().stop();
         freezeTransitionMovement();
         lockEmergenceRotation();
+        tickRelocationVisibility();
         if (stateTicks > 0) stateTicks--;
         if (stateTicks > 0) return;
 
+        relocationHiddenTicks = 0;
+        setInvisible(false);
         setEncounterState(HUNTING);
         noPhysics = false;
         setNoGravity(false);
@@ -440,7 +454,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     private void tickAttack(LivingEntity target) {
         getLookControl().setLookAt(target, 45.0F, 25.0F);
-        pursueDuringAttack(target);
+        if (attackTicks <= ATTACK_PURSUIT_END_TICK) {
+            pursueDuringAttack(target);
+        } else {
+            getNavigation().stop();
+            stopHorizontalMovement();
+        }
         attackTicks++;
 
         if (attackTicks == ATTACK_HIT_TICK
@@ -545,6 +564,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void beginVanish(boolean despawnAfterward) {
         if (getEncounterState() == VANISHING) return;
         vanishForDespawn = despawnAfterward;
+        relocationHiddenTicks = 0;
+        setInvisible(false);
         stateTicks = VANISH_TICKS;
         setEncounterState(VANISHING);
         entityData.set(ATTACKING, false);
@@ -589,17 +610,24 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return;
         }
 
+        setInvisible(true);
         moveTo(placement.position().x, placement.position().y,
                 placement.position().z, placement.yaw(), 0.0F);
         setYBodyRot(placement.yaw());
         setYHeadRot(placement.yaw());
-        startEmergence(placement.emergence());
+        startEmergence(placement.emergence(), RELOCATION_HIDE_TICKS);
         ambushCooldownTicks = AMBUSH_COOLDOWN_TICKS;
         farDistanceTicks = 0;
     }
 
     private void startEmergence(Emergence emergence) {
+        startEmergence(emergence, 0);
+    }
+
+    private void startEmergence(Emergence emergence, int hiddenTicks) {
         vanishForDespawn = false;
+        relocationHiddenTicks = Math.max(0, hiddenTicks);
+        setInvisible(relocationHiddenTicks > 0);
         emergenceYaw = getYRot();
         if (emergence == Emergence.GROUND) alignGroundEmergencePosition();
         entityData.set(ATTACKING, false);
@@ -616,6 +644,15 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         setNoGravity(true);
         getNavigation().stop();
         freezeTransitionMovement();
+    }
+
+    private void tickRelocationVisibility() {
+        if (relocationHiddenTicks <= 0) return;
+        setInvisible(true);
+        relocationHiddenTicks--;
+        if (relocationHiddenTicks == 0) {
+            setInvisible(false);
+        }
     }
 
     private Player resolveHuntedPlayer() {
@@ -695,6 +732,8 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void idleForCreativeTarget() {
         setEncounterState(HUNTING);
         setTarget(null);
+        relocationHiddenTicks = 0;
+        setInvisible(false);
         entityData.set(ATTACKING, false);
         attackTicks = 0;
         cancelRangedAttack();

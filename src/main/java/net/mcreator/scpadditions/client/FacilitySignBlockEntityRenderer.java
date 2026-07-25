@@ -19,13 +19,22 @@ import java.util.List;
 
 public final class FacilitySignBlockEntityRenderer
         implements BlockEntityRenderer<FacilitySignBlockEntity> {
-    private static final int CORE_TEXT = 0x3B4247;
-    private static final int CORE_OUTLINE = 0xF3F5F6;
+    private static final int CORE_TEXT = 0x252A2D;
+    private static final int CORE_OUTLINE = 0x92999D;
     private static final int DOOR_TEXT = 0xF5F7F8;
     private static final float FONT_BASELINE_HEIGHT = 9.0F;
-    private static final float CORE_RENDER_HEIGHT = 13.0F;
-    private static final float DOOR_RENDER_HEIGHT = 11.0F;
+    private static final float CORE_TEXT_SCALE = 0.0070F;
+    private static final float DOOR_TEXT_SCALE = 0.0057F;
+    private static final float DOOR_NUMBER_SCALE = 0.0075F;
+    private static final float CORE_OUTLINE_OFFSET = 0.35F;
+    private static final float DOOR_BASELINE_Y =
+            -FONT_BASELINE_HEIGHT / 2.0F + 1.0F;
     private static final float MODEL_PIXEL = 1.0F / 16.0F;
+    private static final float[][] OUTLINE_DIRECTIONS = {
+            {-1.0F, -1.0F}, {0.0F, -1.0F}, {1.0F, -1.0F},
+            {-1.0F, 0.0F},                    {1.0F, 0.0F},
+            {-1.0F, 1.0F},  {0.0F, 1.0F},  {1.0F, 1.0F}
+    };
 
     /*
      * These rectangles come directly from line_1..3 and number_1..3 in the
@@ -34,19 +43,19 @@ public final class FacilitySignBlockEntityRenderer
      * explicit and lets the renderer place text inside the intended areas.
      */
     private static final TextArea[] CORE_LINES = {
-            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.45F),
-            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.45F),
-            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.45F)
+            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.49F),
+            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.49F),
+            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.49F)
     };
     private static final TextArea[] DOOR_LINES = {
-            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.25F),
-            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.25F),
-            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.25F)
+            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.30F),
+            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.30F),
+            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.30F)
     };
     private static final TextArea[] DOOR_NUMBERS = {
-            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.25F),
-            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.25F),
-            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.25F)
+            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.30F),
+            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.30F),
+            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.30F)
     };
 
     private final Font font;
@@ -118,15 +127,30 @@ public final class FacilitySignBlockEntityRenderer
             PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         FormattedCharSequence sequence = component.getVisualOrderText();
         float width = Math.max(1.0F, font.width(sequence));
-        float scale = area.scale(width, CORE_RENDER_HEIGHT);
+        float x = -width / 2.0F;
+        float y = -FONT_BASELINE_HEIGHT / 2.0F;
 
         poseStack.pushPose();
         poseStack.translate(area.centerX(), area.centerY(), area.z());
         faceTextTowardSignFront(poseStack);
-        poseStack.scale(scale, -scale, scale);
-        font.drawInBatch8xOutline(sequence, -width / 2.0F,
-                -FONT_BASELINE_HEIGHT / 2.0F, CORE_TEXT, CORE_OUTLINE,
-                poseStack.last().pose(), buffer, packedLight);
+        poseStack.scale(CORE_TEXT_SCALE, -CORE_TEXT_SCALE, CORE_TEXT_SCALE);
+
+        /*
+         * Font.drawInBatch8xOutline uses a full font pixel of separation.
+         * At this small world scale that border overwhelms the dark glyph.
+         * Sub-pixel samples preserve the Unity-style edge without turning
+         * the whole label into a bright, heavy stroke.
+         */
+        for (float[] direction : OUTLINE_DIRECTIONS) {
+            font.drawInBatch(sequence,
+                    x + direction[0] * CORE_OUTLINE_OFFSET,
+                    y + direction[1] * CORE_OUTLINE_OFFSET,
+                    CORE_OUTLINE, false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.POLYGON_OFFSET, 0, packedLight);
+        }
+        font.drawInBatch(sequence, x, y, CORE_TEXT, false,
+                poseStack.last().pose(), buffer,
+                Font.DisplayMode.POLYGON_OFFSET, 0, packedLight);
         poseStack.popPose();
     }
 
@@ -136,17 +160,16 @@ public final class FacilitySignBlockEntityRenderer
         float width = Math.max(1.0F, font.width(sequence));
         renderFullBright(sequence, -width / 2.0F,
                 area.centerX(), area.centerY(), area.z(),
-                area.scale(width, DOOR_RENDER_HEIGHT),
+                DOOR_NUMBER_SCALE,
                 poseStack, buffer);
     }
 
     private void renderFullBrightLeft(Component component, TextArea area,
             PoseStack poseStack, MultiBufferSource buffer) {
         FormattedCharSequence sequence = component.getVisualOrderText();
-        float width = Math.max(1.0F, font.width(sequence));
         renderFullBright(sequence, 0.0F,
-                area.left(), area.centerY(), area.z(),
-                area.scale(width, DOOR_RENDER_HEIGHT),
+                area.right(), area.centerY(), area.z(),
+                DOOR_TEXT_SCALE,
                 poseStack, buffer);
     }
 
@@ -157,7 +180,7 @@ public final class FacilitySignBlockEntityRenderer
         poseStack.translate(originX, originY, z);
         faceTextTowardSignFront(poseStack);
         poseStack.scale(scale, -scale, scale);
-        font.drawInBatch(sequence, x, -FONT_BASELINE_HEIGHT / 2.0F,
+        font.drawInBatch(sequence, x, DOOR_BASELINE_Y,
                 DOOR_TEXT, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
@@ -191,8 +214,8 @@ public final class FacilitySignBlockEntityRenderer
 
     private record TextArea(float minX, float minY, float maxX, float maxY,
             float surfaceZ) {
-        private float left() {
-            return minX * MODEL_PIXEL;
+        private float right() {
+            return maxX * MODEL_PIXEL;
         }
 
         private float centerX() {
@@ -207,10 +230,5 @@ public final class FacilitySignBlockEntityRenderer
             return surfaceZ * MODEL_PIXEL;
         }
 
-        private float scale(float renderedWidth, float renderedHeight) {
-            float maxWidth = (maxX - minX) * MODEL_PIXEL;
-            float maxHeight = (maxY - minY) * MODEL_PIXEL;
-            return Math.min(maxWidth / renderedWidth, maxHeight / renderedHeight);
-        }
     }
 }

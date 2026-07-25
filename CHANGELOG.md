@@ -53,7 +53,8 @@
 - Added the Core Room Sign and Door Sign;
 - Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
 - Core Room Signs accept up to 30 characters per line;
-- Door Signs accept up to 40 characters per line.
+- Door Signs accept up to 40 characters per line;
+- Refined both signs to keep a consistent text size between short and long entries, use subtler Core Room lettering and outlines, and seat Door Sign text against its display surface.
 
 ## Accessibility
 

@@ -21,6 +21,7 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
     private int fadeTicksRemaining = -1;
     private boolean playStopCue;
     private boolean stopCuePlayed;
+    private SimpleSoundInstance stopCue;
 
     public Scp106ChaseSound() {
         super(Scp106Sounds.CHASE.get(), SoundSource.MUSIC,
@@ -50,9 +51,9 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
         if (playStopCue && !stopCuePlayed
                 && fadeTicksRemaining <= STOP_CUE_LEAD_TICKS
                 && minecraft.player != null && minecraft.level != null) {
-            minecraft.getSoundManager().play(
-                    SimpleSoundInstance.forUI(Scp106Sounds.STOP.get(),
-                            1.0F, STOP_CUE_VOLUME));
+            stopCue = SimpleSoundInstance.forUI(Scp106Sounds.STOP.get(),
+                    1.0F, STOP_CUE_VOLUME);
+            minecraft.getSoundManager().play(stopCue);
             stopCuePlayed = true;
         }
         if (fadeTicksRemaining == 0) {
@@ -82,5 +83,20 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
 
     public boolean isFadingOut() {
         return fadeTicksRemaining >= 0;
+    }
+
+    public boolean hasActiveAudio() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.getSoundManager().isActive(this)
+                || (stopCue != null
+                && minecraft.getSoundManager().isActive(stopCue));
+    }
+
+    public void stopImmediately() {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.getSoundManager().stop(this);
+        if (stopCue != null) {
+            minecraft.getSoundManager().stop(stopCue);
+        }
     }
 }

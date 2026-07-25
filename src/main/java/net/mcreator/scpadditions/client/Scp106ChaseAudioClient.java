@@ -11,6 +11,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp106ChaseAudioClient {
     private static Scp106ChaseSound chase;
+    private static int ticksSinceStart;
 
     private Scp106ChaseAudioClient() {
     }
@@ -22,8 +23,10 @@ public final class Scp106ChaseAudioClient {
                 && !chase.isFadingOut()) {
             return;
         }
-        if (chase != null) minecraft.getSoundManager().stop(chase);
+        if (chase != null) chase.stopImmediately();
         chase = new Scp106ChaseSound();
+        ticksSinceStart = 0;
+        ModMusicExclusivityClient.stopVanillaMusicNow();
         minecraft.getSoundManager().play(chase);
     }
 
@@ -31,10 +34,26 @@ public final class Scp106ChaseAudioClient {
         if (chase != null) chase.beginFadeOut(true);
     }
 
+    public static boolean isPlaying() {
+        return chase != null;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || chase == null) return;
+
         Minecraft minecraft = Minecraft.getInstance();
-        if (!minecraft.getSoundManager().isActive(chase)) chase = null;
+        if (minecraft.player == null || minecraft.level == null) {
+            chase.stopImmediately();
+            chase = null;
+            ticksSinceStart = 0;
+            return;
+        }
+
+        ticksSinceStart++;
+        if (ticksSinceStart > 1 && !chase.hasActiveAudio()) {
+            chase = null;
+            ticksSinceStart = 0;
+        }
     }
 }

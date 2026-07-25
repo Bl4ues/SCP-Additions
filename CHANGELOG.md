@@ -50,7 +50,8 @@
 
 ## Audio and presentation
 
-- Reintroduced the world-entry sound and added a General & Modules option to disable it.
+- Reintroduced the world-entry sound and added a General & Modules option to disable it;
+- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack, including the chase ending cue, has finished.
 
 ## Bug Fixes
 

@@ -91,4 +91,18 @@ Content relating to the SCP Foundation, including the SCP Foundation logo and SC
 
 SCP Unity is the main visual and mechanical inspiration for the project. Special thanks to [SCP: Overtime](https://modrinth.com/mod/scp-overtime) for inspiring the original creation of SCP Additions. Various facility assets were adapted from or inspired by SCP Unity-related blocks in its 1.16.5 version.
 
+### Bundled fonts
+
+The following font files are redistributed with SCP Additions and remain under their respective licenses; they are **not** relicensed under the project's Creative Commons Attribution-ShareAlike 3.0 license.
+
+| Font | Use in the mod | Copyright and design credit | License |
+|---|---|---|---|
+| Roboto Regular 2.001047 | SCP Inventory interface text | Copyright 2015 Google Inc.; designed by Christian Robertson | [Apache License 2.0](https://github.com/googlefonts/roboto-2/blob/main/LICENSE) |
+| Montserrat Regular 7.200 | SCP Inventory interface headings and labels | Copyright 2011 The Montserrat Project Authors; originally designed by Julieta Ulanovsky | [SIL Open Font License 1.1](https://github.com/JulietaUla/Montserrat/blob/master/OFL.txt) |
+| Liberation Sans Bold 1.04 | Core Room Sign text | Digitized data © 2007 Ascender Corporation; designed by Steve Matteson; Liberation is a trademark of Red Hat, Inc. | [GNU GPL v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) with the [Liberation Fonts exceptions](https://github.com/liberationfonts/liberation-sans-narrow/blob/master/License.txt) |
+| Anonymous Pro Regular 1.003 | Door Sign text | Copyright © 2009 Mark Simonson; Reserved Font Name: Anonymous Pro | [SIL Open Font License 1.1](https://www.marksimonson.com/fonts/view/anonymous/) |
+| Jura Variable 5.106 | Door Sign numbers | Copyright 2019 The Jura Project Authors; designed by Daniel Johnson, Alexei Vanyashin, and Mirko Velimirovic | [SIL Open Font License 1.1](https://github.com/ossobuffo/jura/blob/master/OFL.txt) |
+
+Copyright notices and license metadata embedded in the font files have been preserved. Distributions and forks that include these fonts must retain the applicable notices and license terms. Modified versions may also be subject to reserved-font-name and source-distribution requirements stated in their respective licenses.
+
 SCP Additions is not an official Minecraft product and is not affiliated with Mojang, Microsoft, the SCP Wiki staff, or Aerie Gaming Studios.

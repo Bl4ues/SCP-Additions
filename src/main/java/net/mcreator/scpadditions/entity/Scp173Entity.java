@@ -772,8 +772,6 @@ public class Scp173Entity extends BlinkWatcherEntity {
             trySnapAttack(target);
             return;
         }
-        entityData.set(SCRAPING, true);
-        faceTarget(target);
         Player blinkPlayer = target instanceof Player player ? player : null;
         boolean blinkClosed = blinkPlayer != null && BlinkServerState.isBlinkClosed(blinkPlayer);
         boolean manualBlink = blinkClosed && BlinkServerState.isManualBlink(blinkPlayer);
@@ -788,10 +786,15 @@ public class Scp173Entity extends BlinkWatcherEntity {
             }
         }
         Vec3 step = chooseChaseStep(target, horizontal, distance, maxStep);
-        if (step.lengthSqr() > 0.000001D) {
-            snapMove(step);
-            if (blinkClosed && !manualBlink) consumeAutomaticBlinkTravel(blinkPlayer, step.length());
+        if (step.lengthSqr() <= 0.000001D) {
+            stopAndLock(preTickPose);
+            return;
         }
+
+        entityData.set(SCRAPING, true);
+        faceTarget(target);
+        snapMove(step);
+        if (blinkClosed && !manualBlink) consumeAutomaticBlinkTravel(blinkPlayer, step.length());
         getNavigation().stop();
         applyHeavyWaterSinking();
         hardStopLocalMovement();
@@ -812,7 +815,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
         Vec3 directStep = directHorizontal.scale(1.0D / distance).scale(stepDistance);
         if (canMoveBy(directStep)) { getNavigation().stop(); return directStep; }
         Vec3 pathStep = pathStepToward(target, stepDistance);
-        if (pathStep.lengthSqr() > 0.000001D && canMoveBy(pathStep)) return pathStep;
+        if (pathStep.lengthSqr() <= 0.000001D) return Vec3.ZERO;
+        if (canMoveBy(pathStep)) return pathStep;
         return bestFallbackStep(target, directHorizontal, stepDistance);
     }
 
@@ -820,7 +824,10 @@ public class Scp173Entity extends BlinkWatcherEntity {
         // The path is a direction source only. Do not install it into active
         // navigation, which would add vanilla motion on the following tick.
         Path path = getNavigation().createPath(target, 0);
-        if (path == null || path.isDone()) return Vec3.ZERO;
+        // A partial path that merely ends at a closed door is not useful.
+        // Keep the target so facility control can still reopen the route, but
+        // wait silently instead of improvising side steps against the obstacle.
+        if (path == null || path.isDone() || !path.canReach()) return Vec3.ZERO;
         Vec3 next = path.getNextEntityPos(this);
         Vec3 horizontal = new Vec3(next.x - getX(), 0.0D, next.z - getZ());
         if (horizontal.lengthSqr() <= PATH_NODE_REACHED_DISTANCE_SQR) {

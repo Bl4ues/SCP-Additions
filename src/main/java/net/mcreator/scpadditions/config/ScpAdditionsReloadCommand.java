@@ -117,9 +117,14 @@ public final class ScpAdditionsReloadCommand {
         requireObjectIfPresent(root, "hud", path, errors);
         requireObjectIfPresent(root, "vitals", path, errors);
         requireObjectIfPresent(root, "blink", path, errors);
+        requireObjectIfPresent(root, "audio", path, errors);
+        requireObjectIfPresent(root, "accessibility", path, errors);
+        requireObjectIfPresent(root, "debug", path, errors);
         requireObjectIfPresent(root, "scp_173", path, errors);
         validateBooleanMember(root, "inventory", "enabled", path, errors);
         validateBooleanMember(root, "inventory", "remember_ui_state", path, errors);
+        validateBooleanMember(root, "accessibility",
+                "reduce_scp_012_visual_effects", path, errors);
         rejectUnknownMember(root, "inventory", "disabled", path, errors,
                 "Use inventory.enabled: false instead of inventory.disabled.");
     }

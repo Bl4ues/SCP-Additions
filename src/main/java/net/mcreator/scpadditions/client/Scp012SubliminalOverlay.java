@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -36,6 +37,19 @@ public final class Scp012SubliminalOverlay {
         graphics.fill(0, 0, width, height,
                 veilAlpha << 24 | 0x00100608);
 
+        if (!InventoryModuleRuntimeState
+                .reduceScp012VisualEffectsForClient()) {
+            renderRapidInterference(graphics, width, height, progress, time);
+            renderAuthoredFlash(minecraft, graphics, width, height,
+                    progress, time);
+        }
+
+        renderSmoothVignette(graphics, width, height, progress);
+    }
+
+    private static void renderRapidInterference(GuiGraphics graphics,
+                                                int width, int height,
+                                                float progress, long time) {
         int bucket = (int) (time / 135L);
         int flashAlpha = Mth.clamp(Math.round(34.0F + progress * 105.0F),
                 0, 150);
@@ -47,11 +61,9 @@ public final class Scp012SubliminalOverlay {
             int h = 2 + Math.floorMod(seed / 7, 8);
             int alpha = Math.max(8, flashAlpha - index * 16);
             graphics.fill(x, y, Math.min(width, x + w),
-                    Math.min(height, y + h), alpha << 24 | 0x006A0F18);
+                    Math.min(height, y + h),
+                    alpha << 24 | 0x006A0F18);
         }
-
-        renderAuthoredFlash(minecraft, graphics, width, height, progress, time);
-        renderSmoothVignette(graphics, width, height, progress);
     }
 
     private static void renderSmoothVignette(GuiGraphics graphics,

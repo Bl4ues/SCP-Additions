@@ -53,6 +53,11 @@
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
 - Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack, including the chase ending cue, has finished.
 
+## Accessibility
+
+- Added a dedicated Accessibility screen to the Configuration Center, beginning with a Photosensitive Epilepsy section;
+- Added **Reduce SCP-012 Visual Effects**, which disables the rapidly flashing interference and subliminal full-screen images during SCP-012 psychosis while preserving its gradual veil and smooth vignette.
+
 ## Bug Fixes
 
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;

@@ -4,6 +4,7 @@ import net.mcreator.scpadditions.client.Scp1176MusicClient;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -16,6 +17,7 @@ public final class ClientGameplayEvents {
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        InventoryModuleRuntimeState.clearServerState();
         ScpInventoryConfig.clearServerSnapshot();
         ContextInteractionRegistry.clearServerSnapshot();
     }

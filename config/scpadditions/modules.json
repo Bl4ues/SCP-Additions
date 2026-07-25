@@ -21,6 +21,9 @@
   "scp_173": {
     "enabled": true
   },
+  "accessibility": {
+    "reduce_scp_012_visual_effects": false
+  },
   "debug": {
     "show_scp_079_energy_hud": false,
     "show_scp_079_decision_log_hud": false,

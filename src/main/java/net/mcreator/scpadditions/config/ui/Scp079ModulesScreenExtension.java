@@ -74,6 +74,13 @@ public final class Scp079ModulesScreenExtension {
                     "Shows each roamer's state, countdown and latest scheduler result.", false)
     );
 
+    private static final List<Row> ACCESSIBILITY_ROWS = List.of(
+            new Row("accessibility", "reduce_scp_012_visual_effects",
+                    "Reduce SCP-012 Visual Effects",
+                    "Removes rapidly flashing interference and subliminal images during psychosis.",
+                    false)
+    );
+
     private Scp079ModulesScreenExtension() {
     }
 
@@ -118,10 +125,11 @@ public final class Scp079ModulesScreenExtension {
         }
         if (reload == null || done == null) return;
 
-        int debugX = Math.min(reload.getX(), done.getX());
-        int debugRight = Math.max(reload.getX() + reload.getWidth(),
+        int optionX = Math.min(reload.getX(), done.getX());
+        int optionRight = Math.max(reload.getX() + reload.getWidth(),
                 done.getX() + done.getWidth());
-        int debugY = Math.max(reload.getY(), done.getY());
+        int accessibilityY = Math.max(reload.getY(), done.getY());
+        int debugY = accessibilityY + 31;
         int shiftedY = debugY + 31;
         if (shiftedY + Math.max(reload.getHeight(), done.getHeight())
                 > screen.height - 8) {
@@ -130,10 +138,22 @@ public final class Scp079ModulesScreenExtension {
 
         reload.setY(shiftedY);
         done.setY(shiftedY);
+        Button accessibility = Button.builder(
+                ScpFonts.roboto("Accessibility"),
+                button -> openAccessibilityScreen(screen))
+                .bounds(optionX, accessibilityY, optionRight - optionX, 24)
+                .build();
         Button debug = Button.builder(ScpFonts.roboto("Debug Tools"),
                 button -> openDebugScreen(screen))
-                .bounds(debugX, debugY, debugRight - debugX, 24).build();
+                .bounds(optionX, debugY, optionRight - optionX, 24).build();
+        event.addListener(accessibility);
         event.addListener(debug);
+    }
+
+    private static void openAccessibilityScreen(Screen parent) {
+        Minecraft.getInstance().setScreen(new ExtendedToggleScreen(parent,
+                moduleSnapshot(parent), "Accessibility",
+                "Photosensitive Epilepsy", ACCESSIBILITY_ROWS));
     }
 
     private static void openDebugScreen(Screen parent) {
@@ -183,6 +203,7 @@ public final class Scp079ModulesScreenExtension {
 
         private final Screen parent;
         private final JsonObject working;
+        private final String sectionTitle;
         private final List<Row> rows;
         private final List<Button> buttons = new ArrayList<>();
         private final Map<Button, Component> labels = new IdentityHashMap<>();
@@ -191,9 +212,15 @@ public final class Scp079ModulesScreenExtension {
 
         private ExtendedToggleScreen(Screen parent, JsonObject working,
                 String title, List<Row> rows) {
+            this(parent, working, title, null, rows);
+        }
+
+        private ExtendedToggleScreen(Screen parent, JsonObject working,
+                String title, String sectionTitle, List<Row> rows) {
             super(ScpFonts.roboto(title));
             this.parent = parent;
             this.working = working == null ? new JsonObject() : working;
+            this.sectionTitle = sectionTitle;
             this.rows = rows == null ? List.of() : List.copyOf(rows);
         }
 
@@ -213,7 +240,7 @@ public final class Scp079ModulesScreenExtension {
             int panelX = Math.max(8, (width - panelWidth) / 2);
             int panelY = Math.max(8, (height - panelHeight) / 2);
             int contentX = panelX + 16;
-            int contentY = panelY + 44;
+            int contentY = panelY + (sectionTitle == null ? 44 : 57);
             int visible = visibleRows();
             int end = Math.min(rows.size(), scroll + visible);
 
@@ -338,13 +365,18 @@ public final class Scp079ModulesScreenExtension {
             graphics.drawString(font, ScpFonts.roboto(title), panelX + 10,
                     panelY + 9, WHITE, false);
 
+            if (sectionTitle != null) {
+                graphics.drawString(font, ScpFonts.roboto(sectionTitle),
+                        panelX + 16, panelY + 35, PALE_GOLD, false);
+            }
+
             int visible = visibleRows();
             if (rows.size() > visible) {
                 graphics.drawString(font,
                         ScpFonts.roboto("Mouse wheel: scroll options"),
                         panelX + panelWidth - 160, panelY + 31, MUTED, false);
             }
-            int startY = panelY + 68;
+            int startY = panelY + (sectionTitle == null ? 68 : 81);
             int end = Math.min(rows.size(), scroll + visible);
             for (int i = scroll; i < end; i++) {
                 graphics.drawString(font,

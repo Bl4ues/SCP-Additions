@@ -25,6 +25,7 @@ Malformed existing JSON is rejected instead of being silently replaced by fallba
 The center includes dedicated editors for:
 
 - gameplay modules and interface switches;
+- accessibility options, beginning with photosensitive-epilepsy controls;
 - SCP Inventory item categories and equipment effects;
 - hidden Status effects;
 - SCP-173 targets;
@@ -34,6 +35,16 @@ The center includes dedicated editors for:
 - SCP-914 recipes.
 
 Manual JSON editing remains supported for advanced, automated, or version-controlled modpack workflows.
+
+## Accessibility
+
+The **Accessibility** screen appears before **Debug Tools** and begins with
+the **Photosensitive Epilepsy** section. **Reduce SCP-012 Visual Effects**
+removes the rapidly changing interference and full-screen subliminal images
+from SCP-012 psychosis while retaining the gradual dark veil and smooth
+radial vignette. The setting is stored under
+`accessibility.reduce_scp_012_visual_effects` in `modules.json` and is
+synchronized from the host to connected clients.
 
 ## Codex documents
 

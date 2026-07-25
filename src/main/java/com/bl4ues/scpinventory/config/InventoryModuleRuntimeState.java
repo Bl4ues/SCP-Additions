@@ -3,13 +3,15 @@ package com.bl4ues.scpinventory.config;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 /**
- * Client view of the server-authoritative inventory module state.
+ * Client view of server-authoritative module settings needed by client-only
+ * systems.
  *
  * Integrated singleplayer can fall back to the local module configuration,
  * while dedicated-server clients use the value synchronized at login/reload.
  */
 public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverEnabled;
+    private static volatile Boolean serverReduceScp012VisualEffects;
 
     private InventoryModuleRuntimeState() {
     }
@@ -19,11 +21,21 @@ public final class InventoryModuleRuntimeState {
         return synced != null ? synced : ScpAdditionsModulesConfig.get().inventory.enabled;
     }
 
-    public static void updateFromServer(boolean enabled) {
+    public static boolean reduceScp012VisualEffectsForClient() {
+        Boolean synced = serverReduceScp012VisualEffects;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().accessibility
+                .reduceScp012VisualEffects;
+    }
+
+    public static void updateFromServer(boolean enabled,
+                                        boolean reduceScp012VisualEffects) {
         serverEnabled = enabled;
+        serverReduceScp012VisualEffects = reduceScp012VisualEffects;
     }
 
     public static void clearServerState() {
         serverEnabled = null;
+        serverReduceScp012VisualEffects = null;
     }
 }

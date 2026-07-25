@@ -67,6 +67,9 @@
 - Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.
 - Fixed SCP-914 recipe selection when several compatible items are placed in the intake, preferring the transformation that uses the complete input instead of whichever matching recipe appears first;
 - Fixed the Blink system remaining active after being disabled or appearing in Creative and Spectator modes, with the server now clearing stale blink states and enforcing the module setting.
+- Fixed Sign Support placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
+- Fixed TV placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
+- Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, and expanded its collision to include the upper structure.
 
 # SCP Additions 3.0.7 — Hotfix
 

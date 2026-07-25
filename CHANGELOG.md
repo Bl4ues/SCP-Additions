@@ -48,6 +48,13 @@
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
 - Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack has finished.
 
+## Facility signs
+
+- Added the Core Room Sign and Door Sign to the SCP Unity Blocks tab, with directional model-derived collisions and dedicated building tooltips;
+- Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
+- Core Room Signs accept up to 30 characters per line, render uppercase Liberation Sans text centered with a dark fill and white outline, and use normal world lighting;
+- Door Signs accept up to 40 characters per line, preserve capitalization, left-align Anonymous Pro text, center Jura numbers in the matching boxes, and render both at full brightness.
+
 ## Accessibility
 
 - Added a dedicated Accessibility screen to the Configuration Center, beginning with a Photosensitive Epilepsy section;

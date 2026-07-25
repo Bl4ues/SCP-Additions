@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.Scp079DecisionLog;
+import net.mcreator.scpadditions.facility.FacilitySignBlockEntity;
 import net.mcreator.scpadditions.network.Scp079DecisionPacket.DecisionEntry;
 import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
 import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
@@ -95,6 +96,18 @@ public final class ScpEntityNetwork {
                 Scp106ChasePacket::encode,
                 Scp106ChasePacket::decode,
                 Scp106ChasePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(FacilitySignOpenScreenPacket.class,
+                FacilitySignOpenScreenPacket::encode,
+                FacilitySignOpenScreenPacket::decode,
+                FacilitySignOpenScreenPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(FacilitySignSavePacket.class,
+                FacilitySignSavePacket::encode,
+                FacilitySignSavePacket::decode,
+                FacilitySignSavePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(FacilitySignClipboardPacket.class,
+                FacilitySignClipboardPacket::encode,
+                FacilitySignClipboardPacket::decode,
+                FacilitySignClipboardPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -235,5 +248,14 @@ public final class ScpEntityNetwork {
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new KeycardReaderOpenScreenPacket(pos, level));
+    }
+
+    public static void openFacilitySignScreen(ServerPlayer player,
+            FacilitySignBlockEntity sign) {
+        if (player == null || sign == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new FacilitySignOpenScreenPacket(
+                        sign.getBlockPos(), sign.type(), sign.entries()));
     }
 }

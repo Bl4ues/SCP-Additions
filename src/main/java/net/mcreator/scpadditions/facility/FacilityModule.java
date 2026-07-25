@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -70,6 +71,8 @@ public final class FacilityModule {
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
+            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MODID);
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
@@ -121,8 +124,17 @@ public final class FacilityModule {
             () -> new WallLightBlock(true), false);
     public static final RegistryObject<Block> HEATER = registerBlock("heater", HeaterBlock::new, true);
     public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", SignSupportBlock::new, true);
+    public static final RegistryObject<Block> CORE_ROOM_SIGN = registerSign(
+            "core_room_sign", FacilitySignBlock.SignType.CORE_ROOM);
+    public static final RegistryObject<Block> DOOR_SIGN = registerSign(
+            "door_sign", FacilitySignBlock.SignType.DOOR);
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
+    public static final RegistryObject<BlockEntityType<FacilitySignBlockEntity>>
+            FACILITY_SIGN_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
+                    "facility_sign", () -> BlockEntityType.Builder.of(
+                            FacilitySignBlockEntity::new,
+                            CORE_ROOM_SIGN.get(), DOOR_SIGN.get()).build(null));
 
     // Button states. Only LOCKED and CLOSED are public items.
     public static final RegistryObject<Block> BUTTON_LOCKED = registerButton("button_locked", ButtonState.LOCKED, true);
@@ -188,6 +200,7 @@ public final class FacilityModule {
         SOUNDS.register(modBus);
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
+        BLOCK_ENTITY_TYPES.register(modBus);
         TABS.register(modBus);
     }
 
@@ -241,6 +254,8 @@ public final class FacilityModule {
         addFacilityCreativeItem(ordered, "walllight");
         addFacilityCreativeItem(ordered, "heater");
         addFacilityCreativeItem(ordered, "sign_support");
+        addFacilityCreativeItem(ordered, "core_room_sign");
+        addFacilityCreativeItem(ordered, "door_sign");
         addFacilityCreativeItem(ordered, "tv");
         addFacilityCreativeItem(ordered, "trashbin");
 
@@ -296,6 +311,19 @@ public final class FacilityModule {
 
     private static RegistryObject<Block> registerButton(String path, ButtonState state, boolean publicItem) {
         return registerBlock(path, () -> new DoorButtonBlock(state), publicItem);
+    }
+
+    private static RegistryObject<Block> registerSign(String path,
+            FacilitySignBlock.SignType type) {
+        RegistryObject<Block> block = BLOCKS.register(path,
+                () -> new FacilitySignBlock(type));
+        RegistryObject<Item> item = ITEMS.register(path,
+                () -> new FacilitySignBlockItem(block.get(),
+                        new Item.Properties(), type));
+        BLOCKS_BY_PATH.put(path, block);
+        ITEMS_BY_PATH.put(path, item);
+        CREATIVE_ITEMS.add(item);
+        return block;
     }
 
     private static RegistryObject<Block> registerBlock(String path,

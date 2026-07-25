@@ -82,6 +82,8 @@
         "scp_additions:scp_012_closing_4",
         "scp_additions:scp_012_closing_3",
         "scp_additions:scp_012_closing_2",
-        "scp_additions:scp_012_closing_1"
+        "scp_additions:scp_012_closing_1",
+        "scp_additions:core_room_sign",
+        "scp_additions:door_sign"
     ]
 }

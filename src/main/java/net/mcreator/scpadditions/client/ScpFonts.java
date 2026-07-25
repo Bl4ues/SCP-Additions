@@ -8,6 +8,12 @@ import net.minecraft.resources.ResourceLocation;
 public final class ScpFonts {
     public static final ResourceLocation ROBOTO = new ResourceLocation("scpinventory", "roboto");
     public static final ResourceLocation MONTSERRAT = new ResourceLocation("scpinventory", "montserrat");
+    public static final ResourceLocation LIBERATION_SANS_BOLD =
+            new ResourceLocation("scp_additions", "liberation_sans_bold");
+    public static final ResourceLocation ANONYMOUS_PRO =
+            new ResourceLocation("scp_additions", "anonymous_pro");
+    public static final ResourceLocation JURA =
+            new ResourceLocation("scp_additions", "jura");
 
     private ScpFonts() {
     }
@@ -28,5 +34,22 @@ public final class ScpFonts {
     public static MutableComponent montserrat(Component component) {
         return Component.empty().append(component == null ? Component.empty() : component)
                 .withStyle(style -> style.withFont(MONTSERRAT));
+    }
+
+    public static MutableComponent liberationSans(String text) {
+        return custom(text, LIBERATION_SANS_BOLD);
+    }
+
+    public static MutableComponent anonymousPro(String text) {
+        return custom(text, ANONYMOUS_PRO);
+    }
+
+    public static MutableComponent doorSignNumbers(String text) {
+        return custom(text, JURA);
+    }
+
+    private static MutableComponent custom(String text, ResourceLocation font) {
+        return Component.literal(text == null ? "" : text)
+                .withStyle(style -> style.withFont(font));
     }
 }

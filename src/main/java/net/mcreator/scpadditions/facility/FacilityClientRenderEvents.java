@@ -3,10 +3,12 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.client.FacilitySignBlockEntityRenderer;
 
 /** Client-only render-layer registration for migrated facility blocks. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -20,6 +22,10 @@ public final class FacilityClientRenderEvents {
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.TRASHBIN.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(
+                    FacilityModule.CORE_ROOM_SIGN.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(
+                    FacilityModule.DOOR_SIGN.get(), RenderType.cutout());
 
             ItemBlockRenderTypes.setRenderLayer(
                     MirroredDoorButtons.BUTTON_LOCKED.get(), RenderType.cutout());
@@ -32,5 +38,13 @@ public final class FacilityClientRenderEvents {
             ItemBlockRenderTypes.setRenderLayer(
                     MirroredDoorButtons.BUTTON_CLOSING.get(), RenderType.cutout());
         });
+    }
+
+    @SubscribeEvent
+    public static void registerRenderers(
+            EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(
+                FacilityModule.FACILITY_SIGN_BLOCK_ENTITY.get(),
+                FacilitySignBlockEntityRenderer::new);
     }
 }

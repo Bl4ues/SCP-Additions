@@ -21,7 +21,8 @@
 
 ## SCP-173
 
-- Reduced SCP-173's rendered height to approximately two blocks.
+- Reduced SCP-173's rendered height to approximately two blocks;
+- Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists; it now waits silently and resumes as soon as a route becomes available.
 
 ## SCP-131
 

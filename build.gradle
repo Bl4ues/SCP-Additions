@@ -71,6 +71,53 @@ repositories {
     }
 }
 
+// MoreMcmeta bundles five Forge mods inside its public JAR. ForgeGradle only
+// remaps the outer artifact, leaving those nested plugins in production (SRG)
+// mappings and crashing runClient with NoSuchMethodError. Prepare a dev-only
+// copy of the core without JarJar contents and remap every extracted plugin as
+// its own dependency.
+configurations {
+    moreMcmetaBundle
+}
+
+dependencies {
+    moreMcmetaBundle 'maven.modrinth:HFlxNpln:1Gk4ti96' // MoreMcmeta 4.5.2
+}
+
+def moreMcmetaDevDir = layout.buildDirectory.dir('moremcmeta-dev-runtime').get().asFile
+def moreMcmetaBundleJar = configurations.moreMcmetaBundle.singleFile
+def moreMcmetaCoreJar = new File(moreMcmetaDevDir, 'moremcmeta-core.jar')
+def moreMcmetaPluginDir = new File(moreMcmetaDevDir, 'plugins')
+def moreMcmetaStamp = new File(moreMcmetaDevDir, '.source-sha1')
+def moreMcmetaSourceSha1 = java.security.MessageDigest.getInstance('SHA-1')
+        .digest(moreMcmetaBundleJar.bytes)
+        .encodeHex()
+        .toString()
+
+if (!moreMcmetaStamp.exists()
+        || moreMcmetaStamp.getText('UTF-8').trim() != moreMcmetaSourceSha1
+        || !moreMcmetaCoreJar.exists()) {
+    project.delete(moreMcmetaDevDir)
+    moreMcmetaPluginDir.mkdirs()
+
+    project.copy {
+        from zipTree(moreMcmetaBundleJar)
+        include 'META-INF/jars/*.jar'
+        eachFile { details -> details.path = details.name }
+        includeEmptyDirs = false
+        into moreMcmetaPluginDir
+    }
+
+    ant.zip(destfile: moreMcmetaCoreJar) {
+        zipfileset(src: moreMcmetaBundleJar) {
+            exclude(name: 'META-INF/jars/**')
+            exclude(name: 'META-INF/jarjar/**')
+        }
+    }
+
+    moreMcmetaStamp.setText(moreMcmetaSourceSha1 + System.lineSeparator(), 'UTF-8')
+}
+
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.4.10'
     implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')
@@ -78,7 +125,12 @@ dependencies {
     // Optional client runtime used by runClient to validate emissive textures,
     // PBR materials, shaders and custom player/entity rendering. These are not
     // transitive requirements for users of SCP Additions.
-    runtimeOnly fg.deobf('maven.modrinth:HFlxNpln:wBmYGKE8') // MoreMcmeta 4.5.1
+    runtimeOnly fg.deobf(files(moreMcmetaCoreJar))
+    fileTree(moreMcmetaPluginDir).matching {
+        include '*.jar'
+    }.files.sort().each { pluginJar ->
+        runtimeOnly fg.deobf(files(pluginJar))
+    }
     runtimeOnly fg.deobf('maven.modrinth:oQ0dIGZg:rkJ3fswP') // MoreMcmeta Emissive 2.0.4
     runtimeOnly fg.deobf('maven.modrinth:oaG6aa1j:u7GegV7U') // Kleider's Custom Renderer 7.4.1
     runtimeOnly fg.deobf('maven.modrinth:sk9rgfiA:UTbfe5d1') // Embeddium 0.3.31

@@ -815,19 +815,19 @@ public class Scp173Entity extends BlinkWatcherEntity {
         Vec3 directStep = directHorizontal.scale(1.0D / distance).scale(stepDistance);
         if (canMoveBy(directStep)) { getNavigation().stop(); return directStep; }
         Vec3 pathStep = pathStepToward(target, stepDistance);
-        if (pathStep.lengthSqr() <= 0.000001D) return Vec3.ZERO;
-        if (canMoveBy(pathStep)) return pathStep;
-        return bestFallbackStep(target, directHorizontal, stepDistance);
+        return largestClearPathStep(pathStep);
     }
 
     private Vec3 pathStepToward(LivingEntity target, double stepDistance) {
         // The path is a direction source only. Do not install it into active
         // navigation, which would add vanilla motion on the following tick.
         Path path = getNavigation().createPath(target, 0);
-        // A partial path that merely ends at a closed door is not useful.
-        // Keep the target so facility control can still reopen the route, but
-        // wait silently instead of improvising side steps against the obstacle.
-        if (path == null || path.isDone() || !path.canReach()) return Vec3.ZERO;
+        // Partial paths are still useful: they let the statue take the shortest
+        // available route up to a closed doorway. Once the door opens, the path
+        // is rebuilt on the next movement opportunity and continues through it.
+        // Path.canReach() is intentionally not used here because an accuracy of
+        // zero can report false for reachable players near walls or block edges.
+        if (path == null || path.isDone()) return Vec3.ZERO;
         Vec3 next = path.getNextEntityPos(this);
         Vec3 horizontal = new Vec3(next.x - getX(), 0.0D, next.z - getZ());
         if (horizontal.lengthSqr() <= PATH_NODE_REACHED_DISTANCE_SQR) {
@@ -840,25 +840,18 @@ public class Scp173Entity extends BlinkWatcherEntity {
         return length <= 0.001D ? Vec3.ZERO : horizontal.scale(1.0D / length).scale(Math.min(stepDistance, length));
     }
 
-    private Vec3 bestFallbackStep(LivingEntity target, Vec3 directHorizontal, double stepDistance) {
-        double length = directHorizontal.length();
-        if (length <= 0.001D) return Vec3.ZERO;
-        Vec3 base = directHorizontal.scale(1.0D / length);
-        double[] angles = {35.0D, -35.0D, 70.0D, -70.0D, 110.0D, -110.0D, 160.0D, -160.0D};
-        Vec3 best = Vec3.ZERO;
-        double bestScore = Double.MAX_VALUE;
-        for (double angle : angles) {
-            Vec3 candidate = rotateHorizontal(base, angle).scale(stepDistance * 0.75D);
-            if (!canMoveBy(candidate)) continue;
-            double score = position().add(candidate).distanceToSqr(target.position());
-            if (score < bestScore) { bestScore = score; best = candidate; }
-        }
-        return best;
-    }
+    private Vec3 largestClearPathStep(Vec3 desiredStep) {
+        if (desiredStep == null || desiredStep.lengthSqr() <= 0.000001D) return Vec3.ZERO;
 
-    private Vec3 rotateHorizontal(Vec3 vector, double degrees) {
-        double radians = Math.toRadians(degrees), cos = Math.cos(radians), sin = Math.sin(radians);
-        return new Vec3(vector.x * cos - vector.z * sin, 0.0D, vector.x * sin + vector.z * cos);
+        // Fast snap movement can make a full path-node step clip a doorway edge
+        // even though the node itself is valid. Keep the path direction and try
+        // progressively smaller steps instead of wandering sideways.
+        Vec3 candidate = desiredStep;
+        for (int attempt = 0; attempt < 4; attempt++) {
+            if (canMoveBy(candidate)) return candidate;
+            candidate = candidate.scale(0.5D);
+        }
+        return Vec3.ZERO;
     }
 
     private boolean canMoveBy(Vec3 step) {

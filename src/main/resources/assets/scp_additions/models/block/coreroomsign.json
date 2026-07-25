@@ -2,10 +2,9 @@
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
 	"texture_size": [64, 64],
-	"render_type": "cutout",
 	"textures": {
-		"0": "scp_additions:block/cr_sign",
-		"particle": "scp_additions:block/cr_sign"
+		"0": "cr_sign",
+		"particle": "cr_sign"
 	},
 	"elements": [
 		{
@@ -111,12 +110,5 @@
 		"on_shelf": {
 			"translation": [8.75, 0, -11.5]
 		}
-	},
-	"groups": [
-		0,
-		1,
-		2,
-		3,
-		4
-	]
+	}
 }

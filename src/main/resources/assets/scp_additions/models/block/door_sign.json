@@ -2,10 +2,9 @@
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
 	"texture_size": [64, 64],
-	"render_type": "cutout",
 	"textures": {
-		"0": "scp_additions:block/door_sign",
-		"particle": "scp_additions:block/door_sign"
+		"0": "door_sign",
+		"particle": "door_sign"
 	},
 	"elements": [
 		{
@@ -121,7 +120,7 @@
 			"translation": [0, 0, -6]
 		},
 		"on_shelf": {
-			"rotation": [0, 180, 0],
+			"rotation": [0, -180, 0],
 			"translation": [0, 0, 3.75]
 		}
 	},

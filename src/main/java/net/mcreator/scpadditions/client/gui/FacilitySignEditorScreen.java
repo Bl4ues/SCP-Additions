@@ -32,6 +32,9 @@ public final class FacilitySignEditorScreen extends Screen {
     private static final int TEXT_PRIMARY = 0xFFE4E8EA;
     private static final int TEXT_MUTED = 0xFF879097;
     private static final int ACCENT = 0xFFB8C2C8;
+    private static final int PRIMARY = 0xFFC59A2A;
+    private static final int PRIMARY_TEXT = 0xFFE5D49A;
+    private static final int DANGER = 0xFFD46060;
     private static final int SUCCESS = 0xFF9FC7A8;
     private static final int WARNING = 0xFFD4B37A;
 
@@ -49,7 +52,6 @@ public final class FacilitySignEditorScreen extends Screen {
     private int panelHeight;
     private int rowsTop;
     private int rowHeight;
-    private boolean showPreview;
     private int draggingRow = -1;
     private String status = "";
     private long statusExpiresAt;
@@ -83,10 +85,12 @@ public final class FacilitySignEditorScreen extends Screen {
         int controlGap = 4;
         int controlsWidth = controlWidth * 3 + controlGap * 2;
         int controlsLeft = innerRight - controlsWidth;
+        int counterWidth = 39;
         int numberWidth = type.hasNumbers() ? 48 : 0;
         int textLeft = innerLeft + dragWidth + 7
                 + (type.hasNumbers() ? numberWidth + 7 : 0);
-        int textWidth = Math.max(80, controlsLeft - textLeft - 8);
+        int textWidth = Math.max(80,
+                controlsLeft - counterWidth - textLeft - 10);
 
         for (int index = 0; index < FacilitySignData.ENTRY_COUNT; index++) {
             int rowY = rowsTop + index * rowHeight;
@@ -94,8 +98,8 @@ public final class FacilitySignEditorScreen extends Screen {
 
             if (type.hasNumbers()) {
                 EditBox number = new EditBox(font,
-                        innerLeft + dragWidth + 7, rowY + 9,
-                        numberWidth, 20, Component.translatable(
+                        innerLeft + dragWidth + 7, rowY + 7,
+                        numberWidth, 18, Component.translatable(
                         "screen.scp_additions.facility_sign_number"));
                 number.setBordered(false);
                 number.setTextColor(TEXT_PRIMARY);
@@ -108,8 +112,8 @@ public final class FacilitySignEditorScreen extends Screen {
                 numberFields.add(addRenderableWidget(number));
             }
 
-            EditBox text = new EditBox(font, textLeft, rowY + 9,
-                    textWidth, 20, Component.translatable(
+            EditBox text = new EditBox(font, textLeft, rowY + 7,
+                    textWidth, 18, Component.translatable(
                     "screen.scp_additions.facility_sign_text"));
             text.setBordered(false);
             text.setTextColor(TEXT_PRIMARY);
@@ -122,48 +126,48 @@ public final class FacilitySignEditorScreen extends Screen {
             textFields.add(addRenderableWidget(text));
 
             final int row = index;
-            addRenderableWidget(new EditorButton(controlsLeft, rowY + 8,
-                    controlWidth, 22, Component.literal("C"),
-                    () -> copyEntry(row)));
+            addRenderableWidget(new EditorButton(controlsLeft, rowY + 6,
+                    controlWidth, 20, Component.literal("C"),
+                    ButtonStyle.NEUTRAL, () -> copyEntry(row)));
             addRenderableWidget(new EditorButton(
-                    controlsLeft + controlWidth + controlGap, rowY + 8,
-                    controlWidth, 22, Component.literal("P"),
-                    () -> pasteEntry(row)));
+                    controlsLeft + controlWidth + controlGap, rowY + 6,
+                    controlWidth, 20, Component.literal("P"),
+                    ButtonStyle.NEUTRAL, () -> pasteEntry(row)));
             addRenderableWidget(new EditorButton(
-                    controlsLeft + (controlWidth + controlGap) * 2, rowY + 8,
-                    controlWidth, 22, Component.literal("×"),
-                    () -> clearEntry(row)));
+                    controlsLeft + (controlWidth + controlGap) * 2, rowY + 6,
+                    controlWidth, 20, Component.literal("×"),
+                    ButtonStyle.DANGER, () -> clearEntry(row)));
         }
 
-        int toolbarY = rowsTop - 29;
+        int toolbarY = rowsTop - 27;
         addRenderableWidget(new EditorButton(innerLeft, toolbarY,
-                105, 21, Component.translatable(
+                105, 20, Component.translatable(
                 "screen.scp_additions.facility_sign_copy_all"),
-                this::copyEntireSign));
+                ButtonStyle.NEUTRAL, this::copyEntireSign));
         addRenderableWidget(new EditorButton(innerLeft + 111, toolbarY,
-                105, 21, Component.translatable(
+                105, 20, Component.translatable(
                 "screen.scp_additions.facility_sign_paste_all"),
-                this::pasteEntireSign));
+                ButtonStyle.NEUTRAL, this::pasteEntireSign));
         addRenderableWidget(new EditorButton(innerLeft + 222, toolbarY,
-                75, 21, Component.translatable(
+                75, 20, Component.translatable(
                 "screen.scp_additions.facility_sign_clear"),
-                this::clearAll));
+                ButtonStyle.DANGER, this::clearAll));
 
         int bottomY = panelTop + panelHeight - 31;
         addRenderableWidget(new EditorButton(innerRight - 175, bottomY,
                 82, 22, Component.translatable("gui.done"), this::saveAndClose));
         addRenderableWidget(new EditorButton(innerRight - 87, bottomY,
-                82, 22, Component.translatable("gui.cancel"), this::onClose));
+                82, 22, Component.translatable("gui.cancel"),
+                ButtonStyle.NEUTRAL, this::onClose));
     }
 
     private void calculateLayout() {
-        showPreview = height >= 315;
-        panelWidth = Math.min(760, Math.max(360, width - 24));
-        panelHeight = showPreview ? 306 : 250;
+        panelWidth = Math.min(640, Math.max(360, width - 24));
+        panelHeight = 218;
         panelLeft = (width - panelWidth) / 2;
         panelTop = Math.max(6, (height - panelHeight) / 2);
-        rowHeight = 40;
-        rowsTop = panelTop + (showPreview ? 142 : 86);
+        rowHeight = 31;
+        rowsTop = panelTop + 79;
     }
 
     private void loadClipboard() {
@@ -209,20 +213,18 @@ public final class FacilitySignEditorScreen extends Screen {
                                 : "block.scp_additions.door_sign")),
                 panelLeft + 18, panelTop + 28, TEXT_MUTED, false);
 
-        if (showPreview) drawPreview(graphics);
-
         int innerLeft = panelLeft + 18;
         int innerRight = panelLeft + panelWidth - 18;
         for (int index = 0; index < FacilitySignData.ENTRY_COUNT; index++) {
             int rowY = rowsTop + index * rowHeight;
             int rowColor = draggingRow == index ? 0xEE354047 : ROW_BACKGROUND;
-            graphics.fill(innerLeft, rowY + 3, innerRight, rowY + 36, rowColor);
-            outline(graphics, innerLeft, rowY + 3,
-                    innerRight - innerLeft, 33,
+            graphics.fill(innerLeft, rowY + 2, innerRight, rowY + 29, rowColor);
+            outline(graphics, innerLeft, rowY + 2,
+                    innerRight - innerLeft, 27,
                     draggingRow == index ? ACCENT : 0xFF3D464C);
 
             graphics.drawCenteredString(font, ScpFonts.roboto("≡"),
-                    innerLeft + 11, rowY + 15,
+                    innerLeft + 11, rowY + 11,
                     draggingRow == index ? TEXT_PRIMARY : TEXT_MUTED);
 
             for (EditBox field : fieldsForRow(index)) {
@@ -237,43 +239,9 @@ public final class FacilitySignEditorScreen extends Screen {
                     .codePointCount(0, textFields.get(index).getValue().length())
                     + "/" + type.maxTextLength();
             graphics.drawString(font, ScpFonts.roboto(count),
-                    textFields.get(index).getX() + textFields.get(index).getWidth()
-                            - font.width(count),
-                    rowY + 30, TEXT_MUTED, false);
-        }
-    }
-
-    private void drawPreview(GuiGraphics graphics) {
-        int x = panelLeft + 18;
-        int y = panelTop + 48;
-        int w = panelWidth - 36;
-        int h = 54;
-        graphics.fill(x, y, x + w, y + h, 0xE711161A);
-        outline(graphics, x, y, w, h, FIELD_EDGE);
-
-        List<FacilitySignData.Entry> entries = currentEntries();
-        if (type == FacilitySignBlock.SignType.CORE_ROOM) {
-            for (int row = 0; row < FacilitySignData.ENTRY_COUNT; row++) {
-                String value = FacilitySignData.cleanText(type, entries.get(row).text());
-                Component text = ScpFonts.liberationSans(value);
-                graphics.drawCenteredString(font, text,
-                        x + w / 2, y + 7 + row * 14, 0xFFF1F3F4);
-            }
-        } else {
-            int numberLeft = x + 10;
-            int numberWidth = 38;
-            int textLeft = numberLeft + numberWidth + 10;
-            for (int row = 0; row < FacilitySignData.ENTRY_COUNT; row++) {
-                int lineY = y + 5 + row * 15;
-                graphics.fill(numberLeft, lineY - 2,
-                        numberLeft + numberWidth, lineY + 11, 0xFF253038);
-                graphics.drawCenteredString(font,
-                        ScpFonts.doorSignNumbers(entries.get(row).number()),
-                        numberLeft + numberWidth / 2, lineY, 0xFFF5F7F8);
-                graphics.drawString(font,
-                        ScpFonts.anonymousPro(entries.get(row).text()),
-                        textLeft, lineY, 0xFFF5F7F8, false);
-            }
+                    textFields.get(index).getX()
+                            + textFields.get(index).getWidth() + 8,
+                    rowY + 11, TEXT_MUTED, false);
         }
     }
 
@@ -449,10 +417,17 @@ public final class FacilitySignEditorScreen extends Screen {
 
     private final class EditorButton extends AbstractButton {
         private final Runnable action;
+        private final ButtonStyle style;
 
         private EditorButton(int x, int y, int width, int height,
                 Component label, Runnable action) {
+            this(x, y, width, height, label, ButtonStyle.PRIMARY, action);
+        }
+
+        private EditorButton(int x, int y, int width, int height,
+                Component label, ButtonStyle style, Runnable action) {
             super(x, y, width, height, label);
+            this.style = style;
             this.action = action;
         }
 
@@ -471,14 +446,30 @@ public final class FacilitySignEditorScreen extends Screen {
                 int mouseY, float partialTick) {
             int background = !active ? 0xFF22282D
                     : isHoveredOrFocused() ? 0xFF56636B : 0xFF343D43;
-            int edge = isHoveredOrFocused() ? 0xFFD8E0E4 : 0xFF667178;
+            int edge = switch (style) {
+                case PRIMARY -> isHoveredOrFocused() ? PRIMARY_TEXT : PRIMARY;
+                case DANGER -> DANGER;
+                case NEUTRAL -> isHoveredOrFocused() ? 0xFFD8E0E4 : 0xFF667178;
+            };
+            int text = !active ? TEXT_MUTED
+                    : style == ButtonStyle.PRIMARY ? PRIMARY_TEXT : TEXT_PRIMARY;
             graphics.fill(getX(), getY(),
                     getX() + getWidth(), getY() + getHeight(), background);
             outline(graphics, getX(), getY(), getWidth(), getHeight(), edge);
+            if (style != ButtonStyle.NEUTRAL) {
+                graphics.fill(getX() + 1, getY() + 1,
+                        getX() + 4, getY() + getHeight() - 1, edge);
+            }
             graphics.drawCenteredString(font, ScpFonts.roboto(getMessage()),
                     getX() + getWidth() / 2,
                     getY() + (getHeight() - 8) / 2,
-                    active ? TEXT_PRIMARY : TEXT_MUTED);
+                    text);
         }
+    }
+
+    private enum ButtonStyle {
+        NEUTRAL,
+        PRIMARY,
+        DANGER
     }
 }

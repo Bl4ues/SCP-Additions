@@ -278,7 +278,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 || state == VANISHING) {
             noPhysics = true;
             setNoGravity(true);
-            stopHorizontalMovement();
+            freezeTransitionMovement();
             return;
         }
 
@@ -298,7 +298,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     private void tickEmergence() {
         getNavigation().stop();
-        stopHorizontalMovement();
+        freezeTransitionMovement();
         lockEmergenceRotation();
         if (stateTicks > 0) stateTicks--;
         if (stateTicks > 0) return;
@@ -551,14 +551,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         attackTicks = 0;
         cancelRangedAttack();
         getNavigation().stop();
-        stopHorizontalMovement();
+        freezeTransitionMovement();
         noPhysics = true;
         setNoGravity(true);
     }
 
     private void tickVanish() {
         getNavigation().stop();
-        stopHorizontalMovement();
+        freezeTransitionMovement();
         if (stateTicks > 0) stateTicks--;
         if (stateTicks > 0) return;
 
@@ -615,7 +615,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         noPhysics = true;
         setNoGravity(true);
         getNavigation().stop();
-        stopHorizontalMovement();
+        freezeTransitionMovement();
     }
 
     private Player resolveHuntedPlayer() {
@@ -1027,6 +1027,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void stopHorizontalMovement() {
         Vec3 movement = getDeltaMovement();
         setDeltaMovement(0.0D, movement.y, 0.0D);
+        setSpeed(0.0F);
+    }
+
+    private void freezeTransitionMovement() {
+        setDeltaMovement(Vec3.ZERO);
         setSpeed(0.0F);
     }
 

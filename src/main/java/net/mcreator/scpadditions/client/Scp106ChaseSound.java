@@ -14,6 +14,7 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
     private static final int FADE_IN_TICKS = 36;
     private static final int FADE_OUT_TICKS = 32;
     private static final int STOP_CUE_LEAD_TICKS = 12;
+    private static final float MINIMUM_PLAYABLE_VOLUME = 0.01F;
     private static final float STOP_CUE_VOLUME = 0.14F;
 
     private int fadeInTicksElapsed;
@@ -26,7 +27,7 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
                 RandomSource.create());
         this.looping = true;
         this.delay = 0;
-        this.volume = 0.0F;
+        this.volume = MINIMUM_PLAYABLE_VOLUME;
         this.pitch = 1.0F;
         this.relative = true;
         this.attenuation = SoundInstance.Attenuation.NONE;
@@ -40,12 +41,10 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
             beginFadeOut(false);
         }
 
-        float fadeInVolume = Mth.clamp(fadeInTicksElapsed
-                / (float) FADE_IN_TICKS, 0.0F, 1.0F);
+        float fadeInVolume = getFadeInVolume();
         if (fadeTicksRemaining < 0) {
             if (fadeInTicksElapsed < FADE_IN_TICKS) fadeInTicksElapsed++;
-            volume = Mth.clamp(fadeInTicksElapsed
-                    / (float) FADE_IN_TICKS, 0.0F, 1.0F);
+            volume = getFadeInVolume();
             return;
         }
         if (playStopCue && !stopCuePlayed
@@ -66,6 +65,12 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
                 fadeTicksRemaining / (float) FADE_OUT_TICKS,
                 0.0F, 1.0F);
         fadeTicksRemaining--;
+    }
+
+    private float getFadeInVolume() {
+        float progress = Mth.clamp(fadeInTicksElapsed
+                / (float) FADE_IN_TICKS, 0.0F, 1.0F);
+        return Mth.lerp(progress, MINIMUM_PLAYABLE_VOLUME, 1.0F);
     }
 
     public void beginFadeOut(boolean withStopCue) {

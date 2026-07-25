@@ -130,6 +130,9 @@ public final class FacilityModule {
             "door_sign", FacilitySignBlock.SignType.DOOR);
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
+    public static final RegistryObject<Block> FACILITY_PROP_PART =
+            BLOCKS.register("facility_prop_part",
+                    FacilityPropPartBlock::new);
     public static final RegistryObject<BlockEntityType<FacilitySignBlockEntity>>
             FACILITY_SIGN_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
                     "facility_sign", () -> BlockEntityType.Builder.of(
@@ -672,13 +675,19 @@ public final class FacilityModule {
     private static final class SignSupportBlock extends HorizontalWaterloggedPropBlock {
         private SignSupportBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.GLASS)
-                    .strength(1.0F, 10.0F));
+                    .strength(1.0F, 10.0F).randomTicks());
         }
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
             Direction clickedFace = context.getClickedFace();
             if (clickedFace.getAxis() == Direction.Axis.Y) return null;
+            if (!FacilityLargePropStructure.canPlace(context.getLevel(),
+                    context.getClickedPos(),
+                    FacilityLargePropStructure.Kind.SIGN_SUPPORT,
+                    clickedFace)) {
+                return null;
+            }
             boolean waterlogged = context.getLevel().getFluidState(
                     context.getClickedPos()).getType() == Fluids.WATER;
             return defaultBlockState().setValue(FACING, clickedFace)
@@ -688,19 +697,64 @@ public final class FacilityModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return switch (state.getValue(FACING)) {
-                case NORTH -> box(8.2, -13.35, 15.55, 23.7, -2.65, 16.8);
-                case EAST -> box(-0.8, -13.35, 8.2, 0.45, -2.65, 23.7);
-                case WEST -> box(15.55, -13.35, -7.7, 16.8, -2.65, 7.8);
-                default -> box(-7.7, -13.35, -0.8, 7.8, -2.65, 0.45);
-            };
+            return FacilityLargePropStructure.controllerShape(
+                    FacilityLargePropStructure.Kind.SIGN_SUPPORT,
+                    state.getValue(FACING));
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state,
+                BlockGetter level, BlockPos pos, CollisionContext context) {
+            return getShape(state, level, pos, context);
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
+            super.onPlace(state, level, pos, oldState, moving);
+            if (level.isClientSide || oldState.getBlock() == this) return;
+            Direction facing = state.getValue(FACING);
+            if (!FacilityLargePropStructure.placeParts(level, pos,
+                    FacilityLargePropStructure.Kind.SIGN_SUPPORT, facing)) {
+                level.destroyBlock(pos, true);
+                return;
+            }
+            level.scheduleTick(pos, this, 1);
+        }
+
+        @Override
+        public void tick(BlockState state, ServerLevel level, BlockPos pos,
+                RandomSource random) {
+            FacilityLargePropStructure.ensureParts(level, pos,
+                    FacilityLargePropStructure.Kind.SIGN_SUPPORT,
+                    state.getValue(FACING));
+        }
+
+        @Override
+        public void randomTick(BlockState state, ServerLevel level,
+                BlockPos pos, RandomSource random) {
+            FacilityLargePropStructure.ensureParts(level, pos,
+                    FacilityLargePropStructure.Kind.SIGN_SUPPORT,
+                    state.getValue(FACING));
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean moving) {
+            if (state.getBlock() != newState.getBlock()
+                    && !level.isClientSide) {
+                FacilityLargePropStructure.removeParts(level, pos,
+                        FacilityLargePropStructure.Kind.SIGN_SUPPORT,
+                        state.getValue(FACING));
+            }
+            super.onRemove(state, level, pos, newState, moving);
         }
     }
 
     private static final class TvBlock extends DirectionalBlock {
         private TvBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
-                    .strength(1.0F, 10.0F).noOcclusion()
+                    .strength(1.0F, 10.0F).noOcclusion().randomTicks()
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
         }
@@ -712,7 +766,13 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING, context.getClickedFace());
+            Direction clickedFace = context.getClickedFace();
+            if (!FacilityLargePropStructure.canPlace(context.getLevel(),
+                    context.getClickedPos(),
+                    FacilityLargePropStructure.Kind.TV, clickedFace)) {
+                return null;
+            }
+            return defaultBlockState().setValue(FACING, clickedFace);
         }
 
         @Override
@@ -734,14 +794,57 @@ public final class FacilityModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return switch (state.getValue(FACING)) {
-                case NORTH -> box(-16, -13.05, 15.25, 32, 13.3, 17.75);
-                case EAST -> box(-1.75, -13.05, -16, 0.75, 13.3, 32);
-                case WEST -> box(15.25, -13.05, -16, 17.75, 13.3, 32);
-                case UP -> box(-16, -1.75, -13.05, 32, 0.75, 13.3);
-                case DOWN -> box(-16, 15.25, 2.7, 32, 17.75, 29.05);
-                default -> box(-16, -13.05, -1.75, 32, 13.3, 0.75);
-            };
+            return FacilityLargePropStructure.controllerShape(
+                    FacilityLargePropStructure.Kind.TV,
+                    state.getValue(FACING));
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state,
+                BlockGetter level, BlockPos pos, CollisionContext context) {
+            return getShape(state, level, pos, context);
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
+            super.onPlace(state, level, pos, oldState, moving);
+            if (level.isClientSide || oldState.getBlock() == this) return;
+            Direction facing = state.getValue(FACING);
+            if (!FacilityLargePropStructure.placeParts(level, pos,
+                    FacilityLargePropStructure.Kind.TV, facing)) {
+                level.destroyBlock(pos, true);
+                return;
+            }
+            level.scheduleTick(pos, this, 1);
+        }
+
+        @Override
+        public void tick(BlockState state, ServerLevel level, BlockPos pos,
+                RandomSource random) {
+            FacilityLargePropStructure.ensureParts(level, pos,
+                    FacilityLargePropStructure.Kind.TV,
+                    state.getValue(FACING));
+        }
+
+        @Override
+        public void randomTick(BlockState state, ServerLevel level,
+                BlockPos pos, RandomSource random) {
+            FacilityLargePropStructure.ensureParts(level, pos,
+                    FacilityLargePropStructure.Kind.TV,
+                    state.getValue(FACING));
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean moving) {
+            if (state.getBlock() != newState.getBlock()
+                    && !level.isClientSide) {
+                FacilityLargePropStructure.removeParts(level, pos,
+                        FacilityLargePropStructure.Kind.TV,
+                        state.getValue(FACING));
+            }
+            super.onRemove(state, level, pos, newState, moving);
         }
 
         @Override

@@ -34,19 +34,19 @@ public final class FacilitySignBlockEntityRenderer
      * explicit and lets the renderer place text inside the intended areas.
      */
     private static final TextArea[] CORE_LINES = {
-            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.25F),
-            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.25F),
-            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.25F)
+            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.45F),
+            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.45F),
+            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.45F)
     };
     private static final TextArea[] DOOR_LINES = {
-            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.0F),
-            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.0F),
-            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.0F)
+            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.25F),
+            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.25F),
+            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.25F)
     };
     private static final TextArea[] DOOR_NUMBERS = {
-            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.0F),
-            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.0F),
-            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.0F)
+            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.25F),
+            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.25F),
+            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.25F)
     };
 
     private final Font font;
@@ -163,10 +163,16 @@ public final class FacilitySignBlockEntityRenderer
     }
 
     private static float rotationDegrees(Direction direction) {
+        /*
+         * Blockstate JSON rotations use the baked-model convention. PoseStack
+         * uses the opposite sign around Y, so east/west must be inverted or
+         * the text lands on the opposite side of an otherwise correctly
+         * rotated model.
+         */
         return switch (direction) {
-            case EAST -> 90.0F;
+            case EAST -> -90.0F;
             case SOUTH -> 180.0F;
-            case WEST -> 270.0F;
+            case WEST -> 90.0F;
             default -> 0.0F;
         };
     }

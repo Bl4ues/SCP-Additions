@@ -24,13 +24,13 @@ public final class FacilitySignBlockEntityRenderer
     private static final int DOOR_TEXT = 0xF5F7F8;
     private static final float FONT_BASELINE_HEIGHT = 9.0F;
     private static final float MODEL_PIXEL = 1.0F / 16.0F;
-    private static final float CORE_TEXT_SCALE = 0.0077F;
-    private static final float DOOR_TEXT_SCALE = 0.0051F;
+    private static final float CORE_TEXT_SCALE = 0.0068F;
+    private static final float DOOR_TEXT_SCALE = 0.0040F;
     private static final float DOOR_NUMBER_SCALE = 0.0075F;
     private static final float CORE_OUTLINE_OFFSET = 0.30F;
     private static final float CORE_FILL_DEPTH_OFFSET = 0.10F;
     private static final float CORE_BASELINE_Y =
-            -FONT_BASELINE_HEIGHT / 2.0F + 0.65F;
+            -FONT_BASELINE_HEIGHT / 2.0F + 1.30F;
     private static final float DOOR_NUMBER_BASELINE_Y =
             -FONT_BASELINE_HEIGHT / 2.0F + 1.0F;
     private static final float DOOR_TEXT_BASELINE_Y =

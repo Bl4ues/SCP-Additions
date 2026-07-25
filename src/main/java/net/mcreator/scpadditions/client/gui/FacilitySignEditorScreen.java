@@ -1,13 +1,14 @@
 package net.mcreator.scpadditions.client.gui;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 import net.minecraft.world.item.ItemStack;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.ScpFonts;
@@ -458,6 +459,11 @@ public final class FacilitySignEditorScreen extends Screen {
         @Override
         public void onPress() {
             action.run();
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
         }
 
         @Override

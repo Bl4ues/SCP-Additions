@@ -23,13 +23,20 @@ public final class FacilitySignBlockEntityRenderer
     private static final int CORE_OUTLINE = 0x92999D;
     private static final int DOOR_TEXT = 0xF5F7F8;
     private static final float FONT_BASELINE_HEIGHT = 9.0F;
-    private static final float CORE_TEXT_SCALE = 0.0070F;
-    private static final float DOOR_TEXT_SCALE = 0.0057F;
-    private static final float DOOR_NUMBER_SCALE = 0.0075F;
-    private static final float CORE_OUTLINE_OFFSET = 0.35F;
-    private static final float DOOR_BASELINE_Y =
-            -FONT_BASELINE_HEIGHT / 2.0F + 1.0F;
     private static final float MODEL_PIXEL = 1.0F / 16.0F;
+    private static final float CORE_TEXT_SCALE = 0.0077F;
+    private static final float DOOR_TEXT_SCALE = 0.0051F;
+    private static final float DOOR_NUMBER_SCALE = 0.0075F;
+    private static final float CORE_OUTLINE_OFFSET = 0.30F;
+    private static final float CORE_FILL_DEPTH_OFFSET = 0.10F;
+    private static final float CORE_BASELINE_Y =
+            -FONT_BASELINE_HEIGHT / 2.0F + 0.65F;
+    private static final float DOOR_NUMBER_BASELINE_Y =
+            -FONT_BASELINE_HEIGHT / 2.0F + 1.0F;
+    private static final float DOOR_TEXT_BASELINE_Y =
+            -FONT_BASELINE_HEIGHT / 2.0F + 1.55F;
+    private static final float DOOR_TEXT_RIGHT_SHIFT =
+            -0.25F * MODEL_PIXEL;
     private static final float[][] OUTLINE_DIRECTIONS = {
             {-1.0F, -1.0F}, {0.0F, -1.0F}, {1.0F, -1.0F},
             {-1.0F, 0.0F},                    {1.0F, 0.0F},
@@ -128,7 +135,6 @@ public final class FacilitySignBlockEntityRenderer
         FormattedCharSequence sequence = component.getVisualOrderText();
         float width = Math.max(1.0F, font.width(sequence));
         float x = -width / 2.0F;
-        float y = -FONT_BASELINE_HEIGHT / 2.0F;
 
         poseStack.pushPose();
         poseStack.translate(area.centerX(), area.centerY(), area.z());
@@ -144,11 +150,19 @@ public final class FacilitySignBlockEntityRenderer
         for (float[] direction : OUTLINE_DIRECTIONS) {
             font.drawInBatch(sequence,
                     x + direction[0] * CORE_OUTLINE_OFFSET,
-                    y + direction[1] * CORE_OUTLINE_OFFSET,
+                    CORE_BASELINE_Y
+                            + direction[1] * CORE_OUTLINE_OFFSET,
                     CORE_OUTLINE, false, poseStack.last().pose(), buffer,
                     Font.DisplayMode.POLYGON_OFFSET, 0, packedLight);
         }
-        font.drawInBatch(sequence, x, y, CORE_TEXT, false,
+        /*
+         * Keep the dark fill a fraction of a font pixel in front of the
+         * outline. The world-space separation is below one model pixel, but
+         * it gives the depth buffer an unambiguous ordering and removes the
+         * speckling caused by two differently colored coplanar glyph layers.
+         */
+        poseStack.translate(0.0F, 0.0F, CORE_FILL_DEPTH_OFFSET);
+        font.drawInBatch(sequence, x, CORE_BASELINE_Y, CORE_TEXT, false,
                 poseStack.last().pose(), buffer,
                 Font.DisplayMode.POLYGON_OFFSET, 0, packedLight);
         poseStack.popPose();
@@ -160,7 +174,7 @@ public final class FacilitySignBlockEntityRenderer
         float width = Math.max(1.0F, font.width(sequence));
         renderFullBright(sequence, -width / 2.0F,
                 area.centerX(), area.centerY(), area.z(),
-                DOOR_NUMBER_SCALE,
+                DOOR_NUMBER_SCALE, DOOR_NUMBER_BASELINE_Y,
                 poseStack, buffer);
     }
 
@@ -168,19 +182,21 @@ public final class FacilitySignBlockEntityRenderer
             PoseStack poseStack, MultiBufferSource buffer) {
         FormattedCharSequence sequence = component.getVisualOrderText();
         renderFullBright(sequence, 0.0F,
-                area.right(), area.centerY(), area.z(),
-                DOOR_TEXT_SCALE,
+                area.right() + DOOR_TEXT_RIGHT_SHIFT,
+                area.centerY(), area.z(),
+                DOOR_TEXT_SCALE, DOOR_TEXT_BASELINE_Y,
                 poseStack, buffer);
     }
 
     private void renderFullBright(FormattedCharSequence sequence, float x,
             float originX, float originY, float z, float scale,
+            float baselineY,
             PoseStack poseStack, MultiBufferSource buffer) {
         poseStack.pushPose();
         poseStack.translate(originX, originY, z);
         faceTextTowardSignFront(poseStack);
         poseStack.scale(scale, -scale, scale);
-        font.drawInBatch(sequence, x, DOOR_BASELINE_Y,
+        font.drawInBatch(sequence, x, baselineY,
                 DOOR_TEXT, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);

@@ -118,7 +118,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		String text = authenticated ? "GRANTED" : "DENIED";
 		int color = authenticated ? 0x608952 : 0xAC384A;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 77, 0);
+		guiGraphics.pose().translate(1278, 79, 0);
 		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
 		guiGraphics.drawString(this.font, Component.literal(text).withStyle(style -> style.withFont(ROBOTO_FONT)), 0, 0, color, false);
 		guiGraphics.pose().popPose();

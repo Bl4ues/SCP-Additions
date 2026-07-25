@@ -24,19 +24,19 @@ public final class FacilitySignBlockEntityRenderer
     private static final int DOOR_TEXT = 0xF5F7F8;
     private static final float FONT_BASELINE_HEIGHT = 9.0F;
     private static final float MODEL_PIXEL = 1.0F / 16.0F;
-    private static final float CORE_TEXT_SCALE = 0.0068F;
-    private static final float DOOR_TEXT_SCALE = 0.0040F;
+    private static final float CORE_TEXT_SCALE = 0.0066F;
+    private static final float DOOR_TEXT_SCALE = 0.0038F;
     private static final float DOOR_NUMBER_SCALE = 0.0075F;
     private static final float CORE_OUTLINE_OFFSET = 0.30F;
-    private static final float CORE_FILL_DEPTH_OFFSET = 0.10F;
+    private static final float CORE_FILL_DEPTH_OFFSET = 0.05F;
     private static final float CORE_BASELINE_Y =
-            -FONT_BASELINE_HEIGHT / 2.0F + 1.30F;
+            -FONT_BASELINE_HEIGHT / 2.0F + 1.75F;
     private static final float DOOR_NUMBER_BASELINE_Y =
             -FONT_BASELINE_HEIGHT / 2.0F + 1.0F;
     private static final float DOOR_TEXT_BASELINE_Y =
-            -FONT_BASELINE_HEIGHT / 2.0F + 1.55F;
+            -FONT_BASELINE_HEIGHT / 2.0F + 2.30F;
     private static final float DOOR_TEXT_RIGHT_SHIFT =
-            -0.25F * MODEL_PIXEL;
+            -0.45F * MODEL_PIXEL;
     private static final float[][] OUTLINE_DIRECTIONS = {
             {-1.0F, -1.0F}, {0.0F, -1.0F}, {1.0F, -1.0F},
             {-1.0F, 0.0F},                    {1.0F, 0.0F},
@@ -44,25 +44,25 @@ public final class FacilitySignBlockEntityRenderer
     };
 
     /*
-     * These rectangles come directly from line_1..3 and number_1..3 in the
-     * supplied Blockbench models. Those elements are authoring guides, not
-     * visible model geometry. Keeping the values here makes that distinction
-     * explicit and lets the renderer place text inside the intended areas.
+     * The X/Y rectangles come directly from line_1..3 and number_1..3 in
+     * the supplied Blockbench models. Those elements are authoring guides,
+     * not visible geometry. Surface Z is moved slightly toward the actual
+     * panel face so the glyphs stay flush without z-fighting.
      */
     private static final TextArea[] CORE_LINES = {
-            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.49F),
-            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.49F),
-            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.49F)
+            new TextArea(-10.0F, 13.75F, 10.0F, 17.25F, 15.496F),
+            new TextArea(-10.0F, 7.75F, 10.0F, 11.25F, 15.496F),
+            new TextArea(-10.0F, 1.75F, 10.0F, 5.25F, 15.496F)
     };
     private static final TextArea[] DOOR_LINES = {
-            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.30F),
-            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.30F),
-            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.30F)
+            new TextArea(-0.9F, 2.25F, 14.5F, 3.75F, 14.334F),
+            new TextArea(-0.9F, 0.25F, 14.5F, 1.75F, 14.334F),
+            new TextArea(-0.9F, -1.75F, 14.5F, -0.25F, 14.334F)
     };
     private static final TextArea[] DOOR_NUMBERS = {
-            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.30F),
-            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.30F),
-            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.30F)
+            new TextArea(15.0F, 2.25F, 17.0F, 3.75F, 14.334F),
+            new TextArea(15.0F, 0.25F, 17.0F, 1.75F, 14.334F),
+            new TextArea(15.0F, -1.75F, 17.0F, -0.25F, 14.334F)
     };
 
     private final Font font;

@@ -50,10 +50,10 @@
 
 ## Facility signs
 
-- Added the Core Room Sign and Door Sign to the SCP Unity Blocks tab, with directional model-derived collisions and dedicated building tooltips;
+- Added the Core Room Sign and Door Sign;
 - Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
-- Core Room Signs accept up to 30 characters per line, render uppercase Liberation Sans text centered with a dark fill and white outline, and use normal world lighting;
-- Door Signs accept up to 40 characters per line, preserve capitalization, left-align Anonymous Pro text, center Jura numbers in the matching boxes, and render both at full brightness.
+- Core Room Signs accept up to 30 characters per line;
+- Door Signs accept up to 40 characters per line.
 
 ## Accessibility
 

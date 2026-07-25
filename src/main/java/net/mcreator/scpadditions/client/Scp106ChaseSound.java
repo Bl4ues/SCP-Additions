@@ -11,10 +11,12 @@ import net.mcreator.scpadditions.init.Scp106Sounds;
 
 /** Head-relative chase music heard only by the hunted local player. */
 public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
+    private static final int FADE_IN_TICKS = 36;
     private static final int FADE_OUT_TICKS = 32;
-    private static final int STOP_CUE_LEAD_TICKS = 14;
-    private static final float STOP_CUE_VOLUME = 0.34F;
+    private static final int STOP_CUE_LEAD_TICKS = 12;
+    private static final float STOP_CUE_VOLUME = 0.14F;
 
+    private int fadeInTicksElapsed;
     private int fadeTicksRemaining = -1;
     private boolean playStopCue;
     private boolean stopCuePlayed;
@@ -24,7 +26,7 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
                 RandomSource.create());
         this.looping = true;
         this.delay = 0;
-        this.volume = 1.0F;
+        this.volume = 0.0F;
         this.pitch = 1.0F;
         this.relative = true;
         this.attenuation = SoundInstance.Attenuation.NONE;
@@ -38,7 +40,14 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
             beginFadeOut(false);
         }
 
-        if (fadeTicksRemaining < 0) return;
+        float fadeInVolume = Mth.clamp(fadeInTicksElapsed
+                / (float) FADE_IN_TICKS, 0.0F, 1.0F);
+        if (fadeTicksRemaining < 0) {
+            if (fadeInTicksElapsed < FADE_IN_TICKS) fadeInTicksElapsed++;
+            volume = Mth.clamp(fadeInTicksElapsed
+                    / (float) FADE_IN_TICKS, 0.0F, 1.0F);
+            return;
+        }
         if (playStopCue && !stopCuePlayed
                 && fadeTicksRemaining <= STOP_CUE_LEAD_TICKS
                 && minecraft.player != null && minecraft.level != null) {
@@ -53,7 +62,8 @@ public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
             return;
         }
 
-        volume = Mth.clamp(fadeTicksRemaining / (float) FADE_OUT_TICKS,
+        volume = fadeInVolume * Mth.clamp(
+                fadeTicksRemaining / (float) FADE_OUT_TICKS,
                 0.0F, 1.0F);
         fadeTicksRemaining--;
     }

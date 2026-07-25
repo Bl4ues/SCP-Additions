@@ -15,6 +15,8 @@
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
 - Added phasing sounds and chase soundtrack;
 - Adjusted the chase ending so its final cue begins during the fade at a lower volume, blending both sounds more naturally;
+- Added a gentle fade-in to the SCP-106 chase music and further lowered its ending cue so transitions are less noticeable;
+- Reduced the ranged attack's hand particles and made SCP-106 portals grow and fade in smoothly instead of appearing all at once;
 - Corrected ground and wall emergence alignment so SCP-106 begins at its final height and keeps the intended wall-facing direction throughout the animation;
 - Tesla Gates repel SCP-106 instead of killing it, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.

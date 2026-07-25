@@ -20,6 +20,8 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
 
     private final SpriteSet sprites;
     private final Vec3 normal;
+    private final float baseQuadSize;
+    private final int fadeInTicks;
     private final Vec3 planeU;
     private final Vec3 planeV;
     private final float rotation;
@@ -60,9 +62,11 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         this.lifetime = transientSurface
                 ? 30 + this.random.nextInt(17)
                 : 90 + this.random.nextInt(41);
-        this.quadSize = transientSurface
+        this.baseQuadSize = transientSurface
                 ? 0.58F + this.random.nextFloat() * 0.18F
                 : 0.95F + this.random.nextFloat() * 0.25F;
+        this.fadeInTicks = transientSurface ? 6 : 10;
+        this.quadSize = baseQuadSize * 0.18F;
         this.rotation = this.random.nextFloat() * ((float) Math.PI * 2.0F);
         this.lobeAngleA = rotation + 1.05F
                 + this.random.nextFloat() * 0.45F;
@@ -75,7 +79,7 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         this.lobeDistanceC = 0.44F + this.random.nextFloat() * 0.18F;
         float brightness = 0.86F + this.random.nextFloat() * 0.12F;
         this.setColor(brightness, brightness, brightness);
-        this.setAlpha(MAX_ALPHA);
+        this.setAlpha(0.0F);
         this.pickSprite(sprites);
     }
 
@@ -84,9 +88,14 @@ public final class Scp106PortalParticle extends TextureSheetParticle {
         super.tick();
         float remaining = 1.0F - Mth.clamp(
                 this.age / (float) this.lifetime, 0.0F, 1.0F);
-        float fade = Mth.clamp(remaining / 0.28F, 0.0F, 1.0F);
-        this.setAlpha(MAX_ALPHA * fade);
-        this.quadSize += 0.0009F;
+        float fadeOut = Mth.clamp(remaining / 0.28F, 0.0F, 1.0F);
+        float appear = Mth.clamp(this.age / (float) fadeInTicks,
+                0.0F, 1.0F);
+        float smoothAppear = appear * appear * (3.0F - 2.0F * appear);
+        this.setAlpha(MAX_ALPHA * smoothAppear * fadeOut);
+        this.quadSize = baseQuadSize
+                * (0.18F + 0.82F * smoothAppear)
+                + this.age * 0.0009F;
     }
 
     @Override

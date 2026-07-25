@@ -106,7 +106,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final double RANGED_SEGMENT_SPACING = 0.65D;
     private static final int RANGED_COOLDOWN_TICKS = 14 * 20;
     private static final int RANGED_ABORT_COOLDOWN_TICKS = 4 * 20;
-    private static final int RANGED_HAND_PARTICLE_START_TICK = 26;
+    private static final int RANGED_HAND_PARTICLE_START_TICK = 33;
     private static final int TESLA_SUPPRESSION_TICKS = 10 * 60 * 20;
 
     private static final RawAnimation IDLE_ANIMATION =
@@ -883,12 +883,16 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 .add(0.0D, Mth.lerp(progress, 1.28D, 0.48D), 0.0D)
                 .add(forward.scale(Mth.lerp(progress, 0.18D, 0.72D)))
                 .add(right.scale(0.36D));
-        serverLevel.sendParticles(ParticleTypes.SQUID_INK,
-                hand.x, hand.y, hand.z, 2,
-                0.055D, 0.055D, 0.055D, 0.008D);
-        serverLevel.sendParticles(ParticleTypes.SMOKE,
-                hand.x, hand.y, hand.z, 1,
-                0.035D, 0.035D, 0.035D, 0.004D);
+        if ((rangedAttackTicks & 1) == 0) {
+            serverLevel.sendParticles(ParticleTypes.SMOKE,
+                    hand.x, hand.y, hand.z, 1,
+                    0.014D, 0.014D, 0.014D, 0.002D);
+        }
+        if (rangedAttackTicks % 4 == 0) {
+            serverLevel.sendParticles(ParticleTypes.ASH,
+                    hand.x, hand.y, hand.z, 1,
+                    0.010D, 0.010D, 0.010D, 0.001D);
+        }
     }
 
     private void alignGroundEmergencePosition() {

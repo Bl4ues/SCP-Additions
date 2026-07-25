@@ -54,6 +54,11 @@
 - Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool.
 - Compacted both Facility Sign editors, removed their redundant text previews, aligned character counters with their fields, and matched destructive and confirmation controls to the Configuration Center's red and gold visual language.
 
+## Facility construction
+
+- Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
+- Added an SL1 ceiling lamp that changes its lower face and emits light while powered by redstone.
+
 ## Accessibility
 
 - Added a dedicated Accessibility screen to the Configuration Center, beginning with a Photosensitive Epilepsy section;

@@ -21,6 +21,8 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -65,6 +67,10 @@ public final class UBlocksModule {
     public static final RegistryObject<Block> SL1_WALL_BOT = structure("sl1_wall_bot");
     public static final RegistryObject<Block> SL1_WALL_MID = structure("sl1_wall_mid");
     public static final RegistryObject<Block> SL_1_WALL_TOP = structure("sl_1_wall_top");
+    public static final RegistryObject<Block> SL1_CEILING = structure("sl1_ceiling");
+    public static final RegistryObject<Block> SL1_CEILING_ALT = structure("sl1_ceiling_alt");
+    public static final RegistryObject<Block> SL1_LAMP = registerBlock(
+            "sl1_lamp", RedstoneCeilingLampBlock::new, false);
 
     // Sector 1 directional decoration.
     public static final RegistryObject<Block> SL_1_FLOOR_DETAIL_SMALL = directional(
@@ -185,6 +191,41 @@ public final class UBlocksModule {
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
             List<ItemStack> original = super.getDrops(state, builder);
             return original.isEmpty() ? Collections.singletonList(new ItemStack(this)) : original;
+        }
+    }
+
+    private static final class RedstoneCeilingLampBlock extends UBlockStructureBlock {
+        private static final BooleanProperty LIT = BlockStateProperties.LIT;
+
+        private RedstoneCeilingLampBlock() {
+            registerDefaultState(stateDefinition.any().setValue(LIT, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(LIT);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(LIT,
+                    context.getLevel().hasNeighborSignal(context.getClickedPos()));
+        }
+
+        @Override
+        public void neighborChanged(BlockState state, Level level, BlockPos pos,
+                Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+            if (!level.isClientSide) {
+                boolean powered = level.hasNeighborSignal(pos);
+                if (state.getValue(LIT) != powered) {
+                    level.setBlock(pos, state.setValue(LIT, powered), Block.UPDATE_ALL);
+                }
+            }
+        }
+
+        @Override
+        public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+            return state.getValue(LIT) ? 15 : 0;
         }
     }
 

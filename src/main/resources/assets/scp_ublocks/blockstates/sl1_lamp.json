@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "scp_ublocks:block/sl1_lamp_off"
+    },
+    "lit=true": {
+      "model": "scp_ublocks:block/sl1_lamp_on"
+    }
+  }
+}

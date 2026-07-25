@@ -82,28 +82,36 @@ repositories {
 // mappings and crashing runClient with NoSuchMethodError. Prepare a dev-only
 // copy of the core without JarJar contents and remap every extracted plugin as
 // its own dependency.
-configurations {
-    moreMcmetaBundle
-}
-
-dependencies {
-    moreMcmetaBundle 'maven.modrinth:HFlxNpln:1Gk4ti96' // MoreMcmeta 4.5.2
-}
-
 def moreMcmetaDevDir = layout.buildDirectory.dir('moremcmeta-dev-runtime').get().asFile
-def moreMcmetaBundleJar = configurations.moreMcmetaBundle.singleFile
+def moreMcmetaBundleJar = new File(moreMcmetaDevDir, 'moremcmeta-4.5.2-source.jar')
 def moreMcmetaCoreJar = new File(moreMcmetaDevDir, 'moremcmeta-core-dev.jar')
 def moreMcmetaPluginDir = new File(moreMcmetaDevDir, 'plugins')
-def moreMcmetaStamp = new File(moreMcmetaDevDir, '.source-sha1')
+def moreMcmetaExpectedSha1 = '6046753a29d6963ad2a9c557b557bd7a2d793354'
+def moreMcmetaDownloadUrl =
+        'https://cdn.modrinth.com/data/HFlxNpln/versions/1Gk4ti96/moremcmeta-1.20.1-4.5.2-forge.jar'
+
+if (!moreMcmetaBundleJar.exists()) {
+    moreMcmetaBundleJar.parentFile.mkdirs()
+    new URL(moreMcmetaDownloadUrl).withInputStream { input ->
+        moreMcmetaBundleJar.withOutputStream { output -> output << input }
+    }
+}
+
 def moreMcmetaSourceSha1 = java.security.MessageDigest.getInstance('SHA-1')
         .digest(moreMcmetaBundleJar.bytes)
         .encodeHex()
         .toString()
+if (moreMcmetaSourceSha1 != moreMcmetaExpectedSha1) {
+    project.delete(moreMcmetaBundleJar)
+    throw new GradleException("MoreMcmeta download checksum mismatch: ${moreMcmetaSourceSha1}")
+}
 
+def moreMcmetaStamp = new File(moreMcmetaDevDir, '.prepared-source-sha1')
 if (!moreMcmetaStamp.exists()
         || moreMcmetaStamp.getText('UTF-8').trim() != moreMcmetaSourceSha1
         || !moreMcmetaCoreJar.exists()) {
-    project.delete(moreMcmetaDevDir)
+    project.delete(moreMcmetaCoreJar)
+    project.delete(moreMcmetaPluginDir)
     moreMcmetaPluginDir.mkdirs()
 
     project.copy {

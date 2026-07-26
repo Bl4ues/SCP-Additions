@@ -25,6 +25,11 @@ import java.util.UUID;
 public final class Scp106AudioEvents {
     private static final byte EMERGING_GROUND = 1;
     private static final byte EMERGING_WALL = 2;
+    // The authored walk loop plants its feet at 0.72 s and 1.62 s. GeckoLib
+    // plays that 1.8 s loop at 1.38x while SCP-106 is walking.
+    private static final double WALK_SECONDS_PER_TICK = 1.38D / 20.0D;
+    private static final double FIRST_FOOTSTEP_SECONDS = 0.72D;
+    private static final double FOOTSTEP_INTERVAL_SECONDS = 0.90D;
     private static final Map<UUID, Tracked> TRACKED = new HashMap<>();
 
     private Scp106AudioEvents() {
@@ -70,6 +75,8 @@ public final class Scp106AudioEvents {
             }
             tracked.previousState = state;
 
+            tickFootsteps(tracked);
+
             boolean ranged = scp106.isRangedAttacking();
             if (ranged && !tracked.rangedPreviously) {
                 playPhase(scp106, 0.38F);
@@ -86,6 +93,39 @@ public final class Scp106AudioEvents {
                 }
             }
         }
+    }
+
+    private static void tickFootsteps(Tracked tracked) {
+        Scp106Entity scp106 = tracked.entity;
+        if (!scp106.isWalkingForFootsteps()) {
+            tracked.walkingPreviously = false;
+            tracked.walkAnimationSeconds = 0.0D;
+            tracked.nextFootstepSeconds = FIRST_FOOTSTEP_SECONDS;
+            return;
+        }
+
+        if (!tracked.walkingPreviously) {
+            tracked.walkingPreviously = true;
+            tracked.walkAnimationSeconds = 0.0D;
+            tracked.nextFootstepSeconds = FIRST_FOOTSTEP_SECONDS;
+        }
+
+        tracked.walkAnimationSeconds += WALK_SECONDS_PER_TICK;
+        if (tracked.walkAnimationSeconds + 1.0E-6D
+                < tracked.nextFootstepSeconds) {
+            return;
+        }
+
+        playFootstep(scp106);
+        tracked.nextFootstepSeconds += FOOTSTEP_INTERVAL_SECONDS;
+    }
+
+    private static void playFootstep(Scp106Entity scp106) {
+        if (!(scp106.level() instanceof ServerLevel level)) return;
+        level.playSound(null, scp106.getX(), scp106.getY() + 0.05D,
+                scp106.getZ(), Scp106Sounds.STEP.get(),
+                SoundSource.HOSTILE, 0.9F,
+                0.96F + scp106.getRandom().nextFloat() * 0.08F);
     }
 
     public static void stopChaseFor(Scp106Entity scp106) {
@@ -129,6 +169,9 @@ public final class Scp106AudioEvents {
         private final Scp106Entity entity;
         private byte previousState = -1;
         private boolean rangedPreviously;
+        private boolean walkingPreviously;
+        private double walkAnimationSeconds;
+        private double nextFootstepSeconds = FIRST_FOOTSTEP_SECONDS;
         private UUID audioTarget;
 
         private Tracked(Scp106Entity entity) {

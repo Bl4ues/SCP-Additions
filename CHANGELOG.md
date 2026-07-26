@@ -50,7 +50,6 @@
 ## Audio and presentation
 
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
-- Added localized SCP-106 footsteps synchronized to its walk cycle, confirmed melee-hit and ranged-corrosion impact sounds, and a smoothly fading positional loop while players are affected by Wither;
 - Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack has finished.
 
 ## Facility signs

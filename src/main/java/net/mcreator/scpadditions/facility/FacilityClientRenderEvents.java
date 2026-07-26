@@ -23,6 +23,10 @@ public final class FacilityClientRenderEvents {
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.TRASHBIN.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(
+                    FacilityModule.EMERGENCY_BUTTON.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(
+                    FacilityModule.FIRE_EXTINGUISHER.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.CORE_ROOM_SIGN.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.DOOR_SIGN.get(), RenderType.cutout());

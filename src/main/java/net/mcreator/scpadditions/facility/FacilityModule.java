@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.facility;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -49,6 +50,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -119,6 +121,10 @@ public final class FacilityModule {
     public static final RegistryObject<Block> WALLLIGHT_2 = registerBlock("walllight_2",
             () -> new WallLightBlock(true), false);
     public static final RegistryObject<Block> HEATER = registerBlock("heater", HeaterBlock::new, true);
+    public static final RegistryObject<Block> EMERGENCY_BUTTON = registerBlock(
+            "emergency_button", EmergencyButtonBlock::new, true);
+    public static final RegistryObject<Block> FIRE_EXTINGUISHER = registerBlock(
+            "fire_extinguisher", FireExtinguisherBlock::new, true);
     public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", SignSupportBlock::new, true);
     public static final RegistryObject<Block> CORE_ROOM_SIGN = registerSign(
             "core_room_sign", FacilitySignBlock.SignType.CORE_ROOM);
@@ -252,6 +258,8 @@ public final class FacilityModule {
         // Frequently used facility props.
         addFacilityCreativeItem(ordered, "walllight");
         addFacilityCreativeItem(ordered, "heater");
+        addFacilityCreativeItem(ordered, "emergency_button");
+        addFacilityCreativeItem(ordered, "fire_extinguisher");
         addFacilityCreativeItem(ordered, "sign_support");
         addFacilityCreativeItem(ordered, "core_room_sign");
         addFacilityCreativeItem(ordered, "door_sign");
@@ -330,11 +338,34 @@ public final class FacilityModule {
             Supplier<? extends Block> factory, boolean publicItem) {
         RegistryObject<Block> block = BLOCKS.register(path, factory);
         RegistryObject<Item> item = ITEMS.register(path,
-                () -> new BlockItem(block.get(), new Item.Properties()));
+                () -> isDecorativeProp(path)
+                        ? new DecorativePropBlockItem(block.get(), new Item.Properties())
+                        : new BlockItem(block.get(), new Item.Properties()));
         BLOCKS_BY_PATH.put(path, block);
         ITEMS_BY_PATH.put(path, item);
         if (publicItem) CREATIVE_ITEMS.add(item);
         return block;
+    }
+
+    private static boolean isDecorativeProp(String path) {
+        return "heater".equals(path)
+                || "emergency_button".equals(path)
+                || "fire_extinguisher".equals(path)
+                || "trashbin".equals(path);
+    }
+
+    private static final class DecorativePropBlockItem extends BlockItem {
+        private DecorativePropBlockItem(Block block, Properties properties) {
+            super(block, properties);
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable Level level,
+                List<Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+            tooltip.add(Component.translatable("tooltip.scp_additions.decorative_prop")
+                    .withStyle(ChatFormatting.GRAY));
+            super.appendHoverText(stack, level, tooltip, flag);
+        }
     }
 
     private static DoorFamily door(String id, String closedPath, List<String> openingPaths,
@@ -624,6 +655,55 @@ public final class FacilityModule {
                         box(5.35, 1, 7.5, 8.35, 13.75, 9.5));
             };
         }
+    }
+
+    private static final class EmergencyButtonBlock extends HorizontalWaterloggedPropBlock {
+        private EmergencyButtonBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F));
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return horizontalShape(state.getValue(FACING),
+                    box(5.79, 1.5, 13, 10.21, 7.61, 16));
+        }
+    }
+
+    private static final class FireExtinguisherBlock extends HorizontalWaterloggedPropBlock {
+        private FireExtinguisherBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F));
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            VoxelShape north = Shapes.or(
+                    box(4.4, 0, 10.7, 11.6, 16, 16),
+                    box(6.4, 1.25, 10.7, 9.6, 11.35, 16.4));
+            return horizontalShape(state.getValue(FACING), north);
+        }
+    }
+
+    private static VoxelShape horizontalShape(Direction facing, VoxelShape north) {
+        if (facing == Direction.NORTH) return north;
+        return rotateShape(Direction.NORTH, facing, north);
+    }
+
+    private static VoxelShape rotateShape(Direction from, Direction to, VoxelShape shape) {
+        VoxelShape[] buffer = { shape, Shapes.empty() };
+        int rotations = (to.get2DDataValue() - from.get2DDataValue() + 4) % 4;
+        for (int i = 0; i < rotations; i++) {
+            buffer[0].forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
+                    buffer[1] = Shapes.or(buffer[1],
+                            Shapes.box(1 - maxZ, minY, minX,
+                                    1 - minZ, maxY, maxX)));
+            buffer[0] = buffer[1];
+            buffer[1] = Shapes.empty();
+        }
+        return buffer[0];
     }
 
     private static final class SignSupportBlock extends HorizontalWaterloggedPropBlock {

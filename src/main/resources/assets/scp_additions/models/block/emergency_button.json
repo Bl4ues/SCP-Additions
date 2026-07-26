@@ -3,7 +3,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [256, 256],
 	"textures": {
-		"3": "emergencybutton"
+		"3": "scp_additions:block/emergencybutton",
+		"particle": "scp_additions:block/emergencybutton"
 	},
 	"elements": [
 		{

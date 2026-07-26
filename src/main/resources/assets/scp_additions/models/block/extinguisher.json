@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [64, 64],
 	"textures": {
-		"0": "fireextinguisher",
-		"particle": "fireextinguisher"
+		"0": "scp_additions:block/fireextinguisher",
+		"particle": "scp_additions:block/fireextinguisher"
 	},
 	"elements": [
 		{

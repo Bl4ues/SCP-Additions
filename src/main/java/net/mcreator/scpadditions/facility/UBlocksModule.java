@@ -156,12 +156,34 @@ public final class UBlocksModule {
         RegistryObject<Block> block = BLOCKS.register(path, factory);
         RegistryObject<Item> item = ITEMS.register(path, () -> isConnectedFloorPath(path)
                 ? new ConnectedFloorBlockItem(block.get(), new Item.Properties())
+                : isDecorativePropPath(path)
+                ? new DecorativePropBlockItem(block.get(), new Item.Properties())
                 : new BlockItem(block.get(), new Item.Properties()));
         CREATIVE_ITEMS.add(item);
         if (cutout) {
             CUTOUT_BLOCKS.add(block);
         }
         return block;
+    }
+
+    private static boolean isDecorativePropPath(String path) {
+        return "vent_open".equals(path)
+                || "sl_1_floor_detail_small".equals(path)
+                || "sl_1_floor_detail_big".equals(path);
+    }
+
+    private static final class DecorativePropBlockItem extends BlockItem {
+        private DecorativePropBlockItem(Block block, Properties properties) {
+            super(block, properties);
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable Level level,
+                List<Component> tooltip, TooltipFlag flag) {
+            tooltip.add(Component.translatable("tooltip.scp_additions.decorative_prop")
+                    .withStyle(ChatFormatting.GRAY));
+            super.appendHoverText(stack, level, tooltip, flag);
+        }
     }
 
     private static boolean isConnectedFloorPath(String path) {

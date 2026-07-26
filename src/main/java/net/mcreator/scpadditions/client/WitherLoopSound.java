@@ -13,7 +13,7 @@ import net.mcreator.scpadditions.init.Scp106Sounds;
 /** Positional Wither loop that follows one affected player and fades cleanly. */
 public final class WitherLoopSound extends AbstractTickableSoundInstance {
     private static final float MINIMUM_START_VOLUME = 0.01F;
-    private static final float TARGET_VOLUME = 1.70F;
+    private static final float TARGET_VOLUME = 0.85F;
     private static final int FADE_IN_TICKS = 20;
     private static final int FADE_OUT_TICKS = 30;
 

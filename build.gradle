@@ -393,34 +393,6 @@ processResources {
             writeJson(inactiveTeslaModel, model)
         }
 
-        // The source recordings are intentionally kept untouched. Double the
-        // effective volume of every sound entry from all integrated namespaces
-        // in the processed JAR so the entire mod can be evaluated consistently.
-        ['scp_additions', 'scpinventory', 'scp_unity_extra_blocks', 'scp_ublocks'].each { namespace ->
-            File soundsFile = file("$buildDir/resources/main/assets/${namespace}/sounds.json")
-            if (!soundsFile.exists()) return
-            def definitions = parser.parse(soundsFile)
-            definitions.each { eventName, eventDefinition ->
-                if (eventDefinition instanceof Map
-                        && eventDefinition.sounds instanceof List) {
-                    eventDefinition.sounds = eventDefinition.sounds.collect { sound ->
-                        if (sound instanceof CharSequence) {
-                            return [name: sound.toString(), volume: 2.0G]
-                        }
-                        if (sound instanceof Map) {
-                            def updated = new LinkedHashMap(sound)
-                            BigDecimal originalVolume = updated.containsKey('volume')
-                                    ? updated.volume as BigDecimal
-                                    : 1.0G
-                            updated.volume = originalVolume * 2.0G
-                            return updated
-                        }
-                        return sound
-                    }
-                }
-            }
-            writeJson(soundsFile, definitions)
-        }
     }
 }
 

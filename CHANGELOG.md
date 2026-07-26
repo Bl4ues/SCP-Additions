@@ -76,6 +76,8 @@
 
 ## Bug Fixes
 
+- Synchronized SCP-106's ranged corrosion trail and hand particles with the visible 2.11-second right-arm release keyframe, compensating for server-to-client animation startup delay;
+- Normalized SCP-106's footsteps, hit, ranged splash, and Wither source audio so they are genuinely louder at close range instead of relying on above-maximum playback multipliers that primarily expanded attenuation distance;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;
 - Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;
 - Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.

@@ -108,7 +108,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int RANGED_PREPARE_TICKS = 20;
     private static final int RANGED_AIM_LOCK_TICK = 38;
     private static final int RANGED_RELEASE_TICK = 42;
-    private static final int RANGED_ATTACK_DURATION_TICKS = 69;
+    // Entity data reaches the rendering client shortly after the authoritative
+    // server state starts. Offset visual effects so the 2.11 s corrosion
+    // release lands on the animated right-arm strike instead of preceding it.
+    private static final int RANGED_VISUAL_SYNC_DELAY_TICKS = 2;
+    private static final int RANGED_ANIMATION_DURATION_TICKS = 69;
+    private static final int RANGED_ATTACK_DURATION_TICKS =
+            RANGED_ANIMATION_DURATION_TICKS + RANGED_VISUAL_SYNC_DELAY_TICKS;
     private static final int RANGED_SEGMENTS = 15;
     private static final double RANGED_SEGMENT_SPACING = 0.668D;
     private static final int RANGED_COOLDOWN_TICKS = 14 * 20;
@@ -830,12 +836,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             faceDirection(rangedLockedDirection);
         }
 
-        if (rangedAttackTicks >= RANGED_HAND_PARTICLE_START_TICK
-                && rangedAttackTicks <= RANGED_RELEASE_TICK + 2) {
-            spawnRangedHandParticles();
+        int visualAnimationTick = Math.max(0, rangedAttackTicks
+                - RANGED_VISUAL_SYNC_DELAY_TICKS);
+        if (visualAnimationTick >= RANGED_HAND_PARTICLE_START_TICK
+                && visualAnimationTick <= RANGED_RELEASE_TICK + 2) {
+            spawnRangedHandParticles(visualAnimationTick);
         }
 
-        int segment = rangedAttackTicks - RANGED_RELEASE_TICK;
+        int segment = visualAnimationTick - RANGED_RELEASE_TICK;
         if (segment >= 0 && segment < RANGED_SEGMENTS && !rangedBlocked) {
             spawnRangedSegment(segment);
         }
@@ -900,7 +908,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         Scp106CorrosionFieldManager.addRanged(serverLevel, puddle);
         serverLevel.playSound(null, puddle.x, puddle.y, puddle.z,
                 Scp106Sounds.RANGED_SPLASH.get(), SoundSource.HOSTILE,
-                1.70F, 0.96F + random.nextFloat() * 0.08F);
+                0.85F, 0.96F + random.nextFloat() * 0.08F);
 
         if (rangedHit) return;
         AABB hitbox = new AABB(puddle.x - 0.68D, puddle.y - 0.15D,
@@ -1027,13 +1035,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         return Double.POSITIVE_INFINITY;
     }
 
-    private void spawnRangedHandParticles() {
+    private void spawnRangedHandParticles(int visualAnimationTick) {
         if (!(level() instanceof ServerLevel serverLevel)) return;
         Vec3 forward = rangedLockedDirection.lengthSqr() < 1.0E-6D
                 ? getLookAngle().multiply(1.0D, 0.0D, 1.0D).normalize()
                 : rangedLockedDirection;
         Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
-        double progress = Mth.clamp((rangedAttackTicks
+        double progress = Mth.clamp((visualAnimationTick
                 - RANGED_HAND_PARTICLE_START_TICK)
                 / (double) Math.max(1, RANGED_RELEASE_TICK
                 - RANGED_HAND_PARTICLE_START_TICK), 0.0D, 1.0D);
@@ -1044,12 +1052,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                         RANGED_HAND_FORWARD_OFFSET)))
                 .add(right.scale(Mth.lerp(progress, 0.36D,
                         RANGED_HAND_SIDE_OFFSET)));
-        if ((rangedAttackTicks & 1) == 0) {
+        if ((visualAnimationTick & 1) == 0) {
             serverLevel.sendParticles(ParticleTypes.SMOKE,
                     hand.x, hand.y, hand.z, 1,
                     0.014D, 0.014D, 0.014D, 0.002D);
         }
-        if (rangedAttackTicks % 4 == 0) {
+        if (visualAnimationTick % 4 == 0) {
             serverLevel.sendParticles(ParticleTypes.ASH,
                     hand.x, hand.y, hand.z, 1,
                     0.010D, 0.010D, 0.010D, 0.001D);
@@ -1275,7 +1283,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                         livingTarget.getY()
                                 + livingTarget.getBbHeight() * 0.5D,
                         livingTarget.getZ(), Scp106Sounds.HIT.get(),
-                        SoundSource.HOSTILE, 2.0F, 1.0F);
+                        SoundSource.HOSTILE, 1.0F, 1.0F);
             }
             livingTarget.addEffect(new MobEffectInstance(
                     MobEffects.WITHER,

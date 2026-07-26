@@ -15,6 +15,7 @@
 - Corrosion left by SCP-106 continuously slows Survival players who walk over it;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
+- Reworked ambush relocation to triangulate SCP-106's previous position with the player's actual movement, predicting an interception ahead of the route instead of relying on where the player is looking;
 - Added phasing sounds and chase soundtrack;
 - Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
@@ -36,6 +37,7 @@
 - Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
+- Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## Roamer spawning and developer tools
@@ -69,7 +71,7 @@
 - Added an SL1 ceiling lamp that emits light while powered by redstone.
 - Added decorative Emergency Button and Fire Extinguisher facility props;
 - Added clear decorative-only tooltips to facility props that have no gameplay function;
-- Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made right-click switch between their visual states;
+- Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 
 ## Accessibility

@@ -3,6 +3,8 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -37,6 +39,14 @@ public final class Scp079DecisionLog {
         String safeContext = context == null ? "" : context.trim();
         if (safeContext.length() > MAX_CONTEXT_LENGTH) {
             safeContext = safeContext.substring(0, MAX_CONTEXT_LENGTH);
+        }
+
+        if (outcome == DecisionOutcome.EXECUTED
+                && type.manipulatesFacilityDevice()
+                && !target.equals(BlockPos.ZERO)) {
+            level.playSound(null, target,
+                    ScpAdditionsModSounds.SCP079HACK.get(),
+                    SoundSource.BLOCKS, 1.0F, 1.0F);
         }
 
         synchronized (HISTORIES) {
@@ -74,7 +84,16 @@ public final class Scp079DecisionLog {
         OPEN_SCP_012_BOX,
         ABANDON_SCP_012_CONTEST,
         SEPARATE_SCP_131,
-        ABORTED_ACTION
+        ABORTED_ACTION;
+
+        private boolean manipulatesFacilityDevice() {
+            return switch (this) {
+                case OPEN_DOOR, CLOSE_DOOR, DENY_ACCESS,
+                        TESLA_SUPPRESSION, OPEN_SCP_012_ROUTE,
+                        OPEN_SCP_012_BOX, SEPARATE_SCP_131 -> true;
+                case ABANDON_SCP_012_CONTEST, ABORTED_ACTION -> false;
+            };
+        }
     }
 
     public enum DecisionOutcome {

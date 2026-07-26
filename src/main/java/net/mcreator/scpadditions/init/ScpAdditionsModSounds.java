@@ -31,6 +31,7 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> TERMINALON = REGISTRY.register("terminalon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalon")));
 	public static final RegistryObject<SoundEvent> TERMINALOFF = REGISTRY.register("terminaloff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminaloff")));
 	public static final RegistryObject<SoundEvent> SCP079_1 = REGISTRY.register("scp079_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp079_1")));
+	public static final RegistryObject<SoundEvent> SCP079HACK = REGISTRY.register("scp079_hack", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp079_hack")));
 	public static final RegistryObject<SoundEvent> CANDYEAT = REGISTRY.register("candyeat", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "candyeat")));
 	public static final RegistryObject<SoundEvent> CANDY = REGISTRY.register("candy", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "candy")));
 	public static final RegistryObject<SoundEvent> SCP330DEATH = REGISTRY.register("scp330death", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp330death")));

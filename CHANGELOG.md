@@ -1,5 +1,9 @@
 # Changelog
 
+- Reduced SCP-106's PBR reflectance separately for skin and clothing, and corrected the corrosion-puddle specular map for a wet reflective surface without accidental emission.
+- Fixed SCP-106 instances placed with the Creative spawn egg immediately sinking into the ground and despawning instead of remaining in the world like manually spawned SCP-173 instances.
+- Fixed SCP-106 and SCP-131 PBR materials having smoothness but zero reflectance, and restored SCP-106's depth-safe cutout rendering.
+
 # SCP Additions 3.0.8 — In Development
 
 ## SCP-106
@@ -12,6 +16,7 @@
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
 - Reworked ambush relocation to triangulate SCP-106's previous position with the player's actual movement, predicting an interception ahead of the route instead of relying on where the player is looking;
+- Added phasing sounds and chase soundtrack;
 - Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
 
@@ -47,7 +52,7 @@
 ## Survival
 
 - Added a default-enabled **Disable Hunger System** module that hides the vanilla hunger bar and converts food nutrition directly into health;
-- Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 15 seconds without damage;
+- Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 30 seconds without damage;
 - Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration.
 
 ## Audio and presentation
@@ -76,6 +81,8 @@
 
 ## Bug Fixes
 
+- Synchronized SCP-106's ranged corrosion trail and hand particles with the visible 2.11-second right-arm release keyframe, compensating for server-to-client animation startup delay;
+- Normalized SCP-106's footsteps, hit, ranged splash, and Wither source audio so they are genuinely louder at close range instead of relying on above-maximum playback multipliers that primarily expanded attenuation distance;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;
 - Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;
 - Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.
@@ -88,7 +95,7 @@
 - Removed unintended shader reflections from the SL1 floor arrows and added dedicated handheld item textures for both arrow sizes;
 - Corrected the outward-facing Decontamination Checkpoint diamond trim while preserving its z-fighting separation;
 - Removed duplicated Heater base geometry that reused the top emissive region;
-- Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
+- Separated the Decontamination Checkpoint's diamond-shaped window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
 
 # SCP Additions 3.0.7 — Hotfix
 

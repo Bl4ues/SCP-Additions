@@ -1,12 +1,36 @@
 {
-  "variants": {
-    "facing=north,waterlogged=false": {"model": "scp_additions:block/extinguisher"},
-    "facing=north,waterlogged=true": {"model": "scp_additions:block/extinguisher"},
-    "facing=east,waterlogged=false": {"model": "scp_additions:block/extinguisher", "y": 90},
-    "facing=east,waterlogged=true": {"model": "scp_additions:block/extinguisher", "y": 90},
-    "facing=south,waterlogged=false": {"model": "scp_additions:block/extinguisher", "y": 180},
-    "facing=south,waterlogged=true": {"model": "scp_additions:block/extinguisher", "y": 180},
-    "facing=west,waterlogged=false": {"model": "scp_additions:block/extinguisher", "y": 270},
-    "facing=west,waterlogged=true": {"model": "scp_additions:block/extinguisher", "y": 270}
-  }
+  "multipart": [
+    {
+      "when": {"facing": "north"},
+      "apply": {"model": "scp_additions:block/extinguisher"}
+    },
+    {
+      "when": {"facing": "north"},
+      "apply": {"model": "scp_additions:block/extinguisher_glass"}
+    },
+    {
+      "when": {"facing": "east"},
+      "apply": {"model": "scp_additions:block/extinguisher", "y": 90}
+    },
+    {
+      "when": {"facing": "east"},
+      "apply": {"model": "scp_additions:block/extinguisher_glass", "y": 90}
+    },
+    {
+      "when": {"facing": "south"},
+      "apply": {"model": "scp_additions:block/extinguisher", "y": 180}
+    },
+    {
+      "when": {"facing": "south"},
+      "apply": {"model": "scp_additions:block/extinguisher_glass", "y": 180}
+    },
+    {
+      "when": {"facing": "west"},
+      "apply": {"model": "scp_additions:block/extinguisher", "y": 270}
+    },
+    {
+      "when": {"facing": "west"},
+      "apply": {"model": "scp_additions:block/extinguisher_glass", "y": 270}
+    }
+  ]
 }

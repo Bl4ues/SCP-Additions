@@ -1,0 +1,20 @@
+{
+  "format_version": "1.9.0",
+  "credit": "Made with Blockbench",
+  "render_type": "minecraft:translucent",
+  "ambientocclusion": false,
+  "texture_size": [64, 64],
+  "textures": {
+    "0": "scp_additions:block/fireextinguisher",
+    "particle": "scp_additions:block/fireextinguisher"
+  },
+  "elements": [
+    {
+      "from": [5, 0.5, 11],
+      "to": [11, 15.5, 11],
+      "faces": {
+        "north": {"uv": [15.25, 14.125, 16, 16], "texture": "#0"}
+      }
+    }
+  ]
+}

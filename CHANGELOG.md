@@ -76,7 +76,7 @@
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, expanded its collision to include the upper structure, and moved its front icon clear of the casing;
 - Removed unintended shader reflections from the SL1 floor arrows;
 - Removed duplicated Heater base geometry that reused the top emissive region;
-- Removed hidden coplanar edge faces from the Decontamination Checkpoint windows to prevent z-fighting with optional renderers and shaders.
+- Separated the Decontamination Checkpoint's diamond-shaped window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
 
 # SCP Additions 3.0.7 — Hotfix
 

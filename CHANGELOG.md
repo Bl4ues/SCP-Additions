@@ -57,7 +57,7 @@
 
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 ceiling lamp that emits light while powered by redstone.
-- Added decorative Emergency Button and Fire Extinguisher facility props with model-matched collision;
+- Added decorative Emergency Button and Fire Extinguisher facility props with model-matched collision and placement aligned to the clicked wall face;
 - Added clear decorative-only tooltips to facility props that currently have no gameplay function;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 

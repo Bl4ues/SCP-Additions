@@ -560,6 +560,23 @@ public final class FacilityModule {
         }
     }
 
+    private abstract static class WallMountedWaterloggedPropBlock
+            extends HorizontalWaterloggedPropBlock {
+        protected WallMountedWaterloggedPropBlock(BlockBehaviour.Properties properties) {
+            super(properties);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            Direction clickedFace = context.getClickedFace();
+            if (clickedFace.getAxis() == Direction.Axis.Y) return null;
+            boolean waterlogged = context.getLevel().getFluidState(
+                    context.getClickedPos()).getType() == Fluids.WATER;
+            return defaultBlockState().setValue(FACING, clickedFace)
+                    .setValue(WATERLOGGED, waterlogged);
+        }
+    }
+
     private static final class WallLightBlock extends HorizontalWaterloggedPropBlock {
         private final boolean upper;
 
@@ -657,7 +674,7 @@ public final class FacilityModule {
         }
     }
 
-    private static final class EmergencyButtonBlock extends HorizontalWaterloggedPropBlock {
+    private static final class EmergencyButtonBlock extends WallMountedWaterloggedPropBlock {
         private EmergencyButtonBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F));
@@ -671,7 +688,7 @@ public final class FacilityModule {
         }
     }
 
-    private static final class FireExtinguisherBlock extends HorizontalWaterloggedPropBlock {
+    private static final class FireExtinguisherBlock extends WallMountedWaterloggedPropBlock {
         private FireExtinguisherBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F));

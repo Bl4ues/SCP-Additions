@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed SCP-106 and SCP-131 PBR materials having smoothness but zero reflectance, and restored SCP-106's depth-safe cutout rendering.
+
 # SCP Additions 3.0.8 — In Development
 
 ## SCP-106

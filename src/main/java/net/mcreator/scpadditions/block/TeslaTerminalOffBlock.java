@@ -1,5 +1,10 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraftforge.registries.ForgeRegistries;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -32,7 +37,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
+
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
+import net.mcreator.scpadditions.item.ScrewdriverItem;
 
 import java.util.List;
 import java.util.Collections;
@@ -120,13 +127,26 @@ public class TeslaTerminalOffBlock extends Block implements SimpleWaterloggedBlo
 
 	@Override
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
+		if (!(entity.getItemInHand(hand).getItem() instanceof ScrewdriverItem)) {
+			return InteractionResult.SUCCESS;
+		}
+
 		if (!world.isClientSide) {
 			BlockState enabled = ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get()
 					.defaultBlockState()
 					.setValue(TeslaTerminalBlockBlock.FACING, blockstate.getValue(FACING))
 					.setValue(TeslaTerminalBlockBlock.WATERLOGGED, blockstate.getValue(WATERLOGGED));
 			world.setBlock(pos, enabled, Block.UPDATE_ALL);
+			playToggleSound(world, pos, "terminalon");
 		}
 		return InteractionResult.sidedSuccess(world.isClientSide);
+	}
+
+	private static void playToggleSound(Level world, BlockPos pos, String soundId) {
+		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(
+				new ResourceLocation("scp_additions", soundId));
+		if (sound != null) {
+			world.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
+		}
 	}
 }

@@ -45,8 +45,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 
-import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
+import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.item.ScrewdriverItem;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
 import java.util.List;
@@ -158,16 +159,18 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 
 	@Override
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		if (!entity.isShiftKeyDown()) {
+		if (entity.getItemInHand(hand).getItem() instanceof ScrewdriverItem) {
 			if (!world.isClientSide) {
 				BlockState disabled = ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get()
 						.defaultBlockState()
 						.setValue(TeslaTerminalOffBlock.FACING, blockstate.getValue(FACING))
 						.setValue(TeslaTerminalOffBlock.WATERLOGGED, blockstate.getValue(WATERLOGGED));
 				world.setBlock(pos, disabled, Block.UPDATE_ALL);
+				playToggleSound(world, pos, "terminaloff");
 			}
 			return InteractionResult.sidedSuccess(world.isClientSide);
 		}
+
 		if (entity instanceof ServerPlayer player) {
 			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
 			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
@@ -191,5 +194,13 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 			});
 		}
 		return InteractionResult.sidedSuccess(world.isClientSide);
+	}
+
+	private static void playToggleSound(Level world, BlockPos pos, String soundId) {
+		SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(
+				new ResourceLocation("scp_additions", soundId));
+		if (sound != null) {
+			world.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
+		}
 	}
 }

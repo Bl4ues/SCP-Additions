@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.event;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -47,6 +48,13 @@ public final class Scp106SurfaceEvents {
         boolean changed = previousState == null
                 || previousState.byteValue() != state;
 
+        if (state == PHASE_TRAVEL
+                || (changed && state == HUNTING
+                && previousState != null
+                && previousState == PHASE_TRAVEL)) {
+            alignPhaseFacing(scp106);
+        }
+
         if (changed) {
             if (state == EMERGING_GROUND || state == VANISHING) {
                 spawnGroundPortal(level, scp106);
@@ -62,6 +70,26 @@ public final class Scp106SurfaceEvents {
         }
 
         Scp106PhasePortalTracker.tick(scp106, state == PHASE_TRAVEL);
+    }
+
+    private static void alignPhaseFacing(Scp106Entity scp106) {
+        Vec3 movement = scp106.getDeltaMovement();
+        Vec3 direction = new Vec3(movement.x, 0.0D, movement.z);
+
+        LivingEntity target = scp106.getTarget();
+        if (direction.lengthSqr() < 1.0E-6D && target != null) {
+            Vec3 toTarget = target.position().subtract(scp106.position());
+            direction = new Vec3(toTarget.x, 0.0D, toTarget.z);
+        }
+        if (direction.lengthSqr() < 1.0E-6D) {
+            return;
+        }
+
+        float yaw = (float) (Mth.atan2(direction.z, direction.x)
+                * (180.0D / Math.PI)) - 90.0F;
+        scp106.setYRot(yaw);
+        scp106.setYBodyRot(yaw);
+        scp106.setYHeadRot(yaw);
     }
 
     private static void spawnGroundPortal(ServerLevel level,

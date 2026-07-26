@@ -57,8 +57,8 @@
 
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 ceiling lamp that emits light while powered by redstone.
-- Added decorative Emergency Button and Fire Extinguisher facility props with model-matched collision and placement aligned to the clicked wall face;
-- Added clear decorative-only tooltips to facility props that currently have no gameplay function;
+- Added decorative Emergency Button and Fire Extinguisher facility props;
+- Added clear decorative-only tooltips to facility props that have no gameplay function;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 
 ## Accessibility
@@ -76,11 +76,8 @@
 - Fixed Sign Support placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed TV placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, expanded its collision to include the upper structure, and moved its front icon clear of the casing;
-- Rendered SCP-012, the Emergency Button, and the opaque portions of the Fire Extinguisher with alpha cutout so partially transparent texture borders no longer become bright blended surfaces with optional shaders;
-- Split the Fire Extinguisher glass into its own translucent render pass while keeping the cabinet and extinguisher on the cutout pass, preventing the transparent pane from hiding geometry behind it;
+- Rendered SCP-012 with alpha cutout;
 - Rebuilt the zero-thickness SCP-012 paper folds and Fire Extinguisher details with stable geometry to prevent inverted shader normals and edge-lighting artifacts;
-- Removed an empty face-less element left behind when separating the Fire Extinguisher glass, which caused Minecraft to reject the body model and display the missing-texture cube;
-- Recalibrated the Fire Extinguisher LabPBR specular map and removed unintended emission from its alpha channel while preserving the glass reflection;
 - Removed unintended shader reflections from the SL1 floor arrows;
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's diamond-shaped window trim from the wall planes to prevent z-fighting with optional renderers and shaders.

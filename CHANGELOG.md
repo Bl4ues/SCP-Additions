@@ -47,6 +47,12 @@
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
 
+## Survival
+
+- Added a default-enabled **Disable Hunger System** module that hides the vanilla hunger bar and converts food nutrition directly into health;
+- Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 30 seconds without damage;
+- Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration.
+
 ## Audio and presentation
 
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
@@ -63,6 +69,7 @@
 - Added an SL1 ceiling lamp that emits light while powered by redstone.
 - Added decorative Emergency Button and Fire Extinguisher facility props;
 - Added clear decorative-only tooltips to facility props that have no gameplay function;
+- Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made right-click switch between their visual states;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 
 ## Accessibility

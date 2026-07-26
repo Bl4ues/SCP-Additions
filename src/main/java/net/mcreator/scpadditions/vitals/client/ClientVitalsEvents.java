@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.vitals.client;
 
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,7 +28,14 @@ public final class ClientVitalsEvents {
     @SubscribeEvent
     public static void beforeOverlay(RenderGuiOverlayEvent.Pre event) {
         LocalPlayer player = Minecraft.getInstance().player;
-        if (player != null && !player.isCreative() && !player.isSpectator()
+        if (player == null) return;
+        if (InventoryModuleRuntimeState.hungerDisabledForClient()
+                && event.getOverlay().id().equals(
+                        VanillaGuiOverlay.FOOD_LEVEL.id())) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!player.isCreative() && !player.isSpectator()
                 && VitalsModule.healthHudEnabled()
                 && event.getOverlay().id().equals(VanillaGuiOverlay.PLAYER_HEALTH.id())) {
             event.setCanceled(true);

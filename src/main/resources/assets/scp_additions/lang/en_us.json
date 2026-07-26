@@ -137,7 +137,7 @@
   "gamerule.scp079controlOn.description": "If SCP-079 has control over the facility",
   "advancements.tesla.descr": "Electrifying exit! You've earned a shocking send-off.",
   "subtitles.heartbeat": "Heartbeat",
-  "block.scp_additions.tesla_terminal_off": "Tesla Gate Terminal OFF",
+  "block.scp_additions.tesla_terminal_off": "Disabled Tesla Gate Terminal",
   "advancements.scp_330_achievement.title": "Sweet Tooth",
   "block.scp_additions.lv_6_left_reader_wrong": "Level 6 Keycard Reader (Left) Denied",
   "advancements.scp_079.title": "Digital Menace",

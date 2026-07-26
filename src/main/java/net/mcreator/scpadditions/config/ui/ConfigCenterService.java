@@ -221,7 +221,7 @@ public final class ConfigCenterService {
 
     private static void validateModules(JsonObject root, List<String> errors) {
         for (String group : List.of("inventory", "interactions", "hud", "vitals",
-                "blink", "audio", "accessibility", "debug", "scp_173")) {
+                "hunger", "blink", "audio", "accessibility", "debug", "scp_173")) {
             if (root.has(group) && !root.get(group).isJsonObject()) errors.add(group + " must be an object");
         }
         checkBoolean(root, "inventory", "enabled", errors);
@@ -232,6 +232,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "vitals", "custom_health_enabled", errors);
         checkBoolean(root, "vitals", "stamina_enabled", errors);
         checkBoolean(root, "vitals", "horror_movement_enabled", errors);
+        checkBoolean(root, "hunger", "disabled", errors);
         checkBoolean(root, "blink", "enabled", errors);
         checkBoolean(root, "audio", "enter_sound_enabled", errors);
         checkBoolean(root, "accessibility",
@@ -427,7 +428,7 @@ public final class ConfigCenterService {
     }
 
     private static JsonObject defaultModules() {
-        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"hud\":{\"enabled\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"blink\":{\"enabled\":true},\"audio\":{\"enter_sound_enabled\":true},\"accessibility\":{\"reduce_scp_012_visual_effects\":false},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
+        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"hud\":{\"enabled\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"hunger\":{\"disabled\":true},\"blink\":{\"enabled\":true},\"audio\":{\"enter_sound_enabled\":true},\"accessibility\":{\"reduce_scp_012_visual_effects\":false},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
     }
 
     private static JsonObject defaultInventory() {

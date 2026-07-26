@@ -10,6 +10,7 @@ The integrated systems are independently configurable in `config/scpadditions/mo
 - `vitals.custom_health_enabled` controls the custom health system and its HUD component.
 - `vitals.stamina_enabled` controls stamina behavior and its HUD component.
 - `vitals.horror_movement_enabled` controls the horror movement behavior.
+- `hunger.disabled` replaces vanilla hunger with food-based healing and delayed natural regeneration.
 
 Registry entries and stored capability data must remain available while a module is disabled. A toggle disables behavior and presentation; it must not unregister content or delete saved data.
 
@@ -25,6 +26,10 @@ The vanilla health hearts are suppressed only when both conditions are true:
 If either setting is false, vanilla hearts remain visible. Disabling only stamina must not affect vanilla health rendering.
 
 The stamina HUD is rendered only when both `hud.enabled` and `vitals.stamina_enabled` are true.
+
+The vanilla hunger bar is suppressed whenever `hunger.disabled` is true,
+independently of the custom HUD toggle. Setting it to false restores vanilla
+hunger, food and natural-regeneration behavior as one complete system.
 
 ## Font scope
 

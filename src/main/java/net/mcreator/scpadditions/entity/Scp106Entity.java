@@ -333,6 +333,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         if (stateTicks > 0) stateTicks--;
         if (stateTicks > 0) return;
 
+        boolean emergedFromWall = getEncounterState() == EMERGING_WALL;
         relocationHiddenTicks = 0;
         setInvisible(false);
         setEncounterState(HUNTING);
@@ -342,6 +343,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         blockedSightTicks = 0;
         stuckTicks = 0;
         phaseExitClearTicks = 0;
+        if (emergedFromWall) {
+            Player player = resolveHuntedPlayer();
+            if (player != null) {
+                faceDirection(horizontalDirectionTo(player));
+            }
+        }
     }
 
     private void tickHunt() {
@@ -893,7 +900,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         Scp106CorrosionFieldManager.addRanged(serverLevel, puddle);
         serverLevel.playSound(null, puddle.x, puddle.y, puddle.z,
                 Scp106Sounds.RANGED_SPLASH.get(), SoundSource.HOSTILE,
-                0.85F, 0.96F + random.nextFloat() * 0.08F);
+                1.70F, 0.96F + random.nextFloat() * 0.08F);
 
         if (rangedHit) return;
         AABB hitbox = new AABB(puddle.x - 0.68D, puddle.y - 0.15D,
@@ -1268,7 +1275,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                         livingTarget.getY()
                                 + livingTarget.getBbHeight() * 0.5D,
                         livingTarget.getZ(), Scp106Sounds.HIT.get(),
-                        SoundSource.HOSTILE, 1.0F, 1.0F);
+                        SoundSource.HOSTILE, 2.0F, 1.0F);
             }
             livingTarget.addEffect(new MobEffectInstance(
                     MobEffects.WITHER,

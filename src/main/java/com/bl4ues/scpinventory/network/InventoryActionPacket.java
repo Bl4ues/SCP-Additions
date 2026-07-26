@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.equipment.HazmatSuitEvents;
+import net.mcreator.scpadditions.vitals.HungerSystemEvents;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -132,6 +133,7 @@ public class InventoryActionPacket {
                 0.9F + player.getRandom().nextFloat() * 0.2F
         );
 
+        HungerSystemEvents.healFromFood(player, usedStack);
         ItemStack result = usedStack.finishUsingItem(player.level(), player);
         stack.shrink(1);
         inventory.setInventoryItem(slot, stack.isEmpty() ? ItemStack.EMPTY : stack);

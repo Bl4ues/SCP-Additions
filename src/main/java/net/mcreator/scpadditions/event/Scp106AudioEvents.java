@@ -124,7 +124,7 @@ public final class Scp106AudioEvents {
         if (!(scp106.level() instanceof ServerLevel level)) return;
         level.playSound(null, scp106.getX(), scp106.getY() + 0.05D,
                 scp106.getZ(), Scp106Sounds.STEP.get(),
-                SoundSource.HOSTILE, 0.9F,
+                SoundSource.HOSTILE, 1.8F,
                 0.96F + scp106.getRandom().nextFloat() * 0.08F);
     }
 

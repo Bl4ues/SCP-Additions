@@ -15,6 +15,9 @@
     "stamina_enabled": true,
     "horror_movement_enabled": true
   },
+  "hunger": {
+    "disabled": true
+  },
   "blink": {
     "enabled": true
   },

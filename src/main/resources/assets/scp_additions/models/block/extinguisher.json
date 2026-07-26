@@ -1,10 +1,11 @@
 {
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
+	"render_type": "minecraft:cutout",
 	"texture_size": [64, 64],
 	"textures": {
-		"0": "fireextinguisher",
-		"particle": "fireextinguisher"
+		"0": "scp_additions:block/fireextinguisher",
+		"particle": "scp_additions:block/fireextinguisher"
 	},
 	"elements": [
 		{

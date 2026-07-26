@@ -8,6 +8,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
@@ -34,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
+import net.mcreator.scpadditions.init.Scp106Sounds;
 import net.mcreator.scpadditions.roamer.Scp106CorrosionFieldManager;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
 import net.mcreator.scpadditions.roamer.Scp106PhasePortalTracker;
@@ -889,6 +891,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 puddle.x, puddle.y, puddle.z,
                 0, sizeScale, opacityScale, 0.0D, 1.0D);
         Scp106CorrosionFieldManager.addRanged(serverLevel, puddle);
+        serverLevel.playSound(null, puddle.x, puddle.y, puddle.z,
+                Scp106Sounds.RANGED_SPLASH.get(), SoundSource.HOSTILE,
+                0.85F, 0.96F + random.nextFloat() * 0.08F);
 
         if (rangedHit) return;
         AABB hitbox = new AABB(puddle.x - 0.68D, puddle.y - 0.15D,
@@ -1216,6 +1221,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         return entityData.get(RANGED_ATTACKING);
     }
 
+    public boolean isWalkingForFootsteps() {
+        return getEncounterState() == HUNTING
+                && !isAttacking()
+                && !isRangedAttacking()
+                && onGround()
+                && getDeltaMovement().horizontalDistanceSqr() > 0.0004D;
+    }
+
     public byte getEncounterState() {
         return entityData.get(ENCOUNTER_STATE);
     }
@@ -1250,6 +1263,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         boolean hurt = livingTarget.hurt(
                 damageSources().mobAttack(this), 5.0F);
         if (hurt) {
+            if (level() instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(null, livingTarget.getX(),
+                        livingTarget.getY()
+                                + livingTarget.getBbHeight() * 0.5D,
+                        livingTarget.getZ(), Scp106Sounds.HIT.get(),
+                        SoundSource.HOSTILE, 1.0F, 1.0F);
+            }
             livingTarget.addEffect(new MobEffectInstance(
                     MobEffects.WITHER,
                     WITHER_DURATION_TICKS,

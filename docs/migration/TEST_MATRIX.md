@@ -69,7 +69,7 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] `hud.enabled=true` and `custom_health_enabled=true` render the custom health bar
 - [ ] custom health HUD cancels only vanilla player hearts, not armor, air or mount health
 - [ ] `hunger.disabled=true` hides only the vanilla hunger bar, converts food nutrition to health and preserves sprint availability
-- [ ] custom natural regeneration first heals after 30 damage-free seconds and then every six seconds
+- [ ] custom natural regeneration first heals after 15 damage-free seconds and then every six seconds
 - [ ] Saturation changes the custom regeneration delay to five seconds and interval to four seconds
 - [ ] Hunger prevents custom natural regeneration until the effect ends
 - [ ] `hunger.disabled=false` restores vanilla hunger, food and natural regeneration without other changes

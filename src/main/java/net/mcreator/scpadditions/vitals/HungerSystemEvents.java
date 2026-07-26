@@ -27,7 +27,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class HungerSystemEvents {
-    private static final int NORMAL_REGEN_DELAY_TICKS = 30 * 20;
+    private static final int NORMAL_REGEN_DELAY_TICKS = 15 * 20;
     private static final int SATURATION_REGEN_DELAY_TICKS = 5 * 20;
     private static final int NORMAL_REGEN_INTERVAL_TICKS = 6 * 20;
     private static final int SATURATION_REGEN_INTERVAL_TICKS = 4 * 20;

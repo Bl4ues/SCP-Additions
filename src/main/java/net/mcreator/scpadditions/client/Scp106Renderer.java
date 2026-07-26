@@ -16,6 +16,6 @@ public class Scp106Renderer extends GeoEntityRenderer<Scp106Entity> {
     @Override
     public RenderType getRenderType(Scp106Entity animatable, ResourceLocation texture,
                                     MultiBufferSource bufferSource, float partialTick) {
-        return RenderType.entityCutoutNoCull(texture);
+        return RenderType.entityTranslucent(texture);
     }
 }

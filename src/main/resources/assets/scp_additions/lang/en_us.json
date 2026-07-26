@@ -252,5 +252,9 @@
   "subtitles.scp_additions.scp012_close": "SCP-012 containment closes",
   "subtitles.scp_additions.scp012_bleeding": "Blood drips",
   "advancements.scp_572_a_achievement.title": "The Chosen One",
-  "subtitles.scp_additions.scp_106_phase": "SCP-106 phases through a surface"
+  "subtitles.scp_additions.scp_106_phase": "SCP-106 phases through a surface",
+  "subtitles.scp_additions.scp_106_step": "SCP-106 steps",
+  "subtitles.scp_additions.scp_106_hit": "SCP-106 strikes",
+  "subtitles.scp_additions.scp_106_ranged_splash": "Corrosion splashes",
+  "subtitles.scp_additions.wither": "Withering festers"
 }

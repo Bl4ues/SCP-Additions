@@ -1,5 +1,6 @@
 {
   "parent": "scp_additions:block/internal/scp_012_opening_1_geometry",
+  "render_type": "cutout",
   "textures": {
     "0": "scp_additions:block/012_sign",
     "1": "scp_additions:block/scp_012",

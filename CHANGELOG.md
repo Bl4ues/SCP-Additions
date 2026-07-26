@@ -76,6 +76,7 @@
 - Fixed Sign Support placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed TV placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, expanded its collision to include the upper structure, and moved its front icon clear of the casing;
+- Rendered SCP-012, the Emergency Button, and the Fire Extinguisher with alpha cutout so partially transparent texture borders no longer become bright blended surfaces with optional shaders;
 - Removed unintended shader reflections from the SL1 floor arrows;
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's diamond-shaped window trim from the wall planes to prevent z-fighting with optional renderers and shaders.

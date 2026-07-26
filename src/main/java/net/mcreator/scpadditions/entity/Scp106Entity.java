@@ -26,10 +26,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.roamer.Scp106CorrosionFieldManager;
 import net.mcreator.scpadditions.roamer.Scp106EmergenceLocator;
@@ -105,10 +108,17 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private static final int RANGED_RELEASE_TICK = 42;
     private static final int RANGED_ATTACK_DURATION_TICKS = 69;
     private static final int RANGED_SEGMENTS = 15;
-    private static final double RANGED_SEGMENT_SPACING = 0.65D;
+    private static final double RANGED_SEGMENT_SPACING = 0.668D;
     private static final int RANGED_COOLDOWN_TICKS = 14 * 20;
     private static final int RANGED_ABORT_COOLDOWN_TICKS = 4 * 20;
     private static final int RANGED_HAND_PARTICLE_START_TICK = 33;
+    // Model-space fingertip position at the 2.11 s right-arm release keyframe.
+    private static final double RANGED_HAND_FORWARD_OFFSET = 0.50D;
+    private static final double RANGED_HAND_SIDE_OFFSET = 0.31D;
+    private static final double RANGED_HAND_RELEASE_HEIGHT = 0.41D;
+    private static final int RANGED_SIDE_CENTERING_SEGMENTS = 2;
+    private static final int MAX_PASSABLE_RAY_HITS = 32;
+    private static final double RAY_ADVANCE_EPSILON = 1.0E-3D;
     private static final int RELOCATION_HIDE_TICKS = 5;
     private static final int TESLA_SUPPRESSION_TICKS = 10 * 60 * 20;
 
@@ -856,19 +866,18 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
             return;
         }
 
-        double distance = 0.75D + segment * RANGED_SEGMENT_SPACING;
-        double previousDistance = Math.max(0.30D,
-                distance - RANGED_SEGMENT_SPACING);
-        Vec3 rayStart = position().add(0.0D, 0.38D, 0.0D)
-                .add(rangedLockedDirection.scale(previousDistance));
-        Vec3 rayEnd = position().add(0.0D, 0.38D, 0.0D)
-                .add(rangedLockedDirection.scale(distance));
+        Vec3 point = rangedTrailPoint(segment);
+        Vec3 previousPoint = segment == 0
+                ? point.subtract(rangedLockedDirection.scale(0.22D))
+                : rangedTrailPoint(segment - 1);
+        Vec3 rayStart = new Vec3(previousPoint.x, getY() + 0.38D,
+                previousPoint.z);
+        Vec3 rayEnd = new Vec3(point.x, getY() + 0.38D, point.z);
         if (!hasClearBlockRay(rayStart, rayEnd)) {
             rangedBlocked = true;
             return;
         }
 
-        Vec3 point = position().add(rangedLockedDirection.scale(distance));
         double surfaceY = findCorrosionSurfaceY(point.x, point.y, point.z);
         Vec3 puddle = new Vec3(point.x, surfaceY + 0.025D, point.z);
         double progress = segment / (double) (RANGED_SEGMENTS - 1);
@@ -899,8 +908,22 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         }
     }
 
+    private Vec3 rangedTrailPoint(int segment) {
+        double distance = RANGED_HAND_FORWARD_OFFSET
+                + segment * RANGED_SEGMENT_SPACING;
+        double centeringProgress = Mth.clamp(segment
+                / (double) RANGED_SIDE_CENTERING_SEGMENTS, 0.0D, 1.0D);
+        double sideOffset = Mth.lerp(centeringProgress,
+                RANGED_HAND_SIDE_OFFSET, 0.0D);
+        Vec3 right = new Vec3(-rangedLockedDirection.z, 0.0D,
+                rangedLockedDirection.x);
+        return position()
+                .add(rangedLockedDirection.scale(distance))
+                .add(right.scale(sideOffset));
+    }
+
     private boolean hasClearRangedPath(Player target) {
-        if (target == null || !hasLineOfSight(target)) return false;
+        if (target == null) return false;
         Vec3 start = position().add(0.0D, 0.72D, 0.0D);
         Vec3 targetCenter = target.position().add(0.0D, 0.55D, 0.0D);
         Vec3 motion = target.getDeltaMovement();
@@ -923,9 +946,73 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private boolean hasClearBlockRay(Vec3 start, Vec3 end) {
-        HitResult obstruction = level().clip(new ClipContext(start, end,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-        return obstruction.getType() == HitResult.Type.MISS;
+        Vec3 delta = end.subtract(start);
+        if (delta.lengthSqr() < 1.0E-8D) return true;
+        Vec3 direction = delta.normalize();
+        Vec3 cursor = start;
+
+        for (int hitCount = 0; hitCount < MAX_PASSABLE_RAY_HITS;
+                hitCount++) {
+            if (cursor.distanceToSqr(end)
+                    <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) {
+                return true;
+            }
+
+            BlockHitResult hit = level().clip(new ClipContext(cursor, end,
+                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            if (hit.getType() == HitResult.Type.MISS) return true;
+
+            BlockPos hitPos = hit.getBlockPos();
+            BlockState hitState = level().getBlockState(hitPos);
+            if (blocksRangedTrail(hitState, hitPos)) return false;
+
+            Vec3 advanced = advancePastBlock(hit.getLocation(), direction,
+                    hitPos);
+            if (advanced.distanceToSqr(cursor)
+                    <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) {
+                return false;
+            }
+            cursor = advanced;
+        }
+
+        return false;
+    }
+
+    private boolean blocksRangedTrail(BlockState state, BlockPos pos) {
+        VoxelShape collision = state.getCollisionShape(level(), pos);
+        if (collision.isEmpty() || FacilityModule.isDoorPassable(state)) {
+            return false;
+        }
+        return !state.isPathfindable(level(), pos,
+                PathComputationType.LAND);
+    }
+
+    private static Vec3 advancePastBlock(Vec3 point, Vec3 direction,
+            BlockPos pos) {
+        double distance = Math.min(
+                distanceToExit(point.x, direction.x, pos.getX(),
+                        pos.getX() + 1.0D),
+                Math.min(
+                        distanceToExit(point.y, direction.y, pos.getY(),
+                                pos.getY() + 1.0D),
+                        distanceToExit(point.z, direction.z, pos.getZ(),
+                                pos.getZ() + 1.0D)));
+        if (!Double.isFinite(distance)) {
+            return point.add(direction.scale(RAY_ADVANCE_EPSILON));
+        }
+        return point.add(direction.scale(Math.max(RAY_ADVANCE_EPSILON,
+                distance + RAY_ADVANCE_EPSILON)));
+    }
+
+    private static double distanceToExit(double coordinate, double direction,
+            double min, double max) {
+        if (direction > 1.0E-7D) {
+            return Math.max(0.0D, (max - coordinate) / direction);
+        }
+        if (direction < -1.0E-7D) {
+            return Math.max(0.0D, (min - coordinate) / direction);
+        }
+        return Double.POSITIVE_INFINITY;
     }
 
     private void spawnRangedHandParticles() {
@@ -939,9 +1026,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 / (double) Math.max(1, RANGED_RELEASE_TICK
                 - RANGED_HAND_PARTICLE_START_TICK), 0.0D, 1.0D);
         Vec3 hand = position()
-                .add(0.0D, Mth.lerp(progress, 1.28D, 0.48D), 0.0D)
-                .add(forward.scale(Mth.lerp(progress, 0.18D, 0.72D)))
-                .add(right.scale(0.36D));
+                .add(0.0D, Mth.lerp(progress, 1.28D,
+                        RANGED_HAND_RELEASE_HEIGHT), 0.0D)
+                .add(forward.scale(Mth.lerp(progress, 0.18D,
+                        RANGED_HAND_FORWARD_OFFSET)))
+                .add(right.scale(Mth.lerp(progress, 0.36D,
+                        RANGED_HAND_SIDE_OFFSET)));
         if ((rangedAttackTicks & 1) == 0) {
             serverLevel.sendParticles(ParticleTypes.SMOKE,
                     hand.x, hand.y, hand.z, 1,

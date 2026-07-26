@@ -3,7 +3,6 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -11,7 +10,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Map;
@@ -21,12 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Scp079TeslaSuppression {
     private static final int SUPPRESSION_TICKS = 60;
     private static final int DEVICE_REUSE_TICKS = 100;
-    private static final int FAILED_ROLL_RETRY_TICKS = 30;
 
     private static final double NORMAL_COST = 12.0D;
     private static final double OVERRIDE_COST = 18.0D;
-    private static final float NORMAL_CHANCE = 0.42F;
-    private static final float OVERRIDE_CHANCE = 0.28F;
 
     private static final Map<GateKey, GateState> STATES =
             new ConcurrentHashMap<>();
@@ -37,6 +32,8 @@ public final class Scp079TeslaSuppression {
     /**
      * Returns true while the gate should skip its normal activation sequence.
      * This never changes the global Tesla Gate or manual-override gamerules.
+     * Once a useful pursuit enters an otherwise lethal gate, SCP-079 suppresses
+     * it deterministically whenever enough processing power is available.
      */
     public static boolean shouldSuppress(ServerLevel level, BlockPos gatePos,
             List<LivingEntity> occupants, boolean manualOverride) {
@@ -55,8 +52,7 @@ public final class Scp079TeslaSuppression {
         if (state != null && now < state.suppressedUntil()) {
             return true;
         }
-        if (state != null && (now < state.reuseAfter()
-                || now < state.nextAttempt())) {
+        if (state != null && now < state.reuseAfter()) {
             return false;
         }
 
@@ -74,21 +70,11 @@ public final class Scp079TeslaSuppression {
         if (pursuer == null) return false;
 
         double cost = manualOverride ? OVERRIDE_COST : NORMAL_COST;
-        if (!Scp079ProcessingManager.canAfford(level, cost)) return false;
-
-        ThreatAdjustment adjustment = adjustmentFor(pursuer);
-        float chance = (manualOverride ? OVERRIDE_CHANCE : NORMAL_CHANCE)
-                * adjustment.chanceMultiplier();
-        if (level.getRandom().nextFloat() >= Math.min(0.75F, chance)) {
-            STATES.put(key, new GateState(0L, 0L,
-                    now + FAILED_ROLL_RETRY_TICKS));
-            return false;
-        }
-
         if (!Scp079ProcessingManager.trySpend(level, cost)) return false;
+
         long suppressedUntil = now + SUPPRESSION_TICKS;
         STATES.put(key, new GateState(suppressedUntil,
-                suppressedUntil + DEVICE_REUSE_TICKS, suppressedUntil));
+                suppressedUntil + DEVICE_REUSE_TICKS));
         emitInterference(level, gatePos);
 
         ServerPlayer target = pursuer.getTarget() instanceof ServerPlayer player
@@ -100,7 +86,8 @@ public final class Scp079TeslaSuppression {
         Scp079DecisionLog.record(level,
                 Scp079DecisionLog.DecisionType.TESLA_SUPPRESSION,
                 Scp079DecisionLog.DecisionOutcome.EXECUTED, gatePos, cost,
-                "for " + pursuer.getDisplayName().getString()
+                "guaranteed safe passage for "
+                        + pursuer.getDisplayName().getString()
                         + " pursuing " + targetName + " · " + mode
                         + " · " + SUPPRESSION_TICKS / 20.0D + "s");
         return true;
@@ -111,16 +98,6 @@ public final class Scp079TeslaSuppression {
             return false;
         }
         return player.isAlive() && !player.isCreative() && !player.isSpectator();
-    }
-
-    private static ThreatAdjustment adjustmentFor(Mob mob) {
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(mob.getType());
-        if (id == null) return ThreatAdjustment.DEFAULT;
-        return switch (id.getPath()) {
-            case "scp_173" -> new ThreatAdjustment(1.10F);
-            case "scp_106" -> new ThreatAdjustment(1.20F);
-            default -> ThreatAdjustment.DEFAULT;
-        };
     }
 
     private static void emitInterference(ServerLevel level, BlockPos pos) {
@@ -141,16 +118,9 @@ public final class Scp079TeslaSuppression {
     private record GateKey(ResourceKey<Level> dimension, long pos) {
     }
 
-    private record GateState(long suppressedUntil, long reuseAfter,
-                             long nextAttempt) {
+    private record GateState(long suppressedUntil, long reuseAfter) {
         private boolean expired(long now) {
-            return now >= suppressedUntil && now >= reuseAfter
-                    && now >= nextAttempt;
+            return now >= suppressedUntil && now >= reuseAfter;
         }
-    }
-
-    private record ThreatAdjustment(float chanceMultiplier) {
-        private static final ThreatAdjustment DEFAULT =
-                new ThreatAdjustment(1.0F);
     }
 }

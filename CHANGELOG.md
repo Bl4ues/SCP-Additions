@@ -78,7 +78,9 @@
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, expanded its collision to include the upper structure, and moved its front icon clear of the casing;
 - Rendered SCP-012 with alpha cutout;
 - Rebuilt the zero-thickness SCP-012 paper folds and Fire Extinguisher details with stable geometry to prevent inverted shader normals and edge-lighting artifacts;
-- Removed unintended shader reflections from the SL1 floor arrows;
+- Recalibrated the Fire Extinguisher LabPBR specular map, removing unintended emission and reflections from its printed symbols, stickers, and arrows while preserving the intended material reflections;
+- Removed unintended shader reflections from the SL1 floor arrows and added dedicated handheld item textures for both arrow sizes;
+- Removed unintended emissive pixels from SCP-012's LabPBR specular map;
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's diamond-shaped window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
 

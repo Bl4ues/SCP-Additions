@@ -77,6 +77,7 @@ public final class ScpAdditionsModulesConfig {
 		public Interactions interactions = new Interactions();
 		public Toggle hud = new Toggle();
 		public Vitals vitals = new Vitals();
+		public Hunger hunger = new Hunger();
 		public Toggle blink = new Toggle();
 		public Audio audio = new Audio();
 		public Accessibility accessibility = new Accessibility();
@@ -94,6 +95,7 @@ public final class ScpAdditionsModulesConfig {
 			if (interactions == null) interactions = new Interactions();
 			if (hud == null) hud = new Toggle();
 			if (vitals == null) vitals = new Vitals();
+			if (hunger == null) hunger = new Hunger();
 			if (blink == null) blink = new Toggle();
 			if (audio == null) audio = new Audio();
 			if (accessibility == null) accessibility = new Accessibility();
@@ -126,6 +128,10 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("horror_movement_enabled")
 		public boolean horrorMovementEnabled = true;
+	}
+
+	public static final class Hunger {
+		public boolean disabled = true;
 	}
 
 	public static final class Audio {

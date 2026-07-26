@@ -12,6 +12,7 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverEnabled;
     private static volatile Boolean serverReduceScp012VisualEffects;
+    private static volatile Boolean serverHungerDisabled;
 
     private InventoryModuleRuntimeState() {
     }
@@ -28,14 +29,23 @@ public final class InventoryModuleRuntimeState {
                 .reduceScp012VisualEffects;
     }
 
+    public static boolean hungerDisabledForClient() {
+        Boolean synced = serverHungerDisabled;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().hunger.disabled;
+    }
+
     public static void updateFromServer(boolean enabled,
-                                        boolean reduceScp012VisualEffects) {
+                                        boolean reduceScp012VisualEffects,
+                                        boolean hungerDisabled) {
         serverEnabled = enabled;
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
+        serverHungerDisabled = hungerDisabled;
     }
 
     public static void clearServerState() {
         serverEnabled = null;
         serverReduceScp012VisualEffects = null;
+        serverHungerDisabled = null;
     }
 }

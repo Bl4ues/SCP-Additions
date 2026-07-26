@@ -25,6 +25,7 @@ Malformed existing JSON is rejected instead of being silently replaced by fallba
 The center includes dedicated editors for:
 
 - gameplay modules and interface switches;
+- hunger replacement, food healing and delayed regeneration;
 - accessibility options, beginning with photosensitive-epilepsy controls;
 - SCP Inventory item categories and equipment effects;
 - hidden Status effects;

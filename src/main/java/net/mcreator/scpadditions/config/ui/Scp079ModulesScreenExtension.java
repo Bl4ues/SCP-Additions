@@ -55,6 +55,8 @@ public final class Scp079ModulesScreenExtension {
                     "Enables stamina drain and regeneration.", true),
             new Row("vitals", "horror_movement_enabled", "Survival-Horror Movement",
                     "Uses slower walking and committed sprinting.", true),
+            new Row("hunger", "disabled", "Disable Hunger System",
+                    "Hides hunger, makes food restore health, and uses damage-delay regeneration.", true),
             new Row("blink", "enabled", "Blink System",
                     "Enables automatic and manual blinking.", true),
             new Row("audio", "enter_sound_enabled", "World Entry Sound",

@@ -1,1 +1,6 @@
-{"parent":"scp_additions:block/tesla_terminal_off"}
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "scp_additions:item/teslaoff"
+  }
+}

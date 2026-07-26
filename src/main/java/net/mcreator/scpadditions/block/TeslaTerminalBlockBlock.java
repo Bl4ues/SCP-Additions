@@ -46,6 +46,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
 import java.util.List;
@@ -157,7 +158,16 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 
 	@Override
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
+		if (!entity.isShiftKeyDown()) {
+			if (!world.isClientSide) {
+				BlockState disabled = ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get()
+						.defaultBlockState()
+						.setValue(TeslaTerminalOffBlock.FACING, blockstate.getValue(FACING))
+						.setValue(TeslaTerminalOffBlock.WATERLOGGED, blockstate.getValue(WATERLOGGED));
+				world.setBlock(pos, disabled, Block.UPDATE_ALL);
+			}
+			return InteractionResult.sidedSuccess(world.isClientSide);
+		}
 		if (entity instanceof ServerPlayer player) {
 			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
 			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
@@ -180,6 +190,6 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 				data.writeBoolean(manualOverride);
 			});
 		}
-		return InteractionResult.SUCCESS;
+		return InteractionResult.sidedSuccess(world.isClientSide);
 	}
 }

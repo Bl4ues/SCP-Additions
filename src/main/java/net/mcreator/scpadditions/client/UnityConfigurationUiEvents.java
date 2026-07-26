@@ -82,6 +82,7 @@ public final class UnityConfigurationUiEvents {
             "Enables custom health behavior.",
             "Enables stamina drain and regeneration.",
             "Uses slower walking and committed sprinting.",
+            "Hides hunger, makes food restore health, and uses damage-delay regeneration.",
             "Enables automatic and manual blinking.",
             "Enables SCP-173 behavior.",
             "Allows the configurable natural spawn system.");

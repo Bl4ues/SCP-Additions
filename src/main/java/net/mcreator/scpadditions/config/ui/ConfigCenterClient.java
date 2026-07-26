@@ -327,6 +327,7 @@ public final class ConfigCenterClient {
                 new ToggleSpec("vitals", "custom_health_enabled", "Custom Health", "Enables custom health behavior.", true),
                 new ToggleSpec("vitals", "stamina_enabled", "Stamina", "Enables stamina drain and regeneration.", true),
                 new ToggleSpec("vitals", "horror_movement_enabled", "Survival-Horror Movement", "Uses slower walking and committed sprinting.", true),
+                new ToggleSpec("hunger", "disabled", "Disable Hunger System", "Hides hunger, makes food restore health, and uses damage-delay regeneration.", true),
                 new ToggleSpec("blink", "enabled", "Blink System", "Enables automatic and manual blinking.", true),
                 new ToggleSpec("scp_173", "enabled", "SCP-173", "Enables SCP-173 behavior.", true),
                 new ToggleSpec("scp_173", "natural_spawn_enabled", "SCP-173 Natural Spawning", "Allows the configurable natural spawn system.", true)

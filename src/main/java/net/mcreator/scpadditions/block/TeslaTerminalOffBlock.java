@@ -32,6 +32,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 import java.util.List;
 import java.util.Collections;
@@ -119,6 +120,13 @@ public class TeslaTerminalOffBlock extends Block implements SimpleWaterloggedBlo
 
 	@Override
 	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		return InteractionResult.SUCCESS;
+		if (!world.isClientSide) {
+			BlockState enabled = ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get()
+					.defaultBlockState()
+					.setValue(TeslaTerminalBlockBlock.FACING, blockstate.getValue(FACING))
+					.setValue(TeslaTerminalBlockBlock.WATERLOGGED, blockstate.getValue(WATERLOGGED));
+			world.setBlock(pos, enabled, Block.UPDATE_ALL);
+		}
+		return InteractionResult.sidedSuccess(world.isClientSide);
 	}
 }

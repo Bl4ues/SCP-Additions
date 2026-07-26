@@ -67,7 +67,12 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] HUD scales correctly at common GUI scales
 - [ ] disabling inventory prevents replacement behavior cleanly
 - [ ] `hud.enabled=true` and `custom_health_enabled=true` render the custom health bar
-- [ ] custom health HUD cancels only vanilla player hearts, not armor, hunger, air or mount health
+- [ ] custom health HUD cancels only vanilla player hearts, not armor, air or mount health
+- [ ] `hunger.disabled=true` hides only the vanilla hunger bar, converts food nutrition to health and preserves sprint availability
+- [ ] custom natural regeneration first heals after 30 damage-free seconds and then every six seconds
+- [ ] Saturation changes the custom regeneration delay to five seconds and interval to four seconds
+- [ ] Hunger prevents custom natural regeneration until the effect ends
+- [ ] `hunger.disabled=false` restores vanilla hunger, food and natural regeneration without other changes
 - [ ] `custom_health_enabled=false` restores vanilla hearts and removes only the custom health row
 - [ ] `hud.enabled=false` restores vanilla hearts and hides both custom rows without disabling stamina gameplay
 - [ ] creative and spectator modes never render custom health or stamina rows

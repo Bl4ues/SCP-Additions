@@ -8,11 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Mob;
-import net.mcreator.scpadditions.entity.AbstractScp131Entity;
-import net.mcreator.scpadditions.entity.Scp106Entity;
-import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -24,11 +20,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.entity.Scp106Entity;
+import net.mcreator.scpadditions.entity.Scp173Entity;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,27 +38,31 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Contextual SCP-079 facility control driven by a shared processing budget.
  *
- * There is deliberately no facility-wide action cooldown. Different useful
- * devices may be manipulated in quick succession while processing remains,
- * whereas each individual door receives a short reuse limit to prevent a
- * mechanical open/close loop. SCP-012 owns its separate contest logic.
+ * Tactical actions are deterministic once their physical and strategic
+ * conditions are satisfied. Randomness remains only for harmlessly rare,
+ * unprovoked harassment, where certainty would be repetitive rather than
+ * intelligent. Different useful devices may be manipulated in the same
+ * evaluation while processing remains, but each tactical lane and each door
+ * still has an anti-spam limit.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079FacilityThreatEvents {
     private static final int CHECK_INTERVAL_TICKS = 20;
     private static final int UNPROVOKED_INTERVAL_TICKS = 100;
-    private static final int FLEE_DOOR_RADIUS = 7;
-    private static final int PURSUER_DOOR_RADIUS = 6;
-    private static final int PURSUER_SEARCH_RADIUS = 14;
-    private static final int SCP_106_PURSUER_SEARCH_RADIUS = 22;
+    private static final int FLEE_DOOR_RADIUS = 8;
+    private static final int PURSUER_DOOR_RADIUS = 8;
+    private static final int PURSUER_SEARCH_RADIUS = 20;
+    private static final int SCP_106_PURSUER_SEARCH_RADIUS = 28;
     private static final int DOOR_REUSE_TICKS = 100;
     private static final int LOCKED_DOOR_REUSE_TICKS = 140;
     private static final int SCP_131_SEPARATION_RADIUS = 16;
     private static final int SCP_131_DOOR_RADIUS = 7;
     private static final int SCP_131_INITIAL_LOCK_TICKS = 40;
     private static final int SCP_131_MAX_LOCK_TICKS = 160;
+    private static final int MAX_TACTICAL_ACTIONS = 2;
 
+    private static final double MOVEMENT_THRESHOLD_SQR = 0.0004D;
     private static final double OPEN_FOR_THREAT_COST = 8.0D;
     private static final double CLOSE_AHEAD_COST = 8.0D;
     private static final double DENY_ACCESS_COST = 12.0D;
@@ -66,6 +70,7 @@ public final class Scp079FacilityThreatEvents {
     private static final double SCP_131_SEPARATION_COST =
             CLOSE_AHEAD_COST + DENY_ACCESS_COST;
     private static final float UNPROVOKED_CLOSE_CHANCE = 0.03F;
+    private static final float UNPROVOKED_MINIMUM_POWER = 75.0F;
 
     private static final Map<DoorKey, Long> DOOR_COOLDOWNS =
             new ConcurrentHashMap<>();
@@ -100,6 +105,18 @@ public final class Scp079FacilityThreatEvents {
             return;
         }
 
+        Mob pursuer = findBestPursuer(level, player);
+        if (pursuer != null) {
+            evaluatePursuit(level, player, pursuer, gameTime,
+                    availablePower);
+            return;
+        }
+
+        evaluateUnprovokedPressure(level, player, gameTime, availablePower);
+    }
+
+    private static Mob findBestPursuer(ServerLevel level,
+            ServerPlayer player) {
         List<Mob> pursuers = new ArrayList<>(level.getEntitiesOfClass(
                 Mob.class,
                 player.getBoundingBox().inflate(PURSUER_SEARCH_RADIUS),
@@ -108,24 +125,27 @@ public final class Scp079FacilityThreatEvents {
                 Scp106Entity.class,
                 player.getBoundingBox().inflate(
                         SCP_106_PURSUER_SEARCH_RADIUS),
-                entity -> entity.isAlive()
-                        && entity.getTarget() == player)) {
-            if (!pursuers.contains(scp106)) {
-                pursuers.add(scp106);
-            }
+                entity -> entity.isAlive() && entity.getTarget() == player)) {
+            if (!pursuers.contains(scp106)) pursuers.add(scp106);
         }
-        Mob pursuer = pursuers.stream()
-                .min(Comparator.comparingDouble(player::distanceToSqr))
+
+        return pursuers.stream()
+                .max(Comparator.comparingDouble(pursuer ->
+                        threatSelectionScore(player, pursuer)))
                 .orElse(null);
+    }
 
-        if (pursuer != null) {
-            evaluatePursuit(level, player, pursuer, gameTime,
-                    availablePower);
-            return;
-        }
+    private static double threatSelectionScore(ServerPlayer player,
+            Mob pursuer) {
+        ThreatProfile profile = ThreatProfile.forMob(pursuer);
+        return profile.threatPriority()
+                - Math.sqrt(player.distanceToSqr(pursuer)) * 1.5D;
+    }
 
+    private static void evaluateUnprovokedPressure(ServerLevel level,
+            ServerPlayer player, long gameTime, float availablePower) {
         if ((gameTime + player.getId()) % UNPROVOKED_INTERVAL_TICKS != 0L
-                || availablePower < 60.0F) {
+                || availablePower < UNPROVOKED_MINIMUM_POWER) {
             return;
         }
 
@@ -148,11 +168,8 @@ public final class Scp079FacilityThreatEvents {
                         && entity.isFollowingPlayer(player));
         if (followers.isEmpty()) return false;
 
-        Vec3 travel = horizontal(player.getDeltaMovement());
-        if (travel.lengthSqr() < 0.0025D) {
-            travel = horizontal(player.getLookAngle());
-        }
-        if (travel.lengthSqr() < 0.0001D) return false;
+        Vec3 travel = observedTravel(player);
+        if (travel.lengthSqr() < MOVEMENT_THRESHOLD_SQR) return false;
         Vec3 direction = travel.normalize();
 
         Scp173Entity scp173 = findThreateningScp173Ahead(level, player,
@@ -332,62 +349,80 @@ public final class Scp079FacilityThreatEvents {
                 ? findClosedDoorForThreat(level, player, pursuer, gameTime)
                 : null;
 
-        RandomSource random = level.getRandom();
         List<Action> candidates = new ArrayList<>(3);
+        double pursuerDistance = pursuer.distanceTo(player);
+        double threatPressure = Math.max(0.0D, 12.0D - pursuerDistance);
 
         if (ahead.closed() != null && profile.canDenyAccess()
                 && HeavyDoorControlPanelAccess.hasDeniableInterface(level,
                 ahead.closed().pos())
-                && pursuer.distanceTo(player) >= profile.minimumLockDistance()
-                && random.nextFloat() < profile.denyChance()) {
+                && pursuerDistance >= profile.minimumLockDistance()) {
+            double doorDistance = Math.sqrt(player.distanceToSqr(
+                    Vec3.atCenterOf(ahead.closed().pos())));
             double commitment = Math.max(0.0D,
-                    8.0D - Math.sqrt(player.distanceToSqr(
-                            Vec3.atCenterOf(ahead.closed().pos()))));
+                    FLEE_DOOR_RADIUS - doorDistance);
             candidates.add(new Action(ActionType.DENY, ahead.closed(),
-                    78.0D + commitment, DENY_ACCESS_COST,
-                    profile.lockDurationTicks(),
+                    78.0D + commitment * 2.25D + threatPressure * 0.5D
+                            + profile.denyBias(),
+                    DENY_ACCESS_COST, profile.lockDurationTicks(),
                     profile.maximumLockDurationTicks()));
         }
 
-        if (ahead.open() != null
-                && random.nextFloat() < profile.closeAheadChance()) {
+        if (ahead.open() != null) {
+            double doorDistance = Math.sqrt(player.distanceToSqr(
+                    Vec3.atCenterOf(ahead.open().pos())));
             double commitment = Math.max(0.0D,
-                    7.0D - Math.sqrt(player.distanceToSqr(
-                            Vec3.atCenterOf(ahead.open().pos()))));
+                    FLEE_DOOR_RADIUS - doorDistance);
             candidates.add(new Action(ActionType.CLOSE, ahead.open(),
-                    72.0D + commitment, CLOSE_AHEAD_COST, 0, 0));
+                    74.0D + commitment * 2.25D + threatPressure
+                            + profile.closeBias(),
+                    CLOSE_AHEAD_COST, 0, 0));
         }
 
-        if (threatDoor != null
-                && random.nextFloat() < profile.openForThreatChance()) {
+        if (threatDoor != null) {
+            double doorDistance = Math.sqrt(pursuer.distanceToSqr(
+                    Vec3.atCenterOf(threatDoor.pos())));
             double proximity = Math.max(0.0D,
-                    7.0D - Math.sqrt(pursuer.distanceToSqr(
-                            Vec3.atCenterOf(threatDoor.pos()))));
+                    PURSUER_DOOR_RADIUS - doorDistance);
             candidates.add(new Action(ActionType.OPEN, threatDoor,
-                    70.0D + proximity * 1.6D,
+                    76.0D + proximity * 2.5D + profile.openBias(),
                     OPEN_FOR_THREAT_COST, 0, 0));
         }
 
-        if (candidates.isEmpty()) return;
-        candidates.removeIf(action -> !Scp079ProcessingManager.canAfford(
-                level, action.cost()));
+        executeTacticalPlan(level, candidates, gameTime, player, pursuer,
+                availablePower);
+    }
+
+    private static void executeTacticalPlan(ServerLevel level,
+            List<Action> candidates, long gameTime, ServerPlayer player,
+            Mob pursuer, float availablePower) {
         if (candidates.isEmpty()) return;
 
-        Action selected = candidates.stream()
-                .max(Comparator.comparingDouble(action -> adjustedUtility(
-                        action, availablePower)))
-                .orElse(null);
-        if (selected == null
-                || adjustedUtility(selected, availablePower) < 52.0D) {
-            return;
+        candidates.sort(Comparator.comparingDouble(
+                (Action action) -> adjustedUtility(action, availablePower))
+                .reversed());
+
+        EnumSet<TacticalLane> usedLanes = EnumSet.noneOf(TacticalLane.class);
+        int executed = 0;
+        for (Action action : candidates) {
+            TacticalLane lane = action.type().lane();
+            if (usedLanes.contains(lane)
+                    || !Scp079ProcessingManager.canAfford(level,
+                    action.cost())) {
+                continue;
+            }
+            if (execute(level, action, gameTime, player, pursuer)) {
+                usedLanes.add(lane);
+                executed++;
+                if (executed >= MAX_TACTICAL_ACTIONS) return;
+            }
         }
-        execute(level, selected, gameTime, player, pursuer);
     }
 
     private static double adjustedUtility(Action action, float availablePower) {
         double utility = action.utility();
-        if (availablePower < 30.0F) utility -= action.cost() * 0.9D;
-        if (availablePower < 15.0F) utility -= action.cost() * 1.2D;
+        if (availablePower < 30.0F) utility -= action.cost() * 0.75D;
+        if (availablePower < 18.0F) utility -= action.cost() * 0.75D;
         return utility;
     }
 
@@ -421,8 +456,7 @@ public final class Scp079FacilityThreatEvents {
                 && pursuer != null
                 && action.maximumDurationTicks() > action.durationTicks()) {
             Scp079SustainedDoorLocks.begin(level, action.door().pos(),
-                    player.getUUID(), pursuer.getUUID(),
-                    pursuer.getUUID(),
+                    player.getUUID(), pursuer.getUUID(), pursuer.getUUID(),
                     Scp079SustainedDoorLocks.LockReason.PURSUIT,
                     action.maximumDurationTicks());
         }
@@ -449,12 +483,14 @@ public final class Scp079FacilityThreatEvents {
         String threat = pursuer == null ? ""
                 : pursuer.getDisplayName().getString();
         return switch (action.type()) {
-            case OPEN -> "for " + threat + " pursuing " + playerName;
+            case OPEN -> "opened the pursuit route for " + threat
+                    + " against " + playerName;
             case CLOSE -> pursuer == null
-                    ? "unprovoked near " + playerName
-                    : "ahead of " + playerName + " fleeing " + threat;
-            case DENY -> "against " + playerName + " fleeing " + threat
-                    + " · sustained up to "
+                    ? "unprovoked pressure near " + playerName
+                    : "closed the escape route ahead of " + playerName
+                    + " fleeing " + threat;
+            case DENY -> "denied the escape route ahead of " + playerName
+                    + " fleeing " + threat + " · sustained up to "
                     + action.maximumDurationTicks() / 20.0D + "s";
         };
     }
@@ -462,23 +498,17 @@ public final class Scp079FacilityThreatEvents {
     private static AheadDoors findDoorsAhead(ServerLevel level,
             ServerPlayer player, Mob pursuer, long gameTime,
             boolean requirePursuerBehind) {
-        if (requirePursuerBehind && !player.isSprinting()) {
+        Vec3 travel = observedTravel(player);
+        if (travel.lengthSqr() < MOVEMENT_THRESHOLD_SQR) {
             return AheadDoors.EMPTY;
         }
-
-        Vec3 travel = horizontal(player.getDeltaMovement());
-        if (travel.lengthSqr() < 0.0025D) {
-            if (!requirePursuerBehind) return AheadDoors.EMPTY;
-            travel = horizontal(player.getLookAngle());
-        }
-        if (travel.lengthSqr() < 0.0001D) return AheadDoors.EMPTY;
         Vec3 direction = travel.normalize();
 
         if (requirePursuerBehind && pursuer != null) {
             Vec3 fromThreatToPlayer = horizontal(
                     player.position().subtract(pursuer.position()));
             if (fromThreatToPlayer.lengthSqr() < 0.0001D
-                    || fromThreatToPlayer.normalize().dot(direction) <= 0.20D) {
+                    || fromThreatToPlayer.normalize().dot(direction) <= 0.15D) {
                 return AheadDoors.EMPTY;
             }
         }
@@ -584,10 +614,8 @@ public final class Scp079FacilityThreatEvents {
 
         Direction facing = doorState.getValue(HorizontalDirectionalBlock.FACING);
         Vec3 center = Vec3.atCenterOf(doorPos);
-        double threatSide = (threatPosition.x - center.x) * facing.getStepX()
-                + (threatPosition.z - center.z) * facing.getStepZ();
-        double playerSide = (playerPosition.x - center.x) * facing.getStepX()
-                + (playerPosition.z - center.z) * facing.getStepZ();
+        double threatSide = signedDoorSide(center, facing, threatPosition);
+        double playerSide = signedDoorSide(center, facing, playerPosition);
         return threatSide * playerSide < -0.35D;
     }
 
@@ -639,7 +667,8 @@ public final class Scp079FacilityThreatEvents {
         if (controlCount <= 0) return false;
 
         if (doorPowered(level, match.pos())) {
-            HeavyDoorControlPanelAccess.openConnectedControls(level, match.pos());
+            HeavyDoorControlPanelAccess.openConnectedControls(level,
+                    match.pos());
             return false;
         }
 
@@ -676,10 +705,12 @@ public final class Scp079FacilityThreatEvents {
             if (block == family.open().get()) {
                 return new DoorMatch(pos, state, family, DoorStage.OPEN);
             }
-            if (family.opening().stream().anyMatch(entry -> entry.get() == block)) {
+            if (family.opening().stream().anyMatch(
+                    entry -> entry.get() == block)) {
                 return new DoorMatch(pos, state, family, DoorStage.OPENING);
             }
-            if (family.closing().stream().anyMatch(entry -> entry.get() == block)) {
+            if (family.closing().stream().anyMatch(
+                    entry -> entry.get() == block)) {
                 return new DoorMatch(pos, state, family, DoorStage.CLOSING);
             }
         }
@@ -708,6 +739,21 @@ public final class Scp079FacilityThreatEvents {
                 2, 0.35D, 0.30D, 0.35D, 0.01D);
     }
 
+    private static Vec3 observedTravel(ServerPlayer player) {
+        Vec3 displacement = new Vec3(player.getX() - player.xo, 0.0D,
+                player.getZ() - player.zo);
+        Vec3 velocity = horizontal(player.getDeltaMovement());
+        if (displacement.lengthSqr() >= MOVEMENT_THRESHOLD_SQR) {
+            if (velocity.lengthSqr() >= MOVEMENT_THRESHOLD_SQR
+                    && displacement.dot(velocity) > 0.0D) {
+                return displacement.scale(0.75D).add(velocity.scale(0.25D));
+            }
+            return displacement;
+        }
+        return velocity.lengthSqr() >= MOVEMENT_THRESHOLD_SQR
+                ? velocity : Vec3.ZERO;
+    }
+
     private static Vec3 horizontal(Vec3 vector) {
         return new Vec3(vector.x, 0.0D, vector.z);
     }
@@ -719,15 +765,30 @@ public final class Scp079FacilityThreatEvents {
         CLOSING
     }
 
+    private enum TacticalLane {
+        THREAT_ROUTE,
+        PLAYER_ESCAPE
+    }
+
     private enum ActionType {
-        OPEN,
-        CLOSE,
-        DENY
+        OPEN(TacticalLane.THREAT_ROUTE),
+        CLOSE(TacticalLane.PLAYER_ESCAPE),
+        DENY(TacticalLane.PLAYER_ESCAPE);
+
+        private final TacticalLane lane;
+
+        ActionType(TacticalLane lane) {
+            this.lane = lane;
+        }
+
+        private TacticalLane lane() {
+            return lane;
+        }
     }
 
     private record Action(ActionType type, DoorMatch door, double utility,
-                           double cost, int durationTicks,
-                           int maximumDurationTicks) {
+                          double cost, int durationTicks,
+                          int maximumDurationTicks) {
     }
 
     private record AheadDoors(DoorMatch open, DoorMatch closed) {
@@ -747,14 +808,16 @@ public final class Scp079FacilityThreatEvents {
 
     private record ThreatProfile(boolean canOpenDoors,
                                  boolean canDenyAccess,
-                                 float openForThreatChance,
-                                 float closeAheadChance,
-                                 float denyChance,
-                                  int lockDurationTicks,
-                                  int maximumLockDurationTicks,
-                                  double minimumLockDistance) {
+                                 double openBias,
+                                 double closeBias,
+                                 double denyBias,
+                                 int lockDurationTicks,
+                                 int maximumLockDurationTicks,
+                                 double minimumLockDistance,
+                                 double threatPriority) {
         private static final ThreatProfile DEFAULT = new ThreatProfile(
-                true, true, 0.30F, 0.20F, 0.10F, 60, 160, 5.0D);
+                true, true, 0.0D, 0.0D, 0.0D,
+                60, 160, 5.0D, 50.0D);
 
         private static ThreatProfile forMob(Mob mob) {
             ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(
@@ -762,9 +825,11 @@ public final class Scp079FacilityThreatEvents {
             if (id == null) return DEFAULT;
             return switch (id.getPath()) {
                 case "scp_173" -> new ThreatProfile(true, true,
-                        0.36F, 0.22F, 0.06F, 40, 100, 8.0D);
+                        12.0D, 5.0D, -2.0D,
+                        40, 100, 8.0D, 100.0D);
                 case "scp_106" -> new ThreatProfile(false, true,
-                        0.0F, 0.32F, 0.12F, 35, 80, 6.0D);
+                        0.0D, 10.0D, 12.0D,
+                        35, 80, 6.0D, 95.0D);
                 default -> DEFAULT;
             };
         }

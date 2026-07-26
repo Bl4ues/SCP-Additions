@@ -145,6 +145,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private int ambushCooldownTicks;
     private int relocationHiddenTicks;
     private UUID huntedPlayerId;
+    private boolean managedEncounter;
     private boolean vanishForDespawn;
     private Vec3 rangedLockedDirection = Vec3.ZERO;
     private boolean rangedHit;
@@ -184,6 +185,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         tag.putInt("Scp106RangedCooldown", rangedCooldownTicks);
         tag.putInt("Scp106FarDistanceTicks", farDistanceTicks);
         tag.putInt("Scp106RelocationHiddenTicks", relocationHiddenTicks);
+        tag.putBoolean("Scp106ManagedEncounter", managedEncounter);
         tag.putBoolean("Scp106VanishForDespawn", vanishForDespawn);
         tag.putFloat("Scp106EmergenceYaw", emergenceYaw);
         if (huntedPlayerId != null) {
@@ -208,6 +210,9 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 tag.getInt("Scp106FarDistanceTicks"));
         relocationHiddenTicks = Math.max(0,
                 tag.getInt("Scp106RelocationHiddenTicks"));
+        managedEncounter = tag.contains("Scp106ManagedEncounter")
+                ? tag.getBoolean("Scp106ManagedEncounter")
+                : tag.hasUUID("Scp106HuntedPlayer");
         vanishForDespawn = tag.getBoolean("Scp106VanishForDespawn");
         emergenceYaw = tag.contains("Scp106EmergenceYaw")
                 ? tag.getFloat("Scp106EmergenceYaw") : getYRot();
@@ -232,6 +237,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     public void beginNaturalEncounter(ServerPlayer target,
             Emergence emergence) {
         if (target == null || level().isClientSide) return;
+        managedEncounter = true;
         huntedPlayerId = target.getUUID();
         setTarget(target);
         interestTicksRemaining = rollInterestTicks();
@@ -331,9 +337,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
         Player player = resolveHuntedPlayer();
         if (player == null) {
-            setTarget(null);
-            getNavigation().stop();
-            beginVanish(true);
+            if (managedEncounter) {
+                setTarget(null);
+                getNavigation().stop();
+                beginVanish(true);
+            } else {
+                idleWithoutTarget();
+            }
             return;
         }
         noTargetTicks = 0;
@@ -415,6 +425,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private boolean tickInterest() {
+        if (!managedEncounter) return true;
         if (interestTicksRemaining < 0) {
             interestTicksRemaining = rollInterestTicks();
         }
@@ -590,7 +601,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
         Player player = resolveHuntedPlayer();
         if (player == null) {
-            discard();
+            if (managedEncounter) {
+                discard();
+            } else {
+                idleWithoutTarget();
+            }
             return;
         }
         noTargetTicks = 0;
@@ -730,8 +745,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     }
 
     private void idleForCreativeTarget() {
+        idleWithoutTarget();
+    }
+
+    private void idleWithoutTarget() {
         setEncounterState(HUNTING);
         setTarget(null);
+        huntedPlayerId = null;
         relocationHiddenTicks = 0;
         setInvisible(false);
         entityData.set(ATTACKING, false);

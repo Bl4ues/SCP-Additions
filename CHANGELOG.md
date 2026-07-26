@@ -1,7 +1,7 @@
 # Changelog
 
 - Reduced SCP-106's PBR reflectance separately for skin and clothing, and corrected the corrosion-puddle specular map for a wet reflective surface without accidental emission.
-
+- Fixed SCP-106 instances placed with the Creative spawn egg immediately sinking into the ground and despawning instead of remaining in the world like manually spawned SCP-173 instances.
 - Fixed SCP-106 and SCP-131 PBR materials having smoothness but zero reflectance, and restored SCP-106's depth-safe cutout rendering.
 
 # SCP Additions 3.0.8 — In Development

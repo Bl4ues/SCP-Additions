@@ -80,7 +80,7 @@
 - Split the Fire Extinguisher glass into its own translucent render pass while keeping the cabinet and extinguisher on the cutout pass, preventing the transparent pane from hiding geometry behind it;
 - Rebuilt the zero-thickness SCP-012 paper folds and Fire Extinguisher details with stable geometry to prevent inverted shader normals and edge-lighting artifacts;
 - Removed an empty face-less element left behind when separating the Fire Extinguisher glass, which caused Minecraft to reject the body model and display the missing-texture cube;
-- Recalibrated the Fire Extinguisher LabPBR specular map so labels and painted surfaces no longer reflect like polished metal while preserving the glass reflection;
+- Recalibrated the Fire Extinguisher LabPBR specular map and removed unintended emission from its alpha channel while preserving the glass reflection;
 - Removed unintended shader reflections from the SL1 floor arrows;
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's diamond-shaped window trim from the wall planes to prevent z-fighting with optional renderers and shaders.

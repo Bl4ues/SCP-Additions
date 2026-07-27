@@ -1,6 +1,13 @@
 # Changelog
 
-# SCP Additions 3.0.8 — In Development
+# SCP Additions 3.1.0 — In Development
+
+## Creative inventory organization
+
+- Renamed the former **SCP Unity Blocks** creative tab to **SCP Facility Blocks**;
+- Organized facility content under colored **Functional**, **Props**, **General**, **LCZ - Sublevel 1**, and **LCZ - Sublevel 2** dividers;
+- Moved facility construction controls out of the general SCP Additions tab and into the Functional section;
+- Made every SCP Additions creative-tab icon cycle through the visible items in its own tab.
 
 ## SCP-106
 

@@ -81,6 +81,7 @@ public class ScpAdditionsMod {
         ScpAdditionsModEntities.REGISTRY.register(bus);
         ScpAdditionsModParticleTypes.REGISTRY.register(bus);
 
+        ScpAdditionsModTabs.ICON_ITEMS.register(bus);
         ScpAdditionsModTabs.REGISTRY.register(bus);
         UBlocksModule.register(bus);
         FacilityModule.register(bus);

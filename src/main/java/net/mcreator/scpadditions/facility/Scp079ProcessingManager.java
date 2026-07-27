@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Scp079ProcessingManager {
     public static final float MAX_POWER = 100.0F;
     public static final float INITIAL_POWER = 25.0F;
-    public static final float REGEN_PER_SECOND = 0.5F;
+    public static final float REGEN_PER_SECOND = 1.0F;
     public static final float OFFLINE_DECAY_PER_SECOND = 0.5F;
 
     private static final double REGEN_PER_TICK = REGEN_PER_SECOND / 20.0D;

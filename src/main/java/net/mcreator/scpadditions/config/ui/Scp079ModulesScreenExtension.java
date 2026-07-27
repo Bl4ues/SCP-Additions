@@ -61,6 +61,12 @@ public final class Scp079ModulesScreenExtension {
                     "Enables automatic and manual blinking.", true),
             new Row("audio", "enter_sound_enabled", "World Entry Sound",
                     "Plays enter.ogg after joining or opening a world.", true),
+            new Row("audio", "replace_player_hurt_sounds",
+                    "Replace Player Hurt Sounds",
+                    "Replaces vanilla player damage sounds with the SCP Additions voice set.", true),
+            new Row("audio", "mute_non_player_hit_sounds",
+                    "Remove Non-Player Hit Sounds",
+                    "Mutes vanilla attack, critical and sweep impact sounds against non-player mobs. Mob hurt sounds remain.", false),
             new Row("scp_173", "enabled", "SCP-173",
                     "Enables SCP-173 behavior. Natural spawning uses the 173spawn gamerule.", true)
     );

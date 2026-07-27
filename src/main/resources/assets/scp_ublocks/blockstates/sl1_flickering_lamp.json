@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "lit=false,powered=false": {
+      "model": "scp_ublocks:block/sl1_lamp_off"
+    },
+    "lit=false,powered=true": {
+      "model": "scp_ublocks:block/sl1_lamp_off"
+    },
+    "lit=true,powered=false": {
+      "model": "scp_ublocks:block/sl1_lamp_on"
+    },
+    "lit=true,powered=true": {
+      "model": "scp_ublocks:block/sl1_lamp_on"
+    }
+  }
+}

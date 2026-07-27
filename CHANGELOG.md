@@ -33,7 +33,8 @@
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
 - Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
-- Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
+- Added optional Debug Tools displays for SCP-079's power, and its recent decisions;
+- Restored reliable pursuit interference by tracking the player's recent route, searching farther around turns, recognizing SCP-106 through relocations, and immediately locking suitable doors after closing them when processing power allows.
 
 ## Roamer spawning and developer tools
 
@@ -53,7 +54,10 @@
 ## Audio and presentation
 
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
-- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack has finished.
+- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack has finished;
+- Moved SCP-106's chase-ending cue one second earlier and added quieter randomized pitch to SCP-079's repeated device-hacking sound;
+- Added a default-enabled module that replaces vanilla player hurt sounds with four lightly pitch-shifted voices;
+- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs without muting their own hurt sounds.
 
 ## Facility signs
 
@@ -63,7 +67,8 @@
 ## Facility construction
 
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
-- Added an SL1 ceiling lamp that emits light while powered by redstone.
+- Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
+- Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering.
 - Added decorative Emergency Button and Fire Extinguisher facility props;
 - Added clear decorative-only tooltips to facility props that have no gameplay function;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;

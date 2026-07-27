@@ -15,6 +15,8 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -33,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -48,14 +51,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079FacilityThreatEvents {
-    private static final int CHECK_INTERVAL_TICKS = 20;
+    private static final int CHECK_INTERVAL_TICKS = 10;
     private static final int UNPROVOKED_INTERVAL_TICKS = 100;
-    private static final int FLEE_DOOR_RADIUS = 8;
-    private static final int PURSUER_DOOR_RADIUS = 8;
-    private static final int PURSUER_SEARCH_RADIUS = 20;
-    private static final int SCP_106_PURSUER_SEARCH_RADIUS = 28;
-    private static final int DOOR_REUSE_TICKS = 100;
-    private static final int LOCKED_DOOR_REUSE_TICKS = 140;
+    private static final int FLEE_DOOR_RADIUS = 12;
+    private static final int PURSUER_DOOR_RADIUS = 10;
+    private static final int PURSUER_SEARCH_RADIUS = 24;
+    private static final int SCP_106_PURSUER_SEARCH_RADIUS = 36;
+    private static final int DOOR_REUSE_TICKS = 60;
+    private static final int CLOSE_FOLLOWUP_REUSE_TICKS = 24;
+    private static final int LOCKED_DOOR_REUSE_TICKS = 100;
+    private static final int RECENT_TRAVEL_TICKS = 30;
     private static final int SCP_131_SEPARATION_RADIUS = 16;
     private static final int SCP_131_DOOR_RADIUS = 7;
     private static final int SCP_131_INITIAL_LOCK_TICKS = 40;
@@ -63,16 +68,18 @@ public final class Scp079FacilityThreatEvents {
     private static final int MAX_TACTICAL_ACTIONS = 2;
 
     private static final double MOVEMENT_THRESHOLD_SQR = 0.0004D;
-    private static final double OPEN_FOR_THREAT_COST = 8.0D;
-    private static final double CLOSE_AHEAD_COST = 8.0D;
-    private static final double DENY_ACCESS_COST = 12.0D;
-    private static final double UNPROVOKED_COST = 6.0D;
+    private static final double OPEN_FOR_THREAT_COST = 6.0D;
+    private static final double CLOSE_AHEAD_COST = 6.0D;
+    private static final double DENY_ACCESS_COST = 9.0D;
+    private static final double UNPROVOKED_COST = 5.0D;
     private static final double SCP_131_SEPARATION_COST =
             CLOSE_AHEAD_COST + DENY_ACCESS_COST;
     private static final float UNPROVOKED_CLOSE_CHANCE = 0.03F;
     private static final float UNPROVOKED_MINIMUM_POWER = 75.0F;
 
     private static final Map<DoorKey, Long> DOOR_COOLDOWNS =
+            new ConcurrentHashMap<>();
+    private static final Map<UUID, TravelMemory> RECENT_TRAVEL =
             new ConcurrentHashMap<>();
 
     private Scp079FacilityThreatEvents() {
@@ -90,6 +97,7 @@ public final class Scp079FacilityThreatEvents {
 
         ServerLevel level = player.serverLevel();
         long gameTime = level.getGameTime();
+        rememberTravel(player, gameTime);
         if ((gameTime + player.getId()) % CHECK_INTERVAL_TICKS != 0L
                 || !level.getGameRules().getBoolean(
                 ScpAdditionsModGameRules.SCP079CONTROLON)) {
@@ -125,7 +133,9 @@ public final class Scp079FacilityThreatEvents {
                 Scp106Entity.class,
                 player.getBoundingBox().inflate(
                         SCP_106_PURSUER_SEARCH_RADIUS),
-                entity -> entity.isAlive() && entity.getTarget() == player)) {
+                entity -> entity.isAlive()
+                        && (entity.getTarget() == player
+                        || entity.isHuntingPlayer(player)))) {
             if (!pursuers.contains(scp106)) pursuers.add(scp106);
         }
 
@@ -373,10 +383,15 @@ public final class Scp079FacilityThreatEvents {
                     Vec3.atCenterOf(ahead.open().pos())));
             double commitment = Math.max(0.0D,
                     FLEE_DOOR_RADIUS - doorDistance);
+            boolean canFollowWithLock = profile.canDenyAccess()
+                    && HeavyDoorControlPanelAccess.hasDeniableInterface(level,
+                    ahead.open().pos());
             candidates.add(new Action(ActionType.CLOSE, ahead.open(),
                     74.0D + commitment * 2.25D + threatPressure
-                            + profile.closeBias(),
-                    CLOSE_AHEAD_COST, 0, 0));
+                            + profile.closeBias(), CLOSE_AHEAD_COST,
+                    canFollowWithLock ? profile.lockDurationTicks() : 0,
+                    canFollowWithLock
+                            ? profile.maximumLockDurationTicks() : 0));
         }
 
         if (threatDoor != null) {
@@ -448,8 +463,30 @@ public final class Scp079FacilityThreatEvents {
             return false;
         }
 
-        int reuse = action.type() == ActionType.DENY
-                ? LOCKED_DOOR_REUSE_TICKS : DOOR_REUSE_TICKS;
+        boolean combinedLock = action.type() == ActionType.CLOSE
+                && action.durationTicks() > 0 && player != null
+                && pursuer != null
+                && Scp079ProcessingManager.trySpend(level, DENY_ACCESS_COST);
+        if (combinedLock) {
+            int changed = HeavyDoorControlPanelAccess
+                    .temporarilyDenyConnectedControls(level,
+                    action.door().pos(), action.durationTicks());
+            if (changed <= 0) {
+                Scp079ProcessingManager.refund(level, DENY_ACCESS_COST);
+                combinedLock = false;
+            } else {
+                Scp079SustainedDoorLocks.begin(level, action.door().pos(),
+                        player.getUUID(), pursuer.getUUID(),
+                        pursuer.getUUID(),
+                        Scp079SustainedDoorLocks.LockReason.PURSUIT,
+                        action.maximumDurationTicks());
+            }
+        }
+
+        int reuse = combinedLock || action.type() == ActionType.DENY
+                ? LOCKED_DOOR_REUSE_TICKS
+                : action.type() == ActionType.CLOSE
+                ? CLOSE_FOLLOWUP_REUSE_TICKS : DOOR_REUSE_TICKS;
         DOOR_COOLDOWNS.put(new DoorKey(level.dimension(),
                 action.door().pos().asLong()), gameTime + reuse);
         if (action.type() == ActionType.DENY && player != null
@@ -460,11 +497,27 @@ public final class Scp079FacilityThreatEvents {
                     Scp079SustainedDoorLocks.LockReason.PURSUIT,
                     action.maximumDurationTicks());
         }
-        Scp079DecisionLog.record(level, decisionType(action.type()),
+
+        Scp079DecisionLog.DecisionType type = combinedLock
+                ? Scp079DecisionLog.DecisionType.DENY_ACCESS
+                : decisionType(action.type());
+        double totalCost = action.cost()
+                + (combinedLock ? DENY_ACCESS_COST : 0.0D);
+        String context = combinedLock
+                ? combinedCloseContext(action, player, pursuer)
+                : decisionContext(action, player, pursuer);
+        Scp079DecisionLog.record(level, type,
                 Scp079DecisionLog.DecisionOutcome.EXECUTED,
-                action.door().pos(), action.cost(),
-                decisionContext(action, player, pursuer));
+                action.door().pos(), totalCost, context);
         return true;
+    }
+
+    private static String combinedCloseContext(Action action,
+            ServerPlayer player, Mob pursuer) {
+        return "closed and denied the escape route ahead of "
+                + player.getGameProfile().getName() + " fleeing "
+                + pursuer.getDisplayName().getString() + " · sustained up to "
+                + action.maximumDurationTicks() / 20.0D + "s";
     }
 
     private static Scp079DecisionLog.DecisionType decisionType(
@@ -498,7 +551,7 @@ public final class Scp079FacilityThreatEvents {
     private static AheadDoors findDoorsAhead(ServerLevel level,
             ServerPlayer player, Mob pursuer, long gameTime,
             boolean requirePursuerBehind) {
-        Vec3 travel = observedTravel(player);
+        Vec3 travel = recentTravel(player, gameTime);
         if (travel.lengthSqr() < MOVEMENT_THRESHOLD_SQR) {
             return AheadDoors.EMPTY;
         }
@@ -507,8 +560,11 @@ public final class Scp079FacilityThreatEvents {
         if (requirePursuerBehind && pursuer != null) {
             Vec3 fromThreatToPlayer = horizontal(
                     player.position().subtract(pursuer.position()));
+            double minimumAlignment = pursuer instanceof Scp106Entity
+                    ? -0.55D : -0.15D;
             if (fromThreatToPlayer.lengthSqr() < 0.0001D
-                    || fromThreatToPlayer.normalize().dot(direction) <= 0.15D) {
+                    || fromThreatToPlayer.normalize().dot(direction)
+                    <= minimumAlignment) {
                 return AheadDoors.EMPTY;
             }
         }
@@ -522,9 +578,9 @@ public final class Scp079FacilityThreatEvents {
         for (int step = 1; step <= FLEE_DOOR_RADIUS; step++) {
             Vec3 sample = player.position().add(direction.scale(step));
             BlockPos center = BlockPos.containing(sample);
-            for (int dx = -1; dx <= 1; dx++) {
+            for (int dx = -2; dx <= 2; dx++) {
                 for (int dy = -2; dy <= 3; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
+                    for (int dz = -2; dz <= 2; dz++) {
                         BlockPos pos = center.offset(dx, dy, dz);
                         if (!visited.add(pos.asLong())
                                 || onCooldown(level, pos, gameTime)) {
@@ -543,7 +599,7 @@ public final class Scp079FacilityThreatEvents {
                         if (distance < 0.25D
                                 || distance > FLEE_DOOR_RADIUS
                                 * FLEE_DOOR_RADIUS
-                                || toDoor.normalize().dot(direction) < 0.45D) {
+                                || toDoor.normalize().dot(direction) < 0.18D) {
                             continue;
                         }
 
@@ -754,6 +810,28 @@ public final class Scp079FacilityThreatEvents {
                 ? velocity : Vec3.ZERO;
     }
 
+    private static void rememberTravel(ServerPlayer player, long gameTime) {
+        RECENT_TRAVEL.computeIfAbsent(player.getUUID(),
+                ignored -> new TravelMemory()).observe(player, gameTime);
+    }
+
+    private static Vec3 recentTravel(ServerPlayer player, long gameTime) {
+        TravelMemory memory = RECENT_TRAVEL.get(player.getUUID());
+        Vec3 fallback = observedTravel(player);
+        return memory == null ? fallback : memory.resolve(gameTime, fallback);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        RECENT_TRAVEL.remove(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        RECENT_TRAVEL.clear();
+        DOOR_COOLDOWNS.clear();
+    }
+
     private static Vec3 horizontal(Vec3 vector) {
         return new Vec3(vector.x, 0.0D, vector.z);
     }
@@ -806,6 +884,40 @@ public final class Scp079FacilityThreatEvents {
     private record DoorKey(ResourceKey<Level> dimension, long pos) {
     }
 
+    private static final class TravelMemory {
+        private Vec3 previousPosition;
+        private Vec3 smoothedTravel = Vec3.ZERO;
+        private long lastMovingTick = Long.MIN_VALUE;
+
+        private void observe(ServerPlayer player, long gameTime) {
+            Vec3 position = player.position();
+            if (previousPosition != null) {
+                Vec3 displacement = horizontal(
+                        position.subtract(previousPosition));
+                double distanceSqr = displacement.lengthSqr();
+                if (distanceSqr >= MOVEMENT_THRESHOLD_SQR
+                        && distanceSqr <= 4.0D) {
+                    smoothedTravel = smoothedTravel.lengthSqr()
+                            < MOVEMENT_THRESHOLD_SQR
+                            ? displacement
+                            : smoothedTravel.scale(0.45D)
+                            .add(displacement.scale(0.55D));
+                    lastMovingTick = gameTime;
+                }
+            }
+            previousPosition = position;
+        }
+
+        private Vec3 resolve(long gameTime, Vec3 fallback) {
+            if (gameTime - lastMovingTick <= RECENT_TRAVEL_TICKS
+                    && smoothedTravel.lengthSqr()
+                    >= MOVEMENT_THRESHOLD_SQR) {
+                return smoothedTravel;
+            }
+            return fallback;
+        }
+    }
+
     private record ThreatProfile(boolean canOpenDoors,
                                  boolean canDenyAccess,
                                  double openBias,
@@ -828,8 +940,8 @@ public final class Scp079FacilityThreatEvents {
                         12.0D, 5.0D, -2.0D,
                         40, 100, 8.0D, 100.0D);
                 case "scp_106" -> new ThreatProfile(false, true,
-                        0.0D, 10.0D, 12.0D,
-                        35, 80, 6.0D, 95.0D);
+                        0.0D, 12.0D, 14.0D,
+                        35, 100, 2.5D, 95.0D);
                 default -> DEFAULT;
             };
         }

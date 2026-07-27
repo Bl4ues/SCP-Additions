@@ -20,6 +20,7 @@
   "block.scp_ublocks.sl1_wall_mid": "SL1 Wall Middle",
   "block.scp_ublocks.sl1_ceiling": "SL1 Ceiling",
   "block.scp_ublocks.sl1_ceiling_alt": "SL1 Ceiling Alt",
-  "block.scp_ublocks.sl1_lamp": "SL1 Lamp",
-  "block.scp_ublocks.vent_open": "Vent"
+  "block.scp_ublocks.sl1_lamp": "SL1 Ceiling Lamp",
+  "block.scp_ublocks.vent_open": "Vent",
+  "block.scp_ublocks.sl1_flickering_lamp": "SL1 Flickering Ceiling Lamp"
 }

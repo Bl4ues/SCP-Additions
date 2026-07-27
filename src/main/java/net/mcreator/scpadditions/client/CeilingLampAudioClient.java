@@ -15,11 +15,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/** Maintains at most one subtle looping sound for each visible lit lamp. */
+/** Maintains one positional electrical loop for each nearby powered ceiling lamp. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CeilingLampAudioClient {
     private static final Map<LampKey, CeilingLampLoopSound> LOOPS =
             new HashMap<>();
+    private static final int DISCOVERY_INTERVAL_TICKS = 20;
+    private static final int HORIZONTAL_DISCOVERY_RADIUS = 16;
+    private static final int VERTICAL_DISCOVERY_RADIUS = 8;
+
+    private static int discoveryTicks;
 
     private CeilingLampAudioClient() {
     }
@@ -39,6 +44,7 @@ public final class CeilingLampAudioClient {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
+
         Iterator<Map.Entry<LampKey, CeilingLampLoopSound>> iterator =
                 LOOPS.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -50,6 +56,38 @@ public final class CeilingLampAudioClient {
                 sound.finish();
             }
             if (sound.isFinished()) iterator.remove();
+        }
+
+        if (minecraft.level == null || minecraft.player == null) {
+            discoveryTicks = 0;
+            return;
+        }
+
+        discoveryTicks++;
+        if (discoveryTicks < DISCOVERY_INTERVAL_TICKS) return;
+        discoveryTicks = 0;
+        discoverNearbyPoweredLamps(minecraft.level,
+                minecraft.player.blockPosition());
+    }
+
+    private static void discoverNearbyPoweredLamps(ClientLevel level,
+            BlockPos center) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int y = -VERTICAL_DISCOVERY_RADIUS;
+                y <= VERTICAL_DISCOVERY_RADIUS; y++) {
+            for (int x = -HORIZONTAL_DISCOVERY_RADIUS;
+                    x <= HORIZONTAL_DISCOVERY_RADIUS; x++) {
+                for (int z = -HORIZONTAL_DISCOVERY_RADIUS;
+                        z <= HORIZONTAL_DISCOVERY_RADIUS; z++) {
+                    cursor.set(center.getX() + x, center.getY() + y,
+                            center.getZ() + z);
+                    if (!level.hasChunkAt(cursor)) continue;
+                    if (CeilingLampLoopSound.shouldPlayFor(
+                            level.getBlockState(cursor))) {
+                        ensureLoop(level, cursor);
+                    }
+                }
+            }
         }
     }
 

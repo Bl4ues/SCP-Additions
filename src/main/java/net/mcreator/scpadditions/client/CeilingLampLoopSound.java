@@ -12,8 +12,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.mcreator.scpadditions.facility.UBlocksModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
-/** Quiet positional electrical hum owned by one lit ceiling lamp. */
+/** Positional electrical hum owned by one nearby powered ceiling lamp. */
 public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
+    private static final double MAX_DISTANCE_SQR = 24.0D * 24.0D;
+
     private final ClientLevel level;
     private final BlockPos pos;
     private boolean finished;
@@ -25,7 +27,7 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
         this.pos = pos.immutable();
         this.looping = true;
         this.delay = 0;
-        this.volume = 0.32F;
+        this.volume = 0.80F;
         this.pitch = 0.98F + RandomSource.create().nextFloat() * 0.04F;
         this.relative = false;
         this.attenuation = SoundInstance.Attenuation.LINEAR;
@@ -37,16 +39,23 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
     @Override
     public void tick() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != level || !isLitCeilingLamp(level.getBlockState(pos))) {
+        if (minecraft.level != level || minecraft.player == null
+                || minecraft.player.distanceToSqr(x, y, z) > MAX_DISTANCE_SQR
+                || !shouldPlayFor(level.getBlockState(pos))) {
             finish();
         }
     }
 
-    private static boolean isLitCeilingLamp(BlockState state) {
-        return (state.is(UBlocksModule.SL1_LAMP.get())
-                || state.is(UBlocksModule.SL1_FLICKERING_LAMP.get()))
-                && state.hasProperty(BlockStateProperties.LIT)
-                && state.getValue(BlockStateProperties.LIT);
+    static boolean shouldPlayFor(BlockState state) {
+        if (state.is(UBlocksModule.SL1_LAMP.get())) {
+            return state.hasProperty(BlockStateProperties.LIT)
+                    && state.getValue(BlockStateProperties.LIT);
+        }
+        if (state.is(UBlocksModule.SL1_FLICKERING_LAMP.get())) {
+            return state.hasProperty(BlockStateProperties.POWERED)
+                    && state.getValue(BlockStateProperties.POWERED);
+        }
+        return false;
     }
 
     public boolean isFinished() {

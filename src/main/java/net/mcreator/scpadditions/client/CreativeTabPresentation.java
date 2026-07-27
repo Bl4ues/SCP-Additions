@@ -23,7 +23,6 @@ public final class CreativeTabPresentation {
     private static final long ICON_DISPLAY_MILLIS = 900L;
     private static final int HEADER_WIDTH = 162;
     private static final int HEADER_HEIGHT = 18;
-    private static final int TITLE_MAX_WIDTH = 70;
 
     private static long lastIconStep = Long.MIN_VALUE;
 
@@ -48,7 +47,7 @@ public final class CreativeTabPresentation {
 
         CreativeModeTab selected = CreativeModeInventoryScreen.selectedTab;
         if (isScpAdditionsTab(selected)) {
-            renderCompactTitle(screen, event.getGuiGraphics(), selected.getDisplayName());
+            renderShortTitle(screen, event.getGuiGraphics(), shortTitle(selected));
         }
 
         if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()
@@ -121,18 +120,21 @@ public final class CreativeTabPresentation {
         return Math.max((int) (scroll * scrollableRows + 0.5F), 0);
     }
 
-    private static void renderCompactTitle(CreativeModeInventoryScreen screen,
+    private static void renderShortTitle(CreativeModeInventoryScreen screen,
             GuiGraphics graphics, Component title) {
         Font font = Minecraft.getInstance().font;
-        int width = Math.max(font.width(title), 1);
-        float scale = Math.min(1.0F, TITLE_MAX_WIDTH / (float) width);
+        graphics.drawString(font, title, screen.getGuiLeft() + 8,
+                screen.getGuiTop() + 6, 0x404040, false);
+    }
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(screen.getGuiLeft() + 8,
-                screen.getGuiTop() + 6, 300.0F);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(font, title, 0, 0, 0x404040, false);
-        graphics.pose().popPose();
+    private static Component shortTitle(CreativeModeTab tab) {
+        if (tab == ScpAdditionsModTabs.SC_PADDITIONS_SC_PS.get()) {
+            return Component.translatable("item_group.scp_additions.short_scps");
+        }
+        if (tab == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
+            return Component.translatable("item_group.scp_additions.short_blocks");
+        }
+        return Component.translatable("item_group.scp_additions.short_items");
     }
 
     private static boolean isScpAdditionsTab(CreativeModeTab tab) {

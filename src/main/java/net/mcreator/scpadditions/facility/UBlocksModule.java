@@ -163,11 +163,13 @@ public final class UBlocksModule {
             Supplier<? extends Block> factory, boolean cutout) {
         RegistryObject<Block> block = BLOCKS.register(path, factory);
         RegistryObject<Item> item = ITEMS.register(path, () -> isConnectedFloorPath(path)
-                ? new ConnectedFloorBlockItem(block.get(), new Item.Properties())
+                ? new ConnectedFloorBlockItem(block.get(), new Item.Properties(), path)
                 : isCeilingLampPath(path)
                 ? new CeilingLampBlockItem(block.get(), new Item.Properties(), path)
                 : isDecorativePropPath(path)
                 ? new DecorativePropBlockItem(block.get(), new Item.Properties())
+                : zoneTooltipKey(path) != null
+                ? new FacilityZoneBlockItem(block.get(), new Item.Properties(), path)
                 : new BlockItem(block.get(), new Item.Properties()));
         CREATIVE_ITEMS.add(item);
         if (cutout) {
@@ -183,10 +185,12 @@ public final class UBlocksModule {
 
     private static final class CeilingLampBlockItem extends BlockItem {
         private final String tooltipKey;
+        private final String path;
 
         private CeilingLampBlockItem(Block block, Properties properties,
                 String path) {
             super(block, properties);
+            this.path = path;
             this.tooltipKey = "sl1_flickering_lamp".equals(path)
                     ? "tooltip.scp_additions.sl1_flickering_ceiling_lamp"
                     : "tooltip.scp_additions.sl1_ceiling_lamp";
@@ -195,16 +199,51 @@ public final class UBlocksModule {
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
+            appendZoneTooltip(path, tooltip);
             tooltip.add(Component.translatable(tooltipKey)
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }
     }
 
+    private static final class FacilityZoneBlockItem extends BlockItem {
+        private final String path;
+
+        private FacilityZoneBlockItem(Block block, Properties properties,
+                String path) {
+            super(block, properties);
+            this.path = path;
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable Level level,
+                List<Component> tooltip, TooltipFlag flag) {
+            appendZoneTooltip(path, tooltip);
+            super.appendHoverText(stack, level, tooltip, flag);
+        }
+    }
+
+    private static String zoneTooltipKey(String path) {
+        if (path.startsWith("sl_1_") || path.startsWith("sl1_")) {
+            return "tooltip.scp_additions.sublevel_1";
+        }
+        if (path.startsWith("sl_2_") || path.startsWith("sl2_")) {
+            return "tooltip.scp_additions.sublevel_2";
+        }
+        return null;
+    }
+
+    private static void appendZoneTooltip(String path,
+            List<Component> tooltip) {
+        String key = zoneTooltipKey(path);
+        if (key != null) {
+            tooltip.add(Component.translatable(key)
+                    .withStyle(ChatFormatting.BLUE));
+        }
+    }
+
     private static boolean isDecorativePropPath(String path) {
-        return "vent_open".equals(path)
-                || "sl_1_floor_detail_small".equals(path)
-                || "sl_1_floor_detail_big".equals(path);
+        return "vent_open".equals(path);
     }
 
     private static final class DecorativePropBlockItem extends BlockItem {
@@ -226,13 +265,18 @@ public final class UBlocksModule {
     }
 
     private static final class ConnectedFloorBlockItem extends BlockItem {
-        private ConnectedFloorBlockItem(Block block, Properties properties) {
+        private final String path;
+
+        private ConnectedFloorBlockItem(Block block, Properties properties,
+                String path) {
             super(block, properties);
+            this.path = path;
         }
 
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
+            appendZoneTooltip(path, tooltip);
             tooltip.add(Component.translatable("tooltip.scp_additions.sl1_connected_floors")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);

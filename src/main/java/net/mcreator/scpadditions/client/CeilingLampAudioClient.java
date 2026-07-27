@@ -16,6 +16,7 @@ public final class CeilingLampAudioClient {
     private static final int DISCOVERY_INTERVAL_TICKS = 10;
     private static final int HORIZONTAL_DISCOVERY_RADIUS = 16;
     private static final int VERTICAL_DISCOVERY_RADIUS = 8;
+    private static final double RETARGET_ADVANTAGE_SQ = 4.0D;
 
     private static CeilingLampLoopSound activeLoop;
     private static int discoveryTicks;
@@ -29,7 +30,10 @@ public final class CeilingLampAudioClient {
                 clientLevel.getBlockState(pos))) {
             return;
         }
-        startOrRetarget(clientLevel, pos);
+        if (activeLoop == null || activeLoop.isFinished()
+                || activeLoop.level() != clientLevel) {
+            startLoop(clientLevel, pos);
+        }
     }
 
     @SubscribeEvent
@@ -49,17 +53,38 @@ public final class CeilingLampAudioClient {
         discoveryTicks = 0;
 
         BlockPos nearest = findNearestPoweredLamp(minecraft.level,
-                minecraft.player.blockPosition());
+                minecraft.player.getX(), minecraft.player.getY(),
+                minecraft.player.getZ(), minecraft.player.blockPosition());
         if (nearest == null) stopLoop();
-        else startOrRetarget(minecraft.level, nearest);
+        else selectTarget(minecraft.level, nearest, minecraft.player.getX(),
+                minecraft.player.getY(), minecraft.player.getZ());
     }
 
-    private static void startOrRetarget(ClientLevel level, BlockPos pos) {
-        if (activeLoop != null && !activeLoop.isFinished()
-                && activeLoop.level() == level) {
-            activeLoop.retarget(pos);
+    private static void selectTarget(ClientLevel level, BlockPos candidate,
+            double listenerX, double listenerY, double listenerZ) {
+        if (activeLoop == null || activeLoop.isFinished()
+                || activeLoop.level() != level) {
+            startLoop(level, candidate);
             return;
         }
+
+        BlockPos current = activeLoop.target();
+        if (current.equals(candidate)) return;
+        if (!CeilingLampLoopSound.shouldPlayFor(level.getBlockState(current))) {
+            activeLoop.retarget(candidate);
+            return;
+        }
+
+        double currentDistance = distanceToCenterSqr(current, listenerX,
+                listenerY, listenerZ);
+        double candidateDistance = distanceToCenterSqr(candidate, listenerX,
+                listenerY, listenerZ);
+        if (candidateDistance + RETARGET_ADVANTAGE_SQ < currentDistance) {
+            activeLoop.retarget(candidate);
+        }
+    }
+
+    private static void startLoop(ClientLevel level, BlockPos pos) {
         stopLoop();
         activeLoop = new CeilingLampLoopSound(level, pos);
         Minecraft.getInstance().getSoundManager().play(activeLoop);
@@ -73,6 +98,7 @@ public final class CeilingLampAudioClient {
     }
 
     private static BlockPos findNearestPoweredLamp(ClientLevel level,
+            double listenerX, double listenerY, double listenerZ,
             BlockPos center) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         BlockPos nearest = null;
@@ -88,7 +114,8 @@ public final class CeilingLampAudioClient {
                     if (!level.hasChunkAt(cursor)
                             || !CeilingLampLoopSound.shouldPlayFor(
                             level.getBlockState(cursor))) continue;
-                    double distance = cursor.distSqr(center);
+                    double distance = distanceToCenterSqr(cursor, listenerX,
+                            listenerY, listenerZ);
                     if (distance < nearestDistance) {
                         nearestDistance = distance;
                         nearest = cursor.immutable();
@@ -97,5 +124,13 @@ public final class CeilingLampAudioClient {
             }
         }
         return nearest;
+    }
+
+    private static double distanceToCenterSqr(BlockPos pos, double x,
+            double y, double z) {
+        double dx = pos.getX() + 0.5D - x;
+        double dy = pos.getY() + 0.5D - y;
+        double dz = pos.getZ() + 0.5D - z;
+        return dx * dx + dy * dy + dz * dz;
     }
 }

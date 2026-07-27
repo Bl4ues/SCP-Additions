@@ -307,9 +307,6 @@ public final class FacilityModule {
         addFacilityCreativeItem(ordered, "office_door");
         addFacilityCreativeItem(ordered, "bath_door");
         addFacilityCreativeItem(ordered, "ws_dclosed");
-        addUBlockCreativeItem(ordered, "sl1_lamp");
-        addUBlockCreativeItem(ordered, "sl1_flickering_lamp");
-
         addDivider(ordered,
                 "creative_tab.scp_additions.facility.props",
                 PROPS_DIVIDER_COLOR);
@@ -359,6 +356,8 @@ public final class FacilityModule {
         addUBlockCreativeItem(ordered, "sl_1_wall_top");
         addUBlockCreativeItem(ordered, "sl1_ceiling");
         addUBlockCreativeItem(ordered, "sl1_ceiling_alt");
+        addUBlockCreativeItem(ordered, "sl1_lamp");
+        addUBlockCreativeItem(ordered, "sl1_flickering_lamp");
         addUBlockCreativeItem(ordered, "sl_1_floor_detail_small");
         addUBlockCreativeItem(ordered, "sl_1_floor_detail_big");
         addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_bot");

@@ -1,58 +1,30 @@
-name: Apply Real Creative Tab Sections
+name: Diagnose Real Creative Tab Build
 
 on:
   pull_request:
     branches:
       - master
 
-permissions:
-  contents: write
-
 jobs:
-  patch-and-build:
+  diagnose:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Apply creative tab redesign
+      - name: Apply and compile
+        shell: bash
         run: |
+          git clone --quiet --depth 1 --branch agent/creative-tab-real-sections https://github.com/Bl4ues/SCP-Additions.git source
+          cd source
           sed -i 's/ dividers (until I add more sectors);/ dividers;/' CHANGELOG.md
           python3 scripts/apply_real_creative_sections.py
-          sed -i 's/ section headers;/ section headers (until I add more sectors);/' CHANGELOG.md
-
-      - name: Build
-        shell: bash
-        run: |
           chmod +x gradlew
-          if ! ./gradlew clean build --no-daemon --stacktrace > creative-tab-build.log 2>&1; then
-            tail -n 120 creative-tab-build.log
+          if ! ./gradlew compileJava --no-daemon --stacktrace > creative-tab-build.log 2>&1; then
+            tail -n 50 creative-tab-build.log
             exit 1
           fi
-          tail -n 20 creative-tab-build.log
-
-      - name: Commit validated source
-        shell: bash
-        run: |
-          if [[ -z "$(git status --porcelain)" ]]; then
-            echo "No generated changes to commit."
-            exit 0
-          fi
-          git config user.name "Bl4ues"
-          git config user.email "28213049+Bl4ues@users.noreply.github.com"
-          rm -f creative-tab-build.log
-          git add -A
-          git commit -m "Implement real creative tab section headers"
-          git push origin HEAD:agent/creative-tab-real-sections
+          tail -n 10 creative-tab-build.log

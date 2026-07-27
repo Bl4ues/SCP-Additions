@@ -28,7 +28,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Apply fixes
-        run: python3 scripts/apply_terminal_tesla_blood_fixes.py
+        shell: bash
+        run: |
+          sed -i 's/entity.getRandom().nextInt(8)/Math.floorMod(entity.getUUID().hashCode(), 8)/' \
+            scripts/apply_terminal_tesla_blood_fixes.py
+          python3 scripts/apply_terminal_tesla_blood_fixes.py
 
       - name: Validate source structure
         shell: bash
@@ -46,7 +50,7 @@ jobs:
               ],
               'src/main/java/net/mcreator/scpadditions/procedures/BloodType1Procedure.java': [
                   'onPlayerLoggedIn',
-                  'nextInt(8)',
+                  'Math.floorMod',
               ],
               'src/main/java/net/mcreator/scpadditions/world/inventory/TeslaTerminalMenu.java': [
                   'initialHasSecurityCredentials',

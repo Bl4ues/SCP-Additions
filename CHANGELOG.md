@@ -72,6 +72,7 @@
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
 - Rebuilt the ceiling-lamp hum as one clean positional loop for the nearest powered lamp, removing embedded startup/shutdown clicks and overlapping copies while keeping it active through defective-lamp flicker.
 - Added decorative Emergency Button and Fire Extinguisher facility props;
+- Added the **Wet Floor Sign**, a GeckoLib-rendered decorative prop with eight placement rotations, model-aware collision, and a dedicated inventory/hand texture;
 - Added clear tooltips to facility props that have no gameplay function;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.

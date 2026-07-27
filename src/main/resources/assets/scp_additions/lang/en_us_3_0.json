@@ -142,5 +142,6 @@
   "block.scp_additions.sl_2_floor": "Floor",
   "block.scp_additions.sl_2_wall_bot": "Wall Bottom",
   "block.scp_additions.sl_2_wall_mid": "Wall Middle",
-  "block.scp_additions.sl_2_wall_top": "Wall Top"
+  "block.scp_additions.sl_2_wall_top": "Wall Top",
+  "block.scp_additions.wet_floor": "Wet Floor Sign"
 }

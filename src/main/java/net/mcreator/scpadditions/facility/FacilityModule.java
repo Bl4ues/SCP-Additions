@@ -134,9 +134,14 @@ public final class FacilityModule {
             "door_sign", FacilitySignBlock.SignType.DOOR);
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
+    public static final RegistryObject<Block> WET_FLOOR = registerWetFloor();
     public static final RegistryObject<Block> FACILITY_PROP_PART =
             BLOCKS.register("facility_prop_part",
                     FacilityPropPartBlock::new);
+    public static final RegistryObject<BlockEntityType<WetFloorBlockEntity>>
+            WET_FLOOR_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
+                    "wet_floor", () -> BlockEntityType.Builder.of(
+                            WetFloorBlockEntity::new, WET_FLOOR.get()).build(null));
     public static final RegistryObject<BlockEntityType<FacilitySignBlockEntity>>
             FACILITY_SIGN_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
                     "facility_sign", () -> BlockEntityType.Builder.of(
@@ -291,6 +296,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "heater");
         addFacilityCreativeItem(props, "emergency_button");
         addFacilityCreativeItem(props, "fire_extinguisher");
+        addFacilityCreativeItem(props, "wet_floor");
         addFacilityCreativeItem(props, "tv");
         addFacilityCreativeItem(props, "trashbin");
         addUBlockCreativeItem(props, "vent_open");
@@ -430,6 +436,17 @@ public final class FacilityModule {
         RegistryObject<Item> item = ITEMS.register(path,
                 () -> new FacilitySignBlockItem(block.get(),
                         new Item.Properties(), type));
+        BLOCKS_BY_PATH.put(path, block);
+        ITEMS_BY_PATH.put(path, item);
+        CREATIVE_ITEMS.add(item);
+        return block;
+    }
+
+    private static RegistryObject<Block> registerWetFloor() {
+        String path = "wet_floor";
+        RegistryObject<Block> block = BLOCKS.register(path, WetFloorBlock::new);
+        RegistryObject<Item> item = ITEMS.register(path,
+                () -> new WetFloorBlockItem(block.get(), new Item.Properties()));
         BLOCKS_BY_PATH.put(path, block);
         ITEMS_BY_PATH.put(path, item);
         CREATIVE_ITEMS.add(item);

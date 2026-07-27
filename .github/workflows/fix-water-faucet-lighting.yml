@@ -1,0 +1,31 @@
+name: Fix Water Faucet Lighting
+
+on:
+  push:
+    branches:
+      - fix/water-faucet-lighting
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/water-faucet-lighting
+          fetch-depth: 0
+
+      - name: Disable baked directional shading and ambient occlusion
+        run: python scripts/fix_water_faucet_lighting.py
+
+      - name: Commit corrected model
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/resources/assets/scp_additions/models/block/water_faucet.json
+          git commit -m "Preserve Water Faucet authored color [skip ci]"
+          git push origin HEAD:fix/water-faucet-lighting

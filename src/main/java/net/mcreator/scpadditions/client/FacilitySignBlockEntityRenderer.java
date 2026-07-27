@@ -32,7 +32,7 @@ public final class FacilitySignBlockEntityRenderer
     private static final float CORE_FILL_DEPTH_OFFSET = 0.05F;
     private static final float DOOR_OUTLINE_OFFSET = 0.45F;
     private static final float DOOR_FILL_DEPTH_OFFSET = 0.05F;
-    private static final float DOOR_SURFACE_OFFSET = 0.30F * MODEL_PIXEL;
+    private static final float DOOR_SURFACE_OFFSET = 0.03125F * MODEL_PIXEL;
     private static final float CORE_BASELINE_Y =
             -FONT_BASELINE_HEIGHT / 2.0F + 1.75F;
     private static final float DOOR_NUMBER_BASELINE_Y =

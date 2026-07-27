@@ -11,6 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
@@ -39,6 +40,28 @@ public final class PlayerDamageAudioClient {
     private PlayerDamageAudioClient() {
     }
 
+    /**
+     * Mark the local mob attack before Minecraft creates its attack sound.
+     * AttackEntityEvent can arrive too late or only on the logical server, so
+     * the client input event is the authoritative timing source here.
+     */
+    @SubscribeEvent
+    public static void onInteractionKeyMapping(
+            InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isAttack()) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(minecraft.hitResult instanceof EntityHitResult hit)
+                || !(hit.getEntity() instanceof LivingEntity)
+                || hit.getEntity() instanceof Player) {
+            return;
+        }
+
+        suppressMobImpactUntilNanos = System.nanoTime()
+                + MOB_IMPACT_WINDOW_NANOS;
+    }
+
+    /** Server/integrated-server fallback for attacks not exposed by input. */
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -118,8 +141,14 @@ public final class PlayerDamageAudioClient {
             }
         }
 
+        /*
+         * Attack sounds are commonly positioned at the struck entity rather
+         * than at the attacker, so the local-player distance test is invalid
+         * here. The short pre-attack window already proves this came from the
+         * local player hitting a non-player living entity.
+         */
         if (InventoryModuleRuntimeState.muteNonPlayerHitSoundsForClient()
-                && minecraftSound && localPlayerSound
+                && minecraftSound
                 && path.startsWith(PLAYER_ATTACK_PREFIX)
                 && isNonPlayerMobImpact()) {
             event.setSound(null);
@@ -155,10 +184,6 @@ public final class PlayerDamageAudioClient {
     }
 
     private static boolean isNonPlayerMobImpact() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (System.nanoTime() <= suppressMobImpactUntilNanos) return true;
-        return minecraft.hitResult instanceof EntityHitResult hit
-                && hit.getEntity() instanceof LivingEntity
-                && !(hit.getEntity() instanceof Player);
+        return System.nanoTime() <= suppressMobImpactUntilNanos;
     }
 }

@@ -30,6 +30,8 @@ public final class Scp106AudioEvents {
     private static final double WALK_SECONDS_PER_TICK = 1.38D / 20.0D;
     private static final double FIRST_FOOTSTEP_SECONDS = 0.72D;
     private static final double FOOTSTEP_INTERVAL_SECONDS = 0.90D;
+    // Additional 30% reduction from the previous 0.63 volume.
+    private static final float FOOTSTEP_VOLUME = 0.441F;
     private static final Map<UUID, Tracked> TRACKED = new HashMap<>();
 
     private Scp106AudioEvents() {
@@ -124,7 +126,7 @@ public final class Scp106AudioEvents {
         if (!(scp106.level() instanceof ServerLevel level)) return;
         level.playSound(null, scp106.getX(), scp106.getY() + 0.05D,
                 scp106.getZ(), Scp106Sounds.STEP.get(),
-                SoundSource.HOSTILE, 0.63F,
+                SoundSource.HOSTILE, FOOTSTEP_VOLUME,
                 0.96F + scp106.getRandom().nextFloat() * 0.08F);
     }
 

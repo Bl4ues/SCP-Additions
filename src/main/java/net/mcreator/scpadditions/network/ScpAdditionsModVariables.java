@@ -72,15 +72,15 @@ public class ScpAdditionsModVariables {
 			event.getOriginal().revive();
 			PlayerVariables original = ((PlayerVariables) event.getOriginal().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables()));
 			PlayerVariables clone = ((PlayerVariables) event.getEntity().getCapability(PLAYER_VARIABLES_CAPABILITY, null).orElse(new PlayerVariables()));
+			clone.Opos = original.Opos;
+			clone.Oneg = original.Oneg;
+			clone.Apos = original.Apos;
+			clone.Aneg = original.Aneg;
+			clone.Bpos = original.Bpos;
+			clone.Bneg = original.Bneg;
+			clone.ABpos = original.ABpos;
+			clone.ABneg = original.ABneg;
 			if (!event.isWasDeath()) {
-				clone.Opos = original.Opos;
-				clone.Oneg = original.Oneg;
-				clone.Apos = original.Apos;
-				clone.Aneg = original.Aneg;
-				clone.Bpos = original.Bpos;
-				clone.Bneg = original.Bneg;
-				clone.ABpos = original.ABpos;
-				clone.ABneg = original.ABneg;
 				clone.PlayerOn1to1 = original.PlayerOn1to1;
 				clone.PlayerOn1to1_2 = original.PlayerOn1to1_2;
 				clone.PlayerOn1to1_3 = original.PlayerOn1to1_3;

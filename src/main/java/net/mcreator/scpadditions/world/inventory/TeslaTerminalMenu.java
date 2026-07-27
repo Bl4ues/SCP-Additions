@@ -29,6 +29,7 @@ public class TeslaTerminalMenu extends AbstractContainerMenu implements Supplier
 	public int x, y, z;
 	public boolean initialTeslaGatesEnabled = true;
 	public boolean initialManualOverride = false;
+	public boolean initialHasSecurityCredentials = false;
 	private ContainerLevelAccess access = ContainerLevelAccess.NULL;
 	private IItemHandler internal;
 	private final Map<Integer, Slot> customSlots = new HashMap<>();
@@ -51,6 +52,9 @@ public class TeslaTerminalMenu extends AbstractContainerMenu implements Supplier
 			if (extraData.readableBytes() >= 2) {
 				this.initialTeslaGatesEnabled = extraData.readBoolean();
 				this.initialManualOverride = extraData.readBoolean();
+			}
+			if (extraData.readableBytes() >= 1) {
+				this.initialHasSecurityCredentials = extraData.readBoolean();
 			}
 			access = ContainerLevelAccess.create(world, pos);
 		}

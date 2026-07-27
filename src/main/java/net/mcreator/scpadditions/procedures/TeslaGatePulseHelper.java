@@ -47,8 +47,10 @@ public final class TeslaGatePulseHelper {
 
         AABB lethalVolume = TeslaGateVolume.lethalArcAt(world, pos);
         List<LivingEntity> entities = world.getEntitiesOfClass(
-                LivingEntity.class, lethalVolume,
-                entity -> TeslaGateVolume.intersects(entity, lethalVolume));
+                LivingEntity.class,
+                TeslaGateVolume.motionCandidates(lethalVolume),
+                entity -> TeslaGateVolume.intersectsOrCrossed(entity,
+                        lethalVolume));
         for (LivingEntity living : entities) {
             if (living instanceof Scp106Entity scp106) {
                 Scp106AudioEvents.stopChaseFor(scp106);

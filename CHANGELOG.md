@@ -83,6 +83,9 @@
 
 ## Bug Fixes
 
+- Synchronized the SCP Inventory immediately on login, respawn, and dimension changes, and made Tesla Terminal authentication receive a server-authoritative Security Credentials snapshot when opened;
+- Changed enabled Tesla Gates from ten-tick polling to continuous sensing without duplicate activation queues, and added swept trajectory checks so running entities cannot tunnel through the unchanged visible discharge arc between ticks;
+- Assigned a blood type on first login for new and legacy players and preserved it across death instead of leaving Status as Unknown until the first respawn;
 - Removed the actual source of repeated ceiling-lamp clicks: the old loop file contained embedded power-on and power-off samples, which compounded across nearby lamps;
 - Limited Tesla Gate damage to the visible, rotation-aware electrical arc while preserving the broader 3×3×3 volume only as its activation sensor;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;

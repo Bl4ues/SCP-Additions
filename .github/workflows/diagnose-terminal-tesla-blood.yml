@@ -1,0 +1,23 @@
+name: Diagnose Terminal Tesla Blood Fixes
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compile and print only errors
+        shell: bash
+        run: |
+          git clone --quiet --depth 1 --branch agent/fix-terminal-tesla-blood-sync https://github.com/Bl4ues/SCP-Additions.git source
+          cd source
+          python3 scripts/apply_terminal_tesla_blood_fixes.py
+          chmod +x gradlew
+          set +e
+          ./gradlew compileJava --no-daemon > /tmp/compile.log 2>&1
+          status=$?
+          grep -n -E "error:|cannot find symbol|method .* cannot be applied|incompatible types|FAILURE:|What went wrong" /tmp/compile.log | tail -n 120 || true
+          exit $status

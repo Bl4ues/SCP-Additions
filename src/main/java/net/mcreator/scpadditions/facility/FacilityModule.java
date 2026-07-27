@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -51,7 +50,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
-import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
 
 import javax.annotation.Nullable;
@@ -86,13 +84,6 @@ public final class FacilityModule {
     private static final Map<String, RegistryObject<Item>> ITEMS_BY_PATH = new LinkedHashMap<>();
     private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
     private static final Map<String, DoorFamily> DOOR_FAMILIES = new LinkedHashMap<>();
-
-    private static final String DIVIDER_COLOR_TAG = "FacilityDividerColor";
-    private static final int FUNCTIONAL_DIVIDER_COLOR = 0xD6D6D6;
-    private static final int PROPS_DIVIDER_COLOR = 0x8A8A8A;
-    private static final int GENERAL_DIVIDER_COLOR = 0x444444;
-    private static final int SL1_DIVIDER_COLOR = 0x0987BC;
-    private static final int SL2_DIVIDER_COLOR = 0xFFD306;
 
     private static final RegistryObject<SoundEvent> UNITY_DOOR_OPENING = sound("unity_door_opening");
     private static final RegistryObject<SoundEvent> UNITY_DOOR_CLOSING = sound("unity_door_closing");
@@ -200,28 +191,16 @@ public final class FacilityModule {
             List.of("w_sc_1", "w_sc_2", "wsc_3"), 5, true, 4, 0, SoundType.WOOD,
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
 
-    public static final RegistryObject<Item> FACILITY_TAB_DIVIDER =
-            ITEMS.register("facility_tab_divider",
-                    () -> new Item(new Item.Properties().stacksTo(1)));
-
     public static final RegistryObject<CreativeModeTab> SCP_FACILITY_BLOCKS =
             TABS.register("scp_unity_blocks", () ->
                     CreativeModeTab.builder()
                             .title(Component.translatable(
                                     "item_group.scp_additions.scp_facility_blocks"))
-                            .icon(() -> new ItemStack(
-                                    ScpAdditionsModTabs.FACILITY_BLOCKS_TAB_ICON.get()))
-                            .displayItems((parameters, output) -> {
-                                for (ItemStack stack : creativeItemsInDisplayOrder()) {
-                                    if (stack.is(FACILITY_TAB_DIVIDER.get())) {
-                                        output.accept(stack,
-                                                CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
-                                    } else {
-                                        output.accept(stack);
-                                    }
-                                }
-                            })
+                            .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
+                            .displayItems((parameters, output) ->
+                                    creativeItemsInDisplayOrder().forEach(output::accept))
                             .withSearchBar()
+                            .hideTitle()
                             .build());
 
     private FacilityModule() {
@@ -273,131 +252,136 @@ public final class FacilityModule {
                 : heavyDoorShape(facing);
     }
 
+    public record CreativeSection(String translationKey, ResourceLocation sprite,
+            int textColor, List<ItemStack> items) {
+    }
+
     /**
-     * Curated category order for the public facility tab. Fake divider items are
-     * limited to the parent tab so they do not pollute creative search results.
+     * Curated categories for the facility creative tab. Headers are rendered by
+     * the client over empty grid rows, so no fake items enter inventories or search.
      */
-    private static List<ItemStack> creativeItemsInDisplayOrder() {
+    public static List<CreativeSection> creativeSections() {
+        List<CreativeSection> sections = new ArrayList<>();
+
+        List<ItemStack> functional = new ArrayList<>();
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.TESLA_GATE.get().asItem());
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem());
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get().asItem());
+        addFacilityCreativeItem(functional, "button_closed");
+        addFacilityCreativeItem(functional, "button_locked");
+        addExternalCreativeItem(functional, UnifiedReaderItems.KEYCARD_READER.get());
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
+        addFacilityCreativeItem(functional, "default_door");
+        addFacilityCreativeItem(functional, "yellow_closed");
+        addFacilityCreativeItem(functional, "black_closed");
+        addFacilityCreativeItem(functional, "normal_door");
+        addFacilityCreativeItem(functional, "left_log_door");
+        addFacilityCreativeItem(functional, "right_log_door");
+        addFacilityCreativeItem(functional, "office_door");
+        addFacilityCreativeItem(functional, "bath_door");
+        addFacilityCreativeItem(functional, "ws_dclosed");
+        sections.add(section("creative_tab.scp_additions.facility.functional",
+                "functional", 0x202020, functional));
+
+        List<ItemStack> props = new ArrayList<>();
+        addFacilityCreativeItem(props, "walllight");
+        addFacilityCreativeItem(props, "heater");
+        addFacilityCreativeItem(props, "emergency_button");
+        addFacilityCreativeItem(props, "fire_extinguisher");
+        addFacilityCreativeItem(props, "sign_support");
+        addFacilityCreativeItem(props, "core_room_sign");
+        addFacilityCreativeItem(props, "door_sign");
+        addFacilityCreativeItem(props, "tv");
+        addFacilityCreativeItem(props, "trashbin");
+        addUBlockCreativeItem(props, "vent_open");
+        sections.add(section("creative_tab.scp_additions.facility.props",
+                "props", 0xFFFFFF, props));
+
+        List<ItemStack> general = new ArrayList<>();
+        addFacilityCreativeItem(general, "tesla_bottom");
+        addFacilityCreativeItem(general, "tesla_mid_1");
+        addFacilityCreativeItem(general, "tesla_mid_2");
+        addFacilityCreativeItem(general, "tesla_bottom_alt");
+        addFacilityCreativeItem(general, "tesla_top_alt");
+        addFacilityCreativeItem(general, "archival_bottom");
+        addFacilityCreativeItem(general, "archival_mid");
+        addFacilityCreativeItem(general, "archival_top");
+        addFacilityCreativeItem(general, "archival_bot_1");
+        addFacilityCreativeItem(general, "archival_mid_2");
+        addFacilityCreativeItem(general, "office_bottom");
+        addFacilityCreativeItem(general, "office_mid");
+        addFacilityCreativeItem(general, "office_top");
+        addFacilityCreativeItem(general, "skyroom_bot_1");
+        addFacilityCreativeItem(general, "skyroom_bot_2");
+        addFacilityCreativeItem(general, "skyroom_mid");
+        addFacilityCreativeItem(general, "skyroom_top_alt");
+        addFacilityCreativeItem(general, "skyroom_block");
+        addFacilityCreativeItem(general, "security_bot");
+        addFacilityCreativeItem(general, "security_mid");
+        addFacilityCreativeItem(general, "security_top");
+        sections.add(section("creative_tab.scp_additions.facility.general",
+                "general", 0xFFFFFF, general));
+
+        List<ItemStack> sublevel1 = new ArrayList<>();
+        addUBlockCreativeItem(sublevel1, "sl_1_floor_2");
+        addUBlockCreativeItem(sublevel1, "sl_1_floor_1");
+        addUBlockCreativeItem(sublevel1, "sl1_wall_bot");
+        addUBlockCreativeItem(sublevel1, "sl1_wall_mid");
+        addUBlockCreativeItem(sublevel1, "sl_1_wall_top");
+        addUBlockCreativeItem(sublevel1, "sl1_ceiling");
+        addUBlockCreativeItem(sublevel1, "sl1_ceiling_alt");
+        addUBlockCreativeItem(sublevel1, "sl1_lamp");
+        addUBlockCreativeItem(sublevel1, "sl1_flickering_lamp");
+        addUBlockCreativeItem(sublevel1, "sl_1_floor_detail_small");
+        addUBlockCreativeItem(sublevel1, "sl_1_floor_detail_big");
+        addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_1_bot");
+        addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_2");
+        sections.add(section("creative_tab.scp_additions.facility.lcz_sublevel_1",
+                "lcz_sublevel_1", 0xFFFFFF, sublevel1));
+
+        List<ItemStack> sublevel2 = new ArrayList<>();
+        addUBlockCreativeItem(sublevel2, "sl_2_floor");
+        addUBlockCreativeItem(sublevel2, "sl_2_wall_bot");
+        addUBlockCreativeItem(sublevel2, "sl_2_wall_mid");
+        addUBlockCreativeItem(sublevel2, "sl_2_wall_top");
+        sections.add(section("creative_tab.scp_additions.facility.lcz_sublevel_2",
+                "lcz_sublevel_2", 0x202020, sublevel2));
+
+        return List.copyOf(sections);
+    }
+
+    public static List<ItemStack> creativeItemsInDisplayOrder() {
         List<ItemStack> ordered = new ArrayList<>();
-
-        addDivider(ordered,
-                "creative_tab.scp_additions.facility.functional",
-                FUNCTIONAL_DIVIDER_COLOR);
-        addExternalCreativeItem(ordered,
-                ScpAdditionsModBlocks.TESLA_GATE.get().asItem());
-        addExternalCreativeItem(ordered,
-                ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem());
-        addExternalCreativeItem(ordered,
-                ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get().asItem());
-        addFacilityCreativeItem(ordered, "button_closed");
-        addFacilityCreativeItem(ordered, "button_locked");
-        addExternalCreativeItem(ordered, UnifiedReaderItems.KEYCARD_READER.get());
-        addExternalCreativeItem(ordered,
-                ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
-        addExternalCreativeItem(ordered,
-                ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
-        addExternalCreativeItem(ordered,
-                ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
-        addFacilityCreativeItem(ordered, "default_door");
-        addFacilityCreativeItem(ordered, "yellow_closed");
-        addFacilityCreativeItem(ordered, "black_closed");
-        addFacilityCreativeItem(ordered, "normal_door");
-        addFacilityCreativeItem(ordered, "left_log_door");
-        addFacilityCreativeItem(ordered, "right_log_door");
-        addFacilityCreativeItem(ordered, "office_door");
-        addFacilityCreativeItem(ordered, "bath_door");
-        addFacilityCreativeItem(ordered, "ws_dclosed");
-        addDivider(ordered,
-                "creative_tab.scp_additions.facility.props",
-                PROPS_DIVIDER_COLOR);
-        addFacilityCreativeItem(ordered, "walllight");
-        addFacilityCreativeItem(ordered, "heater");
-        addFacilityCreativeItem(ordered, "emergency_button");
-        addFacilityCreativeItem(ordered, "fire_extinguisher");
-        addFacilityCreativeItem(ordered, "sign_support");
-        addFacilityCreativeItem(ordered, "core_room_sign");
-        addFacilityCreativeItem(ordered, "door_sign");
-        addFacilityCreativeItem(ordered, "tv");
-        addFacilityCreativeItem(ordered, "trashbin");
-        addUBlockCreativeItem(ordered, "vent_open");
-
-        addDivider(ordered,
-                "creative_tab.scp_additions.facility.general",
-                GENERAL_DIVIDER_COLOR);
-        addFacilityCreativeItem(ordered, "tesla_bottom");
-        addFacilityCreativeItem(ordered, "tesla_mid_1");
-        addFacilityCreativeItem(ordered, "tesla_mid_2");
-        addFacilityCreativeItem(ordered, "tesla_bottom_alt");
-        addFacilityCreativeItem(ordered, "tesla_top_alt");
-        addFacilityCreativeItem(ordered, "archival_bottom");
-        addFacilityCreativeItem(ordered, "archival_mid");
-        addFacilityCreativeItem(ordered, "archival_top");
-        addFacilityCreativeItem(ordered, "archival_bot_1");
-        addFacilityCreativeItem(ordered, "archival_mid_2");
-        addFacilityCreativeItem(ordered, "office_bottom");
-        addFacilityCreativeItem(ordered, "office_mid");
-        addFacilityCreativeItem(ordered, "office_top");
-        addFacilityCreativeItem(ordered, "skyroom_bot_1");
-        addFacilityCreativeItem(ordered, "skyroom_bot_2");
-        addFacilityCreativeItem(ordered, "skyroom_mid");
-        addFacilityCreativeItem(ordered, "skyroom_top_alt");
-        addFacilityCreativeItem(ordered, "skyroom_block");
-        addFacilityCreativeItem(ordered, "security_bot");
-        addFacilityCreativeItem(ordered, "security_mid");
-        addFacilityCreativeItem(ordered, "security_top");
-
-        addDivider(ordered,
-                "creative_tab.scp_additions.facility.lcz_sublevel_1",
-                SL1_DIVIDER_COLOR);
-        addUBlockCreativeItem(ordered, "sl_1_floor_2");
-        addUBlockCreativeItem(ordered, "sl_1_floor_1");
-        addUBlockCreativeItem(ordered, "sl1_wall_bot");
-        addUBlockCreativeItem(ordered, "sl1_wall_mid");
-        addUBlockCreativeItem(ordered, "sl_1_wall_top");
-        addUBlockCreativeItem(ordered, "sl1_ceiling");
-        addUBlockCreativeItem(ordered, "sl1_ceiling_alt");
-        addUBlockCreativeItem(ordered, "sl1_lamp");
-        addUBlockCreativeItem(ordered, "sl1_flickering_lamp");
-        addUBlockCreativeItem(ordered, "sl_1_floor_detail_small");
-        addUBlockCreativeItem(ordered, "sl_1_floor_detail_big");
-        addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_bot");
-        addUBlockCreativeItem(ordered, "sl_1_wall_detail_2");
-
-        addDivider(ordered,
-                "creative_tab.scp_additions.facility.lcz_sublevel_2",
-                SL2_DIVIDER_COLOR);
-        addUBlockCreativeItem(ordered, "sl_2_floor");
-        addUBlockCreativeItem(ordered, "sl_2_wall_bot");
-        addUBlockCreativeItem(ordered, "sl_2_wall_mid");
-        addUBlockCreativeItem(ordered, "sl_2_wall_top");
-
+        creativeSections().forEach(section -> section.items().forEach(stack ->
+                addUnique(ordered, stack.copy())));
         return ordered;
     }
 
-    public static List<ItemStack> creativeTabIconStacks() {
-        return creativeItemsInDisplayOrder().stream()
-                .filter(stack -> !stack.is(FACILITY_TAB_DIVIDER.get()))
-                .map(ItemStack::copy)
-                .toList();
-    }
-
-    public static int dividerColor(ItemStack stack) {
-        if (stack.hasTag() && stack.getTag().contains(DIVIDER_COLOR_TAG)) {
-            return stack.getTag().getInt(DIVIDER_COLOR_TAG);
+    /**
+     * Adds one empty nine-slot row before every category. The client paints the
+     * corresponding full-width header over those rows and follows vanilla scroll.
+     */
+    public static List<ItemStack> creativeTabDisplayStacks() {
+        List<ItemStack> display = new ArrayList<>();
+        for (CreativeSection section : creativeSections()) {
+            for (int i = 0; i < 9; i++) display.add(ItemStack.EMPTY);
+            section.items().forEach(stack -> display.add(stack.copy()));
+            while (display.size() % 9 != 0) display.add(ItemStack.EMPTY);
         }
-        return 0xFFFFFF;
+        return display;
     }
 
-    private static void addDivider(List<ItemStack> ordered,
-            String translationKey, int color) {
-        ItemStack divider = new ItemStack(FACILITY_TAB_DIVIDER.get());
-        divider.getOrCreateTag().putInt(DIVIDER_COLOR_TAG, color);
-        divider.setHoverName(Component.translatable(translationKey)
-                .withStyle(style -> style
-                        .withColor(TextColor.fromRgb(color))
-                        .withBold(true)
-                        .withItalic(false)));
-        ordered.add(divider);
+    public static List<ItemStack> creativeTabIconStacks() {
+        return creativeItemsInDisplayOrder().stream().map(ItemStack::copy).toList();
+    }
+
+    private static CreativeSection section(String translationKey, String sprite,
+            int textColor, List<ItemStack> items) {
+        return new CreativeSection(translationKey,
+                new ResourceLocation(MODID, "textures/gui/facility_sections/" + sprite + ".png"),
+                textColor, List.copyOf(items));
     }
 
     private static void addFacilityCreativeItem(List<ItemStack> ordered,

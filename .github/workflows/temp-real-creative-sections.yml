@@ -1,30 +1,85 @@
-name: Diagnose Real Creative Tab Build
+name: Apply Real Creative Tab Sections
 
 on:
   pull_request:
     branches:
       - master
 
+permissions:
+  contents: write
+
 jobs:
-  diagnose:
+  patch-and-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Apply and compile
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Apply creative tab redesign
         shell: bash
         run: |
-          git clone --quiet --depth 1 --branch agent/creative-tab-real-sections https://github.com/Bl4ues/SCP-Additions.git source
-          cd source
           sed -i 's/ dividers (until I add more sectors);/ dividers;/' CHANGELOG.md
           python3 scripts/apply_real_creative_sections.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          client = Path('src/main/java/net/mcreator/scpadditions/client/CreativeTabPresentation.java')
+          text = client.read_text(encoding='utf-8')
+          text = text.replace(
+              '                graphics.blitSprite(section.sprite(), left, y,\n'
+              '                        HEADER_WIDTH, HEADER_HEIGHT);',
+              '                graphics.blit(section.sprite(), left, y, 0.0F, 0.0F,\n'
+              '                        HEADER_WIDTH, HEADER_HEIGHT, HEADER_WIDTH, HEADER_HEIGHT);'
+          )
+          client.write_text(text, encoding='utf-8')
+
+          facility = Path('src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java')
+          text = facility.read_text(encoding='utf-8').replace(
+              'new ResourceLocation(MODID, "facility_sections/" + sprite)',
+              'new ResourceLocation(MODID, "textures/gui/facility_sections/" + sprite + ".png")'
+          )
+          facility.write_text(text, encoding='utf-8')
+
+          old = Path('src/main/resources/assets/scp_additions/textures/gui/sprites/facility_sections')
+          new = Path('src/main/resources/assets/scp_additions/textures/gui/facility_sections')
+          if old.exists():
+              new.parent.mkdir(parents=True, exist_ok=True)
+              old.rename(new)
+          PY
+          sed -i 's/ section headers;/ section headers (until I add more sectors);/' CHANGELOG.md
+
+      - name: Build
+        shell: bash
+        run: |
           chmod +x gradlew
-          if ! ./gradlew compileJava --no-daemon --stacktrace > creative-tab-build.log 2>&1; then
+          if ! ./gradlew clean build --no-daemon --stacktrace > creative-tab-build.log 2>&1; then
             grep -n -C 4 -E 'error:|FAILURE:|What went wrong|Compilation failed' creative-tab-build.log | tail -n 70
             exit 1
           fi
-          tail -n 10 creative-tab-build.log
+          tail -n 20 creative-tab-build.log
+
+      - name: Commit validated source
+        shell: bash
+        run: |
+          rm -f creative-tab-build.log
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No generated changes to commit."
+            exit 0
+          fi
+          git config user.name "Bl4ues"
+          git config user.email "28213049+Bl4ues@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement real creative tab section headers"
+          git push origin HEAD:agent/creative-tab-real-sections

@@ -42,6 +42,7 @@ import java.util.List;
 public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    private static final int SENSOR_INTERVAL_TICKS = 1;
 
     public TeslaGateBlock() {
         super(BlockBehaviour.Properties.of()
@@ -165,8 +166,13 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
         }
 
         super.onPlace(state, level, pos, oldState, moving);
-        level.scheduleTick(pos, this, 10);
-        TeslaGateUpdateTickProcedure.execute(level, pos.getX(), pos.getY(), pos.getZ());
+        if (!level.isClientSide()) {
+            boolean activationQueued = TeslaGateUpdateTickProcedure.execute(
+                    level, pos.getX(), pos.getY(), pos.getZ());
+            if (!activationQueued && isEnabled(level)) {
+                level.scheduleTick(pos, this, SENSOR_INTERVAL_TICKS);
+            }
+        }
     }
 
     private boolean tryRaiseOnPlacement(BlockState state, Level level, BlockPos pos,
@@ -205,11 +211,19 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        TeslaGateUpdateTickProcedure.execute(level, pos.getX(), pos.getY(), pos.getZ());
-        if (level.getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON)
-                || level.getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE)) {
-            level.scheduleTick(pos, this, 10);
+    public void tick(BlockState state, ServerLevel level, BlockPos pos,
+            RandomSource random) {
+        boolean activationQueued = TeslaGateUpdateTickProcedure.execute(
+                level, pos.getX(), pos.getY(), pos.getZ());
+        if (!activationQueued && isEnabled(level)) {
+            level.scheduleTick(pos, this, SENSOR_INTERVAL_TICKS);
         }
+    }
+
+    private static boolean isEnabled(Level level) {
+        return level.getGameRules().getBoolean(
+                ScpAdditionsModGameRules.TESLAGATEON)
+                || level.getGameRules().getBoolean(
+                ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
     }
 }

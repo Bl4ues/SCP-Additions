@@ -7,6 +7,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 /** Separate Tesla Gate sensing and visible-arc discharge footprints. */
 public final class TeslaGateVolume {
@@ -16,6 +17,7 @@ public final class TeslaGateVolume {
     private static final double ARC_Y_MAX = 27.0D / 16.0D;
     private static final double ARC_DEPTH_MIN = 0.0D;
     private static final double ARC_DEPTH_MAX = 1.0D;
+    private static final double MOTION_QUERY_MARGIN = 2.0D;
 
     private TeslaGateVolume() {
     }
@@ -56,8 +58,30 @@ public final class TeslaGateVolume {
                 controller.getZ() + ARC_DEPTH_MAX);
     }
 
+    public static AABB motionCandidates(AABB volume) {
+        return volume.inflate(MOTION_QUERY_MARGIN);
+    }
+
     public static boolean intersects(Entity entity, AABB volume) {
         return entity != null && entity.isAlive()
                 && entity.getBoundingBox().intersects(volume);
+    }
+
+    public static boolean intersectsOrCrossed(Entity entity, AABB volume) {
+        if (!entity.isAlive()) return false;
+        if (entity.getBoundingBox().intersects(volume)) return true;
+
+        double halfWidth = Math.max(0.01D, entity.getBbWidth() * 0.5D);
+        double halfHeight = Math.max(0.01D, entity.getBbHeight() * 0.5D);
+        AABB centerPathTarget = volume.inflate(halfWidth, halfHeight,
+                halfWidth);
+        Vec3 previousCenter = new Vec3(entity.xo,
+                entity.yo + halfHeight, entity.zo);
+        Vec3 currentCenter = new Vec3(entity.getX(),
+                entity.getY() + halfHeight, entity.getZ());
+        return centerPathTarget.contains(previousCenter)
+                || centerPathTarget.contains(currentCenter)
+                || centerPathTarget.clip(previousCenter, currentCenter)
+                .isPresent();
     }
 }

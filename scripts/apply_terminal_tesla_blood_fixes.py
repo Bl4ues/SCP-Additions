@@ -219,7 +219,7 @@ public final class BloodType1Procedure {
                 .ifPresent(variables -> {
                     if (!hasBloodType(variables)) {
                         clearBloodType(variables);
-                        switch (entity.getRandom().nextInt(8)) {
+                        switch (Math.floorMod(entity.getUUID().hashCode(), 8)) {
                             case 0 -> variables.Oneg = true;
                             case 1 -> variables.Opos = true;
                             case 2 -> variables.Aneg = true;

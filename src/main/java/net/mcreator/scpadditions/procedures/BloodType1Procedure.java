@@ -1,106 +1,69 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-
 import net.minecraft.world.entity.Entity;
-
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
-import javax.annotation.Nullable;
-
 @Mod.EventBusSubscriber
-public class BloodType1Procedure {
-	@SubscribeEvent
-	public static void onPlayerRespawned(PlayerEvent.PlayerRespawnEvent event) {
-		execute(event, event.getEntity());
-	}
+public final class BloodType1Procedure {
+    private BloodType1Procedure() {
+    }
 
-	public static void execute(Entity entity) {
-		execute(null, entity);
-	}
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        ensureBloodType(event.getEntity());
+    }
 
-	private static void execute(@Nullable Event event, Entity entity) {
-		if (entity == null)
-			return;
-		if (Math.random() < 0.2) {
-			{
-				boolean _setval = true;
-				entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-					capability.ABpos = _setval;
-					capability.syncPlayerVariables(entity);
-				});
-			}
-		} else {
-			if (Math.random() < 0.2) {
-				{
-					boolean _setval = true;
-					entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-						capability.Bneg = _setval;
-						capability.syncPlayerVariables(entity);
-					});
-				}
-			} else {
-				if (Math.random() < 0.25) {
-					{
-						boolean _setval = true;
-						entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-							capability.ABpos = _setval;
-							capability.syncPlayerVariables(entity);
-						});
-					}
-				} else {
-					if (Math.random() < 0.3) {
-						{
-							boolean _setval = true;
-							entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-								capability.Aneg = _setval;
-								capability.syncPlayerVariables(entity);
-							});
-						}
-					} else {
-						if (Math.random() < 0.4) {
-							{
-								boolean _setval = true;
-								entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-									capability.Bpos = _setval;
-									capability.syncPlayerVariables(entity);
-								});
-							}
-						} else {
-							if (Math.random() < 0.4) {
-								{
-									boolean _setval = true;
-									entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-										capability.Oneg = _setval;
-										capability.syncPlayerVariables(entity);
-									});
-								}
-							} else {
-								if (Math.random() < 0.4) {
-									{
-										boolean _setval = true;
-										entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-											capability.Apos = _setval;
-											capability.syncPlayerVariables(entity);
-										});
-									}
-								} else {
-									{
-										boolean _setval = true;
-										entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY, null).ifPresent(capability -> {
-											capability.Opos = _setval;
-											capability.syncPlayerVariables(entity);
-										});
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    @SubscribeEvent
+    public static void onPlayerRespawned(PlayerEvent.PlayerRespawnEvent event) {
+        ensureBloodType(event.getEntity());
+    }
+
+    public static void execute(Entity entity) {
+        ensureBloodType(entity);
+    }
+
+    private static void ensureBloodType(Entity entity) {
+        if (entity == null || entity.level().isClientSide()) return;
+
+        entity.getCapability(ScpAdditionsModVariables.PLAYER_VARIABLES_CAPABILITY)
+                .ifPresent(variables -> {
+                    if (!hasBloodType(variables)) {
+                        clearBloodType(variables);
+                        switch (Math.floorMod(entity.getUUID().hashCode(), 8)) {
+                            case 0 -> variables.Oneg = true;
+                            case 1 -> variables.Opos = true;
+                            case 2 -> variables.Aneg = true;
+                            case 3 -> variables.Apos = true;
+                            case 4 -> variables.Bneg = true;
+                            case 5 -> variables.Bpos = true;
+                            case 6 -> variables.ABneg = true;
+                            default -> variables.ABpos = true;
+                        }
+                    }
+                    variables.syncPlayerVariables(entity);
+                });
+    }
+
+    private static boolean hasBloodType(
+            ScpAdditionsModVariables.PlayerVariables variables) {
+        return variables.Oneg || variables.Opos
+                || variables.Aneg || variables.Apos
+                || variables.Bneg || variables.Bpos
+                || variables.ABneg || variables.ABpos;
+    }
+
+    private static void clearBloodType(
+            ScpAdditionsModVariables.PlayerVariables variables) {
+        variables.Oneg = false;
+        variables.Opos = false;
+        variables.Aneg = false;
+        variables.Apos = false;
+        variables.Bneg = false;
+        variables.Bpos = false;
+        variables.ABneg = false;
+        variables.ABpos = false;
+    }
 }

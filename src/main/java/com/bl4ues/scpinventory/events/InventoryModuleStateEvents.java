@@ -37,6 +37,22 @@ public final class InventoryModuleStateEvents {
         ModNetwork.syncModuleState(player);
         ModNetwork.syncServerConfig(player);
         updateDisabledState(player);
+        syncInventory(player);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerRespawned(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            syncInventory(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerChangedDimension(
+            PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            syncInventory(player);
+        }
     }
 
     @SubscribeEvent
@@ -52,6 +68,12 @@ public final class InventoryModuleStateEvents {
             return;
         }
         updateDisabledState(player);
+    }
+
+    private static void syncInventory(ServerPlayer player) {
+        if (!ScpAdditionsModulesConfig.get().inventory.enabled) return;
+        player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(
+                inventory -> ModNetwork.syncTo(player, inventory));
     }
 
     private static void updateDisabledState(ServerPlayer player) {

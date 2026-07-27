@@ -23,6 +23,7 @@ import net.mcreator.scpadditions.network.TeslaTerminalButtonMessage;
 import net.mcreator.scpadditions.procedures.TeslaTerminalController;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 
+import com.bl4ues.scpinventory.client.ClientNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
@@ -70,6 +71,12 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		this.entity = container.entity;
 		this.imageWidth = TEX_W;
 		this.imageHeight = TEX_H;
+	}
+
+	@Override
+	protected void init() {
+		super.init();
+		ClientNetwork.requestInventorySync();
 	}
 
 	private static ResourceLocation screen(String id) {
@@ -361,7 +368,8 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private boolean hasCredentialsItem() {
-		return TeslaTerminalController.hasSecurityCredentials(entity);
+		return menu.initialHasSecurityCredentials
+				|| TeslaTerminalController.hasSecurityCredentials(entity);
 	}
 
 	private void playRandomClick() {

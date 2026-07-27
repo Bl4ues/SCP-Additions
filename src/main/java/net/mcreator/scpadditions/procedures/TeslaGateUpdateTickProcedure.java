@@ -20,11 +20,11 @@ import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 import java.util.List;
 
 public class TeslaGateUpdateTickProcedure {
-    public static void execute(LevelAccessor world, double x, double y,
+    public static boolean execute(LevelAccessor world, double x, double y,
             double z) {
         BlockPos gatePos = BlockPos.containing(x, y, z);
         if (FacilityStructureBreakGuard.isBeingMined(world, gatePos)) {
-            return;
+            return false;
         }
 
         boolean manualOverride = world.getLevelData().getGameRules()
@@ -39,7 +39,7 @@ public class TeslaGateUpdateTickProcedure {
             teslaGateOn = true;
         }
         if (!teslaGateOn && !manualOverride) {
-            return;
+            return false;
         }
 
         int activationDelay = manualOverride ? 1 : 5;
@@ -50,40 +50,36 @@ public class TeslaGateUpdateTickProcedure {
 
         AABB detectionVolume = TeslaGateVolume.at(x, y, z);
         List<LivingEntity> occupants = world.getEntitiesOfClass(
-                LivingEntity.class, detectionVolume,
-                entity -> TeslaGateVolume.intersects(entity, detectionVolume));
+                LivingEntity.class,
+                TeslaGateVolume.motionCandidates(detectionVolume),
+                entity -> TeslaGateVolume.intersectsOrCrossed(entity,
+                        detectionVolume));
         if (occupants.isEmpty()) {
-            return;
+            return false;
         }
 
         AABB lethalVolume = TeslaGateVolume.lethalArcAt(world, gatePos);
         List<LivingEntity> lethalOccupants = occupants.stream()
-                .filter(entity -> TeslaGateVolume.intersects(entity,
+                .filter(entity -> TeslaGateVolume.intersectsOrCrossed(entity,
                         lethalVolume))
                 .toList();
         if (world instanceof ServerLevel server
                 && Scp079TeslaSuppression.shouldSuppress(server, gatePos,
                 occupants, lethalOccupants, manualOverride)) {
-            return;
+            return false;
         }
 
-        if (world instanceof Level level) {
-            if (!level.isClientSide()) {
-                level.playSound(null, gatePos,
-                        ForgeRegistries.SOUND_EVENTS.getValue(activationSound),
-                        SoundSource.HOSTILE, activationVolume,
-                        manualOverride ? 1.25F : 1.0F);
-            } else {
-                level.playLocalSound(x, y, z,
-                        ForgeRegistries.SOUND_EVENTS.getValue(activationSound),
-                        SoundSource.HOSTILE, activationVolume,
-                        manualOverride ? 1.25F : 1.0F, false);
-            }
+        if (world instanceof Level level && !level.isClientSide()) {
+            level.playSound(null, gatePos,
+                    ForgeRegistries.SOUND_EVENTS.getValue(activationSound),
+                    SoundSource.HOSTILE, activationVolume,
+                    manualOverride ? 1.25F : 1.0F);
         }
         ScpAdditionsMod.queueServerWork(activationDelay,
                 () -> TeslaGateTransitionHelper.transitionIfCurrent(
                         world, x, y, z,
                         ScpAdditionsModBlocks.TESLA_GATE,
                         ScpAdditionsModBlocks.TESLA_ACTIVE));
+        return true;
     }
 }

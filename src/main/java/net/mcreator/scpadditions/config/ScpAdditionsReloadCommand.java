@@ -125,6 +125,9 @@ public final class ScpAdditionsReloadCommand {
         validateBooleanMember(root, "inventory", "enabled", path, errors);
         validateBooleanMember(root, "inventory", "remember_ui_state", path, errors);
         validateBooleanMember(root, "hunger", "disabled", path, errors);
+        validateBooleanMember(root, "audio", "enter_sound_enabled", path, errors);
+        validateBooleanMember(root, "audio", "replace_player_hurt_sounds", path, errors);
+        validateBooleanMember(root, "audio", "mute_non_player_hit_sounds", path, errors);
         validateBooleanMember(root, "accessibility",
                 "reduce_scp_012_visual_effects", path, errors);
         rejectUnknownMember(root, "inventory", "disabled", path, errors,

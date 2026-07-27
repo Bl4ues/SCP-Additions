@@ -13,7 +13,7 @@ import net.mcreator.scpadditions.init.Scp106Sounds;
 public final class Scp106ChaseSound extends AbstractTickableSoundInstance {
     private static final int FADE_IN_TICKS = 36;
     private static final int FADE_OUT_TICKS = 32;
-    private static final int STOP_CUE_LEAD_TICKS = 12;
+    private static final int STOP_CUE_LEAD_TICKS = FADE_OUT_TICKS;
     private static final float MINIMUM_PLAYABLE_VOLUME = 0.01F;
     private static final float STOP_CUE_VOLUME = 0.14F;
 

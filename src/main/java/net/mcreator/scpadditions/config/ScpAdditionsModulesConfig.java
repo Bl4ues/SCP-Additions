@@ -137,6 +137,12 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Audio {
 		@SerializedName("enter_sound_enabled")
 		public boolean enterSoundEnabled = true;
+
+		@SerializedName("replace_player_hurt_sounds")
+		public boolean replacePlayerHurtSounds = true;
+
+		@SerializedName("mute_non_player_hit_sounds")
+		public boolean muteNonPlayerHitSounds = false;
 	}
 
 	public static final class Accessibility {

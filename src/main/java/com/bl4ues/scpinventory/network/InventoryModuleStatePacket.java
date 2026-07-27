@@ -7,25 +7,30 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record InventoryModuleStatePacket(boolean enabled,
-                                         boolean reduceScp012VisualEffects,
-                                         boolean hungerDisabled) {
-    public static void encode(InventoryModuleStatePacket message, FriendlyByteBuf buffer) {
+        boolean reduceScp012VisualEffects, boolean hungerDisabled,
+        boolean replacePlayerHurtSounds, boolean muteNonPlayerHitSounds) {
+    public static void encode(InventoryModuleStatePacket message,
+            FriendlyByteBuf buffer) {
         buffer.writeBoolean(message.enabled);
         buffer.writeBoolean(message.reduceScp012VisualEffects);
         buffer.writeBoolean(message.hungerDisabled);
+        buffer.writeBoolean(message.replacePlayerHurtSounds);
+        buffer.writeBoolean(message.muteNonPlayerHitSounds);
     }
 
     public static InventoryModuleStatePacket decode(FriendlyByteBuf buffer) {
         return new InventoryModuleStatePacket(buffer.readBoolean(),
+                buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean());
     }
 
     public static void handle(InventoryModuleStatePacket message,
-                              Supplier<NetworkEvent.Context> supplier) {
+            Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> InventoryModuleRuntimeState.updateFromServer(
                 message.enabled, message.reduceScp012VisualEffects,
-                message.hungerDisabled));
+                message.hungerDisabled, message.replacePlayerHurtSounds,
+                message.muteNonPlayerHitSounds));
         context.setPacketHandled(true);
     }
 }

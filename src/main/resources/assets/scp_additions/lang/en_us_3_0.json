@@ -104,5 +104,11 @@
   "effect.scp_additions.eye_sore": "Eye Sore",
   "key.categories.scp_additions": "SCP Additions",
   "key.scp_additions.blink": "Blink",
-  "key.scp_additions.scp_inventory": "Open SCP Inventory"
+  "key.scp_additions.scp_inventory": "Open SCP Inventory",
+  "subtitles.scp_additions.player_hurt": "Player hurt",
+  "subtitles.scp_additions.lamp_loop": "Ceiling lamp hums",
+  "subtitles.scp_additions.lamp_on": "Ceiling lamp turns on",
+  "subtitles.scp_additions.lamp_off": "Ceiling lamp turns off",
+  "tooltip.scp_additions.sl1_ceiling_lamp": "Can be powered with redstone.",
+  "tooltip.scp_additions.sl1_flickering_ceiling_lamp": "Can be powered with redstone. Flickers while lit."
 }

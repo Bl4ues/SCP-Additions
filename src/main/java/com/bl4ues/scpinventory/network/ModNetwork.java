@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "8";
+    private static final String PROTOCOL_VERSION = "9";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -75,7 +75,11 @@ public final class ModNetwork {
                         ScpAdditionsModulesConfig.get().inventory.enabled,
                         ScpAdditionsModulesConfig.get().accessibility
                                 .reduceScp012VisualEffects,
-                        ScpAdditionsModulesConfig.get().hunger.disabled));
+                        ScpAdditionsModulesConfig.get().hunger.disabled,
+                        ScpAdditionsModulesConfig.get().audio
+                                .replacePlayerHurtSounds,
+                        ScpAdditionsModulesConfig.get().audio
+                                .muteNonPlayerHitSounds));
     }
 
     public static void syncModuleState(Iterable<ServerPlayer> players) {

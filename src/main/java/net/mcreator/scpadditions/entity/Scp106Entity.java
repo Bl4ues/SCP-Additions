@@ -723,6 +723,13 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 && player.level() == level();
     }
 
+    /** Remains true through SCP-106's short vanish and relocation states. */
+    public boolean isHuntingPlayer(Player player) {
+        return player != null && huntedPlayerId != null
+                && huntedPlayerId.equals(player.getUUID())
+                && isValidHuntTarget(player) && !vanishForDespawn;
+    }
+
     private Player findNearestPlayer() {
         AABB area = getBoundingBox().inflate(PURSUIT_RANGE);
         Player nearest = null;

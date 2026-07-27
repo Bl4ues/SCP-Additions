@@ -46,7 +46,8 @@ public final class Scp079DecisionLog {
                 && !target.equals(BlockPos.ZERO)) {
             level.playSound(null, target,
                     ScpAdditionsModSounds.SCP079HACK.get(),
-                    SoundSource.BLOCKS, 1.0F, 1.0F);
+                    SoundSource.BLOCKS, 0.75F,
+                    0.92F + level.getRandom().nextFloat() * 0.16F);
         }
 
         synchronized (HISTORIES) {

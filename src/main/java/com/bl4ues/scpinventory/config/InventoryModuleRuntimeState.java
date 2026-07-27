@@ -2,17 +2,13 @@ package com.bl4ues.scpinventory.config;
 
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
-/**
- * Client view of server-authoritative module settings needed by client-only
- * systems.
- *
- * Integrated singleplayer can fall back to the local module configuration,
- * while dedicated-server clients use the value synchronized at login/reload.
- */
+/** Client view of server-authoritative module settings needed by client-only systems. */
 public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverEnabled;
     private static volatile Boolean serverReduceScp012VisualEffects;
     private static volatile Boolean serverHungerDisabled;
+    private static volatile Boolean serverReplacePlayerHurtSounds;
+    private static volatile Boolean serverMuteNonPlayerHitSounds;
 
     private InventoryModuleRuntimeState() {
     }
@@ -35,17 +31,34 @@ public final class InventoryModuleRuntimeState {
                 : ScpAdditionsModulesConfig.get().hunger.disabled;
     }
 
+    public static boolean replacePlayerHurtSoundsForClient() {
+        Boolean synced = serverReplacePlayerHurtSounds;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().audio.replacePlayerHurtSounds;
+    }
+
+    public static boolean muteNonPlayerHitSoundsForClient() {
+        Boolean synced = serverMuteNonPlayerHitSounds;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().audio.muteNonPlayerHitSounds;
+    }
+
     public static void updateFromServer(boolean enabled,
-                                        boolean reduceScp012VisualEffects,
-                                        boolean hungerDisabled) {
+            boolean reduceScp012VisualEffects, boolean hungerDisabled,
+            boolean replacePlayerHurtSounds,
+            boolean muteNonPlayerHitSounds) {
         serverEnabled = enabled;
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
         serverHungerDisabled = hungerDisabled;
+        serverReplacePlayerHurtSounds = replacePlayerHurtSounds;
+        serverMuteNonPlayerHitSounds = muteNonPlayerHitSounds;
     }
 
     public static void clearServerState() {
         serverEnabled = null;
         serverReduceScp012VisualEffects = null;
         serverHungerDisabled = null;
+        serverReplacePlayerHurtSounds = null;
+        serverMuteNonPlayerHitSounds = null;
     }
 }

@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -13,6 +14,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
@@ -28,11 +30,15 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.client.CeilingLampAudioClient;
+import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -71,6 +77,8 @@ public final class UBlocksModule {
     public static final RegistryObject<Block> SL1_CEILING_ALT = structure("sl1_ceiling_alt");
     public static final RegistryObject<Block> SL1_LAMP = registerBlock(
             "sl1_lamp", RedstoneCeilingLampBlock::new, false);
+    public static final RegistryObject<Block> SL1_FLICKERING_LAMP = registerBlock(
+            "sl1_flickering_lamp", FlickeringCeilingLampBlock::new, false);
 
     // Sector 1 directional decoration.
     public static final RegistryObject<Block> SL_1_FLOOR_DETAIL_SMALL = directional(
@@ -156,6 +164,8 @@ public final class UBlocksModule {
         RegistryObject<Block> block = BLOCKS.register(path, factory);
         RegistryObject<Item> item = ITEMS.register(path, () -> isConnectedFloorPath(path)
                 ? new ConnectedFloorBlockItem(block.get(), new Item.Properties())
+                : isCeilingLampPath(path)
+                ? new CeilingLampBlockItem(block.get(), new Item.Properties(), path)
                 : isDecorativePropPath(path)
                 ? new DecorativePropBlockItem(block.get(), new Item.Properties())
                 : new BlockItem(block.get(), new Item.Properties()));
@@ -164,6 +174,31 @@ public final class UBlocksModule {
             CUTOUT_BLOCKS.add(block);
         }
         return block;
+    }
+
+    private static boolean isCeilingLampPath(String path) {
+        return "sl1_lamp".equals(path)
+                || "sl1_flickering_lamp".equals(path);
+    }
+
+    private static final class CeilingLampBlockItem extends BlockItem {
+        private final String tooltipKey;
+
+        private CeilingLampBlockItem(Block block, Properties properties,
+                String path) {
+            super(block, properties);
+            this.tooltipKey = "sl1_flickering_lamp".equals(path)
+                    ? "tooltip.scp_additions.sl1_flickering_ceiling_lamp"
+                    : "tooltip.scp_additions.sl1_ceiling_lamp";
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable Level level,
+                List<Component> tooltip, TooltipFlag flag) {
+            tooltip.add(Component.translatable(tooltipKey)
+                    .withStyle(ChatFormatting.GRAY));
+            super.appendHoverText(stack, level, tooltip, flag);
+        }
     }
 
     private static boolean isDecorativePropPath(String path) {
@@ -216,7 +251,8 @@ public final class UBlocksModule {
         }
     }
 
-    private static final class RedstoneCeilingLampBlock extends UBlockStructureBlock {
+    private static final class RedstoneCeilingLampBlock
+            extends UBlockStructureBlock {
         private static final BooleanProperty LIT = BlockStateProperties.LIT;
 
         private RedstoneCeilingLampBlock() {
@@ -224,31 +260,171 @@ public final class UBlocksModule {
         }
 
         @Override
-        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
             builder.add(LIT);
         }
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
             return defaultBlockState().setValue(LIT,
-                    context.getLevel().hasNeighborSignal(context.getClickedPos()));
+                    context.getLevel().hasNeighborSignal(
+                            context.getClickedPos()));
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean movedByPiston) {
+            super.onPlace(state, level, pos, oldState, movedByPiston);
+            if (!level.isClientSide && oldState.getBlock() != this
+                    && state.getValue(LIT)) {
+                playLampTransition(level, pos, true, false);
+            }
         }
 
         @Override
         public void neighborChanged(BlockState state, Level level, BlockPos pos,
-                Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+                Block neighborBlock, BlockPos neighborPos,
+                boolean movedByPiston) {
             if (!level.isClientSide) {
                 boolean powered = level.hasNeighborSignal(pos);
                 if (state.getValue(LIT) != powered) {
-                    level.setBlock(pos, state.setValue(LIT, powered), Block.UPDATE_ALL);
+                    level.setBlock(pos, state.setValue(LIT, powered),
+                            Block.UPDATE_ALL);
+                    playLampTransition(level, pos, powered, false);
                 }
             }
         }
 
         @Override
-        public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        public void animateTick(BlockState state, Level level, BlockPos pos,
+                RandomSource random) {
+            ensureLampLoop(state, level, pos);
+        }
+
+        @Override
+        public int getLightEmission(BlockState state, BlockGetter level,
+                BlockPos pos) {
             return state.getValue(LIT) ? 15 : 0;
         }
+    }
+
+    private static final class FlickeringCeilingLampBlock
+            extends UBlockStructureBlock {
+        private static final BooleanProperty LIT = BlockStateProperties.LIT;
+        private static final BooleanProperty POWERED =
+                BlockStateProperties.POWERED;
+
+        private FlickeringCeilingLampBlock() {
+            registerDefaultState(stateDefinition.any()
+                    .setValue(LIT, false).setValue(POWERED, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(LIT, POWERED);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            boolean powered = context.getLevel().hasNeighborSignal(
+                    context.getClickedPos());
+            return defaultBlockState().setValue(POWERED, powered)
+                    .setValue(LIT, powered);
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean movedByPiston) {
+            super.onPlace(state, level, pos, oldState, movedByPiston);
+            if (level.isClientSide || oldState.getBlock() == this) return;
+            if (state.getValue(LIT)) {
+                playLampTransition(level, pos, true, false);
+            }
+            if (state.getValue(POWERED)) {
+                level.scheduleTick(pos, this, 8);
+            }
+        }
+
+        @Override
+        public void neighborChanged(BlockState state, Level level, BlockPos pos,
+                Block neighborBlock, BlockPos neighborPos,
+                boolean movedByPiston) {
+            if (level.isClientSide) return;
+            boolean powered = level.hasNeighborSignal(pos);
+            if (state.getValue(POWERED) == powered) return;
+
+            boolean wasLit = state.getValue(LIT);
+            BlockState updated = state.setValue(POWERED, powered)
+                    .setValue(LIT, powered);
+            level.setBlock(pos, updated, Block.UPDATE_ALL);
+            if (wasLit != powered) {
+                playLampTransition(level, pos, powered, false);
+            }
+            if (powered) {
+                level.scheduleTick(pos, this, 5);
+            }
+        }
+
+        @Override
+        public void tick(BlockState state, ServerLevel level, BlockPos pos,
+                RandomSource random) {
+            if (!level.hasNeighborSignal(pos)) {
+                if (state.getValue(POWERED) || state.getValue(LIT)) {
+                    level.setBlock(pos, state.setValue(POWERED, false)
+                            .setValue(LIT, false), Block.UPDATE_ALL);
+                    if (state.getValue(LIT)) {
+                        playLampTransition(level, pos, false, false);
+                    }
+                }
+                return;
+            }
+
+            boolean lit = state.getValue(LIT);
+            level.setBlock(pos, state.setValue(POWERED, true)
+                    .setValue(LIT, !lit), Block.UPDATE_ALL);
+            playLampTransition(level, pos, !lit, true);
+            int delay = lit ? 1 + random.nextInt(3)
+                    : 10 + random.nextInt(36);
+            if (!lit && random.nextFloat() < 0.24F) {
+                delay = 3 + random.nextInt(6);
+            }
+            level.scheduleTick(pos, this, delay);
+        }
+
+        @Override
+        public void animateTick(BlockState state, Level level, BlockPos pos,
+                RandomSource random) {
+            ensureLampLoop(state, level, pos);
+        }
+
+        @Override
+        public int getLightEmission(BlockState state, BlockGetter level,
+                BlockPos pos) {
+            return state.getValue(LIT) ? 15 : 0;
+        }
+    }
+
+    private static void ensureLampLoop(BlockState state, Level level,
+            BlockPos pos) {
+        if (!state.hasProperty(BlockStateProperties.LIT)
+                || !state.getValue(BlockStateProperties.LIT)) {
+            return;
+        }
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                () -> () -> CeilingLampAudioClient.ensureLoop(level, pos));
+    }
+
+    private static void playLampTransition(Level level, BlockPos pos,
+            boolean turningOn, boolean internalFlicker) {
+        float volume = internalFlicker ? 0.26F : 0.55F;
+        float pitch = internalFlicker
+                ? 0.96F + level.getRandom().nextFloat() * 0.08F : 1.0F;
+        level.playSound(null, pos, turningOn
+                        ? ScpAdditionsModSounds.LAMP_ON.get()
+                        : ScpAdditionsModSounds.LAMP_OFF.get(),
+                net.minecraft.sounds.SoundSource.BLOCKS, volume, pitch);
     }
 
     private abstract static class ConnectedFloorBlock extends UBlockStructureBlock {

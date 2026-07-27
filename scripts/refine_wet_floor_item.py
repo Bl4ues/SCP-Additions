@@ -52,6 +52,22 @@ write("src/main/resources/assets/scp_additions/models/item/wet_floor.json", '''
 }
 ''')
 
+block_path = Path("src/main/java/net/mcreator/scpadditions/facility/WetFloorBlock.java")
+block = block_path.read_text(encoding="utf-8")
+block = block.replace(
+    "import net.minecraft.world.level.LevelAccessor;\n",
+    "import net.minecraft.world.level.LevelAccessor;\nimport net.minecraft.world.level.LevelReader;\n",
+)
+block = block.replace(
+    "public boolean canSurvive(BlockState state, LevelAccessor level, BlockPos pos)",
+    "public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos)",
+)
+block = block.replace(
+    "private static boolean canStandOn(LevelAccessor level, BlockPos pos)",
+    "private static boolean canStandOn(LevelReader level, BlockPos pos)",
+)
+block_path.write_text(block, encoding="utf-8")
+
 changelog = Path("CHANGELOG.md")
 text = changelog.read_text(encoding="utf-8")
 text = text.replace(

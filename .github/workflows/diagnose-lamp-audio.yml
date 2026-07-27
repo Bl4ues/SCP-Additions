@@ -1,0 +1,22 @@
+name: Diagnose Lamp Audio
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rebuild loop only
+        shell: bash
+        run: |
+          git clone --quiet --depth 1 --branch agent/lamp-audio-naming-cleanup https://github.com/Bl4ues/SCP-Additions.git source
+          cd source
+          command -v ffmpeg
+          ffmpeg -y -v error \
+            -i src/main/resources/assets/scp_additions/sounds/lamp_loop.ogg \
+            -filter_complex "[0:a]atrim=start=0.5:end=7.0,asetpts=PTS-STARTPTS,asplit=3[full][head][tail];[full]atrim=start=0:end=6.0[body];[head]atrim=start=0:end=0.5[h];[tail]atrim=start=6.0:end=6.5[t];[t][h]acrossfade=d=0.5:c1=tri:c2=tri[xf];[body][xf]concat=n=2:v=0:a=1,volume=20dB[out]" \
+            -map "[out]" -c:a libvorbis -q:a 5 /tmp/lamp_loop_clean.ogg
+          ffprobe -v error -show_entries format=duration,size -of default=nw=1 /tmp/lamp_loop_clean.ogg

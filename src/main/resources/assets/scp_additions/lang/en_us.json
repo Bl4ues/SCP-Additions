@@ -256,5 +256,6 @@
   "subtitles.scp_additions.scp_106_step": "SCP-106 steps",
   "subtitles.scp_additions.scp_106_hit": "SCP-106 strikes",
   "subtitles.scp_additions.scp_106_ranged_splash": "Corrosion splashes",
-  "subtitles.scp_additions.wither": "Withering festers"
+  "subtitles.scp_additions.wither": "Withering festers",
+  "block.scp_additions.water_faucet": "Non-potable Water Faucet"
 }

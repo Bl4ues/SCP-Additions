@@ -1,0 +1,60 @@
+name: Temporary Restore SCP-079 Balance
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  adjust:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore processing costs and regeneration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          threat = Path('src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java')
+          text = threat.read_text(encoding='utf-8')
+          replacements = {
+              'private static final double OPEN_FOR_THREAT_COST = 6.0D;': 'private static final double OPEN_FOR_THREAT_COST = 8.0D;',
+              'private static final double CLOSE_AHEAD_COST = 6.0D;': 'private static final double CLOSE_AHEAD_COST = 8.0D;',
+              'private static final double DENY_ACCESS_COST = 9.0D;': 'private static final double DENY_ACCESS_COST = 12.0D;',
+              'private static final double UNPROVOKED_COST = 5.0D;': 'private static final double UNPROVOKED_COST = 6.0D;',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one occurrence of: {old}')
+              text = text.replace(old, new)
+          threat.write_text(text, encoding='utf-8')
+
+          processing = Path('src/main/java/net/mcreator/scpadditions/facility/Scp079ProcessingManager.java')
+          text = processing.read_text(encoding='utf-8')
+          old = 'public static final float REGEN_PER_SECOND = 1.0F;'
+          new = 'public static final float REGEN_PER_SECOND = 0.5F;'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one occurrence of: {old}')
+          processing.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Remove temporary workflow
+        run: rm .github/workflows/temporary-restore-079-balance.yml
+
+      - name: Commit final adjustment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java \
+                  src/main/java/net/mcreator/scpadditions/facility/Scp079ProcessingManager.java \
+                  .github/workflows/temporary-restore-079-balance.yml
+          git commit -m "Restore SCP-079 processing balance"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

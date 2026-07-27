@@ -1,0 +1,86 @@
+name: Validate Wet Floor Prop
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  integrate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Apply Wet Floor integration
+        run: python3 scripts/apply_wet_floor_prop.py
+
+      - name: Validate assets and source structure
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import struct
+          from pathlib import Path
+
+          geo_path = Path('src/main/resources/assets/scp_additions/geo/block/wet_floor.geo.json')
+          geo = json.loads(geo_path.read_text(encoding='utf-8'))
+          description = geo['minecraft:geometry'][0]['description']
+          assert description['identifier'] == 'geometry.wet_floor'
+          assert description['texture_width'] == 32
+          assert description['texture_height'] == 32
+
+          for name in ('wet_floor.png', 'wet_floor_s.png'):
+              data = Path('src/main/resources/assets/scp_additions/textures/block', name).read_bytes()
+              assert data[:8] == b'\x89PNG\r\n\x1a\n'
+              width, height = struct.unpack('>II', data[16:24])
+              assert (width, height) == (128, 128), (name, width, height)
+
+          for path in [
+              'src/main/resources/assets/scp_additions/animations/block/wet_floor.animation.json',
+              'src/main/resources/assets/scp_additions/blockstates/wet_floor.json',
+              'src/main/resources/assets/scp_additions/models/block/wet_floor.json',
+              'src/main/resources/assets/scp_additions/models/item/wet_floor.json',
+              'src/main/resources/data/scp_additions/loot_tables/blocks/wet_floor.json',
+              'src/main/resources/assets/scp_additions/lang/en_us.json',
+          ]:
+              json.loads(Path(path).read_text(encoding='utf-8'))
+
+          facility = Path('src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java').read_text(encoding='utf-8')
+          assert 'WET_FLOOR = registerBlock' in facility
+          assert 'addFacilityCreativeItem(props, "wet_floor")' in facility
+          assert 'WET_FLOOR_BLOCK_ENTITY' in facility
+          PY
+          git diff --check
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon
+
+      - name: Commit validated implementation
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CHANGELOG.md src/main
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Add eight-direction Wet Floor Sign prop"
+          git push origin HEAD:${{ github.head_ref }}

@@ -1,0 +1,75 @@
+name: Validate Lamp and Naming Cleanup
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Apply source cleanup
+        run: python3 scripts/apply_lamp_and_naming_cleanup.py
+
+      - name: Rebuild clean electrical hum
+        shell: bash
+        run: |
+          ffmpeg -y -v error \
+            -i src/main/resources/assets/scp_additions/sounds/lamp_loop.ogg \
+            -filter_complex "[0:a]atrim=start=0.5:end=7.0,asetpts=PTS-STARTPTS,asplit=3[full][head][tail];[full]atrim=start=0:end=6.0[body];[head]atrim=start=0:end=0.5[h];[tail]atrim=start=6.0:end=6.5[t];[t][h]acrossfade=d=0.5:c1=tri:c2=tri[xf];[body][xf]concat=n=2:v=0:a=1,volume=20dB[out]" \
+            -map "[out]" -c:a libvorbis -q:a 5 \
+            /tmp/lamp_loop_clean.ogg
+          mv /tmp/lamp_loop_clean.ogg \
+            src/main/resources/assets/scp_additions/sounds/lamp_loop.ogg
+
+      - name: Validate audio and JSON
+        shell: bash
+        run: |
+          ffprobe -v error -show_entries format=duration \
+            -of default=nw=1 src/main/resources/assets/scp_additions/sounds/lamp_loop.ogg
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in [
+              'src/main/resources/assets/scp_additions/lang/en_us_3_0.json',
+              'src/main/resources/assets/scp_ublocks/lang/en_us.json',
+              'src/main/resources/assets/scp_unity_extra_blocks/lang/en_us.json',
+          ]:
+              json.loads(Path(path).read_text(encoding='utf-8'))
+          PY
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon
+
+      - name: Commit validated changes
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CHANGELOG.md src/main scripts/apply_lamp_and_naming_cleanup.py
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Fix lamp hum and standardize facility naming"
+          git push origin HEAD:${{ github.head_ref }}

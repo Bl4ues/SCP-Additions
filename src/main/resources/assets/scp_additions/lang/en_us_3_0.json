@@ -117,9 +117,5 @@
   "creative_tab.scp_additions.facility.props": "Props",
   "creative_tab.scp_additions.facility.general": "General",
   "creative_tab.scp_additions.facility.lcz_sublevel_1": "LCZ - Sublevel 1",
-  "creative_tab.scp_additions.facility.lcz_sublevel_2": "LCZ - Sublevel 2",
-  "item.scp_additions.facility_tab_divider": "Facility Category Divider",
-  "item.scp_additions.scp_additions_tab_icon": "SCP Additions Tab Icon",
-  "item.scp_additions.scps_tab_icon": "SCPs Tab Icon",
-  "item.scp_additions.facility_blocks_tab_icon": "Facility Blocks Tab Icon"
+  "creative_tab.scp_additions.facility.lcz_sublevel_2": "LCZ - Sublevel 2"
 }

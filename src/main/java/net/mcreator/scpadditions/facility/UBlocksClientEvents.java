@@ -39,10 +39,5 @@ public final class UBlocksClientEvents {
                         tintIndex == 0 ? FLOOR_DECAL_TINT : 0xFFFFFF,
                 UBlocksModule.SL_1_FLOOR_DETAIL_SMALL.get().asItem(),
                 UBlocksModule.SL_1_FLOOR_DETAIL_BIG.get().asItem());
-        event.register((stack, tintIndex) ->
-                        tintIndex == 0
-                                ? FacilityModule.dividerColor(stack)
-                                : 0xFFFFFF,
-                FacilityModule.FACILITY_TAB_DIVIDER.get());
     }
 }

@@ -2,12 +2,10 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.CreativeModeTab;
@@ -15,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.scp012.Scp012Module;
 
 import java.util.ArrayList;
@@ -23,25 +20,9 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModTabs {
-    public static final DeferredRegister<Item> ICON_ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS,
-                    ScpAdditionsMod.MODID);
     public static final DeferredRegister<CreativeModeTab> REGISTRY =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB,
                     ScpAdditionsMod.MODID);
-
-    public static final RegistryObject<Item> SCP_ADDITIONS_TAB_ICON =
-            ICON_ITEMS.register("scp_additions_tab_icon",
-                    () -> new CyclingCreativeTabIconItem(
-                            ScpAdditionsModTabs::scpAdditionsStacks));
-    public static final RegistryObject<Item> SCPS_TAB_ICON =
-            ICON_ITEMS.register("scps_tab_icon",
-                    () -> new CyclingCreativeTabIconItem(
-                            ScpAdditionsModTabs::scpStacks));
-    public static final RegistryObject<Item> FACILITY_BLOCKS_TAB_ICON =
-            ICON_ITEMS.register("facility_blocks_tab_icon",
-                    () -> new CyclingCreativeTabIconItem(
-                            FacilityModule::creativeTabIconStacks));
 
     public static final RegistryObject<CreativeModeTab> SCP_ADDITIONS =
             REGISTRY.register("scp_additions", () ->
@@ -49,10 +30,11 @@ public class ScpAdditionsModTabs {
                             .title(Component.translatable(
                                     "item_group.scp_additions.scp_additions"))
                             .icon(() -> new ItemStack(
-                                    SCP_ADDITIONS_TAB_ICON.get()))
+                                    ScpAdditionsModItems.SECURITY_CREDENTIALS.get()))
                             .displayItems((parameters, output) ->
                                     scpAdditionsStacks().forEach(output::accept))
                             .withSearchBar()
+                            .hideTitle()
                             .build());
 
     public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS =
@@ -60,13 +42,14 @@ public class ScpAdditionsModTabs {
                     CreativeModeTab.builder()
                             .title(Component.translatable(
                                     "item_group.scp_additions.sc_padditions_sc_ps"))
-                            .icon(() -> new ItemStack(SCPS_TAB_ICON.get()))
+                            .icon(() -> new ItemStack(Scp012Module.SCP_012_ITEM.get()))
                             .displayItems((parameters, output) ->
                                     scpStacks().forEach(output::accept))
                             .withSearchBar()
+                            .hideTitle()
                             .build());
 
-    private static List<ItemStack> scpAdditionsStacks() {
+    public static List<ItemStack> scpAdditionsStacks() {
         List<ItemStack> stacks = new ArrayList<>();
         stacks.add(new ItemStack(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
         stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_1_KEYCARD.get()));
@@ -85,7 +68,7 @@ public class ScpAdditionsModTabs {
         return stacks;
     }
 
-    private static List<ItemStack> scpStacks() {
+    public static List<ItemStack> scpStacks() {
         List<ItemStack> stacks = new ArrayList<>();
         stacks.add(new ItemStack(Scp012Module.SCP_012_ITEM.get()));
         stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_079ON.get()));

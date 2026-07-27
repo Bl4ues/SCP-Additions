@@ -5,8 +5,11 @@
 ## Creative inventory organization
 
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
-- Organized facility content under colored **Functional**, **Props**, **General**, **LCZ - Sublevel 1**, and **LCZ - Sublevel 2** dividers (until I add more sectors);
-- Made every SCP Additions creative-tab icon cycle through the visible items in its own tab.
+- Organized facility content under full-width **Functional**, **Props**, **General**, **LCZ - Sublevel 1**, and **LCZ - Sublevel 2** section headers (until I add more sectors);
+- Made every SCP Additions creative-tab icon cycle through the visible items in its own tab;
+- Corrected rotating tab-icon alignment by letting the vanilla GUI render the active item directly;
+- Scaled the custom tab titles to remain clear of their search fields;
+- Replaced the temporary divider items with true internal headers that follow creative-inventory scrolling.
 
 ## SCP-106
 

@@ -830,10 +830,8 @@ public final class FacilityModule {
     }
 
     private static final class WaterFaucetBlock extends WallMountedWaterloggedPropBlock {
-        private static final VoxelShape NORTH_SHAPE = Shapes.or(
-                box(4.75, 4.0, 12.8, 11.25, 7.0, 15.8),
-                box(3.9, 2.0, 11.7, 7.1, 8.8, 16.5),
-                box(8.9, 2.0, 11.7, 12.1, 8.8, 16.5));
+        private static final VoxelShape NORTH_SHAPE =
+                box(4.0, 2.0, 12.0, 12.0, 8.8, 16.0);
 
         private WaterFaucetBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)

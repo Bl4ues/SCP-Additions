@@ -9,11 +9,8 @@ jobs:
   diagnose:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          show-progress: false
-
       - name: Apply creative tab redesign
-        run: python3 scripts/apply_real_creative_sections.py
+        run: |
+          git clone --quiet --depth 1 --branch agent/creative-tab-real-sections https://github.com/Bl4ues/SCP-Additions.git source
+          cd source
+          python3 scripts/apply_real_creative_sections.py

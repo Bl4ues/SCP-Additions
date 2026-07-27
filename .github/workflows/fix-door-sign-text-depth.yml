@@ -1,0 +1,31 @@
+name: Fix Door Sign Text Depth
+
+on:
+  push:
+    branches:
+      - fix/door-sign-text-depth
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/door-sign-text-depth
+          fetch-depth: 0
+
+      - name: Reduce Door Sign text separation
+        run: python scripts/fix_door_sign_text_depth.py
+
+      - name: Commit corrected renderer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/client/FacilitySignBlockEntityRenderer.java
+          git commit -m "Keep Door Sign text flush with display [skip ci]"
+          git push origin HEAD:fix/door-sign-text-depth

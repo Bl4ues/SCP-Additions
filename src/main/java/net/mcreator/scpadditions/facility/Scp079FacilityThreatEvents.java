@@ -68,10 +68,10 @@ public final class Scp079FacilityThreatEvents {
     private static final int MAX_TACTICAL_ACTIONS = 2;
 
     private static final double MOVEMENT_THRESHOLD_SQR = 0.0004D;
-    private static final double OPEN_FOR_THREAT_COST = 6.0D;
-    private static final double CLOSE_AHEAD_COST = 6.0D;
-    private static final double DENY_ACCESS_COST = 9.0D;
-    private static final double UNPROVOKED_COST = 5.0D;
+    private static final double OPEN_FOR_THREAT_COST = 8.0D;
+    private static final double CLOSE_AHEAD_COST = 8.0D;
+    private static final double DENY_ACCESS_COST = 12.0D;
+    private static final double UNPROVOKED_COST = 6.0D;
     private static final double SCP_131_SEPARATION_COST =
             CLOSE_AHEAD_COST + DENY_ACCESS_COST;
     private static final float UNPROVOKED_CLOSE_CHANCE = 0.03F;

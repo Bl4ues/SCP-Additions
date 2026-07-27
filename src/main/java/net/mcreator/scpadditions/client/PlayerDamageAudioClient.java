@@ -5,18 +5,21 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
+
+import java.util.UUID;
 
 /** Client-only replacement and filtering for player combat audio. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
@@ -26,7 +29,12 @@ public final class PlayerDamageAudioClient {
     private static final String PLAYER_ATTACK_PREFIX = "entity.player.attack.";
     private static final double LOCAL_PLAYER_SOUND_RADIUS_SQ = 9.0D;
     private static final long MOB_IMPACT_WINDOW_NANOS = 300_000_000L;
+    private static final float HEALTH_EPSILON = 1.0E-3F;
+
     private static volatile long suppressMobImpactUntilNanos = Long.MIN_VALUE;
+    private static UUID trackedPlayerId;
+    private static int previousHurtTime;
+    private static float previousEffectiveHealth = Float.NaN;
 
     private PlayerDamageAudioClient() {
     }
@@ -46,6 +54,50 @@ public final class PlayerDamageAudioClient {
         }
     }
 
+    /**
+     * The vanilla hurt sound is filtered independently from the replacement.
+     * Replacing the SoundInstance inside PlaySoundEvent proved unreliable for
+     * this stereo local sound, so a new damage pulse is detected from the
+     * synchronized local player state and played directly through SoundManager.
+     */
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Player player = minecraft.player;
+        if (minecraft.level == null || player == null) {
+            resetDamageTracking();
+            return;
+        }
+
+        UUID playerId = player.getUUID();
+        int hurtTime = player.hurtTime;
+        float effectiveHealth = player.getHealth() + player.getAbsorptionAmount();
+
+        if (!playerId.equals(trackedPlayerId)
+                || Float.isNaN(previousEffectiveHealth)) {
+            trackedPlayerId = playerId;
+            previousHurtTime = hurtTime;
+            previousEffectiveHealth = effectiveHealth;
+            return;
+        }
+
+        boolean newHurtPulse = player.isAlive()
+                && (hurtTime > previousHurtTime
+                || (hurtTime > 0
+                && effectiveHealth + HEALTH_EPSILON
+                < previousEffectiveHealth));
+
+        if (newHurtPulse
+                && InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()) {
+            playLocalHurt();
+        }
+
+        previousHurtTime = hurtTime;
+        previousEffectiveHealth = effectiveHealth;
+    }
+
     @SubscribeEvent
     public static void onPlaySound(PlaySoundEvent event) {
         SoundInstance original = event.getOriginalSound();
@@ -59,11 +111,8 @@ public final class PlayerDamageAudioClient {
 
         if (InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()
                 && minecraftSound && localPlayerSound) {
-            if (path.startsWith(PLAYER_HURT_PREFIX)) {
-                event.setSound(localHurtReplacement(original));
-                return;
-            }
-            if (path.startsWith(PLAYER_DEATH_PREFIX)) {
+            if (path.startsWith(PLAYER_HURT_PREFIX)
+                    || path.startsWith(PLAYER_DEATH_PREFIX)) {
                 event.setSound(null);
                 return;
             }
@@ -77,15 +126,21 @@ public final class PlayerDamageAudioClient {
         }
     }
 
-    private static SoundInstance localHurtReplacement(SoundInstance original) {
+    private static void playLocalHurt() {
         RandomSource random = RandomSource.create();
-        float pitch = Mth.clamp(original.getPitch()
-                * (0.96F + random.nextFloat() * 0.08F), 0.5F, 2.0F);
-        return new SimpleSoundInstance(
-                ScpAdditionsModSounds.PLAYER_HURT.get().getLocation(),
-                original.getSource(), original.getVolume(), pitch, random,
-                false, 0, SoundInstance.Attenuation.NONE,
-                0.0D, 0.0D, 0.0D, true);
+        float pitch = 0.96F + random.nextFloat() * 0.08F;
+        Minecraft.getInstance().getSoundManager().play(
+                new SimpleSoundInstance(
+                        ScpAdditionsModSounds.PLAYER_HURT.get().getLocation(),
+                        SoundSource.PLAYERS, 1.0F, pitch, random,
+                        false, 0, SoundInstance.Attenuation.NONE,
+                        0.0D, 0.0D, 0.0D, true));
+    }
+
+    private static void resetDamageTracking() {
+        trackedPlayerId = null;
+        previousHurtTime = 0;
+        previousEffectiveHealth = Float.NaN;
     }
 
     private static boolean isLocalPlayerSound(SoundInstance sound) {

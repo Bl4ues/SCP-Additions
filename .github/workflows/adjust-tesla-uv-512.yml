@@ -1,0 +1,31 @@
+name: Adjust Tesla UV 512
+
+on:
+  push:
+    branches:
+      - fix/tesla-uv-512
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/tesla-uv-512
+          fetch-depth: 0
+
+      - name: Adjust Tesla atlas metadata and references
+        run: python scripts/adjust_tesla_uv_512.py
+
+      - name: Commit migration result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Adjust Tesla Gate UV scale for 512 texture [skip ci]"
+          git push origin HEAD:fix/tesla-uv-512

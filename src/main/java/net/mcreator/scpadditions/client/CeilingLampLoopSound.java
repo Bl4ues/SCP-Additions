@@ -12,10 +12,15 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.mcreator.scpadditions.facility.UBlocksModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
-/** Positional electrical hum retargeted to the nearest powered ceiling lamp. */
+/** Positional electrical hum smoothly retargeted to a nearby powered ceiling lamp. */
 public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
+    private static final double POSITION_LERP = 0.18D;
+
     private final ClientLevel level;
-    private BlockPos pos;
+    private BlockPos target;
+    private double targetX;
+    private double targetY;
+    private double targetZ;
     private boolean finished;
 
     public CeilingLampLoopSound(ClientLevel level, BlockPos pos) {
@@ -28,24 +33,37 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
         this.pitch = 0.98F + RandomSource.create().nextFloat() * 0.04F;
         this.relative = false;
         this.attenuation = SoundInstance.Attenuation.LINEAR;
-        retarget(pos);
+        this.target = pos.immutable();
+        this.x = this.targetX = pos.getX() + 0.5D;
+        this.y = this.targetY = pos.getY() + 0.5D;
+        this.z = this.targetZ = pos.getZ() + 0.5D;
     }
 
     ClientLevel level() {
         return level;
     }
 
-    void retarget(BlockPos target) {
-        this.pos = target.immutable();
-        this.x = pos.getX() + 0.5D;
-        this.y = pos.getY() + 0.5D;
-        this.z = pos.getZ() + 0.5D;
+    BlockPos target() {
+        return target;
+    }
+
+    void retarget(BlockPos newTarget) {
+        this.target = newTarget.immutable();
+        this.targetX = target.getX() + 0.5D;
+        this.targetY = target.getY() + 0.5D;
+        this.targetZ = target.getZ() + 0.5D;
     }
 
     @Override
     public void tick() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != level || minecraft.player == null) finish();
+        if (minecraft.level != level || minecraft.player == null) {
+            finish();
+            return;
+        }
+        this.x += (targetX - this.x) * POSITION_LERP;
+        this.y += (targetY - this.y) * POSITION_LERP;
+        this.z += (targetZ - this.z) * POSITION_LERP;
     }
 
     static boolean shouldPlayFor(BlockState state) {

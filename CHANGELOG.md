@@ -5,9 +5,7 @@
 ## Creative inventory organization
 
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
-- Organized facility content under colored **Functional**, **Props**, **General**, **LCZ - Sublevel 1**, and **LCZ - Sublevel 2** dividers;
-- Moved facility construction controls out of **SCP Additions - Items** and into the Functional section of **SCP Additions - Blocks**;
-- Placed both SL1 Ceiling Lamps under the **LCZ - Sublevel 1** section;
+- Organized facility content under colored **Functional**, **Props**, **General**, **LCZ - Sublevel 1**, and **LCZ - Sublevel 2** dividers (until I add more sectors);
 - Made every SCP Additions creative-tab icon cycle through the visible items in its own tab.
 
 ## SCP-106

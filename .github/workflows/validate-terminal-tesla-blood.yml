@@ -61,9 +61,14 @@ jobs:
           git diff --check
 
       - name: Build
+        shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew clean build --no-daemon
+          set +e
+          ./gradlew clean build --no-daemon > /tmp/gradle-build.log 2>&1
+          status=$?
+          tail -n 180 /tmp/gradle-build.log
+          exit $status
 
       - name: Commit validated changes
         shell: bash

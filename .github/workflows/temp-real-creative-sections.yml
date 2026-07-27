@@ -24,7 +24,7 @@ jobs:
           python3 scripts/apply_real_creative_sections.py
           chmod +x gradlew
           if ! ./gradlew compileJava --no-daemon --stacktrace > creative-tab-build.log 2>&1; then
-            tail -n 50 creative-tab-build.log
+            grep -n -C 4 -E 'error:|FAILURE:|What went wrong|Compilation failed' creative-tab-build.log | tail -n 70
             exit 1
           fi
           tail -n 10 creative-tab-build.log

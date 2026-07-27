@@ -21,7 +21,9 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
@@ -135,6 +137,8 @@ public final class FacilityModule {
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
     public static final RegistryObject<Block> WET_FLOOR = registerWetFloor();
+    public static final RegistryObject<Block> WATER_FAUCET = registerBlock(
+            "water_faucet", WaterFaucetBlock::new, true);
     public static final RegistryObject<Block> FACILITY_PROP_PART =
             BLOCKS.register("facility_prop_part",
                     FacilityPropPartBlock::new);
@@ -297,6 +301,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "emergency_button");
         addFacilityCreativeItem(props, "fire_extinguisher");
         addFacilityCreativeItem(props, "wet_floor");
+        addFacilityCreativeItem(props, "water_faucet");
         addFacilityCreativeItem(props, "tv");
         addFacilityCreativeItem(props, "trashbin");
         addUBlockCreativeItem(props, "vent_open");
@@ -470,6 +475,7 @@ public final class FacilityModule {
         return "heater".equals(path)
                 || "emergency_button".equals(path)
                 || "fire_extinguisher".equals(path)
+                || "water_faucet".equals(path)
                 || "trashbin".equals(path);
     }
 
@@ -820,6 +826,58 @@ public final class FacilityModule {
                     box(4.4, 0, 10.7, 11.6, 16, 16),
                     box(6.4, 1.25, 10.7, 9.6, 11.35, 16.4));
             return horizontalShape(state.getValue(FACING), north);
+        }
+    }
+
+    private static final class WaterFaucetBlock extends WallMountedWaterloggedPropBlock {
+        private static final VoxelShape NORTH_SHAPE = Shapes.or(
+                box(4.75, 4.0, 12.8, 11.25, 7.0, 15.8),
+                box(3.9, 2.0, 11.7, 7.1, 8.8, 16.5),
+                box(8.9, 2.0, 11.7, 12.1, 8.8, 16.5));
+
+        private WaterFaucetBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F));
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            BlockState state = super.getStateForPlacement(context);
+            return state != null && state.canSurvive(
+                    context.getLevel(), context.getClickedPos()) ? state : null;
+        }
+
+        @Override
+        public boolean canSurvive(BlockState state, LevelReader level,
+                BlockPos pos) {
+            Direction facing = state.getValue(FACING);
+            BlockPos supportPos = pos.relative(facing.getOpposite());
+            return level.getBlockState(supportPos).isFaceSturdy(
+                    level, supportPos, facing);
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction,
+                BlockState neighbor, LevelAccessor level, BlockPos pos,
+                BlockPos neighborPos) {
+            if (direction == state.getValue(FACING).getOpposite()
+                    && !state.canSurvive(level, pos)) {
+                return Blocks.AIR.defaultBlockState();
+            }
+            return super.updateShape(state, direction, neighbor,
+                    level, pos, neighborPos);
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return horizontalShape(state.getValue(FACING), NORTH_SHAPE);
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state,
+                BlockGetter level, BlockPos pos, CollisionContext context) {
+            return getShape(state, level, pos, context);
         }
     }
 

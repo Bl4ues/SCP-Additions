@@ -22,6 +22,7 @@ public final class FacilitySignBlockEntityRenderer
     private static final int CORE_TEXT = 0x252A2D;
     private static final int CORE_OUTLINE = 0x92999D;
     private static final int DOOR_TEXT = 0xF5F7F8;
+    private static final int DOOR_OUTLINE = 0x273138;
     private static final float FONT_BASELINE_HEIGHT = 9.0F;
     private static final float MODEL_PIXEL = 1.0F / 16.0F;
     private static final float CORE_TEXT_SCALE = 0.0066F;
@@ -29,6 +30,9 @@ public final class FacilitySignBlockEntityRenderer
     private static final float DOOR_NUMBER_SCALE = 0.0075F;
     private static final float CORE_OUTLINE_OFFSET = 0.30F;
     private static final float CORE_FILL_DEPTH_OFFSET = 0.05F;
+    private static final float DOOR_OUTLINE_OFFSET = 0.45F;
+    private static final float DOOR_FILL_DEPTH_OFFSET = 0.05F;
+    private static final float DOOR_SURFACE_OFFSET = 0.30F * MODEL_PIXEL;
     private static final float CORE_BASELINE_Y =
             -FONT_BASELINE_HEIGHT / 2.0F + 1.75F;
     private static final float DOOR_NUMBER_BASELINE_Y =
@@ -194,12 +198,28 @@ public final class FacilitySignBlockEntityRenderer
             PoseStack poseStack, MultiBufferSource buffer) {
         poseStack.pushPose();
         poseStack.translate(originX, originY, z);
+        /*
+         * POLYGON_OFFSET becomes unstable on the sloped panel with several
+         * shader pipelines. Move the text a real fraction of a model pixel
+         * toward the viewer instead, then use the normal depth-tested text
+         * render type. This keeps the complete glyph visible from oblique
+         * angles without making it appear detached from the display.
+         */
+        poseStack.translate(0.0F, 0.0F, -DOOR_SURFACE_OFFSET);
         faceTextTowardSignFront(poseStack);
         poseStack.scale(scale, -scale, scale);
+
+        for (float[] direction : OUTLINE_DIRECTIONS) {
+            font.drawInBatch(sequence,
+                    x + direction[0] * DOOR_OUTLINE_OFFSET,
+                    baselineY + direction[1] * DOOR_OUTLINE_OFFSET,
+                    DOOR_OUTLINE, false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+        }
+        poseStack.translate(0.0F, 0.0F, DOOR_FILL_DEPTH_OFFSET);
         font.drawInBatch(sequence, x, baselineY,
                 DOOR_TEXT, false, poseStack.last().pose(), buffer,
-                Font.DisplayMode.POLYGON_OFFSET, 0,
-                LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
         poseStack.popPose();
     }
 
@@ -245,6 +265,5 @@ public final class FacilitySignBlockEntityRenderer
         private float z() {
             return surfaceZ * MODEL_PIXEL;
         }
-
     }
 }

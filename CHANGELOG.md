@@ -11,9 +11,8 @@
 - Corrosion left by SCP-106 continuously slows Survival players who walk over it;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
-- Reworked ambush relocation to triangulate SCP-106's previous position with the player's actual movement, predicting an interception ahead of the route instead of relying on where the player is looking;
 - Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
-- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot simply despawn or lose SCP-106 before the hunt ends.
+- Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot lose SCP-106 before the hunt ends.
 
 ## SCP-173
 
@@ -28,13 +27,11 @@
 
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
 - SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
-- Made SCP-079 recognize SCP-106 hunts across the creature's short repositioning window and more reliably close or briefly lock a useful door ahead without bypassing processing costs or per-door cooldowns;
 - Improved its SCP-012 trap behavior so repeated interference becomes increasingly difficult and less worthwhile;
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
 - Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
-- Added optional Debug Tools displays for SCP-079's power, and its recent decisions;
-- Restored reliable pursuit interference by tracking the player's recent route, searching farther around turns, recognizing SCP-106 through relocations, and immediately locking suitable doors after closing them when processing power allows.
+- Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## Roamer spawning and developer tools
 
@@ -54,10 +51,9 @@
 ## Audio and presentation
 
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
-- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active SCP soundtrack has finished;
-- Moved SCP-106's chase-ending cue one second earlier and added quieter randomized pitch to SCP-079's repeated device-hacking sound;
-- Added a default-enabled module that replaces vanilla player hurt sounds with four lightly pitch-shifted voices;
-- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs without muting their own hurt sounds.
+- Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active soundtrack has finished;
+- Added a default-enabled module that replaces vanilla player hurt sounds with human voices;
+- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs.
 
 ## Facility signs
 
@@ -70,7 +66,7 @@
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering.
 - Added decorative Emergency Button and Fire Extinguisher facility props;
-- Added clear decorative-only tooltips to facility props that have no gameplay function;
+- Added clear tooltips to facility props that have no gameplay function;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 
@@ -82,20 +78,15 @@
 ## Bug Fixes
 
 - Limited Tesla Gate damage to the visible, rotation-aware electrical arc while preserving the broader 3×3×3 volume only as its activation sensor;
-- Applied genuine source-level gain to Tesla Gate Terminal transition, toggle, and ambient sounds instead of ineffective above-maximum event multipliers, while reducing SCP-106 footsteps by 30% and ranged splash audio by 20%;
-- Synchronized SCP-106's ranged corrosion trail and hand particles with the visible 2.11-second right-arm release keyframe, compensating for server-to-client animation startup delay;
-- Normalized SCP-106's footsteps, hit, ranged splash, and Wither source audio so they are genuinely louder at close range instead of relying on above-maximum playback multipliers that primarily expanded attenuation distance;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;
 - Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;
 - Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.
 - Fixed SCP-914 recipe selection when several compatible items are placed in the intake, preferring the transformation that uses the complete input instead of whichever matching recipe appears first;
 - Fixed the Blink system remaining active after being disabled or appearing in Creative and Spectator modes, with the server now clearing stale blink states and enforcing the module setting.
-- Fixed Sign Support placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed TV placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, expanded its collision to include the upper structure, and moved its front icon clear of the casing;
 - Rendered SCP-012 with alpha cutout;
 - Removed unintended shader reflections from the SL1 floor arrows and added dedicated handheld item textures for both arrow sizes;
-- Corrected the outward-facing Decontamination Checkpoint diamond trim while preserving its z-fighting separation;
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
 

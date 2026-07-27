@@ -276,6 +276,8 @@ public final class FacilityModule {
         addFacilityCreativeItem(functional, "default_door");
         addFacilityCreativeItem(functional, "yellow_closed");
         addFacilityCreativeItem(functional, "black_closed");
+        addFacilityCreativeItem(functional, "sign_support");
+        addFacilityCreativeItem(functional, "door_sign");
         addFacilityCreativeItem(functional, "normal_door");
         addFacilityCreativeItem(functional, "left_log_door");
         addFacilityCreativeItem(functional, "right_log_door");
@@ -289,9 +291,6 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "heater");
         addFacilityCreativeItem(props, "emergency_button");
         addFacilityCreativeItem(props, "fire_extinguisher");
-        addFacilityCreativeItem(props, "sign_support");
-        addFacilityCreativeItem(props, "core_room_sign");
-        addFacilityCreativeItem(props, "door_sign");
         addFacilityCreativeItem(props, "tv");
         addFacilityCreativeItem(props, "trashbin");
         addUBlockCreativeItem(props, "vent_open");
@@ -321,7 +320,9 @@ public final class FacilityModule {
         addFacilityCreativeItem(general, "security_top");
         sections.add(section("generaltab", general));
 
-        sections.add(section("coreroomtab", List.of()));
+        List<ItemStack> coreRoom = new ArrayList<>();
+        addFacilityCreativeItem(coreRoom, "core_room_sign");
+        sections.add(section("coreroomtab", coreRoom));
         sections.add(section("l0tab", List.of()));
 
         List<ItemStack> sublevel1 = new ArrayList<>();

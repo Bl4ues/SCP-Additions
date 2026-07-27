@@ -12,25 +12,31 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.mcreator.scpadditions.facility.UBlocksModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
-/** Positional electrical hum owned by one nearby powered ceiling lamp. */
+/** Positional electrical hum retargeted to the nearest powered ceiling lamp. */
 public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
-    private static final double MAX_DISTANCE_SQR = 24.0D * 24.0D;
-
     private final ClientLevel level;
-    private final BlockPos pos;
+    private BlockPos pos;
     private boolean finished;
 
     public CeilingLampLoopSound(ClientLevel level, BlockPos pos) {
         super(ScpAdditionsModSounds.LAMP_LOOP.get(), SoundSource.BLOCKS,
                 RandomSource.create());
         this.level = level;
-        this.pos = pos.immutable();
         this.looping = true;
         this.delay = 0;
-        this.volume = 0.80F;
+        this.volume = 0.58F;
         this.pitch = 0.98F + RandomSource.create().nextFloat() * 0.04F;
         this.relative = false;
         this.attenuation = SoundInstance.Attenuation.LINEAR;
+        retarget(pos);
+    }
+
+    ClientLevel level() {
+        return level;
+    }
+
+    void retarget(BlockPos target) {
+        this.pos = target.immutable();
         this.x = pos.getX() + 0.5D;
         this.y = pos.getY() + 0.5D;
         this.z = pos.getZ() + 0.5D;
@@ -39,11 +45,7 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
     @Override
     public void tick() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != level || minecraft.player == null
-                || minecraft.player.distanceToSqr(x, y, z) > MAX_DISTANCE_SQR
-                || !shouldPlayFor(level.getBlockState(pos))) {
-            finish();
-        }
+        if (minecraft.level != level || minecraft.player == null) finish();
     }
 
     static boolean shouldPlayFor(BlockState state) {

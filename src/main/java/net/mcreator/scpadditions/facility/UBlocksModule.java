@@ -254,6 +254,7 @@ public final class UBlocksModule {
     private static final class RedstoneCeilingLampBlock
             extends UBlockStructureBlock {
         private static final BooleanProperty LIT = BlockStateProperties.LIT;
+        private static final int POWER_UPDATE_DELAY = 2;
 
         private RedstoneCeilingLampBlock() {
             registerDefaultState(stateDefinition.any().setValue(LIT, false));
@@ -276,10 +277,15 @@ public final class UBlocksModule {
         public void onPlace(BlockState state, Level level, BlockPos pos,
                 BlockState oldState, boolean movedByPiston) {
             super.onPlace(state, level, pos, oldState, movedByPiston);
-            if (!level.isClientSide && oldState.getBlock() != this
-                    && state.getValue(LIT)) {
+            if (level.isClientSide) {
+                ensureLampLoop(state, level, pos);
+                return;
+            }
+            if (oldState.getBlock() == this) return;
+            if (state.getValue(LIT)) {
                 playLampTransition(level, pos, true, false);
             }
+            level.scheduleTick(pos, this, POWER_UPDATE_DELAY);
         }
 
         @Override
@@ -287,13 +293,20 @@ public final class UBlocksModule {
                 Block neighborBlock, BlockPos neighborPos,
                 boolean movedByPiston) {
             if (!level.isClientSide) {
-                boolean powered = level.hasNeighborSignal(pos);
-                if (state.getValue(LIT) != powered) {
-                    level.setBlock(pos, state.setValue(LIT, powered),
-                            Block.UPDATE_ALL);
-                    playLampTransition(level, pos, powered, false);
-                }
+                level.scheduleTick(pos, this, POWER_UPDATE_DELAY);
             }
+        }
+
+        @Override
+        public void tick(BlockState state, ServerLevel level, BlockPos pos,
+                RandomSource random) {
+            boolean powered = level.hasNeighborSignal(pos);
+            boolean lit = state.getValue(LIT);
+            if (lit == powered) return;
+
+            level.setBlock(pos, state.setValue(LIT, powered),
+                    Block.UPDATE_CLIENTS);
+            playLampTransition(level, pos, powered, false);
         }
 
         @Override
@@ -338,7 +351,11 @@ public final class UBlocksModule {
         public void onPlace(BlockState state, Level level, BlockPos pos,
                 BlockState oldState, boolean movedByPiston) {
             super.onPlace(state, level, pos, oldState, movedByPiston);
-            if (level.isClientSide || oldState.getBlock() == this) return;
+            if (level.isClientSide) {
+                ensureLampLoop(state, level, pos);
+                return;
+            }
+            if (oldState.getBlock() == this) return;
             if (state.getValue(LIT)) {
                 playLampTransition(level, pos, true, false);
             }

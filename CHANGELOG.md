@@ -5,7 +5,7 @@
 ## Creative inventory organization
 
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
-- Organized facility content under full-width **Functional**, **Props**, **General**, **LCZ - Sublevel 1**, and **LCZ - Sublevel 2** section headers (until I add more sectors);
+- Organized facility content under ten textured, full-width section headers in this order: **Functional**, **Props**, **General**, **Core Room**, **Light Containment Zone**, and **LCZ - Sublevels 1-5**, including reserved empty sections for future content;
 - Made every SCP Additions creative-tab icon cycle through the visible items in its own tab;
 - Corrected rotating tab-icon alignment by letting the vanilla GUI render the active item directly;
 - Scaled the custom tab titles to remain clear of their search fields;
@@ -73,7 +73,8 @@
 
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
-- Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering.
+- Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
+- Increased and stabilized the positional electrical loop, keeping it active through the defective lamp's internal flicker while external power remains on.
 - Added decorative Emergency Button and Fire Extinguisher facility props;
 - Added clear tooltips to facility props that have no gameplay function;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
@@ -86,6 +87,7 @@
 
 ## Bug Fixes
 
+- Prevented stable SL1 Ceiling Lamps from repeatedly playing power-on and power-off clicks without an actual redstone-state change;
 - Limited Tesla Gate damage to the visible, rotation-aware electrical arc while preserving the broader 3×3×3 volume only as its activation sensor;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;
 - Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;

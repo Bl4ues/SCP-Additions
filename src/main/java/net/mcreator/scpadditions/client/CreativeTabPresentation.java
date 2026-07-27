@@ -103,8 +103,6 @@ public final class CreativeTabPresentation {
         int sectionRow = 0;
         int left = screen.getGuiLeft() + 8;
         int top = screen.getGuiTop() + 17;
-        Font font = Minecraft.getInstance().font;
-
         for (FacilityModule.CreativeSection section :
                 FacilityModule.creativeSections()) {
             int visibleRow = sectionRow - currentRow;
@@ -112,12 +110,8 @@ public final class CreativeTabPresentation {
                 int y = top + visibleRow * HEADER_HEIGHT;
                 graphics.blit(section.sprite(), left, y, 0.0F, 0.0F,
                         HEADER_WIDTH, HEADER_HEIGHT, HEADER_WIDTH, HEADER_HEIGHT);
-                graphics.drawString(font,
-                        Component.translatable(section.translationKey()),
-                        left + 5, y + 5, section.textColor(), false);
             }
-            sectionRow += 1 + Math.max(1,
-                    (section.items().size() + 8) / 9);
+            sectionRow += 1 + (section.items().size() + 8) / 9;
         }
     }
 

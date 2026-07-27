@@ -252,8 +252,8 @@ public final class FacilityModule {
                 : heavyDoorShape(facing);
     }
 
-    public record CreativeSection(String translationKey, ResourceLocation sprite,
-            int textColor, List<ItemStack> items) {
+    public record CreativeSection(ResourceLocation sprite,
+            List<ItemStack> items) {
     }
 
     /**
@@ -282,8 +282,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(functional, "office_door");
         addFacilityCreativeItem(functional, "bath_door");
         addFacilityCreativeItem(functional, "ws_dclosed");
-        sections.add(section("creative_tab.scp_additions.facility.functional",
-                "functional", 0x202020, functional));
+        sections.add(section("functionaltab", functional));
 
         List<ItemStack> props = new ArrayList<>();
         addFacilityCreativeItem(props, "walllight");
@@ -296,8 +295,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "tv");
         addFacilityCreativeItem(props, "trashbin");
         addUBlockCreativeItem(props, "vent_open");
-        sections.add(section("creative_tab.scp_additions.facility.props",
-                "props", 0xFFFFFF, props));
+        sections.add(section("proptab", props));
 
         List<ItemStack> general = new ArrayList<>();
         addFacilityCreativeItem(general, "tesla_bottom");
@@ -321,8 +319,10 @@ public final class FacilityModule {
         addFacilityCreativeItem(general, "security_bot");
         addFacilityCreativeItem(general, "security_mid");
         addFacilityCreativeItem(general, "security_top");
-        sections.add(section("creative_tab.scp_additions.facility.general",
-                "general", 0xFFFFFF, general));
+        sections.add(section("generaltab", general));
+
+        sections.add(section("coreroomtab", List.of()));
+        sections.add(section("l0tab", List.of()));
 
         List<ItemStack> sublevel1 = new ArrayList<>();
         addUBlockCreativeItem(sublevel1, "sl_1_floor_2");
@@ -338,16 +338,18 @@ public final class FacilityModule {
         addUBlockCreativeItem(sublevel1, "sl_1_floor_detail_big");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_1_bot");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_2");
-        sections.add(section("creative_tab.scp_additions.facility.lcz_sublevel_1",
-                "lcz_sublevel_1", 0xFFFFFF, sublevel1));
+        sections.add(section("sl1tab", sublevel1));
 
         List<ItemStack> sublevel2 = new ArrayList<>();
         addUBlockCreativeItem(sublevel2, "sl_2_floor");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_bot");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_mid");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_top");
-        sections.add(section("creative_tab.scp_additions.facility.lcz_sublevel_2",
-                "lcz_sublevel_2", 0x202020, sublevel2));
+        sections.add(section("sl2tab", sublevel2));
+
+        sections.add(section("sl3tab", List.of()));
+        sections.add(section("sl4tab", List.of()));
+        sections.add(section("sl5tab", List.of()));
 
         return List.copyOf(sections);
     }
@@ -377,11 +379,11 @@ public final class FacilityModule {
         return creativeItemsInDisplayOrder().stream().map(ItemStack::copy).toList();
     }
 
-    private static CreativeSection section(String translationKey, String sprite,
-            int textColor, List<ItemStack> items) {
-        return new CreativeSection(translationKey,
+    private static CreativeSection section(String sprite,
+            List<ItemStack> items) {
+        return new CreativeSection(
                 new ResourceLocation(MODID, "textures/gui/facility_sections/" + sprite + ".png"),
-                textColor, List.copyOf(items));
+                List.copyOf(items));
     }
 
     private static void addFacilityCreativeItem(List<ItemStack> ordered,

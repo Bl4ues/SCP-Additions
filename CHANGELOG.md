@@ -5,7 +5,7 @@
 ## Creative inventory organization
 
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
-- Organized facility content under ten textured, full-width section headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Levels**.
+- Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**.
 
 ## SCP-106
 
@@ -71,8 +71,7 @@
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
 - Rebuilt the ceiling-lamp hum as one clean positional loop for the nearest powered lamp, removing embedded startup/shutdown clicks and overlapping copies while keeping it active through defective-lamp flicker.
-- Added decorative Emergency Button and Fire Extinguisher facility props;
-- Added the **Wet Floor Sign**, a GeckoLib-rendered decorative prop with eight placement rotations, model-aware collision, and a dedicated inventory/hand texture;
+- Added decorative Emergency Button, Fire Extinguisher, and Wet Floor Sign facility props;
 - Added clear tooltips to facility props that have no gameplay function;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.

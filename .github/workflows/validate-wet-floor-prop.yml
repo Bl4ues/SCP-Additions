@@ -21,6 +21,11 @@ jobs:
           ref: feature/wet-floor-prop-3.1
           fetch-depth: 0
 
+      - name: Synchronize current master assets
+        run: |
+          git fetch origin master
+          git merge --no-edit origin/master
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -31,7 +36,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Apply Wet Floor integration
-        run: python3 scripts/apply_wet_floor_prop.py
+        run: |
+          python3 scripts/apply_wet_floor_prop.py
+          python3 scripts/refine_wet_floor_item.py
 
       - name: Validate assets and source structure
         shell: bash
@@ -46,10 +53,10 @@ jobs:
               'src/main/java/net/mcreator/scpadditions/facility/WetFloorBlockItem.java',
               'src/main/java/net/mcreator/scpadditions/client/WetFloorGeoModel.java',
               'src/main/java/net/mcreator/scpadditions/client/WetFloorBlockEntityRenderer.java',
-              'src/main/java/net/mcreator/scpadditions/client/WetFloorItemRenderer.java',
               'src/main/resources/assets/scp_additions/geo/block/wet_floor.geo.json',
               'src/main/resources/assets/scp_additions/textures/block/wet_floor.png',
               'src/main/resources/assets/scp_additions/textures/block/wet_floor_s.png',
+              'src/main/resources/assets/scp_additions/textures/item/wet_floor.png',
               'src/main/resources/assets/scp_additions/models/item/wet_floor.json',
               'src/main/resources/assets/scp_additions/blockstates/wet_floor.json',
           ]
@@ -57,11 +64,22 @@ jobs:
               if not Path(path).is_file():
                   raise SystemExit(f'Missing required file: {path}')
 
-          geo = json.loads(Path(required[6]).read_text(encoding='utf-8'))
+          for obsolete in (
+              'src/main/java/net/mcreator/scpadditions/client/WetFloorItemGeoModel.java',
+              'src/main/java/net/mcreator/scpadditions/client/WetFloorItemRenderer.java',
+          ):
+              if Path(obsolete).exists():
+                  raise SystemExit(f'Obsolete 3D item renderer still present: {obsolete}')
+
+          geo = json.loads(Path(required[5]).read_text(encoding='utf-8'))
           desc = geo['minecraft:geometry'][0]['description']
           assert desc['texture_width'] == 128
           assert desc['texture_height'] == 128
           assert any(b.get('name') == 'root' for b in geo['minecraft:geometry'][0]['bones'])
+
+          item_model = json.loads(Path(required[9]).read_text(encoding='utf-8'))
+          assert item_model['parent'] == 'minecraft:item/generated'
+          assert item_model['textures']['layer0'] == 'scp_additions:item/wet_floor'
 
           facility = Path('src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java').read_text(encoding='utf-8')
           assert 'addFacilityCreativeItem(props, "wet_floor")' in facility
@@ -70,9 +88,15 @@ jobs:
           git diff --check
 
       - name: Build
+        shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew clean build --no-daemon
+          set -o pipefail
+          ./gradlew clean build --no-daemon 2>&1 | tee /tmp/wet-floor-build.log || {
+            grep -nE 'error:|FAILURE:|What went wrong|Execution failed|Could not compile' /tmp/wet-floor-build.log || true
+            tail -n 120 /tmp/wet-floor-build.log
+            exit 1
+          }
 
       - name: Commit validated integration
         if: github.event_name == 'push'
@@ -80,8 +104,9 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add CHANGELOG.md src/main scripts/apply_wet_floor_prop.py
+          git add CHANGELOG.md src/main scripts/apply_wet_floor_prop.py scripts/refine_wet_floor_item.py
           if git diff --cached --quiet; then
+            git push origin HEAD:feature/wet-floor-prop-3.1
             exit 0
           fi
           git commit -m "Add Wet Floor GeckoLib facility prop"

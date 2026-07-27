@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -49,6 +50,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
+import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
+import net.mcreator.scpadditions.init.UnifiedReaderItems;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -82,6 +86,13 @@ public final class FacilityModule {
     private static final Map<String, RegistryObject<Item>> ITEMS_BY_PATH = new LinkedHashMap<>();
     private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
     private static final Map<String, DoorFamily> DOOR_FAMILIES = new LinkedHashMap<>();
+
+    private static final String DIVIDER_COLOR_TAG = "FacilityDividerColor";
+    private static final int FUNCTIONAL_DIVIDER_COLOR = 0xD6D6D6;
+    private static final int PROPS_DIVIDER_COLOR = 0x8A8A8A;
+    private static final int GENERAL_DIVIDER_COLOR = 0x444444;
+    private static final int SL1_DIVIDER_COLOR = 0x0987BC;
+    private static final int SL2_DIVIDER_COLOR = 0xFFD306;
 
     private static final RegistryObject<SoundEvent> UNITY_DOOR_OPENING = sound("unity_door_opening");
     private static final RegistryObject<SoundEvent> UNITY_DOOR_CLOSING = sound("unity_door_closing");
@@ -189,14 +200,29 @@ public final class FacilityModule {
             List.of("w_sc_1", "w_sc_2", "wsc_3"), 5, true, 4, 0, SoundType.WOOD,
             UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
 
-    public static final RegistryObject<CreativeModeTab> SCP_UNITY_BLOCKS = TABS.register("scp_unity_blocks", () ->
-            CreativeModeTab.builder()
-                    .title(Component.translatable("item_group.scp_additions.scp_unity_blocks"))
-                    .icon(() -> new ItemStack(TESLA_BOTTOM.get()))
-                    .displayItems((parameters, output) ->
-                            creativeItemsInDisplayOrder().forEach(item -> output.accept(item.get())))
-                    .withSearchBar()
-                    .build());
+    public static final RegistryObject<Item> FACILITY_TAB_DIVIDER =
+            ITEMS.register("facility_tab_divider",
+                    () -> new Item(new Item.Properties().stacksTo(1)));
+
+    public static final RegistryObject<CreativeModeTab> SCP_FACILITY_BLOCKS =
+            TABS.register("scp_unity_blocks", () ->
+                    CreativeModeTab.builder()
+                            .title(Component.translatable(
+                                    "item_group.scp_additions.scp_facility_blocks"))
+                            .icon(() -> new ItemStack(
+                                    ScpAdditionsModTabs.FACILITY_BLOCKS_TAB_ICON.get()))
+                            .displayItems((parameters, output) -> {
+                                for (ItemStack stack : creativeItemsInDisplayOrder()) {
+                                    if (stack.is(FACILITY_TAB_DIVIDER.get())) {
+                                        output.accept(stack,
+                                                CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
+                                    } else {
+                                        output.accept(stack);
+                                    }
+                                }
+                            })
+                            .withSearchBar()
+                            .build());
 
     private FacilityModule() {
     }
@@ -248,14 +274,45 @@ public final class FacilityModule {
     }
 
     /**
-     * Stable, curated order for the public facility tab. Registration order is
-     * intentionally not used here because animation states and compatibility
-     * entries are interleaved with the public endpoints.
+     * Curated category order for the public facility tab. Fake divider items are
+     * limited to the parent tab so they do not pollute creative search results.
      */
-    private static List<RegistryObject<Item>> creativeItemsInDisplayOrder() {
-        List<RegistryObject<Item>> ordered = new ArrayList<>();
+    private static List<ItemStack> creativeItemsInDisplayOrder() {
+        List<ItemStack> ordered = new ArrayList<>();
 
-        // Frequently used facility props.
+        addDivider(ordered,
+                "creative_tab.scp_additions.facility.functional",
+                FUNCTIONAL_DIVIDER_COLOR);
+        addExternalCreativeItem(ordered,
+                ScpAdditionsModBlocks.TESLA_GATE.get().asItem());
+        addExternalCreativeItem(ordered,
+                ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem());
+        addExternalCreativeItem(ordered,
+                ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get().asItem());
+        addFacilityCreativeItem(ordered, "button_closed");
+        addFacilityCreativeItem(ordered, "button_locked");
+        addExternalCreativeItem(ordered, UnifiedReaderItems.KEYCARD_READER.get());
+        addExternalCreativeItem(ordered,
+                ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
+        addExternalCreativeItem(ordered,
+                ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
+        addExternalCreativeItem(ordered,
+                ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
+        addFacilityCreativeItem(ordered, "default_door");
+        addFacilityCreativeItem(ordered, "yellow_closed");
+        addFacilityCreativeItem(ordered, "black_closed");
+        addFacilityCreativeItem(ordered, "normal_door");
+        addFacilityCreativeItem(ordered, "left_log_door");
+        addFacilityCreativeItem(ordered, "right_log_door");
+        addFacilityCreativeItem(ordered, "office_door");
+        addFacilityCreativeItem(ordered, "bath_door");
+        addFacilityCreativeItem(ordered, "ws_dclosed");
+        addUBlockCreativeItem(ordered, "sl1_lamp");
+        addUBlockCreativeItem(ordered, "sl1_flickering_lamp");
+
+        addDivider(ordered,
+                "creative_tab.scp_additions.facility.props",
+                PROPS_DIVIDER_COLOR);
         addFacilityCreativeItem(ordered, "walllight");
         addFacilityCreativeItem(ordered, "heater");
         addFacilityCreativeItem(ordered, "emergency_button");
@@ -267,45 +324,104 @@ public final class FacilityModule {
         addFacilityCreativeItem(ordered, "trashbin");
         addUBlockCreativeItem(ordered, "vent_open");
 
-        // Public closed endpoints for every door family, preserving the
-        // original family order from this module.
-        addFacilityCreativeItem(ordered, "default_door");
-        addFacilityCreativeItem(ordered, "yellow_closed");
-        addFacilityCreativeItem(ordered, "black_closed");
-        addFacilityCreativeItem(ordered, "normal_door");
-        addFacilityCreativeItem(ordered, "left_log_door");
-        addFacilityCreativeItem(ordered, "right_log_door");
-        addFacilityCreativeItem(ordered, "office_door");
-        addFacilityCreativeItem(ordered, "bath_door");
-        addFacilityCreativeItem(ordered, "ws_dclosed");
+        addDivider(ordered,
+                "creative_tab.scp_additions.facility.general",
+                GENERAL_DIVIDER_COLOR);
+        addFacilityCreativeItem(ordered, "tesla_bottom");
+        addFacilityCreativeItem(ordered, "tesla_mid_1");
+        addFacilityCreativeItem(ordered, "tesla_mid_2");
+        addFacilityCreativeItem(ordered, "tesla_bottom_alt");
+        addFacilityCreativeItem(ordered, "tesla_top_alt");
+        addFacilityCreativeItem(ordered, "archival_bottom");
+        addFacilityCreativeItem(ordered, "archival_mid");
+        addFacilityCreativeItem(ordered, "archival_top");
+        addFacilityCreativeItem(ordered, "archival_bot_1");
+        addFacilityCreativeItem(ordered, "archival_mid_2");
+        addFacilityCreativeItem(ordered, "office_bottom");
+        addFacilityCreativeItem(ordered, "office_mid");
+        addFacilityCreativeItem(ordered, "office_top");
+        addFacilityCreativeItem(ordered, "skyroom_bot_1");
+        addFacilityCreativeItem(ordered, "skyroom_bot_2");
+        addFacilityCreativeItem(ordered, "skyroom_mid");
+        addFacilityCreativeItem(ordered, "skyroom_top_alt");
+        addFacilityCreativeItem(ordered, "skyroom_block");
+        addFacilityCreativeItem(ordered, "security_bot");
+        addFacilityCreativeItem(ordered, "security_mid");
+        addFacilityCreativeItem(ordered, "security_top");
 
-        // Main SL1 navigation and wall-detail pieces.
+        addDivider(ordered,
+                "creative_tab.scp_additions.facility.lcz_sublevel_1",
+                SL1_DIVIDER_COLOR);
+        addUBlockCreativeItem(ordered, "sl_1_floor_2");
+        addUBlockCreativeItem(ordered, "sl_1_floor_1");
+        addUBlockCreativeItem(ordered, "sl1_wall_bot");
+        addUBlockCreativeItem(ordered, "sl1_wall_mid");
+        addUBlockCreativeItem(ordered, "sl_1_wall_top");
+        addUBlockCreativeItem(ordered, "sl1_ceiling");
+        addUBlockCreativeItem(ordered, "sl1_ceiling_alt");
         addUBlockCreativeItem(ordered, "sl_1_floor_detail_small");
         addUBlockCreativeItem(ordered, "sl_1_floor_detail_big");
         addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_bot");
-        addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_mid");
-        addUBlockCreativeItem(ordered, "sl_1_wall_detail_1_top");
         addUBlockCreativeItem(ordered, "sl_1_wall_detail_2");
 
-        // Preserve the relative order of everything else and suppress entries
-        // already placed above.
-        UBlocksModule.creativeItems().forEach(item -> addUnique(ordered, item));
-        CREATIVE_ITEMS.forEach(item -> addUnique(ordered, item));
+        addDivider(ordered,
+                "creative_tab.scp_additions.facility.lcz_sublevel_2",
+                SL2_DIVIDER_COLOR);
+        addUBlockCreativeItem(ordered, "sl_2_floor");
+        addUBlockCreativeItem(ordered, "sl_2_wall_bot");
+        addUBlockCreativeItem(ordered, "sl_2_wall_mid");
+        addUBlockCreativeItem(ordered, "sl_2_wall_top");
+
         return ordered;
     }
 
-    private static void addFacilityCreativeItem(List<RegistryObject<Item>> ordered, String path) {
+    public static List<ItemStack> creativeTabIconStacks() {
+        return creativeItemsInDisplayOrder().stream()
+                .filter(stack -> !stack.is(FACILITY_TAB_DIVIDER.get()))
+                .map(ItemStack::copy)
+                .toList();
+    }
+
+    public static int dividerColor(ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains(DIVIDER_COLOR_TAG)) {
+            return stack.getTag().getInt(DIVIDER_COLOR_TAG);
+        }
+        return 0xFFFFFF;
+    }
+
+    private static void addDivider(List<ItemStack> ordered,
+            String translationKey, int color) {
+        ItemStack divider = new ItemStack(FACILITY_TAB_DIVIDER.get());
+        divider.getOrCreateTag().putInt(DIVIDER_COLOR_TAG, color);
+        divider.setHoverName(Component.translatable(translationKey)
+                .withStyle(style -> style
+                        .withColor(TextColor.fromRgb(color))
+                        .withBold(true)
+                        .withItalic(false)));
+        ordered.add(divider);
+    }
+
+    private static void addFacilityCreativeItem(List<ItemStack> ordered,
+            String path) {
         RegistryObject<Item> item = ITEMS_BY_PATH.get(path);
-        if (item != null) addUnique(ordered, item);
+        if (item != null) addUnique(ordered, new ItemStack(item.get()));
     }
 
-    private static void addUBlockCreativeItem(List<RegistryObject<Item>> ordered, String path) {
+    private static void addUBlockCreativeItem(List<ItemStack> ordered,
+            String path) {
         RegistryObject<Item> item = UBlocksModule.itemByPath(path);
-        if (item != null) addUnique(ordered, item);
+        if (item != null) addUnique(ordered, new ItemStack(item.get()));
     }
 
-    private static void addUnique(List<RegistryObject<Item>> ordered, RegistryObject<Item> item) {
-        if (!ordered.contains(item)) ordered.add(item);
+    private static void addExternalCreativeItem(List<ItemStack> ordered,
+            Item item) {
+        addUnique(ordered, new ItemStack(item));
+    }
+
+    private static void addUnique(List<ItemStack> ordered, ItemStack stack) {
+        boolean alreadyPresent = ordered.stream()
+                .anyMatch(existing -> ItemStack.isSameItemSameTags(existing, stack));
+        if (!alreadyPresent) ordered.add(stack);
     }
 
     private static RegistryObject<SoundEvent> sound(String path) {

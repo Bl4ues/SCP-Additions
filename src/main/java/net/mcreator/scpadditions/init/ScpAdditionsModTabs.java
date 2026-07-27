@@ -2,10 +2,12 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.CreativeModeTab;
@@ -16,74 +18,104 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.scp012.Scp012Module;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ScpAdditionsModTabs {
-    public static final DeferredRegister<CreativeModeTab> REGISTRY = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ScpAdditionsMod.MODID);
-    public static final RegistryObject<CreativeModeTab> SCP_ADDITIONS = REGISTRY.register("scp_additions",
-            () -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.scp_additions")).icon(() -> new ItemStack(ScpAdditionsModBlocks.TESLA_GATE.get())).displayItems((parameters, tabData) -> {
-                tabData.accept(ScpAdditionsModBlocks.TESLA_GATE.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.TESLA_TERMINAL_BLOCK.get().asItem());
-                tabData.accept(ScpAdditionsModItems.SECURITY_CREDENTIALS.get());
-                tabData.accept(FacilityModule.itemByPath("button_closed").get());
-                tabData.accept(FacilityModule.itemByPath("button_locked").get());
-                tabData.accept(ScpAdditionsModItems.LEVEL_1_KEYCARD.get());
-                tabData.accept(ScpAdditionsModItems.LEVEL_2_KEYCARD.get());
-                tabData.accept(ScpAdditionsModItems.LEVEL_3_KEYCARD.get());
-                tabData.accept(ScpAdditionsModItems.LEVEL_4_KEYCARD.get());
-                tabData.accept(ScpAdditionsModItems.LEVEL_5_KEYCARD.get());
-                tabData.accept(ScpAdditionsModItems.LEVEL_6_KEYCARD.get());
-                tabData.accept(UnifiedReaderItems.KEYCARD_READER.get());
-                tabData.accept(UnifiedReaderItems.SCREWDRIVER.get());
-                tabData.accept(ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
-                tabData.accept(ScpAdditionsModItems.HAZMAT_SUIT.get());
-                tabData.accept(ScpAdditionsModItems.PLAYING_CARD.get());
-                tabData.accept(ScpAdditionsModItems.CREDIT_CARD.get());
-                tabData.accept(ScpAdditionsModItems.PIECES_OF_PAPER.get());
-                tabData.accept(ScpAdditionsModItems.COIN.get());
-                tabData.accept(ScpAdditionsModItems.EMPTY_CUP.get());
-            }).withSearchBar().build());
-    public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS = REGISTRY.register("sc_padditions_sc_ps",
-            () -> CreativeModeTab.builder().title(Component.translatable("item_group.scp_additions.sc_padditions_sc_ps")).icon(() -> new ItemStack(ScpAdditionsModBlocks.SCP_1176.get())).displayItems((parameters, tabData) -> {
-                tabData.accept(Scp012Module.SCP_012_ITEM.get());
-                tabData.accept(ScpAdditionsModBlocks.SCP_079ON.get().asItem());
-                tabData.accept(Scp131Items.SCP_106_SPAWN_EGG.get());
-                tabData.accept(Scp131Items.SCP_131_A_SPAWN_EGG.get());
-                tabData.accept(Scp131Items.SCP_131_B_SPAWN_EGG.get());
-                tabData.accept(Scp131Items.SCP_173_SPAWN_EGG.get());
-                tabData.accept(ScpAdditionsModBlocks.SCP_294.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_330.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_426.get().asItem());
-                tabData.accept(ScpAdditionsModItems.SCP_572.get());
-                tabData.accept(Scp714Items.SCP_714.get());
-                tabData.accept(ScpAdditionsModBlocks.SCP_902_CLOSED.get().asItem());
-                tabData.accept(ScpAdditionsModItems.SCP_914_ASSEMBLY_KIT.get());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914BLOCK.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914CLOCKWORKS.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914BODY.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914DIAL_1TO_1.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914_KEY_WIND.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914_INTAKE.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914_OUTPUT.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914_INTAKE_DOOR.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR.get().asItem());
-                tabData.accept(ScpAdditionsModBlocks.SCP_1176.get().asItem());
-            }).withSearchBar().build());
+    public static final DeferredRegister<Item> ICON_ITEMS =
+            DeferredRegister.create(ForgeRegistries.ITEMS,
+                    ScpAdditionsMod.MODID);
+    public static final DeferredRegister<CreativeModeTab> REGISTRY =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB,
+                    ScpAdditionsMod.MODID);
+
+    public static final RegistryObject<Item> SCP_ADDITIONS_TAB_ICON =
+            ICON_ITEMS.register("scp_additions_tab_icon",
+                    () -> new CyclingCreativeTabIconItem(
+                            ScpAdditionsModTabs::scpAdditionsStacks));
+    public static final RegistryObject<Item> SCPS_TAB_ICON =
+            ICON_ITEMS.register("scps_tab_icon",
+                    () -> new CyclingCreativeTabIconItem(
+                            ScpAdditionsModTabs::scpStacks));
+    public static final RegistryObject<Item> FACILITY_BLOCKS_TAB_ICON =
+            ICON_ITEMS.register("facility_blocks_tab_icon",
+                    () -> new CyclingCreativeTabIconItem(
+                            FacilityModule::creativeTabIconStacks));
+
+    public static final RegistryObject<CreativeModeTab> SCP_ADDITIONS =
+            REGISTRY.register("scp_additions", () ->
+                    CreativeModeTab.builder()
+                            .title(Component.translatable(
+                                    "item_group.scp_additions.scp_additions"))
+                            .icon(() -> new ItemStack(
+                                    SCP_ADDITIONS_TAB_ICON.get()))
+                            .displayItems((parameters, output) ->
+                                    scpAdditionsStacks().forEach(output::accept))
+                            .withSearchBar()
+                            .build());
+
+    public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS =
+            REGISTRY.register("sc_padditions_sc_ps", () ->
+                    CreativeModeTab.builder()
+                            .title(Component.translatable(
+                                    "item_group.scp_additions.sc_padditions_sc_ps"))
+                            .icon(() -> new ItemStack(SCPS_TAB_ICON.get()))
+                            .displayItems((parameters, output) ->
+                                    scpStacks().forEach(output::accept))
+                            .withSearchBar()
+                            .build());
+
+    private static List<ItemStack> scpAdditionsStacks() {
+        List<ItemStack> stacks = new ArrayList<>();
+        stacks.add(new ItemStack(ScpAdditionsModItems.SECURITY_CREDENTIALS.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_1_KEYCARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_2_KEYCARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_3_KEYCARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_4_KEYCARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_5_KEYCARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_6_KEYCARD.get()));
+        stacks.add(new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.HAZMAT_SUIT.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.PLAYING_CARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.CREDIT_CARD.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.PIECES_OF_PAPER.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.COIN.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.EMPTY_CUP.get()));
+        return stacks;
+    }
+
+    private static List<ItemStack> scpStacks() {
+        List<ItemStack> stacks = new ArrayList<>();
+        stacks.add(new ItemStack(Scp012Module.SCP_012_ITEM.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_079ON.get()));
+        stacks.add(new ItemStack(Scp131Items.SCP_106_SPAWN_EGG.get()));
+        stacks.add(new ItemStack(Scp131Items.SCP_131_A_SPAWN_EGG.get()));
+        stacks.add(new ItemStack(Scp131Items.SCP_131_B_SPAWN_EGG.get()));
+        stacks.add(new ItemStack(Scp131Items.SCP_173_SPAWN_EGG.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_294.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_330.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_426.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.SCP_572.get()));
+        stacks.add(new ItemStack(Scp714Items.SCP_714.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_902_CLOSED.get()));
+        stacks.add(new ItemStack(ScpAdditionsModItems.SCP_914_ASSEMBLY_KIT.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914BLOCK.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914CLOCKWORKS.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914BODY.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914DIAL_1TO_1.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914_KEY_WIND.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914_INTAKE.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914_OUTPUT.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914_INTAKE_DOOR.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR.get()));
+        stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_1176.get()));
+        return stacks;
+    }
 
     @SubscribeEvent
-    public static void buildTabContentsVanilla(BuildCreativeModeTabContentsEvent tabData) {
-        if (tabData.getTab() == FacilityModule.SCP_UNITY_BLOCKS.get()) {
-            var iterator = tabData.getEntries().iterator();
-            while (iterator.hasNext()) {
-                ItemStack stack = iterator.next().getKey();
-                if (stack.is(FacilityModule.itemByPath("button_closed").get())
-                        || stack.is(FacilityModule.itemByPath("button_locked").get())) {
-                    iterator.remove();
-                }
-            }
-        }
+    public static void buildTabContentsVanilla(
+            BuildCreativeModeTabContentsEvent tabData) {
         if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
             tabData.accept(ScpAdditionsModItems.SCP_330_RED_CANDY.get());
             tabData.accept(ScpAdditionsModItems.SCP_330_GREEN_CANDY.get());

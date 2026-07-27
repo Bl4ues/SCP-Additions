@@ -78,7 +78,6 @@
   "screen.scp_additions.scp_inventory.inventory": "INVENTORY",
   "screen.scp_additions.scp_inventory.keys": "KEYS",
   "overlay.scp_additions.scp_inventory_full": "Your inventory is full",
-  "item_group.scp_additions.scp_unity_blocks": "SCP Unity Blocks",
   "subtitles.scp_additions.hazmat_equip": "Hazmat Suit being put on",
   "subtitles.scp_additions.hazmat_remove": "Hazmat Suit being removed",
   "subtitles.scp_additions.hazmat_breathing": "Breathing inside the Hazmat Suit",
@@ -110,5 +109,15 @@
   "subtitles.scp_additions.lamp_on": "Ceiling lamp turns on",
   "subtitles.scp_additions.lamp_off": "Ceiling lamp turns off",
   "tooltip.scp_additions.sl1_ceiling_lamp": "Can be powered with redstone.",
-  "tooltip.scp_additions.sl1_flickering_ceiling_lamp": "Can be powered with redstone. Flickers while lit."
+  "tooltip.scp_additions.sl1_flickering_ceiling_lamp": "Can be powered with redstone. Flickers while lit.",
+  "item_group.scp_additions.scp_facility_blocks": "SCP Facility Blocks",
+  "creative_tab.scp_additions.facility.functional": "Functional",
+  "creative_tab.scp_additions.facility.props": "Props",
+  "creative_tab.scp_additions.facility.general": "General",
+  "creative_tab.scp_additions.facility.lcz_sublevel_1": "LCZ - Sublevel 1",
+  "creative_tab.scp_additions.facility.lcz_sublevel_2": "LCZ - Sublevel 2",
+  "item.scp_additions.facility_tab_divider": "Facility Category Divider",
+  "item.scp_additions.scp_additions_tab_icon": "SCP Additions Tab Icon",
+  "item.scp_additions.scps_tab_icon": "SCPs Tab Icon",
+  "item.scp_additions.facility_blocks_tab_icon": "Facility Blocks Tab Icon"
 }

@@ -34,9 +34,14 @@ jobs:
           sed -i 's/ section headers;/ section headers (until I add more sectors);/' CHANGELOG.md
 
       - name: Build
+        shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew clean build --no-daemon --stacktrace
+          if ! ./gradlew clean build --no-daemon --stacktrace > creative-tab-build.log 2>&1; then
+            tail -n 120 creative-tab-build.log
+            exit 1
+          fi
+          tail -n 20 creative-tab-build.log
 
       - name: Commit validated source
         shell: bash
@@ -47,6 +52,7 @@ jobs:
           fi
           git config user.name "Bl4ues"
           git config user.email "28213049+Bl4ues@users.noreply.github.com"
+          rm -f creative-tab-build.log
           git add -A
           git commit -m "Implement real creative tab section headers"
           git push origin HEAD:agent/creative-tab-real-sections

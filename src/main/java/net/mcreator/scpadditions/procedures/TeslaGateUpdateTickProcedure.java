@@ -48,17 +48,22 @@ public class TeslaGateUpdateTickProcedure {
                 ? "overcharge" : "teslaactivate");
         float activationVolume = manualOverride ? 2.0F : 1.0F;
 
-        AABB volume = TeslaGateVolume.at(x, y, z);
+        AABB detectionVolume = TeslaGateVolume.at(x, y, z);
         List<LivingEntity> occupants = world.getEntitiesOfClass(
-                LivingEntity.class, volume,
-                entity -> TeslaGateVolume.intersects(entity, volume));
+                LivingEntity.class, detectionVolume,
+                entity -> TeslaGateVolume.intersects(entity, detectionVolume));
         if (occupants.isEmpty()) {
             return;
         }
 
+        AABB lethalVolume = TeslaGateVolume.lethalArcAt(world, gatePos);
+        List<LivingEntity> lethalOccupants = occupants.stream()
+                .filter(entity -> TeslaGateVolume.intersects(entity,
+                        lethalVolume))
+                .toList();
         if (world instanceof ServerLevel server
                 && Scp079TeslaSuppression.shouldSuppress(server, gatePos,
-                occupants, manualOverride)) {
+                occupants, lethalOccupants, manualOverride)) {
             return;
         }
 

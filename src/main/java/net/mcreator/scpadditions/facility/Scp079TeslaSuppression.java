@@ -32,11 +32,13 @@ public final class Scp079TeslaSuppression {
     /**
      * Returns true while the gate should skip its normal activation sequence.
      * This never changes the global Tesla Gate or manual-override gamerules.
-     * Once a useful pursuit enters an otherwise lethal gate, SCP-079 suppresses
-     * it deterministically whenever enough processing power is available.
+     * Once a useful pursuit enters the broad gate sensor, SCP-079 suppresses it
+     * deterministically whenever enough processing power is available. Only a
+     * player already intersecting the visible lethal arc blocks that passage.
      */
     public static boolean shouldSuppress(ServerLevel level, BlockPos gatePos,
-            List<LivingEntity> occupants, boolean manualOverride) {
+            List<LivingEntity> detectionOccupants,
+            List<LivingEntity> lethalOccupants, boolean manualOverride) {
         GateKey key = key(level, gatePos);
         if (!Scp079ProcessingManager.isActive(level)) {
             STATES.remove(key);
@@ -56,13 +58,14 @@ public final class Scp079TeslaSuppression {
             return false;
         }
 
-        // A player already inside the lethal volume must never receive an
-        // unexplained safe passage merely because a pursuer entered with them.
-        if (occupants.stream().anyMatch(ServerPlayer.class::isInstance)) {
+        // A player already inside the actual arc must never receive unexplained
+        // safe passage merely because a pursuer entered the broader sensor.
+        if (lethalOccupants.stream()
+                .anyMatch(ServerPlayer.class::isInstance)) {
             return false;
         }
 
-        Mob pursuer = occupants.stream()
+        Mob pursuer = detectionOccupants.stream()
                 .filter(Mob.class::isInstance)
                 .map(Mob.class::cast)
                 .filter(Scp079TeslaSuppression::isUsefulPursuer)

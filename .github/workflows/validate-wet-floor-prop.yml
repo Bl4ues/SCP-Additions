@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/wet-floor-prop-3.1
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: write
@@ -72,6 +75,7 @@ jobs:
           ./gradlew clean build --no-daemon
 
       - name: Commit validated integration
+        if: github.event_name == 'push'
         shell: bash
         run: |
           git config user.name github-actions[bot]

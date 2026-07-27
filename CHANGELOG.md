@@ -76,6 +76,8 @@
 
 ## Bug Fixes
 
+- Limited Tesla Gate damage to the visible, rotation-aware electrical arc while preserving the broader 3×3×3 volume only as its activation sensor;
+- Applied genuine source-level gain to Tesla Gate Terminal transition, toggle, and ambient sounds instead of ineffective above-maximum event multipliers, while reducing SCP-106 footsteps by 30% and ranged splash audio by 20%;
 - Synchronized SCP-106's ranged corrosion trail and hand particles with the visible 2.11-second right-arm release keyframe, compensating for server-to-client animation startup delay;
 - Normalized SCP-106's footsteps, hit, ranged splash, and Wither source audio so they are genuinely louder at close range instead of relying on above-maximum playback multipliers that primarily expanded attenuation distance;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;

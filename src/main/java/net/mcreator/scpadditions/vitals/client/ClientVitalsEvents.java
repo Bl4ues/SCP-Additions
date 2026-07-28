@@ -37,7 +37,10 @@ public final class ClientVitalsEvents {
         }
         if (!player.isCreative() && !player.isSpectator()
                 && VitalsModule.healthHudEnabled()
-                && event.getOverlay().id().equals(VanillaGuiOverlay.PLAYER_HEALTH.id())) {
+                && (event.getOverlay().id().equals(
+                        VanillaGuiOverlay.PLAYER_HEALTH.id())
+                || event.getOverlay().id().equals(
+                        VanillaGuiOverlay.ARMOR_LEVEL.id()))) {
             event.setCanceled(true);
         }
     }

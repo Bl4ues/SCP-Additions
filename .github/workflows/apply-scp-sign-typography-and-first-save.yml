@@ -1,0 +1,15 @@
+name: Apply SCP Sign Typography And First Save
+
+on:
+  push:
+    branches:
+      - fix/scp-sign-typography-and-first-save
+
+permissions:
+  contents: write
+
+jobs:
+  marker:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Integration is handled by the temporary base workflow."

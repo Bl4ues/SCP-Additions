@@ -26,7 +26,8 @@
 
 ## SCP-131
 
-- SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally.
+- SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally;
+- SCP-131 now dismisses its owner's follower group when it begins watching SCP-173, matching the manual release behavior.
 
 ## SCP-079
 
@@ -59,7 +60,9 @@
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
 - Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active soundtrack has finished;
 - Added a default-enabled module that replaces vanilla player hurt sounds with human voices;
-- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs.
+- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
+- Added a default-disabled **Disable Vanilla Music** module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions soundtracks;
+- Colored module **ON** and **OFF** states green and red for faster visual scanning.
 
 ## Facility signs
 

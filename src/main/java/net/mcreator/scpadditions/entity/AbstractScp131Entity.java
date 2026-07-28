@@ -138,6 +138,9 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
         Scp173Entity scp173 = findNearestScp173();
         if (scp173 != null) {
+            if (!wasWatchingScp173) {
+                dismissOwnerGroupForScp173();
+            }
             wasWatchingScp173 = true;
             runToAndWatch(scp173);
             return;
@@ -297,6 +300,20 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
     private void setFollowing(boolean following) {
         entityData.set(FOLLOWING, following);
+    }
+
+    private void dismissOwnerGroupForScp173() {
+        if (!isFollowing() || followOwner == null) {
+            return;
+        }
+        MinecraftServer server = getServer();
+        ServerPlayer owner = server == null ? null
+                : server.getPlayerList().getPlayer(followOwner);
+        if (owner != null) {
+            stopFollowersFor(owner);
+        } else {
+            stopFollowing();
+        }
     }
 
     private Scp173Entity findNearestScp173() {

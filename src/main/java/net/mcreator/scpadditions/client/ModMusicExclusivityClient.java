@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -19,11 +20,13 @@ public final class ModMusicExclusivityClient {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END
-                || !hasActiveModMusic()) {
+        if (event.phase != TickEvent.Phase.END) {
             return;
         }
-        stopVanillaMusicNow();
+        if (InventoryModuleRuntimeState.disableVanillaMusicForClient()
+                || hasActiveModMusic()) {
+            stopVanillaMusicNow();
+        }
     }
 
     private static boolean hasActiveModMusic() {

@@ -283,10 +283,11 @@ public final class ScpSignEditorScreen extends Screen {
     }
 
     private static void drawField(GuiGraphics graphics, EditBox field) {
-        graphics.fill(field.getX() - 3, field.getY() - 1,
+        int frameTop = field.getY() - 6;
+        graphics.fill(field.getX() - 3, frameTop,
                 field.getX() + field.getWidth() + 3,
-                field.getY() + field.getHeight() + 1, FIELD_BACKGROUND);
-        outline(graphics, field.getX() - 3, field.getY() - 1,
+                frameTop + field.getHeight() + 2, FIELD_BACKGROUND);
+        outline(graphics, field.getX() - 3, frameTop,
                 field.getWidth() + 6, field.getHeight() + 2, FIELD_EDGE);
     }
 

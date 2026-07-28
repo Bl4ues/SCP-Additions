@@ -237,6 +237,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "audio", "enter_sound_enabled", errors);
         checkBoolean(root, "audio", "replace_player_hurt_sounds", errors);
         checkBoolean(root, "audio", "mute_non_player_hit_sounds", errors);
+        checkBoolean(root, "audio", "disable_vanilla_music", errors);
         checkBoolean(root, "accessibility",
                 "reduce_scp_012_visual_effects", errors);
         checkBoolean(root, "debug", "show_scp_079_energy_hud", errors);

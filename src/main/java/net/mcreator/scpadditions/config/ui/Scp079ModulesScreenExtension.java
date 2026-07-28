@@ -61,6 +61,8 @@ public final class Scp079ModulesScreenExtension {
                     "Enables automatic and manual blinking.", true),
             new Row("audio", "enter_sound_enabled", "World Entry Sound",
                     "Plays enter.ogg after joining or opening a world.", true),
+            new Row("audio", "disable_vanilla_music", "Disable Vanilla Music",
+                    "Stops Minecraft's ambient soundtrack while preserving SCP Additions music.", false),
             new Row("audio", "replace_player_hurt_sounds",
                     "Replace Player Hurt Sounds",
                     "Replaces vanilla player damage sounds with the SCP Additions voice set.", true),
@@ -207,6 +209,8 @@ public final class Scp079ModulesScreenExtension {
         private static final int PALE_GOLD = 0xFFE5D49A;
         private static final int WHITE = 0xFFF7F8FC;
         private static final int MUTED = 0xFF9CA3AF;
+        private static final int ON_COLOR = 0xFF79D58B;
+        private static final int OFF_COLOR = 0xFFFF8B8B;
         private static final int ROW_HEIGHT = 34;
 
         private final Screen parent;
@@ -441,12 +445,31 @@ public final class Scp079ModulesScreenExtension {
             graphics.fill(left + 1, top + 1,
                     left + (primary || hovered ? 4 : 2), bottom - 1, stripe);
 
-            int textX = left + Math.max(5,
-                    (button.getWidth() - font.width(label)) / 2);
             int textY = top + Math.max(1,
                     (button.getHeight() - 8) / 2);
-            graphics.drawString(font, label, textX, textY,
-                    textColor, false);
+            boolean toggleState = plain.endsWith(": ON")
+                    || plain.endsWith(": OFF");
+            if (toggleState) {
+                boolean enabled = plain.endsWith(": ON");
+                String state = enabled ? "ON" : "OFF";
+                String prefix = plain.substring(0, plain.length() - state.length());
+                Component prefixComponent = ScpFonts.roboto(prefix);
+                Component stateComponent = ScpFonts.roboto(state);
+                int totalWidth = font.width(prefixComponent)
+                        + font.width(stateComponent);
+                int textX = left + Math.max(5,
+                        (button.getWidth() - totalWidth) / 2);
+                graphics.drawString(font, prefixComponent, textX, textY,
+                        textColor, false);
+                graphics.drawString(font, stateComponent,
+                        textX + font.width(prefixComponent), textY,
+                        enabled ? ON_COLOR : OFF_COLOR, false);
+            } else {
+                int textX = left + Math.max(5,
+                        (button.getWidth() - font.width(label)) / 2);
+                graphics.drawString(font, label, textX, textY,
+                        textColor, false);
+            }
         }
 
         private static boolean contains(Button button, int mouseX,

@@ -34,6 +34,7 @@ public final class FacilityLargePropStructure {
 
     public enum Kind {
         SIGN_SUPPORT,
+        SCP_914_NOTICE,
         TV
     }
 
@@ -165,15 +166,17 @@ public final class FacilityLargePropStructure {
     }
 
     public static Block controllerBlock(Kind kind) {
-        return kind == Kind.SIGN_SUPPORT
-                ? FacilityModule.SIGN_SUPPORT.get()
-                : FacilityModule.TV.get();
+        return switch (kind) {
+            case SIGN_SUPPORT -> FacilityModule.SIGN_SUPPORT.get();
+            case SCP_914_NOTICE -> FacilityModule.SCP_914_USAGE_NOTICE.get();
+            case TV -> FacilityModule.TV.get();
+        };
     }
 
     private static Direction controllerFacing(BlockState state, Kind kind) {
-        return kind == Kind.SIGN_SUPPORT
-                ? state.getValue(BlockStateProperties.HORIZONTAL_FACING)
-                : state.getValue(FacilityPropPartBlock.FACING);
+        return kind == Kind.TV
+                ? state.getValue(FacilityPropPartBlock.FACING)
+                : state.getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     private static boolean isController(BlockState state, Kind kind) {
@@ -247,6 +250,8 @@ public final class FacilityLargePropStructure {
         for (Map.Entry<Direction, VoxelShape> entry :
                 signShapes.entrySet()) {
             split(result, Kind.SIGN_SUPPORT, entry.getKey(),
+                    entry.getValue());
+            split(result, Kind.SCP_914_NOTICE, entry.getKey(),
                     entry.getValue());
         }
 

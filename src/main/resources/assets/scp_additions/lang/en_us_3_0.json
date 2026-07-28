@@ -144,6 +144,7 @@
   "block.scp_additions.sl_2_wall_mid": "Wall Middle",
   "block.scp_additions.sl_2_wall_top": "Wall Top",
   "block.scp_additions.wet_floor": "Wet Floor Sign",
+  "block.scp_additions.scp_914_usage_notice": "SCP-914 Usage Notice",
   "tooltip.scp_additions.sign_support_primary": "Editable SCP containment information sign.",
   "tooltip.scp_additions.sign_support_secondary": "Use a Screwdriver",
   "screen.scp_additions.scp_sign_editor": "SCP SIGN EDITOR",

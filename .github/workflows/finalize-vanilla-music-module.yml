@@ -1,0 +1,44 @@
+name: Finalize Vanilla Music Module
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.head_ref == 'feature/disable-vanilla-music-module'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/disable-vanilla-music-module
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply implementation
+        run: python3 scripts/apply_final_chat_tweaks.py
+
+      - name: Remove temporary files
+        run: |
+          rm scripts/apply_final_chat_tweaks.py
+          rm .github/workflows/finalize-vanilla-music-module.yml
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Commit finalized feature
+        run: |
+          git add -A
+          git commit -m "Add vanilla music module and final behavior tweaks [skip ci]"
+          git push origin HEAD:feature/disable-vanilla-music-module

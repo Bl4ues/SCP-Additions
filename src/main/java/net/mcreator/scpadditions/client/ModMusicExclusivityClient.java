@@ -6,6 +6,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 
 /** Keeps vanilla background music out of active SCP soundtrack sequences. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
@@ -19,11 +20,13 @@ public final class ModMusicExclusivityClient {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END
-                || !hasActiveModMusic()) {
+        if (event.phase != TickEvent.Phase.END) {
             return;
         }
-        stopVanillaMusicNow();
+        if (InventoryModuleRuntimeState.disableVanillaMusicForClient()
+                || hasActiveModMusic()) {
+            stopVanillaMusicNow();
+        }
     }
 
     private static boolean hasActiveModMusic() {

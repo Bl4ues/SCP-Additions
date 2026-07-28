@@ -26,7 +26,8 @@
 
 ## SCP-131
 
-- SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally.
+- SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally;
+- SCP-131 instances now dismiss their player's follower group when they begin watching SCP-173, matching the manual dismiss action.
 
 ## SCP-079
 
@@ -59,14 +60,16 @@
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
 - Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active soundtrack has finished;
 - Added a default-enabled module that replaces vanilla player hurt sounds with human voices;
-- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs.
+- Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
+- Added a default-disabled **Disable Vanilla Music** module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music.
 
 ## Facility signs
 
 - Added the Core Room Sign and Door Sign;
 - Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
 - Upgraded the SCP Sign with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass;
-- Fine-tuned the SCP Sign typography and Anomaly Trait selector alignment against direct SCP Unity comparisons.
+- Fine-tuned the SCP Sign typography and Anomaly Trait selector alignment against direct SCP Unity comparisons;
+- Corrected the free-text editor field backgrounds without moving their aligned text baselines.
 
 ## Facility construction
 
@@ -81,6 +84,7 @@
 
 ## Accessibility
 
+- Colored module **ON** and **OFF** states green and red for faster visual scanning;
 - Added a dedicated Accessibility screen to the Configuration Center, beginning with a Photosensitive Epilepsy section;
 - Added **Reduce SCP-012 Visual Effects**, which disables the rapidly flashing interference and subliminal full-screen images during SCP-012 psychosis while preserving its gradual veil and smooth vignette.
 

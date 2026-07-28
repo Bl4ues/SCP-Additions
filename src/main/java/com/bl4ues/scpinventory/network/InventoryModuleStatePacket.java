@@ -8,7 +8,8 @@ import java.util.function.Supplier;
 
 public record InventoryModuleStatePacket(boolean enabled,
         boolean reduceScp012VisualEffects, boolean hungerDisabled,
-        boolean replacePlayerHurtSounds, boolean muteNonPlayerHitSounds) {
+        boolean replacePlayerHurtSounds, boolean muteNonPlayerHitSounds,
+        boolean disableVanillaMusic) {
     public static void encode(InventoryModuleStatePacket message,
             FriendlyByteBuf buffer) {
         buffer.writeBoolean(message.enabled);
@@ -16,12 +17,14 @@ public record InventoryModuleStatePacket(boolean enabled,
         buffer.writeBoolean(message.hungerDisabled);
         buffer.writeBoolean(message.replacePlayerHurtSounds);
         buffer.writeBoolean(message.muteNonPlayerHitSounds);
+        buffer.writeBoolean(message.disableVanillaMusic);
     }
 
     public static InventoryModuleStatePacket decode(FriendlyByteBuf buffer) {
         return new InventoryModuleStatePacket(buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
-                buffer.readBoolean(), buffer.readBoolean());
+                buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readBoolean());
     }
 
     public static void handle(InventoryModuleStatePacket message,
@@ -30,7 +33,8 @@ public record InventoryModuleStatePacket(boolean enabled,
         context.enqueueWork(() -> InventoryModuleRuntimeState.updateFromServer(
                 message.enabled, message.reduceScp012VisualEffects,
                 message.hungerDisabled, message.replacePlayerHurtSounds,
-                message.muteNonPlayerHitSounds));
+                message.muteNonPlayerHitSounds,
+                message.disableVanillaMusic));
         context.setPacketHandled(true);
     }
 }

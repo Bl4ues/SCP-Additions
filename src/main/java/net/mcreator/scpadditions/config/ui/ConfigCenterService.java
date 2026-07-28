@@ -237,6 +237,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "audio", "enter_sound_enabled", errors);
         checkBoolean(root, "audio", "replace_player_hurt_sounds", errors);
         checkBoolean(root, "audio", "mute_non_player_hit_sounds", errors);
+        checkBoolean(root, "audio", "disable_vanilla_music", errors);
         checkBoolean(root, "accessibility",
                 "reduce_scp_012_visual_effects", errors);
         checkBoolean(root, "debug", "show_scp_079_energy_hud", errors);
@@ -430,7 +431,7 @@ public final class ConfigCenterService {
     }
 
     private static JsonObject defaultModules() {
-        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"hud\":{\"enabled\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"hunger\":{\"disabled\":true},\"blink\":{\"enabled\":true},\"audio\":{\"enter_sound_enabled\":true,\"replace_player_hurt_sounds\":true,\"mute_non_player_hit_sounds\":false},\"accessibility\":{\"reduce_scp_012_visual_effects\":false},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
+        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"hud\":{\"enabled\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"hunger\":{\"disabled\":true},\"blink\":{\"enabled\":true},\"audio\":{\"enter_sound_enabled\":true,\"replace_player_hurt_sounds\":true,\"mute_non_player_hit_sounds\":false,\"disable_vanilla_music\":false},\"accessibility\":{\"reduce_scp_012_visual_effects\":false},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
     }
 
     private static JsonObject defaultInventory() {

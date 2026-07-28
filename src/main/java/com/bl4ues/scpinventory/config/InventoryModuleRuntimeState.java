@@ -9,6 +9,7 @@ public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverHungerDisabled;
     private static volatile Boolean serverReplacePlayerHurtSounds;
     private static volatile Boolean serverMuteNonPlayerHitSounds;
+    private static volatile Boolean serverDisableVanillaMusic;
 
     private InventoryModuleRuntimeState() {
     }
@@ -43,15 +44,23 @@ public final class InventoryModuleRuntimeState {
                 : ScpAdditionsModulesConfig.get().audio.muteNonPlayerHitSounds;
     }
 
+    public static boolean disableVanillaMusicForClient() {
+        Boolean synced = serverDisableVanillaMusic;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().audio.disableVanillaMusic;
+    }
+
     public static void updateFromServer(boolean enabled,
             boolean reduceScp012VisualEffects, boolean hungerDisabled,
             boolean replacePlayerHurtSounds,
-            boolean muteNonPlayerHitSounds) {
+            boolean muteNonPlayerHitSounds,
+            boolean disableVanillaMusic) {
         serverEnabled = enabled;
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
         serverHungerDisabled = hungerDisabled;
         serverReplacePlayerHurtSounds = replacePlayerHurtSounds;
         serverMuteNonPlayerHitSounds = muteNonPlayerHitSounds;
+        serverDisableVanillaMusic = disableVanillaMusic;
     }
 
     public static void clearServerState() {
@@ -60,5 +69,6 @@ public final class InventoryModuleRuntimeState {
         serverHungerDisabled = null;
         serverReplacePlayerHurtSounds = null;
         serverMuteNonPlayerHitSounds = null;
+        serverDisableVanillaMusic = null;
     }
 }

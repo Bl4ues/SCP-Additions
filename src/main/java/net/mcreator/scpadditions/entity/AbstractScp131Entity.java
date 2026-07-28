@@ -138,6 +138,9 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
         Scp173Entity scp173 = findNearestScp173();
         if (scp173 != null) {
+            if (!wasWatchingScp173 && isFollowing()) {
+                dismissFollowersForScp173();
+            }
             wasWatchingScp173 = true;
             runToAndWatch(scp173);
             return;
@@ -312,6 +315,23 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
             }
         }
         return best;
+    }
+
+    private void dismissFollowersForScp173() {
+        if (!isFollowing()) {
+            return;
+        }
+        MinecraftServer server = getServer();
+        if (server == null || followOwner == null) {
+            stopFollowing();
+            return;
+        }
+        ServerPlayer owner = server.getPlayerList().getPlayer(followOwner);
+        if (owner != null && stopFollowersFor(owner)) {
+            ScpEntityNetwork.showScp131Notice(owner, false);
+        } else {
+            stopFollowing();
+        }
     }
 
     private void runToAndWatch(Scp173Entity scp173) {

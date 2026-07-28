@@ -1,7 +1,8 @@
 Editable SCP Sign Support assets
 
 Base canvas: scp_sign_base.png (1024x640)
-Hazard overlays: hazard_<stable_id>.png (256x256, transparent)
+Hazard overlays: <stable_id>.png (256x256, transparent)
+Empty hazard slot: none.png
 
 The editor and world renderer use these display rectangles in the 1024x640 canvas:
 - Clearance: x=783..840, y=83..123
@@ -12,4 +13,9 @@ The editor and world renderer use these display rectangles in the 1024x640 canva
 - Hazard slot 2: x=622..788, y=375..539
 - Hazard slot 3: x=771..938, y=375..539
 
-Missing hazard PNGs are intentionally skipped. The empty triangles in the base remain visible.
+The stable IDs intentionally match the supplied filenames, including hyphens in:
+- hive-mind_organisms.png
+- self-evolving_system.png
+- self-replicating_object.png
+
+Every slot renders either its selected hazard PNG or none.png. A missing selected asset falls back to none.png.

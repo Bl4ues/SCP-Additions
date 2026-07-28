@@ -249,9 +249,9 @@ public final class FacilityLargePropStructure {
 
         for (Map.Entry<Direction, VoxelShape> entry :
                 signShapes.entrySet()) {
-            split(result, Kind.SIGN_SUPPORT, entry.getKey(),
+            shareFullShape(result, Kind.SIGN_SUPPORT, entry.getKey(),
                     entry.getValue());
-            split(result, Kind.SCP_914_NOTICE, entry.getKey(),
+            shareFullShape(result, Kind.SCP_914_NOTICE, entry.getKey(),
                     entry.getValue());
         }
 
@@ -281,6 +281,24 @@ public final class FacilityLargePropStructure {
             split(result, Kind.TV, entry.getKey(), entry.getValue());
         }
         return Map.copyOf(result);
+    }
+
+    /**
+     * The controller and both occupied sign cells expose the same world-space
+     * shape. The local coordinates differ, but the selection outline remains
+     * visually continuous when the cursor crosses the invisible multiblock seam.
+     */
+    private static void shareFullShape(Map<ShapeKey, VoxelShape> target,
+            Kind kind, Direction facing, VoxelShape source) {
+        target.put(new ShapeKey(kind, facing, 0, 0, 0), source.optimize());
+        for (FacilityPropPartBlock.Part part :
+                FacilityPropPartBlock.Part.forKind(kind)) {
+            BlockPos relative = relativePosition(part, facing);
+            VoxelShape local = source.move(-relative.getX(),
+                    -relative.getY(), -relative.getZ()).optimize();
+            target.put(new ShapeKey(kind, facing, relative.getX(),
+                    relative.getY(), relative.getZ()), local);
+        }
     }
 
     private static void split(Map<ShapeKey, VoxelShape> target, Kind kind,

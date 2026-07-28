@@ -1,0 +1,113 @@
+name: Fix SCP Sign Font
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout font fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/scp-sign-noto-font
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Replace Kokoro with Figma's Latin fallback
+        run: |
+          set -euo pipefail
+          mkdir -p src/main/resources/assets/scp_additions/font
+          mkdir -p src/main/resources/META-INF/licenses
+
+          curl -L --fail --retry 3 \
+            https://raw.githubusercontent.com/notofonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf \
+            -o src/main/resources/assets/scp_additions/font/noto_sans_bold.ttf
+          curl -L --fail --retry 3 \
+            https://raw.githubusercontent.com/notofonts/noto-fonts/main/LICENSE \
+            -o src/main/resources/META-INF/licenses/Noto-Sans-OFL-1.1.txt
+
+          cat > src/main/resources/assets/scp_additions/font/noto_sans_bold.json <<'JSON'
+          {
+            "providers": [
+              {
+                "type": "ttf",
+                "file": "scp_additions:font/noto_sans_bold.ttf",
+                "shift": [0, 0],
+                "size": 11.0,
+                "oversample": 8.0
+              },
+              {
+                "type": "reference",
+                "id": "minecraft:default"
+              }
+            ]
+          }
+          JSON
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          fonts = Path('src/main/java/net/mcreator/scpadditions/client/ScpFonts.java')
+          text = fonts.read_text(encoding='utf-8')
+          text = text.replace(
+              '    public static final ResourceLocation KOKORO =\n'
+              '            new ResourceLocation("scp_additions", "kokoro");',
+              '    public static final ResourceLocation NOTO_SANS_BOLD =\n'
+              '            new ResourceLocation("scp_additions", "noto_sans_bold");')
+          text = text.replace(
+              '    public static MutableComponent kokoro(String text) {\n'
+              '        return custom(text, KOKORO);\n'
+              '    }',
+              '    public static MutableComponent scpSign(String text) {\n'
+              '        return custom(text, NOTO_SANS_BOLD);\n'
+              '    }')
+          fonts.write_text(text, encoding='utf-8')
+
+          for relative in [
+              'src/main/java/net/mcreator/scpadditions/client/ScpSignSupportBlockEntityRenderer.java',
+              'src/main/java/net/mcreator/scpadditions/client/gui/ScpSignEditorScreen.java',
+          ]:
+              path = Path(relative)
+              text = path.read_text(encoding='utf-8')
+              text = text.replace('import net.minecraft.ChatFormatting;\n', '')
+              text = text.replace(
+                  'Component component = ScpFonts.kokoro(value)\n'
+                  '                .withStyle(ChatFormatting.BOLD);',
+                  'Component component = ScpFonts.scpSign(value);')
+              path.write_text(text, encoding='utf-8')
+
+          license_path = Path('LICENSE.md')
+          text = license_path.read_text(encoding='utf-8')
+          old = '| Kokoro Regular | Editable SCP Sign Support text | Copyright 2016 The Kokoro Project Authors; designed by Yasushi Saikusa / typingart | [SIL Open Font License 1.1](https://github.com/google/fonts/blob/main/ofl/kokoro/OFL.txt) |'
+          new = '| Noto Sans Bold | Editable SCP Sign Support text, matching Figma Latin fallback | Copyright 2018 The Noto Project Authors | [SIL Open Font License 1.1](https://github.com/notofonts/noto-fonts/blob/main/LICENSE) |'
+          if old not in text:
+              raise SystemExit('Kokoro attribution row not found')
+          license_path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+          rm -f src/main/resources/assets/scp_additions/font/kokoro.json
+          rm -f src/main/resources/assets/scp_additions/font/kokoro.ttf
+          rm -f src/main/resources/META-INF/licenses/Kokoro-OFL-1.1.txt
+          rm .github/workflows/fix-scp-sign-font.yml
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Commit font correction
+        run: |
+          git add -A
+          git commit -m "Use Noto Sans for SCP sign Latin text [skip ci]"
+          git push origin HEAD:fix/scp-sign-noto-font

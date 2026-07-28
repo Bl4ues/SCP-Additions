@@ -35,6 +35,7 @@
   "audio": {
     "enter_sound_enabled": true,
     "replace_player_hurt_sounds": true,
-    "mute_non_player_hit_sounds": false
+    "mute_non_player_hit_sounds": false,
+    "disable_vanilla_music": false
   }
 }

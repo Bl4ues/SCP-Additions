@@ -40,17 +40,17 @@ public final class ScpSignSupportBlockEntityRenderer
     private static final float PANEL_HEIGHT = PANEL_MAX_Y - PANEL_MIN_Y;
     private static final float BASE_Z = 15.86F / 16.0F;
     private static final float CONTENT_Z = 15.83F / 16.0F;
-    private static final float FONT_HEIGHT = 8.0F;
+    private static final float FONT_HEIGHT = 7.0F;
     private static final int TEXT_COLOR = 0xFF000000;
 
     private static final ImageArea CLEARANCE =
-            new ImageArea(783.0F, 82.0F, 57.0F, 43.0F);
+            new ImageArea(774.0F, 85.0F, 74.0F, 52.0F);
     private static final ImageArea SCP_NUMBER =
-            new ImageArea(64.0F, 265.0F, 355.0F, 56.0F);
+            new ImageArea(64.0F, 257.0F, 382.0F, 72.0F);
     private static final ImageArea CONTAINMENT =
-            new ImageArea(65.0F, 346.0F, 354.0F, 34.0F);
+            new ImageArea(65.0F, 340.0F, 380.0F, 46.0F);
     private static final ImageArea ANOMALY =
-            new ImageArea(535.0F, 294.0F, 343.0F, 20.0F);
+            new ImageArea(522.0F, 306.0F, 363.0F, 28.0F);
     private static final ImageArea[] HAZARDS = {
             new ImageArea(473.0F, 375.0F, 167.0F, 164.0F),
             new ImageArea(622.0F, 375.0F, 166.0F, 164.0F),

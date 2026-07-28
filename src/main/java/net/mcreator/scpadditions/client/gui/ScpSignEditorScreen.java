@@ -42,15 +42,16 @@ public final class ScpSignEditorScreen extends Screen {
     private static final int TEXT_PRIMARY = 0xFFE4E8EA;
     private static final int TEXT_MUTED = 0xFF879097;
     private static final int PREVIEW_TEXT = 0xFF000000;
+    private static final float FONT_HEIGHT = 8.0F;
 
     private static final ImageArea CLEARANCE =
-            new ImageArea(783, 83, 57, 40);
+            new ImageArea(783, 82, 57, 43);
     private static final ImageArea SCP_NUMBER =
-            new ImageArea(64, 273, 355, 48);
+            new ImageArea(64, 265, 355, 56);
     private static final ImageArea CONTAINMENT =
-            new ImageArea(65, 351, 354, 27);
+            new ImageArea(65, 346, 354, 34);
     private static final ImageArea ANOMALY =
-            new ImageArea(589, 298, 235, 15);
+            new ImageArea(535, 294, 343, 20);
     private static final ImageArea[] TRAITS = {
             new ImageArea(473, 375, 167, 164),
             new ImageArea(622, 375, 166, 164),
@@ -349,13 +350,15 @@ public final class ScpSignEditorScreen extends Screen {
         Component component = ScpFonts.scpSign(value);
         int textWidth = Math.max(1, font.width(component));
         float scale = Math.min(area.width() / (float) textWidth,
-                area.height() / 9.0F);
+                area.height() / FONT_HEIGHT);
         float x = centered
                 ? area.x() + (area.width() - textWidth * scale) * 0.5F
                 : area.x();
+        float renderedHeight = FONT_HEIGHT * scale;
+        float y = area.y() + (area.height() - renderedHeight) * 0.5F;
 
         graphics.pose().pushPose();
-        graphics.pose().translate(x, area.y(), 2.0F);
+        graphics.pose().translate(x, y, 2.0F);
         graphics.pose().scale(scale, scale, 1.0F);
         graphics.drawString(font, component, 0, 0, PREVIEW_TEXT, false);
         graphics.pose().popPose();

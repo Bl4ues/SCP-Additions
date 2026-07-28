@@ -1,0 +1,12 @@
+name: SCP Sign Reference Alignment Marker
+
+on:
+  push:
+    branches:
+      - fix/scp-sign-reference-alignment
+
+jobs:
+  marker:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Integration is handled by the temporary base workflow."

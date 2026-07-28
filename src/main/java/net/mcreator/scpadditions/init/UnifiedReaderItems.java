@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -43,11 +44,12 @@ public final class UnifiedReaderItems {
             ));
 
     /**
-     * Using a reader opens its configuration screen. Crouching copies its
-     * level, while Control-use applies the copied level to another reader.
+     * General-purpose facility tool used by supported interactive blocks.
      */
     public static final RegistryObject<Item> SCREWDRIVER = REGISTRY.register("screwdriver",
-            () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
+            () -> new ScrewdriverItem(new Item.Properties()
+                    .stacksTo(1)
+                    .rarity(Rarity.EPIC)));
 
     private UnifiedReaderItems() {
     }

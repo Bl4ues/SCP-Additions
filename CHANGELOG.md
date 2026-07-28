@@ -51,7 +51,8 @@
 
 - Added a default-enabled **Disable Hunger System** module that hides the vanilla hunger bar and converts food nutrition directly into health;
 - Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 15 seconds without damage;
-- Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration.
+- Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration;
+- Made the custom health module hide both the vanilla heart display and armor bar while its replacement HUD is active.
 
 ## Audio and presentation
 
@@ -64,7 +65,9 @@
 
 - Added the Core Room Sign and Door Sign;
 - Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
-- Upgraded the SCP Sign Support with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three hazard pictograms rendered behind its glass.
+- Upgraded the SCP Sign Support with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass;
+- Made the SCP Sign editor open immediately after placement and replaced its vanilla cycling controls with styled dropdowns, including an ordered multi-select list with cropped pictogram previews;
+- Added dedicated Noto Sans rendering for the editable SCP Sign text and a tooltip explaining its Screwdriver interaction.
 
 ## Facility construction
 
@@ -73,6 +76,7 @@
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
 - Added decorative Emergency Button, Fire Extinguisher, Wet Floor Sign, Non-potable Water Faucet, and SCP-914 Usage Notice facility props;
 - Added clear tooltips to facility props that have no gameplay function;
+- Standardized wall-mounted signs, props, door buttons, and keycard readers so they follow the clicked surface, require solid wall support, and break when that support is removed;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
 

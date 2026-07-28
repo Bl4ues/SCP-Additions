@@ -2,7 +2,7 @@
   "providers": [
     {
       "type": "ttf",
-      "file": "scp_additions:kokoro.ttf",
+      "file": "scp_additions:font/kokoro.ttf",
       "shift": [0, 0],
       "size": 11.0,
       "oversample": 8.0

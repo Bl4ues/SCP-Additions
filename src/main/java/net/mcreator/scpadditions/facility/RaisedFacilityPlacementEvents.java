@@ -31,6 +31,7 @@ public final class RaisedFacilityPlacementEvents {
         ItemStack stack = player.getItemInHand(event.getHand());
 
         if (!stack.is(FacilityModule.itemByPath("sign_support").get())
+                && !stack.is(FacilityModule.itemByPath("scp_914_usage_notice").get())
                 && !stack.is(FacilityModule.itemByPath("tv").get())) {
             return;
         }

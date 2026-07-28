@@ -1,3 +1,6 @@
 {
-  "parent": "scp_additions:block/scp_914_usage_notice"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "scp_additions:item/914notice"
+  }
 }

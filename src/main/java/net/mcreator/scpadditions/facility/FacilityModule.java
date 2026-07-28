@@ -129,7 +129,7 @@ public final class FacilityModule {
             "emergency_button", EmergencyButtonBlock::new, true);
     public static final RegistryObject<Block> FIRE_EXTINGUISHER = registerBlock(
             "fire_extinguisher", FireExtinguisherBlock::new, true);
-    public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", SignSupportBlock::new, true);
+    public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", ScpSignSupportBlock::new, true);
     public static final RegistryObject<Block> CORE_ROOM_SIGN = registerSign(
             "core_room_sign", FacilitySignBlock.SignType.CORE_ROOM);
     public static final RegistryObject<Block> DOOR_SIGN = registerSign(
@@ -151,6 +151,11 @@ public final class FacilityModule {
                     "facility_sign", () -> BlockEntityType.Builder.of(
                             FacilitySignBlockEntity::new,
                             CORE_ROOM_SIGN.get(), DOOR_SIGN.get()).build(null));
+    public static final RegistryObject<BlockEntityType<ScpSignSupportBlockEntity>>
+            SCP_SIGN_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
+                    "scp_sign_support", () -> BlockEntityType.Builder.of(
+                            ScpSignSupportBlockEntity::new,
+                            SIGN_SUPPORT.get()).build(null));
 
     // Button states. Only LOCKED and CLOSED are public items.
     public static final RegistryObject<Block> BUTTON_LOCKED = registerButton("button_locked", ButtonState.LOCKED, true);

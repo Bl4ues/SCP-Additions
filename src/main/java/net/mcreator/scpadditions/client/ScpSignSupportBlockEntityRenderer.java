@@ -3,7 +3,6 @@ package net.mcreator.scpadditions.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -110,8 +109,7 @@ public final class ScpSignSupportBlockEntityRenderer
 
     private void renderText(String value, ImageArea area, boolean centered,
             PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        Component component = ScpFonts.kokoro(value)
-                .withStyle(ChatFormatting.BOLD);
+        Component component = ScpFonts.scpSign(value);
         FormattedCharSequence sequence = component.getVisualOrderText();
         float textWidth = Math.max(1.0F, font.width(sequence));
         float scale = Math.min(

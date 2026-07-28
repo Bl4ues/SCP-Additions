@@ -290,8 +290,13 @@ public final class ScpSignEditorScreen extends Screen {
         for (int slot = 0; slot < ScpSignData.HAZARD_SLOTS; slot++) {
             ScpSignHazards.Option option = ScpSignHazards.option(
                     data.hazards().get(slot));
-            if (option.isNone() || !resourceExists(option.texture())) continue;
-            drawHazard(graphics, option.texture(), HAZARDS[slot]);
+            ResourceLocation texture = option.texture();
+            if (!resourceExists(texture)) {
+                texture = ScpSignHazards.NONE.texture();
+            }
+            if (resourceExists(texture)) {
+                drawHazard(graphics, texture, HAZARDS[slot]);
+            }
         }
 
         drawPreviewText(graphics,

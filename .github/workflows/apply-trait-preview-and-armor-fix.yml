@@ -1,5 +1,6 @@
 name: Apply Trait Preview And Armor Fix
 
+# Synchronization marker for the base integration workflow.
 on:
   push:
     branches:

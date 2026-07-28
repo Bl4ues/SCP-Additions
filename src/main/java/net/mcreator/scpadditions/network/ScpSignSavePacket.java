@@ -42,11 +42,13 @@ public final class ScpSignSavePacket {
                     || !player.level().hasChunkAt(message.pos)) {
                 return;
             }
-            ItemStack screwdriver =
-                    KeycardReaderInteractionEvents.screwdriver(player);
-            if (screwdriver.isEmpty()) return;
             if (player.level().getBlockEntity(message.pos)
                     instanceof ScpSignSupportBlockEntity sign) {
+                ItemStack screwdriver =
+                        KeycardReaderInteractionEvents.screwdriver(player);
+                boolean firstPlacementSave =
+                        sign.data().equals(ScpSignData.DEFAULT);
+                if (screwdriver.isEmpty() && !firstPlacementSave) return;
                 sign.setData(message.data);
             }
         });

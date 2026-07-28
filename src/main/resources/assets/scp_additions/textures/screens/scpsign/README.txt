@@ -20,7 +20,7 @@ The stable IDs intentionally match the supplied filenames, including hyphens in:
 
 Every slot renders either its selected hazard PNG or none.png. A missing selected asset falls back to none.png.
 
-Final selectable hazard files:
+Final selectable hazard files (31 hazards, plus none.png):
 - adaptive_object.png
 - antimemetic_hazard.png
 - auditory_hazard.png

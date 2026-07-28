@@ -60,8 +60,6 @@ public final class ScpSignEditorScreen extends Screen {
 
     private final BlockPos signPos;
     private final ScpSignData initialData;
-    private final List<StyledDropdown<ScpSignHazards.Option>> traitDropdowns =
-            new ArrayList<>();
 
     private EditBox scpNumberField;
     private StyledDropdown<ScpSignData.ContainmentClass> containmentDropdown;
@@ -69,7 +67,8 @@ public final class ScpSignEditorScreen extends Screen {
     private StyledDropdown<Integer> clearanceDropdown;
     private StyledDropdown<ScpSignData.AnomalyType> anomalyDropdown;
     private EditBox customAnomalyField;
-    private StyledDropdown<?> openDropdown;
+    private TraitMultiSelect traitSelector;
+    private ExpandableSelector openSelector;
 
     private int panelLeft;
     private int panelTop;
@@ -78,6 +77,7 @@ public final class ScpSignEditorScreen extends Screen {
     private int previewLeft;
     private int previewTop;
     private float previewScale;
+    private int traitControlY;
 
     private ScpSignEditorScreen(BlockPos signPos, ScpSignData data) {
         super(Component.translatable("screen.scp_additions.scp_sign_editor"));
@@ -93,8 +93,7 @@ public final class ScpSignEditorScreen extends Screen {
     @Override
     protected void init() {
         calculateLayout();
-        traitDropdowns.clear();
-        openDropdown = null;
+        openSelector = null;
 
         int formX = panelLeft + 18;
         int fieldX = formX + 124;
@@ -118,7 +117,7 @@ public final class ScpSignEditorScreen extends Screen {
                 List.of(ScpSignData.ContainmentClass.values()),
                 initialData.containmentClass(),
                 value -> Component.literal(value.displayName()),
-                value -> updateCustomVisibility(), null));
+                value -> updateCustomVisibility()));
         y += 27;
 
         customContainmentField = configureField(new EditBox(font, fieldX, y,
@@ -135,7 +134,7 @@ public final class ScpSignEditorScreen extends Screen {
                 initialData.clearanceLevel(),
                 value -> Component.literal(String.format("%02d", value)),
                 value -> {
-                }, null));
+                }));
         y += 27;
 
         anomalyDropdown = addRenderableWidget(new StyledDropdown<>(
@@ -143,7 +142,7 @@ public final class ScpSignEditorScreen extends Screen {
                 List.of(ScpSignData.AnomalyType.values()),
                 initialData.anomalyType(),
                 value -> Component.literal(value.displayName()),
-                value -> updateCustomVisibility(), null));
+                value -> updateCustomVisibility()));
         y += 27;
 
         customAnomalyField = configureField(new EditBox(font, fieldX, y,
@@ -154,19 +153,10 @@ public final class ScpSignEditorScreen extends Screen {
         addRenderableWidget(customAnomalyField);
         y += 31;
 
-        for (int slot = 0; slot < ScpSignData.HAZARD_SLOTS; slot++) {
-            final int selectedSlot = slot;
-            ScpSignHazards.Option initial = ScpSignHazards.option(
-                    initialData.hazards().get(slot));
-            StyledDropdown<ScpSignHazards.Option> dropdown =
-                    new StyledDropdown<>(fieldX, y, fieldWidth, 20,
-                            ScpSignHazards.OPTIONS, initial,
-                            option -> Component.literal(option.displayName()),
-                            value -> selectTrait(selectedSlot, value),
-                            ScpSignHazards.Option::texture);
-            traitDropdowns.add(addRenderableWidget(dropdown));
-            y += 27;
-        }
+        traitControlY = y;
+        traitSelector = addRenderableWidget(new TraitMultiSelect(
+                fieldX, traitControlY, fieldWidth, 20,
+                initialData.hazards()));
 
         int bottomY = panelTop + panelHeight - 29;
         addRenderableWidget(new EditorButton(panelLeft + panelWidth - 178,
@@ -216,27 +206,12 @@ public final class ScpSignEditorScreen extends Screen {
         }
     }
 
-    private void selectTrait(int selectedSlot,
-            ScpSignHazards.Option selected) {
-        if (selected == null || selected.isNone()) return;
-        for (int slot = 0; slot < traitDropdowns.size(); slot++) {
-            if (slot != selectedSlot
-                    && traitDropdowns.get(slot).getValue().id()
-                    .equals(selected.id())) {
-                traitDropdowns.get(slot).setValue(
-                        ScpSignHazards.NONE, false);
-            }
-        }
-    }
-
     private ScpSignData currentData() {
-        List<String> traits = traitDropdowns.stream()
-                .map(dropdown -> dropdown.getValue().id()).toList();
         return new ScpSignData(scpNumberField.getValue(),
                 containmentDropdown.getValue(),
                 customContainmentField.getValue(),
                 clearanceDropdown.getValue(), anomalyDropdown.getValue(),
-                customAnomalyField.getValue(), traits);
+                customAnomalyField.getValue(), traitSelector.selectedIds());
     }
 
     private void saveAndClose() {
@@ -247,12 +222,12 @@ public final class ScpSignEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (openDropdown != null) {
-            if (openDropdown.handleExpandedClick(mouseX, mouseY, button)) {
+        if (openSelector != null) {
+            if (openSelector.handleExpandedClick(mouseX, mouseY, button)) {
                 return true;
             }
-            if (!openDropdown.isMouseOver(mouseX, mouseY)) {
-                openDropdown.setOpen(false);
+            if (!openSelector.isMouseOver(mouseX, mouseY)) {
+                openSelector.setOpen(false);
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -260,8 +235,8 @@ public final class ScpSignEditorScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (openDropdown != null
-                && openDropdown.handleExpandedScroll(mouseX, mouseY, delta)) {
+        if (openSelector != null
+                && openSelector.handleExpandedScroll(mouseX, mouseY, delta)) {
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
@@ -320,21 +295,24 @@ public final class ScpSignEditorScreen extends Screen {
                 Component.translatable("screen.scp_additions.scp_sign_custom_containment"),
                 Component.translatable("screen.scp_additions.scp_sign_clearance"),
                 Component.translatable("screen.scp_additions.scp_sign_anomaly"),
-                Component.translatable("screen.scp_additions.scp_sign_custom_anomaly"),
-                Component.literal("Anomaly Trait 1"),
-                Component.literal("Anomaly Trait 2"),
-                Component.literal("Anomaly Trait 3")
+                Component.translatable("screen.scp_additions.scp_sign_custom_anomaly")
         };
-        int[] gaps = {27, 27, 27, 27, 27, 31, 27, 27, 27};
+        int[] gaps = {27, 27, 27, 27, 27, 31};
         for (int index = 0; index < labels.length; index++) {
             boolean customHidden = index == 2 && !customContainmentField.visible
                     || index == 5 && !customAnomalyField.visible;
             if (!customHidden) {
                 graphics.drawString(font, ScpFonts.roboto(labels[index]),
-                        x, y, index >= 6 ? TEXT_PRIMARY : TEXT_MUTED, false);
+                        x, y, TEXT_MUTED, false);
             }
             y += gaps[index];
         }
+
+        graphics.drawString(font, ScpFonts.roboto("Anomaly Traits"),
+                x, traitControlY + 6, TEXT_PRIMARY, false);
+        graphics.drawString(font, ScpFonts.roboto(
+                        "Choose up to 3. Selection order fills the sign left to right."),
+                panelLeft + 18, traitControlY + 26, TEXT_MUTED, false);
     }
 
     private void drawPreview(GuiGraphics graphics, ScpSignData data) {
@@ -414,6 +392,17 @@ public final class ScpSignEditorScreen extends Screen {
         return false;
     }
 
+    private interface ExpandableSelector {
+        void setOpen(boolean open);
+
+        boolean handleExpandedClick(double mouseX, double mouseY, int button);
+
+        boolean handleExpandedScroll(double mouseX, double mouseY,
+                double delta);
+
+        boolean isMouseOver(double mouseX, double mouseY);
+    }
+
     private final class EditorButton extends AbstractButton {
         private final ButtonStyle style;
         private final Runnable action;
@@ -458,15 +447,14 @@ public final class ScpSignEditorScreen extends Screen {
         }
     }
 
-    private final class StyledDropdown<T> extends AbstractButton {
-        private static final int ROW_HEIGHT = 26;
+    private final class StyledDropdown<T> extends AbstractButton
+            implements ExpandableSelector {
+        private static final int ROW_HEIGHT = 22;
         private static final int MAX_VISIBLE_ROWS = 8;
-        private static final int ICON_SIZE = 22;
 
         private final List<T> values;
         private final Function<T, Component> labelFunction;
         private final Consumer<T> onChange;
-        private final Function<T, ResourceLocation> iconFunction;
         private T value;
         private boolean open;
         private int scrollOffset;
@@ -474,13 +462,11 @@ public final class ScpSignEditorScreen extends Screen {
         private StyledDropdown(int x, int y, int width, int height,
                 List<T> values, T initialValue,
                 Function<T, Component> labelFunction,
-                Consumer<T> onChange,
-                Function<T, ResourceLocation> iconFunction) {
+                Consumer<T> onChange) {
             super(x, y, width, height, labelFunction.apply(initialValue));
             this.values = List.copyOf(values);
             this.labelFunction = labelFunction;
             this.onChange = onChange;
-            this.iconFunction = iconFunction;
             this.value = initialValue;
         }
 
@@ -495,16 +481,17 @@ public final class ScpSignEditorScreen extends Screen {
             if (notify) onChange.accept(newValue);
         }
 
-        private void setOpen(boolean shouldOpen) {
+        @Override
+        public void setOpen(boolean shouldOpen) {
             if (open == shouldOpen) return;
             if (shouldOpen) {
-                if (openDropdown != null && openDropdown != this) {
-                    openDropdown.setOpen(false);
+                if (openSelector != null && openSelector != this) {
+                    openSelector.setOpen(false);
                 }
-                openDropdown = this;
+                openSelector = this;
                 ensureSelectionVisible();
-            } else if (openDropdown == this) {
-                openDropdown = null;
+            } else if (openSelector == this) {
+                openSelector = null;
             }
             open = shouldOpen;
         }
@@ -530,18 +517,10 @@ public final class ScpSignEditorScreen extends Screen {
                     getY() + getHeight(), background);
             outline(graphics, getX(), getY(), getWidth(), getHeight(), edge);
 
-            int textX = getX() + 7;
-            ResourceLocation icon = iconFor(value);
-            if (icon != null) {
-                drawSmallIcon(graphics, icon, getX() + 3,
-                        getY() + (getHeight() - 18) / 2, 18);
-                textX += 20;
-            }
             String label = labelFunction.apply(value).getString();
-            int available = getX() + getWidth() - 22 - textX;
             String clipped = font.plainSubstrByWidth(label,
-                    Math.max(1, available));
-            graphics.drawString(font, ScpFonts.roboto(clipped), textX,
+                    Math.max(1, getWidth() - 30));
+            graphics.drawString(font, ScpFonts.roboto(clipped), getX() + 7,
                     getY() + (getHeight() - 8) / 2, TEXT_PRIMARY, false);
             graphics.drawCenteredString(font,
                     ScpFonts.roboto(open ? "▲" : "▼"),
@@ -576,41 +555,18 @@ public final class ScpSignEditorScreen extends Screen {
                 graphics.fill(getX() + 1, rowY,
                         getX() + getWidth() - 1,
                         rowY + ROW_HEIGHT, rowColor);
-
-                int textX = getX() + 7;
-                ResourceLocation icon = iconFor(option);
-                if (icon != null) {
-                    drawSmallIcon(graphics, icon, getX() + 2,
-                            rowY + 2, ICON_SIZE);
-                    textX += ICON_SIZE + 1;
-                }
                 String label = labelFunction.apply(option).getString();
-                int reserve = values.size() > visible ? 10 : 3;
                 String clipped = font.plainSubstrByWidth(label,
-                        Math.max(1, getX() + getWidth() - reserve - textX));
-                graphics.drawString(font, ScpFonts.roboto(clipped), textX,
-                        rowY + (ROW_HEIGHT - 8) / 2,
+                        Math.max(1, getWidth() - 14));
+                graphics.drawString(font, ScpFonts.roboto(clipped),
+                        getX() + 7, rowY + (ROW_HEIGHT - 8) / 2,
                         selected ? ACCENT_TEXT : TEXT_PRIMARY, false);
-            }
-
-            if (values.size() > visible) {
-                int trackX = getX() + getWidth() - 5;
-                int trackTop = top + 3;
-                int trackHeight = listHeight - 6;
-                graphics.fill(trackX, trackTop, trackX + 2,
-                        trackTop + trackHeight, 0xFF30383E);
-                int thumbHeight = Math.max(8,
-                        trackHeight * visible / values.size());
-                int maxScroll = Math.max(1, values.size() - visible);
-                int thumbY = trackTop + (trackHeight - thumbHeight)
-                        * scrollOffset / maxScroll;
-                graphics.fill(trackX, thumbY, trackX + 2,
-                        thumbY + thumbHeight, ACCENT);
             }
             graphics.pose().popPose();
         }
 
-        private boolean handleExpandedClick(double mouseX, double mouseY,
+        @Override
+        public boolean handleExpandedClick(double mouseX, double mouseY,
                 int button) {
             if (!open || button != 0) return false;
             int top = listTop();
@@ -631,25 +587,19 @@ public final class ScpSignEditorScreen extends Screen {
             return false;
         }
 
-        private boolean handleExpandedScroll(double mouseX, double mouseY,
+        @Override
+        public boolean handleExpandedScroll(double mouseX, double mouseY,
                 double delta) {
             if (!open || values.size() <= visibleRows()) return false;
             int top = listTop();
-            int height = visibleRows() * ROW_HEIGHT + 2;
+            int listHeight = visibleRows() * ROW_HEIGHT + 2;
             if (mouseX < getX() || mouseX >= getX() + getWidth()
-                    || mouseY < top || mouseY >= top + height) {
+                    || mouseY < top || mouseY >= top + listHeight) {
                 return false;
             }
-            int direction = delta > 0.0D ? -1 : 1;
             scrollOffset = Math.max(0, Math.min(maxScroll(),
-                    scrollOffset + direction));
+                    scrollOffset + (delta > 0.0D ? -1 : 1)));
             return true;
-        }
-
-        private ResourceLocation iconFor(T option) {
-            if (iconFunction == null || option == null) return null;
-            ResourceLocation icon = iconFunction.apply(option);
-            return resourceExists(icon) ? icon : null;
         }
 
         private int visibleRows() {
@@ -663,7 +613,7 @@ public final class ScpSignEditorScreen extends Screen {
         private int listTop() {
             int listHeight = visibleRows() * ROW_HEIGHT + 2;
             int below = getY() + getHeight() + 2;
-            return below + listHeight <= height - 6
+            return below + listHeight <= ScpSignEditorScreen.this.height - 6
                     ? below : getY() - listHeight - 2;
         }
 
@@ -675,9 +625,238 @@ public final class ScpSignEditorScreen extends Screen {
             }
             scrollOffset = Math.max(0, Math.min(maxScroll(), scrollOffset));
         }
+    }
+
+    private final class TraitMultiSelect extends AbstractButton
+            implements ExpandableSelector {
+        private static final int MAX_SELECTED = 3;
+        private static final int ROW_HEIGHT = 28;
+        private static final int MAX_VISIBLE_ROWS = 8;
+        private static final int ICON_SIZE = 24;
+
+        private final List<ScpSignHazards.Option> options;
+        private final List<ScpSignHazards.Option> selected = new ArrayList<>();
+        private boolean open;
+        private int scrollOffset;
+
+        private TraitMultiSelect(int x, int y, int width, int height,
+                List<String> initialIds) {
+            super(x, y, width, height,
+                    Component.literal("No traits selected"));
+            options = ScpSignHazards.OPTIONS.stream()
+                    .filter(option -> !option.isNone()).toList();
+            for (String id : initialIds) {
+                ScpSignHazards.Option option = ScpSignHazards.option(id);
+                if (!option.isNone() && !selected.contains(option)
+                        && selected.size() < MAX_SELECTED) {
+                    selected.add(option);
+                }
+            }
+            updateMessage();
+        }
+
+        private List<String> selectedIds() {
+            return selected.stream().map(ScpSignHazards.Option::id).toList();
+        }
+
+        private void updateMessage() {
+            setMessage(Component.literal(selected.isEmpty()
+                    ? "No traits selected"
+                    : selected.size() + " / " + MAX_SELECTED + " selected"));
+        }
+
+        @Override
+        public void setOpen(boolean shouldOpen) {
+            if (open == shouldOpen) return;
+            if (shouldOpen) {
+                if (openSelector != null && openSelector != this) {
+                    openSelector.setOpen(false);
+                }
+                openSelector = this;
+                ensureSelectionVisible();
+            } else if (openSelector == this) {
+                openSelector = null;
+            }
+            open = shouldOpen;
+        }
+
+        @Override
+        public void onPress() {
+            setOpen(!open);
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX,
+                int mouseY, float partialTick) {
+            int background = isHoveredOrFocused() || open
+                    ? CONTROL_HOVER : CONTROL_BACKGROUND;
+            int edge = open ? ACCENT
+                    : isHoveredOrFocused() ? 0xFFD8E0E4 : CONTROL_EDGE;
+            graphics.fill(getX(), getY(), getX() + getWidth(),
+                    getY() + getHeight(), background);
+            outline(graphics, getX(), getY(), getWidth(), getHeight(), edge);
+
+            int iconX = getX() + 3;
+            for (ScpSignHazards.Option option : selected) {
+                drawSmallIcon(graphics, option.texture(), iconX,
+                        getY() + 1, 18);
+                iconX += 20;
+            }
+            int textX = selected.isEmpty() ? getX() + 7 : iconX + 2;
+            String clipped = font.plainSubstrByWidth(getMessage().getString(),
+                    Math.max(1, getX() + getWidth() - 24 - textX));
+            graphics.drawString(font, ScpFonts.roboto(clipped), textX,
+                    getY() + (getHeight() - 8) / 2,
+                    selected.isEmpty() ? TEXT_MUTED : TEXT_PRIMARY, false);
+            graphics.drawCenteredString(font,
+                    ScpFonts.roboto(open ? "▲" : "▼"),
+                    getX() + getWidth() - 11,
+                    getY() + (getHeight() - 8) / 2, TEXT_MUTED);
+
+            if (open) renderExpanded(graphics, mouseX, mouseY);
+        }
+
+        private void renderExpanded(GuiGraphics graphics, int mouseX,
+                int mouseY) {
+            int top = listTop();
+            int visible = visibleRows();
+            int listHeight = visible * ROW_HEIGHT + 2;
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, 300.0F);
+            graphics.fill(getX(), top, getX() + getWidth(),
+                    top + listHeight, 0xFF171C20);
+            outline(graphics, getX(), top, getWidth(), listHeight, ACCENT);
+
+            for (int row = 0; row < visible; row++) {
+                int index = scrollOffset + row;
+                if (index >= options.size()) break;
+                ScpSignHazards.Option option = options.get(index);
+                int rowY = top + 1 + row * ROW_HEIGHT;
+                int selectedIndex = selected.indexOf(option);
+                boolean isSelected = selectedIndex >= 0;
+                boolean enabled = isSelected || selected.size() < MAX_SELECTED;
+                boolean hovered = enabled && mouseX >= getX()
+                        && mouseX < getX() + getWidth()
+                        && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
+                int rowColor = isSelected ? 0xFF4B3F27
+                        : hovered ? 0xFF3D484F
+                        : enabled ? 0xFF242B30 : 0xFF1D2226;
+                graphics.fill(getX() + 1, rowY,
+                        getX() + getWidth() - 1,
+                        rowY + ROW_HEIGHT, rowColor);
+
+                drawSmallIcon(graphics, option.texture(), getX() + 2,
+                        rowY + 2, ICON_SIZE);
+                int textColor = !enabled ? 0xFF5F686E
+                        : isSelected ? ACCENT_TEXT : TEXT_PRIMARY;
+                String clipped = font.plainSubstrByWidth(option.displayName(),
+                        Math.max(1, getWidth() - ICON_SIZE - 31));
+                graphics.drawString(font, ScpFonts.roboto(clipped),
+                        getX() + ICON_SIZE + 7,
+                        rowY + (ROW_HEIGHT - 8) / 2, textColor, false);
+                if (isSelected) {
+                    graphics.drawCenteredString(font,
+                            ScpFonts.roboto(Integer.toString(selectedIndex + 1)),
+                            getX() + getWidth() - 12,
+                            rowY + (ROW_HEIGHT - 8) / 2, ACCENT_TEXT);
+                }
+            }
+
+            if (options.size() > visible) {
+                int trackX = getX() + getWidth() - 5;
+                int trackTop = top + 3;
+                int trackHeight = listHeight - 6;
+                graphics.fill(trackX, trackTop, trackX + 2,
+                        trackTop + trackHeight, 0xFF30383E);
+                int thumbHeight = Math.max(8,
+                        trackHeight * visible / options.size());
+                int maxScroll = Math.max(1, options.size() - visible);
+                int thumbY = trackTop + (trackHeight - thumbHeight)
+                        * scrollOffset / maxScroll;
+                graphics.fill(trackX, thumbY, trackX + 2,
+                        thumbY + thumbHeight, ACCENT);
+            }
+            graphics.pose().popPose();
+        }
+
+        @Override
+        public boolean handleExpandedClick(double mouseX, double mouseY,
+                int button) {
+            if (!open || button != 0) return false;
+            int top = listTop();
+            int visible = visibleRows();
+            if (mouseX >= getX() && mouseX < getX() + getWidth()
+                    && mouseY >= top
+                    && mouseY < top + visible * ROW_HEIGHT + 2) {
+                int row = (int) ((mouseY - top - 1) / ROW_HEIGHT);
+                if (row >= 0 && row < visible) {
+                    int index = scrollOffset + row;
+                    if (index < options.size()) {
+                        toggle(options.get(index));
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private void toggle(ScpSignHazards.Option option) {
+            int selectedIndex = selected.indexOf(option);
+            if (selectedIndex >= 0) {
+                selected.remove(selectedIndex);
+            } else if (selected.size() < MAX_SELECTED) {
+                selected.add(option);
+            }
+            updateMessage();
+        }
+
+        @Override
+        public boolean handleExpandedScroll(double mouseX, double mouseY,
+                double delta) {
+            if (!open || options.size() <= visibleRows()) return false;
+            int top = listTop();
+            int listHeight = visibleRows() * ROW_HEIGHT + 2;
+            if (mouseX < getX() || mouseX >= getX() + getWidth()
+                    || mouseY < top || mouseY >= top + listHeight) {
+                return false;
+            }
+            scrollOffset = Math.max(0, Math.min(maxScroll(),
+                    scrollOffset + (delta > 0.0D ? -1 : 1)));
+            return true;
+        }
+
+        private int visibleRows() {
+            return Math.min(MAX_VISIBLE_ROWS, options.size());
+        }
+
+        private int maxScroll() {
+            return Math.max(0, options.size() - visibleRows());
+        }
+
+        private int listTop() {
+            int listHeight = visibleRows() * ROW_HEIGHT + 2;
+            int below = getY() + getHeight() + 2;
+            return below + listHeight <= ScpSignEditorScreen.this.height - 6
+                    ? below : getY() - listHeight - 2;
+        }
+
+        private void ensureSelectionVisible() {
+            if (selected.isEmpty()) return;
+            int firstSelected = options.indexOf(selected.get(0));
+            if (firstSelected >= 0) {
+                scrollOffset = Math.max(0,
+                        Math.min(maxScroll(), firstSelected));
+            }
+        }
 
         private void drawSmallIcon(GuiGraphics graphics,
                 ResourceLocation texture, int x, int y, int size) {
+            if (!resourceExists(texture)) return;
             graphics.pose().pushPose();
             graphics.pose().translate(x, y, 1.0F);
             graphics.pose().scale(size / 256.0F,

@@ -26,6 +26,13 @@ jobs:
 
       - name: Apply feature patch
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply_vanilla_music_and_module_polish.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace("'''\\\"audio", "r'''\\\"audio")
+          path.write_text(text, encoding='utf-8')
+          PY
           python3 scripts/apply_vanilla_music_and_module_polish.py
           rm scripts/apply_vanilla_music_and_module_polish.py
 

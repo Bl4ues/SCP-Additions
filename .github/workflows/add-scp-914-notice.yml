@@ -1,0 +1,44 @@
+name: Add SCP-914 Usage Notice
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/scp-914-usage-notice
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply static notice integration
+        run: python3 scripts/add_scp_914_notice.py
+
+      - name: Remove temporary integration files
+        run: |
+          rm scripts/add_scp_914_notice.py
+          rm .github/workflows/add-scp-914-notice.yml
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Commit completed prop
+        run: |
+          git add -A
+          git commit -m "Add SCP-914 Usage Notice prop [skip ci]"
+          git push origin HEAD:feature/scp-914-usage-notice

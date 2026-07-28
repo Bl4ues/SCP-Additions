@@ -100,6 +100,8 @@
 - Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
 
 ---
+---
+---
 
 # SCP Additions 3.0.7 — Hotfix
 

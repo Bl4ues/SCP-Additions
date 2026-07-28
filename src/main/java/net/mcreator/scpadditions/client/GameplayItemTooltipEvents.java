@@ -30,8 +30,11 @@ public final class GameplayItemTooltipEvents {
         String path = id.getPath();
 
         // SCP artifacts, containment objects and spawn eggs use the high-rarity
-        // purple name color. Ordinary facility architecture remains unchanged.
-        if (path.startsWith("scp_") && !tooltip.isEmpty()) {
+        // purple name color. Ordinary facility props remain common even when
+        // their registry path names the SCP they reference.
+        if (path.startsWith("scp_")
+                && !"scp_914_usage_notice".equals(path)
+                && !tooltip.isEmpty()) {
             tooltip.set(0, tooltip.get(0).copy().withStyle(ChatFormatting.LIGHT_PURPLE));
         }
 

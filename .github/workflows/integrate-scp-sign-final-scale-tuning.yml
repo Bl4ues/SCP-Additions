@@ -1,0 +1,41 @@
+name: Integrate SCP Sign Final Scale Tuning
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.head_ref == 'fix/scp-sign-final-scale-tuning'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/scp-sign-final-scale-tuning
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply final scale tuning
+        run: |
+          python3 scripts/apply_scp_sign_final_scale_tuning.py
+          rm scripts/apply_scp_sign_final_scale_tuning.py
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Commit final branch state
+        run: |
+          git add -A
+          git commit -m "Fine-tune SCP sign scale and trait alignment [skip ci]"
+          git push origin HEAD:fix/scp-sign-final-scale-tuning

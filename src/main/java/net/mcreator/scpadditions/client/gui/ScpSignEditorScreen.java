@@ -42,17 +42,17 @@ public final class ScpSignEditorScreen extends Screen {
     private static final int TEXT_PRIMARY = 0xFFE4E8EA;
     private static final int TEXT_MUTED = 0xFF879097;
     private static final int PREVIEW_TEXT = 0xFF000000;
-    private static final float FONT_HEIGHT = 7.0F;
+    private static final float FONT_HEIGHT = 7.5F;
     private static final int TEXT_FIELD_Y_OFFSET = 5;
 
     private static final ImageArea CLEARANCE =
-            new ImageArea(774, 85, 74, 52);
+            new ImageArea(778, 85, 66, 47);
     private static final ImageArea SCP_NUMBER =
-            new ImageArea(64, 257, 382, 72);
+            new ImageArea(64, 261, 370, 64);
     private static final ImageArea CONTAINMENT =
-            new ImageArea(65, 340, 380, 46);
+            new ImageArea(65, 343, 365, 40);
     private static final ImageArea ANOMALY =
-            new ImageArea(522, 306, 363, 28);
+            new ImageArea(528, 299, 351, 23);
     private static final ImageArea[] TRAITS = {
             new ImageArea(473, 375, 167, 164),
             new ImageArea(622, 375, 166, 164),
@@ -709,7 +709,7 @@ public final class ScpSignEditorScreen extends Screen {
             int iconX = getX() + 3;
             for (ScpSignHazards.Option option : selected) {
                 drawSmallIcon(graphics, option.texture(), iconX,
-                        getY() + 1, 18);
+                        getY() - 1, 18);
                 iconX += 20;
             }
             int textX = selected.isEmpty() ? getX() + 7 : iconX + 2;
@@ -763,12 +763,12 @@ public final class ScpSignEditorScreen extends Screen {
                         Math.max(1, getWidth() - ICON_SIZE - 31));
                 graphics.drawString(font, ScpFonts.roboto(clipped),
                         getX() + ICON_SIZE + 7,
-                        rowY + (ROW_HEIGHT - 8) / 2, textColor, false);
+                        rowY + (ROW_HEIGHT - 8) / 2 + 2, textColor, false);
                 if (isSelected) {
                     graphics.drawCenteredString(font,
                             ScpFonts.roboto(Integer.toString(selectedIndex + 1)),
                             getX() + getWidth() - 12,
-                            rowY + (ROW_HEIGHT - 8) / 2, ACCENT_TEXT);
+                            rowY + (ROW_HEIGHT - 8) / 2 + 2, ACCENT_TEXT);
                 }
             }
 

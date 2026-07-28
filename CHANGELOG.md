@@ -66,6 +66,7 @@
 - Added the Core Room Sign and Door Sign;
 - Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
 - Upgraded the SCP Sign with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass;
+- Fine-tuned the SCP Sign typography and Anomaly Trait selector alignment against direct SCP Unity comparisons.
 
 ## Facility construction
 

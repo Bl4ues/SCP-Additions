@@ -1,0 +1,35 @@
+name: Run Wall Support Follow-up
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.head_ref == 'fix/wall-mounted-support-and-sign-font'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/wall-mounted-support-and-sign-font
+          fetch-depth: 0
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Apply targeted follow-up
+        run: |
+          python3 scripts/fix_wall_support_followup.py
+          rm scripts/fix_wall_support_followup.py
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit final state
+        run: |
+          git add -A
+          git commit -m "Correct wall-mounted button targeting [skip ci]"
+          git push origin HEAD:fix/wall-mounted-support-and-sign-font

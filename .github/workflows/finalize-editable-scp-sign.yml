@@ -42,15 +42,8 @@ jobs:
 
           path = Path('src/main/java/net/mcreator/scpadditions/client/gui/ScpSignEditorScreen.java')
           text = path.read_text(encoding='utf-8')
-          old = '''            if (option.isNone() || !resourceExists(option.texture())) continue;
-              drawHazard(graphics, option.texture(), HAZARDS[slot]);'''
-          new = '''            ResourceLocation texture = option.texture();
-              if (!resourceExists(texture)) {
-                  texture = ScpSignHazards.NONE.texture();
-              }
-              if (resourceExists(texture)) {
-                  drawHazard(graphics, texture, HAZARDS[slot]);
-              }'''
+          old = "if (option.isNone() || !resourceExists(option.texture())) continue;\n            drawHazard(graphics, option.texture(), HAZARDS[slot]);"
+          new = "ResourceLocation texture = option.texture();\n            if (!resourceExists(texture)) {\n                texture = ScpSignHazards.NONE.texture();\n            }\n            if (resourceExists(texture)) {\n                drawHazard(graphics, texture, HAZARDS[slot]);\n            }"
           if old not in text:
               raise SystemExit('Expected SCP sign preview lines were not found')
           path.write_text(text.replace(old, new, 1), encoding='utf-8')

@@ -22,9 +22,8 @@ import java.util.WeakHashMap;
 
 /**
  * Shared support contract for facility objects whose visible model is mounted
- * on a wall. Most blocks can react to a direct neighbour update themselves;
- * offset Unity buttons, readers, signs and TVs need this nearby scan because
- * their logical block position is not the cell in which the model appears.
+ * on a wall. Offset Unity buttons, readers and large props need a nearby scan
+ * because their logical block is not always the cell in which the model appears.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -43,15 +42,29 @@ public final class WallMountedSupportEvents {
                 level, supportPos, facing);
     }
 
-    public static boolean hasRaisedWallSupport(LevelReader level, BlockPos pos,
+    /** Checks every visible cell occupied by a large wall-mounted prop. */
+    public static boolean hasLargePropWallSupport(LevelReader level,
+            BlockPos controllerPos, FacilityLargePropStructure.Kind kind,
             Direction facing) {
-        return hasWallSupport(level, pos.below(), facing);
+        if (facing == null || facing.getAxis() == Direction.Axis.Y) return false;
+
+        if (kind == FacilityLargePropStructure.Kind.TV
+                && !hasWallSupport(level, controllerPos, facing)) {
+            return false;
+        }
+        for (FacilityPropPartBlock.Part part :
+                FacilityPropPartBlock.Part.forKind(kind)) {
+            BlockPos visualCell = FacilityLargePropStructure.partPosition(
+                    controllerPos, facing, part);
+            if (!hasWallSupport(level, visualCell, facing)) return false;
+        }
+        return true;
     }
 
     @SubscribeEvent
     public static void onNearbyNeighborUpdate(BlockEvent.NeighborNotifyEvent event) {
         if (event.getLevel() instanceof ServerLevel level) {
-            validateAround(level, event.getPos());
+            queueScan(level, event.getPos());
         }
     }
 
@@ -92,9 +105,9 @@ public final class WallMountedSupportEvents {
     }
 
     private static void validateAround(ServerLevel level, BlockPos source) {
-        for (int dx = -2; dx <= 2; dx++) {
-            for (int dy = -1; dy <= 2; dy++) {
-                for (int dz = -2; dz <= 2; dz++) {
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -3; dz <= 3; dz++) {
                     BlockPos candidate = source.offset(dx, dy, dz);
                     BlockState state = level.getBlockState(candidate);
                     if (!isTrackedWallObject(state.getBlock())) continue;
@@ -112,10 +125,17 @@ public final class WallMountedSupportEvents {
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         Block block = state.getBlock();
 
-        if (block == FacilityModule.SIGN_SUPPORT.get()
-                || block == FacilityModule.SCP_914_USAGE_NOTICE.get()
-                || block == FacilityModule.TV.get()) {
-            return hasRaisedWallSupport(level, pos, facing);
+        if (block == FacilityModule.SIGN_SUPPORT.get()) {
+            return hasLargePropWallSupport(level, pos,
+                    FacilityLargePropStructure.Kind.SIGN_SUPPORT, facing);
+        }
+        if (block == FacilityModule.SCP_914_USAGE_NOTICE.get()) {
+            return hasLargePropWallSupport(level, pos,
+                    FacilityLargePropStructure.Kind.SCP_914_NOTICE, facing);
+        }
+        if (block == FacilityModule.TV.get()) {
+            return hasLargePropWallSupport(level, pos,
+                    FacilityLargePropStructure.Kind.TV, facing);
         }
 
         if (isDoorButton(block)) {

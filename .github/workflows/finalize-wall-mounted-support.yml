@@ -1,0 +1,452 @@
+name: Finalize Wall Mounted Support
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/wall-mounted-support-and-sign-font
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply wall support and sign fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'{label}: expected block not found in {path}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Minecraft font providers resolve TTF files relative to assets/<ns>/font.
+          replace_once(
+              'src/main/resources/assets/scp_additions/font/noto_sans_bold.json',
+              '"file": "scp_additions:font/noto_sans_bold.ttf"',
+              '"file": "scp_additions:noto_sans_bold.ttf"',
+              'Noto provider path')
+
+          sign = 'src/main/java/net/mcreator/scpadditions/facility/ScpSignSupportBlock.java'
+          replace_once(sign,
+              'import net.minecraft.world.entity.player.Player;\n',
+              'import net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.entity.player.Player;\n',
+              'SCP sign living entity import')
+          replace_once(sign,
+              '''        boolean waterlogged = context.getLevel().getFluidState(
+                  context.getClickedPos()).getType() == Fluids.WATER;
+          return defaultBlockState().setValue(FACING, clickedFace)
+                  .setValue(WATERLOGGED, waterlogged);
+      }
+  ''',
+              '''        boolean waterlogged = context.getLevel().getFluidState(
+                  context.getClickedPos()).getType() == Fluids.WATER;
+          BlockState state = defaultBlockState().setValue(FACING, clickedFace)
+                  .setValue(WATERLOGGED, waterlogged);
+          return state.canSurvive(context.getLevel(), context.getClickedPos())
+                  ? state : null;
+      }
+  
+      @Override
+      public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level,
+              BlockPos pos) {
+          return WallMountedSupportEvents.hasRaisedWallSupport(
+                  level, pos, state.getValue(FACING));
+      }
+  ''',
+              'SCP sign placement support')
+          replace_once(sign,
+              '''        if (state.getValue(WATERLOGGED)) {
+              level.scheduleTick(pos, Fluids.WATER,
+                      Fluids.WATER.getTickDelay(level));
+          }
+          return super.updateShape(state, direction, neighbor, level, pos,
+                  neighborPos);
+  ''',
+              '''        if (state.getValue(WATERLOGGED)) {
+              level.scheduleTick(pos, Fluids.WATER,
+                      Fluids.WATER.getTickDelay(level));
+          }
+          if (!state.canSurvive(level, pos)) {
+              return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+          }
+          return super.updateShape(state, direction, neighbor, level, pos,
+                  neighborPos);
+  ''',
+              'SCP sign support loss')
+          replace_once(sign,
+              '''    @Override
+      public InteractionResult use(BlockState state, Level level, BlockPos pos,
+  ''',
+              '''    @Override
+      public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+              @Nullable LivingEntity placer, ItemStack stack) {
+          super.setPlacedBy(level, pos, state, placer, stack);
+          if (!level.isClientSide && placer instanceof ServerPlayer serverPlayer
+                  && level.getBlockEntity(pos)
+                          instanceof ScpSignSupportBlockEntity sign) {
+              ScpEntityNetwork.openScpSignScreen(serverPlayer, sign);
+          }
+      }
+  
+      @Override
+      public InteractionResult use(BlockState state, Level level, BlockPos pos,
+  ''',
+              'SCP sign automatic editor')
+
+          notice = 'src/main/java/net/mcreator/scpadditions/facility/Scp914UsageNoticeBlock.java'
+          replace_once(notice,
+              '''        boolean waterlogged = context.getLevel().getFluidState(
+                  context.getClickedPos()).getType() == Fluids.WATER;
+          return defaultBlockState().setValue(FACING, clickedFace)
+                  .setValue(WATERLOGGED, waterlogged);
+      }
+  ''',
+              '''        boolean waterlogged = context.getLevel().getFluidState(
+                  context.getClickedPos()).getType() == Fluids.WATER;
+          BlockState state = defaultBlockState().setValue(FACING, clickedFace)
+                  .setValue(WATERLOGGED, waterlogged);
+          return state.canSurvive(context.getLevel(), context.getClickedPos())
+                  ? state : null;
+      }
+  
+      @Override
+      public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level,
+              BlockPos pos) {
+          return WallMountedSupportEvents.hasRaisedWallSupport(
+                  level, pos, state.getValue(FACING));
+      }
+  ''',
+              '914 notice placement support')
+          replace_once(notice,
+              '''        if (state.getValue(WATERLOGGED)) {
+              level.scheduleTick(pos, Fluids.WATER,
+                      Fluids.WATER.getTickDelay(level));
+          }
+          return super.updateShape(state, direction, neighbor, level, pos,
+                  neighborPos);
+  ''',
+              '''        if (state.getValue(WATERLOGGED)) {
+              level.scheduleTick(pos, Fluids.WATER,
+                      Fluids.WATER.getTickDelay(level));
+          }
+          if (!state.canSurvive(level, pos)) {
+              return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+          }
+          return super.updateShape(state, direction, neighbor, level, pos,
+                  neighborPos);
+  ''',
+              '914 notice support loss')
+
+          facility_sign = 'src/main/java/net/mcreator/scpadditions/facility/FacilitySignBlock.java'
+          replace_once(facility_sign,
+              '''        boolean waterlogged = context.getLevel().getFluidState(
+                  context.getClickedPos()).getType() == Fluids.WATER;
+          return defaultBlockState()
+                  .setValue(FACING, clickedFace)
+                  .setValue(WATERLOGGED, waterlogged);
+      }
+  ''',
+              '''        boolean waterlogged = context.getLevel().getFluidState(
+                  context.getClickedPos()).getType() == Fluids.WATER;
+          BlockState state = defaultBlockState()
+                  .setValue(FACING, clickedFace)
+                  .setValue(WATERLOGGED, waterlogged);
+          return state.canSurvive(context.getLevel(), context.getClickedPos())
+                  ? state : null;
+      }
+  
+      @Override
+      public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level,
+              BlockPos pos) {
+          return WallMountedSupportEvents.hasWallSupport(
+                  level, pos, state.getValue(FACING));
+      }
+  ''',
+              'facility sign placement support')
+          replace_once(facility_sign,
+              '''        if (state.getValue(WATERLOGGED)) {
+              level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+          }
+          return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
+  ''',
+              '''        if (state.getValue(WATERLOGGED)) {
+              level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+          }
+          if (!state.canSurvive(level, pos)) {
+              return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+          }
+          return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
+  ''',
+              'facility sign support loss')
+
+          module = 'src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java'
+          replace_once(module,
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction clickedFace = context.getClickedFace();
+              if (clickedFace.getAxis() == Direction.Axis.Y) return null;
+              boolean waterlogged = context.getLevel().getFluidState(
+                      context.getClickedPos()).getType() == Fluids.WATER;
+              return defaultBlockState().setValue(FACING, clickedFace)
+                      .setValue(WATERLOGGED, waterlogged);
+          }
+      }
+  
+      private static final class WallLightBlock extends HorizontalWaterloggedPropBlock {
+  ''',
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction clickedFace = context.getClickedFace();
+              if (clickedFace.getAxis() == Direction.Axis.Y) return null;
+              boolean waterlogged = context.getLevel().getFluidState(
+                      context.getClickedPos()).getType() == Fluids.WATER;
+              BlockState state = defaultBlockState().setValue(FACING, clickedFace)
+                      .setValue(WATERLOGGED, waterlogged);
+              return state.canSurvive(context.getLevel(), context.getClickedPos())
+                      ? state : null;
+          }
+  
+          @Override
+          public boolean canSurvive(BlockState state, LevelReader level,
+                  BlockPos pos) {
+              return WallMountedSupportEvents.hasWallSupport(
+                      level, pos, state.getValue(FACING));
+          }
+  
+          @Override
+          public BlockState updateShape(BlockState state, Direction direction,
+                  BlockState neighbor, LevelAccessor level, BlockPos pos,
+                  BlockPos neighborPos) {
+              if (!state.canSurvive(level, pos)) {
+                  return Blocks.AIR.defaultBlockState();
+              }
+              return super.updateShape(state, direction, neighbor, level, pos,
+                      neighborPos);
+          }
+      }
+  
+      private static final class WallLightBlock extends WallMountedWaterloggedPropBlock {
+  ''',
+              'shared wall-mounted prop support')
+
+          replace_once(module,
+              '''        @Override
+          public VoxelShape getShape(BlockState state, BlockGetter level,
+                  BlockPos pos, CollisionContext context) {
+  ''',
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              BlockState state = super.getStateForPlacement(context);
+              if (state == null || upper) return state;
+              BlockPos upperPos = context.getClickedPos().above();
+              if (!context.getLevel().getBlockState(upperPos).canBeReplaced()) {
+                  return null;
+              }
+              Direction facing = state.getValue(FACING);
+              BlockPos upperSupport = upperPos.relative(facing.getOpposite());
+              return context.getLevel().getBlockState(upperSupport).isFaceSturdy(
+                      context.getLevel(), upperSupport, facing) ? state : null;
+          }
+  
+          @Override
+          public boolean canSurvive(BlockState state, LevelReader level,
+                  BlockPos pos) {
+              if (upper) {
+                  return level.getBlockState(pos.below()).is(WALLLIGHT.get());
+              }
+              return super.canSurvive(state, level, pos);
+          }
+  
+          @Override
+          public VoxelShape getShape(BlockState state, BlockGetter level,
+                  BlockPos pos, CollisionContext context) {
+  ''',
+              'wall light two-block support')
+
+          replace_once(module,
+              '''                level.setBlock(pos.above(), WALLLIGHT_2.get().defaultBlockState()
+                          .setValue(FACING, state.getValue(FACING)), Block.UPDATE_ALL);
+  ''',
+              '''                boolean upperWaterlogged = level.getFluidState(pos.above())
+                          .getType() == Fluids.WATER;
+                  level.setBlock(pos.above(), WALLLIGHT_2.get().defaultBlockState()
+                          .setValue(FACING, state.getValue(FACING))
+                          .setValue(WATERLOGGED, upperWaterlogged), Block.UPDATE_ALL);
+  ''',
+              'wall light upper waterlogging')
+
+          replace_once(module,
+              'private static final class TvBlock extends DirectionalBlock {',
+              'private static final class TvBlock extends HorizontalDirectionalBlock {',
+              'TV horizontal wall type')
+          replace_once(module,
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction clickedFace = context.getClickedFace();
+              if (!FacilityLargePropStructure.canPlace(context.getLevel(),
+                      context.getClickedPos(),
+                      FacilityLargePropStructure.Kind.TV, clickedFace)) {
+                  return null;
+              }
+              return defaultBlockState().setValue(FACING, clickedFace);
+          }
+  ''',
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction clickedFace = context.getClickedFace();
+              if (clickedFace.getAxis() == Direction.Axis.Y
+                      || !FacilityLargePropStructure.canPlace(context.getLevel(),
+                      context.getClickedPos(),
+                      FacilityLargePropStructure.Kind.TV, clickedFace)) {
+                  return null;
+              }
+              BlockState state = defaultBlockState().setValue(FACING, clickedFace);
+              return state.canSurvive(context.getLevel(), context.getClickedPos())
+                      ? state : null;
+          }
+  
+          @Override
+          public boolean canSurvive(BlockState state, LevelReader level,
+                  BlockPos pos) {
+              return WallMountedSupportEvents.hasRaisedWallSupport(
+                      level, pos, state.getValue(FACING));
+          }
+  
+          @Override
+          public BlockState updateShape(BlockState state, Direction direction,
+                  BlockState neighbor, LevelAccessor level, BlockPos pos,
+                  BlockPos neighborPos) {
+              return state.canSurvive(level, pos) ? state
+                      : Blocks.AIR.defaultBlockState();
+          }
+  ''',
+              'TV wall support')
+
+          replace_once(module,
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              return defaultBlockState().setValue(FACING,
+                      context.getHorizontalDirection().getOpposite());
+          }
+  ''',
+              '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction clickedFace = context.getClickedFace();
+              return clickedFace.getAxis() == Direction.Axis.Y ? null
+                      : defaultBlockState().setValue(FACING, clickedFace);
+          }
+  ''',
+              'door button surface orientation')
+
+          structure = 'src/main/java/net/mcreator/scpadditions/facility/FacilityLargePropStructure.java'
+          replace_once(structure,
+              '''    private static Direction controllerFacing(BlockState state, Kind kind) {
+          return kind == Kind.TV
+                  ? state.getValue(FacilityPropPartBlock.FACING)
+                  : state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+      }
+  ''',
+              '''    private static Direction controllerFacing(BlockState state, Kind kind) {
+          return state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+      }
+  ''',
+              'horizontal TV controller facing')
+
+          button_events = 'src/main/java/net/mcreator/scpadditions/facility/DoorButtonPlacementEvents.java'
+          replace_once(button_events,
+              '''        if (clickedFace.getAxis() == Direction.Axis.Y) {
+              event.setCanceled(true);
+              event.setCancellationResult(InteractionResult.FAIL);
+              return;
+          }
+  ''',
+              '''        if (clickedFace.getAxis() == Direction.Axis.Y
+                  || !hit.getBlockPos().equals(hit.getBlockPos())
+                  || !player.level().getBlockState(hit.getBlockPos()).isFaceSturdy(
+                          player.level(), hit.getBlockPos(), clickedFace)) {
+              event.setCanceled(true);
+              event.setCancellationResult(InteractionResult.FAIL);
+              return;
+          }
+  ''',
+              'door button sturdy wall placement')
+
+          reader_item = 'src/main/java/net/mcreator/scpadditions/item/OffsetKeycardReaderItem.java'
+          replace_once(reader_item,
+              '''        Direction readerFacing = context.getClickedFace();
+          Direction screenLeft = readerFacing.getClockWise();
+  ''',
+              '''        Direction readerFacing = context.getClickedFace();
+          BlockPos supportPos = context.getClickedPos();
+          if (!context.getLevel().getBlockState(supportPos).isFaceSturdy(
+                  context.getLevel(), supportPos, readerFacing)) {
+              return InteractionResult.FAIL;
+          }
+          Direction screenLeft = readerFacing.getClockWise();
+  ''',
+              'keycard reader sturdy wall placement')
+
+          for button_file in (
+                  'src/main/java/net/mcreator/scpadditions/facility/LeftDoorButtons.java',
+                  'src/main/java/net/mcreator/scpadditions/facility/MirroredDoorButtons.java'):
+              p = Path(button_file)
+              text = p.read_text(encoding='utf-8')
+              old_player = '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              return defaultBlockState().setValue(FACING,
+                      context.getHorizontalDirection().getOpposite());
+          }
+  '''
+              old_mixed = '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction face = context.getClickedFace();
+              Direction facing = face.getAxis().isHorizontal()
+                      ? face : context.getHorizontalDirection().getOpposite();
+              return defaultBlockState().setValue(FACING, facing);
+          }
+  '''
+              new = '''        @Override
+          public BlockState getStateForPlacement(BlockPlaceContext context) {
+              Direction face = context.getClickedFace();
+              return face.getAxis() == Direction.Axis.Y ? null
+                      : defaultBlockState().setValue(FACING, face);
+          }
+  '''
+              if old_player in text:
+                  text = text.replace(old_player, new, 1)
+              elif old_mixed in text:
+                  text = text.replace(old_mixed, new, 1)
+              else:
+                  raise SystemExit(f'button surface orientation missing in {button_file}')
+              p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Remove temporary workflow
+        run: rm .github/workflows/finalize-wall-mounted-support.yml
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Commit final state
+        run: |
+          git add -A
+          git commit -m "Fix wall-mounted support and SCP sign font [skip ci]"
+          git push origin HEAD:fix/wall-mounted-support-and-sign-font

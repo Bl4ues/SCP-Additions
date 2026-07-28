@@ -1160,9 +1160,8 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            Direction clickedFace = context.getClickedFace();
-            return clickedFace.getAxis() == Direction.Axis.Y ? null
-                    : defaultBlockState().setValue(FACING, clickedFace);
+            return defaultBlockState().setValue(FACING,
+                    context.getHorizontalDirection().getOpposite());
         }
 
         @Override
@@ -1389,8 +1388,9 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING,
-                    context.getHorizontalDirection().getOpposite());
+            Direction clickedFace = context.getClickedFace();
+            return clickedFace.getAxis() == Direction.Axis.Y ? null
+                    : defaultBlockState().setValue(FACING, clickedFace);
         }
 
         @Override

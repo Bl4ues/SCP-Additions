@@ -1,0 +1,41 @@
+name: Apply Trait Preview And Armor Fix
+
+on:
+  push:
+    branches:
+      - fix/trait-preview-and-armor-overlay
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/trait-preview-and-armor-overlay
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply targeted fixes
+        run: |
+          python3 scripts/apply_trait_preview_and_armor_fix.py
+          rm scripts/apply_trait_preview_and_armor_fix.py
+          rm .github/workflows/apply-trait-preview-and-armor-fix.yml
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Commit final branch state
+        run: |
+          git add -A
+          git commit -m "Refine trait previews and hide vanilla armor HUD [skip ci]"
+          git push origin HEAD:fix/trait-preview-and-armor-overlay

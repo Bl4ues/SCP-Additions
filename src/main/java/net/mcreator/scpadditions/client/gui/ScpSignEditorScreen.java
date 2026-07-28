@@ -1,7 +1,6 @@
 package net.mcreator.scpadditions.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
@@ -347,8 +346,7 @@ public final class ScpSignEditorScreen extends Screen {
 
     private void drawPreviewText(GuiGraphics graphics, String value,
             ImageArea area, boolean centered) {
-        Component component = ScpFonts.kokoro(value)
-                .withStyle(ChatFormatting.BOLD);
+        Component component = ScpFonts.scpSign(value);
         int textWidth = Math.max(1, font.width(component));
         float scale = Math.min(area.width() / (float) textWidth,
                 area.height() / 9.0F);

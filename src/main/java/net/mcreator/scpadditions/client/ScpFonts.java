@@ -14,8 +14,8 @@ public final class ScpFonts {
             new ResourceLocation("scp_additions", "anonymous_pro");
     public static final ResourceLocation JURA =
             new ResourceLocation("scp_additions", "jura");
-    public static final ResourceLocation KOKORO =
-            new ResourceLocation("scp_additions", "kokoro");
+    public static final ResourceLocation NOTO_SANS_BOLD =
+            new ResourceLocation("scp_additions", "noto_sans_bold");
 
     private ScpFonts() {
     }
@@ -50,8 +50,8 @@ public final class ScpFonts {
         return custom(text, JURA);
     }
 
-    public static MutableComponent kokoro(String text) {
-        return custom(text, KOKORO);
+    public static MutableComponent scpSign(String text) {
+        return custom(text, NOTO_SANS_BOLD);
     }
 
     private static MutableComponent custom(String text, ResourceLocation font) {

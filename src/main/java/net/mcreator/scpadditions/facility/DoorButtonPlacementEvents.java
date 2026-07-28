@@ -44,7 +44,9 @@ public final class DoorButtonPlacementEvents {
 
         BlockHitResult hit = event.getHitVec();
         Direction clickedFace = hit.getDirection();
-        if (clickedFace.getAxis() == Direction.Axis.Y) {
+        if (clickedFace.getAxis() == Direction.Axis.Y
+                || !player.level().getBlockState(hit.getBlockPos()).isFaceSturdy(
+                        player.level(), hit.getBlockPos(), clickedFace)) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
             return;

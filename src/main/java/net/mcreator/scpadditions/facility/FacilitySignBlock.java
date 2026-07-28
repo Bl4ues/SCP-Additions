@@ -84,9 +84,18 @@ public final class FacilitySignBlock extends BaseEntityBlock
         if (clickedFace.getAxis() == Direction.Axis.Y) return null;
         boolean waterlogged = context.getLevel().getFluidState(
                 context.getClickedPos()).getType() == Fluids.WATER;
-        return defaultBlockState()
+        BlockState state = defaultBlockState()
                 .setValue(FACING, clickedFace)
                 .setValue(WATERLOGGED, waterlogged);
+        return state.canSurvive(context.getLevel(), context.getClickedPos())
+                ? state : null;
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state,
+            net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return WallMountedSupportEvents.hasWallSupport(
+                level, pos, state.getValue(FACING));
     }
 
     @Override
@@ -111,6 +120,9 @@ public final class FacilitySignBlock extends BaseEntityBlock
             BlockPos neighborPos) {
         if (state.getValue(WATERLOGGED)) {
             level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        }
+        if (!state.canSurvive(level, pos)) {
+            return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
         }
         return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }

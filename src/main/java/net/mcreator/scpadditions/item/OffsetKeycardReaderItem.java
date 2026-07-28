@@ -54,6 +54,11 @@ public final class OffsetKeycardReaderItem extends BlockItem {
         BlockPos visualPosition = originalPlacement.getClickedPos();
 
         Direction readerFacing = context.getClickedFace();
+        BlockPos supportPos = context.getClickedPos();
+        if (!context.getLevel().getBlockState(supportPos).isFaceSturdy(
+                context.getLevel(), supportPos, readerFacing)) {
+            return InteractionResult.FAIL;
+        }
         Direction screenLeft = readerFacing.getClockWise();
 
         Vec3 clickedBlockCenter = Vec3.atCenterOf(context.getClickedPos());

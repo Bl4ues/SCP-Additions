@@ -42,16 +42,17 @@ public final class ScpSignEditorScreen extends Screen {
     private static final int TEXT_PRIMARY = 0xFFE4E8EA;
     private static final int TEXT_MUTED = 0xFF879097;
     private static final int PREVIEW_TEXT = 0xFF000000;
-    private static final float FONT_HEIGHT = 8.0F;
+    private static final float FONT_HEIGHT = 7.0F;
+    private static final int TEXT_FIELD_Y_OFFSET = 5;
 
     private static final ImageArea CLEARANCE =
-            new ImageArea(783, 82, 57, 43);
+            new ImageArea(774, 85, 74, 52);
     private static final ImageArea SCP_NUMBER =
-            new ImageArea(64, 265, 355, 56);
+            new ImageArea(64, 257, 382, 72);
     private static final ImageArea CONTAINMENT =
-            new ImageArea(65, 346, 354, 34);
+            new ImageArea(65, 340, 380, 46);
     private static final ImageArea ANOMALY =
-            new ImageArea(535, 294, 343, 20);
+            new ImageArea(522, 306, 363, 28);
     private static final ImageArea[] TRAITS = {
             new ImageArea(473, 375, 167, 164),
             new ImageArea(622, 375, 166, 164),
@@ -100,7 +101,8 @@ public final class ScpSignEditorScreen extends Screen {
         int fieldWidth = 220;
         int y = panelTop + 48;
 
-        scpNumberField = configureField(new EditBox(font, fieldX, y,
+        scpNumberField = configureField(new EditBox(font, fieldX,
+                y + TEXT_FIELD_Y_OFFSET,
                 fieldWidth, 20, Component.translatable(
                 "screen.scp_additions.scp_sign_number")));
         scpNumberField.setMaxLength(ScpSignData.MAX_SCP_NUMBER_LENGTH);
@@ -120,7 +122,8 @@ public final class ScpSignEditorScreen extends Screen {
                 value -> updateCustomVisibility()));
         y += 27;
 
-        customContainmentField = configureField(new EditBox(font, fieldX, y,
+        customContainmentField = configureField(new EditBox(font, fieldX,
+                y + TEXT_FIELD_Y_OFFSET,
                 fieldWidth, 20, Component.translatable(
                 "screen.scp_additions.scp_sign_custom_containment")));
         customContainmentField.setMaxLength(
@@ -145,7 +148,8 @@ public final class ScpSignEditorScreen extends Screen {
                 value -> updateCustomVisibility()));
         y += 27;
 
-        customAnomalyField = configureField(new EditBox(font, fieldX, y,
+        customAnomalyField = configureField(new EditBox(font, fieldX,
+                y + TEXT_FIELD_Y_OFFSET,
                 fieldWidth, 20, Component.translatable(
                 "screen.scp_additions.scp_sign_custom_anomaly")));
         customAnomalyField.setMaxLength(ScpSignData.MAX_ANOMALY_TYPE_LENGTH);

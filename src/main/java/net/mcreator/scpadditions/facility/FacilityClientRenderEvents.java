@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.FacilitySignBlockEntityRenderer;
+import net.mcreator.scpadditions.client.Scp914UsageNoticeBlockEntityRenderer;
 import net.mcreator.scpadditions.client.ScpSignSupportBlockEntityRenderer;
 import net.mcreator.scpadditions.client.WetFloorBlockEntityRenderer;
 
@@ -30,6 +31,9 @@ public final class FacilityClientRenderEvents {
                     FacilityModule.CORE_ROOM_SIGN.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.DOOR_SIGN.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(
+                    FacilityModule.SCP_914_USAGE_NOTICE.get(),
+                    RenderType.translucent());
 
             ItemBlockRenderTypes.setRenderLayer(
                     MirroredDoorButtons.BUTTON_LOCKED.get(), RenderType.cutout());
@@ -56,5 +60,8 @@ public final class FacilityClientRenderEvents {
         event.registerBlockEntityRenderer(
                 FacilityModule.SCP_SIGN_BLOCK_ENTITY.get(),
                 ScpSignSupportBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(
+                FacilityModule.SCP_914_NOTICE_BLOCK_ENTITY.get(),
+                Scp914UsageNoticeBlockEntityRenderer::new);
     }
 }

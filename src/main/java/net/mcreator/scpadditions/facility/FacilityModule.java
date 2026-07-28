@@ -130,6 +130,8 @@ public final class FacilityModule {
     public static final RegistryObject<Block> FIRE_EXTINGUISHER = registerBlock(
             "fire_extinguisher", FireExtinguisherBlock::new, true);
     public static final RegistryObject<Block> SIGN_SUPPORT = registerBlock("sign_support", ScpSignSupportBlock::new, true);
+    public static final RegistryObject<Block> SCP_914_USAGE_NOTICE = registerBlock(
+            "scp_914_usage_notice", Scp914UsageNoticeBlock::new, true);
     public static final RegistryObject<Block> CORE_ROOM_SIGN = registerSign(
             "core_room_sign", FacilitySignBlock.SignType.CORE_ROOM);
     public static final RegistryObject<Block> DOOR_SIGN = registerSign(
@@ -156,6 +158,11 @@ public final class FacilityModule {
                     "scp_sign_support", () -> BlockEntityType.Builder.of(
                             ScpSignSupportBlockEntity::new,
                             SIGN_SUPPORT.get()).build(null));
+    public static final RegistryObject<BlockEntityType<Scp914UsageNoticeBlockEntity>>
+            SCP_914_NOTICE_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
+                    "scp_914_usage_notice", () -> BlockEntityType.Builder.of(
+                            Scp914UsageNoticeBlockEntity::new,
+                            SCP_914_USAGE_NOTICE.get()).build(null));
 
     // Button states. Only LOCKED and CLOSED are public items.
     public static final RegistryObject<Block> BUTTON_LOCKED = registerButton("button_locked", ButtonState.LOCKED, true);
@@ -307,6 +314,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "fire_extinguisher");
         addFacilityCreativeItem(props, "wet_floor");
         addFacilityCreativeItem(props, "water_faucet");
+        addFacilityCreativeItem(props, "scp_914_usage_notice");
         addFacilityCreativeItem(props, "tv");
         addFacilityCreativeItem(props, "trashbin");
         addUBlockCreativeItem(props, "vent_open");
@@ -481,6 +489,7 @@ public final class FacilityModule {
                 || "emergency_button".equals(path)
                 || "fire_extinguisher".equals(path)
                 || "water_faucet".equals(path)
+                || "scp_914_usage_notice".equals(path)
                 || "trashbin".equals(path);
     }
 

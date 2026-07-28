@@ -7,6 +7,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.Scp079DecisionLog;
 import net.mcreator.scpadditions.facility.FacilitySignBlockEntity;
+import net.mcreator.scpadditions.facility.ScpSignSupportBlockEntity;
 import net.mcreator.scpadditions.network.Scp079DecisionPacket.DecisionEntry;
 import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
 import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
@@ -108,6 +109,14 @@ public final class ScpEntityNetwork {
                 FacilitySignClipboardPacket::encode,
                 FacilitySignClipboardPacket::decode,
                 FacilitySignClipboardPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignOpenScreenPacket.class,
+                ScpSignOpenScreenPacket::encode,
+                ScpSignOpenScreenPacket::decode,
+                ScpSignOpenScreenPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignSavePacket.class,
+                ScpSignSavePacket::encode,
+                ScpSignSavePacket::decode,
+                ScpSignSavePacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -257,5 +266,13 @@ public final class ScpEntityNetwork {
                 PacketDistributor.PLAYER.with(() -> player),
                 new FacilitySignOpenScreenPacket(
                         sign.getBlockPos(), sign.type(), sign.entries()));
+    }
+
+    public static void openScpSignScreen(ServerPlayer player,
+            ScpSignSupportBlockEntity sign) {
+        if (player == null || sign == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new ScpSignOpenScreenPacket(sign.getBlockPos(), sign.data()));
     }
 }

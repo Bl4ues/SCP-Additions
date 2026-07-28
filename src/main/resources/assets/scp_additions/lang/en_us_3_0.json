@@ -143,5 +143,15 @@
   "block.scp_additions.sl_2_wall_bot": "Wall Bottom",
   "block.scp_additions.sl_2_wall_mid": "Wall Middle",
   "block.scp_additions.sl_2_wall_top": "Wall Top",
-  "block.scp_additions.wet_floor": "Wet Floor Sign"
+  "block.scp_additions.wet_floor": "Wet Floor Sign",
+  "tooltip.scp_additions.sign_support_primary": "Editable SCP containment information sign.",
+  "tooltip.scp_additions.sign_support_secondary": "Use a Screwdriver",
+  "screen.scp_additions.scp_sign_editor": "SCP SIGN EDITOR",
+  "screen.scp_additions.scp_sign_number": "SCP Number",
+  "screen.scp_additions.scp_sign_containment": "Containment Class",
+  "screen.scp_additions.scp_sign_custom_containment": "Custom Containment Class",
+  "screen.scp_additions.scp_sign_clearance": "Clearance Level",
+  "screen.scp_additions.scp_sign_anomaly": "Anomaly Type",
+  "screen.scp_additions.scp_sign_custom_anomaly": "Custom Anomaly Type",
+  "screen.scp_additions.scp_sign_hazard": "Hazard Slot %s"
 }

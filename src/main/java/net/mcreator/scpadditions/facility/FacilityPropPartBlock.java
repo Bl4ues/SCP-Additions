@@ -3,8 +3,11 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -27,10 +30,13 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -158,6 +164,27 @@ public final class FacilityPropPartBlock extends Block
         FacilityLargePropStructure.ensureParts(level, controller,
                 part.kind(), facing);
         level.scheduleTick(pos, this, 40);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+            Player player, InteractionHand hand, BlockHitResult hit) {
+        Part part = state.getValue(PART);
+        if (part.kind() != FacilityLargePropStructure.Kind.SIGN_SUPPORT
+                || KeycardReaderInteractionEvents.screwdriver(player).isEmpty()) {
+            return InteractionResult.PASS;
+        }
+        BlockPos controller = FacilityLargePropStructure.controllerPosition(
+                pos, state);
+        if (!FacilityLargePropStructure.isValidPart(level, pos, state)) {
+            return InteractionResult.PASS;
+        }
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(controller)
+                        instanceof ScpSignSupportBlockEntity sign) {
+            ScpEntityNetwork.openScpSignScreen(serverPlayer, sign);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override

@@ -86,9 +86,14 @@ public final class ScpSignSupportBlockEntityRenderer
         for (int slot = 0; slot < ScpSignData.HAZARD_SLOTS; slot++) {
             ScpSignHazards.Option option = ScpSignHazards.option(
                     data.hazards().get(slot));
-            if (option.isNone() || !resourceExists(option.texture())) continue;
-            renderImage(option.texture(), HAZARDS[slot], CONTENT_Z,
-                    poseStack, buffer, packedLight);
+            ResourceLocation texture = option.texture();
+            if (!resourceExists(texture)) {
+                texture = ScpSignHazards.NONE.texture();
+            }
+            if (resourceExists(texture)) {
+                renderImage(texture, HAZARDS[slot], CONTENT_Z,
+                        poseStack, buffer, packedLight);
+            }
         }
 
         renderText(String.format("%02d", data.clearanceLevel()), CLEARANCE,

@@ -711,18 +711,57 @@ public final class FacilityModule {
             if (clickedFace.getAxis() == Direction.Axis.Y) return null;
             boolean waterlogged = context.getLevel().getFluidState(
                     context.getClickedPos()).getType() == Fluids.WATER;
-            return defaultBlockState().setValue(FACING, clickedFace)
+            BlockState state = defaultBlockState().setValue(FACING, clickedFace)
                     .setValue(WATERLOGGED, waterlogged);
+            return state.canSurvive(context.getLevel(), context.getClickedPos())
+                    ? state : null;
+        }
+
+        @Override
+        public boolean canSurvive(BlockState state, LevelReader level,
+                BlockPos pos) {
+            return WallMountedSupportEvents.hasWallSupport(
+                    level, pos, state.getValue(FACING));
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction,
+                BlockState neighbor, LevelAccessor level, BlockPos pos,
+                BlockPos neighborPos) {
+            BlockState updated = super.updateShape(state, direction, neighbor,
+                    level, pos, neighborPos);
+            return state.canSurvive(level, pos) ? updated
+                    : Blocks.AIR.defaultBlockState();
         }
     }
 
-    private static final class WallLightBlock extends HorizontalWaterloggedPropBlock {
+    private static final class WallLightBlock extends WallMountedWaterloggedPropBlock {
         private final boolean upper;
 
         private WallLightBlock(boolean upper) {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F).lightLevel(state -> 15));
             this.upper = upper;
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            BlockState state = super.getStateForPlacement(context);
+            if (state == null || upper) return state;
+            BlockPos upperPos = context.getClickedPos().above();
+            if (!context.getLevel().getBlockState(upperPos).canBeReplaced()) {
+                return null;
+            }
+            Direction facing = state.getValue(FACING);
+            return WallMountedSupportEvents.hasWallSupport(
+                    context.getLevel(), upperPos, facing) ? state : null;
+        }
+
+        @Override
+        public boolean canSurvive(BlockState state, LevelReader level,
+                BlockPos pos) {
+            return upper ? level.getBlockState(pos.below()).is(WALLLIGHT.get())
+                    : super.canSurvive(state, level, pos);
         }
 
         @Override
@@ -758,8 +797,11 @@ public final class FacilityModule {
                 BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
             if (!upper && !level.isClientSide && level.getBlockState(pos.above()).canBeReplaced()) {
+                boolean upperWaterlogged = level.getFluidState(pos.above())
+                        .getType() == Fluids.WATER;
                 level.setBlock(pos.above(), WALLLIGHT_2.get().defaultBlockState()
-                        .setValue(FACING, state.getValue(FACING)), Block.UPDATE_ALL);
+                        .setValue(FACING, state.getValue(FACING))
+                        .setValue(WATERLOGGED, upperWaterlogged), Block.UPDATE_ALL);
             }
         }
 
@@ -991,7 +1033,7 @@ public final class FacilityModule {
         }
     }
 
-    private static final class TvBlock extends DirectionalBlock {
+    private static final class TvBlock extends HorizontalDirectionalBlock {
         private TvBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(1.0F, 10.0F).noOcclusion().randomTicks()
@@ -1007,12 +1049,23 @@ public final class FacilityModule {
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
             Direction clickedFace = context.getClickedFace();
-            if (!FacilityLargePropStructure.canPlace(context.getLevel(),
+            if (clickedFace.getAxis() == Direction.Axis.Y
+                    || !FacilityLargePropStructure.canPlace(context.getLevel(),
                     context.getClickedPos(),
                     FacilityLargePropStructure.Kind.TV, clickedFace)) {
                 return null;
             }
-            return defaultBlockState().setValue(FACING, clickedFace);
+            BlockState state = defaultBlockState().setValue(FACING, clickedFace);
+            return state.canSurvive(context.getLevel(), context.getClickedPos())
+                    ? state : null;
+        }
+
+        @Override
+        public boolean canSurvive(BlockState state, LevelReader level,
+                BlockPos pos) {
+            return WallMountedSupportEvents.hasLargePropWallSupport(level, pos,
+                    FacilityLargePropStructure.Kind.TV,
+                    state.getValue(FACING));
         }
 
         @Override
@@ -1107,8 +1160,9 @@ public final class FacilityModule {
 
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING,
-                    context.getHorizontalDirection().getOpposite());
+            Direction clickedFace = context.getClickedFace();
+            return clickedFace.getAxis() == Direction.Axis.Y ? null
+                    : defaultBlockState().setValue(FACING, clickedFace);
         }
 
         @Override

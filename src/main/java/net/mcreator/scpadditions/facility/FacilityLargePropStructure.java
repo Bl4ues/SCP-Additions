@@ -174,9 +174,7 @@ public final class FacilityLargePropStructure {
     }
 
     private static Direction controllerFacing(BlockState state, Kind kind) {
-        return kind == Kind.TV
-                ? state.getValue(FacilityPropPartBlock.FACING)
-                : state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        return state.getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     private static boolean isController(BlockState state, Kind kind) {

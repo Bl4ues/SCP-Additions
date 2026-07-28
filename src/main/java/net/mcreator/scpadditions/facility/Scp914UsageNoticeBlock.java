@@ -72,8 +72,18 @@ public final class Scp914UsageNoticeBlock extends BaseEntityBlock
         }
         boolean waterlogged = context.getLevel().getFluidState(
                 context.getClickedPos()).getType() == Fluids.WATER;
-        return defaultBlockState().setValue(FACING, clickedFace)
+        BlockState state = defaultBlockState().setValue(FACING, clickedFace)
                 .setValue(WATERLOGGED, waterlogged);
+        return state.canSurvive(context.getLevel(), context.getClickedPos())
+                ? state : null;
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state,
+            net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return WallMountedSupportEvents.hasLargePropWallSupport(level, pos,
+                FacilityLargePropStructure.Kind.SCP_914_NOTICE,
+                state.getValue(FACING));
     }
 
     @Override

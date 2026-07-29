@@ -28,6 +28,13 @@ jobs:
       - name: Apply elevator runtime refinements
         run: python .github/scripts/refine_core_room_elevator.py
 
+      - name: Normalize generated imports
+        run: |
+          file=src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java
+          if ! grep -q 'import net.minecraft.util.Mth;' "$file"; then
+            sed -i '/import net.minecraft.util.StringRepresentable;/a import net.minecraft.util.Mth;' "$file"
+          fi
+
       - name: Build
         run: |
           chmod +x gradlew

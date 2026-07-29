@@ -75,7 +75,7 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Root {
 		public Inventory inventory = new Inventory();
 		public Interactions interactions = new Interactions();
-		public Toggle hud = new Toggle();
+		public Hud hud = new Hud();
 		public Vitals vitals = new Vitals();
 		public Hunger hunger = new Hunger();
 		public Toggle blink = new Toggle();
@@ -93,7 +93,7 @@ public final class ScpAdditionsModulesConfig {
 		private Root normalize() {
 			if (inventory == null) inventory = new Inventory();
 			if (interactions == null) interactions = new Interactions();
-			if (hud == null) hud = new Toggle();
+			if (hud == null) hud = new Hud();
 			if (vitals == null) vitals = new Vitals();
 			if (hunger == null) hunger = new Hunger();
 			if (blink == null) blink = new Toggle();
@@ -107,6 +107,11 @@ public final class ScpAdditionsModulesConfig {
 
 	public static class Toggle {
 		public boolean enabled = true;
+	}
+
+	public static final class Hud extends Toggle {
+		@SerializedName("hide_active_effect_indicators")
+		public boolean hideActiveEffectIndicators = true;
 	}
 
 	public static final class Interactions extends Toggle {

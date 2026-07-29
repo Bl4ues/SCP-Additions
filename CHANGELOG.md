@@ -53,7 +53,8 @@
 - Added a default-enabled **Disable Hunger System** module that hides the vanilla hunger bar and converts food nutrition directly into health;
 - Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 15 seconds without damage;
 - Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration;
-- Made the custom health module hide both the vanilla heart display and armor bar while its replacement HUD is active.
+- Made the custom health module hide both the vanilla heart display and armor bar while its replacement HUD is active;
+- Added a default-enabled **Hide Active Effect Indicators** module that removes vanilla status-effect icons from the HUD while preserving inventory and SCP Conditions displays.
 
 ## Audio and presentation
 

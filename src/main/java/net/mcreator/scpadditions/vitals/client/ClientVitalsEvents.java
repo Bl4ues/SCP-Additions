@@ -29,6 +29,12 @@ public final class ClientVitalsEvents {
     public static void beforeOverlay(RenderGuiOverlayEvent.Pre event) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
+        if (InventoryModuleRuntimeState.hideActiveEffectIndicatorsForClient()
+                && event.getOverlay().id().equals(
+                        VanillaGuiOverlay.POTION_ICONS.id())) {
+            event.setCanceled(true);
+            return;
+        }
         if (InventoryModuleRuntimeState.hungerDisabledForClient()
                 && event.getOverlay().id().equals(
                         VanillaGuiOverlay.FOOD_LEVEL.id())) {

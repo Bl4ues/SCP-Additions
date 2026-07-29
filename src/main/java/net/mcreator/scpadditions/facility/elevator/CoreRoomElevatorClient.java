@@ -244,7 +244,7 @@ public final class CoreRoomElevatorClient {
         private static void renderCable(CoreRoomElevatorCarriageEntity entity,
                 boolean front, float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight) {
-            Vec3 attachment = entity.cableAttachment(front);
+            Vec3 attachment = entity.cableAttachment(front, partialTick);
             Vec3 origin = entity.cableOrigin(front, partialTick);
             double bottom = attachment.y;
             double top = origin.y;

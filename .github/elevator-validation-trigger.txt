@@ -1,1 +1,0 @@
-Validate the complete Core Room elevator integration before finalizing master.

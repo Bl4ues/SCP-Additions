@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -358,18 +359,27 @@ public final class CoreRoomElevatorModule {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos,
                 Player player, InteractionHand hand, BlockHitResult hit) {
+            Vec3 local = CoreRoomElevatorGeometry.worldToModelLocal(
+                    pos, state.getValue(FACING), hit.getLocation());
+            Vec3 upButton = new Vec3(14.64492D / 16.0D,
+                    21.25D / 16.0D, -16.69749D / 16.0D);
+            Vec3 downButton = new Vec3(14.64492D / 16.0D,
+                    19.25D / 16.0D, -16.69749D / 16.0D);
+            double upDistance = local.distanceToSqr(upButton);
+            double downDistance = local.distanceToSqr(downButton);
+            if (Math.min(upDistance, downDistance) > 0.32D * 0.32D) {
+                return InteractionResult.PASS;
+            }
             if (level.isClientSide) return InteractionResult.SUCCESS;
             if (!(player instanceof ServerPlayer serverPlayer)
                     || !(level instanceof ServerLevel serverLevel)) {
                 return InteractionResult.PASS;
             }
-            Vec3 local = CoreRoomElevatorGeometry.worldToModelLocal(
-                    pos, state.getValue(FACING), hit.getLocation());
-            ElevatorFoundation.TravelDirection direction = local.y >= 1.25D
+            ElevatorFoundation.TravelDirection direction =
+                    upDistance <= downDistance
                     ? ElevatorFoundation.TravelDirection.UP
                     : ElevatorFoundation.TravelDirection.DOWN;
-            return handleContextInteraction(serverLevel, pos,
-                    serverPlayer,
+            return handleContextInteraction(serverLevel, pos, serverPlayer,
                     direction == ElevatorFoundation.TravelDirection.UP
                             ? "elevator_station_up" : "elevator_station_down");
         }
@@ -388,11 +398,11 @@ public final class CoreRoomElevatorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            DoorVisualState door = level.getBlockEntity(pos)
-                    instanceof StationBlockEntity station
-                    ? station.doorState() : DoorVisualState.CLOSED;
+            boolean gateSolid = !(level.getBlockEntity(pos)
+                    instanceof StationBlockEntity station)
+                    || station.isGateCollisionSolid();
             return CoreRoomElevatorGeometry.stationCellShape(
-                    state.getValue(FACING), 0, 0, 0, door);
+                    state.getValue(FACING), 0, 0, 0, gateSolid);
         }
 
         @Override
@@ -643,11 +653,11 @@ public final class CoreRoomElevatorModule {
                 return CoreRoomElevatorGeometry.beamCellShape(facing,
                         part.localX(), part.localY(), part.localZ());
             }
-            DoorVisualState door = level.getBlockEntity(part.masterPos())
-                    instanceof StationBlockEntity station
-                    ? station.doorState() : DoorVisualState.CLOSED;
+            boolean gateSolid = !(level.getBlockEntity(part.masterPos())
+                    instanceof StationBlockEntity station)
+                    || station.isGateCollisionSolid();
             return CoreRoomElevatorGeometry.stationCellShape(facing,
-                    part.localX(), part.localY(), part.localZ(), door);
+                    part.localX(), part.localY(), part.localZ(), gateSolid);
         }
 
         @Override
@@ -776,9 +786,13 @@ public final class CoreRoomElevatorModule {
         private static final RawAnimation CLOSING_ANIM = RawAnimation.begin()
                 .thenPlay(ElevatorAssets.STATION_CLOSING);
 
+        private static final int DOOR_TICKS = 15;
+        private static final int COLLISION_THRESHOLD = DOOR_TICKS / 2;
+
         private final AnimatableInstanceCache cache =
                 GeckoLibUtil.createInstanceCache(this);
         private DoorVisualState doorState = DoorVisualState.CLOSED;
+        private int doorTicks = DOOR_TICKS;
         private boolean initialized;
 
         public StationBlockEntity(BlockPos pos, BlockState state) {
@@ -787,6 +801,10 @@ public final class CoreRoomElevatorModule {
 
         public static void tick(Level level, BlockPos pos, BlockState state,
                 StationBlockEntity blockEntity) {
+            if (level.isClientSide) {
+                blockEntity.advanceDoorClock();
+                return;
+            }
             if (!(level instanceof ServerLevel serverLevel)) return;
             if (!blockEntity.initialized) {
                 blockEntity.initialized = true;
@@ -795,15 +813,34 @@ public final class CoreRoomElevatorModule {
             DoorVisualState next = CoreRoomElevatorManager
                     .visualStateForStation(serverLevel, pos);
             blockEntity.setDoorState(next);
+            blockEntity.advanceDoorClock();
         }
 
         public DoorVisualState doorState() {
             return doorState;
         }
 
+        public boolean isGateCollisionSolid() {
+            return switch (doorState) {
+                case OPEN -> false;
+                case OPENING -> doorTicks < COLLISION_THRESHOLD;
+                case CLOSING -> doorTicks >= COLLISION_THRESHOLD;
+                default -> true;
+            };
+        }
+
+        private void advanceDoorClock() {
+            if ((doorState == DoorVisualState.OPENING
+                    || doorState == DoorVisualState.CLOSING)
+                    && doorTicks < DOOR_TICKS) {
+                doorTicks++;
+            }
+        }
+
         private void setDoorState(DoorVisualState state) {
             if (state == doorState) return;
             doorState = state;
+            doorTicks = 0;
             setChanged();
             if (level != null) {
                 level.sendBlockUpdated(worldPosition, getBlockState(),
@@ -832,6 +869,7 @@ public final class CoreRoomElevatorModule {
         protected void saveAdditional(CompoundTag tag) {
             super.saveAdditional(tag);
             tag.putByte("DoorState", (byte) doorState.ordinal());
+            tag.putInt("DoorTicks", doorTicks);
         }
 
         @Override
@@ -840,6 +878,9 @@ public final class CoreRoomElevatorModule {
             int value = tag.getByte("DoorState");
             doorState = value >= 0 && value < DoorVisualState.values().length
                     ? DoorVisualState.values()[value] : DoorVisualState.CLOSED;
+            doorTicks = tag.contains("DoorTicks")
+                    ? Mth.clamp(tag.getInt("DoorTicks"), 0, DOOR_TICKS)
+                    : DOOR_TICKS;
         }
 
         @Override

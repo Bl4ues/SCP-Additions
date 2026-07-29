@@ -73,11 +73,9 @@ public final class CoreRoomElevatorGeometry {
     }
 
     public static VoxelShape stationCellShape(Direction facing, int localX,
-            int localY, int localZ,
-            CoreRoomElevatorModule.DoorVisualState doorState) {
+            int localY, int localZ, boolean gateSolid) {
         List<AABB> boxes = new ArrayList<>(STATION_STATIC);
-        if (doorState == CoreRoomElevatorModule.DoorVisualState.CLOSED
-                || doorState == CoreRoomElevatorModule.DoorVisualState.CLOSING) {
+        if (gateSolid) {
             boxes.add(STATION_GATE);
         }
         return cellShape(boxes, facing, localX, localY, localZ);

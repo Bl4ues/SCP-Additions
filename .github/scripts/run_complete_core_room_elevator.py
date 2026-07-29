@@ -14,11 +14,21 @@ if match is None:
     raise RuntimeError("Unable to find the elevator integration payload prefix")
 
 prefix = match.group(1).replace(PLACEHOLDER, "")
+chunk_names = [
+    "00",
+    "01_0",
+    "01_1",
+    "01_2",
+    "01_3",
+    "02",
+    "03",
+    "04",
+]
 suffix = "".join(
-    (ROOT / f".github/scripts/elevator_payload_suffix_{index:02d}.txt")
+    (ROOT / f".github/scripts/elevator_payload_suffix_{name}.txt")
     .read_text(encoding="utf-8")
     .strip()
-    for index in range(5)
+    for name in chunk_names
 )
 payload = prefix + suffix
 if len(payload) != EXPECTED_LENGTH:

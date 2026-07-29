@@ -4,8 +4,6 @@ import com.bl4ues.scpinventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpinventory.network.ContextInteractPacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
-import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -23,129 +21,147 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.List;
 
+/** Selects and renders the nearest contextual interaction anchor. */
 public final class ContextPromptClient {
     private static final int ICON_SOURCE_SIZE = 128;
-    private static final int ICON_SIZE = 82;
+    private static final int BASE_ICON_SIZE = 82;
     private static final int TEXT_WHITE = 0xFFE8E8E8;
     private static final int TEXT_GRAY = 0xFFB2B3B3;
-    private static final float ACTION_TEXT_SCALE = 1.55F;
-    private static final float NAME_TEXT_SCALE = 1.85F;
+    private static final float BASE_ACTION_TEXT_SCALE = 1.55F;
+    private static final float BASE_NAME_TEXT_SCALE = 1.85F;
     private static final double MAX_CONTEXT_REACH = 6.0D;
     private static final double TARGET_STICKINESS_BONUS = 0.045D;
     private static final int CLICK_COOLDOWN_TICKS = 5;
 
     private static ContextTarget target;
-    private static boolean useWasDown = false;
-    private static int cooldownTicks = 0;
+    private static boolean useWasDown;
+    private static int cooldownTicks;
 
     private ContextPromptClient() {
     }
 
     public static void clientTick() {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || mc.screen != null
-                || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null
+                || minecraft.screen != null
+                || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(
+                        player)) {
             clear();
             useWasDown = false;
             cooldownTicks = 0;
             return;
         }
 
-        if (cooldownTicks > 0) {
-            cooldownTicks--;
-        }
-
+        if (cooldownTicks > 0) cooldownTicks--;
         if (PickupPromptClient.hasActiveTarget()) {
             clear();
-            useWasDown = mc.options.keyUse.isDown();
+            useWasDown = minecraft.options.keyUse.isDown();
             return;
         }
 
-        target = findContextTarget(mc, player);
-
-        boolean useDown = mc.options.keyUse.isDown();
-        boolean usePressedThisTick = useDown && !useWasDown;
+        target = findContextTarget(minecraft, player);
+        boolean useDown = minecraft.options.keyUse.isDown();
+        boolean rightClickPressed = useDown && !useWasDown;
         useWasDown = useDown;
-        boolean contextPressedThisTick = Keybinds.CONTEXT_INTERACT.consumeClick();
+        boolean contextPressed = Keybinds.CONTEXT_INTERACT.consumeClick();
 
-        if (target != null && cooldownTicks <= 0) {
-            boolean rightClickAccepted = usePressedThisTick && target.allowRightClick();
-            boolean contextKeyAccepted = contextPressedThisTick && target.allowE();
-            if (rightClickAccepted || contextKeyAccepted) {
-                ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(target.pos(), target.entityId(),
-                        target.entity(), Screen.hasShiftDown(), Screen.hasControlDown()));
-                cooldownTicks = CLICK_COOLDOWN_TICKS;
-                clear();
-            }
+        if (target != null && cooldownTicks <= 0
+                && ((rightClickPressed && target.allowRightClick())
+                || (contextPressed && target.allowE()))) {
+            ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
+                    target.pos(), target.entityId(), target.entity(),
+                    Screen.hasShiftDown(), Screen.hasControlDown(),
+                    target.interactionKey()));
+            cooldownTicks = CLICK_COOLDOWN_TICKS;
+            clear();
         }
     }
 
     public static boolean hasRightClickTarget() {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || mc.screen != null
-                || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null
+                || minecraft.screen != null
+                || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(
+                        player)
                 || PickupPromptClient.hasActiveTarget()) {
             return false;
         }
-        if (target == null || !target.isAlive(mc)) {
-            target = findContextTarget(mc, player);
+        if (target == null || !target.isAlive(minecraft)) {
+            target = findContextTarget(minecraft, player);
         }
         return target != null && target.allowRightClick();
     }
 
-    public static void render(GuiGraphics g, int screenWidth, int screenHeight, float partialTick) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || mc.screen != null || mc.options.hideGui || PickupPromptClient.hasActiveTarget() || target == null || !target.isAlive(mc)) {
+    public static void render(GuiGraphics graphics, int screenWidth,
+            int screenHeight, float partialTick) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.level == null
+                || minecraft.screen != null || minecraft.options.hideGui
+                || PickupPromptClient.hasActiveTarget() || target == null
+                || !target.isAlive(minecraft)) {
             return;
         }
 
-        ScreenPoint point = projectToScreen(mc, target.anchor(), screenWidth, screenHeight);
+        ScreenPoint point = projectToScreen(minecraft, target.anchor(),
+                screenWidth, screenHeight);
         if (point == null) {
             point = new ScreenPoint(screenWidth / 2, screenHeight - 28);
         }
 
-        int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
-        int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
+        float promptScale = target.promptScale();
+        int iconSize = Math.max(24,
+                Math.round(BASE_ICON_SIZE * promptScale));
+        float actionScale = BASE_ACTION_TEXT_SCALE * promptScale;
+        float nameScale = BASE_NAME_TEXT_SCALE * promptScale;
+        int screenX = Mth.clamp(point.x(), 18, screenWidth - 18);
+        int screenY = Mth.clamp(point.y(), 18, screenHeight - 18);
+        int iconX = screenX - iconSize / 2 - Math.round(3 * promptScale);
+        int iconY = screenY - iconSize / 2 + Math.round(8 * promptScale);
+        int gap = Math.max(2, Math.round(4 * promptScale));
+        int textX = iconX + iconSize + gap;
+        int actionY = iconY + Math.round(22 * promptScale);
+        int nameY = actionY + Math.round(32 * promptScale);
 
-        int iconX = screenX - (ICON_SIZE / 2) - 3;
-        int iconY = screenY - (ICON_SIZE / 2) + 8;
-        int textX = iconX + ICON_SIZE + 4;
-        int actionY = iconY + 22;
-        int nameY = actionY + 32;
-
-        int textWidth = target.maxTextWidth(mc);
+        int textWidth = target.maxTextWidth(minecraft, actionScale, nameScale);
         if (textWidth > 0 && textX + textWidth > screenWidth - 8) {
             textX = Math.max(8, screenWidth - textWidth - 8);
-            iconX = Math.max(6, textX - ICON_SIZE - 4);
+            iconX = Math.max(6, textX - iconSize - gap);
         }
         if (iconX < 6) {
             iconX = 6;
-            textX = iconX + ICON_SIZE + 4;
+            textX = iconX + iconSize + gap;
         }
         if (iconY < 6) {
             iconY = 6;
-            actionY = iconY + 22;
-            nameY = actionY + 32;
+            actionY = iconY + Math.round(22 * promptScale);
+            nameY = actionY + Math.round(32 * promptScale);
         }
-        if (iconY + ICON_SIZE > screenHeight - 6) {
-            iconY = screenHeight - ICON_SIZE - 6;
-            actionY = iconY + 22;
-            nameY = actionY + 32;
+        if (iconY + iconSize > screenHeight - 6) {
+            iconY = screenHeight - iconSize - 6;
+            actionY = iconY + Math.round(22 * promptScale);
+            nameY = actionY + Math.round(32 * promptScale);
         }
 
-        drawIcon(g, target.icon(), iconX, iconY);
+        drawIcon(graphics, target.icon(), iconX, iconY, iconSize);
         if (target.showAction()) {
-            drawScaledString(g, mc, target.action(), textX, actionY, ACTION_TEXT_SCALE, TEXT_GRAY);
+            drawScaledString(graphics, minecraft, target.action(), textX,
+                    actionY, actionScale, TEXT_GRAY);
         }
         if (target.showName()) {
-            drawScaledString(g, mc, target.name(), textX, target.showAction() ? nameY : actionY + 14, NAME_TEXT_SCALE, TEXT_WHITE);
+            drawScaledString(graphics, minecraft, target.name(), textX,
+                    target.showAction() ? nameY
+                            : actionY + Math.round(14 * promptScale),
+                    nameScale, TEXT_WHITE);
         }
     }
 
@@ -153,140 +169,171 @@ public final class ContextPromptClient {
         target = null;
     }
 
-    private static ContextTarget findContextTarget(Minecraft mc, LocalPlayer player) {
-        ContextTarget block = findBlockTarget(mc, player);
-        ContextTarget entity = findEntityTarget(mc, player);
-        if (block == null) {
-            return entity;
-        }
-        if (entity == null) {
-            return block;
-        }
+    private static ContextTarget findContextTarget(Minecraft minecraft,
+            LocalPlayer player) {
+        ContextTarget block = findBlockTarget(minecraft, player);
+        ContextTarget entity = findEntityTarget(minecraft, player);
+        if (block == null) return entity;
+        if (entity == null) return block;
         return entity.score() < block.score() ? entity : block;
     }
 
-    private static ContextTarget findBlockTarget(Minecraft mc, LocalPlayer player) {
-        if (!ContextInteractionRegistry.hasBlockRules()) {
-            return null;
-        }
-
+    private static ContextTarget findBlockTarget(Minecraft minecraft,
+            LocalPlayer player) {
+        if (!ContextInteractionRegistry.hasBlockRules()) return null;
         Vec3 eye = player.getEyePosition(1.0F);
         Vec3 look = player.getViewVector(1.0F).normalize();
-        double maxRange = Math.min(MAX_CONTEXT_REACH, ContextInteractionRegistry.getMaxBlockRange());
-        if (maxRange <= 0.0D) {
-            return null;
-        }
+        double maxRange = Math.min(MAX_CONTEXT_REACH,
+                ContextInteractionRegistry.getMaxBlockRange());
+        if (maxRange <= 0.0D) return null;
 
-        BlockHitResult blockHit = mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK ? hit : null;
+        BlockHitResult blockHit = minecraft.hitResult
+                instanceof BlockHitResult hit
+                && hit.getType() == HitResult.Type.BLOCK ? hit : null;
         int radius = Math.max(1, (int) Math.ceil(maxRange));
         BlockPos playerPos = player.blockPosition();
-
         ContextTarget best = null;
         double bestScore = Double.MAX_VALUE;
-        for (BlockPos mutablePos : BlockPos.betweenClosed(playerPos.offset(-radius, -radius, -radius), playerPos.offset(radius, radius, radius))) {
-            BlockPos pos = mutablePos.immutable();
-            BlockState state = player.level().getBlockState(pos);
-            List<ContextInteractionRegistry.Rule> rules = ContextInteractionRegistry.getBlockRules(state.getBlock());
-            if (rules.isEmpty()) {
-                continue;
-            }
 
-            boolean directBlockHit = blockHit != null && blockHit.getBlockPos().equals(pos);
+        for (BlockPos mutable : BlockPos.betweenClosed(
+                playerPos.offset(-radius, -radius, -radius),
+                playerPos.offset(radius, radius, radius))) {
+            BlockPos pos = mutable.immutable();
+            BlockState state = player.level().getBlockState(pos);
+            List<ContextInteractionRegistry.Rule> rules =
+                    ContextInteractionRegistry.getBlockRules(state.getBlock());
+            if (rules.isEmpty()) continue;
+            boolean directHit = blockHit != null
+                    && hitBelongsTo(blockHit.getBlockPos(), pos, player);
             for (ContextInteractionRegistry.Rule rule : rules) {
                 Vec3 anchor = rule.resolveBlockAnchor(pos, state);
-                double score = scorePoint(anchor, eye, look, rule.range(), directBlockHit, rule.priority());
-                if (isCurrentBlockTarget(pos)) score -= TARGET_STICKINESS_BONUS;
-                if (score < bestScore && hasBlockLineOfSight(player, eye, anchor, pos, directBlockHit)) {
+                double score = scorePoint(anchor, eye, look, rule.range(),
+                        directHit, rule.priority());
+                if (isCurrentBlockTarget(pos, rule.interactionKey())) {
+                    score -= TARGET_STICKINESS_BONUS;
+                }
+                if (score < bestScore && hasBlockLineOfSight(player, eye,
+                        anchor, pos, directHit)) {
                     bestScore = score;
-                    String name = rule.showName() ? rule.blockName(state) : "";
-                    boolean shouldShowName = rule.showName() && !name.isEmpty();
-                    boolean shouldShowAction = rule.showAction() && shouldShowName;
-                    ResourceLocation icon = ContextPromptIcons.resolve(rule.icon(), rule.id());
-                    best = new ContextTarget(pos, 0, false, anchor, rule.action(), name, shouldShowAction, shouldShowName, rule.allowE(), rule.allowRightClick(), icon, score);
+                    String name = rule.showName()
+                            ? rule.blockName(state) : "";
+                    boolean showName = rule.showName() && !name.isEmpty();
+                    boolean showAction = rule.showAction() && showName;
+                    ResourceLocation icon = ContextPromptIcons.resolve(
+                            rule.icon(), rule.id());
+                    best = new ContextTarget(pos, 0, false, anchor,
+                            rule.interactionKey(), rule.action(), name,
+                            showAction, showName, rule.allowE(),
+                            rule.allowRightClick(), icon,
+                            (float) rule.promptScale(), score);
                 }
             }
         }
         return best;
     }
 
-    private static ContextTarget findEntityTarget(Minecraft mc, LocalPlayer player) {
-        if (!ContextInteractionRegistry.hasEntityRules()) {
-            return null;
-        }
-
+    private static ContextTarget findEntityTarget(Minecraft minecraft,
+            LocalPlayer player) {
+        if (!ContextInteractionRegistry.hasEntityRules()) return null;
         Vec3 eye = player.getEyePosition(1.0F);
         Vec3 look = player.getViewVector(1.0F).normalize();
-        double maxRange = Math.min(MAX_CONTEXT_REACH, ContextInteractionRegistry.getMaxEntityRange());
-        if (maxRange <= 0.0D) {
-            return null;
-        }
+        double maxRange = Math.min(MAX_CONTEXT_REACH,
+                ContextInteractionRegistry.getMaxEntityRange());
+        if (maxRange <= 0.0D) return null;
 
-        EntityHitResult entityHit = mc.hitResult instanceof EntityHitResult hit ? hit : null;
-        AABB area = player.getBoundingBox().expandTowards(look.scale(maxRange)).inflate(1.0D);
+        EntityHitResult entityHit = minecraft.hitResult
+                instanceof EntityHitResult hit ? hit : null;
+        AABB area = player.getBoundingBox()
+                .expandTowards(look.scale(maxRange)).inflate(1.0D);
         ContextTarget best = null;
         double bestScore = Double.MAX_VALUE;
-        for (Entity entity : player.level().getEntities(player, area, candidate -> candidate.isAlive() && candidate.isPickable())) {
-            if (entity instanceof AbstractScp131Entity scp131 && scp131.isFollowing()) {
-                continue;
-            }
-
-            List<ContextInteractionRegistry.Rule> rules = ContextInteractionRegistry.getEntityRules(entity.getType());
-            if (rules.isEmpty()) {
-                continue;
-            }
-
-            boolean directEntityHit = entityHit != null && entityHit.getEntity().getId() == entity.getId();
+        for (Entity entity : player.level().getEntities(player, area,
+                candidate -> candidate.isAlive() && candidate.isPickable())) {
+            if (entity instanceof AbstractScp131Entity scp131
+                    && scp131.isFollowing()) continue;
+            List<ContextInteractionRegistry.Rule> rules =
+                    ContextInteractionRegistry.getEntityRules(entity.getType());
+            if (rules.isEmpty()) continue;
+            boolean directHit = entityHit != null
+                    && entityHit.getEntity().getId() == entity.getId();
             for (ContextInteractionRegistry.Rule rule : rules) {
                 Vec3 anchor = rule.resolveEntityAnchor(entity);
-                double score = scorePoint(anchor, eye, look, rule.range(), directEntityHit, rule.priority());
-                if (isCurrentEntityTarget(entity.getId())) score -= TARGET_STICKINESS_BONUS;
-                if (score < bestScore && hasEntityLineOfSight(player, eye, anchor, directEntityHit)) {
+                double score = scorePoint(anchor, eye, look, rule.range(),
+                        directHit, rule.priority());
+                if (isCurrentEntityTarget(entity.getId(),
+                        rule.interactionKey())) {
+                    score -= TARGET_STICKINESS_BONUS;
+                }
+                if (score < bestScore && hasEntityLineOfSight(player, eye,
+                        anchor, directHit)) {
                     bestScore = score;
-                    String name = rule.showName() ? rule.entityName(entity) : "";
-                    boolean shouldShowName = rule.showName() && !name.isEmpty();
-                    boolean shouldShowAction = rule.showAction() && shouldShowName;
-                    ResourceLocation icon = ContextPromptIcons.resolve(rule.icon(), rule.id());
-                    best = new ContextTarget(entity.blockPosition(), entity.getId(), true, anchor, rule.action(), name, shouldShowAction, shouldShowName, rule.allowE(), rule.allowRightClick(), icon, score);
+                    String name = rule.showName()
+                            ? rule.entityName(entity) : "";
+                    boolean showName = rule.showName() && !name.isEmpty();
+                    boolean showAction = rule.showAction() && showName;
+                    ResourceLocation icon = ContextPromptIcons.resolve(
+                            rule.icon(), rule.id());
+                    best = new ContextTarget(entity.blockPosition(),
+                            entity.getId(), true, anchor,
+                            rule.interactionKey(), rule.action(), name,
+                            showAction, showName, rule.allowE(),
+                            rule.allowRightClick(), icon,
+                            (float) rule.promptScale(), score);
                 }
             }
         }
         return best;
     }
 
-    private static boolean isCurrentBlockTarget(BlockPos pos) {
-        return target != null && !target.entity() && target.pos().equals(pos);
+    private static boolean hitBelongsTo(BlockPos hitPos, BlockPos master,
+            LocalPlayer player) {
+        if (hitPos.equals(master)) return true;
+        return player.level().getBlockEntity(hitPos)
+                instanceof CoreRoomElevatorModule.StructurePartBlockEntity part
+                && part.masterPos().equals(master);
     }
 
-    private static boolean isCurrentEntityTarget(int entityId) {
-        return target != null && target.entity() && target.entityId() == entityId;
+    private static boolean isCurrentBlockTarget(BlockPos pos, String key) {
+        return target != null && !target.entity() && target.pos().equals(pos)
+                && target.interactionKey().equals(key);
     }
 
-    private static boolean hasBlockLineOfSight(LocalPlayer player, Vec3 eye, Vec3 anchor,
-            BlockPos targetPos, boolean directHit) {
+    private static boolean isCurrentEntityTarget(int entityId, String key) {
+        return target != null && target.entity()
+                && target.entityId() == entityId
+                && target.interactionKey().equals(key);
+    }
+
+    private static boolean hasBlockLineOfSight(LocalPlayer player, Vec3 eye,
+            Vec3 anchor, BlockPos targetPos, boolean directHit) {
         if (directHit) return true;
         BlockHitResult obstruction = player.level().clip(new ClipContext(
-                eye, anchor, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        return obstruction.getType() == HitResult.Type.MISS
-                || obstruction.getBlockPos().equals(targetPos);
+                eye, anchor, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, player));
+        if (obstruction.getType() == HitResult.Type.MISS
+                || obstruction.getBlockPos().equals(targetPos)) return true;
+        return player.level().getBlockEntity(obstruction.getBlockPos())
+                instanceof CoreRoomElevatorModule.StructurePartBlockEntity part
+                && part.masterPos().equals(targetPos);
     }
 
-    private static boolean hasEntityLineOfSight(LocalPlayer player, Vec3 eye, Vec3 anchor,
-            boolean directHit) {
+    private static boolean hasEntityLineOfSight(LocalPlayer player, Vec3 eye,
+            Vec3 anchor, boolean directHit) {
         if (directHit) return true;
         BlockHitResult obstruction = player.level().clip(new ClipContext(
-                eye, anchor, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+                eye, anchor, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, player));
         return obstruction.getType() == HitResult.Type.MISS;
     }
 
-    private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look, double reach, boolean directHit, int priority) {
+    private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look,
+            double reach, boolean directHit, int priority) {
         Vec3 toPoint = point.subtract(eye);
         double distanceSqr = toPoint.lengthSqr();
-        if (distanceSqr > reach * reach) {
-            return Double.MAX_VALUE;
-        }
-
+        if (distanceSqr > reach * reach) return Double.MAX_VALUE;
         double distance = Math.sqrt(distanceSqr);
-        Vec3 direction = distance <= 0.001D ? look : toPoint.scale(1.0D / distance);
+        Vec3 direction = distance <= 0.001D ? look
+                : toPoint.scale(1.0D / distance);
         double dot = direction.dot(look);
         double centerPenalty;
         if (dot > 0.0D) {
@@ -294,75 +341,83 @@ public final class ContextPromptClient {
             Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
             centerPenalty = closest.distanceToSqr(point);
         } else {
-            centerPenalty = 0.58D * 0.58D + ((1.0D - dot) * 0.35D);
+            centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
         }
-
-        return centerPenalty + (distance * 0.035D) - (priority * 0.01D) - (directHit ? 0.35D : 0.0D);
+        return centerPenalty + distance * 0.035D - priority * 0.01D
+                - (directHit ? 0.35D : 0.0D);
     }
 
-    private static ScreenPoint projectToScreen(Minecraft mc, Vec3 worldPos, int screenWidth, int screenHeight) {
-        Camera camera = mc.gameRenderer.getMainCamera();
+    private static ScreenPoint projectToScreen(Minecraft minecraft,
+            Vec3 worldPos, int screenWidth, int screenHeight) {
+        Camera camera = minecraft.gameRenderer.getMainCamera();
         Vec3 relative = worldPos.subtract(camera.getPosition());
         Quaternionf rotation = new Quaternionf(camera.rotation());
         rotation.conjugate();
-
-        Vector3f transformed = new Vector3f((float) relative.x, (float) relative.y, (float) relative.z);
+        Vector3f transformed = new Vector3f((float) relative.x,
+                (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
-
         double z = transformed.z();
         double depth = Math.abs(z);
         if (depth < 0.05D) return null;
-
-        double fov = mc.options.fov().get();
-        double scale = screenHeight / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
-
-        int x = (int) Math.round((screenWidth / 2.0D) - (transformed.x() * scale / depth));
-        int y;
-        if (z < 0.0D) {
-            y = screenHeight - 28;
-        } else {
-            y = (int) Math.round((screenHeight / 2.0D) - (transformed.y() * scale / depth));
-        }
+        double fov = minecraft.options.fov().get();
+        double scale = screenHeight
+                / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
+        int x = (int) Math.round(screenWidth / 2.0D
+                - transformed.x() * scale / depth);
+        int y = z < 0.0D ? screenHeight - 28
+                : (int) Math.round(screenHeight / 2.0D
+                - transformed.y() * scale / depth);
         return new ScreenPoint(x, y);
     }
 
-    private static void drawIcon(GuiGraphics g, ResourceLocation icon, int x, int y) {
+    private static void drawIcon(GuiGraphics graphics,
+            ResourceLocation icon, int x, int y, int size) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.98F);
-        g.blit(icon, x, y, ICON_SIZE, ICON_SIZE, 0.0F, 0.0F, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE);
+        graphics.blit(icon, x, y, size, size, 0.0F, 0.0F,
+                ICON_SOURCE_SIZE, ICON_SOURCE_SIZE,
+                ICON_SOURCE_SIZE, ICON_SOURCE_SIZE);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
     }
 
-    private static void drawScaledString(GuiGraphics g, Minecraft mc, String text, int x, int y, float scale, int color) {
-        PoseStack pose = g.pose();
+    private static void drawScaledString(GuiGraphics graphics,
+            Minecraft minecraft, String text, int x, int y, float scale,
+            int color) {
+        PoseStack pose = graphics.pose();
         pose.pushPose();
         pose.translate(x, y, 0.0F);
         pose.scale(scale, scale, 1.0F);
-        g.drawString(mc.font, ScpFonts.roboto(text), 0, 0, color, true);
+        graphics.drawString(minecraft.font, ScpFonts.roboto(text),
+                0, 0, color, true);
         pose.popPose();
     }
 
-    private record ContextTarget(BlockPos pos, int entityId, boolean entity, Vec3 anchor, String action, String name, boolean showAction, boolean showName, boolean allowE, boolean allowRightClick, ResourceLocation icon, double score) {
-        private boolean isAlive(Minecraft mc) {
-            if (mc.level == null) {
-                return false;
-            }
+    private record ContextTarget(BlockPos pos, int entityId, boolean entity,
+            Vec3 anchor, String interactionKey, String action, String name,
+            boolean showAction, boolean showName, boolean allowE,
+            boolean allowRightClick, ResourceLocation icon,
+            float promptScale, double score) {
+        private boolean isAlive(Minecraft minecraft) {
+            if (minecraft.level == null) return false;
             if (entity) {
-                Entity found = mc.level.getEntity(entityId);
+                Entity found = minecraft.level.getEntity(entityId);
                 return found != null && found.isAlive();
             }
-            return pos != null && !mc.level.getBlockState(pos).isAir();
+            return pos != null && !minecraft.level.getBlockState(pos).isAir();
         }
 
-        private int maxTextWidth(Minecraft mc) {
+        private int maxTextWidth(Minecraft minecraft, float actionScale,
+                float nameScale) {
             int width = 0;
             if (showAction) {
-                width = Math.max(width, Math.round(mc.font.width(ScpFonts.roboto(action)) * ACTION_TEXT_SCALE));
+                width = Math.max(width, Math.round(minecraft.font.width(
+                        ScpFonts.roboto(action)) * actionScale));
             }
             if (showName) {
-                width = Math.max(width, Math.round(mc.font.width(ScpFonts.roboto(name)) * NAME_TEXT_SCALE));
+                width = Math.max(width, Math.round(minecraft.font.width(
+                        ScpFonts.roboto(name)) * nameScale));
             }
             return width;
         }

@@ -72,6 +72,15 @@
 - Fine-tuned the SCP Sign typography and Anomaly Trait selector alignment against direct SCP Unity comparisons;
 - Corrected the free-text editor field backgrounds without moving their aligned text baselines.
 
+## Core Room elevator
+
+- Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
+- Added Core Room Elevator Stations, a top Pulley, reusable Beam segments, and the Core Room Floor construction block;
+- Aligned stations automatically generate model-matched shaft beams between floors and up to the pulley, while incomplete or obstructed layouts remain safely inactive;
+- Completed elevator lines automatically create exactly one carriage at the lowest station and preserve one carriage per vertical line;
+- Added precise multiblock collision shells for stations, pulleys, and beam segments, plus moving carriage collision that carries players, mobs, and items smoothly;
+- Added compact contextual interaction targets to the separate up and down buttons inside the carriage and on each station.
+
 ## Facility construction
 
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;

@@ -155,5 +155,22 @@
   "screen.scp_additions.scp_sign_clearance": "Clearance Level",
   "screen.scp_additions.scp_sign_anomaly": "Anomaly Type",
   "screen.scp_additions.scp_sign_custom_anomaly": "Custom Anomaly Type",
-  "screen.scp_additions.scp_sign_hazard": "Hazard Slot %s"
+  "screen.scp_additions.scp_sign_hazard": "Hazard Slot %s",
+  "block.scp_additions.core_room_elevator_station": "Core Room Elevator Station",
+  "block.scp_additions.core_room_elevator_pulley": "Core Room Elevator Pulley",
+  "block.scp_additions.core_room_elevator_beams": "Core Room Elevator Beams",
+  "block.scp_additions.core_room_floor": "Core Room Floor",
+  "block.scp_additions.core_room_elevator_structure_part": "Core Room Elevator Structure",
+  "entity.scp_additions.core_room_elevator_carriage": "Core Room Elevator Carriage",
+  "tooltip.scp_additions.core_room_elevator_station": "Place aligned stations vertically; the structure automatically forms its shaft and landing collision.",
+  "tooltip.scp_additions.core_room_elevator_pulley": "Place above the highest aligned station to complete the elevator and create its carriage.",
+  "tooltip.scp_additions.core_room_elevator_beams": "One-block shaft segment. Complete elevators create aligned segments automatically.",
+  "tooltip.scp_additions.core_room_floor": "Core Room construction floor with its visible surface at the top of the block.",
+  "message.scp_additions.elevator_space_blocked": "The elevator structure does not have enough clear space.",
+  "message.scp_additions.elevator_needs_pulley": "Elevator stations aligned. Place a pulley above the highest station to complete the line.",
+  "message.scp_additions.elevator_path_obstructed": "The elevator line is obstructed; clear the shaft between its stations and pulley.",
+  "message.scp_additions.elevator_linked": "Core Room elevator linked with %s floor(s).",
+  "message.scp_additions.elevator_incomplete": "This elevator line is incomplete or obstructed.",
+  "message.scp_additions.elevator_no_floor_above": "There is no elevator floor above this stop.",
+  "message.scp_additions.elevator_no_floor_below": "There is no elevator floor below this stop."
 }

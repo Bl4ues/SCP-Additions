@@ -53,6 +53,7 @@ import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.UnifiedReaderItems;
+import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -345,6 +346,14 @@ public final class FacilityModule {
         sections.add(section("generaltab", general));
 
         List<ItemStack> coreRoom = new ArrayList<>();
+        addExternalCreativeItem(coreRoom,
+                CoreRoomElevatorModule.STATION_ITEM.get());
+        addExternalCreativeItem(coreRoom,
+                CoreRoomElevatorModule.PULLEY_ITEM.get());
+        addExternalCreativeItem(coreRoom,
+                CoreRoomElevatorModule.BEAMS_ITEM.get());
+        addExternalCreativeItem(coreRoom,
+                CoreRoomElevatorModule.FLOOR_ITEM.get());
         addFacilityCreativeItem(coreRoom, "core_room_sign");
         sections.add(section("coreroomtab", coreRoom));
         sections.add(section("l0tab", List.of()));

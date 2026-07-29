@@ -13,15 +13,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
-/**
- * Shared, renderer-independent primitives for the Core Room elevator.
- *
- * <p>The actual controller block entity, moving carriage entity, renderer and
- * collision solver are intentionally kept out of this class. This file defines
- * the contracts they will share so the implementation can be built without
- * coupling floor discovery, motion timing and authored model names to client
- * classes.</p>
- */
+/** Shared server-side contracts and motion mathematics for Core Room elevators. */
 public final class ElevatorFoundation {
     private static final double EPSILON = 1.0E-7D;
 
@@ -50,7 +42,7 @@ public final class ElevatorFoundation {
         }
     }
 
-    /** Server-authoritative lifecycle of one carriage. */
+    /** Server-authoritative lifecycle of one moving carriage. */
     public enum Phase {
         IDLE_OPEN,
         DOOR_CLOSING,
@@ -69,7 +61,7 @@ public final class ElevatorFoundation {
         }
     }
 
-    /** Stable action identifiers used by contextual interaction rules. */
+    /** Stable sub-actions used by the two contextual interaction targets. */
     public enum ContextAction {
         UP("elevator_up", TravelDirection.UP),
         DOWN("elevator_down", TravelDirection.DOWN);
@@ -100,10 +92,7 @@ public final class ElevatorFoundation {
         }
     }
 
-    /**
-     * One declared stop. {@code cabinY} is the exact world-space Y coordinate
-     * of the carriage floor when it is level with this marker.
-     */
+    /** One declared stop; cabinY is the exact world Y of the carriage floor. */
     public record FloorStop(BlockPos markerPos, int cabinY, String label) {
         public FloorStop {
             markerPos = Objects.requireNonNull(markerPos, "markerPos").immutable();
@@ -111,7 +100,7 @@ public final class ElevatorFoundation {
         }
     }
 
-    /** Immutable, bottom-to-top floor map produced by the controller scan. */
+    /** Immutable floor map ordered from bottom to top. */
     public static final class FloorLayout {
         private final BlockPos controllerPos;
         private final Direction facing;
@@ -133,7 +122,6 @@ public final class ElevatorFoundation {
 
             List<FloorStop> sorted = new ArrayList<>(declaredFloors);
             sorted.sort(Comparator.comparingInt(FloorStop::cabinY));
-
             Set<Integer> occupiedHeights = new HashSet<>();
             for (FloorStop floor : sorted) {
                 Objects.requireNonNull(floor, "floor");
@@ -144,11 +132,11 @@ public final class ElevatorFoundation {
                 if (floor.cabinY() >= controllerPos.getY()) {
                     throw new IllegalArgumentException(
                             "Floor " + floor.cabinY()
-                                    + " must be below the top controller at "
+                                    + " must be below top controller "
                                     + controllerPos.getY());
                 }
             }
-            this.floors = List.copyOf(sorted);
+            floors = List.copyOf(sorted);
         }
 
         public BlockPos controllerPos() {
@@ -173,9 +161,9 @@ public final class ElevatorFoundation {
 
         public OptionalInt indexAt(double cabinY, double tolerance) {
             double accepted = Math.max(0.0D, tolerance);
-            for (int i = 0; i < floors.size(); i++) {
-                if (Math.abs(floors.get(i).cabinY() - cabinY) <= accepted) {
-                    return OptionalInt.of(i);
+            for (int index = 0; index < floors.size(); index++) {
+                if (Math.abs(floors.get(index).cabinY() - cabinY) <= accepted) {
+                    return OptionalInt.of(index);
                 }
             }
             return OptionalInt.empty();
@@ -184,10 +172,10 @@ public final class ElevatorFoundation {
         public int nearestIndex(double cabinY) {
             int nearest = 0;
             double nearestDistance = Double.MAX_VALUE;
-            for (int i = 0; i < floors.size(); i++) {
-                double distance = Math.abs(floors.get(i).cabinY() - cabinY);
+            for (int index = 0; index < floors.size(); index++) {
+                double distance = Math.abs(floors.get(index).cabinY() - cabinY);
                 if (distance < nearestDistance) {
-                    nearest = i;
+                    nearest = index;
                     nearestDistance = distance;
                 }
             }
@@ -206,21 +194,16 @@ public final class ElevatorFoundation {
     }
 
     /**
-     * Acceleration-limited vertical movement. It produces a triangular profile
-     * for short trips and a trapezoidal profile for longer ones, avoiding the
-     * floaty whole-trip easing produced by a simple smoothstep.
+     * Acceleration-limited vertical motion. Short trips use a triangular speed
+     * profile; longer trips use acceleration, cruise and deceleration phases.
      */
     public record MotionPlan(double startY, double endY, double acceleration,
             double peakSpeed, double accelerationTicks, double cruiseTicks,
             double totalTicks) {
 
         public MotionPlan {
-            if (!Double.isFinite(startY) || !Double.isFinite(endY)
-                    || !Double.isFinite(acceleration)
-                    || !Double.isFinite(peakSpeed)
-                    || !Double.isFinite(accelerationTicks)
-                    || !Double.isFinite(cruiseTicks)
-                    || !Double.isFinite(totalTicks)) {
+            if (!finite(startY, endY, acceleration, peakSpeed,
+                    accelerationTicks, cruiseTicks, totalTicks)) {
                 throw new IllegalArgumentException(
                         "Elevator motion values must be finite");
             }
@@ -247,22 +230,21 @@ public final class ElevatorFoundation {
             }
 
             double timeToMaximum = maximumSpeed / acceleration;
-            double distanceWhileAccelerating = 0.5D * acceleration
+            double accelerationDistance = 0.5D * acceleration
                     * timeToMaximum * timeToMaximum;
             double accelerationTicks;
             double cruiseTicks;
             double peakSpeed;
 
-            if (distanceWhileAccelerating * 2.0D >= distance) {
+            if (accelerationDistance * 2.0D >= distance) {
                 accelerationTicks = Math.sqrt(distance / acceleration);
                 cruiseTicks = 0.0D;
                 peakSpeed = acceleration * accelerationTicks;
             } else {
                 accelerationTicks = timeToMaximum;
                 peakSpeed = maximumSpeed;
-                double cruiseDistance = distance
-                        - (distanceWhileAccelerating * 2.0D);
-                cruiseTicks = cruiseDistance / peakSpeed;
+                cruiseTicks = (distance - accelerationDistance * 2.0D)
+                        / peakSpeed;
             }
 
             return new MotionPlan(startY, endY, acceleration, peakSpeed,
@@ -312,26 +294,11 @@ public final class ElevatorFoundation {
             double progress, boolean complete) {
     }
 
-    /** Bone/locator names shared by the Blockbench file and renderer. */
-    public static final class ModelBones {
-        public static final String ROOT = "root";
-        public static final String CABIN = "cabin";
-        public static final String SHELL = "shell";
-        public static final String FLOOR = "floor";
-        public static final String CEILING = "ceiling";
-        public static final String DOOR_LEFT = "door_left";
-        public static final String DOOR_RIGHT = "door_right";
-        public static final String BUTTON_UP = "button_up";
-        public static final String BUTTON_DOWN = "button_down";
-        public static final String BUTTON_UP_LIGHT = "button_up_light";
-        public static final String BUTTON_DOWN_LIGHT = "button_down_light";
-        public static final String CABLE_MOUNT_LEFT = "cable_mount_left";
-        public static final String CABLE_MOUNT_RIGHT = "cable_mount_right";
-        public static final String GUIDE_MOUNT_LEFT = "guide_mount_left";
-        public static final String GUIDE_MOUNT_RIGHT = "guide_mount_right";
-
-        private ModelBones() {
+    private static boolean finite(double... values) {
+        for (double value : values) {
+            if (!Double.isFinite(value)) return false;
         }
+        return true;
     }
 
     private static double clamp(double value, double minimum,

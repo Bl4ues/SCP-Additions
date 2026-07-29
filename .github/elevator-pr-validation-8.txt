@@ -1,0 +1,1 @@
+Validation marker after correcting RegistryObject comparisons.

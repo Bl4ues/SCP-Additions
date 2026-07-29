@@ -25,7 +25,7 @@ public final class ElevatorAssets {
     public static final ResourceLocation PULLEY_MODEL = resource(
             "geo/block/core_room_elevator_pulley.geo.json");
     public static final ResourceLocation PULLEY_TEXTURE = resource(
-            "textures/block/core_room_elevator_pulley.png");
+            "textures/block/elevator_pulley.png");
 
     public static final String CARRIAGE_CLOSED =
             "animation.core_room_elevator_carriage.closed";

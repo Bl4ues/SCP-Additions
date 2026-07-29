@@ -11,7 +11,7 @@ public final class ElevatorAssets {
     public static final ResourceLocation CARRIAGE_MODEL = resource(
             "geo/entity/core_room_elevator_carriage.geo.json");
     public static final ResourceLocation CARRIAGE_TEXTURE = resource(
-            "textures/entity/core_room_elevator_carriage.png");
+            "textures/entities/core_room_elevator_carriage.png");
     public static final ResourceLocation CARRIAGE_ANIMATION = resource(
             "animations/entity/core_room_elevator_carriage.animation.json");
 

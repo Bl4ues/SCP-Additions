@@ -25,6 +25,18 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Diagnose payload
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text = Path('.github/scripts/complete_core_room_elevator.py').read_text()
+          match = re.search(r"b64decode\('([^']+)'\)", text)
+          payload = match.group(1)
+          print('PAYLOAD_LENGTH=' + str(len(payload)))
+          print('PAYLOAD_END=' + payload[-120:])
+          PY
+
       - name: Generate elevator implementation
         run: python .github/scripts/complete_core_room_elevator.py
 

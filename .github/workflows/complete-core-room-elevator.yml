@@ -33,13 +33,23 @@ jobs:
           chmod +x gradlew
           ./gradlew build --no-daemon
 
-      - name: Commit validated refinements
+      - name: Remove temporary elevator tooling
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          rm -f .github/scripts/complete_core_room_elevator.py
+          rm -f .github/scripts/run_complete_core_room_elevator.py
+          rm -f .github/scripts/refine_core_room_elevator.py
+          rm -f .github/scripts/elevator_payload_suffix_*.txt
+          rm -f .github/elevator-*.txt
+          rm -f .github/workflows/complete-core-room-elevator.yml
+
+      - name: Commit validated implementation
         if: ${{ github.event_name == 'push' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "Refine Core Room elevator runtime behavior [skip elevator refinement]"
+            git commit -m "Finalize Core Room elevator implementation [skip elevator refinement]"
             git push
           fi

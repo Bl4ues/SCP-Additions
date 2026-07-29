@@ -244,7 +244,6 @@
   "subtitles.scp_additions.statue_death": "SCP-173 attacks",
   "subtitles.scp_additions.stone_scrap": "Stone scrapes",
   "subtitles.scp_additions.neck_snap": "Neck snaps",
-  "subtitles.scp_additions.rattle": "Stone rattles",
   "effect.scp_additions.bleeding": "Bleeding",
   "subtitles.scp_additions.scp012_trance": "SCP-012 calls to the viewer",
   "subtitles.scp_additions.scp012_damage": "The composition demands completion",
@@ -257,5 +256,6 @@
   "subtitles.scp_additions.scp_106_hit": "SCP-106 strikes",
   "subtitles.scp_additions.scp_106_ranged_splash": "Corrosion splashes",
   "subtitles.scp_additions.wither": "Withering festers",
-  "block.scp_additions.water_faucet": "Non-potable Water Faucet"
+  "block.scp_additions.water_faucet": "Non-potable Water Faucet",
+  "subtitles.scp_additions.save_game": "Game saved"
 }

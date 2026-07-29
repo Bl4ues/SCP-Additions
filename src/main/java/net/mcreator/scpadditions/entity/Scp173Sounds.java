@@ -13,9 +13,9 @@ public final class Scp173Sounds {
     public static final RegistryObject<SoundEvent> SCARE = register("scare");
     public static final RegistryObject<SoundEvent> HORROR = register("horror");
     public static final RegistryObject<SoundEvent> STATUE_DEATH = register("statue_death");
+    public static final RegistryObject<SoundEvent> STONE_SCRAP_LOOP = register("stone_scrap_loop");
     public static final RegistryObject<SoundEvent> STONE_SCRAP = register("stone_scrap");
     public static final RegistryObject<SoundEvent> NECK_SNAP = register("neck_snap");
-    public static final RegistryObject<SoundEvent> RATTLE = register("rattle");
 
     private Scp173Sounds() {
     }

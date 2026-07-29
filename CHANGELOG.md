@@ -22,7 +22,7 @@
 ## SCP-173
 
 - Reduced SCP-173's rendered height to approximately two blocks;
-- Updated SCP-173's sound effects, removed its spawn sound, and changed how its moving sounds trigger;
+- Reworked SCP-173's movement audio: `stone_scrap.ogg` now loops only while the statue moves, while one of `stone_scrap_1.ogg` through `stone_scrap_5.ogg` plays when it turns or stops; removed the natural-spawn rattle and its unused assets;
 - Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists; it now waits silently and resumes as soon as a route becomes available.
 
 ## SCP-131
@@ -60,6 +60,7 @@
 ## Audio and presentation
 
 - Reintroduced the world-entry sound and added a General & Modules option to disable it;
+- Added a default-enabled **Save Game Sound** module that plays `save_game.ogg` whenever commands, beds, respawn anchors, or facility systems set a player's respawn point;
 - Made SCP-1176's music and SCP-106's chase soundtrack immediately stop vanilla background music and keep it suppressed until the complete active soundtrack has finished;
 - Added a default-enabled module that replaces vanilla player hurt sounds with human voices;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;

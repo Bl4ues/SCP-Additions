@@ -106,7 +106,7 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 
 - [ ] entity and spawn egg register under `scp_additions`
 - [ ] model, translucent texture and static GeckoLib animation load
-- [ ] scare, horror, rattle, scrape, death and neck-snap sounds load
+- [ ] scare, horror, continuous scrape, turn/stop scrape variants, death and neck-snap sounds load
 - [ ] blink HUD appears only after confirmed visual contact within 20 blocks
 - [ ] blink HUD remains during the intended 200-tick paranoia window
 - [ ] automatic blink interval, blackout and post-blink cover match the standalone mod
@@ -125,7 +125,7 @@ Every migration phase must pass `clean build` and a client startup smoke test be
 - [ ] only one SCP-173 routine instance exists globally
 - [ ] routine-spawned SCP-173 remains inactive until observed
 - [ ] routine-spawned SCP-173 despawns after 400 unseen ticks when no player is close
-- [ ] spawn rattle and movement scrape pulses play at the intended cadence
+- [ ] `stone_scrap.ogg` loops only while SCP-173 moves, and variants 1-5 play only on turns or confirmed stops
 - [ ] durability is 1730 health, 80 armor, 40 toughness and full knockback resistance
 - [ ] incoming damage is reduced to 2% with a minimum of 0.25
 - [ ] configured mobs and `#minecraft:raiders` can observe and be targeted

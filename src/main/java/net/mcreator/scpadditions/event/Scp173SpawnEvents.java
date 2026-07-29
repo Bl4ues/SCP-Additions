@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,7 +15,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp173Entity;
-import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModEntities;
 import net.mcreator.scpadditions.roamer.RoamerManager;
 import net.mcreator.scpadditions.roamer.RoamerResult;
@@ -150,7 +148,7 @@ public final class Scp173SpawnEvents {
             BlockPos pos = findLocalSpawnPosition(level, x, playerY, z);
             if (pos == null) pos = findSurfaceSpawnPosition(level, x, z);
             if (pos != null) {
-                Scp173Entity spawned = spawn173(level, pos, player, random);
+                Scp173Entity spawned = spawn173(level, pos, player);
                 if (spawned != null) return spawned;
             }
         }
@@ -221,7 +219,7 @@ public final class Scp173SpawnEvents {
     }
 
     private static Scp173Entity spawn173(ServerLevel level, BlockPos pos,
-            ServerPlayer player, RandomSource random) {
+            ServerPlayer player) {
         Scp173Entity scp173 = ScpAdditionsModEntities.SCP_173.get().create(level);
         if (scp173 == null) return null;
         double x = pos.getX() + 0.5D;
@@ -233,9 +231,6 @@ public final class Scp173SpawnEvents {
         scp173.moveTo(x, y, z, yaw, 0.0F);
         scp173.markRoutineSpawn();
         if (!level.addFreshEntity(scp173)) return null;
-        level.playSound(null, x, y + 0.6D, z,
-                Scp173Sounds.RATTLE.get(), SoundSource.HOSTILE,
-                0.72F, 0.96F + random.nextFloat() * 0.08F);
         return scp173;
     }
 }

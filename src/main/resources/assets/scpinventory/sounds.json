@@ -54,14 +54,6 @@
       "scpinventory:neck_snap"
     ]
   },
-  "rattle": {
-    "subtitle": "subtitles.scpinventory.rattle",
-    "sounds": [
-      "scpinventory:rattle1",
-      "scpinventory:rattle2",
-      "scpinventory:rattle3"
-    ]
-  },
   "eye_pod_idle": {
     "subtitle": "subtitles.scpinventory.eye_pod_idle",
     "sounds": [

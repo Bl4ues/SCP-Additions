@@ -28,6 +28,20 @@ jobs:
       - name: Apply audio integration
         run: |
           if [ -f .github/scripts/apply_scp173_save_sound.py ]; then
+            python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/apply_scp173_save_sound.py')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              "'        @SerializedName(\"enter_sound_enabled\")\\n'": "'\\t\\t@SerializedName(\"enter_sound_enabled\")\\n'",
+              "'        public boolean enterSoundEnabled = true;\\n'": "'\\t\\tpublic boolean enterSoundEnabled = true;\\n'",
+              "'        @SerializedName(\"save_game_sound_enabled\")\\n'": "'\\t\\t@SerializedName(\"save_game_sound_enabled\")\\n'",
+              "'        public boolean saveGameSoundEnabled = true;\\n'": "'\\t\\tpublic boolean saveGameSoundEnabled = true;\\n'",
+          }
+          for old, new in replacements.items():
+              text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8')
+          PY
             python .github/scripts/apply_scp173_save_sound.py
           fi
 

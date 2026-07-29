@@ -8,7 +8,8 @@
     "disable_in_creative": false
   },
   "hud": {
-    "enabled": true
+    "enabled": true,
+    "hide_active_effect_indicators": true
   },
   "vitals": {
     "custom_health_enabled": true,

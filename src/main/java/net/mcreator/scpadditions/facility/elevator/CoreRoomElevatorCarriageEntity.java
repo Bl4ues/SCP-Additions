@@ -57,8 +57,6 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private static final double MAX_SPEED = 0.115D;
     private static final double ACCELERATION = 0.0075D;
     private static final double FLOOR_EPSILON = 0.035D;
-    private static final int DOOR_COLLISION_THRESHOLD = DOOR_TICKS / 2;
-    private static final double BUTTON_HIT_RADIUS_SQR = 0.32D * 0.32D;
 
     private static final RawAnimation CLOSED_ANIMATION = RawAnimation.begin()
             .thenLoop(ElevatorAssets.CARRIAGE_CLOSED);
@@ -196,10 +194,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                     beginMotion();
                 }
             }
-            case MOVING -> {
-                if (motionPlan == null && !resumeMotionAfterLoad()) break;
-                tickMotion();
-            }
+            case MOVING -> tickMotion();
             case LEVELING -> {
                 if (phaseTicks >= LEVELING_TICKS) {
                     setPhase(ElevatorFoundation.Phase.DOOR_OPENING);
@@ -238,36 +233,9 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         setPhase(ElevatorFoundation.Phase.MOVING);
     }
 
-    private boolean resumeMotionAfterLoad() {
-        int target = targetFloorIndex();
-        if (floorHeights.length == 0 || target < 0
-                || target >= floorHeights.length) {
-            recoverAtNearestFloor();
-            return false;
-        }
-        motionPlan = ElevatorFoundation.MotionPlan.create(getY(),
-                floorHeights[target], MAX_SPEED, ACCELERATION);
-        phaseTicks = 0;
-        return true;
-    }
-
-    private void recoverAtNearestFloor() {
-        if (floorHeights.length == 0) {
-            setPhase(ElevatorFoundation.Phase.FAULT);
-            return;
-        }
-        int nearest = nearestFloorIndex(getY());
-        setPos(getX(), floorHeights[nearest], getZ());
-        entityData.set(CURRENT_FLOOR, nearest);
-        entityData.set(TARGET_FLOOR, -1);
-        queuedTarget = -1;
-        motionPlan = null;
-        setPhase(ElevatorFoundation.Phase.IDLE_OPEN);
-    }
-
     private void tickMotion() {
         if (motionPlan == null) {
-            recoverAtNearestFloor();
+            setPhase(ElevatorFoundation.Phase.FAULT);
             return;
         }
         ElevatorFoundation.MotionSample sample = motionPlan.sample(phaseTicks);
@@ -361,7 +329,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                 0.84D, 3.08D, 0.82D));
         local.add(new AABB(-0.82D, 0.0D, 0.72D,
                 0.82D, 3.08D, 0.84D));
-        if (isDoorCollisionSolid()) {
+        if (phase() != ElevatorFoundation.Phase.IDLE_OPEN
+                && phase() != ElevatorFoundation.Phase.DOOR_OPENING) {
             local.add(new AABB(-0.72D, 0.0D, -0.84D,
                     0.72D, 2.35D, -0.72D));
         }
@@ -372,15 +341,6 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             world.add(rotated.move(getX(), getY(), getZ()));
         }
         return world;
-    }
-
-    public boolean isDoorCollisionSolid() {
-        return switch (phase()) {
-            case IDLE_OPEN -> false;
-            case DOOR_OPENING -> phaseTicks < DOOR_COLLISION_THRESHOLD;
-            case DOOR_CLOSING -> phaseTicks >= DOOR_COLLISION_THRESHOLD;
-            default -> true;
-        };
     }
 
     private AABB cabinOuterBox() {
@@ -407,16 +367,11 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     public Vec3 cableAttachment(boolean front) {
-        return cableAttachment(front, 1.0F);
-    }
-
-    public Vec3 cableAttachment(boolean front, float partialTick) {
         double modelX = (front ? -7.0D : 7.0D) / 16.0D;
         double modelY = 53.0D / 16.0D;
         Vec3 rootRotated = new Vec3(0.0D, modelY, modelX);
-        return getPosition(partialTick).add(
-                CoreRoomElevatorGeometry.rotateLocalVector(facing(),
-                        rootRotated.x, rootRotated.y, rootRotated.z));
+        return position().add(CoreRoomElevatorGeometry.rotateLocalVector(
+                facing(), rootRotated.x, rootRotated.y, rootRotated.z));
     }
 
     public Vec3 cableOrigin(boolean front, float partialTick) {
@@ -433,18 +388,11 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     @Override
     public InteractionResult interactAt(Player player, Vec3 hit,
             InteractionHand hand) {
-        Vec3 upAnchor = contextAnchor(true).subtract(position());
-        Vec3 downAnchor = contextAnchor(false).subtract(position());
-        double upDistance = hit.distanceToSqr(upAnchor);
-        double downDistance = hit.distanceToSqr(downAnchor);
-        if (Math.min(upDistance, downDistance) > BUTTON_HIT_RADIUS_SQR) {
-            return InteractionResult.PASS;
-        }
         if (level().isClientSide) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.PASS;
         }
-        boolean up = upDistance <= downDistance;
+        boolean up = hit.y >= 1.25D;
         return handleContextInteraction(serverPlayer,
                 up ? "elevator_carriage_up" : "elevator_carriage_down")
                 ? InteractionResult.CONSUME : InteractionResult.FAIL;
@@ -529,10 +477,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         entityData.set(PHASE, tag.getByte("Phase"));
         entityData.set(CURRENT_FLOOR, tag.getInt("CurrentFloor"));
         entityData.set(TARGET_FLOOR, tag.getInt("TargetFloor"));
-        queuedTarget = tag.contains("QueuedTarget")
-                ? tag.getInt("QueuedTarget") : -1;
+        queuedTarget = tag.getInt("QueuedTarget");
         phaseTicks = tag.getInt("PhaseTicks");
-        motionPlan = null;
     }
 
     @Override

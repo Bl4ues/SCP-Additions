@@ -141,7 +141,7 @@ public final class ScpAdditionsModulesConfig {
 
 	public static final class Audio {
 		@SerializedName("enter_sound_enabled")
-        public boolean enterSoundEnabled = true;
+		public boolean enterSoundEnabled = true;
 
 		@SerializedName("save_game_sound_enabled")
 		public boolean saveGameSoundEnabled = true;

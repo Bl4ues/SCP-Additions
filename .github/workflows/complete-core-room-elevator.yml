@@ -28,6 +28,14 @@ jobs:
       - name: Generate elevator implementation
         run: python .github/scripts/run_complete_core_room_elevator.py
 
+      - name: Normalize generated Forge registry checks
+        run: |
+          file=src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java
+          sed -i 's/\.is(STRUCTURE_PART)/.is(STRUCTURE_PART.get())/g' "$file"
+          sed -i 's/\.is(STATION)/.is(STATION.get())/g' "$file"
+          sed -i 's/\.is(PULLEY)/.is(PULLEY.get())/g' "$file"
+          sed -i 's/\.is(BEAMS)/.is(BEAMS.get())/g' "$file"
+
       - name: Build
         run: |
           chmod +x gradlew

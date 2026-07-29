@@ -42,7 +42,9 @@ jobs:
               text = text.replace(old, new)
           lines = []
           for line in text.splitlines(keepends=True):
-              if 'audio' in line and 'enter_sound_enabled' in line:
+              escaped_default = 'audio' in line and 'enter_sound_enabled' in line
+              escaped_assertion = 'if ' in line and 'save_game_sound_enabled' in line
+              if escaped_default or escaped_assertion:
                   line = line.replace(r'\"', r'\\\"')
               lines.append(line)
           path.write_text(''.join(lines), encoding='utf-8')

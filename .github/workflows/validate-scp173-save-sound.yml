@@ -40,7 +40,12 @@ jobs:
           }
           for old, new in replacements.items():
               text = text.replace(old, new)
-          path.write_text(text, encoding='utf-8')
+          lines = []
+          for line in text.splitlines(keepends=True):
+              if 'audio' in line and 'enter_sound_enabled' in line:
+                  line = line.replace(r'\"', r'\\\"')
+              lines.append(line)
+          path.write_text(''.join(lines), encoding='utf-8')
           PY
             python .github/scripts/apply_scp173_save_sound.py
           fi

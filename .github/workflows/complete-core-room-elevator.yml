@@ -1,9 +1,7 @@
-name: Complete Core Room Elevator
+name: Refine Core Room Elevator
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
     branches: [ master ]
   workflow_dispatch:
 
@@ -12,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip elevator workflow]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip elevator refinement]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,29 +23,20 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Generate elevator implementation
-        run: python .github/scripts/run_complete_core_room_elevator.py
-
-      - name: Normalize generated Forge registry checks
-        run: |
-          file=src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java
-          sed -i 's/\.is(STRUCTURE_PART)/.is(STRUCTURE_PART.get())/g' "$file"
-          sed -i 's/\.is(STATION)/.is(STATION.get())/g' "$file"
-          sed -i 's/\.is(PULLEY)/.is(PULLEY.get())/g' "$file"
-          sed -i 's/\.is(BEAMS)/.is(BEAMS.get())/g' "$file"
+      - name: Apply elevator runtime refinements
+        run: python .github/scripts/refine_core_room_elevator.py
 
       - name: Build
         run: |
           chmod +x gradlew
           ./gradlew build --no-daemon
 
-      - name: Commit generated implementation
-        if: ${{ github.event_name == 'push' }}
+      - name: Commit validated refinements
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "Complete Core Room elevator implementation [skip elevator workflow]"
+            git commit -m "Refine Core Room elevator runtime behavior [skip elevator refinement]"
             git push
           fi

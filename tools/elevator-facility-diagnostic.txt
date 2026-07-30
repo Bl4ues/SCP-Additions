@@ -1,0 +1,410 @@
+=== FILES ===
+src/main/java/com/bl4ues/scpinventory/client/ContextPromptClickGuard.java
+src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java
+src/main/java/com/bl4ues/scpinventory/client/ContextPromptIcons.java
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java
+src/main/java/net/mcreator/scpadditions/block/entity/Scp330BlockEntity.java
+src/main/java/net/mcreator/scpadditions/client/CreativeTabPresentation.java
+src/main/java/net/mcreator/scpadditions/client/Scp330Client.java
+src/main/java/net/mcreator/scpadditions/effect/Scp330HandLossEffect.java
+src/main/java/net/mcreator/scpadditions/facility/UBlocksClientEvents.java
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorAudioClient.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorClient.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorManager.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/ElevatorAssets.java
+src/main/java/net/mcreator/scpadditions/facility/elevator/ElevatorFoundation.java
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModTabs.java
+src/main/java/net/mcreator/scpadditions/item/Scp330CandyItem.java
+src/main/java/net/mcreator/scpadditions/scp330/Scp330Hands.java
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java
+=== CREATIVE TAB REFERENCES ===
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:106:    public static final RegistryObject<Block> ARCHIVAL_BOTTOM = structure("archival_bottom");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:107:    public static final RegistryObject<Block> ARCHIVAL_MID = structure("archival_mid");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:108:    public static final RegistryObject<Block> ARCHIVAL_TOP = structure("archival_top");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:109:    public static final RegistryObject<Block> ARCHIVAL_BOT_1 = structure("archival_bot_1");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:110:    public static final RegistryObject<Block> ARCHIVAL_MID_2 = structure("archival_mid_2");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:111:    public static final RegistryObject<Block> OFFICE_BOTTOM = structure("office_bottom");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:114:    public static final RegistryObject<Block> SKYROOM_BOT_1 = structure("skyroom_bot_1");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:115:    public static final RegistryObject<Block> SKYROOM_BOT_2 = structure("skyroom_bot_2");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:116:    public static final RegistryObject<Block> SKYROOM_MID = structure("skyroom_mid");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:117:    public static final RegistryObject<Block> SKYROOM_TOP_ALT = structure("skyroom_top_alt");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:118:    public static final RegistryObject<Block> SKYROOM_BLOCK = structure("skyroom_block");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:330:        addFacilityCreativeItem(general, "archival_bottom");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:331:        addFacilityCreativeItem(general, "archival_mid");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:332:        addFacilityCreativeItem(general, "archival_top");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:333:        addFacilityCreativeItem(general, "archival_bot_1");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:334:        addFacilityCreativeItem(general, "archival_mid_2");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:335:        addFacilityCreativeItem(general, "office_bottom");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:338:        addFacilityCreativeItem(general, "skyroom_bot_1");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:339:        addFacilityCreativeItem(general, "skyroom_bot_2");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:340:        addFacilityCreativeItem(general, "skyroom_mid");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:341:        addFacilityCreativeItem(general, "skyroom_top_alt");
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:342:        addFacilityCreativeItem(general, "skyroom_block");
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:118:    public static List<RegistryObject<Item>> creativeItems() {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:94:            "core_room_elevator_station", StationBlock::new);
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:107:            "core_room_elevator_station", () -> new ElevatorBlockItem(
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:108:                    STATION.get(), "tooltip.scp_additions.core_room_elevator_station"));
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:120:            BLOCK_ENTITIES.register("core_room_elevator_station", () ->
+src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:157:                    ScpAdditionsMod.MODID, "core_room_elevator_station");
+=== SCP330 REFERENCES ===
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:570:                    .scale(PHASE_MOVEMENT_SPEED);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:895:                ? point.subtract(rangedLockedDirection.scale(0.22D))
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:948:                .add(rangedLockedDirection.scale(distance))
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:949:                .add(right.scale(sideOffset));
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:969:                .normalize().scale(0.22D);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1009:        VoxelShape collision = state.getCollisionShape(level(), pos);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1028:            return point.add(direction.scale(RAY_ADVANCE_EPSILON));
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1030:        return point.add(direction.scale(Math.max(RAY_ADVANCE_EPSILON,
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1058:                .add(forward.scale(Mth.lerp(progress, 0.18D,
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1060:                .add(right.scale(Mth.lerp(progress, 0.36D,
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1085:            VoxelShape shape = state.getCollisionShape(level(), mutable);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1127:            VoxelShape shape = state.getCollisionShape(level(), mutable);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1171:                    VoxelShape shape = state.getCollisionShape(level(), mutable);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1224:        Vec3 behind = horizontal.normalize().scale(-0.28D);
+src/main/java/net/mcreator/scpadditions/entity/Scp106Entity.java:1227:                .scale((random.nextDouble() - 0.5D) * 0.34D);
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:537:        double dot = look.dot(toPoint.scale(1.0D / distance));
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:603:        if (!Double.isFinite(distance)) return point.add(direction.scale(RAY_ADVANCE_EPSILON));
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:604:        return point.add(direction.scale(Math.max(RAY_ADVANCE_EPSILON, distance + RAY_ADVANCE_EPSILON)));
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:815:        Vec3 directStep = directHorizontal.scale(1.0D / distance).scale(stepDistance);
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:840:        return length <= 0.001D ? Vec3.ZERO : horizontal.scale(1.0D / length).scale(Math.min(stepDistance, length));
+src/main/java/net/mcreator/scpadditions/entity/Scp173Entity.java:852:            candidate = candidate.scale(0.5D);
+src/main/java/net/mcreator/scpadditions/entity/AbstractScp131Entity.java:358:        return scp173.position().add(direction.scale(SCP_173_WATCH_DISTANCE));
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModItems.java:42:	public static final RegistryObject<Item> SCP_330_BLUE_CANDY = REGISTRY.register("scp_330_blue_candy", Scp330CandyItem::new);
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModItems.java:43:	public static final RegistryObject<Item> SCP_330_PINK_CANDY = REGISTRY.register("scp_330_pink_candy", Scp330CandyItem::new);
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModItems.java:44:	public static final RegistryObject<Item> SCP_330_YELLOW_CANDY = REGISTRY.register("scp_330_yellow_candy", Scp330CandyItem::new);
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModBlocks.java:36:import net.mcreator.scpadditions.block.Scp330Block;
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModBlocks.java:102:	public static final RegistryObject<Block> SCP_330 = REGISTRY.register("scp_330", () -> new Scp330Block());
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMobEffects.java:14:import net.mcreator.scpadditions.effect.Scp330HandLossEffect;
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModMobEffects.java:21:            REGISTRY.register("scp_330_hand_loss", Scp330HandLossEffect::new);
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModBlockEntities.java:17:import net.mcreator.scpadditions.block.entity.Scp330BlockEntity;
+src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModBlockEntities.java:22:	public static final RegistryObject<BlockEntityType<Scp330BlockEntity>> SCP_330 = REGISTRY.register("scp_330", () -> BlockEntityType.Builder.of(Scp330BlockEntity::new, ScpAdditionsModBlocks.SCP_330.get()).build(null));
+src/main/java/net/mcreator/scpadditions/item/Scp330CandyItem.java:12:public final class Scp330CandyItem extends Item {
+src/main/java/net/mcreator/scpadditions/item/Scp330CandyItem.java:19:    public Scp330CandyItem() {
+src/main/java/net/mcreator/scpadditions/facility/ScpSignSupportBlock.java:72:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/ScpSignSupportBlock.java:125:    public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/ScpSignSupportBlock.java:133:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/ScpSignSupportBlock.java:135:        return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:666:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:716:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:755:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:756:            BlockState state = super.getStateForPlacement(context);
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:775:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:846:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:872:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:886:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:905:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:906:            BlockState state = super.getStateForPlacement(context);
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:933:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:939:        public VoxelShape getCollisionShape(BlockState state,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:941:            return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:971:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:987:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:995:        public VoxelShape getCollisionShape(BlockState state,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:997:            return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1057:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1095:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1103:        public VoxelShape getCollisionShape(BlockState state,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1105:            return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1169:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1191:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1228:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1265:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1274:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1397:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java:1414:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityPropPartBlock.java:83:    public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityPropPartBlock.java:90:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilityPropPartBlock.java:92:        return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:295:                        player.position().add(direction.scale(step)));
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:579:            Vec3 sample = player.position().add(direction.scale(step));
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:635:                    pursuer.position().add(direction.scale(step)));
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:805:                return displacement.scale(0.75D).add(velocity.scale(0.25D));
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:903:                            : smoothedTravel.scale(0.45D)
+src/main/java/net/mcreator/scpadditions/facility/Scp079FacilityThreatEvents.java:904:                            .add(displacement.scale(0.55D));
+src/main/java/net/mcreator/scpadditions/facility/LeftDoorButtons.java:126:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/LeftDoorButtons.java:144:        public VoxelShape getShape(BlockState blockState, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:314:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:387:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:538:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:688:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:729:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:735:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:793:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:809:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/UBlocksModule.java:815:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/WetFloorBlock.java:64:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/WetFloorBlock.java:85:    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/facility/WetFloorBlock.java:93:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/facility/WetFloorBlock.java:95:        return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/FacilitySignBlock.java:82:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/FacilitySignBlock.java:131:    public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilitySignBlock.java:137:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/FacilitySignBlock.java:139:        return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/facility/MirroredDoorButtons.java:126:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/MirroredDoorButtons.java:142:        public VoxelShape getShape(BlockState blockState, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/HeavyDoorPowerRelay.java:145:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/HeavyDoorPowerRelay.java:151:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:383:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:488:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:494:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:550:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:586:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:592:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:646:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:693:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:720:        public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:726:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:732:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:783:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:789:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/Scp914UsageNoticeBlock.java:65:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/facility/Scp914UsageNoticeBlock.java:118:    public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/Scp914UsageNoticeBlock.java:126:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/Scp914UsageNoticeBlock.java:128:        return getShape(state, level, pos, context);
+src/main/java/net/mcreator/scpadditions/scp330/Scp330Hands.java:32:public final class Scp330Hands {
+src/main/java/net/mcreator/scpadditions/scp330/Scp330Hands.java:37:    private Scp330Hands() {
+src/main/java/net/mcreator/scpadditions/scp330/Scp330Hands.java:129:                        "scp_330_achievement"));
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:13:public final class Scp330HandsEvents {
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:14:    private Scp330HandsEvents() {
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:19:        if (event.phase == TickEvent.Phase.END) Scp330Hands.maintain(event.player);
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:24:        if (event.isWasDeath()) Scp330Hands.resetAfterDeath(event.getEntity());
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:29:        Scp330Hands.resetAfterDeath(event.getEntity());
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:34:        cancel(event, Scp330Hands.isDisabled(event.getEntity()));
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:39:        cancel(event, Scp330Hands.isDisabled(event.getEntity()));
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:44:        cancel(event, Scp330Hands.isDisabled(event.getEntity()));
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:49:        cancel(event, Scp330Hands.isDisabled(event.getEntity()));
+src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java:54:        cancel(event, Scp330Hands.isDisabled(event.getEntity()));
+src/main/java/net/mcreator/scpadditions/block/LeftReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/LeftReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914clockworks2Block.java:67:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/entity/Scp330BlockEntity.java:13:public final class Scp330BlockEntity extends BlockEntity implements GeoBlockEntity {
+src/main/java/net/mcreator/scpadditions/block/entity/Scp330BlockEntity.java:16:    public Scp330BlockEntity(BlockPos pos, BlockState state) {
+src/main/java/net/mcreator/scpadditions/block/Scp902OpenBlock.java:78:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp902OpenBlock.java:93:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive4Block.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive4Block.java:77:	public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive4Block.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp079offBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp079offBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914clockworksBlock.java:68:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:29:import net.mcreator.scpadditions.block.entity.Scp330BlockEntity;
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:30:import net.mcreator.scpadditions.scp330.Scp330Hands;
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:36:public final class Scp330Block extends BaseEntityBlock {
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:44:    public Scp330Block() {
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:56:        return new Scp330BlockEntity(pos, state);
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:71:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:87:    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:93:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/block/Scp330Block.java:108:        return Scp330Hands.takeCandy(level, pos, player)
+src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderWrongBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderWrongBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:79:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialRoughBlock.java:94:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:79:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialFineBlock.java:94:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914OutputDoorClosedBlock.java:66:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914OutputDoorClosedBlock.java:81:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:83:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp294Block.java:98:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp902ClosedBlock.java:76:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp902ClosedBlock.java:91:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914bodyBlock.java:67:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914bodyBlock.java:82:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/DecontaminationCollisionBlock.java:98:    public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/block/DecontaminationCollisionBlock.java:104:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914OutputDoorBlock.java:63:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914OutputDoorBlock.java:78:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive2Block.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive2Block.java:77:	public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive2Block.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonLoffBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonLoffBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914KeyWindBlock.java:65:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914KeyWindBlock.java:80:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaGateBlock.java:85:    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/TeslaGateBlock.java:91:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/TeslaGateBlock.java:102:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914IntakeDoorBlock.java:63:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914IntakeDoorBlock.java:78:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaTerminalOffBlock.java:77:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaTerminalOffBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonRonBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonRonBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/AbstractDecontaminationBlock.java:87:    public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/block/AbstractDecontaminationBlock.java:94:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/block/AbstractDecontaminationBlock.java:101:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:92:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaTerminalBlockBlock.java:120:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914IntakeBlock.java:58:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914IntakeBlock.java:73:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp294OutOfRangeBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp294OutOfRangeBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:75:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dial1to1Block.java:90:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:79:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialVeryFineBlock.java:94:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/LeftReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/LeftReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp1176Block.java:76:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp1176Block.java:91:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderWrongBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderWrongBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/LeftReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/LeftReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonLonBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonLonBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderWrongBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3RightReaderWrongBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp079controlBlock.java:72:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6RightReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5LeftReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv5RightReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4RightReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914IntakeDoorClosedBlock.java:66:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914IntakeDoorClosedBlock.java:81:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaRechargeBlock.java:82:    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/TeslaRechargeBlock.java:88:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/TeslaRechargeBlock.java:99:    public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/RightReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/RightReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive3Block.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive3Block.java:77:	public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActive3Block.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv4LeftReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaGateCollisionBlock.java:76:    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/TeslaGateCollisionBlock.java:82:    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
+src/main/java/net/mcreator/scpadditions/block/Scp079onBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp079onBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/RightReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/RightReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp079controloffBlock.java:71:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv3LeftReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/SCP079SystemControlBlock.java:71:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActiveBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActiveBlock.java:77:	public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/TeslaActiveBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp294StockingBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp294StockingBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/RightReaderAcceptBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/RightReaderAcceptBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonRoffBlock.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/ButtonRoffBlock.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2RightReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:79:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914dialCoarseBlock.java:94:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914OutputBlock.java:58:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp914OutputBlock.java:73:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp426Block.java:72:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Scp426Block.java:87:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderBlock.java:71:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv6LeftReaderBlock.java:86:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderWrongBlock.java:73:	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+src/main/java/net/mcreator/scpadditions/block/Lv2LeftReaderWrongBlock.java:88:	public BlockState getStateForPlacement(BlockPlaceContext context) {
+src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java:114:                travel.add(awayFromHunter.scale(originWeight)));
+src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java:128:                interceptionDirection.scale(leadDistance));
+src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java:140:                        .add(interceptionDirection.scale(forwardJitter))
+src/main/java/net/mcreator/scpadditions/roamer/Scp106EmergenceLocator.java:141:                        .add(right.scale(side));
+=== ELEVATOR SHAPES AND ANCHORS ===
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java:512:    public Vec3 contextAnchor(boolean up) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java:549:        Vec3 upAnchor = contextAnchor(true).subtract(position());
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java:550:        Vec3 downAnchor = contextAnchor(false).subtract(position());
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:8:import net.minecraft.world.phys.shapes.VoxelShape;
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:67:    public static VoxelShape stationCellShape(Direction facing, int localX,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:74:    public static VoxelShape stationSelectionCellShape() {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:78:    public static VoxelShape pulleyCellShape(Direction facing, int localX,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:83:    public static VoxelShape pulleySelectionCellShape() {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:87:    public static VoxelShape beamShape(Direction facing) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:91:    public static VoxelShape beamCellShape(Direction facing, int localX,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:96:    private static VoxelShape cellShape(List<AABB> source, Direction facing,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java:103:        VoxelShape result = Shapes.empty();
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:50:import net.minecraft.world.phys.shapes.VoxelShape;
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:102:            "core_room_elevator_structure_part", StructurePartBlock::new);
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:104:            "core_room_elevator_beam_part", BeamStructurePartBlock::new);
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:127:    public static final RegistryObject<BlockEntityType<StructurePartBlockEntity>> PART_BE =
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:129:                    BlockEntityType.Builder.of(StructurePartBlockEntity::new,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:203:    private static List<LocalCell> stationCells() {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:258:                    && level.getBlockEntity(target) instanceof StructurePartBlockEntity part) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:288:                if (level.getBlockEntity(target) instanceof StructurePartBlockEntity part) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:307:            case STATION -> stationCells();
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:317:                if (level.getBlockEntity(target) instanceof StructurePartBlockEntity part
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:428:                    stationCells(), player)) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:488:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:494:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:586:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:592:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:693:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:708:        private static final VoxelShape FLOOR_SHAPE = Block.box(
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:726:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:732:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:738:        public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:761:    public static class StructurePartBlock extends BaseEntityBlock {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:762:        private StructurePartBlock() {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:767:        protected StructurePartBlock(BlockBehaviour.Properties properties) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:779:            return new StructurePartBlockEntity(pos, state);
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:783:        public VoxelShape getShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:789:        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:791:            if (!(level.getBlockEntity(pos) instanceof StructurePartBlockEntity part)) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:815:            if (!(level.getBlockEntity(pos) instanceof StructurePartBlockEntity part)) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:832:                    && level.getBlockEntity(pos) instanceof StructurePartBlockEntity part) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:846:                    && level.getBlockEntity(pos) instanceof StructurePartBlockEntity part) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:862:            if (level.getBlockEntity(pos) instanceof StructurePartBlockEntity part) {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:873:    private static final class BeamStructurePartBlock
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:874:            extends StructurePartBlock {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:875:        private BeamStructurePartBlock() {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:882:    public static final class StructurePartBlockEntity extends BlockEntity {
+src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java:889:        public StructurePartBlockEntity(BlockPos pos, BlockState state) {
+src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:489:                    return carriage.contextAnchor(true);
+src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java:492:                    return carriage.contextAnchor(false);
+=== GENERAL BLOCK LANG KEYS ===
+death.attack.scp1176=%s fell for the curse from SCP-1176.
+subtitles.scp1176=SCP-1176 curse
+block.scp_additions.scp_1176=SCP-1176
+advancements.scp_1176_achievement.title=Cursed Honey
+advancements.scp_1176_achievement.descr=Found SCP-1176.

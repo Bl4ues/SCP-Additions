@@ -1,1 +1,1 @@
-Apply the final validated Core Room elevator repairs and SCP-330 rebuild.
+Trigger final validated Core Room elevator repairs and SCP-330 rebuild from pull_request_target.

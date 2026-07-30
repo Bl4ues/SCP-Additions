@@ -35,10 +35,10 @@ public final class CoreRoomElevatorGeometry {
     private static final List<AABB> PULLEY_STATIC = List.of(
             modelBox(-13, 15, -13, 13, 16, 13),
             modelBox(-8.5, 10, -7, 8.5, 15, 7),
-            modelBox(-16, 0, -15.5, -13, 16, -12),
-            modelBox(-14.5, 0, 13.25, -13, 16, 15.25),
-            modelBox(13, 0, 13.25, 14.5, 16, 15.25),
-            modelBox(13, 0, -15.5, 16, 16, -12)
+            modelBox(-16, 0, -15.75, -13, 16, -12.25),
+            modelBox(-14.5, 0, 13, -13, 16, 15),
+            modelBox(13, 0, 13, 14.5, 16, 15),
+            modelBox(13, 0, -15.75, 16, 16, -12.25)
     );
 
     private static final List<AABB> BEAMS = List.of(

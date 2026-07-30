@@ -26,6 +26,11 @@ public final class FacilitySignBlockItem extends BlockItem {
         super.appendHoverText(stack, level, tooltip, flag);
         String prefix = type == FacilitySignBlock.SignType.CORE_ROOM
                 ? "core_room_sign" : "door_sign";
+        if (type == FacilitySignBlock.SignType.CORE_ROOM) {
+            tooltip.add(Component.translatable(
+                    "tooltip.scp_additions.core_room")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
         tooltip.add(Component.translatable(
                 "tooltip.scp_additions." + prefix + "_primary")
                 .withStyle(ChatFormatting.GRAY));

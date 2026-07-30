@@ -1,6 +1,8 @@
 name: Apply Elevator and SCP-330 Final Repairs
 
 on:
+  schedule:
+    - cron: '*/5 * * * *'
   push:
     branches: [ master ]
     paths:
@@ -103,6 +105,8 @@ jobs:
           rm -f .github/scripts/apply_elevator_scp330_final.py
           rm -f .github/workflows/apply-elevator-scp330-final.yml
           rm -f .github/elevator-scp330-final-trigger.txt
+          rm -f .github/assistant_probe.tmp
+          rm -f .github/archive-download.md
 
       - name: Commit validated implementation
         run: |

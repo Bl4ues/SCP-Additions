@@ -489,7 +489,11 @@ public final class CoreRoomElevatorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return CoreRoomElevatorGeometry.stationSelectionCellShape();
+            boolean gateSolid = !(level.getBlockEntity(pos)
+                    instanceof StationBlockEntity station)
+                    || station.isGateCollisionSolid();
+            return CoreRoomElevatorGeometry.stationCellShape(
+                    state.getValue(FACING), 0, 0, 0, gateSolid);
         }
 
         @Override

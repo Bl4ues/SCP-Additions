@@ -43,6 +43,30 @@ jobs:
           script = '\n'.join(
               line[indent:] if line.startswith(' ' * indent) else line
               for line in script_lines) + '\n'
+
+          script = script.replace('import json\n', 'import json\nimport re\n', 1)
+          label = "'Station direct button hit testing')"
+          call_end = script.index(label) + len(label)
+          call_start = script.rfind('replace_once(', 0, call_end)
+          if call_start < 0:
+              raise SystemExit('Station button replacement call not found')
+          robust = '''module_text = module_path.read_text(encoding='utf-8')
+          station_pattern = re.compile(
+              r'            Vec3 local = CoreRoomElevatorGeometry\\.worldToModelLocal\\(.*?'
+              r'            double downDistance = local\\.distanceToSqr\\(downButton\\);',
+              re.S)
+          station_replacement = """            Vec3 upButton = CoreRoomElevatorGeometry.stationButtonWorld(
+                      pos, state.getValue(FACING), true);
+              Vec3 downButton = CoreRoomElevatorGeometry.stationButtonWorld(
+                      pos, state.getValue(FACING), false);
+              double upDistance = hit.getLocation().distanceToSqr(upButton);
+              double downDistance = hit.getLocation().distanceToSqr(downButton);"""
+          module_text, station_count = station_pattern.subn(
+              station_replacement, module_text, count=1)
+          if station_count != 1:
+              raise SystemExit(f'Station direct button hit testing: expected one pattern, found {station_count}')
+          module_path.write_text(module_text, encoding='utf-8')'''
+          script = script[:call_start] + robust + script[call_end:]
           Path('/tmp/apply_elevator_fix.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/apply_elevator_fix.py

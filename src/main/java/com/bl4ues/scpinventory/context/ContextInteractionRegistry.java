@@ -157,11 +157,8 @@ public final class ContextInteractionRegistry {
             ResourceLocation stationId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_station");
             Block station = CoreRoomElevatorModule.STATION.get();
-            Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
-                    Direction.EAST, 14.64492D / 16.0D, 0.0D,
-                    -16.69749D / 16.0D);
-            double x = 0.5D + modelAligned.x;
-            double z = 0.5D + modelAligned.z;
+            double x = 0.5D;
+            double z = 0.5D;
             addRule(new Rule(Kind.BLOCK, stationId, station, null,
                     "elevator_station_up", 2.8D, 120, "",
                     "", false, false, false,
@@ -442,6 +439,10 @@ public final class ContextInteractionRegistry {
         public String useItem() { return useItem; }
         public String icon() { return icon; }
         public double promptScale() { return promptScale; }
+        public boolean requiresPreciseAim() {
+        return interactionKey.startsWith("elevator_station_")
+                || interactionKey.startsWith("elevator_carriage_");
+    }
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state) {
@@ -479,6 +480,11 @@ public final class ContextInteractionRegistry {
         }
 
         public Vec3 resolveBlockAnchor(BlockPos pos, BlockState state) {
+    if (block == CoreRoomElevatorModule.STATION.get()) {
+        return CoreRoomElevatorGeometry.stationButtonWorld(pos,
+                state.getValue(CoreRoomElevatorModule.FACING),
+                interactionKey.endsWith("up"));
+    }
             Vec3 centered = new Vec3(localX - 0.5D,
                     localY - 0.5D, localZ - 0.5D);
             Vec3 rotated = rotate(centered, state);

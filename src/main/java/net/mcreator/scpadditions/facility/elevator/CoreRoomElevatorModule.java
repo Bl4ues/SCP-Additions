@@ -448,16 +448,12 @@ public final class CoreRoomElevatorModule {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos,
                 Player player, InteractionHand hand, BlockHitResult hit) {
-            Vec3 local = CoreRoomElevatorGeometry.worldToModelLocal(
-                    pos, state.getValue(FACING), hit.getLocation());
-            Vec3 upButton = CoreRoomElevatorGeometry.rotateLocalVector(
-                    Direction.EAST, 14.64492D / 16.0D,
-                    21.25D / 16.0D, -16.69749D / 16.0D);
-            Vec3 downButton = CoreRoomElevatorGeometry.rotateLocalVector(
-                    Direction.EAST, 14.64492D / 16.0D,
-                    19.25D / 16.0D, -16.69749D / 16.0D);
-            double upDistance = local.distanceToSqr(upButton);
-            double downDistance = local.distanceToSqr(downButton);
+            Vec3 upButton = CoreRoomElevatorGeometry.stationButtonWorld(
+            pos, state.getValue(FACING), true);
+    Vec3 downButton = CoreRoomElevatorGeometry.stationButtonWorld(
+            pos, state.getValue(FACING), false);
+    double upDistance = hit.getLocation().distanceToSqr(upButton);
+    double downDistance = hit.getLocation().distanceToSqr(downButton);
             if (Math.min(upDistance, downDistance) > 0.32D * 0.32D) {
                 return InteractionResult.PASS;
             }
@@ -640,7 +636,7 @@ public final class CoreRoomElevatorModule {
 
     public static final class BeamBlock extends HorizontalDirectionalBlock {
         private BeamBlock() {
-            super(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F)
+            super(BlockBehaviour.Properties.of().strength(5.0F, 15.0F)
                     .sound(SoundType.METAL).noOcclusion());
             registerDefaultState(stateDefinition.any()
                     .setValue(FACING, Direction.NORTH)
@@ -880,7 +876,7 @@ public final class CoreRoomElevatorModule {
             extends StructurePartBlock {
         private BeamStructurePartBlock() {
             super(BlockBehaviour.Properties.of()
-                    .strength(-1.0F, 3600000.0F)
+                    .strength(5.0F, 15.0F)
                     .sound(SoundType.METAL).noOcclusion());
         }
     }
@@ -904,6 +900,10 @@ public final class CoreRoomElevatorModule {
             this.localY = localY;
             this.localZ = localZ;
             setChanged();
+    if (level != null) {
+        level.sendBlockUpdated(worldPosition, getBlockState(),
+                getBlockState(), 3);
+    }
         }
 
         public BlockPos masterPos() { return masterPos; }
@@ -931,6 +931,24 @@ public final class CoreRoomElevatorModule {
             localY = tag.getInt("LocalY");
             localZ = tag.getInt("LocalZ");
         }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
+    }
+
+    @Nullable
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection net,
+            ClientboundBlockEntityDataPacket packet) {
+        CompoundTag tag = packet.getTag();
+        if (tag != null) load(tag);
+    }
     }
 
     public static final class StationBlockEntity extends BlockEntity

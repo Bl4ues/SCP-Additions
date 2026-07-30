@@ -182,7 +182,7 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorCarriageEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucentCull(texture);
+            return RenderType.entityCutoutNoCull(texture);
         }
 
         @Override

@@ -352,7 +352,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                 entity.move(MoverType.SHULKER,
                         new Vec3(0.0D, deltaY, 0.0D));
                 entity.fallDistance = 0.0F;
-                if (standing) entity.setOnGround(true);
+                if (standing) stabilizeGroundedEntity(entity);
             }
             resolveSweptFloorCollision(entity, previous);
             resolveShellCollision(entity);
@@ -364,21 +364,34 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     private void resolveSweptFloorCollision(Entity entity, Vec3 previous) {
-        AABB floor = shellBoxes().get(0);
-        AABB box = entity.getBoundingBox();
-        boolean horizontalOverlap = box.maxX > floor.minX
-                && box.minX < floor.maxX && box.maxZ > floor.minZ
-                && box.minZ < floor.maxZ;
-        boolean crossedFloor = previous.y >= floor.maxY - 0.18D
-                && box.minY < floor.maxY;
-        boolean recoverBelowFloor = box.minY < floor.maxY
-                && box.minY > floor.minY - 0.85D;
-        if (!horizontalOverlap || (!crossedFloor && !recoverBelowFloor)) return;
-        entity.move(MoverType.SHULKER, new Vec3(0.0D,
-                floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
-        entity.setOnGround(true);
-        entity.fallDistance = 0.0F;
+    AABB floor = shellBoxes().get(0);
+    AABB box = entity.getBoundingBox();
+    boolean horizontalOverlap = box.maxX > floor.minX
+            && box.minX < floor.maxX && box.maxZ > floor.minZ
+            && box.minZ < floor.maxZ;
+    boolean crossedFloor = previous.y >= floor.maxY - 0.18D
+            && box.minY < floor.maxY;
+    boolean recoverBelowFloor = box.minY < floor.maxY
+            && box.minY > floor.minY - 1.50D;
+    if (!horizontalOverlap || (!crossedFloor && !recoverBelowFloor)) return;
+    placeEntityOnFloor(entity, floor);
+}
+
+    private static void placeEntityOnFloor(Entity entity, AABB floor) {
+    AABB box = entity.getBoundingBox();
+    entity.move(MoverType.SHULKER, new Vec3(0.0D,
+            floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
+    stabilizeGroundedEntity(entity);
+}
+
+    private static void stabilizeGroundedEntity(Entity entity) {
+    Vec3 motion = entity.getDeltaMovement();
+    if (motion.y < 0.0D) {
+        entity.setDeltaMovement(motion.x, 0.0D, motion.z);
     }
+    entity.setOnGround(true);
+    entity.fallDistance = 0.0F;
+}
 
     private void playCabinFootstep(Entity entity, Vec3 previous) {
         if (!(entity instanceof Player) || !isStandingOnFloor(entity, getY())) {
@@ -421,15 +434,12 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     private void resolveFloorCollision(Entity entity, AABB floor) {
-        AABB box = entity.getBoundingBox();
-        if (!box.intersects(floor)) return;
-        if (box.getCenter().y >= floor.getCenter().y) {
-            entity.move(MoverType.SHULKER, new Vec3(0.0D,
-                    floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
-            entity.setOnGround(true);
-            entity.fallDistance = 0.0F;
-        }
+    AABB box = entity.getBoundingBox();
+    if (!box.intersects(floor)) return;
+    if (box.getCenter().y >= floor.getCenter().y) {
+        placeEntityOnFloor(entity, floor);
     }
+}
 
     private void resolveCeilingCollision(Entity entity, AABB ceiling) {
         AABB box = entity.getBoundingBox();
@@ -485,7 +495,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             AABB modelAligned = CoreRoomElevatorGeometry.rotateAabb(box,
                     Direction.EAST, 0.0D, 0.0D);
             AABB facingAligned = CoreRoomElevatorGeometry.rotateAabb(
-                    modelAligned, facing(), 0.0D, 0.0D);
+                    modelAligned, facing().getOpposite(), 0.0D, 0.0D);
             world.add(facingAligned.move(getX(), getY(), getZ()));
         }
         return world;
@@ -519,7 +529,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
                 Direction.EAST, modelX, modelY, modelZ);
         Vec3 facingRotated = CoreRoomElevatorGeometry.rotateLocalVector(
-                facing(), modelAligned.x, modelAligned.y, modelAligned.z);
+                facing().getOpposite(), modelAligned.x, modelAligned.y, modelAligned.z);
         return position().add(facingRotated);
     }
 

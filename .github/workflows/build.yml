@@ -31,6 +31,11 @@ jobs:
       - name: Apply source and model repairs
         run: python .github/scripts/apply_elevator_runtime_final.py
 
+      - name: Install audio tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
       - name: Convert elevator audio to positional mono
         run: |
           for name in elevator_door_close station_close elevator_moving elevator_cabin_loop; do

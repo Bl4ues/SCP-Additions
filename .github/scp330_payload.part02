@@ -3,3 +3,10 @@ PAYLOAD += (
 )
 import base64, gzip
 exec(compile(gzip.decompress(base64.b64decode(PAYLOAD)), __file__, 'exec'))
+from pathlib import Path
+registry_path = Path('src/main/java/net/mcreator/scpadditions/init/ScpAdditionsModBlockEntities.java')
+registry_text = registry_path.read_text(encoding='utf-8')
+registry_text = registry_text.replace(
+    'public static final RegistryObject<BlockEntityType<?>> SCP_330 = register("scp_330", ScpAdditionsModBlocks.SCP_330, Scp330BlockEntity::new);',
+    'public static final RegistryObject<BlockEntityType<Scp330BlockEntity>> SCP_330 = REGISTRY.register("scp_330", () -> BlockEntityType.Builder.of(Scp330BlockEntity::new, ScpAdditionsModBlocks.SCP_330.get()).build(null));')
+registry_path.write_text(registry_text, encoding='utf-8')

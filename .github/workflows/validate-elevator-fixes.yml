@@ -23,6 +23,69 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Make orientation patch class-specific
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/scripts/apply_elevator_fixes.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''client = replace_once(
+              client,
+              "                root.setRotY(rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "                root.setRotY((float) (-Math.PI / 2.0D)\\n"
+              "                        + rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "station authored quarter-turn",
+          )
+          client = replace_once(
+              client,
+              "                root.setRotY((float) (-Math.PI / 2.0D)\\n"
+              "                        + rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "                root.setRotY(rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "pulley duplicate quarter-turn",
+          )
+          # The first identical pattern above belongs to the station after replacement.
+          # Replace the next authored double rotation specifically in the carriage block.
+          '''
+          new = '''station_start = client.index("    public static final class StationModel")
+          station_end = client.index("    public static final class StationRenderer", station_start)
+          station = client[station_start:station_end]
+          station = replace_once(
+              station,
+              "                root.setRotY(rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "                root.setRotY((float) (-Math.PI / 2.0D)\\n"
+              "                        + rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "station authored quarter-turn",
+          )
+          client = client[:station_start] + station + client[station_end:]
+
+          pulley_start = client.index("    public static final class PulleyModel")
+          pulley_end = client.index("    public static final class PulleyRenderer", pulley_start)
+          pulley = client[pulley_start:pulley_end]
+          pulley = replace_once(
+              pulley,
+              "                root.setRotY((float) (-Math.PI / 2.0D)\\n"
+              "                        + rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "                root.setRotY(rotationFor(animatable.getBlockState()\\n"
+              "                        .getValue(CoreRoomElevatorModule.FACING)));\\n",
+              "pulley duplicate quarter-turn",
+          )
+          client = client[:pulley_start] + pulley + client[pulley_end:]
+
+          # Replace the authored double rotation specifically in the carriage block.
+          '''
+          if old not in text:
+              raise SystemExit('Could not locate ambiguous orientation patch block')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Apply elevator corrections
         run: python .github/scripts/apply_elevator_fixes.py
 
@@ -43,5 +106,3 @@ jobs:
           git add -A
           git commit -m "Fix Core Room elevator rendering orientation and collision"
           git push origin HEAD:elevator-fixes-validation
-
-# Triggered after the workflow became available on the validation branch.

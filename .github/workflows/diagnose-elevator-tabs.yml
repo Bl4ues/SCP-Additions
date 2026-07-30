@@ -1,0 +1,46 @@
+name: Diagnose elevator and facility layout
+on:
+  push:
+    branches: [master]
+    paths: [tools/hotfix/DIAGNOSE_ELEVATOR_TABS]
+permissions:
+  contents: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Collect relevant source context
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=tools/elevator-facility-diagnostic.txt
+          : > "$out"
+          echo '=== FILES ===' >> "$out"
+          find src/main/java -type f | grep -Ei 'Elevator|Creative|Tab|Scp330|UBlocks|ContextPrompt' | sort >> "$out" || true
+          echo '=== CREATIVE TAB REFERENCES ===' >> "$out"
+          grep -RInE 'lcz_sublevel_1|facility.general|creativeItems\(|core_room_elevator_station|archival|skyroom|security_bottom|office_bottom|tesla_room' src/main/java >> "$out" || true
+          echo '=== SCP330 REFERENCES ===' >> "$out"
+          grep -RInE 'Scp330|scp_330|scale\(|getStateForPlacement|getShape|getCollisionShape' src/main/java/net/mcreator/scpadditions | head -n 300 >> "$out" || true
+          echo '=== ELEVATOR SHAPES AND ANCHORS ===' >> "$out"
+          grep -RInE 'VoxelShape|getShape|getCollisionShape|contextAnchor|stationCells|StructurePartBlock|anchor\(' src/main/java/net/mcreator/scpadditions/facility/elevator src/main/java/com/bl4ues/scpinventory/context >> "$out" || true
+          echo '=== GENERAL BLOCK LANG KEYS ===' >> "$out"
+          python - <<'PY' >> "$out"
+          import json
+          from pathlib import Path
+          p=Path('src/main/resources/assets/scp_additions/lang/en_us.json')
+          data=json.loads(p.read_text())
+          needles=['Tesla Room','Archival','Office Bottom','Office Middle','Office Top','Skyroom','Security Bottom','Security Middle','Security Top','SCP-1176','honey']
+          for k,v in data.items():
+              if any(n.lower() in str(v).lower() or n.lower() in k.lower() for n in needles):
+                  print(f'{k}={v}')
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$out"
+          git commit -m "Collect elevator and facility diagnostic"
+          git push origin HEAD:master

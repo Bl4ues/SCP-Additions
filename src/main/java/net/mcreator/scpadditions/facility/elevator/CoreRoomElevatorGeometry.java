@@ -20,17 +20,12 @@ public final class CoreRoomElevatorGeometry {
             modelBox(13, 0, 13, 14.5, 48, 15),
             modelBox(-14.5, 0, 13, -13, 48, 15),
 
-            modelBox(17, 0, -24, 24, 0.75, 24),
-            modelBox(-24, 0, -24, -17, 0.75, 24),
-            modelBox(-17, 0, 16.5, 17, 0.75, 24),
-            modelBox(-12, 0, -24, 12, 0.75, -18.5),
-            modelBox(-12, 0, -29.75, 12, 0.75, -19.5),
-
-            modelBox(12, 0, -16.6, 17, 13.5, -16.4),
-            modelBox(-17, 0, -16.6, -12, 13.5, -16.4),
-            modelBox(-17, 0, 16.4, 17, 13.5, 16.6),
-            modelBox(16.4, 0, -16.5, 16.6, 13.5, 16.5),
-            modelBox(-16.6, 0, -16.5, -16.4, 13.5, 16.5),
+            // One shallow, continuous deck. Decorative glass and trim planes
+            // remain visual-only so players cannot snag on sub-pixel edges.
+            modelBox(17, 0, -24, 24, 0.25, 24),
+            modelBox(-24, 0, -24, -17, 0.25, 24),
+            modelBox(-17, 0, 16.5, 17, 0.25, 24),
+            modelBox(-12, 0, -29.75, 12, 0.25, -18.5),
 
             modelBox(10, 0, -18.5, 12, 17, -14.25),
             modelBox(-12, 0, -18.5, -10, 17, -14.25)

@@ -11,6 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,6 +21,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
+import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorManager;
+import net.mcreator.scpadditions.facility.elevator.ElevatorFoundation;
 
 import java.io.File;
 import java.io.FileReader;
@@ -156,15 +159,15 @@ public final class ContextInteractionRegistry {
             double x = 0.5D + 14.64492D / 16.0D;
             double z = 0.5D - 16.69749D / 16.0D;
             addRule(new Rule(Kind.BLOCK, stationId, station, null,
-                    "elevator_station_up", 2.8D, 120, "Call Up",
-                    "Elevator", true, true, false,
+                    "elevator_station_up", 2.8D, 120, "",
+                    "", false, false, false,
                     x, 21.25D / 16.0D, z,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.HORIZONTAL_FACING, true, true,
                     "front", "hand", "hand", 0.55D));
             addRule(new Rule(Kind.BLOCK, stationId, station, null,
-                    "elevator_station_down", 2.8D, 120, "Call Down",
-                    "Elevator", true, true, false,
+                    "elevator_station_down", 2.8D, 120, "",
+                    "", false, false, false,
                     x, 19.25D / 16.0D, z,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.HORIZONTAL_FACING, true, true,
@@ -174,15 +177,15 @@ public final class ContextInteractionRegistry {
                     ScpAdditionsMod.MODID, "core_room_elevator_carriage");
             EntityType<?> carriage = CoreRoomElevatorModule.CARRIAGE.get();
             addRule(new Rule(Kind.ENTITY, carriageId, null, carriage,
-                    "elevator_carriage_up", 2.8D, 125, "Go Up",
-                    "Elevator", true, true, false,
+                    "elevator_carriage_up", 2.8D, 125, "",
+                    "", false, false, false,
                     0.5D, 0.5D, 0.5D,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.NONE, true, true,
                     "front", "hand", "hand", 0.55D));
             addRule(new Rule(Kind.ENTITY, carriageId, null, carriage,
-                    "elevator_carriage_down", 2.8D, 125, "Go Down",
-                    "Elevator", true, true, false,
+                    "elevator_carriage_down", 2.8D, 125, "",
+                    "", false, false, false,
                     0.5D, 0.5D, 0.5D,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.NONE, true, true,
@@ -435,6 +438,30 @@ public final class ContextInteractionRegistry {
         public String useItem() { return useItem; }
         public String icon() { return icon; }
         public double promptScale() { return promptScale; }
+
+        public boolean isAvailable(Level level, BlockPos pos,
+                BlockState state) {
+            if (block == CoreRoomElevatorModule.STATION.get()) {
+                ElevatorFoundation.TravelDirection direction =
+                        interactionKey.endsWith("up")
+                                ? ElevatorFoundation.TravelDirection.UP
+                                : ElevatorFoundation.TravelDirection.DOWN;
+                return CoreRoomElevatorManager.hasStationInDirection(
+                        level, pos, direction);
+            }
+            return true;
+        }
+
+        public boolean isAvailable(Entity entity) {
+            if (entity instanceof CoreRoomElevatorCarriageEntity carriage) {
+                ElevatorFoundation.TravelDirection direction =
+                        interactionKey.endsWith("up")
+                                ? ElevatorFoundation.TravelDirection.UP
+                                : ElevatorFoundation.TravelDirection.DOWN;
+                return carriage.canTravel(direction);
+            }
+            return true;
+        }
 
         public String blockName(BlockState state) {
             if (!autoName) return name;

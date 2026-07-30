@@ -6,6 +6,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +24,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -66,6 +69,8 @@ import java.util.Set;
 /** Complete registry and block-side implementation for the modular Core Room elevator. */
 public final class CoreRoomElevatorModule {
     public static final int STATION_HEIGHT_BLOCKS = 3;
+    public static final int MIN_FLOOR_SPACING = 8;
+    public static final int MAX_FLOOR_SPACING = 32;
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty GENERATED = BooleanProperty.create("generated");
     private static final ThreadLocal<Boolean> MUTATING_PARTS =
@@ -81,6 +86,9 @@ public final class CoreRoomElevatorModule {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES,
                     ScpAdditionsMod.MODID);
+    public static final DeferredRegister<SoundEvent> SOUNDS =
+            DeferredRegister.create(ForgeRegistries.SOUND_EVENTS,
+                    ScpAdditionsMod.MODID);
 
     public static final RegistryObject<Block> STATION = BLOCKS.register(
             "core_room_elevator_station", StationBlock::new);
@@ -92,12 +100,14 @@ public final class CoreRoomElevatorModule {
             "core_room_floor", CoreRoomFloorBlock::new);
     public static final RegistryObject<Block> STRUCTURE_PART = BLOCKS.register(
             "core_room_elevator_structure_part", StructurePartBlock::new);
+    public static final RegistryObject<Block> BEAM_STRUCTURE_PART = BLOCKS.register(
+            "core_room_elevator_beam_part", BeamStructurePartBlock::new);
 
     public static final RegistryObject<Item> STATION_ITEM = ITEMS.register(
             "core_room_elevator_station", () -> new ElevatorBlockItem(
                     STATION.get(), "tooltip.scp_additions.core_room_elevator_station"));
     public static final RegistryObject<Item> PULLEY_ITEM = ITEMS.register(
-            "core_room_elevator_pulley", () -> new ElevatorBlockItem(
+            "core_room_elevator_pulley", () -> new PulleyBlockItem(
                     PULLEY.get(), "tooltip.scp_additions.core_room_elevator_pulley"));
     public static final RegistryObject<Item> BEAMS_ITEM = ITEMS.register(
             "core_room_elevator_beams", () -> new ElevatorBlockItem(
@@ -117,7 +127,19 @@ public final class CoreRoomElevatorModule {
     public static final RegistryObject<BlockEntityType<StructurePartBlockEntity>> PART_BE =
             BLOCK_ENTITIES.register("core_room_elevator_structure_part", () ->
                     BlockEntityType.Builder.of(StructurePartBlockEntity::new,
-                            STRUCTURE_PART.get()).build(null));
+                            STRUCTURE_PART.get(), BEAM_STRUCTURE_PART.get())
+                            .build(null));
+
+    public static final RegistryObject<SoundEvent> ELEVATOR_DOOR_CLOSE =
+            sound("elevator_door_close");
+    public static final RegistryObject<SoundEvent> STATION_CLOSE =
+            sound("station_close");
+    public static final RegistryObject<SoundEvent> ELEVATOR_MOVING =
+            sound("elevator_moving");
+    public static final RegistryObject<SoundEvent> ELEVATOR_DOOR_OPEN =
+            sound("elevator_door_open");
+    public static final RegistryObject<SoundEvent> ELEVATOR_CABIN_LOOP =
+            sound("elevator_cabin_loop");
 
     public static final RegistryObject<EntityType<CoreRoomElevatorCarriageEntity>> CARRIAGE =
             ENTITIES.register("core_room_elevator_carriage", () -> EntityType.Builder
@@ -136,6 +158,13 @@ public final class CoreRoomElevatorModule {
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
         ENTITIES.register(bus);
+        SOUNDS.register(bus);
+    }
+
+    private static RegistryObject<SoundEvent> sound(String path) {
+        ResourceLocation id = new ResourceLocation(ScpAdditionsMod.MODID, path);
+        return SOUNDS.register(path,
+                () -> SoundEvent.createVariableRangeEvent(id));
     }
 
     public enum StructureKind implements StringRepresentable {
@@ -224,7 +253,8 @@ public final class CoreRoomElevatorModule {
             BlockPos target = master.offset(rotated);
             BlockState existing = level.getBlockState(target);
             if (existing.canBeReplaced()) continue;
-            if (existing.is(STRUCTURE_PART.get())
+            if ((existing.is(STRUCTURE_PART.get())
+                    || existing.is(BEAM_STRUCTURE_PART.get()))
                     && level.getBlockEntity(target) instanceof StructurePartBlockEntity part) {
                 if (master.equals(part.masterPos()) && kind == part.kind()) {
                     continue;
@@ -252,7 +282,9 @@ public final class CoreRoomElevatorModule {
             for (LocalCell cell : cells) {
                 BlockPos rotated = rotateOffset(facing, cell.x(), cell.y(), cell.z());
                 BlockPos target = master.offset(rotated);
-                level.setBlock(target, STRUCTURE_PART.get().defaultBlockState(), 3);
+                Block partBlock = kind == StructureKind.BEAMS
+                        ? BEAM_STRUCTURE_PART.get() : STRUCTURE_PART.get();
+                level.setBlock(target, partBlock.defaultBlockState(), 3);
                 if (level.getBlockEntity(target) instanceof StructurePartBlockEntity part) {
                     part.configure(master, kind, cell.x(), cell.y(), cell.z());
                 }
@@ -296,10 +328,10 @@ public final class CoreRoomElevatorModule {
         return MUTATING_PARTS.get();
     }
 
-    public static final class ElevatorBlockItem extends BlockItem {
+    public static class ElevatorBlockItem extends BlockItem {
         private final String tooltipKey;
 
-        private ElevatorBlockItem(Block block, String tooltipKey) {
+        protected ElevatorBlockItem(Block block, String tooltipKey) {
             super(block, new Item.Properties());
             this.tooltipKey = tooltipKey;
         }
@@ -310,6 +342,28 @@ public final class CoreRoomElevatorModule {
             tooltip.add(Component.translatable(tooltipKey)
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
+        }
+    }
+
+    private static final class PulleyBlockItem extends ElevatorBlockItem {
+        private PulleyBlockItem(Block block, String tooltipKey) {
+            super(block, tooltipKey);
+        }
+
+        @Override
+        public InteractionResult useOn(UseOnContext context) {
+            BlockPlaceContext placement = new BlockPlaceContext(context);
+            if (CoreRoomElevatorManager.findPulleyFacing(placement.getLevel(),
+                    placement.getClickedPos()) == null) {
+                if (!placement.getLevel().isClientSide
+                        && placement.getPlayer() != null) {
+                    placement.getPlayer().sendSystemMessage(Component.translatable(
+                            "message.scp_additions.elevator_place_station_first")
+                            .withStyle(ChatFormatting.YELLOW));
+                }
+                return InteractionResult.FAIL;
+            }
+            return super.useOn(context);
         }
     }
 
@@ -335,6 +389,17 @@ public final class CoreRoomElevatorModule {
             if (!(level instanceof ServerLevel serverLevel)) return;
             Player player = placer instanceof Player found ? found : null;
             Direction facing = state.getValue(FACING);
+            if (!CoreRoomElevatorManager.isValidStationPlacement(
+                    serverLevel, pos, facing)) {
+                if (player != null) {
+                    player.sendSystemMessage(Component.translatable(
+                            "message.scp_additions.elevator_floor_spacing",
+                            MIN_FLOOR_SPACING, MAX_FLOOR_SPACING)
+                            .withStyle(ChatFormatting.RED));
+                }
+                serverLevel.destroyBlock(pos, true, placer);
+                return;
+            }
             if (!placeParts(serverLevel, pos, facing, StructureKind.STATION,
                     stationCells(), player)) {
                 serverLevel.destroyBlock(pos, true, placer);
@@ -459,8 +524,10 @@ public final class CoreRoomElevatorModule {
         @Nullable
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            return defaultBlockState().setValue(FACING,
-                    context.getHorizontalDirection().getOpposite());
+            Direction stationFacing = CoreRoomElevatorManager.findPulleyFacing(
+                    context.getLevel(), context.getClickedPos());
+            return stationFacing == null ? null
+                    : defaultBlockState().setValue(FACING, stationFacing);
         }
 
         @Override
@@ -543,7 +610,7 @@ public final class CoreRoomElevatorModule {
 
     public static final class BeamBlock extends HorizontalDirectionalBlock {
         private BeamBlock() {
-            super(BlockBehaviour.Properties.of().strength(5.0F, 15.0F)
+            super(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F)
                     .sound(SoundType.METAL).noOcclusion());
             registerDefaultState(stateDefinition.any()
                     .setValue(FACING, Direction.NORTH)
@@ -619,10 +686,14 @@ public final class CoreRoomElevatorModule {
         }
     }
 
-    public static final class StructurePartBlock extends BaseEntityBlock {
+    public static class StructurePartBlock extends BaseEntityBlock {
         private StructurePartBlock() {
-            super(BlockBehaviour.Properties.of().strength(5.0F, 15.0F)
+            this(BlockBehaviour.Properties.of().strength(5.0F, 15.0F)
                     .sound(SoundType.METAL).noOcclusion());
+        }
+
+        protected StructurePartBlock(BlockBehaviour.Properties properties) {
+            super(properties);
         }
 
         @Override
@@ -719,11 +790,20 @@ public final class CoreRoomElevatorModule {
             if (level.getBlockEntity(pos) instanceof StructurePartBlockEntity part) {
                 return new ItemStack(switch (part.kind()) {
                     case PULLEY -> PULLEY_ITEM.get();
-                    case BEAMS -> BEAMS_ITEM.get();
+                    case BEAMS -> net.minecraft.world.item.Items.AIR;
                     case STATION -> STATION_ITEM.get();
                 });
             }
             return ItemStack.EMPTY;
+        }
+    }
+
+    private static final class BeamStructurePartBlock
+            extends StructurePartBlock {
+        private BeamStructurePartBlock() {
+            super(BlockBehaviour.Properties.of()
+                    .strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.METAL).noOcclusion());
         }
     }
 

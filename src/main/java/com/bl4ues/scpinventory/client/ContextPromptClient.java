@@ -206,6 +206,7 @@ public final class ContextPromptClient {
             boolean directHit = blockHit != null
                     && hitBelongsTo(blockHit.getBlockPos(), pos, player);
             for (ContextInteractionRegistry.Rule rule : rules) {
+                if (!rule.isAvailable(player.level(), pos, state)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(pos, state);
                 double score = scorePoint(anchor, eye, look, rule.range(),
                         directHit, rule.priority());
@@ -257,6 +258,7 @@ public final class ContextPromptClient {
             boolean directHit = entityHit != null
                     && entityHit.getEntity().getId() == entity.getId();
             for (ContextInteractionRegistry.Rule rule : rules) {
+                if (!rule.isAvailable(entity)) continue;
                 Vec3 anchor = rule.resolveEntityAnchor(entity);
                 double score = scorePoint(anchor, eye, look, rule.range(),
                         directHit, rule.priority());

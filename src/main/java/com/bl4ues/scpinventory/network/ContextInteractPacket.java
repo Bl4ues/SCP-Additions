@@ -123,7 +123,7 @@ public class ContextInteractPacket {
                 ContextInteractionRegistry.getEntityRules(entity.getType());
         ContextInteractionRegistry.Rule rule = selectedRule(rules,
                 interactionKey);
-        if (rule == null) return;
+        if (rule == null || !rule.isAvailable(entity)) return;
         Vec3 anchor = rule.resolveEntityAnchor(entity);
         if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
             return;
@@ -160,7 +160,7 @@ public class ContextInteractPacket {
                 ContextInteractionRegistry.getBlockRules(state.getBlock());
         ContextInteractionRegistry.Rule rule = selectedRule(rules,
                 interactionKey);
-        if (rule == null) return;
+        if (rule == null || !rule.isAvailable(level, pos, state)) return;
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);
         if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
             return;

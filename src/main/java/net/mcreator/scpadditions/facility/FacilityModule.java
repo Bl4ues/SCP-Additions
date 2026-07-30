@@ -351,8 +351,6 @@ public final class FacilityModule {
         addExternalCreativeItem(coreRoom,
                 CoreRoomElevatorModule.PULLEY_ITEM.get());
         addExternalCreativeItem(coreRoom,
-                CoreRoomElevatorModule.BEAMS_ITEM.get());
-        addExternalCreativeItem(coreRoom,
                 CoreRoomElevatorModule.FLOOR_ITEM.get());
         addFacilityCreativeItem(coreRoom, "core_room_sign");
         sections.add(section("coreroomtab", coreRoom));

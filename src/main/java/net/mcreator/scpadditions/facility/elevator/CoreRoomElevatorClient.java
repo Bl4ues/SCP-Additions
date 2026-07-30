@@ -18,8 +18,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
@@ -75,20 +73,6 @@ public final class CoreRoomElevatorClient {
             return ElevatorAssets.FLOOR_STATION_ANIMATION;
         }
 
-        @Override
-        public void setCustomAnimations(
-                CoreRoomElevatorModule.StationBlockEntity animatable,
-                long instanceId,
-                AnimationState<CoreRoomElevatorModule.StationBlockEntity> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            CoreGeoBone root = getAnimationProcessor().getBone(
-                    ElevatorAssets.STATION);
-            if (root != null && animatable.getBlockState()
-                    .hasProperty(CoreRoomElevatorModule.FACING)) {
-                root.setRotY(rotationFor(animatable.getBlockState()
-                        .getValue(CoreRoomElevatorModule.FACING)));
-            }
-        }
     }
 
     public static final class StationRenderer extends
@@ -108,7 +92,7 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorModule.StationBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture);
+            return RenderType.entityCutoutNoCull(texture);
         }
     }
 
@@ -136,21 +120,6 @@ public final class CoreRoomElevatorClient {
             return EMPTY_ANIMATION;
         }
 
-        @Override
-        public void setCustomAnimations(
-                CoreRoomElevatorModule.PulleyBlockEntity animatable,
-                long instanceId,
-                AnimationState<CoreRoomElevatorModule.PulleyBlockEntity> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            CoreGeoBone root = getAnimationProcessor().getBone(
-                    ElevatorAssets.PULLEY);
-            if (root != null && animatable.getBlockState()
-                    .hasProperty(CoreRoomElevatorModule.FACING)) {
-                root.setRotY((float) (-Math.PI / 2.0D)
-                        + rotationFor(animatable.getBlockState()
-                        .getValue(CoreRoomElevatorModule.FACING)));
-            }
-        }
     }
 
     public static final class PulleyRenderer extends
@@ -170,7 +139,7 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorModule.PulleyBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture);
+            return RenderType.entityCutoutNoCull(texture);
         }
     }
 
@@ -194,18 +163,6 @@ public final class CoreRoomElevatorClient {
             return ElevatorAssets.CARRIAGE_ANIMATION;
         }
 
-        @Override
-        public void setCustomAnimations(
-                CoreRoomElevatorCarriageEntity animatable, long instanceId,
-                AnimationState<CoreRoomElevatorCarriageEntity> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            CoreGeoBone root = getAnimationProcessor().getBone(
-                    ElevatorAssets.CABIN);
-            if (root != null) {
-                root.setRotY((float) (-Math.PI / 2.0D)
-                        + rotationFor(animatable.facing()));
-            }
-        }
     }
 
     public static final class CarriageRenderer extends
@@ -226,7 +183,7 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorCarriageEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture);
+            return RenderType.entityCutoutNoCull(texture);
         }
 
         @Override

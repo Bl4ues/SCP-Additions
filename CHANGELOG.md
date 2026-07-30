@@ -76,11 +76,15 @@
 ## Core Room elevator
 
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
-- Added Core Room Elevator Stations, a top Pulley, reusable Beam segments, and the Core Room Floor construction block;
+- Added Core Room Elevator Stations, a station-aligned top Pulley, automatically generated shaft Beams, and the Core Room Floor construction block;
 - Aligned stations automatically generate model-matched shaft beams between floors and up to the pulley, while incomplete or obstructed layouts remain safely inactive;
 - Completed elevator lines automatically create exactly one carriage at the lowest station and preserve one carriage per vertical line;
 - Added precise multiblock collision shells for stations, pulleys, and beam segments, plus moving carriage collision that carries players, mobs, and items smoothly;
-- Added compact contextual interaction targets to the separate up and down buttons inside the carriage and on each station.
+- Added compact contextual interaction targets to the separate up and down buttons inside the carriage and on each station;
+- Added dedicated cabin, landing-gate, movement, opening, and ambient cabin audio, with the 13-second travel profile synchronized to the movement recording;
+- Limited adjacent stations to 8-32 blocks, made the Pulley derive its orientation from the stations below it, and hid unavailable direction buttons;
+- Made generated shaft Beams internal, survival-proof structural pieces instead of manually placed creative-tab blocks;
+- Corrected station, carriage, Pulley, cable, prompt, transparency, z-fighting, and moving-collision alignment.
 
 ## Facility construction
 

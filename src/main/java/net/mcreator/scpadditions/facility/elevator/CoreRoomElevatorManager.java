@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -56,6 +57,71 @@ public final class CoreRoomElevatorManager {
         }
     }
 
+    @Nullable
+    public static Direction findPulleyFacing(Level level, BlockPos pulleyPos) {
+        Direction facing = null;
+        boolean found = false;
+        for (int y = level.getMinBuildHeight();
+                y < level.getMaxBuildHeight(); y++) {
+            BlockPos candidate = new BlockPos(pulleyPos.getX(), y,
+                    pulleyPos.getZ());
+            BlockState state = level.getBlockState(candidate);
+            if (!state.is(CoreRoomElevatorModule.STATION.get())) continue;
+            if (y >= pulleyPos.getY()) return null;
+            Direction stationFacing = state.getValue(
+                    CoreRoomElevatorModule.FACING);
+            if (facing == null) facing = stationFacing;
+            else if (facing != stationFacing) return null;
+            found = true;
+        }
+        return found ? facing : null;
+    }
+
+    public static boolean isValidStationPlacement(Level level, BlockPos pos,
+            Direction facing) {
+        List<Integer> heights = new ArrayList<>();
+        heights.add(pos.getY());
+        for (int y = level.getMinBuildHeight();
+                y < level.getMaxBuildHeight(); y++) {
+            if (y == pos.getY()) continue;
+            BlockState state = level.getBlockState(new BlockPos(
+                    pos.getX(), y, pos.getZ()));
+            if (!state.is(CoreRoomElevatorModule.STATION.get())) continue;
+            if (state.getValue(CoreRoomElevatorModule.FACING) != facing) {
+                return false;
+            }
+            heights.add(y);
+        }
+        heights.sort(Integer::compareTo);
+        for (int index = 0; index + 1 < heights.size(); index++) {
+            int spacing = heights.get(index + 1) - heights.get(index);
+            if (spacing < CoreRoomElevatorModule.MIN_FLOOR_SPACING
+                    || spacing > CoreRoomElevatorModule.MAX_FLOOR_SPACING) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean hasStationInDirection(Level level,
+            BlockPos stationPos, ElevatorFoundation.TravelDirection direction) {
+        if (direction == ElevatorFoundation.TravelDirection.NONE) return false;
+        BlockState origin = level.getBlockState(stationPos);
+        if (!origin.is(CoreRoomElevatorModule.STATION.get())) return false;
+        Direction facing = origin.getValue(CoreRoomElevatorModule.FACING);
+        int sign = direction.step();
+        for (int distance = CoreRoomElevatorModule.MIN_FLOOR_SPACING;
+                distance <= CoreRoomElevatorModule.MAX_FLOOR_SPACING;
+                distance++) {
+            BlockState candidate = level.getBlockState(stationPos.offset(
+                    0, sign * distance, 0));
+            if (candidate.is(CoreRoomElevatorModule.STATION.get())
+                    && candidate.getValue(CoreRoomElevatorModule.FACING)
+                    == facing) return true;
+        }
+        return false;
+    }
+
     public static ColumnLayout discover(ServerLevel level, int x, int z) {
         List<BlockPos> stations = new ArrayList<>();
         List<BlockPos> pulleys = new ArrayList<>();
@@ -78,6 +144,14 @@ public final class CoreRoomElevatorManager {
         }
         stations.sort(Comparator.comparingInt(BlockPos::getY));
         pulleys.sort(Comparator.comparingInt(BlockPos::getY));
+        for (int index = 0; index + 1 < stations.size(); index++) {
+            int spacing = stations.get(index + 1).getY()
+                    - stations.get(index).getY();
+            if (spacing < CoreRoomElevatorModule.MIN_FLOOR_SPACING
+                    || spacing > CoreRoomElevatorModule.MAX_FLOOR_SPACING) {
+                orientationValid = false;
+            }
+        }
         if (facing == null) facing = Direction.NORTH;
 
         BlockPos pulley = null;
@@ -266,6 +340,17 @@ public final class CoreRoomElevatorManager {
                     .withStyle(ChatFormatting.RED));
             return false;
         }
+        int directionalDestination = stationIndex.getAsInt()
+                + direction.step();
+        if (directionalDestination < 0
+                || directionalDestination >= layout.stations().size()) {
+            player.sendSystemMessage(Component.translatable(
+                    direction == ElevatorFoundation.TravelDirection.UP
+                            ? "message.scp_additions.elevator_no_floor_above"
+                            : "message.scp_additions.elevator_no_floor_below")
+                    .withStyle(ChatFormatting.YELLOW));
+            return false;
+        }
         return carriage.requestFromStation(stationIndex.getAsInt(), direction,
                 player);
     }
@@ -280,7 +365,8 @@ public final class CoreRoomElevatorManager {
         return switch (carriage.phase()) {
             case IDLE_OPEN -> CoreRoomElevatorModule.DoorVisualState.OPEN;
             case DOOR_OPENING -> CoreRoomElevatorModule.DoorVisualState.OPENING;
-            case DOOR_CLOSING -> CoreRoomElevatorModule.DoorVisualState.CLOSING;
+            case DOOR_CLOSING -> CoreRoomElevatorModule.DoorVisualState.OPEN;
+            case STATION_CLOSING -> CoreRoomElevatorModule.DoorVisualState.CLOSING;
             default -> CoreRoomElevatorModule.DoorVisualState.CLOSED;
         };
     }

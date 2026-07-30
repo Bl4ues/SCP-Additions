@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.mcreator.scpadditions.client.gui.TeslaTerminalScreen;
 import net.mcreator.scpadditions.client.gui.Scp914GuiScreen;
 import net.mcreator.scpadditions.client.gui.Scp294GuiScreen;
+import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ScpAdditionsModScreens {
@@ -32,6 +33,7 @@ public class ScpAdditionsModScreens {
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_3.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_4.get(), RenderType.cutout());
+			ItemBlockRenderTypes.setRenderLayer(CoreRoomElevatorModule.FLOOR.get(), RenderType.cutout());
 		});
 	}
 }

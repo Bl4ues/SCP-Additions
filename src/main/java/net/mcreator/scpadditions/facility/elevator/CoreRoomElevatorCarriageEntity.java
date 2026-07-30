@@ -50,15 +50,19 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private static final EntityDataAccessor<Integer> TARGET_FLOOR =
             SynchedEntityData.defineId(CoreRoomElevatorCarriageEntity.class,
                     EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> FLOOR_COUNT =
+            SynchedEntityData.defineId(CoreRoomElevatorCarriageEntity.class,
+                    EntityDataSerializers.INT);
 
     private static final int DOOR_TICKS = 15;
     private static final int MECHANICAL_PAUSE_TICKS = 4;
     private static final int LEVELING_TICKS = 5;
-    private static final double MAX_SPEED = 0.115D;
-    private static final double ACCELERATION = 0.0075D;
+    public static final int TRAVEL_TICKS = 260;
     private static final double FLOOR_EPSILON = 0.035D;
     private static final int DOOR_COLLISION_THRESHOLD = DOOR_TICKS / 2;
     private static final double BUTTON_HIT_RADIUS_SQR = 0.32D * 0.32D;
+    private static final double FLOOR_TOP = 0.25D / 16.0D;
+    private static final double COLLISION_EPSILON = 1.0E-4D;
 
     private static final RawAnimation CLOSED_ANIMATION = RawAnimation.begin()
             .thenLoop(ElevatorAssets.CARRIAGE_CLOSED);
@@ -74,7 +78,9 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private int[] floorHeights = new int[0];
     private int phaseTicks;
     private int queuedTarget = -1;
-    private ElevatorFoundation.MotionPlan motionPlan;
+    private double motionStartY;
+    private double motionEndY;
+    private boolean motionReady;
     private double previousServerY;
 
     public CoreRoomElevatorCarriageEntity(
@@ -93,12 +99,16 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         entityData.define(CONTROLLER, BlockPos.ZERO);
         entityData.define(CURRENT_FLOOR, 0);
         entityData.define(TARGET_FLOOR, -1);
+        entityData.define(FLOOR_COUNT, 0);
     }
 
     public void applyLayout(CoreRoomElevatorManager.ColumnLayout layout) {
         floorHeights = layout.floorHeights();
         entityData.set(FACING, (byte) layout.facing().get2DDataValue());
+        entityData.set(FLOOR_COUNT, floorHeights.length);
         entityData.set(CONTROLLER, layout.pulley());
+        setYRot(layout.facing().toYRot());
+        yRotO = getYRot();
         if (floorHeights.length == 0) return;
         int nearest = nearestFloorIndex(getY());
         int current = currentFloorIndex();
@@ -138,6 +148,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
 
     public boolean handleContextInteraction(ServerPlayer player,
             String actionKey) {
+        if (phase() != ElevatorFoundation.Phase.IDLE_OPEN) return false;
         ElevatorFoundation.TravelDirection direction = actionKey != null
                 && actionKey.endsWith("up")
                 ? ElevatorFoundation.TravelDirection.UP
@@ -160,6 +171,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         if (phase() == ElevatorFoundation.Phase.IDLE_OPEN) {
             queuedTarget = -1;
             entityData.set(TARGET_FLOOR, destination);
+            playElevatorSound(CoreRoomElevatorModule.ELEVATOR_DOOR_CLOSE.get(),
+                    1.0F);
             setPhase(ElevatorFoundation.Phase.DOOR_CLOSING);
         } else {
             queuedTarget = destination;
@@ -188,6 +201,13 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             case IDLE_OPEN -> tickIdle();
             case DOOR_CLOSING -> {
                 if (phaseTicks >= DOOR_TICKS) {
+                    playElevatorSound(CoreRoomElevatorModule.STATION_CLOSE.get(),
+                            1.0F);
+                    setPhase(ElevatorFoundation.Phase.STATION_CLOSING);
+                }
+            }
+            case STATION_CLOSING -> {
+                if (phaseTicks >= DOOR_TICKS) {
                     setPhase(ElevatorFoundation.Phase.READY_TO_MOVE);
                 }
             }
@@ -196,12 +216,12 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                     beginMotion();
                 }
             }
-            case MOVING -> {
-                if (motionPlan == null && !resumeMotionAfterLoad()) break;
-                tickMotion();
-            }
+            case MOVING -> tickMotion();
             case LEVELING -> {
                 if (phaseTicks >= LEVELING_TICKS) {
+                    playElevatorSound(
+                            CoreRoomElevatorModule.ELEVATOR_DOOR_OPEN.get(),
+                            1.0F);
                     setPhase(ElevatorFoundation.Phase.DOOR_OPENING);
                 }
             }
@@ -223,6 +243,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             int next = queuedTarget;
             queuedTarget = -1;
             entityData.set(TARGET_FLOOR, next);
+            playElevatorSound(CoreRoomElevatorModule.ELEVATOR_DOOR_CLOSE.get(),
+                    1.0F);
             setPhase(ElevatorFoundation.Phase.DOOR_CLOSING);
         }
     }
@@ -233,8 +255,9 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             setPhase(ElevatorFoundation.Phase.FAULT);
             return;
         }
-        motionPlan = ElevatorFoundation.MotionPlan.create(getY(),
-                floorHeights[target], MAX_SPEED, ACCELERATION);
+        motionStartY = getY();
+        motionEndY = floorHeights[target];
+        motionReady = true;
         setPhase(ElevatorFoundation.Phase.MOVING);
     }
 
@@ -245,9 +268,12 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             recoverAtNearestFloor();
             return false;
         }
-        motionPlan = ElevatorFoundation.MotionPlan.create(getY(),
-                floorHeights[target], MAX_SPEED, ACCELERATION);
-        phaseTicks = 0;
+        if (!motionReady) {
+            motionStartY = getY();
+            motionEndY = floorHeights[target];
+            phaseTicks = 0;
+            motionReady = true;
+        }
         return true;
     }
 
@@ -261,24 +287,43 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         entityData.set(CURRENT_FLOOR, nearest);
         entityData.set(TARGET_FLOOR, -1);
         queuedTarget = -1;
-        motionPlan = null;
+        motionReady = false;
         setPhase(ElevatorFoundation.Phase.IDLE_OPEN);
     }
 
     private void tickMotion() {
-        if (motionPlan == null) {
-            recoverAtNearestFloor();
-            return;
-        }
-        ElevatorFoundation.MotionSample sample = motionPlan.sample(phaseTicks);
-        setPos(getX(), sample.positionY(), getZ());
-        if (sample.complete()) {
+        if (!motionReady && !resumeMotionAfterLoad()) return;
+        double normalized = Mth.clamp(phaseTicks / (double) TRAVEL_TICKS,
+                0.0D, 1.0D);
+        double progress = soundSyncedProgress(normalized);
+        setPos(getX(), Mth.lerp(progress, motionStartY, motionEndY), getZ());
+        if (phaseTicks >= TRAVEL_TICKS) {
             int target = targetFloorIndex();
             setPos(getX(), floorHeights[target], getZ());
             entityData.set(CURRENT_FLOOR, target);
-            motionPlan = null;
+            motionReady = false;
             setPhase(ElevatorFoundation.Phase.LEVELING);
         }
+    }
+
+    /**
+     * Starts decisively, reaches most of the shaft by the audio's 8-9 second
+     * braking cue, then eases through its final mechanical settling until the
+     * 13 second sound ends.
+     */
+    private static double soundSyncedProgress(double time) {
+        double clamped = Mth.clamp(time, 0.0D, 1.0D);
+        double forward = clamped * clamped;
+        double remaining = 1.0D - clamped;
+        double denominator = forward + 0.30D * remaining * remaining;
+        return denominator <= 1.0E-9D ? 1.0D : forward / denominator;
+    }
+
+    private void playElevatorSound(net.minecraft.sounds.SoundEvent sound,
+            float volume) {
+        if (!(level() instanceof ServerLevel serverLevel)) return;
+        serverLevel.playSound(null, getX(), getY() + 1.0D, getZ(), sound,
+                net.minecraft.sounds.SoundSource.BLOCKS, volume, 1.0F);
     }
 
     private void resolveNearbyEntities(double deltaY) {
@@ -303,56 +348,71 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
 
     private boolean isStandingOnFloor(Entity entity, double oldFloorY) {
         AABB box = entity.getBoundingBox();
+        double floorTop = oldFloorY + FLOOR_TOP;
         return box.maxX > getX() - 0.74D && box.minX < getX() + 0.74D
                 && box.maxZ > getZ() - 0.74D && box.minZ < getZ() + 0.74D
-                && box.minY >= oldFloorY - 0.12D
-                && box.minY <= oldFloorY + 0.34D;
+                && box.minY >= floorTop - 0.08D
+                && box.minY <= floorTop + 0.12D;
     }
 
     private void resolveShellCollision(Entity entity) {
-        for (AABB shell : shellBoxes()) {
-            AABB entityBox = entity.getBoundingBox();
-            if (!entityBox.intersects(shell)) continue;
-            double pushDown = entityBox.maxY - shell.minY;
-            double pushUp = shell.maxY - entityBox.minY;
-            double pushWest = entityBox.maxX - shell.minX;
-            double pushEast = shell.maxX - entityBox.minX;
-            double pushNorth = entityBox.maxZ - shell.minZ;
-            double pushSouth = shell.maxZ - entityBox.minZ;
-
-            double smallest = pushDown;
-            Vec3 push = new Vec3(0.0D, -pushDown, 0.0D);
-            if (pushUp < smallest) {
-                smallest = pushUp;
-                push = new Vec3(0.0D, pushUp, 0.0D);
-            }
-            if (pushWest < smallest) {
-                smallest = pushWest;
-                push = new Vec3(-pushWest, 0.0D, 0.0D);
-            }
-            if (pushEast < smallest) {
-                smallest = pushEast;
-                push = new Vec3(pushEast, 0.0D, 0.0D);
-            }
-            if (pushNorth < smallest) {
-                smallest = pushNorth;
-                push = new Vec3(0.0D, 0.0D, -pushNorth);
-            }
-            if (pushSouth < smallest) {
-                push = new Vec3(0.0D, 0.0D, pushSouth);
-            }
-            entity.move(MoverType.SHULKER, push);
-            if (push.y > 0.0D) {
-                entity.setOnGround(true);
-                entity.fallDistance = 0.0F;
-            }
+        List<AABB> shells = shellBoxes();
+        if (shells.size() < 5) return;
+        resolveFloorCollision(entity, shells.get(0));
+        resolveCeilingCollision(entity, shells.get(1));
+        for (int index = 2; index < shells.size(); index++) {
+            resolveHorizontalCollision(entity, shells.get(index));
         }
+    }
+
+    private void resolveFloorCollision(Entity entity, AABB floor) {
+        AABB box = entity.getBoundingBox();
+        if (!box.intersects(floor)) return;
+        if (box.getCenter().y >= floor.getCenter().y) {
+            entity.move(MoverType.SHULKER, new Vec3(0.0D,
+                    floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
+            entity.setOnGround(true);
+            entity.fallDistance = 0.0F;
+        }
+    }
+
+    private void resolveCeilingCollision(Entity entity, AABB ceiling) {
+        AABB box = entity.getBoundingBox();
+        if (!box.intersects(ceiling)
+                || box.getCenter().y > ceiling.getCenter().y) return;
+        entity.move(MoverType.SHULKER, new Vec3(0.0D,
+                ceiling.minY - box.maxY - COLLISION_EPSILON, 0.0D));
+    }
+
+    private void resolveHorizontalCollision(Entity entity, AABB shell) {
+        AABB box = entity.getBoundingBox();
+        if (!box.intersects(shell)) return;
+        double west = box.maxX - shell.minX;
+        double east = shell.maxX - box.minX;
+        double north = box.maxZ - shell.minZ;
+        double south = shell.maxZ - box.minZ;
+        double smallest = west;
+        Vec3 push = new Vec3(-west - COLLISION_EPSILON, 0.0D, 0.0D);
+        if (east < smallest) {
+            smallest = east;
+            push = new Vec3(east + COLLISION_EPSILON, 0.0D, 0.0D);
+        }
+        if (north < smallest) {
+            smallest = north;
+            push = new Vec3(0.0D, 0.0D,
+                    -north - COLLISION_EPSILON);
+        }
+        if (south < smallest) {
+            push = new Vec3(0.0D, 0.0D,
+                    south + COLLISION_EPSILON);
+        }
+        entity.move(MoverType.SHULKER, push);
     }
 
     private List<AABB> shellBoxes() {
         List<AABB> local = new ArrayList<>();
         local.add(new AABB(-0.82D, -0.20D, -0.82D,
-                0.82D, 0.0D, 0.82D));
+                0.82D, FLOOR_TOP, 0.82D));
         local.add(new AABB(-0.82D, 3.06D, -0.82D,
                 0.82D, 3.32D, 0.82D));
         local.add(new AABB(-0.84D, 0.0D, -0.82D,
@@ -367,8 +427,10 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         }
         List<AABB> world = new ArrayList<>();
         for (AABB box : local) {
-            AABB rotated = CoreRoomElevatorGeometry.rotateAabb(box, facing(),
-                    0.0D, 0.0D);
+            AABB authored = CoreRoomElevatorGeometry.rotateAabb(box,
+                    Direction.EAST, 0.0D, 0.0D);
+            AABB rotated = CoreRoomElevatorGeometry.rotateAabb(authored,
+                    facing(), 0.0D, 0.0D);
             world.add(rotated.move(getX(), getY(), getZ()));
         }
         return world;
@@ -390,7 +452,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     private AABB cabinInteriorBox() {
-        return new AABB(getX() - 0.72D, getY() - 0.05D,
+        return new AABB(getX() - 0.72D, getY() + FLOOR_TOP - 0.04D,
                 getZ() - 0.72D, getX() + 0.72D, getY() + 3.05D,
                 getZ() + 0.72D);
     }
@@ -478,6 +540,13 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         return Direction.from2DDataValue(entityData.get(FACING));
     }
 
+    public boolean canTravel(ElevatorFoundation.TravelDirection direction) {
+        if (direction == ElevatorFoundation.TravelDirection.NONE
+                || phase() != ElevatorFoundation.Phase.IDLE_OPEN) return false;
+        int destination = currentFloorIndex() + direction.step();
+        return destination >= 0 && destination < entityData.get(FLOOR_COUNT);
+    }
+
     public ElevatorFoundation.Phase phase() {
         int index = entityData.get(PHASE);
         return index >= 0 && index < ElevatorFoundation.Phase.values().length
@@ -529,10 +598,15 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         entityData.set(PHASE, tag.getByte("Phase"));
         entityData.set(CURRENT_FLOOR, tag.getInt("CurrentFloor"));
         entityData.set(TARGET_FLOOR, tag.getInt("TargetFloor"));
+        entityData.set(FLOOR_COUNT, floorHeights.length);
         queuedTarget = tag.contains("QueuedTarget")
                 ? tag.getInt("QueuedTarget") : -1;
         phaseTicks = tag.getInt("PhaseTicks");
-        motionPlan = null;
+        motionStartY = tag.contains("MotionStartY")
+                ? tag.getDouble("MotionStartY") : getY();
+        motionEndY = tag.contains("MotionEndY")
+                ? tag.getDouble("MotionEndY") : getY();
+        motionReady = tag.getBoolean("MotionReady");
     }
 
     @Override
@@ -545,6 +619,9 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         tag.putInt("TargetFloor", targetFloorIndex());
         tag.putInt("QueuedTarget", queuedTarget);
         tag.putInt("PhaseTicks", phaseTicks);
+        tag.putDouble("MotionStartY", motionStartY);
+        tag.putDouble("MotionEndY", motionEndY);
+        tag.putBoolean("MotionReady", motionReady);
     }
 
     @Override

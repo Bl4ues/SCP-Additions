@@ -50,7 +50,8 @@ public final class ElevatorFoundation {
         MOVING,
         LEVELING,
         DOOR_OPENING,
-        FAULT;
+        FAULT,
+        STATION_CLOSING;
 
         public boolean doorsMayBeOpen() {
             return this == IDLE_OPEN || this == DOOR_OPENING;

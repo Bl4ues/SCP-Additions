@@ -24,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
+import net.mcreator.scpadditions.scp330.Scp330Hands;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -54,7 +55,7 @@ public final class ContextPromptClient {
         if (player == null || minecraft.level == null
                 || minecraft.screen != null
                 || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(
-                        player)) {
+                        player) || Scp330Hands.isDisabled(player)) {
             clear();
             useWasDown = false;
             cooldownTicks = 0;
@@ -92,7 +93,7 @@ public final class ContextPromptClient {
         if (player == null || minecraft.level == null
                 || minecraft.screen != null
                 || !ScpAdditionsModulesConfig.customInteractionsEnabledFor(
-                        player)
+                        player) || Scp330Hands.isDisabled(player)
                 || PickupPromptClient.hasActiveTarget()) {
             return false;
         }

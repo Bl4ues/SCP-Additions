@@ -11,11 +11,14 @@ import net.mcreator.scpadditions.effect.BleedingEffect;
 import net.mcreator.scpadditions.effect.EyeSoreEffect;
 import net.mcreator.scpadditions.effect.LubricatedEyeEffect;
 import net.mcreator.scpadditions.effect.Scp1176HoneyedEffect;
+import net.mcreator.scpadditions.effect.Scp330HandLossEffect;
 
 public class ScpAdditionsModMobEffects {
     public static final DeferredRegister<MobEffect> REGISTRY =
             DeferredRegister.create(ForgeRegistries.MOB_EFFECTS,
                     ScpAdditionsMod.MODID);
+    public static final RegistryObject<MobEffect> SCP_330_HAND_LOSS =
+            REGISTRY.register("scp_330_hand_loss", Scp330HandLossEffect::new);
     public static final RegistryObject<MobEffect> EYE_SORE =
             REGISTRY.register("eye_sore", EyeSoreEffect::new);
     public static final RegistryObject<MobEffect> LUBRICATED_EYE =

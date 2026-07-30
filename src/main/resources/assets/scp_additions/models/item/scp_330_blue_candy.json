@@ -1,6 +1,1 @@
-{
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "scp_additions:item/330bluecandy"
-  }
-}
+{"parent":"item/generated","textures":{"layer0":"scp_additions:block/blue_candy"}}

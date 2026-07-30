@@ -39,10 +39,9 @@ public class ScpAdditionsModItems {
 	public static final RegistryObject<Item> SCP_914_OUTPUT_DOOR = block(ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR);
 	public static final RegistryObject<Item> SCP_914_ASSEMBLY_KIT = REGISTRY.register("scp_914_assembly_kit", () -> new Scp914AssemblyKitItem());
 	public static final RegistryObject<Item> SCP_1176 = block(ScpAdditionsModBlocks.SCP_1176);
-	public static final RegistryObject<Item> SCP_330_RED_CANDY = REGISTRY.register("scp_330_red_candy", () -> new Scp330RedCandyItem());
-	public static final RegistryObject<Item> SCP_330_GREEN_CANDY = REGISTRY.register("scp_330_green_candy", () -> new Scp330GreenCandyItem());
-	public static final RegistryObject<Item> SCP_330_YELLOW_CANDY = REGISTRY.register("scp_330_yellow_candy", () -> new Scp330YellowCandyItem());
-	public static final RegistryObject<Item> SCP_330_BLUE_CANDY = REGISTRY.register("scp_330_blue_candy", () -> new Scp330BlueCandyItem());
+	public static final RegistryObject<Item> SCP_330_BLUE_CANDY = REGISTRY.register("scp_330_blue_candy", Scp330CandyItem::new);
+	public static final RegistryObject<Item> SCP_330_PINK_CANDY = REGISTRY.register("scp_330_pink_candy", Scp330CandyItem::new);
+	public static final RegistryObject<Item> SCP_330_YELLOW_CANDY = REGISTRY.register("scp_330_yellow_candy", Scp330CandyItem::new);
 	public static final RegistryObject<Item> SCP_1176HONEY = REGISTRY.register("scp_1176honey", () -> new Scp1176honeyItem());
 	public static final RegistryObject<Item> PLAYING_CARD = REGISTRY.register("playing_card", () -> new PlayingCardItem());
 	public static final RegistryObject<Item> CREDIT_CARD = REGISTRY.register("credit_card", () -> new CreditCardItem());

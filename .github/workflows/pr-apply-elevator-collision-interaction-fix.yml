@@ -1,0 +1,66 @@
+name: PR apply elevator collision and interaction repair
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'automation/elevator-fix-trigger' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Extract and run prepared repair
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/apply-elevator-collision-interaction-fix.yml')
+          lines = workflow.read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(lines)
+                       if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(lines))
+                     if lines[i].strip() == 'PY')
+          script_lines = lines[start:end]
+          indent = min(len(line) - len(line.lstrip())
+                       for line in script_lines if line.strip())
+          script = '\n'.join(line[indent:] for line in script_lines) + '\n'
+          Path('/tmp/apply_elevator_fix.py').write_text(script, encoding='utf-8')
+          PY
+          python /tmp/apply_elevator_fix.py
+
+      - name: Build
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit validated repair
+        shell: bash
+        run: |
+          rm -f \
+            .github/workflows/apply-elevator-collision-interaction-fix.yml \
+            .github/workflows/pr-apply-elevator-collision-interaction-fix.yml \
+            tools/hotfix/APPLY_ELEVATOR_COLLISION_INTERACTION_FIX \
+            tools/hotfix/TRIGGER_ELEVATOR_FIX_PR
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Core Room elevator collision and interaction alignment"
+          git push origin HEAD:master

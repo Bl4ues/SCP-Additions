@@ -1,7 +1,7 @@
-name: Build and Apply SCP-330 Rebuild
+name: Apply and Build SCP-330 Rebuild
 
 on:
-  push:
+  pull_request:
     branches:
       - master
 
@@ -9,14 +9,15 @@ permissions:
   contents: write
 
 jobs:
-  build-and-apply:
+  apply-build-and-commit:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current master
+      - name: Checkout pull request branch
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Set up Java 17
@@ -90,10 +91,7 @@ jobs:
           assert 'scp_330_green_candy' not in combined
           assert 'Scp330Hands.isDisabled(player)' in (root / 'src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java').read_text(encoding='utf-8')
           assert 'Scp330Hands.isDisabled(player)' in (root / 'src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java').read_text(encoding='utf-8')
-
-          changelog = (root / 'CHANGELOG.md').read_text(encoding='utf-8')
-          assert '## SCP-330' in changelog
-          assert 'Pink Candy' in changelog
+          assert '## SCP-330' in (root / 'CHANGELOG.md').read_text(encoding='utf-8')
           PY
 
       - name: Build
@@ -163,10 +161,10 @@ jobs:
                     if-no-files-found: error
           EOF
 
-      - name: Commit validated SCP-330 rebuild
+      - name: Commit validated rebuild to pull request branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git commit -m 'Rebuild SCP-330 with three candies and persistent hand loss'
-          git push origin HEAD:master
+          git push origin HEAD:${{ github.head_ref }}

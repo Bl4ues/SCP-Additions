@@ -5,6 +5,10 @@ on:
     branches: [ master ]
     paths:
       - '.github/elevator-scp330-final-trigger.txt'
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+    paths:
+      - '.github/elevator-scp330-final-trigger.txt'
 
 permissions:
   contents: write
@@ -35,21 +39,16 @@ jobs:
           import json
           from pathlib import Path
           root = Path('.')
-
           carriage = json.loads((root / 'src/main/resources/assets/scp_additions/geo/entity/core_room_elevator_carriage.geo.json').read_text())
           cabin = carriage['minecraft:geometry'][0]['bones'][0]
           assert cabin['rotation'] == [0, -90, 0]
           assert cabin['locators']['cable_attachment_front'] == [-7, 53, 0]
           assert cabin['locators']['cable_attachment_rear'] == [7, 53, 0]
-
           station = json.loads((root / 'src/main/resources/assets/scp_additions/geo/block/core_room_elevator_floor_station.geo.json').read_text())
-          names = [bone['name'] for bone in station['minecraft:geometry'][0]['bones']]
-          assert 'station_glass' in names
-
+          assert 'station_glass' in [bone['name'] for bone in station['minecraft:geometry'][0]['bones']]
           scp330 = json.loads((root / 'src/main/resources/assets/scp_additions/geo/block/scp330.geo.json').read_text())
           assert scp330['minecraft:geometry'][0]['description']['identifier'] == 'geometry.scp330'
           assert scp330['minecraft:geometry'][0]['bones'][0]['name'] == 'scp330'
-
           required = [
               'src/main/java/net/mcreator/scpadditions/block/entity/Scp330BlockEntity.java',
               'src/main/java/net/mcreator/scpadditions/client/Scp330Client.java',
@@ -59,9 +58,7 @@ jobs:
               'src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsClientEvents.java',
               'src/main/resources/assets/scp_additions/models/item/scp_330_pink_candy.json',
           ]
-          for path in required:
-              assert (root / path).is_file(), path
-
+          for path in required: assert (root / path).is_file(), path
           obsolete = [
               'src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java',
               'src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java',
@@ -73,21 +70,18 @@ jobs:
               'src/main/java/net/mcreator/scpadditions/procedures/Scp330CandyClearProcedure.java',
               'src/main/resources/assets/scp_additions/models/custom/scp330.json',
           ]
-          for path in obsolete:
-              assert not (root / path).exists(), path
-
+          for path in obsolete: assert not (root / path).exists(), path
           context = (root / 'src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java').read_text()
           assert 'double depth = -transformed.z();' in context
           assert 'Scp330Hands.isDisabled(player)' in context
           packet = (root / 'src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java').read_text()
           assert 'Scp330Hands.isDisabled(player)' in packet
-          changelog = (root / 'CHANGELOG.md').read_text()
-          assert '## SCP-330' in changelog
+          assert '## SCP-330' in (root / 'CHANGELOG.md').read_text()
           PY
 
       - name: Convert elevator sounds to positional mono
         run: |
-          command -v ffmpeg >/dev/null || sudo apt-get update && sudo apt-get install -y ffmpeg
+          if ! command -v ffmpeg >/dev/null; then sudo apt-get update && sudo apt-get install -y ffmpeg; fi
           for name in elevator_door_close station_close elevator_moving elevator_door_open elevator_cabin_loop; do
             file="src/main/resources/assets/scp_additions/sounds/${name}.ogg"
             test -f "$file"

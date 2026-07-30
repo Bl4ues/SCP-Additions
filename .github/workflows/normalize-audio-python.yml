@@ -1,0 +1,128 @@
+name: Normalize audio channels with Python audit
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/NORMALIZE_AUDIO_PYTHON
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install audio inspection tools
+        run: |
+          python -m pip install --disable-pip-version-check mutagen
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
+      - name: Inspect and normalize every audio asset
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+          from mutagen import File as MutagenFile
+
+          root = Path('src/main/resources/assets')
+          extensions = {'.ogg', '.oga', '.wav', '.mp3', '.flac'}
+          paths = sorted(p for p in root.rglob('*') if p.is_file() and p.suffix.lower() in extensions)
+          results = []
+          failures = []
+          converted = 0
+
+          def channels(path: Path):
+              audio = MutagenFile(path)
+              if audio is None or getattr(audio, 'info', None) is None:
+                  return None
+              value = getattr(audio.info, 'channels', None)
+              return int(value) if value is not None else None
+
+          for path in paths:
+              before = channels(path)
+              entry = {'path': path.as_posix(), 'channels_before': before}
+              if before is None:
+                  entry.update(status='unreadable', channels_after=None)
+                  failures.append(path.as_posix())
+                  results.append(entry)
+                  continue
+
+              if before == 1:
+                  entry.update(status='already-mono', channels_after=1)
+                  results.append(entry)
+                  continue
+
+              suffix = path.suffix.lower()
+              temp = path.with_name(path.stem + '.mono-tmp' + suffix)
+              codec_args = {
+                  '.ogg': ['-c:a', 'libvorbis', '-q:a', '6'],
+                  '.oga': ['-c:a', 'libvorbis', '-q:a', '6'],
+                  '.wav': ['-c:a', 'pcm_s16le'],
+                  '.mp3': ['-c:a', 'libmp3lame', '-q:a', '2'],
+                  '.flac': ['-c:a', 'flac'],
+              }[suffix]
+
+              command = ['ffmpeg', '-v', 'error', '-y', '-i', str(path), '-map_metadata', '0', '-ac', '1', *codec_args, str(temp)]
+              try:
+                  subprocess.run(command, check=True)
+                  temp.replace(path)
+                  after = channels(path)
+              except Exception as exc:
+                  if temp.exists():
+                      temp.unlink()
+                  entry.update(status='conversion-error', channels_after=None, error=str(exc))
+                  failures.append(path.as_posix())
+                  results.append(entry)
+                  continue
+
+              if after != 1:
+                  entry.update(status='verification-failed', channels_after=after)
+                  failures.append(path.as_posix())
+              else:
+                  entry.update(status='converted-to-mono', channels_after=1)
+                  converted += 1
+              results.append(entry)
+
+          summary = {
+              'total_audio_files': len(paths),
+              'already_mono': sum(item['status'] == 'already-mono' for item in results),
+              'converted_to_mono': converted,
+              'failures': len(failures),
+          }
+          report = {'summary': summary, 'files': results}
+          Path('tools').mkdir(exist_ok=True)
+          Path('tools/audio-channel-audit.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(summary, indent=2))
+
+          if failures:
+              raise SystemExit('Audio audit failures: ' + ', '.join(failures))
+          PY
+
+      - name: Commit audit and mono conversions
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f tools/audio-channel-audit.json
+          git add src/main/resources/assets
+          git commit -m "Convert all stereo mod sounds to mono"
+          git push origin HEAD:master

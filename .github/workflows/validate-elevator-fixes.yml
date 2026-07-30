@@ -3,7 +3,7 @@ name: Validate Elevator Placement and Collision Fixes
 on:
   push:
     branches: [ elevator-fixes-validation ]
-  pull_request:
+  pull_request_target:
     branches: [ master ]
     types: [ opened, synchronize, reopened ]
 
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    if: github.head_ref == 'elevator-fixes-validation' || github.ref_name == 'elevator-fixes-validation'
+    if: github.event.pull_request.head.ref == 'elevator-fixes-validation' || github.ref_name == 'elevator-fixes-validation'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout validation branch
@@ -102,6 +102,7 @@ jobs:
         run: |
           rm -f .github/scripts/apply_elevator_fixes.py
           rm -f .github/workflows/validate-elevator-fixes.yml
+          rm -f .github/elevator-fixes-trigger-2.txt
 
       - name: Commit validated implementation
         run: |

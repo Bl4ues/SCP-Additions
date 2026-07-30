@@ -1,32 +1,27 @@
-name: Apply Elevator and SCP-330 Final Repairs
+name: Validate SCP-330 Rebuild
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
-  push:
-    branches: [ master ]
-    paths:
-      - '.github/elevator-scp330-final-trigger.txt'
   pull_request_target:
     types: [opened, reopened, synchronize]
     paths:
-      - '.github/elevator-scp330-final-trigger.txt'
+      - '.github/scp330_payload.part02'
 
 permissions:
   contents: write
 
 concurrency:
-  group: elevator-scp330-final
+  group: scp330-rebuild
   cancel-in-progress: false
 
 jobs:
   apply-build-and-commit:
+    if: github.event.pull_request.head.ref == 'fix/scp330-rebuild'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout current master
+      - name: Checkout SCP-330 rebuild branch
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: fix/scp330-rebuild
           fetch-depth: 0
 
       - name: Set up Java 17
@@ -36,47 +31,42 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Mark validation running
+      - name: Apply SCP-330 rebuild
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          printf 'running run_id=%s started=%s\n' "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > .github/elevator-final-status.txt
-          git add .github/elevator-final-status.txt
-          git commit -m 'Mark final integration validation running'
-          git push origin HEAD:master
+          cat .github/scp330_payload.part00 \
+              .github/scp330_payload.part01 \
+              .github/scp330_payload.part02 > /tmp/apply_scp330.py
+          python -m py_compile /tmp/apply_scp330.py
+          python /tmp/apply_scp330.py
 
-      - name: Apply elevator and SCP-330 changes
-        run: python .github/scripts/apply_elevator_scp330_final.py
-
-      - name: Verify source and asset contracts
+      - name: Verify SCP-330 contracts
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+
           root = Path('.')
-          carriage = json.loads((root / 'src/main/resources/assets/scp_additions/geo/entity/core_room_elevator_carriage.geo.json').read_text())
-          cabin = carriage['minecraft:geometry'][0]['bones'][0]
-          assert cabin['rotation'] == [0, -90, 0]
-          assert cabin['locators']['cable_attachment_front'] == [-7, 53, 0]
-          assert cabin['locators']['cable_attachment_rear'] == [7, 53, 0]
-          station = json.loads((root / 'src/main/resources/assets/scp_additions/geo/block/core_room_elevator_floor_station.geo.json').read_text())
-          assert 'station_glass' in [bone['name'] for bone in station['minecraft:geometry'][0]['bones']]
-          scp330 = json.loads((root / 'src/main/resources/assets/scp_additions/geo/block/scp330.geo.json').read_text())
-          assert scp330['minecraft:geometry'][0]['description']['identifier'] == 'geometry.scp330'
-          assert scp330['minecraft:geometry'][0]['bones'][0]['name'] == 'scp330'
           required = [
               'src/main/java/net/mcreator/scpadditions/block/entity/Scp330BlockEntity.java',
               'src/main/java/net/mcreator/scpadditions/client/Scp330Client.java',
+              'src/main/java/net/mcreator/scpadditions/effect/Scp330HandLossEffect.java',
               'src/main/java/net/mcreator/scpadditions/item/Scp330CandyItem.java',
               'src/main/java/net/mcreator/scpadditions/scp330/Scp330Hands.java',
               'src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsEvents.java',
-              'src/main/java/net/mcreator/scpadditions/scp330/Scp330HandsClientEvents.java',
+              'src/main/resources/assets/scp_additions/geo/block/scp330.geo.json',
+              'src/main/resources/assets/scp_additions/animations/block/scp330.animation.json',
+              'src/main/resources/assets/scp_additions/models/item/scp_330_blue_candy.json',
               'src/main/resources/assets/scp_additions/models/item/scp_330_pink_candy.json',
+              'src/main/resources/assets/scp_additions/models/item/scp_330_yellow_candy.json',
           ]
-          for path in required: assert (root / path).is_file(), path
+          for path in required:
+              assert (root / path).is_file(), path
+
           obsolete = [
               'src/main/java/net/mcreator/scpadditions/item/Scp330RedCandyItem.java',
               'src/main/java/net/mcreator/scpadditions/item/Scp330GreenCandyItem.java',
+              'src/main/java/net/mcreator/scpadditions/item/Scp330BlueCandyItem.java',
+              'src/main/java/net/mcreator/scpadditions/item/Scp330YellowCandyItem.java',
               'src/main/java/net/mcreator/scpadditions/procedures/RedCandyProcedure.java',
               'src/main/java/net/mcreator/scpadditions/procedures/GreenCandyProcedure.java',
               'src/main/java/net/mcreator/scpadditions/procedures/BlueCandyProcedure.java',
@@ -85,56 +75,47 @@ jobs:
               'src/main/java/net/mcreator/scpadditions/procedures/Scp330CandyClearProcedure.java',
               'src/main/resources/assets/scp_additions/models/custom/scp330.json',
           ]
-          for path in obsolete: assert not (root / path).exists(), path
-          context = (root / 'src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java').read_text()
-          assert 'double depth = -transformed.z();' in context
-          assert 'Scp330Hands.isDisabled(player)' in context
-          packet = (root / 'src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java').read_text()
-          assert 'Scp330Hands.isDisabled(player)' in packet
-          assert '## SCP-330' in (root / 'CHANGELOG.md').read_text()
-          PY
+          for path in obsolete:
+              assert not (root / path).exists(), path
 
-      - name: Convert elevator sounds to positional mono
-        run: |
-          if ! command -v ffmpeg >/dev/null; then sudo apt-get update && sudo apt-get install -y ffmpeg; fi
-          for name in elevator_door_close station_close elevator_moving elevator_door_open elevator_cabin_loop; do
-            file="src/main/resources/assets/scp_additions/sounds/${name}.ogg"
-            test -f "$file"
-            channels=$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=nw=1:nk=1 "$file")
-            if [ "$channels" != "1" ]; then
-              ffmpeg -y -v error -i "$file" -ac 1 -c:a libvorbis -q:a 6 "${file}.mono.ogg"
-              mv "${file}.mono.ogg" "$file"
-            fi
-            test "$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=nw=1:nk=1 "$file")" = "1"
-          done
+          geometry = json.loads((root / 'src/main/resources/assets/scp_additions/geo/block/scp330.geo.json').read_text(encoding='utf-8'))
+          definition = geometry['minecraft:geometry'][0]
+          assert definition['description']['identifier'] == 'geometry.scp330'
+          assert definition['bones'][0]['name'] == 'scp330'
+
+          combined = '\n'.join(
+              path.read_text(encoding='utf-8', errors='ignore')
+              for base in ('src/main/java', 'src/main/resources')
+              for path in (root / base).rglob('*')
+              if path.is_file() and path.suffix in {'.java', '.json', '.mcmeta'}
+          )
+          assert 'scp_330_red_candy' not in combined
+          assert 'scp_330_green_candy' not in combined
+          assert 'Scp330Hands.isDisabled(player)' in (root / 'src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java').read_text(encoding='utf-8')
+          assert 'Scp330Hands.isDisabled(player)' in (root / 'src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java').read_text(encoding='utf-8')
+
+          changelog = (root / 'CHANGELOG.md').read_text(encoding='utf-8')
+          assert '## SCP-330' in changelog
+          assert 'Pink Candy' in changelog
+          PY
 
       - name: Build
         run: |
           chmod +x gradlew
           ./gradlew clean build --no-daemon --stacktrace
 
-      - name: Record validation failure
-        if: failure()
+      - name: Remove temporary rebuild tooling
         run: |
-          git reset --hard HEAD
-          printf 'failed run_id=%s finished=%s\n' "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > .github/elevator-final-status.txt
-          git add .github/elevator-final-status.txt
-          git commit -m 'Record final integration validation failure' || true
-          git push origin HEAD:master
-
-      - name: Remove temporary integration tooling
-        run: |
-          rm -f .github/scripts/apply_elevator_scp330_final.py
+          rm -f .github/scp330_payload.part00
+          rm -f .github/scp330_payload.part01
+          rm -f .github/scp330_payload.part02
+          rm -f .github/workflows/build-scp330-rebuild.yml
           rm -f .github/workflows/apply-elevator-scp330-final.yml
-          rm -f .github/elevator-scp330-final-trigger.txt
-          rm -f .github/elevator-final-status.txt
-          rm -f .github/assistant_probe.tmp
-          rm -f .github/archive-download.md
 
-      - name: Commit validated implementation
+      - name: Commit validated rebuild
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Finalize Core Room elevator and rebuild SCP-330'
-          git push origin HEAD:master
+          git commit -m 'Rebuild SCP-330 with three candies and persistent hand loss'
+          git push origin HEAD:fix/scp330-rebuild

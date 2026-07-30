@@ -1,0 +1,85 @@
+name: Finalize elevator station selection
+
+on:
+  pull_request_target:
+    types: [reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.event.number == 136 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Replace cubic station selection
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java')
+          text = path.read_text(encoding='utf-8')
+          old = '''        @Override
+          public VoxelShape getShape(BlockState state, BlockGetter level,
+                  BlockPos pos, CollisionContext context) {
+              return CoreRoomElevatorGeometry.stationSelectionCellShape();
+          }
+
+          @Override
+          public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                  BlockPos pos, CollisionContext context) {
+              boolean gateSolid = !(level.getBlockEntity(pos)
+                      instanceof StationBlockEntity station)
+                      || station.isGateCollisionSolid();
+              return CoreRoomElevatorGeometry.stationCellShape(
+                      state.getValue(FACING), 0, 0, 0, gateSolid);
+          }'''
+          new = '''        @Override
+          public VoxelShape getShape(BlockState state, BlockGetter level,
+                  BlockPos pos, CollisionContext context) {
+              boolean gateSolid = !(level.getBlockEntity(pos)
+                      instanceof StationBlockEntity station)
+                      || station.isGateCollisionSolid();
+              return CoreRoomElevatorGeometry.stationCellShape(
+                      state.getValue(FACING), 0, 0, 0, gateSolid);
+          }
+
+          @Override
+          public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                  BlockPos pos, CollisionContext context) {
+              return getShape(state, level, pos, context);
+          }'''
+          if old not in text:
+              raise SystemExit('Expected station shape block not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Build
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit validated result
+        shell: bash
+        run: |
+          rm -f .github/workflows/finalize-elevator-selection.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Match elevator station selection to its model"
+          git push origin HEAD:master

@@ -38,9 +38,11 @@ jobs:
           end = next(i for i in range(start, len(lines))
                      if lines[i].strip() == 'PY')
           script_lines = lines[start:end]
-          indent = min(len(line) - len(line.lstrip())
-                       for line in script_lines if line.strip())
-          script = '\n'.join(line[indent:] for line in script_lines) + '\n'
+          first = next(line for line in script_lines if line.strip())
+          indent = len(first) - len(first.lstrip())
+          script = '\n'.join(
+              line[indent:] if line.startswith(' ' * indent) else line
+              for line in script_lines) + '\n'
           Path('/tmp/apply_elevator_fix.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/apply_elevator_fix.py

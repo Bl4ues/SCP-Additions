@@ -77,6 +77,46 @@ public final class CoreRoomElevatorManager {
         return found ? facing : null;
     }
 
+    public static BlockPos findStationSnap(Level level, BlockPos desired,
+            Direction facing) {
+        BlockPos best = desired;
+        int bestDistance = Integer.MAX_VALUE;
+        boolean ambiguous = false;
+        Set<BlockPos> columns = new HashSet<>();
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                if (dx == 0 && dz == 0) continue;
+                int columnX = desired.getX() + dx;
+                int columnZ = desired.getZ() + dz;
+                for (int y = level.getMinBuildHeight();
+                        y < level.getMaxBuildHeight(); y++) {
+                    BlockPos candidate = new BlockPos(columnX, y, columnZ);
+                    BlockState state = level.getBlockState(candidate);
+                    if (!state.is(CoreRoomElevatorModule.STATION.get())
+                            || state.getValue(CoreRoomElevatorModule.FACING)
+                            != facing) continue;
+                    int spacing = Math.abs(y - desired.getY());
+                    if (spacing < CoreRoomElevatorModule.MIN_FLOOR_SPACING
+                            || spacing > CoreRoomElevatorModule.MAX_FLOOR_SPACING) {
+                        continue;
+                    }
+                    BlockPos column = new BlockPos(columnX, desired.getY(),
+                            columnZ);
+                    if (!columns.add(column)) continue;
+                    int distance = dx * dx + dz * dz;
+                    if (distance < bestDistance) {
+                        best = column;
+                        bestDistance = distance;
+                        ambiguous = false;
+                    } else if (distance == bestDistance && !best.equals(column)) {
+                        ambiguous = true;
+                    }
+                }
+            }
+        }
+        return ambiguous ? desired : best;
+    }
+
     public static boolean isValidStationPlacement(Level level, BlockPos pos,
             Direction facing) {
         List<Integer> heights = new ArrayList<>();

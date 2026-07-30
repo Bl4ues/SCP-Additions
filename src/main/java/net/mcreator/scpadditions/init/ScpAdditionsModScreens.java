@@ -33,7 +33,7 @@ public class ScpAdditionsModScreens {
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_3.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpAdditionsModBlocks.TESLA_ACTIVE_4.get(), RenderType.cutout());
-			ItemBlockRenderTypes.setRenderLayer(CoreRoomElevatorModule.FLOOR.get(), RenderType.cutout());
+			ItemBlockRenderTypes.setRenderLayer(CoreRoomElevatorModule.FLOOR.get(), RenderType.translucent());
 		});
 	}
 }

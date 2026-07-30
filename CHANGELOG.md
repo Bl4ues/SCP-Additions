@@ -85,6 +85,7 @@
 - Limited adjacent stations to 8-32 blocks, made the Pulley derive its orientation from the stations below it, and hid unavailable direction buttons;
 - Made generated shaft Beams internal, survival-proof structural pieces instead of manually placed creative-tab blocks;
 - Corrected station, carriage, Pulley, cable, prompt, transparency, z-fighting, and moving-collision alignment.
+- Rebuilt thin-floor culling, directional placement, station selection/collision, cabin wall tunneling, SL1-style cabin footsteps, pulley guide alignment, station snapping, translucent windows, and respawn-save audio after in-game validation.
 
 ## Facility construction
 

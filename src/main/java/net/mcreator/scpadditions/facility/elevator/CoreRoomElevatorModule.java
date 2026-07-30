@@ -389,6 +389,27 @@ public final class CoreRoomElevatorModule {
             if (!(level instanceof ServerLevel serverLevel)) return;
             Player player = placer instanceof Player found ? found : null;
             Direction facing = state.getValue(FACING);
+
+            BlockPos snapped = CoreRoomElevatorManager.findStationSnap(
+                    serverLevel, pos, facing);
+            if (!snapped.equals(pos)) {
+                BlockState occupied = serverLevel.getBlockState(snapped);
+                if (occupied.is(BEAMS.get()) && occupied.getValue(GENERATED)) {
+                    serverLevel.removeBlock(snapped, false);
+                } else if (!occupied.canBeReplaced()) {
+                    if (player != null) {
+                        player.sendSystemMessage(Component.translatable(
+                                "message.scp_additions.elevator_space_blocked")
+                                .withStyle(ChatFormatting.RED));
+                    }
+                    serverLevel.destroyBlock(pos, true, placer);
+                    return;
+                }
+                serverLevel.removeBlock(pos, false);
+                serverLevel.setBlock(snapped, state, Block.UPDATE_ALL);
+                pos = snapped;
+            }
+
             if (!CoreRoomElevatorManager.isValidStationPlacement(
                     serverLevel, pos, facing)) {
                 if (player != null) {
@@ -463,17 +484,17 @@ public final class CoreRoomElevatorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            boolean gateSolid = !(level.getBlockEntity(pos)
-                    instanceof StationBlockEntity station)
-                    || station.isGateCollisionSolid();
-            return CoreRoomElevatorGeometry.stationCellShape(
-                    state.getValue(FACING), 0, 0, 0, gateSolid);
+            return CoreRoomElevatorGeometry.stationSelectionCellShape();
         }
 
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return getShape(state, level, pos, context);
+            boolean gateSolid = !(level.getBlockEntity(pos)
+                    instanceof StationBlockEntity station)
+                    || station.isGateCollisionSolid();
+            return CoreRoomElevatorGeometry.stationCellShape(
+                    state.getValue(FACING), 0, 0, 0, gateSolid);
         }
 
         @Override
@@ -561,14 +582,14 @@ public final class CoreRoomElevatorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return CoreRoomElevatorGeometry.pulleyCellShape(
-                    state.getValue(FACING), 0, 0, 0);
+            return CoreRoomElevatorGeometry.pulleySelectionCellShape();
         }
 
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return getShape(state, level, pos, context);
+            return CoreRoomElevatorGeometry.pulleyCellShape(
+                    state.getValue(FACING), 0, 0, 0);
         }
 
         @Override
@@ -679,10 +700,58 @@ public final class CoreRoomElevatorModule {
         }
     }
 
-    public static final class CoreRoomFloorBlock extends Block {
+    public static final class CoreRoomFloorBlock
+            extends HorizontalDirectionalBlock {
+        private static final VoxelShape FLOOR_SHAPE = Block.box(
+                0.0D, 15.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+
         private CoreRoomFloorBlock() {
             super(BlockBehaviour.Properties.of().strength(4.0F, 12.0F)
-                    .sound(SoundType.METAL));
+                    .sound(SoundType.METAL).noOcclusion());
+            registerDefaultState(stateDefinition.any().setValue(FACING,
+                    Direction.NORTH));
+        }
+
+        @Nullable
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(FACING,
+                    context.getHorizontalDirection().getOpposite());
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return FLOOR_SHAPE;
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return FLOOR_SHAPE;
+        }
+
+        @Override
+        public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
+                BlockPos pos) {
+            return Shapes.empty();
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING);
+        }
+
+        @Override
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING,
+                    rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
         }
     }
 
@@ -710,6 +779,12 @@ public final class CoreRoomElevatorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
+            return Shapes.block();
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
             if (!(level.getBlockEntity(pos) instanceof StructurePartBlockEntity part)) {
                 return Shapes.empty();
             }
@@ -729,12 +804,6 @@ public final class CoreRoomElevatorModule {
                     || station.isGateCollisionSolid();
             return CoreRoomElevatorGeometry.stationCellShape(facing,
                     part.localX(), part.localY(), part.localZ(), gateSolid);
-        }
-
-        @Override
-        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
-                BlockPos pos, CollisionContext context) {
-            return getShape(state, level, pos, context);
         }
 
         @Override

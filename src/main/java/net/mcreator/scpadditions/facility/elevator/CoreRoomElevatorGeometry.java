@@ -19,14 +19,10 @@ public final class CoreRoomElevatorGeometry {
             modelBox(-16, 0, -15.75, -13, 48, -12.25),
             modelBox(13, 0, 13, 14.5, 48, 15),
             modelBox(-14.5, 0, 13, -13, 48, 15),
-
-            // One shallow, continuous deck. Decorative glass and trim planes
-            // remain visual-only so players cannot snag on sub-pixel edges.
-            modelBox(17, 0, -24, 24, 0.25, 24),
-            modelBox(-24, 0, -24, -17, 0.25, 24),
-            modelBox(-17, 0, 16.5, 17, 0.25, 24),
-            modelBox(-12, 0, -29.75, 12, 0.25, -18.5),
-
+            modelBox(17, 0, -24, 24, 1, 24),
+            modelBox(-24, 0, -24, -17, 1, 24),
+            modelBox(-17, 0, 16.5, 17, 1, 24),
+            modelBox(-12, 0, -29.75, 12, 1, -18.5),
             modelBox(10, 0, -18.5, 12, 17, -14.25),
             modelBox(-12, 0, -18.5, -10, 17, -14.25)
     );
@@ -34,13 +30,15 @@ public final class CoreRoomElevatorGeometry {
     private static final AABB STATION_GATE = modelBox(
             -10, 0, -19.65, 10, 9.5, -19.15);
 
+    // Post-root (-90 degree) pulley coordinates. Guide bars include the
+    // requested one-unit rearward correction.
     private static final List<AABB> PULLEY_STATIC = List.of(
             modelBox(-13, 15, -13, 13, 16, 13),
-            modelBox(-7, 10, -8.5, 7, 15, 8.5),
-            modelBox(-16.5, 0, 13, -13, 16, 16),
-            modelBox(12.25, 0, 13, 14.25, 16, 14.5),
-            modelBox(12.25, 0, -14.5, 14.25, 16, -13),
-            modelBox(-16.5, 0, -16, -13, 16, -13)
+            modelBox(-8.5, 10, -7, 8.5, 15, 7),
+            modelBox(-16, 0, -15.5, -13, 16, -12),
+            modelBox(-14.5, 0, 13.25, -13, 16, 15.25),
+            modelBox(13, 0, 13.25, 14.5, 16, 15.25),
+            modelBox(13, 0, -15.5, 16, 16, -12)
     );
 
     private static final List<AABB> BEAMS = List.of(
@@ -50,8 +48,7 @@ public final class CoreRoomElevatorGeometry {
             javaModelBox(-8, 0, -7.75, -5, 16, -4.25)
     );
 
-    private CoreRoomElevatorGeometry() {
-    }
+    private CoreRoomElevatorGeometry() {}
 
     private static AABB modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
@@ -70,15 +67,21 @@ public final class CoreRoomElevatorGeometry {
     public static VoxelShape stationCellShape(Direction facing, int localX,
             int localY, int localZ, boolean gateSolid) {
         List<AABB> boxes = new ArrayList<>(STATION_STATIC);
-        if (gateSolid) {
-            boxes.add(STATION_GATE);
-        }
+        if (gateSolid) boxes.add(STATION_GATE);
         return cellShape(boxes, facing, localX, localY, localZ);
+    }
+
+    public static VoxelShape stationSelectionCellShape() {
+        return Shapes.block();
     }
 
     public static VoxelShape pulleyCellShape(Direction facing, int localX,
             int localY, int localZ) {
         return cellShape(PULLEY_STATIC, facing, localX, localY, localZ);
+    }
+
+    public static VoxelShape pulleySelectionCellShape() {
+        return Shapes.block();
     }
 
     public static VoxelShape beamShape(Direction facing) {
@@ -117,9 +120,7 @@ public final class CoreRoomElevatorGeometry {
         double maxY = Math.min(first.maxY, second.maxY);
         double maxZ = Math.min(first.maxZ, second.maxZ);
         if (maxX - minX <= THIN || maxY - minY <= THIN
-                || maxZ - minZ <= THIN) {
-            return null;
-        }
+                || maxZ - minZ <= THIN) return null;
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
@@ -170,13 +171,12 @@ public final class CoreRoomElevatorGeometry {
         double x = worldPoint.x - (master.getX() + 0.5D);
         double y = worldPoint.y - master.getY();
         double z = worldPoint.z - (master.getZ() + 0.5D);
-        Vec3 unrotated = switch (facing) {
+        return switch (facing) {
             case SOUTH -> new Vec3(-x, y, -z);
             case EAST -> new Vec3(z, y, -x);
             case WEST -> new Vec3(-z, y, x);
             default -> new Vec3(x, y, z);
         };
-        return unrotated;
     }
 
     public static Vec3 rotateLocalVector(Direction facing, double x,

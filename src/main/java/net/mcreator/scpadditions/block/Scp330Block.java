@@ -38,7 +38,8 @@ public final class Scp330Block extends BaseEntityBlock {
 
     /* Compact collision matching the visible bowl and plate. */
     private static final VoxelShape SHAPE = box(
-            5.75D, 0.0D, 5.75D, 10.25D, 1.75D, 10.25D);
+            5.1875D, 0.0D, 5.1875D,
+            10.8125D, 2.1875D, 10.8125D);
 
     public Scp330Block() {
         super(BlockBehaviour.Properties.of()

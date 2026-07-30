@@ -50,6 +50,21 @@ public final class CoreRoomElevatorGeometry {
 
     private CoreRoomElevatorGeometry() {}
 
+    private static final double STATION_BUTTON_X = 14.64492D / 16.0D;
+    private static final double STATION_BUTTON_Z = -16.69749D / 16.0D;
+
+    public static Vec3 stationButtonWorld(BlockPos master,
+            Direction facing, boolean up) {
+        Vec3 local = new Vec3(STATION_BUTTON_X,
+                (up ? 21.25D : 19.25D) / 16.0D,
+                STATION_BUTTON_Z);
+        Vec3 rotated = rotateLocalVector(facing,
+                local.x, local.y, local.z);
+        return Vec3.atLowerCornerOf(master)
+                .add(0.5D, 0.0D, 0.5D)
+                .add(rotated);
+    }
+
     private static AABB modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
         return new AABB(0.5D + minX / 16.0D, minY / 16.0D,
@@ -68,7 +83,7 @@ public final class CoreRoomElevatorGeometry {
             int localY, int localZ, boolean gateSolid) {
         List<AABB> boxes = new ArrayList<>(STATION_STATIC);
         if (gateSolid) boxes.add(STATION_GATE);
-        return cellShape(boxes, facing, localX, localY, localZ, true);
+        return cellShape(boxes, facing, localX, localY, localZ, false);
     }
 
     public static VoxelShape stationSelectionCellShape() {

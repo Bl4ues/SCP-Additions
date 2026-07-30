@@ -40,6 +40,7 @@ public final class ContextPromptClient {
     private static final float BASE_NAME_TEXT_SCALE = 1.85F;
     private static final double MAX_CONTEXT_REACH = 6.0D;
     private static final double TARGET_STICKINESS_BONUS = 0.045D;
+    private static final double PRECISE_AIM_RADIUS_SQR = 0.52D * 0.52D;
     private static final int CLICK_COOLDOWN_TICKS = 5;
 
     private static ContextTarget target;
@@ -208,7 +209,8 @@ public final class ContextPromptClient {
                 if (!rule.isAvailable(player.level(), pos, state)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(pos, state);
                 double score = scorePoint(anchor, eye, look, rule.range(),
-                        directHit, rule.priority());
+                        directHit, rule.priority(),
+                        rule.requiresPreciseAim());
                 if (isCurrentBlockTarget(pos, rule.interactionKey())) {
                     score -= TARGET_STICKINESS_BONUS;
                 }
@@ -260,7 +262,8 @@ public final class ContextPromptClient {
                 if (!rule.isAvailable(entity)) continue;
                 Vec3 anchor = rule.resolveEntityAnchor(entity);
                 double score = scorePoint(anchor, eye, look, rule.range(),
-                        directHit, rule.priority());
+                        directHit, rule.priority(),
+                        rule.requiresPreciseAim());
                 if (isCurrentEntityTarget(entity.getId(),
                         rule.interactionKey())) {
                     score -= TARGET_STICKINESS_BONUS;
@@ -328,25 +331,32 @@ public final class ContextPromptClient {
     }
 
     private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look,
-            double reach, boolean directHit, int priority) {
-        Vec3 toPoint = point.subtract(eye);
-        double distanceSqr = toPoint.lengthSqr();
-        if (distanceSqr > reach * reach) return Double.MAX_VALUE;
-        double distance = Math.sqrt(distanceSqr);
-        Vec3 direction = distance <= 0.001D ? look
-                : toPoint.scale(1.0D / distance);
-        double dot = direction.dot(look);
-        double centerPenalty;
-        if (dot > 0.0D) {
-            double alongRay = toPoint.dot(look);
-            Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
-            centerPenalty = closest.distanceToSqr(point);
-        } else {
-            centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
-        }
-        return centerPenalty + distance * 0.035D - priority * 0.01D
-                - (directHit ? 0.35D : 0.0D);
+        double reach, boolean directHit, int priority,
+        boolean preciseAim) {
+    Vec3 toPoint = point.subtract(eye);
+    double distanceSqr = toPoint.lengthSqr();
+    if (distanceSqr > reach * reach) return Double.MAX_VALUE;
+    double distance = Math.sqrt(distanceSqr);
+    Vec3 direction = distance <= 0.001D ? look
+            : toPoint.scale(1.0D / distance);
+    double dot = direction.dot(look);
+    double alongRay = toPoint.dot(look);
+    if (preciseAim && (alongRay < 0.0D || alongRay > reach)) {
+        return Double.MAX_VALUE;
     }
+    double centerPenalty;
+    if (dot > 0.0D) {
+        Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+        centerPenalty = closest.distanceToSqr(point);
+    } else {
+        centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
+    }
+    if (preciseAim && centerPenalty > PRECISE_AIM_RADIUS_SQR) {
+        return Double.MAX_VALUE;
+    }
+    return centerPenalty + distance * 0.035D - priority * 0.01D
+            - (directHit ? 0.35D : 0.0D);
+}
 
     private static ScreenPoint projectToScreen(Minecraft minecraft,
             Vec3 worldPos, int screenWidth, int screenHeight) {

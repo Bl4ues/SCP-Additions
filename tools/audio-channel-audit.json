@@ -1,0 +1,754 @@
+{
+  "summary": {
+    "total_audio_files": 124,
+    "already_mono": 88,
+    "converted_to_mono": 36,
+    "failures": 0
+  },
+  "files": [
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/012_close.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/012_damage.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/012_open.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/012_trance.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/079_1.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/079_2.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/079hack.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106chase.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106hit.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106phase_1.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106phase_2.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106phase_3.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106ranged_splash.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106step_1.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106step_2.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106step_3.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/106stop.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/330death.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/accessdenied.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/accessgranted.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/bleed_1.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/bleed_2.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/bleed_3.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/button.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/candy.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/candyeat.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/click.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/click_2.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/decontamination.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/doorclose.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/dooropen.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/elevator_cabin_loop.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/elevator_door_close.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/elevator_door_open.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/elevator_moving.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/enter.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/gravitons.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/hazmat_breathing.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/hazmat_equip.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/hazmat_remove.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/heartbeat.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/lamp_loop.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/lamp_off.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/lamp_on.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/nuclear.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/on_mount_golgotha.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/overcharge.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/overrideon.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/player_hurt_1.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/player_hurt_2.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/player_hurt_3.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/player_hurt_4.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/popup.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/save_game.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp1176.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294coinslot.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294emptycup.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294enter.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294off.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294on.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294outofrange.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp294pouring.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp902.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp902closing.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp902opening.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914death.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914dial.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914doorclose.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914dooropen.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914inside.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914key.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp914refining.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/scp_714.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/select.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/spray.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/station_close.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/stomach.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/terminalloop.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/terminaloff.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/terminalon.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/teslaactivate.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/teslaready.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/teslarecharge.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/turningoff.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/turningon.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_additions/sounds/wither.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_ublocks/sounds/page.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/bathroom_close.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/bathroom_open.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/closing.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/default_close.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/default_open.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/office_close.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/office_open.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scp_unity_extra_blocks/sounds/open.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/horror.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/idle.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/neck_snap.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_1.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_10.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_11.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_12.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_13.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_14.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_15.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_16.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_2.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_3.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_4.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_5.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_6.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_7.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_8.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/noise_9.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/scare.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/statue_death.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_drag.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_scrap.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_scrap_1.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_scrap_2.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_scrap_3.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_scrap_4.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/stone_scrap_5.ogg",
+      "channels_before": 2,
+      "status": "converted-to-mono",
+      "channels_after": 1
+    },
+    {
+      "path": "src/main/resources/assets/scpinventory/sounds/walk.ogg",
+      "channels_before": 1,
+      "status": "already-mono",
+      "channels_after": 1
+    }
+  ]
+}

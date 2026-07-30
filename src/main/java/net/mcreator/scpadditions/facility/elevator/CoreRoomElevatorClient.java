@@ -27,8 +27,7 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class CoreRoomElevatorClient {
     private static final ResourceLocation CABLE_TEXTURE = new ResourceLocation(
-            ScpAdditionsMod.MODID,
-            "textures/block/core_room_elevator_beams.png");
+            "minecraft", "textures/block/black_concrete.png");
 
     private CoreRoomElevatorClient() {
     }
@@ -214,7 +213,7 @@ public final class CoreRoomElevatorClient {
                     - renderOrigin.z);
             float y0 = (float) (bottom - renderOrigin.y);
             float y1 = (float) (top - renderOrigin.y);
-            float radius = 0.028F;
+            float radius = 0.0625F;
             float vMax = Math.max(1.0F, (y1 - y0) * 4.0F);
 
             VertexConsumer consumer = bufferSource.getBuffer(

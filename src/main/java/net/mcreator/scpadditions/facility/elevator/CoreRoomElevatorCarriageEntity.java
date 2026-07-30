@@ -67,7 +67,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private static final double FLOOR_EPSILON = 0.035D;
     private static final int DOOR_COLLISION_THRESHOLD = DOOR_TICKS / 2;
     private static final double BUTTON_HIT_RADIUS_SQR = 0.32D * 0.32D;
-    private static final double FLOOR_TOP = 0.25D / 16.0D;
+    private static final double FLOOR_TOP = 0.0D;
     private static final double COLLISION_EPSILON = 1.0E-4D;
 
     private static final RawAnimation CLOSED_ANIMATION = RawAnimation.begin()
@@ -369,8 +369,11 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         boolean horizontalOverlap = box.maxX > floor.minX
                 && box.minX < floor.maxX && box.maxZ > floor.minZ
                 && box.minZ < floor.maxZ;
-        if (!horizontalOverlap || previous.y < floor.maxY - 0.12D
-                || box.minY >= floor.maxY) return;
+        boolean crossedFloor = previous.y >= floor.maxY - 0.18D
+                && box.minY < floor.maxY;
+        boolean recoverBelowFloor = box.minY < floor.maxY
+                && box.minY > floor.minY - 0.85D;
+        if (!horizontalOverlap || (!crossedFloor && !recoverBelowFloor)) return;
         entity.move(MoverType.SHULKER, new Vec3(0.0D,
                 floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
         entity.setOnGround(true);

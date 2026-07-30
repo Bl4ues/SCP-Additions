@@ -450,9 +450,11 @@ public final class CoreRoomElevatorModule {
                 Player player, InteractionHand hand, BlockHitResult hit) {
             Vec3 local = CoreRoomElevatorGeometry.worldToModelLocal(
                     pos, state.getValue(FACING), hit.getLocation());
-            Vec3 upButton = new Vec3(14.64492D / 16.0D,
+            Vec3 upButton = CoreRoomElevatorGeometry.rotateLocalVector(
+                    Direction.EAST, 14.64492D / 16.0D,
                     21.25D / 16.0D, -16.69749D / 16.0D);
-            Vec3 downButton = new Vec3(14.64492D / 16.0D,
+            Vec3 downButton = CoreRoomElevatorGeometry.rotateLocalVector(
+                    Direction.EAST, 14.64492D / 16.0D,
                     19.25D / 16.0D, -16.69749D / 16.0D);
             double upDistance = local.distanceToSqr(upButton);
             double downDistance = local.distanceToSqr(downButton);
@@ -782,7 +784,7 @@ public final class CoreRoomElevatorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return Shapes.block();
+            return getCollisionShape(state, level, pos, context);
         }
 
         @Override

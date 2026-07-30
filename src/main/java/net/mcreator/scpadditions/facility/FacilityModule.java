@@ -327,22 +327,6 @@ public final class FacilityModule {
         addFacilityCreativeItem(general, "tesla_mid_2");
         addFacilityCreativeItem(general, "tesla_bottom_alt");
         addFacilityCreativeItem(general, "tesla_top_alt");
-        addFacilityCreativeItem(general, "archival_bottom");
-        addFacilityCreativeItem(general, "archival_mid");
-        addFacilityCreativeItem(general, "archival_top");
-        addFacilityCreativeItem(general, "archival_bot_1");
-        addFacilityCreativeItem(general, "archival_mid_2");
-        addFacilityCreativeItem(general, "office_bottom");
-        addFacilityCreativeItem(general, "office_mid");
-        addFacilityCreativeItem(general, "office_top");
-        addFacilityCreativeItem(general, "skyroom_bot_1");
-        addFacilityCreativeItem(general, "skyroom_bot_2");
-        addFacilityCreativeItem(general, "skyroom_mid");
-        addFacilityCreativeItem(general, "skyroom_top_alt");
-        addFacilityCreativeItem(general, "skyroom_block");
-        addFacilityCreativeItem(general, "security_bot");
-        addFacilityCreativeItem(general, "security_mid");
-        addFacilityCreativeItem(general, "security_top");
         sections.add(section("generaltab", general));
 
         List<ItemStack> coreRoom = new ArrayList<>();
@@ -370,6 +354,22 @@ public final class FacilityModule {
         addUBlockCreativeItem(sublevel1, "sl_1_floor_detail_big");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_1_bot");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_2");
+        addFacilityCreativeItem(sublevel1, "archival_bottom");
+        addFacilityCreativeItem(sublevel1, "archival_mid");
+        addFacilityCreativeItem(sublevel1, "archival_top");
+        addFacilityCreativeItem(sublevel1, "archival_bot_1");
+        addFacilityCreativeItem(sublevel1, "archival_mid_2");
+        addFacilityCreativeItem(sublevel1, "office_bottom");
+        addFacilityCreativeItem(sublevel1, "office_mid");
+        addFacilityCreativeItem(sublevel1, "office_top");
+        addFacilityCreativeItem(sublevel1, "skyroom_bot_1");
+        addFacilityCreativeItem(sublevel1, "skyroom_bot_2");
+        addFacilityCreativeItem(sublevel1, "skyroom_mid");
+        addFacilityCreativeItem(sublevel1, "skyroom_top_alt");
+        addFacilityCreativeItem(sublevel1, "skyroom_block");
+        addFacilityCreativeItem(sublevel1, "security_bot");
+        addFacilityCreativeItem(sublevel1, "security_mid");
+        addFacilityCreativeItem(sublevel1, "security_top");
         sections.add(section("sl1tab", sublevel1));
 
         List<ItemStack> sublevel2 = new ArrayList<>();

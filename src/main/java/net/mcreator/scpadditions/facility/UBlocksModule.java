@@ -277,7 +277,10 @@ public final class UBlocksModule {
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
             appendZoneTooltip(path, tooltip);
-            tooltip.add(Component.translatable("tooltip.scp_additions.sl1_connected_floors")
+            String connectionKey = "sl_1_floor_1".equals(path)
+                    ? "tooltip.scp_additions.sl1_metal_floor_connection"
+                    : "tooltip.scp_additions.sl1_blue_floor_connection";
+            tooltip.add(Component.translatable(connectionKey)
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

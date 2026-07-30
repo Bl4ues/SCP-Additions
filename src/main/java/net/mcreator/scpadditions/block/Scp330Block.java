@@ -36,10 +36,9 @@ import java.util.List;
 public final class Scp330Block extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    /* Two model-matched layers: the low bowl body and its slightly wider rim. */
-    private static final VoxelShape SHAPE = Shapes.or(
-            box(5.75D, 0.0D, 4.75D, 10.25D, 1.0D, 11.25D),
-            box(5.4D, 0.75D, 4.4D, 10.6D, 1.65D, 11.6D));
+    /* Compact collision matching the visible bowl and plate. */
+    private static final VoxelShape SHAPE = box(
+            5.75D, 0.0D, 5.75D, 10.25D, 1.75D, 10.25D);
 
     public Scp330Block() {
         super(BlockBehaviour.Properties.of()
@@ -70,7 +69,7 @@ public final class Scp330Block extends BaseEntityBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return defaultBlockState().setValue(FACING,
-                context.getHorizontalDirection().getOpposite());
+                context.getHorizontalDirection());
     }
 
     @Override

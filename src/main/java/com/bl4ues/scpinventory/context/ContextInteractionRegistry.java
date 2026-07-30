@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;
+import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorGeometry;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorManager;
 import net.mcreator.scpadditions.facility.elevator.ElevatorFoundation;
@@ -156,22 +157,25 @@ public final class ContextInteractionRegistry {
             ResourceLocation stationId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_station");
             Block station = CoreRoomElevatorModule.STATION.get();
-            double x = 0.5D + 14.64492D / 16.0D;
-            double z = 0.5D - 16.69749D / 16.0D;
+            Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
+                    Direction.EAST, 14.64492D / 16.0D, 0.0D,
+                    -16.69749D / 16.0D);
+            double x = 0.5D + modelAligned.x;
+            double z = 0.5D + modelAligned.z;
             addRule(new Rule(Kind.BLOCK, stationId, station, null,
                     "elevator_station_up", 2.8D, 120, "",
                     "", false, false, false,
                     x, 21.25D / 16.0D, z,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.HORIZONTAL_FACING, true, true,
-                    "front", "hand", "hand", 0.55D));
+                    "front", "hand", "hand", 0.38D));
             addRule(new Rule(Kind.BLOCK, stationId, station, null,
                     "elevator_station_down", 2.8D, 120, "",
                     "", false, false, false,
                     x, 19.25D / 16.0D, z,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.HORIZONTAL_FACING, true, true,
-                    "front", "hand", "hand", 0.55D));
+                    "front", "hand", "hand", 0.38D));
 
             ResourceLocation carriageId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_carriage");
@@ -182,14 +186,14 @@ public final class ContextInteractionRegistry {
                     0.5D, 0.5D, 0.5D,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.NONE, true, true,
-                    "front", "hand", "hand", 0.55D));
+                    "front", "hand", "hand", 0.38D));
             addRule(new Rule(Kind.ENTITY, carriageId, null, carriage,
                     "elevator_carriage_down", 2.8D, 125, "",
                     "", false, false, false,
                     0.5D, 0.5D, 0.5D,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.NONE, true, true,
-                    "front", "hand", "hand", 0.55D));
+                    "front", "hand", "hand", 0.38D));
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error(
                     "Failed to register Core Room elevator interactions",

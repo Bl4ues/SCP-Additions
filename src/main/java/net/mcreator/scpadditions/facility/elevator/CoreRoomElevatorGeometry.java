@@ -68,7 +68,7 @@ public final class CoreRoomElevatorGeometry {
             int localY, int localZ, boolean gateSolid) {
         List<AABB> boxes = new ArrayList<>(STATION_STATIC);
         if (gateSolid) boxes.add(STATION_GATE);
-        return cellShape(boxes, facing, localX, localY, localZ);
+        return cellShape(boxes, facing, localX, localY, localZ, true);
     }
 
     public static VoxelShape stationSelectionCellShape() {
@@ -77,7 +77,7 @@ public final class CoreRoomElevatorGeometry {
 
     public static VoxelShape pulleyCellShape(Direction facing, int localX,
             int localY, int localZ) {
-        return cellShape(PULLEY_STATIC, facing, localX, localY, localZ);
+        return cellShape(PULLEY_STATIC, facing, localX, localY, localZ, false);
     }
 
     public static VoxelShape pulleySelectionCellShape() {
@@ -90,11 +90,11 @@ public final class CoreRoomElevatorGeometry {
 
     public static VoxelShape beamCellShape(Direction facing, int localX,
             int localY, int localZ) {
-        return cellShape(BEAMS, facing, localX, localY, localZ);
+        return cellShape(BEAMS, facing, localX, localY, localZ, false);
     }
 
     private static VoxelShape cellShape(List<AABB> source, Direction facing,
-            int localX, int localY, int localZ) {
+            int localX, int localY, int localZ, boolean modelRootRotated) {
         BlockPos rotatedCell = CoreRoomElevatorModule.rotateOffset(facing,
                 localX, localY, localZ);
         AABB cell = new AABB(rotatedCell.getX(), rotatedCell.getY(),
@@ -102,7 +102,10 @@ public final class CoreRoomElevatorGeometry {
                 rotatedCell.getY() + 1.0D, rotatedCell.getZ() + 1.0D);
         VoxelShape result = Shapes.empty();
         for (AABB original : source) {
-            AABB rotated = rotateAabb(original, facing, 0.5D, 0.5D);
+            AABB aligned = modelRootRotated
+                    ? rotateAabb(original, Direction.EAST, 0.5D, 0.5D)
+                    : original;
+            AABB rotated = rotateAabb(aligned, facing, 0.5D, 0.5D);
             AABB clipped = intersect(rotated, cell);
             if (clipped == null) continue;
             result = Shapes.or(result, Shapes.create(clipped.move(

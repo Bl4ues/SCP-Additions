@@ -14,6 +14,7 @@ SCP Additions is currently developed and released for **Minecraft 1.20.1 with Fo
 
 ## Links
 
+- [Download source snapshot](https://api.github.com/repos/Bl4ues/SCP-Additions/zipball/master)
 - [Download on Modrinth](https://modrinth.com/mod/scp-additions)
 - [Download on CurseForge](https://www.curseforge.com/minecraft/mc-mods/scp-additions)
 - [Documentation Wiki](https://github.com/Bl4ues/SCP-Additions/wiki)

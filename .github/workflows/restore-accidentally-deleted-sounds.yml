@@ -1,0 +1,93 @@
+name: Restore accidentally deleted sounds
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/RESTORE_DELETED_SOUNDS
+
+permissions:
+  contents: write
+
+jobs:
+  restore-sounds-and-tooltip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore sound assets without touching textures
+        shell: bash
+        run: |
+          git checkout 65d48dcc688a6a34a1623e781c893434f0b85a6b -- \
+            src/main/resources/assets/scp_additions/sounds \
+            src/main/resources/assets/scpinventory/sounds
+
+      - name: Correct SCP-330 tooltip
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/main/resources/assets/scp_additions/lang/en_us.json')
+          text = path.read_text(encoding='utf-8')
+          old = '"tooltip.scp_additions.scp330_warning":"Take no more than two, please!"'
+          new = '"tooltip.scp_additions.scp330_warning":"Take Only Two"'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one SCP-330 tooltip entry, found {count}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Verify restoration scope
+        shell: bash
+        run: |
+          test -f src/main/resources/assets/scp_additions/sounds/106chase.ogg
+          test -f src/main/resources/assets/scp_additions/sounds/scp914refining.ogg
+          test -f src/main/resources/assets/scpinventory/sounds/neck_snap.ogg
+          test -f src/main/resources/assets/scpinventory/sounds/stone_scrap_5.ogg
+          grep -q '"tooltip.scp_additions.scp330_warning":"Take Only Two"' \
+            src/main/resources/assets/scp_additions/lang/en_us.json
+          if git diff --name-only | grep -q '/textures/'; then
+            echo 'Unexpected texture change detected'
+            git diff --name-only
+            exit 1
+          fi
+
+      - name: Commit restoration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/main/resources/assets/scp_additions/sounds \
+            src/main/resources/assets/scpinventory/sounds \
+            src/main/resources/assets/scp_additions/lang/en_us.json
+          git commit -m "Restore deleted sounds and fix SCP-330 tooltip"
+          git push origin HEAD:master
+
+  cleanup:
+    if: always()
+    needs: restore-sounds-and-tooltip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove temporary restoration workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f \
+            .github/workflows/restore-accidentally-deleted-sounds.yml \
+            tools/hotfix/RESTORE_DELETED_SOUNDS
+          git commit -m "Remove temporary sound restoration workflow [skip ci]"
+          git push origin HEAD:master

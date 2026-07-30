@@ -1,0 +1,68 @@
+name: Finalize elevator selection by push
+
+on:
+  push:
+    branches: [master]
+    paths: [tools/hotfix/FINALIZE_ELEVATOR_SELECTION_PUSH]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Replace cubic station selection
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java')
+          text = path.read_text(encoding='utf-8')
+          needle = '            return CoreRoomElevatorGeometry.stationSelectionCellShape();'
+          replacement = (
+              '            boolean gateSolid = !(level.getBlockEntity(pos)\n'
+              '                    instanceof StationBlockEntity station)\n'
+              '                    || station.isGateCollisionSolid();\n'
+              '            return CoreRoomElevatorGeometry.stationCellShape(\n'
+              '                    state.getValue(FACING), 0, 0, 0, gateSolid);'
+          )
+          if text.count(needle) != 1:
+              raise SystemExit(f'Expected exactly one cubic station selection, found {text.count(needle)}')
+          path.write_text(text.replace(needle, replacement, 1), encoding='utf-8')
+          PY
+
+      - name: Build
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit validated result and clean temporary tooling
+        shell: bash
+        run: |
+          rm -f \
+            .github/workflows/finalize-elevator-selection.yml \
+            .github/workflows/finalize-elevator-selection-v2.yml \
+            .github/workflows/finalize-elevator-selection-v3.yml \
+            .github/workflows/finalize-elevator-selection-push.yml \
+            tools/hotfix/FINALIZE_ELEVATOR_SELECTION_PUSH
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Match elevator station selection to its model"
+          git push origin HEAD:master

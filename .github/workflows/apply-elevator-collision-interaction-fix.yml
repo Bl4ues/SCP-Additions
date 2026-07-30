@@ -1,0 +1,437 @@
+name: Apply elevator collision and interaction repair
+
+on:
+  push:
+    branches: [master]
+    paths: [tools/hotfix/APPLY_ELEVATOR_COLLISION_INTERACTION_FIX]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Apply model, collision, interaction, and rendering fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              text = path.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # SCP-330: enlarge the complete authored model by another 25 percent,
+          # scaling upward from its current lowest cube so the plate remains seated.
+          geo_path = Path('src/main/resources/assets/scp_additions/geo/block/scp330.geo.json')
+          geo = json.loads(geo_path.read_text(encoding='utf-8'))
+          scale = 1.25
+          for geometry in geo.get('minecraft:geometry', []):
+              description = geometry.get('description', {})
+              current_width = float(description.get('visible_bounds_width', 0.0))
+              if not 2.20 <= current_width <= 2.30:
+                  raise SystemExit(f'Unexpected SCP-330 model scale: {current_width}')
+              cubes = [cube for bone in geometry.get('bones', [])
+                       for cube in bone.get('cubes', [])
+                       if isinstance(cube.get('origin'), list)]
+              base_y = min(float(cube['origin'][1]) for cube in cubes)
+
+              def scale_position(vector):
+                  if not isinstance(vector, list) or len(vector) < 3:
+                      return
+                  vector[0] = round(float(vector[0]) * scale, 6)
+                  vector[1] = round(base_y + (float(vector[1]) - base_y) * scale, 6)
+                  vector[2] = round(float(vector[2]) * scale, 6)
+
+              def scale_size(vector):
+                  if not isinstance(vector, list) or len(vector) < 3:
+                      return
+                  for index in range(3):
+                      vector[index] = round(float(vector[index]) * scale, 6)
+
+              description['visible_bounds_width'] = round(current_width * scale, 6)
+              if 'visible_bounds_height' in description:
+                  description['visible_bounds_height'] = round(
+                      float(description['visible_bounds_height']) * scale, 6)
+              if isinstance(description.get('visible_bounds_offset'), list):
+                  description['visible_bounds_offset'][0] = round(
+                      float(description['visible_bounds_offset'][0]) * scale, 6)
+                  description['visible_bounds_offset'][1] = round(
+                      float(description['visible_bounds_offset'][1]) * scale, 6)
+                  description['visible_bounds_offset'][2] = round(
+                      float(description['visible_bounds_offset'][2]) * scale, 6)
+
+              for bone in geometry.get('bones', []):
+                  scale_position(bone.get('pivot'))
+                  for cube in bone.get('cubes', []):
+                      scale_position(cube.get('origin'))
+                      scale_size(cube.get('size'))
+                      scale_position(cube.get('pivot'))
+                  for locator in bone.get('locators', {}).values():
+                      scale_position(locator)
+          geo_path.write_text(json.dumps(geo, separators=(',', ':')) + '\n',
+                              encoding='utf-8')
+
+          block_path = Path('src/main/java/net/mcreator/scpadditions/block/Scp330Block.java')
+          replace_once(
+              block_path,
+              '''    private static final VoxelShape SHAPE = box(
+                      5.75D, 0.0D, 5.75D, 10.25D, 1.75D, 10.25D);''',
+              '''    private static final VoxelShape SHAPE = box(
+                      5.1875D, 0.0D, 5.1875D,
+                      10.8125D, 2.1875D, 10.8125D);''',
+              'SCP-330 collision')
+
+          # Station geometry: the authored station root has no Y rotation.
+          geometry_path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java')
+          replace_once(
+              geometry_path,
+              '''    private CoreRoomElevatorGeometry() {}
+
+              private static AABB modelBox''',
+              '''    private static final double STATION_BUTTON_X = 14.64492D / 16.0D;
+              private static final double STATION_BUTTON_Z = -16.69749D / 16.0D;
+
+              private CoreRoomElevatorGeometry() {}
+
+              public static Vec3 stationButtonWorld(BlockPos master,
+                      Direction facing, boolean up) {
+                  Vec3 local = new Vec3(STATION_BUTTON_X,
+                          (up ? 21.25D : 19.25D) / 16.0D,
+                          STATION_BUTTON_Z);
+                  Vec3 rotated = rotateLocalVector(facing,
+                          local.x, local.y, local.z);
+                  return Vec3.atLowerCornerOf(master)
+                          .add(0.5D, 0.0D, 0.5D)
+                          .add(rotated);
+              }
+
+              private static AABB modelBox''',
+              'Station button helper')
+          replace_once(
+              geometry_path,
+              '        return cellShape(boxes, facing, localX, localY, localZ, true);',
+              '        return cellShape(boxes, facing, localX, localY, localZ, false);',
+              'Station root collision alignment')
+
+          # Station hit testing and multiblock client synchronization.
+          module_path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java')
+          replace_once(
+              module_path,
+              '''            Vec3 local = CoreRoomElevatorGeometry.worldToModelLocal(
+                      pos, state.getValue(FACING), hit.getLocation());
+              Vec3 upButton = CoreRoomElevatorGeometry.rotateLocalVector(
+                      Direction.EAST, 14.64492D / 16.0D,
+                      21.25D / 16.0D, -16.69749D / 16.0D);
+              Vec3 downButton = CoreRoomElevatorGeometry.rotateLocalVector(
+                      Direction.EAST, 14.64492D / 16.0D,
+                      19.25D / 16.0D, -16.69749D / 16.0D);
+              double upDistance = local.distanceToSqr(upButton);
+              double downDistance = local.distanceToSqr(downButton);''',
+              '''            Vec3 upButton = CoreRoomElevatorGeometry.stationButtonWorld(
+                      pos, state.getValue(FACING), true);
+              Vec3 downButton = CoreRoomElevatorGeometry.stationButtonWorld(
+                      pos, state.getValue(FACING), false);
+              double upDistance = hit.getLocation().distanceToSqr(upButton);
+              double downDistance = hit.getLocation().distanceToSqr(downButton);''',
+              'Station direct button hit testing')
+          replace_once(
+              module_path,
+              '''            this.localZ = localZ;
+              setChanged();
+          }''',
+              '''            this.localZ = localZ;
+              setChanged();
+              if (level != null) {
+                  level.sendBlockUpdated(worldPosition, getBlockState(),
+                          getBlockState(), 3);
+              }
+          }''',
+              'Structure part synchronization notification')
+          replace_once(
+              module_path,
+              '''        @Override
+          public void load(CompoundTag tag) {
+              super.load(tag);
+              masterPos = BlockPos.of(tag.getLong("Master"));
+              kind = StructureKind.fromName(tag.getString("Kind"));
+              localX = tag.getInt("LocalX");
+              localY = tag.getInt("LocalY");
+              localZ = tag.getInt("LocalZ");
+          }
+      }
+
+      public static final class StationBlockEntity''',
+              '''        @Override
+          public void load(CompoundTag tag) {
+              super.load(tag);
+              masterPos = BlockPos.of(tag.getLong("Master"));
+              kind = StructureKind.fromName(tag.getString("Kind"));
+              localX = tag.getInt("LocalX");
+              localY = tag.getInt("LocalY");
+              localZ = tag.getInt("LocalZ");
+          }
+
+          @Override
+          public CompoundTag getUpdateTag() {
+              return saveWithoutMetadata();
+          }
+
+          @Nullable
+          @Override
+          public ClientboundBlockEntityDataPacket getUpdatePacket() {
+              return ClientboundBlockEntityDataPacket.create(this);
+          }
+
+          @Override
+          public void onDataPacket(Connection net,
+                  ClientboundBlockEntityDataPacket packet) {
+              CompoundTag tag = packet.getTag();
+              if (tag != null) load(tag);
+          }
+      }
+
+      public static final class StationBlockEntity''',
+              'Structure part update packet')
+
+          # Context anchors use the same model-space helper as direct clicks.
+          registry_path = Path('src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java')
+          replace_once(
+              registry_path,
+              '''            Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
+                      Direction.EAST, 14.64492D / 16.0D, 0.0D,
+                      -16.69749D / 16.0D);
+              double x = 0.5D + modelAligned.x;
+              double z = 0.5D + modelAligned.z;''',
+              '''            double x = 0.5D;
+              double z = 0.5D;''',
+              'Station rule coordinates')
+          replace_once(
+              registry_path,
+              '''        public double promptScale() { return promptScale; }
+
+          public boolean isAvailable(Level level, BlockPos pos,''',
+              '''        public double promptScale() { return promptScale; }
+          public boolean requiresPreciseAim() {
+              return interactionKey.startsWith("elevator_station_")
+                      || interactionKey.startsWith("elevator_carriage_");
+          }
+
+          public boolean isAvailable(Level level, BlockPos pos,''',
+              'Precise elevator aim flag')
+          replace_once(
+              registry_path,
+              '''        public Vec3 resolveBlockAnchor(BlockPos pos, BlockState state) {
+              Vec3 centered = new Vec3(localX - 0.5D,
+                      localY - 0.5D, localZ - 0.5D);''',
+              '''        public Vec3 resolveBlockAnchor(BlockPos pos, BlockState state) {
+              if (block == CoreRoomElevatorModule.STATION.get()) {
+                  return CoreRoomElevatorGeometry.stationButtonWorld(pos,
+                          state.getValue(CoreRoomElevatorModule.FACING),
+                          interactionKey.endsWith("up"));
+              }
+              Vec3 centered = new Vec3(localX - 0.5D,
+                      localY - 0.5D, localZ - 0.5D);''',
+              'Station prompt anchor')
+
+          # Require the crosshair to remain near elevator buttons, matching pickup targeting.
+          prompt_path = Path('src/main/java/com/bl4ues/scpinventory/client/ContextPromptClient.java')
+          replace_once(
+              prompt_path,
+              '''    private static final double TARGET_STICKINESS_BONUS = 0.045D;
+              private static final int CLICK_COOLDOWN_TICKS = 5;''',
+              '''    private static final double TARGET_STICKINESS_BONUS = 0.045D;
+              private static final double PRECISE_AIM_RADIUS_SQR = 0.52D * 0.52D;
+              private static final int CLICK_COOLDOWN_TICKS = 5;''',
+              'Precise aim radius')
+          prompt_text = prompt_path.read_text(encoding='utf-8')
+          old_call = '''                double score = scorePoint(anchor, eye, look, rule.range(),
+                          directHit, rule.priority());'''
+          new_call = '''                double score = scorePoint(anchor, eye, look, rule.range(),
+                          directHit, rule.priority(), rule.requiresPreciseAim());'''
+          if prompt_text.count(old_call) != 2:
+              raise SystemExit(f'Context score calls: expected two, found {prompt_text.count(old_call)}')
+          prompt_text = prompt_text.replace(old_call, new_call)
+          prompt_path.write_text(prompt_text, encoding='utf-8')
+          replace_once(
+              prompt_path,
+              '''    private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look,
+              double reach, boolean directHit, int priority) {
+          Vec3 toPoint = point.subtract(eye);
+          double distanceSqr = toPoint.lengthSqr();
+          if (distanceSqr > reach * reach) return Double.MAX_VALUE;
+          double distance = Math.sqrt(distanceSqr);
+          Vec3 direction = distance <= 0.001D ? look
+                  : toPoint.scale(1.0D / distance);
+          double dot = direction.dot(look);
+          double centerPenalty;
+          if (dot > 0.0D) {
+              double alongRay = toPoint.dot(look);
+              Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+              centerPenalty = closest.distanceToSqr(point);
+          } else {
+              centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
+          }
+          return centerPenalty + distance * 0.035D - priority * 0.01D
+                  - (directHit ? 0.35D : 0.0D);
+      }''',
+              '''    private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look,
+              double reach, boolean directHit, int priority,
+              boolean preciseAim) {
+          Vec3 toPoint = point.subtract(eye);
+          double distanceSqr = toPoint.lengthSqr();
+          if (distanceSqr > reach * reach) return Double.MAX_VALUE;
+          double distance = Math.sqrt(distanceSqr);
+          Vec3 direction = distance <= 0.001D ? look
+                  : toPoint.scale(1.0D / distance);
+          double dot = direction.dot(look);
+          double alongRay = toPoint.dot(look);
+          if (preciseAim && (alongRay < 0.0D || alongRay > reach)) {
+              return Double.MAX_VALUE;
+          }
+          double centerPenalty;
+          if (dot > 0.0D) {
+              Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+              centerPenalty = closest.distanceToSqr(point);
+          } else {
+              centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
+          }
+          if (preciseAim && centerPenalty > PRECISE_AIM_RADIUS_SQR) {
+              return Double.MAX_VALUE;
+          }
+          return centerPenalty + distance * 0.035D - priority * 0.01D
+                  - (directHit ? 0.35D : 0.0D);
+      }''',
+              'Context score implementation')
+
+          # Cabin orientation and floor stabilization.
+          carriage_path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java')
+          replace_once(
+              carriage_path,
+              '''                entity.fallDistance = 0.0F;
+                  if (standing) entity.setOnGround(true);
+              }''',
+              '''                entity.fallDistance = 0.0F;
+                  if (standing) stabilizeGroundedEntity(entity);
+              }''',
+              'Moving cabin passenger stabilization')
+          replace_once(
+              carriage_path,
+              '''        boolean recoverBelowFloor = box.minY < floor.maxY
+                  && box.minY > floor.minY - 0.85D;
+          if (!horizontalOverlap || (!crossedFloor && !recoverBelowFloor)) return;
+          entity.move(MoverType.SHULKER, new Vec3(0.0D,
+                  floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
+          entity.setOnGround(true);
+          entity.fallDistance = 0.0F;''',
+              '''        boolean recoverBelowFloor = box.minY < floor.maxY
+                  && box.minY > floor.minY - 1.50D;
+          if (!horizontalOverlap || (!crossedFloor && !recoverBelowFloor)) return;
+          placeEntityOnFloor(entity, floor);''',
+              'Swept cabin floor recovery')
+          replace_once(
+              carriage_path,
+              '''    private void playCabinFootstep(Entity entity, Vec3 previous) {''',
+              '''    private static void placeEntityOnFloor(Entity entity, AABB floor) {
+          AABB box = entity.getBoundingBox();
+          entity.move(MoverType.SHULKER, new Vec3(0.0D,
+                  floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
+          stabilizeGroundedEntity(entity);
+      }
+
+      private static void stabilizeGroundedEntity(Entity entity) {
+          Vec3 motion = entity.getDeltaMovement();
+          if (motion.y < 0.0D) {
+              entity.setDeltaMovement(motion.x, 0.0D, motion.z);
+          }
+          entity.setOnGround(true);
+          entity.fallDistance = 0.0F;
+          entity.hurtMarked = true;
+      }
+
+      private void playCabinFootstep(Entity entity, Vec3 previous) {''',
+              'Cabin floor grounding helper')
+          replace_once(
+              carriage_path,
+              '''        if (box.getCenter().y >= floor.getCenter().y) {
+              entity.move(MoverType.SHULKER, new Vec3(0.0D,
+                      floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
+              entity.setOnGround(true);
+              entity.fallDistance = 0.0F;
+          }''',
+              '''        if (box.getCenter().y >= floor.getCenter().y) {
+              placeEntityOnFloor(entity, floor);
+          }''',
+              'Cabin floor overlap collision')
+          carriage_text = carriage_path.read_text(encoding='utf-8')
+          old_facing = '''            AABB facingAligned = CoreRoomElevatorGeometry.rotateAabb(
+                      modelAligned, facing(), 0.0D, 0.0D);'''
+          new_facing = '''            AABB facingAligned = CoreRoomElevatorGeometry.rotateAabb(
+                      modelAligned, facing().getOpposite(), 0.0D, 0.0D);'''
+          if carriage_text.count(old_facing) != 1:
+              raise SystemExit(f'Cabin shell orientation: expected one, found {carriage_text.count(old_facing)}')
+          carriage_text = carriage_text.replace(old_facing, new_facing, 1)
+          old_anchor = '''        Vec3 facingRotated = CoreRoomElevatorGeometry.rotateLocalVector(
+                  facing(), modelAligned.x, modelAligned.y, modelAligned.z);'''
+          new_anchor = '''        Vec3 facingRotated = CoreRoomElevatorGeometry.rotateLocalVector(
+                  facing().getOpposite(), modelAligned.x,
+                  modelAligned.y, modelAligned.z);'''
+          if carriage_text.count(old_anchor) != 1:
+              raise SystemExit(f'Cabin button orientation: expected one, found {carriage_text.count(old_anchor)}')
+          carriage_text = carriage_text.replace(old_anchor, new_anchor, 1)
+          carriage_path.write_text(carriage_text, encoding='utf-8')
+
+          # Render the carriage in the cutout pass so translucent station glass
+          # blends over it rather than erasing another translucent object.
+          client_path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorClient.java')
+          client_text = client_path.read_text(encoding='utf-8')
+          marker = '''    public static final class CarriageRenderer extends
+              GeoEntityRenderer<CoreRoomElevatorCarriageEntity> {'''
+          marker_index = client_text.find(marker)
+          if marker_index < 0:
+              raise SystemExit('Carriage renderer not found')
+          prefix = client_text[:marker_index]
+          suffix = client_text[marker_index:]
+          old_render = '            return RenderType.entityTranslucentCull(texture);'
+          if suffix.count(old_render) != 1:
+              raise SystemExit(f'Carriage render type: expected one, found {suffix.count(old_render)}')
+          suffix = suffix.replace(old_render,
+                  '            return RenderType.entityCutoutNoCull(texture);', 1)
+          client_path.write_text(prefix + suffix, encoding='utf-8')
+          PY
+
+      - name: Build
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit validated repair
+        shell: bash
+        run: |
+          rm -f \
+            .github/workflows/apply-elevator-collision-interaction-fix.yml \
+            tools/hotfix/APPLY_ELEVATOR_COLLISION_INTERACTION_FIX
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Core Room elevator collision and interaction alignment"
+          git push origin HEAD:master

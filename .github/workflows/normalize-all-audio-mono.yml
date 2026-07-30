@@ -1,0 +1,141 @@
+name: Normalize all mod audio to mono
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/NORMALIZE_ALL_AUDIO_MONO
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Audit and convert multichannel audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          converted=0
+          scanned=0
+          report="audio-channel-audit.txt"
+          : > "$report"
+
+          while IFS= read -r -d '' file; do
+            scanned=$((scanned + 1))
+            channels="$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$file" | head -n1)"
+            if [[ -z "$channels" ]]; then
+              echo "UNREADABLE $file" | tee -a "$report"
+              exit 1
+            fi
+
+            echo "$channels channel(s): $file" >> "$report"
+
+            if (( channels > 1 )); then
+              ext="${file##*.}"
+              ext="${ext,,}"
+              tmp="${file%.*}.mono-tmp.${ext}"
+
+              case "$ext" in
+                ogg|oga)
+                  ffmpeg -v error -y -i "$file" -map_metadata 0 -ac 1 -c:a libvorbis -q:a 6 "$tmp"
+                  ;;
+                wav)
+                  ffmpeg -v error -y -i "$file" -map_metadata 0 -ac 1 -c:a pcm_s16le "$tmp"
+                  ;;
+                mp3)
+                  ffmpeg -v error -y -i "$file" -map_metadata 0 -ac 1 -c:a libmp3lame -q:a 2 "$tmp"
+                  ;;
+                flac)
+                  ffmpeg -v error -y -i "$file" -map_metadata 0 -ac 1 -c:a flac "$tmp"
+                  ;;
+                *)
+                  echo "Unsupported audio extension: $file" >&2
+                  exit 1
+                  ;;
+              esac
+
+              mv "$tmp" "$file"
+              converted=$((converted + 1))
+              echo "CONVERTED: $file"
+            fi
+          done < <(find src/main/resources/assets -type f \( -iname '*.ogg' -o -iname '*.oga' -o -iname '*.wav' -o -iname '*.mp3' -o -iname '*.flac' \) -print0)
+
+          echo "Scanned: $scanned"
+          echo "Converted: $converted"
+          echo "SCANNED=$scanned" >> "$GITHUB_ENV"
+          echo "CONVERTED=$converted" >> "$GITHUB_ENV"
+
+      - name: Verify every audio file is mono
+        shell: bash
+        run: |
+          set -euo pipefail
+          failures=0
+          while IFS= read -r -d '' file; do
+            channels="$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$file" | head -n1)"
+            if [[ "$channels" != "1" ]]; then
+              echo "NOT MONO ($channels channels): $file"
+              failures=$((failures + 1))
+            fi
+          done < <(find src/main/resources/assets -type f \( -iname '*.ogg' -o -iname '*.oga' -o -iname '*.wav' -o -iname '*.mp3' -o -iname '*.flac' \) -print0)
+
+          if (( failures > 0 )); then
+            exit 1
+          fi
+
+      - name: Commit converted audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/resources/assets
+          if git diff --cached --quiet; then
+            echo "No stereo or multichannel audio files required conversion."
+          else
+            git commit -m "Convert all stereo mod sounds to mono"
+            git push origin HEAD:master
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-channel-audit
+          path: audio-channel-audit.txt
+          if-no-files-found: warn
+
+  cleanup:
+    if: always()
+    needs: normalize
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove temporary normalization workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin master
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/normalize-all-audio-mono.yml tools/hotfix/NORMALIZE_ALL_AUDIO_MONO
+          git commit -m "Remove temporary audio normalization workflow [skip ci]"
+          git push origin HEAD:master

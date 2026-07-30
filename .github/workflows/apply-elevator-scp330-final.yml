@@ -1,8 +1,8 @@
-name: Validate SCP-330 Rebuild
+name: Apply Validated SCP-330 Rebuild
 
 on:
-  pull_request_target:
-    types: [opened, reopened, synchronize]
+  push:
+    branches: [ master ]
     paths:
       - '.github/scp330_payload.part02'
 
@@ -10,18 +10,17 @@ permissions:
   contents: write
 
 concurrency:
-  group: scp330-rebuild
+  group: scp330-rebuild-master
   cancel-in-progress: false
 
 jobs:
   apply-build-and-commit:
-    if: github.event.pull_request.head.ref == 'fix/scp330-rebuild'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout SCP-330 rebuild branch
+      - name: Checkout current master
         uses: actions/checkout@v4
         with:
-          ref: fix/scp330-rebuild
+          ref: master
           fetch-depth: 0
 
       - name: Set up Java 17
@@ -104,13 +103,17 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build --no-daemon --stacktrace
 
-      - name: Remove temporary rebuild tooling
+      - name: Remove temporary tooling
         run: |
           rm -f .github/scp330_payload.part00
           rm -f .github/scp330_payload.part01
           rm -f .github/scp330_payload.part02
-          rm -f .github/workflows/build-scp330-rebuild.yml
           rm -f .github/workflows/apply-elevator-scp330-final.yml
+          rm -f .github/scripts/apply_elevator_scp330_final.py
+          rm -f .github/elevator-scp330-final-trigger.txt
+          rm -f .github/elevator-final-status.txt
+          rm -f .github/assistant_probe.tmp
+          rm -f .github/archive-download.md
 
       - name: Commit validated rebuild
         run: |
@@ -118,4 +121,4 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git commit -m 'Rebuild SCP-330 with three candies and persistent hand loss'
-          git push origin HEAD:fix/scp330-rebuild
+          git push origin HEAD:master

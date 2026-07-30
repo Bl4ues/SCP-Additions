@@ -1,0 +1,38 @@
+name: Clean temporary audio audit files
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - tools/hotfix/CLEANUP_AUDIO_AUDIT
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove temporary audit infrastructure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f \
+            .github/workflows/audit-and-normalize-audio.yml \
+            .github/workflows/normalize-audio-python.yml \
+            .github/workflows/cleanup-audio-audit.yml \
+            tools/hotfix/AUDIT_AND_NORMALIZE_AUDIO \
+            tools/hotfix/NORMALIZE_AUDIO_PYTHON \
+            tools/hotfix/CLEANUP_AUDIO_AUDIT \
+            tools/audio-channel-audit.json
+          git commit -m "Remove temporary audio audit files [skip ci]"
+          git push origin HEAD:master

@@ -32,7 +32,22 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Apply prepared elevator and SCP-330 integration
-        run: python .github/scripts/apply_elevator_scp330_final.py
+        run: |
+          python - <<'PY'
+          import base64
+          import gzip
+          import re
+          from pathlib import Path
+          script_path = Path('.github/scripts/apply_elevator_scp330_final.py')
+          wrapper = script_path.read_text()
+          match = re.search(r"b64decode\('([^']+)'\)", wrapper)
+          if match is None:
+              raise RuntimeError('Prepared payload was not found')
+          payload = match.group(1)
+          payload += '=' * (-len(payload) % 4)
+          source = gzip.decompress(base64.b64decode(payload))
+          exec(compile(source, str(script_path), 'exec'))
+          PY
 
       - name: Convert elevator sounds to positional mono
         run: |

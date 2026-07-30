@@ -1,0 +1,100 @@
+name: Apply resilient elevator repair on trigger branch
+
+on:
+  pull_request:
+    types: [synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'automation/elevator-fix-trigger' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: automation/elevator-fix-trigger
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Prepare geometry helper and run structural repair
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          geometry_path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorGeometry.java')
+          geometry = geometry_path.read_text(encoding='utf-8')
+          if 'stationButtonWorld' not in geometry:
+              helper = '''    private static final double STATION_BUTTON_X = 14.64492D / 16.0D;
+              private static final double STATION_BUTTON_Z = -16.69749D / 16.0D;
+
+              public static Vec3 stationButtonWorld(BlockPos master,
+                      Direction facing, boolean up) {
+                  Vec3 local = new Vec3(STATION_BUTTON_X,
+                          (up ? 21.25D : 19.25D) / 16.0D,
+                          STATION_BUTTON_Z);
+                  Vec3 rotated = rotateLocalVector(facing,
+                          local.x, local.y, local.z);
+                  return Vec3.atLowerCornerOf(master)
+                          .add(0.5D, 0.0D, 0.5D)
+                          .add(rotated);
+              }
+
+          '''
+              geometry, count = re.subn(
+                  r'(?=    private static AABB modelBox\()', helper,
+                  geometry, count=1)
+              if count != 1:
+                  raise SystemExit(f'Geometry helper insertion count: {count}')
+              geometry_path.write_text(geometry, encoding='utf-8')
+
+          workflow = Path('.github/workflows/pr-branch-apply-elevator-fix.yml')
+          lines = workflow.read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(lines)
+                       if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(lines))
+                     if lines[i].strip() == 'PY')
+          body = lines[start:end]
+          first = next(line for line in body if line.strip())
+          indent = len(first) - len(first.lstrip())
+          script = '\n'.join(
+              line[indent:] if line.startswith(' ' * indent) else line
+              for line in body) + '\n'
+          Path('/tmp/apply_elevator_fix.py').write_text(script, encoding='utf-8')
+          PY
+          python /tmp/apply_elevator_fix.py
+
+      - name: Build
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit validated repair to trigger branch
+        shell: bash
+        run: |
+          rm -f \
+            .github/workflows/apply-elevator-collision-interaction-fix.yml \
+            .github/workflows/pr-apply-elevator-collision-interaction-fix.yml \
+            .github/workflows/pr-branch-apply-elevator-fix.yml \
+            .github/workflows/pr-branch-apply-elevator-fix-v2.yml \
+            tools/hotfix/APPLY_ELEVATOR_COLLISION_INTERACTION_FIX \
+            tools/hotfix/TRIGGER_ELEVATOR_FIX_PR \
+            tools/hotfix/TRIGGER_ELEVATOR_FIX_PR_2 \
+            tools/hotfix/TRIGGER_ELEVATOR_FIX_PR_3 \
+            tools/hotfix/TRIGGER_ELEVATOR_FIX_PR_4
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Core Room elevator collision and interaction alignment"
+          git push origin HEAD:automation/elevator-fix-trigger

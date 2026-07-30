@@ -1,9 +1,3 @@
-
-### Core Room elevator fixes
-- Corrected contextual prompt projection and button anchor alignment.
-- Rebuilt carriage collision around the authored doorway and removed the aggressive horizontal sweep that repelled players.
-- Corrected pulley-to-beam alignment, translucent backface handling, positional elevator audio assets, and Core Room floor collision thickness.
-- Simplified Core Room block display names and moved the section label into tooltips; renamed the editable sign to Facility Direction Sign.
 # Changelog
 
 # SCP Additions 3.1.0 — In Development
@@ -97,8 +91,11 @@
 - Added dedicated cabin, landing-gate, movement, opening, and ambient cabin audio, with the 13-second travel profile synchronized to the movement recording;
 - Limited adjacent stations to 8-32 blocks, made the Pulley derive its orientation from the stations below it, and hid unavailable direction buttons;
 - Made generated shaft Beams internal, survival-proof structural pieces instead of manually placed creative-tab blocks;
-- Corrected station, carriage, Pulley, cable, prompt, transparency, z-fighting, and moving-collision alignment.
-- Rebuilt thin-floor culling, directional placement, station selection/collision, cabin wall tunneling, SL1-style cabin footsteps, pulley guide alignment, station snapping, translucent windows, and respawn-save audio after in-game validation.
+- Corrected contextual prompt projection and aligned station and carriage button anchors with their authored model positions;
+- Rebuilt the carriage collision around the actual doorway and removed the oversized horizontal sweep that repelled entities before contact;
+- Corrected station, carriage, Pulley, cable, z-fighting, and moving-collision alignment, including the remaining Pulley-to-Beam offset;
+- Preserved translucent window alpha while culling duplicate backfaces, converted positional elevator audio to mono, and increased the Core Room Floor collision thickness below its visible surface;
+- Simplified Core Room block display names, moved **Core Room** into their tooltips, and renamed the editable sign to **Facility Direction Sign**.
 
 ## Facility construction
 

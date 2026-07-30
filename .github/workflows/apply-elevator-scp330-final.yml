@@ -2,7 +2,7 @@ name: Apply Elevator and SCP-330 Final Repairs
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/15 * * * *'
   push:
     branches: [ master ]
     paths:
@@ -14,6 +14,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: elevator-scp330-final
+  cancel-in-progress: false
 
 jobs:
   apply-build-and-commit:
@@ -31,6 +35,15 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+
+      - name: Mark validation running
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          printf 'running run_id=%s started=%s\n' "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > .github/elevator-final-status.txt
+          git add .github/elevator-final-status.txt
+          git commit -m 'Mark final integration validation running'
+          git push origin HEAD:master
 
       - name: Apply elevator and SCP-330 changes
         run: python .github/scripts/apply_elevator_scp330_final.py
@@ -100,11 +113,21 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build --no-daemon --stacktrace
 
+      - name: Record validation failure
+        if: failure()
+        run: |
+          git reset --hard HEAD
+          printf 'failed run_id=%s finished=%s\n' "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > .github/elevator-final-status.txt
+          git add .github/elevator-final-status.txt
+          git commit -m 'Record final integration validation failure' || true
+          git push origin HEAD:master
+
       - name: Remove temporary integration tooling
         run: |
           rm -f .github/scripts/apply_elevator_scp330_final.py
           rm -f .github/workflows/apply-elevator-scp330-final.yml
           rm -f .github/elevator-scp330-final-trigger.txt
+          rm -f .github/elevator-final-status.txt
           rm -f .github/assistant_probe.tmp
           rm -f .github/archive-download.md
 

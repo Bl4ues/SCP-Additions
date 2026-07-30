@@ -785,18 +785,18 @@
             "copy_input_nbt": false
         },
         {
-            "id": "scp_additions:scp330_red_fine",
+            "id": "scp_additions:scp330_pink_fine",
             "enabled": true,
             "setting": "fine",
             "item_inputs": [
                 {
-                    "item": "scp_additions:scp_330_red_candy",
+                    "item": "scp_additions:scp_330_pink_candy",
                     "count": 1
                 }
             ],
             "item_outputs": [
                 {
-                    "item": "scp_additions:scp_330_green_candy",
+                    "item": "scp_additions:scp_330_yellow_candy",
                     "count": 1
                 }
             ],
@@ -804,12 +804,12 @@
             "copy_input_nbt": false
         },
         {
-            "id": "scp_additions:scp330_green_fine",
+            "id": "scp_additions:scp330_yellow_fine",
             "enabled": true,
             "setting": "fine",
             "item_inputs": [
                 {
-                    "item": "scp_additions:scp_330_green_candy",
+                    "item": "scp_additions:scp_330_yellow_candy",
                     "count": 1
                 }
             ],

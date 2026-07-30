@@ -100,10 +100,9 @@ public class ScpAdditionsModTabs {
     public static void buildTabContentsVanilla(
             BuildCreativeModeTabContentsEvent tabData) {
         if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
-            tabData.accept(ScpAdditionsModItems.SCP_330_RED_CANDY.get());
-            tabData.accept(ScpAdditionsModItems.SCP_330_GREEN_CANDY.get());
-            tabData.accept(ScpAdditionsModItems.SCP_330_YELLOW_CANDY.get());
             tabData.accept(ScpAdditionsModItems.SCP_330_BLUE_CANDY.get());
+            tabData.accept(ScpAdditionsModItems.SCP_330_PINK_CANDY.get());
+            tabData.accept(ScpAdditionsModItems.SCP_330_YELLOW_CANDY.get());
             tabData.accept(ScpAdditionsModItems.SCP_1176HONEY.get());
         }
     }

@@ -1,7 +1,1 @@
-{
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "scp_additions:block/330text"
-  },
-  "render_type": "translucent"
-}
+{"parent":"item/generated","textures":{"layer0":"scp_additions:block/scp330item"}}

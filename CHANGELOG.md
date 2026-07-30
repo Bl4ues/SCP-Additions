@@ -19,6 +19,13 @@
 - Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot lose SCP-106 before the hunt ends.
 
+## SCP-330
+
+- Rebuilt SCP-330 as a GeckoLib block using the new authored bowl and candy model;
+- Reduced its candy selection to blue, pink, and yellow, removed the former potion buffs, and increased nutrition and saturation while adding a small direct heal;
+- Reworked the two-candy limit into a persistent hand-loss state: after taking a third candy, players cannot open inventories, use items, break or interact with blocks, activate buttons, interact with entities, or use contextual interactions until death;
+- Removed the obsolete red and green candies, legacy candy procedures, textures, and model files.
+
 ## SCP-173
 
 - Reduced SCP-173's rendered height to approximately two blocks;

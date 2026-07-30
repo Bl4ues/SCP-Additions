@@ -6,6 +6,7 @@ import net.mcreator.scpadditions.entity.AbstractScp131Entity;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
+import net.mcreator.scpadditions.scp330.Scp330Hands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -86,7 +87,8 @@ public class ContextInteractPacket {
             Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (!ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)) {
+            if (!ScpAdditionsModulesConfig.customInteractionsEnabledFor(player)
+                    || Scp330Hands.isDisabled(player)) {
                 return;
             }
             if (msg.entityTarget) {

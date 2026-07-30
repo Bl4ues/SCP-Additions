@@ -31,11 +31,41 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Apply prepared elevator and SCP-330 integration
+        run: python .github/scripts/apply_elevator_scp330_final.py
+
+      - name: Convert elevator sounds to positional mono
+        run: |
+          for name in elevator_door_close station_close elevator_moving elevator_door_open elevator_cabin_loop; do
+            file="src/main/resources/assets/scp_additions/sounds/${name}.ogg"
+            test -f "$file"
+            channels=$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=nw=1:nk=1 "$file")
+            if [ "$channels" != "1" ]; then
+              ffmpeg -y -v error -i "$file" -ac 1 -c:a libvorbis -q:a 6 "${file}.mono.ogg"
+              mv "${file}.mono.ogg" "$file"
+            fi
+            test "$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=nw=1:nk=1 "$file")" = "1"
+          done
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Build
         run: ./gradlew clean build --stacktrace
+
+      - name: Package generated source snapshot
+        if: success()
+        run: |
+          rm -rf build .gradle
+          zip -qr generated-source.zip . -x '.git/*' 'generated-source.zip'
+
+      - name: Upload generated source snapshot
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-source-${{ github.sha }}
+          path: generated-source.zip
+          if-no-files-found: error
 
       - name: Upload compiled JAR
         if: success()

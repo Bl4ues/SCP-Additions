@@ -115,9 +115,7 @@ public final class ContextPromptClient {
 
         ScreenPoint point = projectToScreen(minecraft, target.anchor(),
                 screenWidth, screenHeight);
-        if (point == null) {
-            point = new ScreenPoint(screenWidth / 2, screenHeight - 28);
-        }
+        if (point == null) return;
 
         float promptScale = target.promptScale();
         int iconSize = Math.max(24,
@@ -359,16 +357,14 @@ public final class ContextPromptClient {
         Vector3f transformed = new Vector3f((float) relative.x,
                 (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
-        double z = transformed.z();
-        double depth = Math.abs(z);
-        if (depth < 0.05D) return null;
+        double depth = -transformed.z();
+        if (depth <= 0.05D) return null;
         double fov = minecraft.options.fov().get();
         double scale = screenHeight
                 / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
         int x = (int) Math.round(screenWidth / 2.0D
-                - transformed.x() * scale / depth);
-        int y = z < 0.0D ? screenHeight - 28
-                : (int) Math.round(screenHeight / 2.0D
+                + transformed.x() * scale / depth);
+        int y = (int) Math.round(screenHeight / 2.0D
                 - transformed.y() * scale / depth);
         return new ScreenPoint(x, y);
     }

@@ -1,3 +1,9 @@
+
+### Core Room elevator fixes
+- Corrected contextual prompt projection and button anchor alignment.
+- Rebuilt carriage collision around the authored doorway and removed the aggressive horizontal sweep that repelled players.
+- Corrected pulley-to-beam alignment, translucent backface handling, positional elevator audio assets, and Core Room floor collision thickness.
+- Simplified Core Room block display names and moved the section label into tooltips; renamed the editable sign to Facility Direction Sign.
 # Changelog
 
 # SCP Additions 3.1.0 — In Development

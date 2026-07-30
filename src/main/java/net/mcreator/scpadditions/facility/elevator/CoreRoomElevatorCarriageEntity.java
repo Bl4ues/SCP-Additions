@@ -355,7 +355,6 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                 if (standing) entity.setOnGround(true);
             }
             resolveSweptFloorCollision(entity, previous);
-            resolveSweptHorizontalCollision(entity, previous);
             resolveShellCollision(entity);
             playCabinFootstep(entity, previous);
             previousEntityPositions.put(entity.getId(), entity.position());
@@ -376,30 +375,6 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                 floor.maxY - box.minY + COLLISION_EPSILON, 0.0D));
         entity.setOnGround(true);
         entity.fallDistance = 0.0F;
-    }
-
-    private void resolveSweptHorizontalCollision(Entity entity, Vec3 previous) {
-        List<AABB> shells = shellBoxes();
-        AABB entityBox = entity.getBoundingBox();
-        double halfWidthX = entityBox.getXsize() * 0.5D;
-        double halfWidthZ = entityBox.getZsize() * 0.5D;
-        double halfHeight = entityBox.getYsize() * 0.5D;
-        Vec3 current = entityBox.getCenter();
-        Vec3 start = new Vec3(previous.x, current.y, previous.z);
-        for (int index = 2; index < shells.size(); index++) {
-            AABB expanded = shells.get(index).inflate(halfWidthX,
-                    halfHeight, halfWidthZ);
-            if (expanded.contains(start)) continue;
-            Optional<Vec3> intersection = expanded.clip(start, current);
-            if (intersection.isEmpty()) continue;
-            Vec3 travel = current.subtract(start);
-            if (travel.horizontalDistanceSqr() <= 1.0E-9D) continue;
-            Vec3 safe = intersection.get().subtract(travel.normalize()
-                    .scale(COLLISION_EPSILON * 4.0D));
-            entity.move(MoverType.SHULKER, new Vec3(
-                    safe.x - current.x, 0.0D, safe.z - current.z));
-            current = entity.getBoundingBox().getCenter();
-        }
     }
 
     private void playCabinFootstep(Entity entity, Vec3 previous) {
@@ -488,25 +463,27 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
 
     private List<AABB> shellBoxes() {
         List<AABB> local = new ArrayList<>();
-        local.add(new AABB(-0.82D, -0.20D, -0.82D,
-                0.82D, FLOOR_TOP, 0.82D));
-        local.add(new AABB(-0.82D, 3.06D, -0.82D,
-                0.82D, 3.32D, 0.82D));
-        local.add(new AABB(-0.84D, 0.0D, -0.82D,
-                -0.72D, 3.08D, 0.82D));
-        local.add(new AABB(0.72D, 0.0D, -0.82D,
-                0.84D, 3.08D, 0.82D));
-        local.add(new AABB(-0.82D, 0.0D, 0.72D,
-                0.82D, 3.08D, 0.84D));
+        local.add(new AABB(-0.8125D, -0.203125D, -0.8125D,
+                0.8125D, FLOOR_TOP, 0.8125D));
+        local.add(new AABB(-0.8125D, 2.5625D, -0.8125D,
+                0.8125D, 3.3125D, 0.8125D));
+        local.add(new AABB(0.71875D, 0.0D, -0.8125D,
+                0.84375D, 3.08D, 0.8125D));
+        local.add(new AABB(-0.8125D, 0.0D, -0.84375D,
+                0.8125D, 3.08D, -0.71875D));
+        local.add(new AABB(-0.8125D, 0.0D, 0.71875D,
+                0.8125D, 3.08D, 0.84375D));
         if (isDoorCollisionSolid()) {
-            local.add(new AABB(-0.72D, 0.0D, -0.84D,
-                    0.72D, 2.35D, -0.72D));
+            local.add(new AABB(-0.84375D, 0.0D, -0.71875D,
+                    -0.71875D, 2.35D, 0.71875D));
         }
         List<AABB> world = new ArrayList<>();
         for (AABB box : local) {
-            AABB rotated = CoreRoomElevatorGeometry.rotateAabb(box,
-                    facing(), 0.0D, 0.0D);
-            world.add(rotated.move(getX(), getY(), getZ()));
+            AABB modelAligned = CoreRoomElevatorGeometry.rotateAabb(box,
+                    Direction.EAST, 0.0D, 0.0D);
+            AABB facingAligned = CoreRoomElevatorGeometry.rotateAabb(
+                    modelAligned, facing(), 0.0D, 0.0D);
+            world.add(facingAligned.move(getX(), getY(), getZ()));
         }
         return world;
     }
@@ -536,8 +513,10 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         double modelX = -10.95508D / 16.0D;
         double modelY = (up ? 21.25D : 19.25D) / 16.0D;
         double modelZ = 11.00251D / 16.0D;
+        Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
+                Direction.EAST, modelX, modelY, modelZ);
         Vec3 facingRotated = CoreRoomElevatorGeometry.rotateLocalVector(
-                facing(), modelX, modelY, modelZ);
+                facing(), modelAligned.x, modelAligned.y, modelAligned.z);
         return position().add(facingRotated);
     }
 

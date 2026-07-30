@@ -339,6 +339,9 @@ public final class CoreRoomElevatorModule {
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
+            tooltip.add(Component.translatable(
+                    "tooltip.scp_additions.core_room")
+                    .withStyle(ChatFormatting.DARK_GRAY));
             tooltip.add(Component.translatable(tooltipKey)
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
@@ -703,7 +706,7 @@ public final class CoreRoomElevatorModule {
     public static final class CoreRoomFloorBlock
             extends HorizontalDirectionalBlock {
         private static final VoxelShape FLOOR_SHAPE = Block.box(
-                0.0D, 15.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+                0.0D, 14.0D, 0.0D, 16.0D, 16.0D, 16.0D);
 
         private CoreRoomFloorBlock() {
             super(BlockBehaviour.Properties.of().strength(4.0F, 12.0F)

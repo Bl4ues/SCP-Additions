@@ -43,3 +43,5 @@ jobs:
           git add -A
           git commit -m "Fix Core Room elevator rendering orientation and collision"
           git push origin HEAD:elevator-fixes-validation
+
+# Triggered after the workflow became available on the validation branch.

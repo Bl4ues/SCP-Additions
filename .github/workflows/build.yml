@@ -38,6 +38,30 @@ jobs:
       - name: Apply contextual off-screen prompt feature
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts'
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/apply_context_offscreen_prompts.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one occurrence, found {count}")
+              return text.replace(old, new, 1)
+          '''
+          new = '''def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if label == "save packet entity dispatch" and count == 2:
+                  return text.replace(old, new)
+              if label == "save packet block dispatch" and count == 0:
+                  return text
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one occurrence, found {count}")
+              return text.replace(old, new, 1)
+          '''
+          if old not in text:
+              raise SystemExit('Could not patch replace_once helper')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           python .github/scripts/apply_context_offscreen_prompts.py
           rm .github/scripts/apply_context_offscreen_prompts.py
           git show origin/master:.github/workflows/build.yml > .github/workflows/build.yml

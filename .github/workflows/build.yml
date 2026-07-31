@@ -41,7 +41,9 @@ jobs:
         if: github.event_name == 'pull_request' && github.head_ref == 'fix/ui-resource-followup' && hashFiles('tools/hotfix/apply_ui_resource_followup.py') != ''
         run: |
           python tools/hotfix/apply_ui_resource_followup.py
+          python tools/hotfix/fix_ui_resource_followup_compile.py
           rm tools/hotfix/apply_ui_resource_followup.py
+          rm tools/hotfix/fix_ui_resource_followup_compile.py
           rm -f tools/hotfix/RUN_UI_RESOURCE_FOLLOWUP
           git show 41a8612c7cd1613d93fb41c6f1ad27d61c57cf88:.github/workflows/build.yml > .github/workflows/build.yml
           echo "changed=true" >> "$GITHUB_OUTPUT"

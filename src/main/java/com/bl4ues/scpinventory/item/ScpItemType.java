@@ -15,7 +15,7 @@ public enum ScpItemType {
     AMMO("Ammo"),
     HEAD("Head"),
     ACCESSORY("Accessory"),
-    ACCESSORY_HAND("Accessory"),
+    ACCESSORY_HAND("Accessory (Offhand)"),
     CHEST("Chest"),
     LEGS("Legs"),
     FEET("Feet"),

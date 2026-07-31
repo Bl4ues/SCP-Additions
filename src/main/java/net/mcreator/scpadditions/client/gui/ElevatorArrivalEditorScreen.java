@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.client.gui;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.EditBox;
@@ -91,7 +92,7 @@ public final class ElevatorArrivalEditorScreen extends Screen {
                     updateCustomVisibility();
                 }));
 
-        customZoneField = configureField(new EditBox(font, x, top + 126,
+        customZoneField = configureField(new CenteredEditBox(font, x, top + 126,
                 width, 20, ScpFonts.roboto("Custom sector name")));
         customZoneField.setMaxLength(
                 ElevatorArrivalDisplayData.MAX_CUSTOM_ZONE_LENGTH);
@@ -106,7 +107,7 @@ public final class ElevatorArrivalEditorScreen extends Screen {
                 value -> ScpFonts.roboto(value.displayName()),
                 value -> floorType = value));
 
-        floorNumberField = configureField(new EditBox(font, x + 186,
+        floorNumberField = configureField(new CenteredEditBox(font, x + 186,
                 floorY + 1, width - 186, 20,
                 ScpFonts.roboto("Floor number")));
         floorNumberField.setMaxLength(3);
@@ -277,6 +278,23 @@ public final class ElevatorArrivalEditorScreen extends Screen {
         graphics.fill(x + width - 1, y, x + width, y + height, color);
     }
 
+    private static final class CenteredEditBox extends EditBox {
+        private CenteredEditBox(Font font, int x, int y, int width,
+                int height, Component message) {
+            super(font, x, y, width, height, message);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX,
+                int mouseY, float partialTick) {
+            int offset = Math.max(0, (getHeight() - 9) / 2);
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, offset, 0.0F);
+            super.renderWidget(graphics, mouseX, mouseY, partialTick);
+            graphics.pose().popPose();
+        }
+    }
+
     private interface ExpandableSelector {
         void setOpen(boolean open);
 
@@ -316,7 +334,7 @@ public final class ElevatorArrivalEditorScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX,
+        public void renderWidget(GuiGraphics graphics, int mouseX,
                 int mouseY, float partialTick) {
             int background = !active ? 0xFF161B27
                     : isHoveredOrFocused() ? CONTROL_HOVER : CONTROL;
@@ -386,7 +404,7 @@ public final class ElevatorArrivalEditorScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX,
+        public void renderWidget(GuiGraphics graphics, int mouseX,
                 int mouseY, float partialTick) {
             int background = isHoveredOrFocused() || open
                     ? CONTROL_HOVER : CONTROL;

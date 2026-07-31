@@ -15,8 +15,6 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
@@ -81,21 +79,6 @@ public final class Scp330Client {
         @Override
         public ResourceLocation getAnimationResource(Scp330BlockEntity animatable) {
             return ANIMATION;
-        }
-
-        @Override
-        public void setCustomAnimations(Scp330BlockEntity animatable,
-                long instanceId, AnimationState<Scp330BlockEntity> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            CoreGeoBone root = getAnimationProcessor().getBone("scp330");
-            if (root == null || !animatable.getBlockState().hasProperty(Scp330Block.FACING)) return;
-            float rotation = switch (animatable.getBlockState().getValue(Scp330Block.FACING)) {
-                case NORTH -> (float) Math.PI;
-                case EAST -> (float) (Math.PI / 2.0D);
-                case WEST -> (float) (-Math.PI / 2.0D);
-                default -> 0.0F;
-            };
-            root.setRotY(rotation);
         }
     }
 

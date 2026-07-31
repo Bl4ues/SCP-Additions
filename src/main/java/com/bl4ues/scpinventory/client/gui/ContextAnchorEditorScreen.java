@@ -6,6 +6,7 @@ import com.bl4ues.scpinventory.network.ContextConfigOpenPacket;
 import com.bl4ues.scpinventory.network.ContextConfigSavePacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.EditBox;
@@ -96,13 +97,13 @@ public final class ContextAnchorEditorScreen extends Screen {
         int x = left + 16;
         int width = PANEL_W - 32;
 
-        actionBox = configureField(new EditBox(font, x, top + 92,
+        actionBox = configureField(new CenteredEditBox(font, x, top + 92,
                 width, 20, ScpFonts.roboto("Action")));
         actionBox.setValue(startAction == null || startAction.isBlank()
                 ? "Use" : startAction);
         addRenderableWidget(actionBox);
 
-        nameBox = configureField(new EditBox(font, x, top + 127,
+        nameBox = configureField(new CenteredEditBox(font, x, top + 127,
                 width - 92, 20, ScpFonts.roboto("Display name")));
         nameBox.setValue(startName == null || startName.isBlank()
                 ? fallbackName() : startName);
@@ -113,7 +114,7 @@ public final class ContextAnchorEditorScreen extends Screen {
             refreshButtonMessages();
         }));
 
-        rangeBox = configureField(new EditBox(font, x, top + 162,
+        rangeBox = configureField(new CenteredEditBox(font, x, top + 162,
                 64, 20, ScpFonts.roboto("Range")));
         rangeBox.setValue(startRange == null ? "2.25" : startRange);
         addRenderableWidget(rangeBox);
@@ -573,6 +574,23 @@ public final class ContextAnchorEditorScreen extends Screen {
         graphics.fill(x + width - 1, y, x + width, y + height, color);
     }
 
+    private static final class CenteredEditBox extends EditBox {
+        private CenteredEditBox(Font font, int x, int y, int width,
+                int height, Component message) {
+            super(font, x, y, width, height, message);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX,
+                int mouseY, float partialTick) {
+            int offset = Math.max(0, (getHeight() - 9) / 2);
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, offset, 0.0F);
+            super.renderWidget(graphics, mouseX, mouseY, partialTick);
+            graphics.pose().popPose();
+        }
+    }
+
     private enum ButtonStyle {
         PRIMARY,
         NEUTRAL,
@@ -602,7 +620,7 @@ public final class ContextAnchorEditorScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX,
+        public void renderWidget(GuiGraphics graphics, int mouseX,
                 int mouseY, float partialTick) {
             int background = !active ? 0xFF171B25
                     : isHoveredOrFocused() ? CONTROL_HOVER : CONTROL;

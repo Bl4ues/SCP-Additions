@@ -40,12 +40,14 @@ public final class ElevatorArrivalOverlay {
     private static final int LINE_WHITE = 0xFFF7F8FC;
     private static final int TEXT_WHITE = 0xF7F8FC;
     private static final int FLOOR_TYPE_GRAY = 0xA9AFBA;
-    private static final float SECTOR_SCALE = 2.10F;
-    private static final float FLOOR_SCALE = 2.76F;
-    private static final int LINE_TEXT_PADDING = 32;
+    private static final float SECTOR_SCALE = 2.43F;
+    private static final float FLOOR_SCALE = 3.30F;
+    private static final int LINE_TEXT_PADDING = 60;
     private static final int TEXT_LINE_GAP = 4;
-    private static final int SECTOR_VERTICAL_BIAS = 0;
-    private static final int FLOOR_VERTICAL_BIAS = 10;
+    private static final int LINE_HORIZONTAL_BIAS = 5;
+    private static final int FLOOR_HORIZONTAL_BIAS = 3;
+    private static final int SECTOR_VERTICAL_BIAS = 7;
+    private static final int FLOOR_VERTICAL_BIAS = 1;
     private static final ResourceLocation CROSSHAIR_TEXTURE =
             new ResourceLocation("minecraft", "textures/gui/icons.png");
 
@@ -146,8 +148,10 @@ public final class ElevatorArrivalOverlay {
         GuiGraphics graphics = event.getGuiGraphics();
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
-        int centerX = width / 2;
-        int lineY = Math.round(height * 0.49F);
+        int screenCenterX = width / 2;
+        int lineCenterX = screenCenterX + LINE_HORIZONTAL_BIAS;
+        int floorCenterX = screenCenterX + FLOOR_HORIZONTAL_BIAS;
+        int lineY = Math.round(height * 0.498F);
 
         MutableComponent sector = Component.literal(current.sectorLabel())
                 .withStyle(style -> style.withFont(ScpFonts.TITILLIUM_WEB)
@@ -211,25 +215,25 @@ public final class ElevatorArrivalOverlay {
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, 0.0F, 1000.0F);
         int clipLeft = Math.max(0,
-                centerX - maximumLineWidth / 2 - 12);
+                lineCenterX - maximumLineWidth / 2 - 12);
         int clipRight = Math.min(width,
-                centerX + maximumLineWidth / 2 + 12);
+                lineCenterX + maximumLineWidth / 2 + 12);
 
         graphics.enableScissor(clipLeft, Math.max(0, lineY - 64),
                 clipRight, Math.max(0, lineY));
         drawCenteredScaled(graphics, minecraft, sector,
-                centerX, sectorY, sectorScale, LINE_WHITE);
+                screenCenterX, sectorY, sectorScale, LINE_WHITE);
         graphics.disableScissor();
 
         graphics.enableScissor(clipLeft, Math.min(height, lineY + 2),
                 clipRight, Math.min(height, lineY + 68));
         drawCenteredScaled(graphics, minecraft, floor,
-                centerX, floorY, floorScale, LINE_WHITE);
+                floorCenterX, floorY, floorScale, LINE_WHITE);
         graphics.disableScissor();
 
         if (lineWidth > 0) {
-            graphics.fill(centerX - lineWidth / 2, lineY,
-                    centerX + (lineWidth + 1) / 2,
+            graphics.fill(lineCenterX - lineWidth / 2, lineY,
+                    lineCenterX + (lineWidth + 1) / 2,
                     lineY + 2, LINE_WHITE);
         }
         graphics.pose().popPose();

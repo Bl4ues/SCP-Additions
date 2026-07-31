@@ -370,7 +370,7 @@ public final class ContextPromptClient {
             : toPoint.scale(1.0D / distance);
     double dot = direction.dot(look);
     double alongRay = toPoint.dot(look);
-    if (preciseAim && (alongRay < 0.0D || alongRay > reach)) {
+    if (alongRay <= 0.0D || alongRay > reach) {
         return Double.MAX_VALUE;
     }
     double centerPenalty;
@@ -434,13 +434,13 @@ public final class ContextPromptClient {
         Vector3f transformed = new Vector3f((float) relative.x,
                 (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
-        double depth = -transformed.z();
+        double depth = transformed.z();
         if (depth <= 0.05D) return null;
         double fov = minecraft.options.fov().get();
         double scale = screenHeight
                 / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
         int x = (int) Math.round(screenWidth / 2.0D
-                + transformed.x() * scale / depth);
+                - transformed.x() * scale / depth);
         int y = (int) Math.round(screenHeight / 2.0D
                 - transformed.y() * scale / depth);
         return new ScreenPoint(x, y);

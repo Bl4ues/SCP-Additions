@@ -165,14 +165,14 @@ public final class ContextInteractionRegistry {
                     x, 21.25D / 16.0D, z,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.HORIZONTAL_FACING, true, true,
-                    "front", "hand", "hand", 0.38D));
+                    "front", "hand", "hand", 0.38D, false));
             addRule(new Rule(Kind.BLOCK, stationId, station, null,
                     "elevator_station_down", 2.8D, 120, "",
                     "", false, false, false,
                     x, 19.25D / 16.0D, z,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.HORIZONTAL_FACING, true, true,
-                    "front", "hand", "hand", 0.38D));
+                    "front", "hand", "hand", 0.38D, false));
 
             ResourceLocation carriageId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_carriage");
@@ -183,14 +183,14 @@ public final class ContextInteractionRegistry {
                     0.5D, 0.5D, 0.5D,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.NONE, true, true,
-                    "front", "hand", "hand", 0.38D));
+                    "front", "hand", "hand", 0.38D, false));
             addRule(new Rule(Kind.ENTITY, carriageId, null, carriage,
                     "elevator_carriage_down", 2.8D, 125, "",
                     "", false, false, false,
                     0.5D, 0.5D, 0.5D,
                     0.0D, 0.0D, 0.0D,
                     RotationMode.NONE, true, true,
-                    "front", "hand", "hand", 0.38D));
+                    "front", "hand", "hand", 0.38D, false));
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error(
                     "Failed to register Core Room elevator interactions",
@@ -267,6 +267,8 @@ public final class ContextInteractionRegistry {
                 getString(visual, "icon", useItem));
         double promptScale = getDouble(visual, "scale",
                 getDouble(object, "promptScale", 1.0D));
+        boolean allowOffscreen = getBoolean(visual, "allowOffscreen",
+                getBoolean(object, "allowOffscreen", false));
         String key = getString(object, "interactionId",
                 getString(object, "interactionKey", ""));
         if (key.isBlank()) key = id + "#" + sequence;
@@ -276,7 +278,7 @@ public final class ContextInteractionRegistry {
                 local[0], local[1], local[2],
                 world[0], world[1], world[2], rotation,
                 allowE, allowRightClick, clickFace, useItem, icon,
-                promptScale);
+                promptScale, allowOffscreen);
     }
 
     private static JsonObject getObject(JsonObject object, String key) {
@@ -387,6 +389,7 @@ public final class ContextInteractionRegistry {
         private final String useItem;
         private final String icon;
         private final double promptScale;
+        private final boolean allowOffscreen;
 
         private Rule(Kind kind, ResourceLocation id, Block block,
                 EntityType<?> entityType, String interactionKey,
@@ -396,7 +399,8 @@ public final class ContextInteractionRegistry {
                 double worldOffsetX, double worldOffsetY,
                 double worldOffsetZ, RotationMode rotationMode,
                 boolean allowE, boolean allowRightClick, String clickFace,
-                String useItem, String icon, double promptScale) {
+                String useItem, String icon, double promptScale,
+                boolean allowOffscreen) {
             this.kind = kind;
             this.id = id;
             this.block = block;
@@ -424,6 +428,7 @@ public final class ContextInteractionRegistry {
             this.icon = icon == null || icon.isEmpty() ? this.useItem : icon;
             this.promptScale = Math.max(0.35D,
                     Math.min(1.5D, promptScale));
+            this.allowOffscreen = allowOffscreen;
         }
 
         public Kind kind() { return kind; }
@@ -439,6 +444,7 @@ public final class ContextInteractionRegistry {
         public String useItem() { return useItem; }
         public String icon() { return icon; }
         public double promptScale() { return promptScale; }
+        public boolean allowOffscreen() { return allowOffscreen; }
         public boolean requiresPreciseAim() {
         return interactionKey.startsWith("elevator_station_")
                 || interactionKey.startsWith("elevator_carriage_");

@@ -34,6 +34,7 @@ public final class ContextConfigSaveService {
             double range,
             boolean allowE,
             boolean allowRightClick,
+            boolean allowOffscreen,
             String useItem,
             String clickFace,
             String rotateWith,
@@ -80,6 +81,9 @@ public final class ContextConfigSaveService {
             JsonObject input = object(rule, "input");
             input.addProperty("allowE", allowE);
             input.addProperty("allowRightClick", allowRightClick);
+
+            object(rule, "visual").addProperty("allowOffscreen",
+                    allowOffscreen);
 
             object(rule, "click").addProperty("face", cleanClickFace(clickFace));
 
@@ -145,6 +149,10 @@ public final class ContextConfigSaveService {
         JsonObject click = new JsonObject();
         click.addProperty("face", "front");
         rule.add("click", click);
+
+        JsonObject visual = new JsonObject();
+        visual.addProperty("allowOffscreen", false);
+        rule.add("visual", visual);
 
         JsonObject anchor = new JsonObject();
         JsonArray position = new JsonArray();

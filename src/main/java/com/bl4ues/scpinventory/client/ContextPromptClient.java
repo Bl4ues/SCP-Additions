@@ -118,7 +118,7 @@ public final class ContextPromptClient {
         }
 
         ScreenPoint point = projectToScreen(minecraft, target.anchor(),
-                screenWidth, screenHeight);
+                screenWidth, screenHeight, target.allowOffscreen());
         if (point == null) return;
 
         float promptScale = target.promptScale();
@@ -230,7 +230,8 @@ public final class ContextPromptClient {
                 }
                 double score = scorePoint(anchor, eye, look, rule.range(),
                         directHit, rule.priority(), rule.requiresPreciseAim(),
-                        preciseAimRadiusSqr(rule.interactionKey()));
+                        preciseAimRadiusSqr(rule.interactionKey()),
+                        rule.allowOffscreen());
                 if (!isElevatorButton(rule.interactionKey())
                         && isCurrentBlockTarget(rulePos,
                         rule.interactionKey())) {
@@ -249,7 +250,8 @@ public final class ContextPromptClient {
                             rule.interactionKey(), rule.action(), name,
                             showAction, showName, rule.allowE(),
                             rule.allowRightClick(), icon,
-                            (float) rule.promptScale(), score);
+                            (float) rule.promptScale(),
+                            rule.allowOffscreen(), score);
                 }
             }
         }
@@ -291,7 +293,8 @@ public final class ContextPromptClient {
                 double score = scorePoint(anchor, eye, look, rule.range(),
                         directHit, rule.priority(),
                         rule.requiresPreciseAim(),
-                        preciseAimRadiusSqr(rule.interactionKey()));
+                        preciseAimRadiusSqr(rule.interactionKey()),
+                        rule.allowOffscreen());
                 if (!isElevatorButton(rule.interactionKey())
                         && isCurrentEntityTarget(entity.getId(),
                         rule.interactionKey())) {
@@ -311,7 +314,8 @@ public final class ContextPromptClient {
                             rule.interactionKey(), rule.action(), name,
                             showAction, showName, rule.allowE(),
                             rule.allowRightClick(), icon,
-                            (float) rule.promptScale(), score);
+                            (float) rule.promptScale(),
+                            rule.allowOffscreen(), score);
                 }
             }
         }
@@ -361,7 +365,8 @@ public final class ContextPromptClient {
 
     private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look,
             double reach, boolean directHit, int priority,
-            boolean preciseAim, double preciseAimRadiusSqr) {
+            boolean preciseAim, double preciseAimRadiusSqr,
+            boolean allowOffscreen) {
     Vec3 toPoint = point.subtract(eye);
     double distanceSqr = toPoint.lengthSqr();
     if (distanceSqr > reach * reach) return Double.MAX_VALUE;
@@ -370,7 +375,7 @@ public final class ContextPromptClient {
             : toPoint.scale(1.0D / distance);
     double dot = direction.dot(look);
     double alongRay = toPoint.dot(look);
-    if (alongRay <= 0.0D || alongRay > reach) {
+    if ((!allowOffscreen && alongRay <= 0.0D) || alongRay > reach) {
         return Double.MAX_VALUE;
     }
     double centerPenalty;
@@ -426,7 +431,8 @@ public final class ContextPromptClient {
     }
 
     private static ScreenPoint projectToScreen(Minecraft minecraft,
-            Vec3 worldPos, int screenWidth, int screenHeight) {
+            Vec3 worldPos, int screenWidth, int screenHeight,
+            boolean allowOffscreen) {
         Camera camera = minecraft.gameRenderer.getMainCamera();
         Vec3 relative = worldPos.subtract(camera.getPosition());
         Quaternionf rotation = new Quaternionf(camera.rotation());
@@ -434,15 +440,30 @@ public final class ContextPromptClient {
         Vector3f transformed = new Vector3f((float) relative.x,
                 (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
-        double depth = transformed.z();
-        if (depth <= 0.05D) return null;
+        double rawDepth = transformed.z();
+        if (rawDepth <= 0.05D) {
+            if (!allowOffscreen) return null;
+            double offsetX = -transformed.x();
+            double offsetY = -transformed.y();
+            double length = Math.hypot(offsetX, offsetY);
+            if (length < 1.0E-4D) {
+                offsetY = 1.0D;
+                length = 1.0D;
+            }
+            double edgeDistance = Math.max(screenWidth, screenHeight) * 2.0D;
+            return new ScreenPoint(
+                    (int) Math.round(screenWidth / 2.0D
+                            + offsetX / length * edgeDistance),
+                    (int) Math.round(screenHeight / 2.0D
+                            + offsetY / length * edgeDistance));
+        }
         double fov = minecraft.options.fov().get();
         double scale = screenHeight
                 / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
         int x = (int) Math.round(screenWidth / 2.0D
-                - transformed.x() * scale / depth);
+                - transformed.x() * scale / rawDepth);
         int y = (int) Math.round(screenHeight / 2.0D
-                - transformed.y() * scale / depth);
+                - transformed.y() * scale / rawDepth);
         return new ScreenPoint(x, y);
     }
 
@@ -474,7 +495,7 @@ public final class ContextPromptClient {
             Vec3 anchor, String interactionKey, String action, String name,
             boolean showAction, boolean showName, boolean allowE,
             boolean allowRightClick, ResourceLocation icon,
-            float promptScale, double score) {
+            float promptScale, boolean allowOffscreen, double score) {
         private boolean isAlive(Minecraft minecraft) {
             if (minecraft.level == null) return false;
             if (entity) {

@@ -76,7 +76,7 @@ public final class ContextEntityConfigManager {
     }
 
     public static boolean saveClientRuleIfEntitySession(ServerPlayer player, BlockPos pos, String idText, String action, String name,
-                                                        boolean showName, double range, boolean allowE, boolean allowRightClick, String useItem,
+                                                        boolean showName, double range, boolean allowE, boolean allowRightClick, boolean allowOffscreen, String useItem,
                                                         String clickFace, String rotateWith, double anchorX, double anchorY, double anchorZ) {
         if (player == null) {
             return false;
@@ -111,6 +111,8 @@ public final class ContextEntityConfigManager {
         JsonObject input = object(rule, "input");
         input.addProperty("allowE", allowE);
         input.addProperty("allowRightClick", allowRightClick);
+
+        object(rule, "visual").addProperty("allowOffscreen", allowOffscreen);
 
         JsonObject click = object(rule, "click");
         click.addProperty("face", cleanClickFace(clickFace));
@@ -199,6 +201,7 @@ public final class ContextEntityConfigManager {
         JsonObject input = object(rule, "input");
         JsonObject click = object(rule, "click");
         JsonObject anchor = object(rule, "anchor");
+        JsonObject visual = object(rule, "visual");
         JsonArray position = positionArray(anchor);
         String name = string(text, "name", string(rule, "name", entityName));
         boolean showName = bool(text, "showName", bool(rule, "showName", !name.isBlank()));
@@ -212,6 +215,8 @@ public final class ContextEntityConfigManager {
                 number(rule, "range", 2.25D),
                 bool(input, "allowE", bool(rule, "allowE", true)),
                 bool(input, "allowRightClick", bool(rule, "allowRightClick", true)),
+                bool(visual, "allowOffscreen", bool(rule, "allowOffscreen", false)),
+                true,
                 cleanUseItem(string(rule, "useItem", "hand")),
                 cleanClickFace(string(click, "face", string(rule, "clickFace", "front"))),
                 cleanRotateWith(string(anchor, "rotateWith", "none")),
@@ -254,6 +259,10 @@ public final class ContextEntityConfigManager {
         JsonObject click = new JsonObject();
         click.addProperty("face", "front");
         rule.add("click", click);
+
+        JsonObject visual = new JsonObject();
+        visual.addProperty("allowOffscreen", false);
+        rule.add("visual", visual);
         return rule;
     }
 

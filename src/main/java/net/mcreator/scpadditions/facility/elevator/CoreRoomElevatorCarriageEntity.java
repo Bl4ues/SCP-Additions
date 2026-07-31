@@ -162,11 +162,15 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
 
     public boolean handleContextInteraction(ServerPlayer player,
             String actionKey) {
-        if (phase() != ElevatorFoundation.Phase.IDLE_OPEN) return false;
         ElevatorFoundation.TravelDirection direction = actionKey != null
                 && actionKey.endsWith("up")
                 ? ElevatorFoundation.TravelDirection.UP
                 : ElevatorFoundation.TravelDirection.DOWN;
+        Vec3 button = contextAnchor(
+                direction == ElevatorFoundation.TravelDirection.UP);
+        playElevatorSoundAt(CoreRoomElevatorModule.ELEVATOR_BUTTON_PRESS.get(),
+                button, 1.0F);
+        if (phase() != ElevatorFoundation.Phase.IDLE_OPEN) return false;
         int current = nearestFloorIndex(getY());
         int destination = current + direction.step();
         if (destination < 0 || destination >= floorHeights.length) {
@@ -177,6 +181,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             return false;
         }
         queueDestination(destination);
+        playElevatorSoundAt(CoreRoomElevatorModule.ELEVATOR_BUTTON_ACCEPT.get(),
+                button, 1.0F);
         return true;
     }
 
@@ -371,8 +377,14 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
 
     private void playElevatorSound(net.minecraft.sounds.SoundEvent sound,
             float volume) {
+        playElevatorSoundAt(sound,
+                new Vec3(getX(), getY() + 1.0D, getZ()), volume);
+    }
+
+    private void playElevatorSoundAt(net.minecraft.sounds.SoundEvent sound,
+            Vec3 position, float volume) {
         if (!(level() instanceof ServerLevel serverLevel)) return;
-        serverLevel.playSound(null, getX(), getY() + 1.0D, getZ(), sound,
+        serverLevel.playSound(null, position.x, position.y, position.z, sound,
                 net.minecraft.sounds.SoundSource.BLOCKS, volume, 1.0F);
     }
 

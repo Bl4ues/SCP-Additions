@@ -90,6 +90,12 @@
 - Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources;
 - Updated props' item textures.
 
+## Contextual interactions
+
+- Added an **Off-screen prompts** option to the contextual-interaction editor, allowing selected block prompts to remain available at the edge of the screen while behind the player;
+- Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
+- Added a non-blocking editor warning when the selected block probably has no native right-click interaction.
+
 ## Accessibility
 
 - Colored module **ON** and **OFF** states green and red for faster visual scanning;

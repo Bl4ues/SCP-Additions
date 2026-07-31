@@ -36,7 +36,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Synchronize elevator travel to eight seconds
-        if: github.head_ref == 'feature/elevator-audio-8s-sync' || github.ref == 'refs/heads/feature/elevator-audio-8s-sync'
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-audio-8s-sync'
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -44,11 +44,12 @@ jobs:
           path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java')
           text = path.read_text(encoding='utf-8')
 
-          old_ticks = '    public static final int TRAVEL_TICKS = 260;'
-          new_ticks = '    public static final int TRAVEL_TICKS = 8 * 20;'
-          if text.count(old_ticks) != 1:
-              raise SystemExit(f'Expected one old travel duration, found {text.count(old_ticks)}')
-          text = text.replace(old_ticks, new_ticks, 1)
+          if '    public static final int TRAVEL_TICKS = 260;' in text:
+              text = text.replace(
+                  '    public static final int TRAVEL_TICKS = 260;',
+                  '    public static final int TRAVEL_TICKS = 8 * 20;', 1)
+          elif '    public static final int TRAVEL_TICKS = 8 * 20;' not in text:
+              raise SystemExit('Unexpected elevator travel duration')
 
           old_comment = '''    /**
      * Starts decisively, reaches most of the shaft by the audio's 8-9 second
@@ -60,9 +61,11 @@ jobs:
      * first moves and the movement sound starts, then eases into the stop at
      * the destination as the shortened audio ends.
      */'''
-          if text.count(old_comment) != 1:
-              raise SystemExit(f'Expected one old timing comment, found {text.count(old_comment)}')
-          text = text.replace(old_comment, new_comment, 1)
+          if old_comment in text:
+              text = text.replace(old_comment, new_comment, 1)
+          elif new_comment not in text:
+              raise SystemExit('Unexpected elevator timing comment')
+
           path.write_text(text, encoding='utf-8')
           PY
 
@@ -73,14 +76,18 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Commit validated synchronization
-        if: github.head_ref == 'feature/elevator-audio-8s-sync' || github.ref == 'refs/heads/feature/elevator-audio-8s-sync'
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-audio-8s-sync'
         run: |
-          git checkout origin/master -- .github/workflows/build.yml
+          git show 806d702c1dfcead5b20b44ea85b3fd8c62dfa993:.github/workflows/build.yml > .github/workflows/build.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java .github/workflows/build.yml
-          git commit -m "Synchronize elevator travel with eight-second movement audio"
-          git push origin HEAD:feature/elevator-audio-8s-sync
+          if git diff --cached --quiet; then
+            echo "Synchronization already committed."
+          else
+            git commit -m "Synchronize elevator travel with eight-second movement audio"
+            git push origin HEAD:feature/elevator-audio-8s-sync
+          fi
 
       - name: Upload compiled JAR
         if: success()
@@ -89,5 +96,3 @@ jobs:
           name: scp-additions-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
-
-# PR synchronization trigger

@@ -11,6 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -41,6 +42,8 @@ public final class ContextPromptClient {
     private static final double MAX_CONTEXT_REACH = 6.0D;
     private static final double TARGET_STICKINESS_BONUS = 0.045D;
     private static final double PRECISE_AIM_RADIUS_SQR = 0.60D * 0.60D;
+    private static final double ELEVATOR_BUTTON_AIM_RADIUS_SQR =
+            0.20D * 0.20D;
     private static final int CLICK_COOLDOWN_TICKS = 5;
 
     private static ContextTarget target;
@@ -220,9 +223,17 @@ public final class ContextPromptClient {
             for (ContextInteractionRegistry.Rule rule : rules) {
                 if (!rule.isAvailable(player.level(), rulePos, ruleState)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(rulePos, ruleState);
+                if (isElevatorStationButton(rule.interactionKey())
+                        && !isStationButtonViewedFromFront(eye, anchor,
+                        ruleState)) {
+                    continue;
+                }
                 double score = scorePoint(anchor, eye, look, rule.range(),
-                        directHit, rule.priority(), rule.requiresPreciseAim());
-                if (isCurrentBlockTarget(rulePos, rule.interactionKey())) {
+                        directHit, rule.priority(), rule.requiresPreciseAim(),
+                        preciseAimRadiusSqr(rule.interactionKey()));
+                if (!isElevatorButton(rule.interactionKey())
+                        && isCurrentBlockTarget(rulePos,
+                        rule.interactionKey())) {
                     score -= TARGET_STICKINESS_BONUS;
                 }
                 if (score < bestScore && hasBlockLineOfSight(player, eye,
@@ -272,10 +283,17 @@ public final class ContextPromptClient {
             for (ContextInteractionRegistry.Rule rule : rules) {
                 if (!rule.isAvailable(entity)) continue;
                 Vec3 anchor = rule.resolveEntityAnchor(entity);
+                if (isElevatorCarriageButton(rule.interactionKey())
+                        && !isCarriageButtonViewedFromFront(eye, anchor,
+                        entity)) {
+                    continue;
+                }
                 double score = scorePoint(anchor, eye, look, rule.range(),
                         directHit, rule.priority(),
-                        rule.requiresPreciseAim());
-                if (isCurrentEntityTarget(entity.getId(),
+                        rule.requiresPreciseAim(),
+                        preciseAimRadiusSqr(rule.interactionKey()));
+                if (!isElevatorButton(rule.interactionKey())
+                        && isCurrentEntityTarget(entity.getId(),
                         rule.interactionKey())) {
                     score -= TARGET_STICKINESS_BONUS;
                 }
@@ -342,8 +360,8 @@ public final class ContextPromptClient {
     }
 
     private static double scorePoint(Vec3 point, Vec3 eye, Vec3 look,
-        double reach, boolean directHit, int priority,
-        boolean preciseAim) {
+            double reach, boolean directHit, int priority,
+            boolean preciseAim, double preciseAimRadiusSqr) {
     Vec3 toPoint = point.subtract(eye);
     double distanceSqr = toPoint.lengthSqr();
     if (distanceSqr > reach * reach) return Double.MAX_VALUE;
@@ -362,12 +380,50 @@ public final class ContextPromptClient {
     } else {
         centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
     }
-    if (preciseAim && centerPenalty > PRECISE_AIM_RADIUS_SQR) {
+    if (preciseAim && centerPenalty > preciseAimRadiusSqr) {
         return Double.MAX_VALUE;
     }
     return centerPenalty + distance * 0.035D - priority * 0.01D
             - (directHit ? 0.35D : 0.0D);
 }
+
+    private static boolean isElevatorButton(String interactionKey) {
+        return isElevatorStationButton(interactionKey)
+                || isElevatorCarriageButton(interactionKey);
+    }
+
+    private static boolean isElevatorStationButton(String interactionKey) {
+        return interactionKey != null
+                && interactionKey.startsWith("elevator_station_");
+    }
+
+    private static boolean isElevatorCarriageButton(String interactionKey) {
+        return interactionKey != null
+                && interactionKey.startsWith("elevator_carriage_");
+    }
+
+    private static double preciseAimRadiusSqr(String interactionKey) {
+        return isElevatorButton(interactionKey)
+                ? ELEVATOR_BUTTON_AIM_RADIUS_SQR
+                : PRECISE_AIM_RADIUS_SQR;
+    }
+
+    private static boolean isStationButtonViewedFromFront(Vec3 eye,
+            Vec3 anchor, BlockState state) {
+        if (!state.hasProperty(CoreRoomElevatorModule.FACING)) return true;
+        Direction facing = state.getValue(CoreRoomElevatorModule.FACING);
+        Vec3 outward = new Vec3(facing.getStepX(), 0.0D,
+                facing.getStepZ());
+        return eye.subtract(anchor).dot(outward) > 0.02D;
+    }
+
+    private static boolean isCarriageButtonViewedFromFront(Vec3 eye,
+            Vec3 anchor, Entity entity) {
+        Vec3 inward = entity.position().subtract(anchor)
+                .multiply(1.0D, 0.0D, 1.0D);
+        if (inward.lengthSqr() < 1.0E-6D) return true;
+        return eye.subtract(anchor).dot(inward.normalize()) > 0.02D;
+    }
 
     private static ScreenPoint projectToScreen(Minecraft minecraft,
             Vec3 worldPos, int screenWidth, int screenHeight) {
@@ -378,13 +434,13 @@ public final class ContextPromptClient {
         Vector3f transformed = new Vector3f((float) relative.x,
                 (float) relative.y, (float) relative.z);
         transformed.rotate(rotation);
-        double depth = Math.abs(transformed.z());
-        if (depth < 0.05D) return null;
+        double depth = -transformed.z();
+        if (depth <= 0.05D) return null;
         double fov = minecraft.options.fov().get();
         double scale = screenHeight
                 / (2.0D * Math.tan(Math.toRadians(fov) / 2.0D));
         int x = (int) Math.round(screenWidth / 2.0D
-                - transformed.x() * scale / depth);
+                + transformed.x() * scale / depth);
         int y = (int) Math.round(screenHeight / 2.0D
                 - transformed.y() * scale / depth);
         return new ScreenPoint(x, y);

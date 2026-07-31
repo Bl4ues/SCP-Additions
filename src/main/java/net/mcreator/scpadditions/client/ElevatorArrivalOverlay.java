@@ -32,17 +32,19 @@ public final class ElevatorArrivalOverlay {
     private static final double FLOOR_OUT_END = 5.96D;
     private static final double LINE_OUT_START = 5.96D;
     private static final double LINE_OUT_END = 6.30D;
+    private static final double CROSSHAIR_HIDE_LEAD_SECONDS = 0.50D;
     private static final double CROSSHAIR_FADE_OUT_SECONDS = 0.30D;
     private static final double CROSSHAIR_FADE_IN_SECONDS = 0.30D;
 
     private static final int LINE_WHITE = 0xFFF7F8FC;
     private static final int TEXT_WHITE = 0xF7F8FC;
     private static final int FLOOR_TYPE_GRAY = 0xA9AFBA;
-    private static final float SECTOR_SCALE = 2.10F;
-    private static final float FLOOR_SCALE = 2.65F;
-    private static final int LINE_TEXT_PADDING = 56;
+    private static final float SECTOR_SCALE = 2.25F;
+    private static final float FLOOR_SCALE = 2.85F;
+    private static final int LINE_TEXT_PADDING = 32;
     private static final int TEXT_LINE_GAP = 4;
-    private static final int SECTOR_VERTICAL_BIAS = 3;
+    private static final int SECTOR_VERTICAL_BIAS = 9;
+    private static final int FLOOR_VERTICAL_BIAS = -3;
     private static final ResourceLocation CROSSHAIR_TEXTURE =
             new ResourceLocation("minecraft", "textures/gui/icons.png");
 
@@ -78,7 +80,7 @@ public final class ElevatorArrivalOverlay {
 
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
-                CoreRoomElevatorModule.ZONE_SPLASH.get(), 1.0F));
+                CoreRoomElevatorModule.ZONE_SPLASH.get(), 1.0F, 2.0F));
     }
 
     public static void show(ElevatorArrivalDisplayData data) {
@@ -188,7 +190,8 @@ public final class ElevatorArrivalOverlay {
         int sectorShownY = lineY - sectorHeight - TEXT_LINE_GAP
                 + SECTOR_VERTICAL_BIAS;
         int floorHiddenY = lineY - floorHeight - 2;
-        int floorShownY = lineY + 2 + TEXT_LINE_GAP;
+        int floorShownY = lineY + 2 + TEXT_LINE_GAP
+                + FLOOR_VERTICAL_BIAS;
         int sectorY = Math.round(Mth.lerp((float) sectorProgress,
                 sectorHiddenY, sectorShownY));
         int floorY = Math.round(Mth.lerp((float) floorProgress,
@@ -243,9 +246,14 @@ public final class ElevatorArrivalOverlay {
 
     private static float crosshairOpacity(long now) {
         if (pending) {
-            double elapsed = (now - cueStartedAtNanos)
+            double secondsUntilStart = (scheduledStartNanos - now)
                     / 1_000_000_000.0D;
-            return (float) (1.0D - smoothProgress(elapsed,
+            if (secondsUntilStart >= CROSSHAIR_HIDE_LEAD_SECONDS) {
+                return 1.0F;
+            }
+            double fadeElapsed = CROSSHAIR_HIDE_LEAD_SECONDS
+                    - secondsUntilStart;
+            return (float) (1.0D - smoothProgress(fadeElapsed,
                     CROSSHAIR_FADE_OUT_SECONDS));
         }
         if (active) return 0.0F;

@@ -48,8 +48,8 @@ jobs:
           end = next(i for i in range(start, len(lines))
                      if lines[i].strip() == 'PY')
           body = lines[start:end]
-          indent = min(len(line) - len(line.lstrip())
-                       for line in body if line.strip())
+          first = next(line for line in body if line.strip())
+          indent = len(first) - len(first.lstrip())
           script = '\n'.join(
               line[indent:] if line.startswith(' ' * indent) else line
               for line in body) + '\n'

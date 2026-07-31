@@ -14,7 +14,7 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
 module = ROOT / 'src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorModule.java'
 manager = ROOT / 'src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorManager.java'
 carriage = ROOT / 'src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java'
-lang_path = ROOT / 'src/main/resources/assets/scp_additions/lang/en_us.json'
+lang_path = ROOT / 'src/main/resources/assets/scp_additions/lang/en_us_3_0.json'
 
 replace_once(
     module,
@@ -209,32 +209,19 @@ replace_once(
 )
 
 lang = json.loads(lang_path.read_text(encoding='utf-8'))
-station_keys = [
-    key for key, value in lang.items()
-    if isinstance(value, str) and 'landing collision' in value.lower()
-]
-if len(station_keys) != 1:
+station_key = 'tooltip.scp_additions.core_room_elevator_station'
+expected = ('Place aligned stations vertically; the structure automatically '
+            'forms its shaft and landing collision.')
+replacement = ('Place aligned stations vertically; the structure automatically '
+               'forms its shaft.')
+if lang.get(station_key) != expected:
     raise SystemExit(
-        f'expected one tooltip containing landing collision, found {station_keys}'
+        f'unexpected Floor Station tooltip: {lang.get(station_key)!r}'
     )
-station_key = station_keys[0]
-original_station_tooltip = lang[station_key]
-updated_station_tooltip = re.sub(
-    r',?\s*and landing collision', '', original_station_tooltip,
-    flags=re.IGNORECASE,
-)
-updated_station_tooltip = re.sub(r'\s+([.,])', r'\1', updated_station_tooltip)
-if updated_station_tooltip == original_station_tooltip:
-    raise SystemExit(
-        f'floor station tooltip did not contain expected phrase: {original_station_tooltip!r}'
-    )
-lang[station_key] = updated_station_tooltip
+lang[station_key] = replacement
 lang_path.write_text(
     json.dumps(lang, ensure_ascii=False, separators=(',', ':')) + '\n',
     encoding='utf-8',
 )
 
-print(
-    'Applied elevator smooth transport, access orientation, station behavior, '
-    f'and Core Room tooltip fixes using {station_key}.'
-)
+print('Applied elevator smooth transport, access orientation, station behavior, and Core Room tooltip fixes.')

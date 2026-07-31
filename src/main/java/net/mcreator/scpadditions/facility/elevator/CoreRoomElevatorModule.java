@@ -465,7 +465,16 @@ public final class CoreRoomElevatorModule {
             pos, state.getValue(FACING), false);
     double upDistance = hit.getLocation().distanceToSqr(upButton);
     double downDistance = hit.getLocation().distanceToSqr(downButton);
-            if (Math.min(upDistance, downDistance) > 0.32D * 0.32D) {
+            if (Math.min(upDistance, downDistance) > 0.20D * 0.20D) {
+                return InteractionResult.PASS;
+            }
+            Vec3 selectedButton = upDistance <= downDistance
+                    ? upButton : downButton;
+            Direction facing = state.getValue(FACING);
+            Vec3 outward = new Vec3(facing.getStepX(), 0.0D,
+                    facing.getStepZ());
+            if (player.getEyePosition().subtract(selectedButton)
+                    .dot(outward) <= 0.02D) {
                 return InteractionResult.PASS;
             }
             if (level.isClientSide) return InteractionResult.SUCCESS;

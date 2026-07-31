@@ -66,7 +66,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     public static final int TRAVEL_TICKS = 8 * 20;
     private static final double FLOOR_EPSILON = 0.035D;
     private static final int DOOR_COLLISION_THRESHOLD = DOOR_TICKS / 2;
-    private static final double BUTTON_HIT_RADIUS_SQR = 0.32D * 0.32D;
+    private static final double BUTTON_HIT_RADIUS_SQR = 0.20D * 0.20D;
     private static final double FLOOR_TOP = 0.0D;
     private static final double COLLISION_EPSILON = 1.0E-4D;
 
@@ -88,7 +88,12 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private double motionEndY;
     private boolean motionReady;
     private double previousServerY;
-    private double previousClientY = Double.NaN;
+    private int clientLerpSteps;
+    private double clientLerpX;
+    private double clientLerpY;
+    private double clientLerpZ;
+    private float clientLerpYRot;
+    private float clientLerpXRot;
     private final Map<Integer, Vec3> previousEntityPositions = new HashMap<>();
     private final Map<Integer, Double> cabinStepDistance = new HashMap<>();
 
@@ -189,17 +194,43 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     @Override
+    public void lerpTo(double x, double y, double z, float yRot,
+            float xRot, int steps, boolean teleport) {
+        if (!level().isClientSide || teleport) {
+            super.lerpTo(x, y, z, yRot, xRot, steps, teleport);
+            return;
+        }
+        clientLerpX = x;
+        clientLerpY = y;
+        clientLerpZ = z;
+        clientLerpYRot = yRot;
+        clientLerpXRot = xRot;
+        clientLerpSteps = Math.max(1, steps);
+    }
+
+    private void tickClientInterpolation() {
+        if (clientLerpSteps <= 0) return;
+        double fraction = 1.0D / clientLerpSteps;
+        setPos(Mth.lerp(fraction, getX(), clientLerpX),
+                Mth.lerp(fraction, getY(), clientLerpY),
+                Mth.lerp(fraction, getZ(), clientLerpZ));
+        setYRot(Mth.rotLerp((float) fraction, getYRot(),
+                clientLerpYRot));
+        setXRot(Mth.lerp((float) fraction, getXRot(),
+                clientLerpXRot));
+        clientLerpSteps--;
+    }
+
+    @Override
     public void tick() {
         super.tick();
         setDeltaMovement(Vec3.ZERO);
         setNoGravity(true);
         noPhysics = true;
         if (level().isClientSide) {
-            double currentY = getY();
-            double oldY = Double.isNaN(previousClientY)
-                    ? currentY : previousClientY;
-            double clientDeltaY = currentY - oldY;
-            previousClientY = currentY;
+            double oldY = getY();
+            tickClientInterpolation();
+            double clientDeltaY = getY() - oldY;
             previousServerY = oldY;
             if (Math.abs(clientDeltaY) > 1.0D) {
                 clientDeltaY = 0.0D;
@@ -360,8 +391,13 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             boolean inside = cabinInteriorBox().intersects(entity.getBoundingBox());
             boolean standing = isStandingOnFloor(entity, previousServerY);
             if ((inside || standing) && Math.abs(deltaY) > 1.0E-7D) {
-                entity.move(MoverType.SHULKER,
-                        new Vec3(0.0D, deltaY, 0.0D));
+                if (level().isClientSide) {
+                    entity.setPos(entity.getX(), entity.getY() + deltaY,
+                            entity.getZ());
+                } else {
+                    entity.move(MoverType.SHULKER,
+                            new Vec3(0.0D, deltaY, 0.0D));
+                }
                 entity.fallDistance = 0.0F;
                 if (standing) stabilizeGroundedEntity(entity);
             }
@@ -604,6 +640,15 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             return InteractionResult.PASS;
         }
         boolean up = upDistance <= downDistance;
+        Vec3 selectedButton = up ? contextAnchor(true)
+                : contextAnchor(false);
+        Vec3 inward = position().subtract(selectedButton)
+                .multiply(1.0D, 0.0D, 1.0D);
+        if (inward.lengthSqr() >= 1.0E-6D
+                && player.getEyePosition().subtract(selectedButton)
+                .dot(inward.normalize()) <= 0.02D) {
+            return InteractionResult.PASS;
+        }
         return handleContextInteraction(serverPlayer,
                 up ? "elevator_carriage_up" : "elevator_carriage_down")
                 ? InteractionResult.CONSUME : InteractionResult.FAIL;

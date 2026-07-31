@@ -40,7 +40,9 @@ jobs:
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-arrival-display' && hashFiles('tools/hotfix/apply_elevator_arrival_display.py') != ''
         run: |
           python tools/hotfix/apply_elevator_arrival_display.py
+          python tools/hotfix/fix_elevator_arrival_overlay.py
           rm tools/hotfix/apply_elevator_arrival_display.py
+          rm tools/hotfix/fix_elevator_arrival_overlay.py
           git show 95b7c16f8f5b5f0c62013add013e32d36f780652:.github/workflows/build.yml > .github/workflows/build.yml
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

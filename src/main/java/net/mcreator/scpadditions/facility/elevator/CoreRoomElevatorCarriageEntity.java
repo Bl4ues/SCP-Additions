@@ -63,7 +63,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private static final int DOOR_TICKS = 15;
     private static final int MECHANICAL_PAUSE_TICKS = 4;
     private static final int LEVELING_TICKS = 5;
-    public static final int TRAVEL_TICKS = 260;
+    public static final int TRAVEL_TICKS = 8 * 20;
     private static final double FLOOR_EPSILON = 0.035D;
     private static final int DOOR_COLLISION_THRESHOLD = DOOR_TICKS / 2;
     private static final double BUTTON_HIT_RADIUS_SQR = 0.32D * 0.32D;
@@ -319,9 +319,9 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     /**
-     * Starts decisively, reaches most of the shaft by the audio's 8-9 second
-     * braking cue, then eases through its final mechanical settling until the
-     * 13 second sound ends.
+     * Uses the full eight-second movement phase, beginning when the carriage
+     * first moves and the movement sound starts, then eases into the stop at
+     * the destination as the shortened audio ends.
      */
     private static double soundSyncedProgress(double time) {
         double clamped = Mth.clamp(time, 0.0D, 1.0D);

@@ -40,7 +40,7 @@ public final class ContextPromptClient {
     private static final float BASE_NAME_TEXT_SCALE = 1.85F;
     private static final double MAX_CONTEXT_REACH = 6.0D;
     private static final double TARGET_STICKINESS_BONUS = 0.045D;
-    private static final double PRECISE_AIM_RADIUS_SQR = 0.52D * 0.52D;
+    private static final double PRECISE_AIM_RADIUS_SQR = 0.60D * 0.60D;
     private static final int CLICK_COOLDOWN_TICKS = 5;
 
     private static ContextTarget target;
@@ -198,32 +198,43 @@ public final class ContextPromptClient {
         for (BlockPos mutable : BlockPos.betweenClosed(
                 playerPos.offset(-radius, -radius, -radius),
                 playerPos.offset(radius, radius, radius))) {
-            BlockPos pos = mutable.immutable();
-            BlockState state = player.level().getBlockState(pos);
+            BlockPos scannedPos = mutable.immutable();
+            BlockState scannedState = player.level().getBlockState(scannedPos);
+            BlockPos rulePos = scannedPos;
+            BlockState ruleState = scannedState;
+            if (player.level().getBlockEntity(scannedPos)
+                    instanceof CoreRoomElevatorModule.StructurePartBlockEntity part) {
+                BlockPos master = part.masterPos();
+                BlockState masterState = player.level().getBlockState(master);
+                if (masterState.getBlock()
+                        instanceof CoreRoomElevatorModule.StationBlock) {
+                    rulePos = master;
+                    ruleState = masterState;
+                }
+            }
             List<ContextInteractionRegistry.Rule> rules =
-                    ContextInteractionRegistry.getBlockRules(state.getBlock());
+                    ContextInteractionRegistry.getBlockRules(ruleState.getBlock());
             if (rules.isEmpty()) continue;
             boolean directHit = blockHit != null
-                    && hitBelongsTo(blockHit.getBlockPos(), pos, player);
+                    && hitBelongsTo(blockHit.getBlockPos(), rulePos, player);
             for (ContextInteractionRegistry.Rule rule : rules) {
-                if (!rule.isAvailable(player.level(), pos, state)) continue;
-                Vec3 anchor = rule.resolveBlockAnchor(pos, state);
+                if (!rule.isAvailable(player.level(), rulePos, ruleState)) continue;
+                Vec3 anchor = rule.resolveBlockAnchor(rulePos, ruleState);
                 double score = scorePoint(anchor, eye, look, rule.range(),
-                        directHit, rule.priority(),
-                        rule.requiresPreciseAim());
-                if (isCurrentBlockTarget(pos, rule.interactionKey())) {
+                        directHit, rule.priority(), rule.requiresPreciseAim());
+                if (isCurrentBlockTarget(rulePos, rule.interactionKey())) {
                     score -= TARGET_STICKINESS_BONUS;
                 }
                 if (score < bestScore && hasBlockLineOfSight(player, eye,
-                        anchor, pos, directHit)) {
+                        anchor, rulePos, directHit)) {
                     bestScore = score;
                     String name = rule.showName()
-                            ? rule.blockName(state) : "";
+                            ? rule.blockName(ruleState) : "";
                     boolean showName = rule.showName() && !name.isEmpty();
                     boolean showAction = rule.showAction() && showName;
                     ResourceLocation icon = ContextPromptIcons.resolve(
                             rule.icon(), rule.id());
-                    best = new ContextTarget(pos, 0, false, anchor,
+                    best = new ContextTarget(rulePos, 0, false, anchor,
                             rule.interactionKey(), rule.action(), name,
                             showAction, showName, rule.allowE(),
                             rule.allowRightClick(), icon,

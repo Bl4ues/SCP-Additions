@@ -193,7 +193,11 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         setDeltaMovement(Vec3.ZERO);
         setNoGravity(true);
         noPhysics = true;
-        if (level().isClientSide) return;
+        if (level().isClientSide) {
+            previousServerY = getY();
+            resolveNearbyEntities(0.0D);
+            return;
+        }
         if (!(level() instanceof ServerLevel serverLevel)) return;
 
         if (tickCount % 40 == 0
@@ -335,7 +339,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     }
 
     private void resolveNearbyEntities(double deltaY) {
-        AABB outer = cabinOuterBox().inflate(0.45D, 0.45D, 0.45D);
+        AABB outer = cabinOuterBox().inflate(0.45D, 1.50D, 0.45D);
         List<Entity> nearby = level().getEntities(this, outer,
                 entity -> entity.isAlive() && !entity.noPhysics
                         && !(entity instanceof CoreRoomElevatorCarriageEntity)

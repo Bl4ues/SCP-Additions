@@ -24,7 +24,13 @@ public final class CoreRoomElevatorGeometry {
             modelBox(-17, 0, 16.5, 17, 1, 24),
             modelBox(-12, 0, -29.75, 12, 1, -18.5),
             modelBox(10, 0, -18.5, 12, 17, -14.25),
-            modelBox(-12, 0, -18.5, -10, 17, -14.25)
+            modelBox(-12, 0, -18.5, -10, 17, -14.25),
+            // Low glass/metal railings surrounding the carriage opening.
+            modelBox(-17, 0, 16.25, 17, 13.5, 17),
+            modelBox(-17, 0, -16.75, -16.25, 13.5, 17),
+            modelBox(16.25, 0, -16.75, 17, 13.5, 17),
+            modelBox(-17, 0, -16.75, -12, 13.5, -16.25),
+            modelBox(12, 0, -16.75, 17, 13.5, -16.25)
     );
 
     private static final AABB STATION_GATE = modelBox(
@@ -50,7 +56,7 @@ public final class CoreRoomElevatorGeometry {
 
     private CoreRoomElevatorGeometry() {}
 
-    private static final double STATION_BUTTON_X = 14.64492D / 16.0D;
+    private static final double STATION_BUTTON_X = -14.64492D / 16.0D;
     private static final double STATION_BUTTON_Z = -16.69749D / 16.0D;
 
     public static Vec3 stationButtonWorld(BlockPos master,

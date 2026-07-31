@@ -313,11 +313,11 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "heater");
         addFacilityCreativeItem(props, "emergency_button");
         addFacilityCreativeItem(props, "fire_extinguisher");
-        addFacilityCreativeItem(props, "wet_floor");
         addFacilityCreativeItem(props, "water_faucet");
+        addFacilityCreativeItem(props, "wet_floor");
+        addFacilityCreativeItem(props, "trashbin");
         addFacilityCreativeItem(props, "scp_914_usage_notice");
         addFacilityCreativeItem(props, "tv");
-        addFacilityCreativeItem(props, "trashbin");
         addUBlockCreativeItem(props, "vent_open");
         sections.add(section("proptab", props));
 

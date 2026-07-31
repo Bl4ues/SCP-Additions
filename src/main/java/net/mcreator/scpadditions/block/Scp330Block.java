@@ -38,8 +38,8 @@ public final class Scp330Block extends BaseEntityBlock {
 
     /* Compact collision matching the visible bowl and plate. */
     private static final VoxelShape SHAPE = box(
-            5.1875D, 0.0D, 5.1875D,
-            10.8125D, 2.1875D, 10.8125D);
+            4.484375D, 0.0D, 4.484375D,
+            11.515625D, 2.734375D, 11.515625D);
 
     public Scp330Block() {
         super(BlockBehaviour.Properties.of()
@@ -70,7 +70,7 @@ public final class Scp330Block extends BaseEntityBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return defaultBlockState().setValue(FACING,
-                context.getHorizontalDirection());
+                context.getHorizontalDirection().getOpposite());
     }
 
     @Override

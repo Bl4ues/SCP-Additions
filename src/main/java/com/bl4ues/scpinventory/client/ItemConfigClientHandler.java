@@ -1,6 +1,6 @@
 package com.bl4ues.scpinventory.client;
 
-import com.bl4ues.scpinventory.client.gui.ItemConfigScreen;
+import com.bl4ues.scpinventory.client.gui.ItemRuleEditorScreen;
 import com.bl4ues.scpinventory.config.ScpInventoryConfig;
 import com.bl4ues.scpinventory.network.ItemConfigOpenPacket;
 import net.minecraft.client.Minecraft;
@@ -13,7 +13,7 @@ public final class ItemConfigClientHandler {
     }
 
     public static void open(ItemConfigOpenPacket packet) {
-        Minecraft.getInstance().setScreen(new ItemConfigScreen(packet));
+        Minecraft.getInstance().setScreen(new ItemRuleEditorScreen(packet));
     }
 
     public static void reloadItemConfig() {

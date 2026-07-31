@@ -2,6 +2,12 @@
 
 # SCP Additions 3.1.0 — In Development
 
+## Interface and presentation
+
+- Added an optional SCP: Unity-inspired custom crosshair, disabled by default, with independent in-game visibility, RGB and alpha controls, a live preview, default reset, cancel, and save-and-reload controls;
+- Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior;
+- Refined the Core Room elevator arrival display's text scale and spacing to more closely match SCP: Unity.
+
 ## Creative inventory organization
 
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
@@ -105,6 +111,7 @@
 
 ## Bug Fixes
 
+- Corrected **Save Game Sound** being styled as a primary save action instead of a normal module option;
 - Synchronized the SCP Inventory immediately on login, respawn, and dimension changes, and made Tesla Terminal authentication receive a server-authoritative Security Credentials snapshot when opened;
 - Changed enabled Tesla Gates from ten-tick polling to continuous sensing without duplicate activation queues, and added swept trajectory checks so running entities cannot tunnel through the unchanged visible discharge arc between ticks;
 - Assigned a blood type on first login for new and legacy players and preserved it across death instead of leaving Status as Unknown until the first respawn;

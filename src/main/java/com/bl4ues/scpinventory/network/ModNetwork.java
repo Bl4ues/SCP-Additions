@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "12";
+    private static final String PROTOCOL_VERSION = "13";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -70,20 +70,22 @@ public final class ModNetwork {
 
     public static void syncModuleState(ServerPlayer player) {
         if (player == null) return;
+        ScpAdditionsModulesConfig.Root modules = ScpAdditionsModulesConfig.get();
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                 new InventoryModuleStatePacket(
-                        ScpAdditionsModulesConfig.get().inventory.enabled,
-                        ScpAdditionsModulesConfig.get().accessibility
-                                .reduceScp012VisualEffects,
-                        ScpAdditionsModulesConfig.get().hunger.disabled,
-                        ScpAdditionsModulesConfig.get().audio
-                                .replacePlayerHurtSounds,
-                        ScpAdditionsModulesConfig.get().audio
-                                .muteNonPlayerHitSounds,
-                        ScpAdditionsModulesConfig.get().audio
-                                .disableVanillaMusic,
-                        ScpAdditionsModulesConfig.get().hud
-                                .hideActiveEffectIndicators));
+                        modules.inventory.enabled,
+                        modules.accessibility.reduceScp012VisualEffects,
+                        modules.hunger.disabled,
+                        modules.audio.replacePlayerHurtSounds,
+                        modules.audio.muteNonPlayerHitSounds,
+                        modules.audio.disableVanillaMusic,
+                        modules.hud.hideActiveEffectIndicators,
+                        modules.crosshair.enabled,
+                        modules.crosshair.inGameEnabled,
+                        (float) modules.crosshair.red,
+                        (float) modules.crosshair.green,
+                        (float) modules.crosshair.blue,
+                        (float) modules.crosshair.alpha));
     }
 
     public static void syncModuleState(Iterable<ServerPlayer> players) {

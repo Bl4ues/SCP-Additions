@@ -10,7 +10,11 @@ public record InventoryModuleStatePacket(boolean enabled,
         boolean reduceScp012VisualEffects, boolean hungerDisabled,
         boolean replacePlayerHurtSounds, boolean muteNonPlayerHitSounds,
         boolean disableVanillaMusic,
-        boolean hideActiveEffectIndicators) {
+        boolean hideActiveEffectIndicators,
+        boolean customCrosshairEnabled,
+        boolean inGameCrosshairEnabled,
+        float crosshairRed, float crosshairGreen,
+        float crosshairBlue, float crosshairAlpha) {
     public static void encode(InventoryModuleStatePacket message,
             FriendlyByteBuf buffer) {
         buffer.writeBoolean(message.enabled);
@@ -20,13 +24,22 @@ public record InventoryModuleStatePacket(boolean enabled,
         buffer.writeBoolean(message.muteNonPlayerHitSounds);
         buffer.writeBoolean(message.disableVanillaMusic);
         buffer.writeBoolean(message.hideActiveEffectIndicators);
+        buffer.writeBoolean(message.customCrosshairEnabled);
+        buffer.writeBoolean(message.inGameCrosshairEnabled);
+        buffer.writeFloat(message.crosshairRed);
+        buffer.writeFloat(message.crosshairGreen);
+        buffer.writeFloat(message.crosshairBlue);
+        buffer.writeFloat(message.crosshairAlpha);
     }
 
     public static InventoryModuleStatePacket decode(FriendlyByteBuf buffer) {
         return new InventoryModuleStatePacket(buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
-                buffer.readBoolean(), buffer.readBoolean());
+                buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readFloat(), buffer.readFloat(),
+                buffer.readFloat(), buffer.readFloat());
     }
 
     public static void handle(InventoryModuleStatePacket message,
@@ -37,7 +50,11 @@ public record InventoryModuleStatePacket(boolean enabled,
                 message.hungerDisabled, message.replacePlayerHurtSounds,
                 message.muteNonPlayerHitSounds,
                 message.disableVanillaMusic,
-                message.hideActiveEffectIndicators));
+                message.hideActiveEffectIndicators,
+                message.customCrosshairEnabled,
+                message.inGameCrosshairEnabled,
+                message.crosshairRed, message.crosshairGreen,
+                message.crosshairBlue, message.crosshairAlpha));
         context.setPacketHandled(true);
     }
 }

@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -39,12 +40,12 @@ public final class ElevatorArrivalOverlay {
     private static final int LINE_WHITE = 0xFFF7F8FC;
     private static final int TEXT_WHITE = 0xF7F8FC;
     private static final int FLOOR_TYPE_GRAY = 0xA9AFBA;
-    private static final float SECTOR_SCALE = 2.25F;
-    private static final float FLOOR_SCALE = 2.85F;
+    private static final float SECTOR_SCALE = 2.10F;
+    private static final float FLOOR_SCALE = 2.76F;
     private static final int LINE_TEXT_PADDING = 32;
     private static final int TEXT_LINE_GAP = 4;
-    private static final int SECTOR_VERTICAL_BIAS = 9;
-    private static final int FLOOR_VERTICAL_BIAS = -3;
+    private static final int SECTOR_VERTICAL_BIAS = 0;
+    private static final int FLOOR_VERTICAL_BIAS = 10;
     private static final ResourceLocation CROSSHAIR_TEXTURE =
             new ResourceLocation("minecraft", "textures/gui/icons.png");
 
@@ -91,10 +92,20 @@ public final class ElevatorArrivalOverlay {
         finishSequence(System.nanoTime());
     }
 
+    /** Current opacity used by both the vanilla and custom crosshair renderers. */
+    public static float crosshairOpacity() {
+        long now = System.nanoTime();
+        updateTimeline(now);
+        return crosshairOpacity(now);
+    }
+
     @SubscribeEvent
     public static void renderCrosshair(RenderGuiOverlayEvent.Pre event) {
         if (!event.getOverlay().id().equals(
                 VanillaGuiOverlay.CROSSHAIR.id())) {
+            return;
+        }
+        if (InventoryModuleRuntimeState.customCrosshairEnabledForClient()) {
             return;
         }
         long now = System.nanoTime();

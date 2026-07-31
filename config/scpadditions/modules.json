@@ -1,4 +1,12 @@
 {
+  "crosshair": {
+    "enabled": false,
+    "in_game_enabled": true,
+    "red": 1.0,
+    "green": 1.0,
+    "blue": 1.0,
+    "alpha": 1.0
+  },
   "inventory": {
     "enabled": true,
     "remember_ui_state": true

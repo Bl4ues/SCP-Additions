@@ -73,6 +73,7 @@ public final class ScpAdditionsModulesConfig {
 	}
 
 	public static final class Root {
+		public Crosshair crosshair = new Crosshair();
 		public Inventory inventory = new Inventory();
 		public Interactions interactions = new Interactions();
 		public Hud hud = new Hud();
@@ -91,6 +92,8 @@ public final class ScpAdditionsModulesConfig {
 		}
 
 		private Root normalize() {
+			if (crosshair == null) crosshair = new Crosshair();
+			crosshair.normalize();
 			if (inventory == null) inventory = new Inventory();
 			if (interactions == null) interactions = new Interactions();
 			if (hud == null) hud = new Hud();
@@ -103,6 +106,30 @@ public final class ScpAdditionsModulesConfig {
 			if (scp173 == null) scp173 = new Toggle();
 			return this;
 		}
+	}
+
+	public static final class Crosshair {
+		public boolean enabled = false;
+
+		@SerializedName("in_game_enabled")
+		public boolean inGameEnabled = true;
+
+		public double red = 1.0D;
+		public double green = 1.0D;
+		public double blue = 1.0D;
+		public double alpha = 1.0D;
+
+		private void normalize() {
+			red = clampUnit(red);
+			green = clampUnit(green);
+			blue = clampUnit(blue);
+			alpha = clampUnit(alpha);
+		}
+	}
+
+	private static double clampUnit(double value) {
+		if (!Double.isFinite(value)) return 1.0D;
+		return Math.max(0.0D, Math.min(1.0D, value));
 	}
 
 	public static class Toggle {

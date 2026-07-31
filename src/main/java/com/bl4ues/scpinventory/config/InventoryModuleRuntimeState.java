@@ -11,6 +11,12 @@ public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverMuteNonPlayerHitSounds;
     private static volatile Boolean serverDisableVanillaMusic;
     private static volatile Boolean serverHideActiveEffectIndicators;
+    private static volatile Boolean serverCustomCrosshairEnabled;
+    private static volatile Boolean serverInGameCrosshairEnabled;
+    private static volatile Float serverCrosshairRed;
+    private static volatile Float serverCrosshairGreen;
+    private static volatile Float serverCrosshairBlue;
+    private static volatile Float serverCrosshairAlpha;
 
     private InventoryModuleRuntimeState() {
     }
@@ -58,12 +64,52 @@ public final class InventoryModuleRuntimeState {
                 .hideActiveEffectIndicators;
     }
 
+    public static boolean customCrosshairEnabledForClient() {
+        Boolean synced = serverCustomCrosshairEnabled;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().crosshair.enabled;
+    }
+
+    public static boolean inGameCrosshairEnabledForClient() {
+        Boolean synced = serverInGameCrosshairEnabled;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().crosshair.inGameEnabled;
+    }
+
+    public static float crosshairRedForClient() {
+        Float synced = serverCrosshairRed;
+        return clampUnit(synced != null ? synced
+                : (float) ScpAdditionsModulesConfig.get().crosshair.red);
+    }
+
+    public static float crosshairGreenForClient() {
+        Float synced = serverCrosshairGreen;
+        return clampUnit(synced != null ? synced
+                : (float) ScpAdditionsModulesConfig.get().crosshair.green);
+    }
+
+    public static float crosshairBlueForClient() {
+        Float synced = serverCrosshairBlue;
+        return clampUnit(synced != null ? synced
+                : (float) ScpAdditionsModulesConfig.get().crosshair.blue);
+    }
+
+    public static float crosshairAlphaForClient() {
+        Float synced = serverCrosshairAlpha;
+        return clampUnit(synced != null ? synced
+                : (float) ScpAdditionsModulesConfig.get().crosshair.alpha);
+    }
+
     public static void updateFromServer(boolean enabled,
             boolean reduceScp012VisualEffects, boolean hungerDisabled,
             boolean replacePlayerHurtSounds,
             boolean muteNonPlayerHitSounds,
             boolean disableVanillaMusic,
-            boolean hideActiveEffectIndicators) {
+            boolean hideActiveEffectIndicators,
+            boolean customCrosshairEnabled,
+            boolean inGameCrosshairEnabled,
+            float crosshairRed, float crosshairGreen,
+            float crosshairBlue, float crosshairAlpha) {
         serverEnabled = enabled;
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
         serverHungerDisabled = hungerDisabled;
@@ -71,6 +117,12 @@ public final class InventoryModuleRuntimeState {
         serverMuteNonPlayerHitSounds = muteNonPlayerHitSounds;
         serverDisableVanillaMusic = disableVanillaMusic;
         serverHideActiveEffectIndicators = hideActiveEffectIndicators;
+        serverCustomCrosshairEnabled = customCrosshairEnabled;
+        serverInGameCrosshairEnabled = inGameCrosshairEnabled;
+        serverCrosshairRed = clampUnit(crosshairRed);
+        serverCrosshairGreen = clampUnit(crosshairGreen);
+        serverCrosshairBlue = clampUnit(crosshairBlue);
+        serverCrosshairAlpha = clampUnit(crosshairAlpha);
     }
 
     public static void clearServerState() {
@@ -81,5 +133,16 @@ public final class InventoryModuleRuntimeState {
         serverMuteNonPlayerHitSounds = null;
         serverDisableVanillaMusic = null;
         serverHideActiveEffectIndicators = null;
+        serverCustomCrosshairEnabled = null;
+        serverInGameCrosshairEnabled = null;
+        serverCrosshairRed = null;
+        serverCrosshairGreen = null;
+        serverCrosshairBlue = null;
+        serverCrosshairAlpha = null;
+    }
+
+    private static float clampUnit(float value) {
+        if (!Float.isFinite(value)) return 1.0F;
+        return Math.max(0.0F, Math.min(1.0F, value));
     }
 }

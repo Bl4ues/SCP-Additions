@@ -65,7 +65,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private static final int MECHANICAL_PAUSE_TICKS = 4;
     private static final int LEVELING_TICKS = 5;
     public static final int TRAVEL_TICKS = 8 * 20;
-    private static final int ARRIVAL_SOUND_LEAD_TICKS = 20;
+    private static final int ARRIVAL_SOUND_LEAD_TICKS = 30;
     private static final int ARRIVAL_SOUND_MOVING_TICK =
             TRAVEL_TICKS + LEVELING_TICKS - ARRIVAL_SOUND_LEAD_TICKS;
     private static final double FLOOR_EPSILON = 0.035D;
@@ -281,7 +281,6 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             case MOVING -> tickMotion();
             case LEVELING -> {
                 if (phaseTicks >= LEVELING_TICKS) {
-                    triggerArrivalDisplay(serverLevel);
                     playElevatorSound(
                             CoreRoomElevatorModule.ELEVATOR_DOOR_OPEN.get(),
                             1.0F);
@@ -402,30 +401,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
                     || !passengers.intersects(player.getBoundingBox())) {
                 continue;
             }
-            player.playNotifySound(CoreRoomElevatorModule.ZONE_SPLASH.get(),
-                    net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
-        }
-    }
-
-    private void triggerArrivalDisplay(ServerLevel serverLevel) {
-        int floor = currentFloorIndex();
-        if (floor < 0 || floor >= floorHeights.length) return;
-        BlockPos stationPos = new BlockPos(columnX(),
-                floorHeights[floor], columnZ());
-        if (!(serverLevel.getBlockEntity(stationPos)
-                instanceof CoreRoomElevatorModule.StationBlockEntity station)) {
-            return;
-        }
-        ElevatorArrivalDisplayData data = station.arrivalDisplay();
-        if (!data.enabled() || data.sectorLabel().isBlank()) return;
-        AABB passengers = cabinInteriorBox().inflate(0.18D, 0.12D,
-                0.18D);
-        for (ServerPlayer player : serverLevel.players()) {
-            if (!player.isAlive() || player.isSpectator()
-                    || !passengers.intersects(player.getBoundingBox())) {
-                continue;
-            }
-            ScpEntityNetwork.showElevatorArrival(player, data);
+            ScpEntityNetwork.showElevatorArrival(player, data,
+                    ARRIVAL_SOUND_LEAD_TICKS);
         }
     }
 

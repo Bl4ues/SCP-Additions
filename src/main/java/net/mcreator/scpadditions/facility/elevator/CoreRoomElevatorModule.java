@@ -363,6 +363,11 @@ public final class CoreRoomElevatorModule {
             super.appendHoverText(stack, level, tooltip, flag);
             tooltip.add(Component.translatable(tooltipKey)
                     .withStyle(ChatFormatting.GRAY));
+            if (getBlock() == STATION.get()) {
+                tooltip.add(Component.literal(
+                        "Use a Screwdriver to edit this floor's arrival display.")
+                        .withStyle(ChatFormatting.DARK_GRAY));
+            }
         }
     }
 

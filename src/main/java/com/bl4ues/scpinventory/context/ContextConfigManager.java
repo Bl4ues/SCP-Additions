@@ -22,6 +22,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -766,10 +767,12 @@ public final class ContextConfigManager {
     private static boolean likelySupportsRightClick(BlockState state) {
         if (state == null || state.isAir()) return false;
         try {
-            return state.getBlock().getClass().getMethod("use",
+            Class<?> declaring = state.getBlock().getClass().getMethod("use",
                     BlockState.class, Level.class, BlockPos.class,
                     Player.class, InteractionHand.class,
-                    BlockHitResult.class).getDeclaringClass() != Block.class;
+                    BlockHitResult.class).getDeclaringClass();
+            return declaring != Block.class
+                    && declaring != BlockBehaviour.class;
         } catch (ReflectiveOperationException ignored) {
             // Avoid blocking valid custom blocks when another mod changes the
             // implementation shape in a way reflection cannot inspect.

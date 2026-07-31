@@ -209,9 +209,15 @@ replace_once(
 )
 
 lang = json.loads(lang_path.read_text(encoding='utf-8'))
-station_key = 'tooltip.scp_additions.core_room_elevator_station'
-if station_key not in lang:
-    raise SystemExit(f'missing language key: {station_key}')
+station_keys = [
+    key for key, value in lang.items()
+    if isinstance(value, str) and 'landing collision' in value.lower()
+]
+if len(station_keys) != 1:
+    raise SystemExit(
+        f'expected one tooltip containing landing collision, found {station_keys}'
+    )
+station_key = station_keys[0]
 original_station_tooltip = lang[station_key]
 updated_station_tooltip = re.sub(
     r',?\s*and landing collision', '', original_station_tooltip,
@@ -228,4 +234,7 @@ lang_path.write_text(
     encoding='utf-8',
 )
 
-print('Applied elevator smooth transport, access orientation, station behavior, and Core Room tooltip fixes.')
+print(
+    'Applied elevator smooth transport, access orientation, station behavior, '
+    f'and Core Room tooltip fixes using {station_key}.'
+)

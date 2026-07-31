@@ -64,6 +64,7 @@ jobs:
           PY
           python .github/scripts/apply_context_offscreen_prompts.py
           rm .github/scripts/apply_context_offscreen_prompts.py
+          rm -f tools/hotfix/TRIGGER_CONTEXT_OFFSCREEN
           git show origin/master:.github/workflows/build.yml > .github/workflows/build.yml
 
       - name: Make Gradle wrapper executable

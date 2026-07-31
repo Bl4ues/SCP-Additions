@@ -1,9 +1,12 @@
 package net.mcreator.scpadditions.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -11,6 +14,7 @@ import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 import net.mcreator.scpadditions.facility.elevator.ElevatorArrivalDisplayData;
 
 /** Animated SCP: Unity-style sector and floor announcement. */
@@ -28,38 +32,86 @@ public final class ElevatorArrivalOverlay {
     private static final double FLOOR_OUT_END = 5.96D;
     private static final double LINE_OUT_START = 5.96D;
     private static final double LINE_OUT_END = 6.30D;
+    private static final double CROSSHAIR_FADE_OUT_SECONDS = 0.30D;
+    private static final double CROSSHAIR_FADE_IN_SECONDS = 0.30D;
 
     private static final int LINE_WHITE = 0xFFF7F8FC;
     private static final int TEXT_WHITE = 0xF7F8FC;
     private static final int FLOOR_TYPE_GRAY = 0xA9AFBA;
-    private static final float SECTOR_SCALE = 2.25F;
+    private static final float SECTOR_SCALE = 2.10F;
     private static final float FLOOR_SCALE = 2.65F;
     private static final int LINE_TEXT_PADDING = 56;
     private static final int TEXT_LINE_GAP = 4;
-    private static final float WEIGHT_OFFSET = 0.35F;
+    private static final int SECTOR_VERTICAL_BIAS = 3;
+    private static final ResourceLocation CROSSHAIR_TEXTURE =
+            new ResourceLocation("minecraft", "textures/gui/icons.png");
 
     private static ElevatorArrivalDisplayData current =
             ElevatorArrivalDisplayData.NONE;
+    private static long cueStartedAtNanos;
+    private static long scheduledStartNanos;
     private static long startedAtNanos;
+    private static long crosshairRestoreStartedAtNanos;
+    private static boolean pending;
     private static boolean active;
+    private static boolean restoringCrosshair;
 
     private ElevatorArrivalOverlay() {
     }
 
-    public static void show(ElevatorArrivalDisplayData data) {
+    public static void prepare(ElevatorArrivalDisplayData data,
+            int delayTicks) {
         if (data == null || !data.enabled()
                 || data.sectorLabel().isBlank()) {
             return;
         }
+        long now = System.nanoTime();
         current = data;
-        startedAtNanos = System.nanoTime();
-        active = true;
+        cueStartedAtNanos = now;
+        scheduledStartNanos = now
+                + Math.max(0, delayTicks) * 50_000_000L;
+        startedAtNanos = 0L;
+        crosshairRestoreStartedAtNanos = 0L;
+        pending = true;
+        active = false;
+        restoringCrosshair = false;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                CoreRoomElevatorModule.ZONE_SPLASH.get(), 1.0F));
+    }
+
+    public static void show(ElevatorArrivalDisplayData data) {
+        prepare(data, 0);
     }
 
     public static void hide() {
-        active = false;
-        current = ElevatorArrivalDisplayData.NONE;
-        startedAtNanos = 0L;
+        finishSequence(System.nanoTime());
+    }
+
+    @SubscribeEvent
+    public static void renderCrosshair(RenderGuiOverlayEvent.Pre event) {
+        if (!event.getOverlay().id().equals(
+                VanillaGuiOverlay.CROSSHAIR.id())) {
+            return;
+        }
+        long now = System.nanoTime();
+        updateTimeline(now);
+        float opacity = crosshairOpacity(now);
+        if (opacity >= 0.999F) return;
+
+        event.setCanceled(true);
+        if (opacity <= 0.001F) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        GuiGraphics graphics = event.getGuiGraphics();
+        int x = (minecraft.getWindow().getGuiScaledWidth() - 15) / 2;
+        int y = (minecraft.getWindow().getGuiScaledHeight() - 15) / 2;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, opacity);
+        graphics.blit(CROSSHAIR_TEXTURE, x, y, 0, 0, 15, 15);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @SubscribeEvent
@@ -67,11 +119,12 @@ public final class ElevatorArrivalOverlay {
         if (!event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) {
             return;
         }
+        long now = System.nanoTime();
+        updateTimeline(now);
         if (!active) return;
-        double time = (System.nanoTime() - startedAtNanos)
-                / 1_000_000_000.0D;
+        double time = (now - startedAtNanos) / 1_000_000_000.0D;
         if (time < 0.0D || time >= LINE_OUT_END) {
-            hide();
+            finishSequence(now);
             return;
         }
 
@@ -132,7 +185,8 @@ public final class ElevatorArrivalOverlay {
                 Math.round(minecraft.font.lineHeight * floorScale));
 
         int sectorHiddenY = lineY + 2;
-        int sectorShownY = lineY - sectorHeight - TEXT_LINE_GAP;
+        int sectorShownY = lineY - sectorHeight - TEXT_LINE_GAP
+                + SECTOR_VERTICAL_BIAS;
         int floorHiddenY = lineY - floorHeight - 2;
         int floorShownY = lineY + 2 + TEXT_LINE_GAP;
         int sectorY = Math.round(Mth.lerp((float) sectorProgress,
@@ -167,6 +221,54 @@ public final class ElevatorArrivalOverlay {
         graphics.pose().popPose();
     }
 
+    private static void updateTimeline(long now) {
+        if (pending && now >= scheduledStartNanos) {
+            pending = false;
+            active = true;
+            startedAtNanos = scheduledStartNanos;
+        }
+    }
+
+    private static void finishSequence(long now) {
+        if (!pending && !active) return;
+        pending = false;
+        active = false;
+        current = ElevatorArrivalDisplayData.NONE;
+        cueStartedAtNanos = 0L;
+        scheduledStartNanos = 0L;
+        startedAtNanos = 0L;
+        crosshairRestoreStartedAtNanos = now;
+        restoringCrosshair = true;
+    }
+
+    private static float crosshairOpacity(long now) {
+        if (pending) {
+            double elapsed = (now - cueStartedAtNanos)
+                    / 1_000_000_000.0D;
+            return (float) (1.0D - smoothProgress(elapsed,
+                    CROSSHAIR_FADE_OUT_SECONDS));
+        }
+        if (active) return 0.0F;
+        if (restoringCrosshair) {
+            double elapsed = (now - crosshairRestoreStartedAtNanos)
+                    / 1_000_000_000.0D;
+            float opacity = (float) smoothProgress(elapsed,
+                    CROSSHAIR_FADE_IN_SECONDS);
+            if (opacity >= 0.999F) {
+                restoringCrosshair = false;
+                return 1.0F;
+            }
+            return opacity;
+        }
+        return 1.0F;
+    }
+
+    private static double smoothProgress(double elapsed, double duration) {
+        if (duration <= 0.0D) return 1.0D;
+        double value = Mth.clamp(elapsed / duration, 0.0D, 1.0D);
+        return value * value * (3.0D - 2.0D * value);
+    }
+
     private static float fittedScale(int rawWidth, float preferred,
             int maximumWidth) {
         if (rawWidth <= 0) return preferred;
@@ -180,9 +282,6 @@ public final class ElevatorArrivalOverlay {
         graphics.pose().pushPose();
         graphics.pose().translate(centerX, y, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(minecraft.font, text,
-                -textWidth / 2, 0, color, false);
-        graphics.pose().translate(WEIGHT_OFFSET, 0.0F, 0.0F);
         graphics.drawString(minecraft.font, text,
                 -textWidth / 2, 0, color, false);
         graphics.pose().popPose();

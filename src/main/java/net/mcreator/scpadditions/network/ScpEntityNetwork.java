@@ -302,11 +302,11 @@ public final class ScpEntityNetwork {
 
     public static void showElevatorArrival(ServerPlayer player,
             net.mcreator.scpadditions.facility.elevator.
-                    ElevatorArrivalDisplayData data) {
+                    ElevatorArrivalDisplayData data, int delayTicks) {
         if (player == null || data == null || !data.enabled()) return;
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new ElevatorArrivalDisplayPacket(data));
+                new ElevatorArrivalDisplayPacket(data, delayTicks));
     }
 
 }

@@ -9,10 +9,10 @@ for relative in (
 ):
     path = ROOT / relative
     text = path.read_text(encoding="utf-8")
-    old = "protected void renderWidget("
-    if text.count(old) != 1:
-        raise RuntimeError(f"Centered EditBox signature not found in {relative}")
-    path.write_text(text.replace(old, "public void renderWidget(", 1),
+    old = "        protected void renderWidget("
+    if old not in text:
+        raise RuntimeError(f"Widget render signatures not found in {relative}")
+    path.write_text(text.replace(old, "        public void renderWidget("),
             encoding="utf-8")
 
 path = ROOT / "src/main/java/net/mcreator/scpadditions/client/Scp330Client.java"

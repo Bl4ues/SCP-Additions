@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -53,6 +54,8 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.UnifiedReaderItems;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -463,6 +466,17 @@ public final class CoreRoomElevatorModule {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos,
                 Player player, InteractionHand hand, BlockHitResult hit) {
+            if (player.getItemInHand(hand).is(
+                    UnifiedReaderItems.SCREWDRIVER.get())) {
+                if (!level.isClientSide
+                        && player instanceof ServerPlayer serverPlayer
+                        && level.getBlockEntity(pos)
+                        instanceof StationBlockEntity station) {
+                    ScpEntityNetwork.openElevatorArrivalEditor(
+                            serverPlayer, pos, station.arrivalDisplay());
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
             Vec3 upButton = CoreRoomElevatorGeometry.stationButtonWorld(
             pos, state.getValue(FACING), true);
     Vec3 downButton = CoreRoomElevatorGeometry.stationButtonWorld(
@@ -1009,6 +1023,8 @@ public final class CoreRoomElevatorModule {
         private DoorVisualState doorState = DoorVisualState.CLOSED;
         private int doorTicks = DOOR_TICKS;
         private boolean initialized;
+        private ElevatorArrivalDisplayData arrivalDisplay =
+                ElevatorArrivalDisplayData.NONE;
 
         public StationBlockEntity(BlockPos pos, BlockState state) {
             super(STATION_BE.get(), pos, state);
@@ -1033,6 +1049,21 @@ public final class CoreRoomElevatorModule {
 
         public DoorVisualState doorState() {
             return doorState;
+        }
+
+        public ElevatorArrivalDisplayData arrivalDisplay() {
+            return arrivalDisplay;
+        }
+
+        public void setArrivalDisplay(
+                ElevatorArrivalDisplayData data) {
+            arrivalDisplay = data == null
+                    ? ElevatorArrivalDisplayData.NONE : data;
+            setChanged();
+            if (level != null) {
+                level.sendBlockUpdated(worldPosition, getBlockState(),
+                        getBlockState(), Block.UPDATE_ALL);
+            }
         }
 
         public boolean isGateCollisionSolid() {
@@ -1085,6 +1116,9 @@ public final class CoreRoomElevatorModule {
             super.saveAdditional(tag);
             tag.putByte("DoorState", (byte) doorState.ordinal());
             tag.putInt("DoorTicks", doorTicks);
+            if (arrivalDisplay.enabled()) {
+                tag.put("ArrivalDisplay", arrivalDisplay.save());
+            }
         }
 
         @Override
@@ -1096,6 +1130,10 @@ public final class CoreRoomElevatorModule {
             doorTicks = tag.contains("DoorTicks")
                     ? Mth.clamp(tag.getInt("DoorTicks"), 0, DOOR_TICKS)
                     : DOOR_TICKS;
+            arrivalDisplay = tag.contains("ArrivalDisplay", Tag.TAG_COMPOUND)
+                    ? ElevatorArrivalDisplayData.load(
+                            tag.getCompound("ArrivalDisplay"))
+                    : ElevatorArrivalDisplayData.NONE;
         }
 
         @Override

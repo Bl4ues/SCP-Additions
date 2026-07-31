@@ -16,6 +16,8 @@ public final class ScpFonts {
             new ResourceLocation("scp_additions", "jura");
     public static final ResourceLocation NOTO_SANS_BOLD =
             new ResourceLocation("scp_additions", "noto_sans_bold");
+    public static final ResourceLocation TITILLIUM_WEB =
+            new ResourceLocation("scp_additions", "titillium_web");
 
     private ScpFonts() {
     }
@@ -52,6 +54,10 @@ public final class ScpFonts {
 
     public static MutableComponent scpSign(String text) {
         return custom(text, NOTO_SANS_BOLD);
+    }
+
+    public static MutableComponent titillium(String text) {
+        return custom(text, TITILLIUM_WEB);
     }
 
     private static MutableComponent custom(String text, ResourceLocation font) {

@@ -80,6 +80,7 @@
 ## Facility construction
 
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
+- Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;

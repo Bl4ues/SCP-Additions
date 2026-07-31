@@ -117,6 +117,20 @@ public final class ScpEntityNetwork {
                 ScpSignSavePacket::encode,
                 ScpSignSavePacket::decode,
                 ScpSignSavePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(
+                ElevatorArrivalOpenScreenPacket.class,
+                ElevatorArrivalOpenScreenPacket::encode,
+                ElevatorArrivalOpenScreenPacket::decode,
+                ElevatorArrivalOpenScreenPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ElevatorArrivalSavePacket.class,
+                ElevatorArrivalSavePacket::encode,
+                ElevatorArrivalSavePacket::decode,
+                ElevatorArrivalSavePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(
+                ElevatorArrivalDisplayPacket.class,
+                ElevatorArrivalDisplayPacket::encode,
+                ElevatorArrivalDisplayPacket::decode,
+                ElevatorArrivalDisplayPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -275,4 +289,24 @@ public final class ScpEntityNetwork {
                 PacketDistributor.PLAYER.with(() -> player),
                 new ScpSignOpenScreenPacket(sign.getBlockPos(), sign.data()));
     }
+
+    public static void openElevatorArrivalEditor(ServerPlayer player,
+            BlockPos stationPos,
+            net.mcreator.scpadditions.facility.elevator.
+                    ElevatorArrivalDisplayData data) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new ElevatorArrivalOpenScreenPacket(stationPos, data));
+    }
+
+    public static void showElevatorArrival(ServerPlayer player,
+            net.mcreator.scpadditions.facility.elevator.
+                    ElevatorArrivalDisplayData data) {
+        if (player == null || data == null || !data.enabled()) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new ElevatorArrivalDisplayPacket(data));
+    }
+
 }

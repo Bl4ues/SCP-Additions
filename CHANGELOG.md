@@ -21,7 +21,7 @@
 
 ## SCP-330
 
-- Rebuilt SCP-330 as a GeckoLib block using the new authored bowl and candy model;
+- Rebuilt SCP-330 as a GeckoLib block using a new bowl and candy model based on Unity's design;
 - Reduced its candy selection to blue, pink, and yellow, removed the former potion buffs, and increased nutrition and saturation while adding a small direct heal;
 - Reworked the two-candy limit into a persistent hand-loss state: after taking a third candy, players cannot open inventories, use items, break or interact with blocks, activate buttons, interact with entities, or use contextual interactions until death;
 - Removed the obsolete red and green candies, legacy candy procedures, textures, and model files.
@@ -29,7 +29,7 @@
 ## SCP-173
 
 - Reduced SCP-173's rendered height to approximately two blocks;
-- Reworked SCP-173's movement audio: `stone_scrap.ogg` now loops only while the statue moves, while one of `stone_scrap_1.ogg` through `stone_scrap_5.ogg` plays when it turns or stops; removed the natural-spawn rattle and its unused assets;
+- Updated and Reworked SCP-173's movement audio;
 - Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists; it now waits silently and resumes as soon as a route becomes available.
 
 ## SCP-131
@@ -58,15 +58,15 @@
 
 ## Survival
 
-- Added a default-enabled **Disable Hunger System** module that hides the vanilla hunger bar and converts food nutrition directly into health;
+- Added a default-enabled module that hides the vanilla hunger bar and converts food nutrition directly into health;
+- Added a default-enabled module that removes vanilla status-effect icons from the HUD while preserving inventory and SCP Conditions displays.
 - Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 15 seconds without damage;
 - Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration;
 - Made the custom health module hide both the vanilla heart display and armor bar while its replacement HUD is active;
-- Added a default-enabled **Hide Active Effect Indicators** module that removes vanilla status-effect icons from the HUD while preserving inventory and SCP Conditions displays.
 
 ## Audio and presentation
 
-- Reintroduced the world-entry sound and added a General & Modules option to disable it;
+- Reintroduced and updated the world-entry sound and added a General & Modules option to disable it;
 - Added a default-enabled module that plays a sound whenever commands, beds, respawn anchors, or facility systems set a player's respawn point;
 - Added a default-enabled module that replaces vanilla player hurt sounds with human voices;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
@@ -74,31 +74,12 @@
 
 ## Facility signs
 
-- Added the Core Room Sign and Door Sign;
-- Added a Screwdriver editor for three compacting, reorderable entries, including per-entry and whole-sign copy/paste memory stored on the tool;
-- Upgraded the SCP Sign with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass;
-- Fine-tuned the SCP Sign typography and Anomaly Trait selector alignment against direct SCP Unity comparisons;
-- Corrected the free-text editor field backgrounds without moving their aligned text baselines.
-
-## Core Room elevator
-
-- Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
-- Added Core Room Elevator Stations, a station-aligned top Pulley, automatically generated shaft Beams, and the Core Room Floor construction block;
-- Aligned stations automatically generate model-matched shaft beams between floors and up to the pulley, while incomplete or obstructed layouts remain safely inactive;
-- Completed elevator lines automatically create exactly one carriage at the lowest station and preserve one carriage per vertical line;
-- Added precise multiblock collision shells for stations, pulleys, and beam segments, plus moving carriage collision that carries players, mobs, and items smoothly;
-- Added compact contextual interaction targets to the separate up and down buttons inside the carriage and on each station;
-- Added dedicated cabin, landing-gate, movement, opening, and ambient cabin audio, with the 13-second travel profile synchronized to the movement recording;
-- Limited adjacent stations to 8-32 blocks, made the Pulley derive its orientation from the stations below it, and hid unavailable direction buttons;
-- Made generated shaft Beams internal, survival-proof structural pieces instead of manually placed creative-tab blocks;
-- Corrected contextual prompt projection and aligned station and carriage button anchors with their authored model positions;
-- Rebuilt the carriage collision around the actual doorway and removed the oversized horizontal sweep that repelled entities before contact;
-- Corrected station, carriage, Pulley, cable, z-fighting, and moving-collision alignment, including the remaining Pulley-to-Beam offset;
-- Preserved translucent window alpha while culling duplicate backfaces, converted positional elevator audio to mono, and increased the Core Room Floor collision thickness below its visible surface;
-- Simplified Core Room block display names, moved **Core Room** into their tooltips, and renamed the editable sign to **Facility Direction Sign**.
+- Added the Facility Direction Sign and Door Sign, both editable with the Screwdriver;
+- Upgraded the SCP Sign with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass.
 
 ## Facility construction
 
+- Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
@@ -106,7 +87,8 @@
 - Added clear tooltips to facility props that have no gameplay function;
 - Standardized wall-mounted signs, props, door buttons, and keycard readers so they follow the clicked surface, require solid wall support, and break when that support is removed;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;
-- Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources.
+- Moved Vent directly after Trashbin in the facility creative tab and removed the obsolete Alarm Lamp block and its resources;
+- Updated props' item textures.
 
 ## Accessibility
 
@@ -130,7 +112,7 @@
 - Rendered SCP-012 with alpha cutout;
 - Removed unintended shader reflections from the SL1 floor arrows and added dedicated handheld item textures for both arrow sizes;
 - Removed duplicated Heater base geometry that reused the top emissive region;
-- Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with optional renderers and shaders.
+- Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with shaders.
 
 ---
 ---

@@ -113,8 +113,7 @@ public final class CoreRoomElevatorModule {
             "core_room_elevator_beams", () -> new ElevatorBlockItem(
                     BEAMS.get(), "tooltip.scp_additions.core_room_elevator_beams"));
     public static final RegistryObject<Item> FLOOR_ITEM = ITEMS.register(
-            "core_room_floor", () -> new ElevatorBlockItem(
-                    FLOOR.get(), "tooltip.scp_additions.core_room_floor"));
+            "core_room_floor", () -> new CoreRoomBlockItem(FLOOR.get()));
 
     public static final RegistryObject<BlockEntityType<StationBlockEntity>> STATION_BE =
             BLOCK_ENTITIES.register("core_room_elevator_station", () ->
@@ -328,12 +327,9 @@ public final class CoreRoomElevatorModule {
         return MUTATING_PARTS.get();
     }
 
-    public static class ElevatorBlockItem extends BlockItem {
-        private final String tooltipKey;
-
-        protected ElevatorBlockItem(Block block, String tooltipKey) {
+    public static class CoreRoomBlockItem extends BlockItem {
+        protected CoreRoomBlockItem(Block block) {
             super(block, new Item.Properties());
-            this.tooltipKey = tooltipKey;
         }
 
         @Override
@@ -341,10 +337,25 @@ public final class CoreRoomElevatorModule {
                 List<Component> tooltip, TooltipFlag flag) {
             tooltip.add(Component.translatable(
                     "tooltip.scp_additions.core_room")
-                    .withStyle(ChatFormatting.DARK_GRAY));
+                    .withStyle(ChatFormatting.BLUE));
+            super.appendHoverText(stack, level, tooltip, flag);
+        }
+    }
+
+    public static class ElevatorBlockItem extends CoreRoomBlockItem {
+        private final String tooltipKey;
+
+        protected ElevatorBlockItem(Block block, String tooltipKey) {
+            super(block);
+            this.tooltipKey = tooltipKey;
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable Level level,
+                List<Component> tooltip, TooltipFlag flag) {
+            super.appendHoverText(stack, level, tooltip, flag);
             tooltip.add(Component.translatable(tooltipKey)
                     .withStyle(ChatFormatting.GRAY));
-            super.appendHoverText(stack, level, tooltip, flag);
         }
     }
 

@@ -88,6 +88,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private double motionEndY;
     private boolean motionReady;
     private double previousServerY;
+    private double previousClientY = Double.NaN;
     private final Map<Integer, Vec3> previousEntityPositions = new HashMap<>();
     private final Map<Integer, Double> cabinStepDistance = new HashMap<>();
 
@@ -194,8 +195,16 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         setNoGravity(true);
         noPhysics = true;
         if (level().isClientSide) {
-            previousServerY = getY();
-            resolveNearbyEntities(0.0D);
+            double currentY = getY();
+            double oldY = Double.isNaN(previousClientY)
+                    ? currentY : previousClientY;
+            double clientDeltaY = currentY - oldY;
+            previousClientY = currentY;
+            previousServerY = oldY;
+            if (Math.abs(clientDeltaY) > 1.0D) {
+                clientDeltaY = 0.0D;
+            }
+            resolveNearbyEntities(clientDeltaY);
             return;
         }
         if (!(level() instanceof ServerLevel serverLevel)) return;
@@ -325,10 +334,8 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
      */
     private static double soundSyncedProgress(double time) {
         double clamped = Mth.clamp(time, 0.0D, 1.0D);
-        double forward = clamped * clamped;
-        double remaining = 1.0D - clamped;
-        double denominator = forward + 0.30D * remaining * remaining;
-        return denominator <= 1.0E-9D ? 1.0D : forward / denominator;
+        return clamped * clamped * clamped
+                * (clamped * (clamped * 6.0D - 15.0D) + 10.0D);
     }
 
     private void playElevatorSound(net.minecraft.sounds.SoundEvent sound,
@@ -518,8 +525,10 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         }
         List<AABB> world = new ArrayList<>();
         for (AABB box : local) {
+            AABB modelAligned = CoreRoomElevatorGeometry.rotateAabb(box,
+                    Direction.EAST, 0.0D, 0.0D);
             AABB facingAligned = CoreRoomElevatorGeometry.rotateAabb(
-                    box, facing().getOpposite(), 0.0D, 0.0D);
+                    modelAligned, facing(), 0.0D, 0.0D);
             world.add(facingAligned.move(getX(), getY(), getZ()));
         }
         return world;
@@ -550,8 +559,10 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         double modelX = -10.95508D / 16.0D;
         double modelY = (up ? 21.25D : 19.25D) / 16.0D;
         double modelZ = 11.00251D / 16.0D;
+        Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
+                Direction.EAST, modelX, modelY, modelZ);
         Vec3 facingRotated = CoreRoomElevatorGeometry.rotateLocalVector(
-                facing().getOpposite(), modelX, modelY, modelZ);
+                facing(), modelAligned.x, modelAligned.y, modelAligned.z);
         return position().add(facingRotated);
     }
 

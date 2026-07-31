@@ -683,8 +683,8 @@ public final class Scp079ModulesScreenExtension {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX,
-                                    int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics graphics, int mouseX,
+                                 int mouseY, float partialTick) {
             boolean hovered = isHoveredOrFocused();
             int left = getX();
             int top = getY();

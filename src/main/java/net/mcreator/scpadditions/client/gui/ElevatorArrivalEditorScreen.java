@@ -287,7 +287,7 @@ public final class ElevatorArrivalEditorScreen extends Screen {
         @Override
         public void renderWidget(GuiGraphics graphics, int mouseX,
                 int mouseY, float partialTick) {
-            int offset = Math.max(0, (getHeight() - 9) / 2);
+            int offset = Math.max(0, (getHeight() - 9) / 2 + 2);
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, offset, 0.0F);
             super.renderWidget(graphics, mouseX, mouseY, partialTick);

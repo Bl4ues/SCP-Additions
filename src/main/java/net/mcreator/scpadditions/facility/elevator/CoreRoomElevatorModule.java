@@ -146,6 +146,8 @@ public final class CoreRoomElevatorModule {
             sound("elevator_button_press");
     public static final RegistryObject<SoundEvent> ELEVATOR_BUTTON_ACCEPT =
             sound("elevator_button_accept");
+    public static final RegistryObject<SoundEvent> ZONE_SPLASH =
+            sound("zone_splash");
 
     public static final RegistryObject<EntityType<CoreRoomElevatorCarriageEntity>> CARRIAGE =
             ENTITIES.register("core_room_elevator_carriage", () -> EntityType.Builder

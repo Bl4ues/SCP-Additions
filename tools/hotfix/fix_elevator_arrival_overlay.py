@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Applied after the main integration patch so GUI interpolation uses pixels.
 path = Path("src/main/java/net/mcreator/scpadditions/client/ElevatorArrivalOverlay.java")
 text = path.read_text(encoding="utf-8")
 old_sector = """        int sectorY = Mth.lerp((float) sectorProgress,

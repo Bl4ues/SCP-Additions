@@ -380,19 +380,11 @@ public final class CoreRoomElevatorManager {
                     .withStyle(ChatFormatting.RED));
             return false;
         }
-        int directionalDestination = stationIndex.getAsInt()
-                + direction.step();
-        if (directionalDestination < 0
-                || directionalDestination >= layout.stations().size()) {
-            player.sendSystemMessage(Component.translatable(
-                    direction == ElevatorFoundation.TravelDirection.UP
-                            ? "message.scp_additions.elevator_no_floor_above"
-                            : "message.scp_additions.elevator_no_floor_below")
-                    .withStyle(ChatFormatting.YELLOW));
+        int requestedFloor = stationIndex.getAsInt();
+        if (carriage.isAtFloorHeight(stationPos.getY())) {
             return false;
         }
-        return carriage.requestFromStation(stationIndex.getAsInt(), direction,
-                player);
+        return carriage.requestFromStation(requestedFloor, direction, player);
     }
 
     public static CoreRoomElevatorModule.DoorVisualState visualStateForStation(

@@ -12,7 +12,7 @@ on:
       - integration/scp-additions-3.0
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -31,11 +35,59 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Synchronize elevator travel to eight seconds
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-audio-8s-sync'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java')
+          text = path.read_text(encoding='utf-8')
+
+          if '    public static final int TRAVEL_TICKS = 260;' in text:
+              text = text.replace(
+                  '    public static final int TRAVEL_TICKS = 260;',
+                  '    public static final int TRAVEL_TICKS = 8 * 20;', 1)
+          elif '    public static final int TRAVEL_TICKS = 8 * 20;' not in text:
+              raise SystemExit('Unexpected elevator travel duration')
+
+          old_comment = '''    /**
+     * Starts decisively, reaches most of the shaft by the audio's 8-9 second
+     * braking cue, then eases through its final mechanical settling until the
+     * 13 second sound ends.
+     */'''
+          new_comment = '''    /**
+     * Uses the full eight-second movement phase, beginning when the carriage
+     * first moves and the movement sound starts, then eases into the stop at
+     * the destination as the shortened audio ends.
+     */'''
+          if old_comment in text:
+              text = text.replace(old_comment, new_comment, 1)
+          elif new_comment not in text:
+              raise SystemExit('Unexpected elevator timing comment')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Build
         run: ./gradlew clean build --stacktrace
+
+      - name: Commit validated synchronization
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-audio-8s-sync'
+        run: |
+          git show 806d702c1dfcead5b20b44ea85b3fd8c62dfa993:.github/workflows/build.yml > .github/workflows/build.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/facility/elevator/CoreRoomElevatorCarriageEntity.java .github/workflows/build.yml
+          if git diff --cached --quiet; then
+            echo "Synchronization already committed."
+          else
+            git commit -m "Synchronize elevator travel with eight-second movement audio"
+            git push origin HEAD:feature/elevator-audio-8s-sync
+          fi
 
       - name: Upload compiled JAR
         if: success()

@@ -34,7 +34,7 @@ public final class CoreRoomElevatorGeometry {
     );
 
     private static final AABB STATION_GATE = modelBox(
-            -10, 0, -19.65, 10, 9.5, -19.15);
+            -12, 0, -16.75, 12, 13.5, -16.25);
 
     // Post-root (-90 degree) pulley coordinates. Guide bars include the
     // requested one-unit rearward correction.

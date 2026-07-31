@@ -90,9 +90,9 @@ public final class Scp330Client {
             CoreGeoBone root = getAnimationProcessor().getBone("scp330");
             if (root == null || !animatable.getBlockState().hasProperty(Scp330Block.FACING)) return;
             float rotation = switch (animatable.getBlockState().getValue(Scp330Block.FACING)) {
-                case SOUTH -> (float) Math.PI;
-                case EAST -> (float) (-Math.PI / 2.0D);
-                case WEST -> (float) (Math.PI / 2.0D);
+                case NORTH -> (float) Math.PI;
+                case EAST -> (float) (Math.PI / 2.0D);
+                case WEST -> (float) (-Math.PI / 2.0D);
                 default -> 0.0F;
             };
             root.setRotY(rotation);

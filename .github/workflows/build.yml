@@ -22,6 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -35,7 +36,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Synchronize elevator travel to eight seconds
-        if: github.ref == 'refs/heads/feature/elevator-audio-8s-sync'
+        if: github.head_ref == 'feature/elevator-audio-8s-sync' || github.ref == 'refs/heads/feature/elevator-audio-8s-sync'
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -72,7 +73,7 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Commit validated synchronization
-        if: github.ref == 'refs/heads/feature/elevator-audio-8s-sync'
+        if: github.head_ref == 'feature/elevator-audio-8s-sync' || github.ref == 'refs/heads/feature/elevator-audio-8s-sync'
         run: |
           git checkout origin/master -- .github/workflows/build.yml
           git config user.name "github-actions[bot]"

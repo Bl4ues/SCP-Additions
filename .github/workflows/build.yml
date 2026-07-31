@@ -42,7 +42,16 @@ jobs:
           python .github/scripts/apply_elevator_button_sounds.py
           rm .github/scripts/apply_elevator_button_sounds.py
           git show 028ad1ae9c92fc8bc5576e372dfcb42a234f4f47:.github/workflows/build.yml > .github/workflows/build.yml
-          echo "applied=true" >> "$GITHUB_OUTPUT"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Normalize elevator sound language diff
+        id: normalize
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-button-sounds' && hashFiles('.github/scripts/compact_elevator_sound_lang.py') != ''
+        run: |
+          python .github/scripts/compact_elevator_sound_lang.py
+          rm .github/scripts/compact_elevator_sound_lang.py
+          git show 028ad1ae9c92fc8bc5576e372dfcb42a234f4f47:.github/workflows/build.yml > .github/workflows/build.yml
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -51,12 +60,12 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Commit validated elevator button sounds
-        if: steps.apply.outputs.applied == 'true'
+        if: steps.apply.outputs.changed == 'true' || steps.normalize.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Add directional elevator button sounds"
+          git commit -m "Finalize directional elevator button sounds"
           git push origin HEAD:${{ github.head_ref }}
 
       - name: Upload compiled JAR

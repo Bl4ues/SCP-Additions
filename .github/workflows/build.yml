@@ -89,3 +89,5 @@ jobs:
           name: scp-additions-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
+
+# PR synchronization trigger

@@ -6,6 +6,7 @@ on:
       - master
       - integration/scp-additions-3.0
       - 'feature/**'
+      - 'fix/**'
   pull_request:
     branches:
       - master
@@ -22,6 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -36,7 +38,7 @@ jobs:
 
       - name: Apply UI and resource follow-up fixes
         id: apply
-        if: github.ref_name == 'master' && hashFiles('tools/hotfix/apply_ui_resource_followup.py') != ''
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/ui-resource-followup' && hashFiles('tools/hotfix/apply_ui_resource_followup.py') != ''
         run: |
           python tools/hotfix/apply_ui_resource_followup.py
           rm tools/hotfix/apply_ui_resource_followup.py
@@ -56,7 +58,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix editor alignment and arrival display resources"
-          git push origin HEAD:master
+          git push origin HEAD:${{ github.head_ref }}
 
       - name: Upload compiled JAR
         if: success()

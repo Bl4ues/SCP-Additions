@@ -35,21 +35,37 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Format contextual interaction defaults
+      - name: Finalize contextual prompt feature
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts-v2'
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          paths = [
+
+          for path in [
               Path('config/scpinventory/context_interactions.json'),
               Path('src/main/resources/defaults/scpinventory/context_interactions.json'),
-          ]
-          for path in paths:
+          ]:
               data = json.loads(path.read_text(encoding='utf-8'))
               path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          section = '''## Contextual interactions
+
+- Added an **Off-screen prompts** option to the contextual-interaction editor, allowing selected block prompts to remain available at the edge of the screen while behind the player;
+- Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
+- Added a non-blocking editor warning when the selected block probably has no native right-click interaction.
+
+'''
+          if '## Contextual interactions\n' not in text:
+              marker = '## Accessibility\n'
+              if marker not in text:
+                  raise SystemExit('Could not locate Accessibility section in changelog')
+              text = text.replace(marker, section + marker, 1)
+              changelog.write_text(text, encoding='utf-8')
           PY
-          rm -f tools/hotfix/FORMAT_CONTEXT_OFFSCREEN_DEFAULTS
+          rm -f tools/hotfix/FINALIZE_CONTEXT_OFFSCREEN
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -57,16 +73,16 @@ jobs:
       - name: Build
         run: ./gradlew clean build --stacktrace
 
-      - name: Commit formatted contextual defaults
+      - name: Commit finalized contextual prompt feature
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts-v2'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "No formatting changes to commit."
+            echo "No finalization changes to commit."
           else
-            git commit -m "Format contextual interaction defaults"
+            git commit -m "Document contextual off-screen prompts"
             git push origin HEAD:feature/context-offscreen-prompts-v2
           fi
 

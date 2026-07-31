@@ -29,8 +29,9 @@ public final class ElevatorArrivalOverlay {
     private static final double LINE_OUT_START = 5.96D;
     private static final double LINE_OUT_END = 6.30D;
 
-    private static final int WHITE = 0xFFF7F8FC;
-    private static final int FLOOR_TYPE_GRAY = 0xFFA9AFBA;
+    private static final int LINE_WHITE = 0xFFF7F8FC;
+    private static final int TEXT_WHITE = 0xF7F8FC;
+    private static final int FLOOR_TYPE_GRAY = 0xA9AFBA;
     private static final float TEXT_SCALE = 1.65F;
 
     private static ElevatorArrivalDisplayData current =
@@ -104,7 +105,7 @@ public final class ElevatorArrivalOverlay {
 
         MutableComponent sector = Component.literal(current.sectorLabel())
                 .withStyle(style -> style.withFont(ScpFonts.TITILLIUM_WEB)
-                        .withColor(WHITE));
+                        .withColor(TEXT_WHITE));
         MutableComponent floor = Component.empty()
                 .append(Component.literal(current.floorTypeLabel() + " ")
                         .withStyle(style -> style
@@ -113,7 +114,7 @@ public final class ElevatorArrivalOverlay {
                 .append(Component.literal(current.floorNumberLabel())
                         .withStyle(style -> style
                                 .withFont(ScpFonts.TITILLIUM_WEB)
-                                .withColor(WHITE)));
+                                .withColor(TEXT_WHITE)));
 
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, 0.0F, 1000.0F);
@@ -124,18 +125,18 @@ public final class ElevatorArrivalOverlay {
         graphics.enableScissor(clipLeft, Math.max(0, lineY - 44),
                 clipRight, Math.max(0, lineY - 1));
         drawCenteredScaled(graphics, minecraft, sector,
-                centerX, sectorY, TEXT_SCALE, WHITE);
+                centerX, sectorY, TEXT_SCALE, LINE_WHITE);
         graphics.disableScissor();
 
         graphics.enableScissor(clipLeft, Math.min(height, lineY + 2),
                 clipRight, Math.min(height, lineY + 42));
         drawCenteredScaled(graphics, minecraft, floor,
-                centerX, floorY, TEXT_SCALE, WHITE);
+                centerX, floorY, TEXT_SCALE, LINE_WHITE);
         graphics.disableScissor();
 
         if (lineWidth > 0) {
             graphics.fill(centerX - lineWidth / 2, lineY,
-                    centerX + (lineWidth + 1) / 2, lineY + 2, WHITE);
+                    centerX + (lineWidth + 1) / 2, lineY + 2, LINE_WHITE);
         }
         graphics.pose().popPose();
     }

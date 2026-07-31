@@ -636,7 +636,7 @@ public final class CoreRoomElevatorModule {
 
     public static final class BeamBlock extends HorizontalDirectionalBlock {
         private BeamBlock() {
-            super(BlockBehaviour.Properties.of().strength(5.0F, 15.0F)
+            super(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F)
                     .sound(SoundType.METAL).noOcclusion());
             registerDefaultState(stateDefinition.any()
                     .setValue(FACING, Direction.NORTH)
@@ -876,7 +876,7 @@ public final class CoreRoomElevatorModule {
             extends StructurePartBlock {
         private BeamStructurePartBlock() {
             super(BlockBehaviour.Properties.of()
-                    .strength(5.0F, 15.0F)
+                    .strength(-1.0F, 3600000.0F)
                     .sound(SoundType.METAL).noOcclusion());
         }
     }

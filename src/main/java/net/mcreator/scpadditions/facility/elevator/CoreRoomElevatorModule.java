@@ -139,6 +139,10 @@ public final class CoreRoomElevatorModule {
             sound("elevator_door_open");
     public static final RegistryObject<SoundEvent> ELEVATOR_CABIN_LOOP =
             sound("elevator_cabin_loop");
+    public static final RegistryObject<SoundEvent> ELEVATOR_BUTTON_PRESS =
+            sound("elevator_button_press");
+    public static final RegistryObject<SoundEvent> ELEVATOR_BUTTON_ACCEPT =
+            sound("elevator_button_accept");
 
     public static final RegistryObject<EntityType<CoreRoomElevatorCarriageEntity>> CARRIAGE =
             ENTITIES.register("core_room_elevator_carriage", () -> EntityType.Builder
@@ -497,9 +501,24 @@ public final class CoreRoomElevatorModule {
                     && actionKey.endsWith("up")
                     ? ElevatorFoundation.TravelDirection.UP
                     : ElevatorFoundation.TravelDirection.DOWN;
-            return CoreRoomElevatorManager.requestFromStation(level, pos,
-                    direction, player)
-                    ? InteractionResult.CONSUME : InteractionResult.FAIL;
+            BlockState state = level.getBlockState(pos);
+            Vec3 button = CoreRoomElevatorGeometry.stationButtonWorld(pos,
+                    state.getValue(FACING),
+                    direction == ElevatorFoundation.TravelDirection.UP);
+            level.playSound(null, button.x, button.y, button.z,
+                    ELEVATOR_BUTTON_PRESS.get(),
+                    net.minecraft.sounds.SoundSource.BLOCKS,
+                    1.0F, 1.0F);
+            boolean accepted = CoreRoomElevatorManager.requestFromStation(
+                    level, pos, direction, player);
+            if (accepted) {
+                level.playSound(null, button.x, button.y, button.z,
+                        ELEVATOR_BUTTON_ACCEPT.get(),
+                        net.minecraft.sounds.SoundSource.BLOCKS,
+                        1.0F, 1.0F);
+            }
+            return accepted ? InteractionResult.CONSUME
+                    : InteractionResult.FAIL;
         }
 
         @Override

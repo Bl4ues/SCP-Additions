@@ -97,10 +97,10 @@ public final class ElevatorArrivalOverlay {
         int sectorShownY = lineY - 22;
         int floorHiddenY = lineY - 7;
         int floorShownY = lineY + 8;
-        int sectorY = Mth.lerp((float) sectorProgress,
-                sectorHiddenY, sectorShownY);
-        int floorY = Mth.lerp((float) floorProgress,
-                floorHiddenY, floorShownY);
+        int sectorY = Math.round(Mth.lerp((float) sectorProgress,
+                sectorHiddenY, sectorShownY));
+        int floorY = Math.round(Mth.lerp((float) floorProgress,
+                floorHiddenY, floorShownY));
 
         MutableComponent sector = Component.literal(current.sectorLabel())
                 .withStyle(style -> style.withFont(ScpFonts.TITILLIUM_WEB)

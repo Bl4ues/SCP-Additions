@@ -40,6 +40,8 @@ public final class ElevatorArrivalEditorScreen extends Screen {
 
     private final BlockPos stationPos;
     private final boolean configured;
+    private final String initialCustomZone;
+    private final int initialFloorNumber;
     private ElevatorArrivalDisplayData.Zone zone;
     private ElevatorArrivalDisplayData.FloorType floorType;
 
@@ -57,6 +59,8 @@ public final class ElevatorArrivalEditorScreen extends Screen {
         ElevatorArrivalDisplayData initial = data != null && data.enabled()
                 ? data : ElevatorArrivalDisplayData.EDITOR_DEFAULT;
         this.configured = data != null && data.enabled();
+        this.initialCustomZone = initial.customZone();
+        this.initialFloorNumber = initial.floorNumber();
         this.zone = initial.zone();
         this.floorType = initial.floorType();
     }
@@ -125,15 +129,8 @@ public final class ElevatorArrivalEditorScreen extends Screen {
     }
 
     private ElevatorArrivalDisplayData initialData() {
-        ElevatorArrivalDisplayData data = ElevatorArrivalDisplayData.EDITOR_DEFAULT;
-        if (zone == ElevatorArrivalDisplayData.Zone.CUSTOM) {
-            data = new ElevatorArrivalDisplayData(true, zone, "Custom Zone",
-                    floorType, 1);
-        } else {
-            data = new ElevatorArrivalDisplayData(true, zone, "",
-                    floorType, 1);
-        }
-        return data;
+        return new ElevatorArrivalDisplayData(true, zone,
+                initialCustomZone, floorType, initialFloorNumber);
     }
 
     private EditBox configureField(EditBox field) {

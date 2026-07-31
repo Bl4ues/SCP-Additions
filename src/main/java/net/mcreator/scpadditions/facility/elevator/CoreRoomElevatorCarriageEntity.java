@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
+import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -277,6 +278,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
             case MOVING -> tickMotion();
             case LEVELING -> {
                 if (phaseTicks >= LEVELING_TICKS) {
+                    triggerArrivalDisplay(serverLevel);
                     playElevatorSound(
                             CoreRoomElevatorModule.ELEVATOR_DOOR_OPEN.get(),
                             1.0F);
@@ -373,6 +375,28 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         double clamped = Mth.clamp(time, 0.0D, 1.0D);
         return clamped * clamped * clamped
                 * (clamped * (clamped * 6.0D - 15.0D) + 10.0D);
+    }
+
+    private void triggerArrivalDisplay(ServerLevel serverLevel) {
+        int floor = currentFloorIndex();
+        if (floor < 0 || floor >= floorHeights.length) return;
+        BlockPos stationPos = new BlockPos(columnX(),
+                floorHeights[floor], columnZ());
+        if (!(serverLevel.getBlockEntity(stationPos)
+                instanceof CoreRoomElevatorModule.StationBlockEntity station)) {
+            return;
+        }
+        ElevatorArrivalDisplayData data = station.arrivalDisplay();
+        if (!data.enabled() || data.sectorLabel().isBlank()) return;
+        AABB passengers = cabinInteriorBox().inflate(0.18D, 0.12D,
+                0.18D);
+        for (ServerPlayer player : serverLevel.players()) {
+            if (!player.isAlive() || player.isSpectator()
+                    || !passengers.intersects(player.getBoundingBox())) {
+                continue;
+            }
+            ScpEntityNetwork.showElevatorArrival(player, data);
+        }
     }
 
     private void playElevatorSound(net.minecraft.sounds.SoundEvent sound,

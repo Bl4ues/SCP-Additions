@@ -594,7 +594,7 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     public Vec3 contextAnchor(boolean up) {
         double modelX = -10.95508D / 16.0D;
         double modelY = (up ? 21.25D : 19.25D) / 16.0D;
-        double modelZ = 11.00251D / 16.0D;
+        double modelZ = -11.00251D / 16.0D;
         Vec3 modelAligned = CoreRoomElevatorGeometry.rotateLocalVector(
                 Direction.EAST, modelX, modelY, modelZ);
         Vec3 facingRotated = CoreRoomElevatorGeometry.rotateLocalVector(

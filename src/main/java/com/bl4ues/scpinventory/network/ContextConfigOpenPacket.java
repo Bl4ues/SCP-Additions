@@ -17,6 +17,8 @@ public class ContextConfigOpenPacket {
     private final double range;
     private final boolean allowE;
     private final boolean allowRightClick;
+    private final boolean allowOffscreen;
+    private final boolean likelyRightClick;
     private final String useItem;
     private final String clickFace;
     private final String rotateWith;
@@ -25,7 +27,8 @@ public class ContextConfigOpenPacket {
     private final double anchorZ;
 
     public ContextConfigOpenPacket(BlockPos pos, String blockId, boolean existing, String action, String name, boolean showName, double range,
-                                   boolean allowE, boolean allowRightClick, String useItem, String clickFace, String rotateWith,
+                                   boolean allowE, boolean allowRightClick, boolean allowOffscreen, boolean likelyRightClick,
+                                   String useItem, String clickFace, String rotateWith,
                                    double anchorX, double anchorY, double anchorZ) {
         this.pos = pos == null ? BlockPos.ZERO : pos;
         this.blockId = blockId == null ? "minecraft:air" : blockId;
@@ -36,6 +39,8 @@ public class ContextConfigOpenPacket {
         this.range = range;
         this.allowE = allowE;
         this.allowRightClick = allowRightClick;
+        this.allowOffscreen = allowOffscreen;
+        this.likelyRightClick = likelyRightClick;
         this.useItem = useItem == null ? "hand" : useItem;
         this.clickFace = clickFace == null ? "front" : clickFace;
         this.rotateWith = rotateWith == null ? "none" : rotateWith;
@@ -54,6 +59,8 @@ public class ContextConfigOpenPacket {
         buf.writeDouble(msg.range);
         buf.writeBoolean(msg.allowE);
         buf.writeBoolean(msg.allowRightClick);
+        buf.writeBoolean(msg.allowOffscreen);
+        buf.writeBoolean(msg.likelyRightClick);
         buf.writeUtf(msg.useItem);
         buf.writeUtf(msg.clickFace);
         buf.writeUtf(msg.rotateWith);
@@ -71,6 +78,8 @@ public class ContextConfigOpenPacket {
                 buf.readUtf(),
                 buf.readBoolean(),
                 buf.readDouble(),
+                buf.readBoolean(),
+                buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readUtf(),
@@ -121,6 +130,14 @@ public class ContextConfigOpenPacket {
 
     public boolean allowRightClick() {
         return allowRightClick;
+    }
+
+    public boolean allowOffscreen() {
+        return allowOffscreen;
+    }
+
+    public boolean likelyRightClick() {
+        return likelyRightClick;
     }
 
     public String useItem() {

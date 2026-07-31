@@ -346,6 +346,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -375,6 +378,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -404,6 +410,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -433,6 +442,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -462,6 +474,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -491,6 +506,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -520,6 +538,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -549,6 +570,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -578,6 +602,9 @@
       },
       "click": {
         "face": "front"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -607,6 +634,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -636,6 +666,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -665,6 +698,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -694,6 +730,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -723,6 +762,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -1912,6 +1954,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -1941,6 +1986,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -1970,6 +2018,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -1999,6 +2050,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {
@@ -2376,6 +2430,9 @@
       },
       "click": {
         "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": true
       }
     },
     {

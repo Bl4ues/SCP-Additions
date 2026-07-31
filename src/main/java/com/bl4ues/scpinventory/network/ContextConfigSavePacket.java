@@ -22,6 +22,7 @@ public class ContextConfigSavePacket {
     private final double range;
     private final boolean allowE;
     private final boolean allowRightClick;
+    private final boolean allowOffscreen;
     private final String useItem;
     private final String clickFace;
     private final String rotateWith;
@@ -30,7 +31,8 @@ public class ContextConfigSavePacket {
     private final double anchorZ;
 
     public ContextConfigSavePacket(BlockPos pos, String blockId, String action, String name, boolean showName, double range,
-                                   boolean allowE, boolean allowRightClick, String useItem, String clickFace, String rotateWith,
+                                   boolean allowE, boolean allowRightClick, boolean allowOffscreen, String useItem,
+                                   String clickFace, String rotateWith,
                                    double anchorX, double anchorY, double anchorZ) {
         this.pos = pos == null ? BlockPos.ZERO : pos;
         this.blockId = blockId == null ? "minecraft:air" : blockId;
@@ -40,6 +42,7 @@ public class ContextConfigSavePacket {
         this.range = range;
         this.allowE = allowE;
         this.allowRightClick = allowRightClick;
+        this.allowOffscreen = allowOffscreen;
         this.useItem = useItem == null ? "hand" : useItem;
         this.clickFace = clickFace == null ? "front" : clickFace;
         this.rotateWith = rotateWith == null ? "none" : rotateWith;
@@ -57,6 +60,7 @@ public class ContextConfigSavePacket {
         buf.writeDouble(msg.range);
         buf.writeBoolean(msg.allowE);
         buf.writeBoolean(msg.allowRightClick);
+        buf.writeBoolean(msg.allowOffscreen);
         buf.writeUtf(msg.useItem);
         buf.writeUtf(msg.clickFace);
         buf.writeUtf(msg.rotateWith);
@@ -75,6 +79,7 @@ public class ContextConfigSavePacket {
                 buf.readDouble(),
                 buf.readBoolean(),
                 buf.readBoolean(),
+                buf.readBoolean(),
                 buf.readUtf(),
                 buf.readUtf(),
                 buf.readUtf(),
@@ -91,7 +96,8 @@ public class ContextConfigSavePacket {
 
             boolean handledAsEntity = ContextEntityConfigManager.saveClientRuleIfEntitySession(
                     player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
-                    msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
+                    msg.allowE, msg.allowRightClick, msg.allowOffscreen, msg.useItem,
+                    msg.clickFace, msg.rotateWith,
                     msg.anchorX, msg.anchorY, msg.anchorZ);
             if (handledAsEntity) {
                 ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
@@ -101,7 +107,8 @@ public class ContextConfigSavePacket {
 
             ConfigCenterService.SaveResult result = ContextConfigSaveService.saveBlockRule(
                     player, msg.pos, msg.blockId, msg.action, msg.name, msg.showName, msg.range,
-                    msg.allowE, msg.allowRightClick, msg.useItem, msg.clickFace, msg.rotateWith,
+                    msg.allowE, msg.allowRightClick, msg.allowOffscreen, msg.useItem,
+                    msg.clickFace, msg.rotateWith,
                     msg.anchorX, msg.anchorY, msg.anchorZ);
             if (!result.success()) {
                 player.sendSystemMessage(Component.literal(

@@ -23,7 +23,7 @@ import org.lwjgl.glfw.GLFW;
 
 public class ContextConfigScreen extends Screen {
     private static final int PANEL_W = 270;
-    private static final int PANEL_H = 366;
+    private static final int PANEL_H = 420;
     private static final int MARGIN = 10;
 
     private final BlockPos pos;
@@ -41,6 +41,8 @@ public class ContextConfigScreen extends Screen {
     private boolean showName;
     private boolean allowE;
     private boolean allowRightClick;
+    private boolean allowOffscreen;
+    private final boolean likelyRightClick;
     private String useItem;
     private String clickFace;
     private String rotateWith;
@@ -58,6 +60,8 @@ public class ContextConfigScreen extends Screen {
         this.showName = packet.showName();
         this.allowE = packet.allowE();
         this.allowRightClick = packet.allowRightClick();
+        this.allowOffscreen = packet.allowOffscreen();
+        this.likelyRightClick = packet.likelyRightClick();
         this.useItem = "card".equalsIgnoreCase(packet.useItem()) ? "card" : "hand";
         this.clickFace = packet.clickFace();
         this.rotateWith = packet.rotateWith();
@@ -123,6 +127,12 @@ public class ContextConfigScreen extends Screen {
             b.setMessage(Component.literal("Rotate: " + rotateWith));
         }).bounds(fieldX + 128, y, 118, 18).build());
 
+        y += 28;
+        addRenderableWidget(Button.builder(Component.literal(offscreenText()), b -> {
+            allowOffscreen = !allowOffscreen;
+            b.setMessage(Component.literal(offscreenText()));
+        }).bounds(fieldX, y, fieldW, 18).build());
+
         int bottomY = top + PANEL_H - 30;
         forgetButton = addRenderableWidget(Button.builder(Component.literal("Forget"), b -> forgetRule()).bounds(left + 12, bottomY, 68, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Save"), b -> save()).bounds(left + PANEL_W - 154, bottomY, 68, 20).build());
@@ -151,12 +161,17 @@ public class ContextConfigScreen extends Screen {
         g.drawString(font, "Name / Display", left + 12, top + 71, 0xFFB7B7B7, false);
         g.drawString(font, "Range / Input / Item", left + 12, top + 107, 0xFFB7B7B7, false);
         g.drawString(font, "Anchor tools", left + 12, top + 142, 0xFFB7B7B7, false);
-        g.drawString(font, "Anchor local", left + 12, top + 242, 0xFFE6E6B0, false);
-        g.drawString(font, "X " + fmt(anchorX) + "  Y " + fmt(anchorY) + "  Z " + fmt(anchorZ), left + 12, top + 254, 0xFFE6E6B0, false);
-        g.drawString(font, "Arrows X/Y, PgUp/PgDn Z, wheel Y", left + 12, top + 270, 0xFF999999, false);
-        g.drawString(font, "Shift=0.10  Ctrl=0.01  normal=0.05", left + 12, top + 282, 0xFF999999, false);
-        g.drawString(font, "Rotate mode now previews final in-world anchor.", left + 12, top + 296, 0xFF88DDEE, false);
-        g.drawString(font, "Forget asks twice, then removes this rule.", left + 12, top + 310, 0xFFFF9D9D, false);
+        g.drawString(font, "Off-screen prompts appear at the edge behind you.", left + 12, top + 242, 0xFF88DDEE, false);
+        g.drawString(font, "Anchor local", left + 12, top + 270, 0xFFE6E6B0, false);
+        g.drawString(font, "X " + fmt(anchorX) + "  Y " + fmt(anchorY) + "  Z " + fmt(anchorZ), left + 12, top + 282, 0xFFE6E6B0, false);
+        g.drawString(font, "Arrows X/Y, PgUp/PgDn Z, wheel Y", left + 12, top + 298, 0xFF999999, false);
+        g.drawString(font, "Shift=0.10  Ctrl=0.01  normal=0.05", left + 12, top + 310, 0xFF999999, false);
+        g.drawString(font, "Rotate mode previews the final in-world anchor.", left + 12, top + 324, 0xFF88DDEE, false);
+        if (!likelyRightClick) {
+            g.drawString(font, "Warning: no right-click interaction was detected.", left + 12, top + 340, 0xFFFFB35C, false);
+            g.drawString(font, "You can still save if this detection is wrong.", left + 12, top + 352, 0xFFFFB35C, false);
+        }
+        g.drawString(font, "Forget asks twice, then removes this rule.", left + 12, top + 370, 0xFFFF9D9D, false);
         super.render(g, mouseX, mouseY, partialTick);
     }
 
@@ -204,7 +219,7 @@ public class ContextConfigScreen extends Screen {
     }
 
     private void save() {
-        ModNetwork.CHANNEL.sendToServer(new ContextConfigSavePacket(pos, blockId, actionBox.getValue(), nameBox.getValue(), showName, parseRange(), allowE, allowRightClick, useItem, clickFace, rotateWith, anchorX, anchorY, anchorZ));
+        ModNetwork.CHANNEL.sendToServer(new ContextConfigSavePacket(pos, blockId, actionBox.getValue(), nameBox.getValue(), showName, parseRange(), allowE, allowRightClick, allowOffscreen, useItem, clickFace, rotateWith, anchorX, anchorY, anchorZ));
         Minecraft.getInstance().setScreen(null);
     }
 
@@ -243,6 +258,11 @@ public class ContextConfigScreen extends Screen {
     private String inputText() {
         if (allowE && allowRightClick) return "Input: Both";
         return allowE ? "Input: E" : "Input: Right";
+    }
+
+    private String offscreenText() {
+        return allowOffscreen ? "Off-screen prompts: On"
+                : "Off-screen prompts: Off";
     }
 
     private String itemText() {

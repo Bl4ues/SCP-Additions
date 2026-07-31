@@ -4,42 +4,6 @@ on:
   push:
     branches:
       - master
-
-permissions:
-  contents: write
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Restore context prompt projection
-        run: |
-          python .github/scripts/fix_context_prompt_projection.py
-          rm .github/scripts/fix_context_prompt_projection.py
-          python - <<'PY'
-          from pathlib import Path
-          Path('.github/workflows/build.yml').write_text('''name: Build
-
-on:
-  push:
-    branches:
-      - master
       - integration/scp-additions-3.0
       - 'feature/**'
   pull_request:
@@ -80,23 +44,3 @@ jobs:
           name: scp-additions-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
-''', encoding='utf-8')
-          PY
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x gradlew
-
-      - name: Build
-        run: ./gradlew clean build --stacktrace
-
-      - name: Commit validated projection fix
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Restore contextual interaction prompt projection"
-            git push origin HEAD:master
-          fi

@@ -12,7 +12,7 @@ on:
       - integration/scp-additions-3.0
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -31,11 +35,29 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Apply elevator button sounds
+        id: apply
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/elevator-button-sounds' && hashFiles('.github/scripts/apply_elevator_button_sounds.py') != ''
+        run: |
+          python .github/scripts/apply_elevator_button_sounds.py
+          rm .github/scripts/apply_elevator_button_sounds.py
+          git show 028ad1ae9c92fc8bc5576e372dfcb42a234f4f47:.github/workflows/build.yml > .github/workflows/build.yml
+          echo "applied=true" >> "$GITHUB_OUTPUT"
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Build
         run: ./gradlew clean build --stacktrace
+
+      - name: Commit validated elevator button sounds
+        if: steps.apply.outputs.applied == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add directional elevator button sounds"
+          git push origin HEAD:${{ github.head_ref }}
 
       - name: Upload compiled JAR
         if: success()

@@ -65,6 +65,9 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
     private static final int MECHANICAL_PAUSE_TICKS = 4;
     private static final int LEVELING_TICKS = 5;
     public static final int TRAVEL_TICKS = 8 * 20;
+    private static final int ARRIVAL_SOUND_LEAD_TICKS = 20;
+    private static final int ARRIVAL_SOUND_MOVING_TICK =
+            TRAVEL_TICKS + LEVELING_TICKS - ARRIVAL_SOUND_LEAD_TICKS;
     private static final double FLOOR_EPSILON = 0.035D;
     private static final int DOOR_COLLISION_THRESHOLD = DOOR_TICKS / 2;
     private static final double BUTTON_HIT_RADIUS_SQR = 0.20D * 0.20D;
@@ -356,6 +359,10 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         double normalized = Mth.clamp(phaseTicks / (double) TRAVEL_TICKS,
                 0.0D, 1.0D);
         double progress = soundSyncedProgress(normalized);
+        if (phaseTicks == ARRIVAL_SOUND_MOVING_TICK
+                && level() instanceof ServerLevel serverLevel) {
+            triggerArrivalCue(serverLevel);
+        }
         setPos(getX(), Mth.lerp(progress, motionStartY, motionEndY), getZ());
         if (phaseTicks >= TRAVEL_TICKS) {
             int target = targetFloorIndex();
@@ -375,6 +382,29 @@ public final class CoreRoomElevatorCarriageEntity extends Entity
         double clamped = Mth.clamp(time, 0.0D, 1.0D);
         return clamped * clamped * clamped
                 * (clamped * (clamped * 6.0D - 15.0D) + 10.0D);
+    }
+
+    private void triggerArrivalCue(ServerLevel serverLevel) {
+        int floor = targetFloorIndex();
+        if (floor < 0 || floor >= floorHeights.length) return;
+        BlockPos stationPos = new BlockPos(columnX(),
+                floorHeights[floor], columnZ());
+        if (!(serverLevel.getBlockEntity(stationPos)
+                instanceof CoreRoomElevatorModule.StationBlockEntity station)) {
+            return;
+        }
+        ElevatorArrivalDisplayData data = station.arrivalDisplay();
+        if (!data.enabled() || data.sectorLabel().isBlank()) return;
+        AABB passengers = cabinInteriorBox().inflate(0.18D, 0.12D,
+                0.18D);
+        for (ServerPlayer player : serverLevel.players()) {
+            if (!player.isAlive() || player.isSpectator()
+                    || !passengers.intersects(player.getBoundingBox())) {
+                continue;
+            }
+            player.playNotifySound(CoreRoomElevatorModule.ZONE_SPLASH.get(),
+                    net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
     }
 
     private void triggerArrivalDisplay(ServerLevel serverLevel) {

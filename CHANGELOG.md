@@ -5,8 +5,7 @@
 ## Interface and presentation
 
 - Added an optional SCP: Unity-inspired custom crosshair, disabled by default, with independent in-game visibility, RGB and alpha controls, a live preview, default reset, cancel, and save-and-reload controls;
-- Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior;
-- Refined the Core Room elevator arrival display's text scale and spacing to more closely match SCP: Unity.
+- Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior.
 
 ## Creative inventory organization
 
@@ -85,7 +84,7 @@
 
 ## Facility construction
 
-- Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
+- Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel; Also, if clicked with a Screwdriver in the Elevator Station, a sector and level can be configured to be displayed while arriving in the destination, e.g. "Light Containment Zone - Sublevel 01" just like in SCP Unity;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;

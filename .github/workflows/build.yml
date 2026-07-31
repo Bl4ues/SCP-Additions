@@ -37,26 +37,9 @@ jobs:
 
       - name: Apply prepared elevator repair
         if: github.event_name == 'pull_request' && github.head_ref == 'fix/elevator-collision-prompts-v3'
-        shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          workflow = Path('.github/workflows/apply-elevator-fix-v3.yml')
-          lines = workflow.read_text(encoding='utf-8').splitlines()
-          start = next(i for i, line in enumerate(lines)
-                       if line.strip() == "python - <<'PY'") + 1
-          end = next(i for i in range(start, len(lines))
-                     if lines[i].strip() == 'PY')
-          body = lines[start:end]
-          first = next(line for line in body if line.strip())
-          indent = len(first) - len(first.lstrip())
-          script = '\n'.join(
-              line[indent:] if line.startswith(' ' * indent) else line
-              for line in body) + '\n'
-          Path('/tmp/apply_elevator_fix_v3.py').write_text(script,
-                                                           encoding='utf-8')
-          PY
-          python /tmp/apply_elevator_fix_v3.py
+          python tools/hotfix/apply_elevator_fix_v3.py
+          rm -f tools/hotfix/apply_elevator_fix_v3.py
           rm -f tools/hotfix/APPLY_ELEVATOR_FIX_V3
           rm -f .github/workflows/apply-elevator-fix-v3.yml
 

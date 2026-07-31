@@ -94,7 +94,7 @@
 
 - Added an **Off-screen prompts** option to the contextual-interaction editor, allowing selected block prompts to remain available at the edge of the screen while behind the player;
 - Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
-- Added a non-blocking editor warning when the selected block probably has no native right-click interaction.
+- Added a warning in the visual anchor editor when the selected block probably has no native right-click interaction.
 
 ## Accessibility
 

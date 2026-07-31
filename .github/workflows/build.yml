@@ -35,37 +35,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Apply contextual off-screen prompt feature
-        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/context-offscreen-prompts')
+      - name: Format contextual interaction defaults
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts-v2'
         run: |
           python - <<'PY'
+          import json
           from pathlib import Path
-          path = Path('.github/scripts/apply_context_offscreen_prompts.py')
-          text = path.read_text(encoding='utf-8')
-          old = '''def replace_once(text: str, old: str, new: str, label: str) -> str:
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"{label}: expected one occurrence, found {count}")
-              return text.replace(old, new, 1)
-          '''
-          new = '''def replace_once(text: str, old: str, new: str, label: str) -> str:
-              count = text.count(old)
-              if label == "save packet entity dispatch" and count == 2:
-                  return text.replace(old, new)
-              if label == "save packet block dispatch" and count == 0:
-                  return text
-              if count != 1:
-                  raise SystemExit(f"{label}: expected one occurrence, found {count}")
-              return text.replace(old, new, 1)
-          '''
-          if old not in text:
-              raise SystemExit('Could not patch replace_once helper')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          paths = [
+              Path('config/scpinventory/context_interactions.json'),
+              Path('src/main/resources/defaults/scpinventory/context_interactions.json'),
+          ]
+          for path in paths:
+              data = json.loads(path.read_text(encoding='utf-8'))
+              path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
           PY
-          python .github/scripts/apply_context_offscreen_prompts.py
-          rm .github/scripts/apply_context_offscreen_prompts.py
-          rm -f tools/hotfix/TRIGGER_CONTEXT_OFFSCREEN
-          git show origin/master:.github/workflows/build.yml > .github/workflows/build.yml
+          rm -f tools/hotfix/FORMAT_CONTEXT_OFFSCREEN_DEFAULTS
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -73,17 +57,17 @@ jobs:
       - name: Build
         run: ./gradlew clean build --stacktrace
 
-      - name: Commit validated contextual prompt feature
-        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/context-offscreen-prompts')
+      - name: Commit formatted contextual defaults
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts-v2'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No formatting changes to commit."
           else
-            git commit -m "Add configurable off-screen context prompts"
-            git push origin HEAD:${{ github.head_ref }}
+            git commit -m "Format contextual interaction defaults"
+            git push origin HEAD:feature/context-offscreen-prompts-v2
           fi
 
       - name: Upload compiled JAR

@@ -42,6 +42,7 @@ jobs:
         run: |
           python tools/hotfix/apply_ui_resource_followup.py
           rm tools/hotfix/apply_ui_resource_followup.py
+          rm -f tools/hotfix/RUN_UI_RESOURCE_FOLLOWUP
           git show 41a8612c7cd1613d93fb41c6f1ad27d61c57cf88:.github/workflows/build.yml > .github/workflows/build.yml
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

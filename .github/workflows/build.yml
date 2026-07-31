@@ -36,7 +36,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Apply contextual off-screen prompt feature
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts'
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/context-offscreen-prompts')
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -74,7 +74,7 @@ jobs:
         run: ./gradlew clean build --stacktrace
 
       - name: Commit validated contextual prompt feature
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/context-offscreen-prompts'
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/context-offscreen-prompts')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -83,7 +83,7 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "Add configurable off-screen context prompts"
-            git push origin HEAD:feature/context-offscreen-prompts
+            git push origin HEAD:${{ github.head_ref }}
           fi
 
       - name: Upload compiled JAR

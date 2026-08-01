@@ -30,4 +30,12 @@ public class Keybinds {
             GLFW.GLFW_KEY_K,
             "key.categories.scpinventory"
     );
+
+    public static final KeyMapping STOW_HELD_ITEM = new KeyMapping(
+            "key.scpinventory.stow_held_item",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_H,
+            "key.categories.scpinventory"
+    );
 }

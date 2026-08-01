@@ -10,7 +10,6 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.sound.GameplaySounds;
 
 import javax.annotation.Nullable;
@@ -45,9 +44,7 @@ public final class SaveGameSoundEvents {
         SpawnSnapshot current = snapshot(player);
         SpawnSnapshot previous = LAST_SPAWNS.put(player.getUUID(), current);
         if (previous == null || previous.equals(current)
-                || current.position() == null
-                || !ScpAdditionsModulesConfig.get().audio
-                .saveGameSoundEnabled) return;
+                || current.position() == null) return;
         player.playNotifySound(GameplaySounds.SAVE_GAME.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
     }

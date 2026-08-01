@@ -9,7 +9,8 @@
   },
   "inventory": {
     "enabled": true,
-    "remember_ui_state": true
+    "remember_ui_state": true,
+    "require_equipped_weapon_to_attack": false
   },
   "interactions": {
     "enabled": true,

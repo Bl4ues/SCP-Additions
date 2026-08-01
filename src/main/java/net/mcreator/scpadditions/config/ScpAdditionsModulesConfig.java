@@ -148,6 +148,9 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("custom_oxygen_bar")
 		public boolean customOxygenBar = true;
+
+		@SerializedName("action_bars_roboto")
+		public boolean actionBarsRoboto = true;
 	}
 
 	public static final class Interactions extends Toggle {

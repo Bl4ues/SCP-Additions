@@ -47,6 +47,7 @@ public final class ClientModulePreferences {
             "hud.hide_empty_hand",
             "hud.disable_experience_bar",
             "hud.custom_oxygen_bar",
+            "hud.action_bars_roboto",
             "vitals.custom_health_enabled",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
@@ -118,6 +119,8 @@ public final class ClientModulePreferences {
                 "disable_experience_bar", next.hud.disableExperienceBar);
         next.hud.customOxygenBar = bool(hud, "custom_oxygen_bar",
                 next.hud.customOxygenBar);
+        next.hud.actionBarsRoboto = bool(hud, "action_bars_roboto",
+                next.hud.actionBarsRoboto);
 
         JsonObject vitals = object(modules, "vitals");
         next.vitals.customHealthEnabled = bool(vitals,
@@ -179,6 +182,7 @@ public final class ClientModulePreferences {
         hud.addProperty("disable_experience_bar",
                 value.hud.disableExperienceBar);
         hud.addProperty("custom_oxygen_bar", value.hud.customOxygenBar);
+        hud.addProperty("action_bars_roboto", value.hud.actionBarsRoboto);
 
         object(modules, "vitals").addProperty("custom_health_enabled",
                 value.vitals.customHealthEnabled);
@@ -263,6 +267,7 @@ public final class ClientModulePreferences {
                 value.hud.hideEmptyHand,
                 value.hud.disableExperienceBar,
                 value.hud.customOxygenBar,
+                value.hud.actionBarsRoboto,
                 value.crosshair.enabled,
                 value.crosshair.inGameEnabled,
                 (float) value.crosshair.red,
@@ -352,6 +357,7 @@ public final class ClientModulePreferences {
         private boolean hideEmptyHand = true;
         private boolean disableExperienceBar = true;
         private boolean customOxygenBar = true;
+        private boolean actionBarsRoboto = true;
     }
 
     private static final class Vitals {

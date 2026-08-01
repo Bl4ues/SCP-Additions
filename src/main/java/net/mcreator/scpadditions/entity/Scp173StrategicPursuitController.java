@@ -26,23 +26,25 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Supplies a second, conservative pursuit pass after entity ticks. It acts only
- * when SCP-173 had a valid movement opportunity but made no progress, allowing
- * it to retain a route, approach a newly closed door, and reacquire its target
- * without adding a second normal movement step.
+ * Repairs a stalled SCP-173 movement opportunity after the entity's own tick.
+ * Fresh shortest-path nodes always outrank remembered detours, including during
+ * automatic blinks. The corrective step consumes the same six-block automatic
+ * blink budget instead of granting additional travel.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class Scp173StrategicPursuitController {
     private static final double SEARCH_RANGE = 48.0D;
+    private static final double SEARCH_RANGE_SQR = SEARCH_RANGE * SEARCH_RANGE;
     private static final double MOVEMENT_EPSILON_SQR = 0.035D * 0.035D;
-    private static final double NODE_REACHED_SQR = 0.58D * 0.58D;
-    private static final double TARGET_REPLAN_SQR = 1.5D * 1.5D;
-    private static final double ROUTE_FIRST_NODE_DIFFERENCE_SQR = 0.45D * 0.45D;
-    private static final double ROUTE_ENDPOINT_IMPROVEMENT_SQR = 0.65D;
-    private static final double MIN_USEFUL_STEP = 0.055D;
-    private static final double ASSISTED_STEP = 0.72D;
-    private static final double MANUAL_BLINK_ASSISTED_STEP = 0.58D;
-    private static final int REPLAN_INTERVAL_TICKS = 4;
+    private static final double NODE_REACHED_SQR = 0.52D * 0.52D;
+    private static final double MIN_USEFUL_STEP = 0.045D;
+    private static final double DIRECT_STEP = 1.20D;
+    private static final double BLINK_STEP = 0.95D;
+    private static final double AUTOMATIC_BLINK_DISTANCE = 6.0D;
+    private static final double STOP_DISTANCE = 0.72D;
+    private static final double SWEEP_SAMPLE_DISTANCE = 0.16D;
+    private static final double MAX_UP_STEP = 1.05D;
+    private static final double MAX_DOWN_STEP = 1.00D;
     private static final int ROUTE_MEMORY_TICKS = 100;
     private static final int MAX_ROUTE_NODES = 128;
 
@@ -54,6 +56,10 @@ public final class Scp173StrategicPursuitController {
     private static final Method SET_MANUAL_YAW = method(
             "setManualYaw", float.class);
     private static final Method HARD_STOP = method("hardStopLocalMovement");
+    private static final Method CONSUME_AUTOMATIC_BLINK = method(
+            "consumeAutomaticBlinkTravel", Player.class, double.class);
+    private static final Field AUTOMATIC_BLINK_REMAINING = field(
+            "automaticBlinkTravelRemaining");
     private static final Field SCRAPING = field("SCRAPING");
     private static boolean reflectionWarningLogged;
 
@@ -87,92 +93,104 @@ public final class Scp173StrategicPursuitController {
         state.lastLevel = level.dimension();
 
         Vec3 current = statue.position();
-        if (state.lastPosition == null) {
-            state.lastPosition = current;
-        }
+        if (state.lastPosition == null) state.lastPosition = current;
 
         if (!ScpAdditionsModulesConfig.get().scp173.enabled
                 || !statue.isAlive() || statue.isRemoved()
                 || !statue.isActivated()) {
+            setScraping(statue, false);
             state.reset(current);
             return;
         }
 
         LivingEntity target = resolveTarget(level, statue);
         if (target == null) {
+            setScraping(statue, false);
             state.reset(current);
             return;
         }
 
         prepareTarget(state, target);
-        long gameTime = level.getGameTime();
-        boolean targetShifted = state.lastTargetPosition == null
-                || horizontalDistanceSqr(state.lastTargetPosition,
-                        target.position()) >= TARGET_REPLAN_SQR;
-        if (targetShifted || gameTime >= state.nextReplanGameTime) {
-            considerFreshRoute(statue, target, state, gameTime);
-        }
-
         boolean movedNormally = current.distanceToSqr(state.lastPosition)
                 > MOVEMENT_EPSILON_SQR;
         state.lastPosition = current;
-        state.lastTargetPosition = target.position();
         if (movedNormally) {
-            state.stallAttempts = 0;
+            state.routeExpiresGameTime = level.getGameTime()
+                    + ROUTE_MEMORY_TICKS;
             trimReachedNodes(statue.position(), state);
             return;
         }
 
         if (isObservationLocked(statue)) {
+            setScraping(statue, false);
             return;
         }
 
-        if (target instanceof Player player
-                && BlinkServerState.isBlinkClosed(player)
-                && !BlinkServerState.isManualBlink(player)) {
-            // Automatic blinks already have a hard travel budget inside the
-            // entity. Never let the corrective pass spend beyond that budget.
+        double maximumStep = maximumStep(statue, target);
+        if (maximumStep <= MIN_USEFUL_STEP) {
+            setScraping(statue, false);
             return;
         }
 
-        state.stallAttempts++;
-        if (state.stallAttempts >= 2
-                || gameTime >= state.nextReplanGameTime) {
-            considerFreshRoute(statue, target, state, gameTime);
+        long gameTime = level.getGameTime();
+        Vec3 step = shortestFreshPathStep(statue, target, state,
+                maximumStep, gameTime);
+        if (!isUseful(step)) {
+            step = rememberedRouteStep(statue, state, maximumStep, gameTime);
+        }
+        if (!isUseful(step)) {
+            step = directStagingStep(statue, target, maximumStep);
         }
 
-        double maximumStep = target instanceof Player player
-                && BlinkServerState.isBlinkClosed(player)
-                ? MANUAL_BLINK_ASSISTED_STEP : ASSISTED_STEP;
-        Vec3 step = stepAlongRememberedRoute(statue, state, maximumStep);
-        if (step.lengthSqr() <= MIN_USEFUL_STEP * MIN_USEFUL_STEP) {
-            // Even without a complete path, advance to the last physically
-            // reachable point before the obstruction instead of stopping in the
-            // middle of the previous room.
-            step = largestClearStep(statue,
-                    horizontalDirection(statue.position(), target.position()),
-                    maximumStep);
-        }
-
-        if (step.lengthSqr() <= MIN_USEFUL_STEP * MIN_USEFUL_STEP) {
+        if (!isUseful(step)) {
+            setScraping(statue, false);
+            statue.getNavigation().stop();
+            hardStop(statue);
             return;
         }
 
+        Vec3 before = statue.position();
         applyStrategicStep(statue, step);
+        double moved = statue.position().distanceTo(before);
+        if (moved <= MIN_USEFUL_STEP) {
+            setScraping(statue, false);
+            state.lastPosition = statue.position();
+            return;
+        }
+
+        setScraping(statue, true);
+        consumeBlinkBudget(target, statue, moved);
         state.lastPosition = statue.position();
-        state.stallAttempts = 0;
         state.routeExpiresGameTime = gameTime + ROUTE_MEMORY_TICKS;
         trimReachedNodes(statue.position(), state);
     }
 
     private static LivingEntity resolveTarget(ServerLevel level,
             Scp173Entity statue) {
+        Player nearestPlayer = null;
+        double nearestPlayerDistance = Double.MAX_VALUE;
+        AABB area = statue.getBoundingBox().inflate(SEARCH_RANGE);
+        for (Player player : level.getEntitiesOfClass(Player.class, area,
+                Scp173StrategicPursuitController::isValidPlayer)) {
+            double distance = statue.distanceToSqr(player);
+            if (distance <= SEARCH_RANGE_SQR
+                    && distance < nearestPlayerDistance) {
+                nearestPlayerDistance = distance;
+                nearestPlayer = player;
+            }
+        }
+        if (nearestPlayer != null) {
+            if (statue.getTarget() != nearestPlayer) {
+                statue.setTarget(nearestPlayer);
+            }
+            return nearestPlayer;
+        }
+
         LivingEntity current = statue.getTarget();
         if (isValidTarget(current)) return current;
 
         LivingEntity best = null;
         double bestDistance = Double.MAX_VALUE;
-        AABB area = statue.getBoundingBox().inflate(SEARCH_RANGE);
         for (LivingEntity candidate : level.getEntitiesOfClass(
                 LivingEntity.class, area,
                 entity -> entity != statue && isValidTarget(entity))) {
@@ -186,13 +204,16 @@ public final class Scp173StrategicPursuitController {
         return best;
     }
 
+    private static boolean isValidPlayer(Player player) {
+        return player != null && player.isAlive()
+                && !player.isCreative() && !player.isSpectator();
+    }
+
     private static boolean isValidTarget(LivingEntity entity) {
         if (entity == null || !entity.isAlive() || entity.isRemoved()) {
             return false;
         }
-        if (entity instanceof Player player) {
-            return !player.isCreative() && !player.isSpectator();
-        }
+        if (entity instanceof Player player) return isValidPlayer(player);
         return Scp173TargetConfig.isConfiguredTarget(entity);
     }
 
@@ -203,39 +224,28 @@ public final class Scp173StrategicPursuitController {
         state.routeIndex = 0;
         state.targetId = target.getUUID();
         state.lastTargetPosition = target.position();
-        state.routeEndpointDistanceSqr = Double.POSITIVE_INFINITY;
         state.routeExpiresGameTime = Long.MIN_VALUE;
-        state.nextReplanGameTime = 0L;
-        state.stallAttempts = 0;
     }
 
-    private static void considerFreshRoute(Scp173Entity statue,
-            LivingEntity target, PursuitState state, long gameTime) {
-        state.nextReplanGameTime = gameTime + REPLAN_INTERVAL_TICKS;
+    /**
+     * Rebuilds the path on every stalled opportunity. This is deliberate: an
+     * opened door must beat every remembered plan immediately, not after a
+     * replan cooldown or a collection of failed collision attempts.
+     */
+    private static Vec3 shortestFreshPathStep(Scp173Entity statue,
+            LivingEntity target, PursuitState state, double maximumStep,
+            long gameTime) {
         Path path = statue.getNavigation().createPath(target, 0);
         List<Vec3> fresh = capturePath(statue, path);
         trimReachedNodes(statue.position(), fresh);
-        if (fresh.isEmpty()) return;
-
-        Vec3 endpoint = fresh.get(fresh.size() - 1);
-        double endpointDistance = horizontalDistanceSqr(endpoint,
-                target.position());
-        boolean currentUsable = hasUsableRoute(state, gameTime);
-        boolean currentBlocked = currentUsable
-                && !hasClearStepToCurrentNode(statue, state);
-        boolean clearlyBetter = !currentUsable
-                || endpointDistance + ROUTE_ENDPOINT_IMPROVEMENT_SQR
-                < state.routeEndpointDistanceSqr;
-        boolean usefulAlternative = state.stallAttempts > 0
-                && (currentBlocked || firstNodeDiffers(fresh, state));
-
-        if (!clearlyBetter && !usefulAlternative) return;
+        if (fresh.isEmpty()) return Vec3.ZERO;
 
         state.route.clear();
         state.route.addAll(fresh);
         state.routeIndex = 0;
-        state.routeEndpointDistanceSqr = endpointDistance;
+        state.lastTargetPosition = target.position();
         state.routeExpiresGameTime = gameTime + ROUTE_MEMORY_TICKS;
+        return stepTowardWaypoint(statue, fresh.get(0), maximumStep);
     }
 
     private static List<Vec3> capturePath(Scp173Entity statue, Path path) {
@@ -247,7 +257,8 @@ public final class Scp173StrategicPursuitController {
         while (!path.isDone() && safety++ < MAX_ROUTE_NODES) {
             Vec3 node = path.getNextEntityPos(statue);
             if (previous == null
-                    || horizontalDistanceSqr(previous, node) > 0.01D) {
+                    || horizontalDistanceSqr(previous, node) > 0.01D
+                    || Math.abs(previous.y - node.y) > 0.01D) {
                 nodes.add(node);
                 previous = node;
             }
@@ -256,72 +267,142 @@ public final class Scp173StrategicPursuitController {
         return nodes;
     }
 
-    private static Vec3 stepAlongRememberedRoute(Scp173Entity statue,
-            PursuitState state, double maximumStep) {
+    private static Vec3 rememberedRouteStep(Scp173Entity statue,
+            PursuitState state, double maximumStep, long gameTime) {
+        if (gameTime > state.routeExpiresGameTime) return Vec3.ZERO;
         trimReachedNodes(statue.position(), state);
         if (state.routeIndex >= state.route.size()) return Vec3.ZERO;
-        Vec3 direction = horizontalDirection(statue.position(),
-                state.route.get(state.routeIndex));
-        return largestClearStep(statue, direction, maximumStep);
+        return stepTowardWaypoint(statue,
+                state.route.get(state.routeIndex), maximumStep);
+    }
+
+    private static Vec3 directStagingStep(Scp173Entity statue,
+            LivingEntity target, double maximumStep) {
+        Vec3 delta = target.position().subtract(statue.position());
+        Vec3 horizontal = new Vec3(delta.x, 0.0D, delta.z);
+        double distance = horizontal.length();
+        if (distance <= STOP_DISTANCE) return Vec3.ZERO;
+        double travel = Math.min(maximumStep, distance - STOP_DISTANCE);
+        if (travel <= MIN_USEFUL_STEP) return Vec3.ZERO;
+        return largestClearStep(statue,
+                horizontal.scale(1.0D / distance).scale(travel));
+    }
+
+    private static Vec3 stepTowardWaypoint(Scp173Entity statue,
+            Vec3 waypoint, double maximumStep) {
+        Vec3 delta = waypoint.subtract(statue.position());
+        Vec3 horizontal = new Vec3(delta.x, 0.0D, delta.z);
+        double horizontalLength = horizontal.length();
+        if (horizontalLength <= 0.001D) {
+            double vertical = Mth.clamp(delta.y, -MAX_DOWN_STEP, MAX_UP_STEP);
+            Vec3 verticalStep = new Vec3(0.0D, vertical, 0.0D);
+            return largestClearStep(statue, verticalStep);
+        }
+
+        double horizontalTravel = Math.min(maximumStep, horizontalLength);
+        double vertical = horizontalLength <= maximumStep * 1.25D
+                ? Mth.clamp(delta.y, -MAX_DOWN_STEP, MAX_UP_STEP) : 0.0D;
+        Vec3 desired = horizontal.scale(1.0D / horizontalLength)
+                .scale(horizontalTravel).add(0.0D, vertical, 0.0D);
+        return largestClearStep(statue, desired);
     }
 
     private static Vec3 largestClearStep(Scp173Entity statue,
-            Vec3 normalizedDirection, double maximumStep) {
-        if (normalizedDirection.lengthSqr() <= 0.000001D
-                || maximumStep <= MIN_USEFUL_STEP) {
-            return Vec3.ZERO;
-        }
-
-        Vec3 full = normalizedDirection.scale(maximumStep);
-        if (canMoveBy(statue, full)) return full;
+            Vec3 desired) {
+        if (!isUseful(desired)) return Vec3.ZERO;
+        if (canSweepBy(statue, desired)) return desired;
 
         double low = 0.0D;
-        double high = maximumStep;
-        for (int attempt = 0; attempt < 9; attempt++) {
+        double high = 1.0D;
+        for (int attempt = 0; attempt < 10; attempt++) {
             double middle = (low + high) * 0.5D;
-            Vec3 candidate = normalizedDirection.scale(middle);
-            if (canMoveBy(statue, candidate)) low = middle;
+            Vec3 candidate = desired.scale(middle);
+            if (canSweepBy(statue, candidate)) low = middle;
             else high = middle;
         }
-        return low >= MIN_USEFUL_STEP
-                ? normalizedDirection.scale(low) : Vec3.ZERO;
-    }
-
-    private static boolean canMoveBy(Scp173Entity statue, Vec3 step) {
-        return step != null && step.lengthSqr() > 0.000001D
-                && statue.level().noCollision(statue,
-                        statue.getBoundingBox().move(step));
-    }
-
-    private static boolean hasClearStepToCurrentNode(Scp173Entity statue,
-            PursuitState state) {
-        if (state.routeIndex >= state.route.size()) return false;
-        Vec3 direction = horizontalDirection(statue.position(),
-                state.route.get(state.routeIndex));
-        return largestClearStep(statue, direction, ASSISTED_STEP)
-                .lengthSqr() > MIN_USEFUL_STEP * MIN_USEFUL_STEP;
-    }
-
-    private static boolean firstNodeDiffers(List<Vec3> fresh,
-            PursuitState state) {
-        if (fresh.isEmpty() || state.routeIndex >= state.route.size()) {
-            return true;
+        if (low > 0.0D) {
+            Vec3 shortened = desired.scale(low);
+            if (isUseful(shortened)) return shortened;
         }
-        return horizontalDistanceSqr(fresh.get(0),
-                state.route.get(state.routeIndex))
-                >= ROUTE_FIRST_NODE_DIFFERENCE_SQR;
+
+        // A diagonal approach can catch one edge of a narrow doorway. Preserve
+        // the pathfinder's intent but align one axis at a time toward its node.
+        Vec3 xOnly = new Vec3(desired.x, desired.y, 0.0D);
+        Vec3 zOnly = new Vec3(0.0D, desired.y, desired.z);
+        Vec3 first = Math.abs(desired.x) >= Math.abs(desired.z)
+                ? xOnly : zOnly;
+        Vec3 second = first == xOnly ? zOnly : xOnly;
+        if (isUseful(first) && canSweepBy(statue, first)) return first;
+        if (isUseful(second) && canSweepBy(statue, second)) return second;
+        return Vec3.ZERO;
     }
 
-    private static boolean hasUsableRoute(PursuitState state,
-            long gameTime) {
-        return gameTime <= state.routeExpiresGameTime
-                && state.routeIndex < state.route.size();
+    private static boolean canSweepBy(Scp173Entity statue, Vec3 step) {
+        if (!isUseful(step)) return false;
+        int samples = Math.max(1, (int) Math.ceil(step.length()
+                / SWEEP_SAMPLE_DISTANCE));
+        for (int sample = 1; sample <= samples; sample++) {
+            Vec3 partial = step.scale(sample / (double) samples);
+            if (!statue.level().noCollision(statue,
+                    statue.getBoundingBox().move(partial))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isUseful(Vec3 step) {
+        return step != null && step.lengthSqr()
+                > MIN_USEFUL_STEP * MIN_USEFUL_STEP;
+    }
+
+    private static double maximumStep(Scp173Entity statue,
+            LivingEntity target) {
+        if (!(target instanceof Player player)
+                || !BlinkServerState.isBlinkClosed(player)) {
+            return DIRECT_STEP;
+        }
+        if (BlinkServerState.isManualBlink(player)) return BLINK_STEP;
+
+        double remaining = automaticBlinkRemaining(statue, player);
+        if (remaining <= MIN_USEFUL_STEP) return 0.0D;
+        return Math.min(BLINK_STEP, remaining);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static double automaticBlinkRemaining(Scp173Entity statue,
+            Player player) {
+        if (AUTOMATIC_BLINK_REMAINING == null) return 0.0D;
+        try {
+            Map<UUID, Double> remaining = (Map<UUID, Double>)
+                    AUTOMATIC_BLINK_REMAINING.get(statue);
+            return remaining.getOrDefault(player.getUUID(),
+                    AUTOMATIC_BLINK_DISTANCE);
+        } catch (ReflectiveOperationException exception) {
+            warnReflection(exception);
+            return 0.0D;
+        }
+    }
+
+    private static void consumeBlinkBudget(LivingEntity target,
+            Scp173Entity statue, double distance) {
+        if (!(target instanceof Player player)
+                || !BlinkServerState.isBlinkClosed(player)
+                || BlinkServerState.isManualBlink(player)
+                || CONSUME_AUTOMATIC_BLINK == null) {
+            return;
+        }
+        try {
+            CONSUME_AUTOMATIC_BLINK.invoke(statue, player, distance);
+        } catch (ReflectiveOperationException exception) {
+            warnReflection(exception);
+        }
     }
 
     private static void trimReachedNodes(Vec3 position,
             PursuitState state) {
         while (state.routeIndex < state.route.size()
-                && horizontalDistanceSqr(position,
+                && distanceSqr(position,
                         state.route.get(state.routeIndex))
                 <= NODE_REACHED_SQR) {
             state.routeIndex++;
@@ -330,18 +411,9 @@ public final class Scp173StrategicPursuitController {
 
     private static void trimReachedNodes(Vec3 position, List<Vec3> nodes) {
         while (!nodes.isEmpty()
-                && horizontalDistanceSqr(position, nodes.get(0))
-                <= NODE_REACHED_SQR) {
+                && distanceSqr(position, nodes.get(0)) <= NODE_REACHED_SQR) {
             nodes.remove(0);
         }
-    }
-
-    private static Vec3 horizontalDirection(Vec3 from, Vec3 to) {
-        if (from == null || to == null) return Vec3.ZERO;
-        Vec3 horizontal = new Vec3(to.x - from.x, 0.0D, to.z - from.z);
-        double length = horizontal.length();
-        return length <= 0.000001D
-                ? Vec3.ZERO : horizontal.scale(1.0D / length);
     }
 
     private static double horizontalDistanceSqr(Vec3 first, Vec3 second) {
@@ -349,6 +421,11 @@ public final class Scp173StrategicPursuitController {
         double x = first.x - second.x;
         double z = first.z - second.z;
         return x * x + z * z;
+    }
+
+    private static double distanceSqr(Vec3 first, Vec3 second) {
+        return first == null || second == null
+                ? Double.POSITIVE_INFINITY : first.distanceToSqr(second);
     }
 
     private static boolean isObservationLocked(Scp173Entity statue) {
@@ -366,13 +443,19 @@ public final class Scp173StrategicPursuitController {
     }
 
     @SuppressWarnings("unchecked")
+    private static void setScraping(Scp173Entity statue, boolean value) {
+        if (SCRAPING == null) return;
+        try {
+            EntityDataAccessor<Boolean> accessor =
+                    (EntityDataAccessor<Boolean>) SCRAPING.get(null);
+            statue.getEntityData().set(accessor, value);
+        } catch (ReflectiveOperationException exception) {
+            warnReflection(exception);
+        }
+    }
+
     private static void applyStrategicStep(Scp173Entity statue, Vec3 step) {
         try {
-            if (SCRAPING != null) {
-                EntityDataAccessor<Boolean> accessor =
-                        (EntityDataAccessor<Boolean>) SCRAPING.get(null);
-                statue.getEntityData().set(accessor, true);
-            }
             float yaw = (float) (Mth.atan2(step.z, step.x)
                     * Mth.RAD_TO_DEG) - 90.0F;
             if (SET_MANUAL_YAW != null) SET_MANUAL_YAW.invoke(statue, yaw);
@@ -380,16 +463,27 @@ public final class Scp173StrategicPursuitController {
             else statue.setPos(statue.getX() + step.x,
                     statue.getY() + step.y, statue.getZ() + step.z);
             statue.getNavigation().stop();
-            if (HARD_STOP != null) HARD_STOP.invoke(statue);
-            else statue.setDeltaMovement(Vec3.ZERO);
+            hardStop(statue);
         } catch (ReflectiveOperationException exception) {
             warnReflection(exception);
-            if (canMoveBy(statue, step)) {
+            if (canSweepBy(statue, step)) {
                 statue.setPos(statue.getX() + step.x,
                         statue.getY() + step.y, statue.getZ() + step.z);
                 statue.setDeltaMovement(Vec3.ZERO);
             }
         }
+    }
+
+    private static void hardStop(Scp173Entity statue) {
+        if (HARD_STOP != null) {
+            try {
+                HARD_STOP.invoke(statue);
+                return;
+            } catch (ReflectiveOperationException exception) {
+                warnReflection(exception);
+            }
+        }
+        statue.setDeltaMovement(Vec3.ZERO);
     }
 
     private static Method method(String name, Class<?>... parameters) {
@@ -429,10 +523,7 @@ public final class Scp173StrategicPursuitController {
         private Vec3 lastPosition;
         private Vec3 lastTargetPosition;
         private int routeIndex;
-        private int stallAttempts;
         private long routeExpiresGameTime = Long.MIN_VALUE;
-        private long nextReplanGameTime;
-        private double routeEndpointDistanceSqr = Double.POSITIVE_INFINITY;
 
         private void reset(Vec3 position) {
             route.clear();
@@ -440,10 +531,7 @@ public final class Scp173StrategicPursuitController {
             lastPosition = position;
             lastTargetPosition = null;
             routeIndex = 0;
-            stallAttempts = 0;
             routeExpiresGameTime = Long.MIN_VALUE;
-            nextReplanGameTime = 0L;
-            routeEndpointDistanceSqr = Double.POSITIVE_INFINITY;
         }
     }
 }

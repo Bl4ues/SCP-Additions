@@ -10,7 +10,8 @@
   "inventory": {
     "enabled": true,
     "remember_ui_state": true,
-    "require_equipped_weapon_to_attack": false
+    "require_equipped_weapon_to_attack": false,
+    "custom_hotbar": false
   },
   "interactions": {
     "enabled": true,

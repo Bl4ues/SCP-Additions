@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -438,38 +439,45 @@ public final class ClientPreferenceModulesUi {
 
     private static void renderHomeDisclaimer(GuiGraphics graphics,
             Screen screen) {
+        Font font = Minecraft.getInstance().font;
         int panelWidth = Math.min(420, screen.width - 20);
         int panelHeight = Math.min(310, screen.height - 20);
         int panelX = Math.max(8, (screen.width - panelWidth) / 2);
         int panelY = Math.max(10, (screen.height - panelHeight) / 2);
         graphics.fill(panelX + 10, panelY + 27,
                 panelX + panelWidth - 10, panelY + 49, PANEL);
-        graphics.drawString(screen.getMinecraft().font,
+        graphics.drawString(font,
                 ScpFonts.roboto("Personal preferences apply only to you."),
                 panelX + 14, panelY + 29, PERSONAL, false);
-        graphics.drawString(screen.getMinecraft().font,
+        graphics.drawString(font,
                 ScpFonts.roboto("World and gameplay rules require the host or an operator."),
                 panelX + 14, panelY + 40, MUTED, false);
     }
 
     private static void renderModuleDisclaimer(GuiGraphics graphics,
             Screen screen) {
+        Font font = Minecraft.getInstance().font;
         int panelWidth = Math.min(560, screen.width - 20);
-        int panelHeight = Math.min(380, screen.height - 16);
+        int rowCount;
+        try {
+            rowCount = rowScopes(screen).size();
+        } catch (ReflectiveOperationException ignored) {
+            rowCount = 8;
+        }
+        int preferredHeight = rowCount <= 4 ? 240 : 380;
+        int panelHeight = Math.min(preferredHeight, screen.height - 16);
         int panelX = Math.max(8, (screen.width - panelWidth) / 2);
         int panelY = Math.max(8, (screen.height - panelHeight) / 2);
         graphics.fill(panelX + 10, panelY + 27,
                 panelX + panelWidth - 10, panelY + 41, PANEL);
-        graphics.drawString(screen.getMinecraft().font,
+        graphics.drawString(font,
                 ScpFonts.roboto("Personal: per-player presentation"),
                 panelX + 16, panelY + 30, PERSONAL, false);
         String hostText = canEditServer()
                 ? "Host: world and gameplay rules"
                 : "Host: locked without operator permission";
-        int hostWidth = screen.getMinecraft().font.width(
-                ScpFonts.roboto(hostText));
-        graphics.drawString(screen.getMinecraft().font,
-                ScpFonts.roboto(hostText),
+        int hostWidth = font.width(ScpFonts.roboto(hostText));
+        graphics.drawString(font, ScpFonts.roboto(hostText),
                 panelX + panelWidth - hostWidth - 16,
                 panelY + 30, HOST, false);
     }

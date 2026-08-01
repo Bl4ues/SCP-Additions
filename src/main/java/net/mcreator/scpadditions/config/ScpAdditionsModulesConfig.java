@@ -139,6 +139,15 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Hud extends Toggle {
 		@SerializedName("hide_active_effect_indicators")
 		public boolean hideActiveEffectIndicators = true;
+
+		@SerializedName("hide_empty_hand")
+		public boolean hideEmptyHand = true;
+
+		@SerializedName("disable_experience_bar")
+		public boolean disableExperienceBar = true;
+
+		@SerializedName("custom_oxygen_bar")
+		public boolean customOxygenBar = true;
 	}
 
 	public static final class Interactions extends Toggle {

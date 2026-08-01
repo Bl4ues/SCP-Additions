@@ -185,6 +185,9 @@ public final class ScpAdditionsModulesConfig {
 		@SerializedName("replace_player_hurt_sounds")
 		public boolean replacePlayerHurtSounds = true;
 
+		@SerializedName("use_voice_profile_b")
+		public boolean useVoiceProfileB = false;
+
 		@SerializedName("mute_non_player_hit_sounds")
 		public boolean muteNonPlayerHitSounds = false;
 

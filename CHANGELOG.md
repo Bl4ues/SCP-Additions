@@ -4,7 +4,9 @@
 
 ## Interface and presentation
 
-- Added an optional SCP: Unity-inspired custom crosshair, disabled by default, with independent in-game visibility, RGB and alpha controls, a live preview, default reset, cancel, and save-and-reload controls;
+- Added an optional SCP: Unity-inspired custom crosshair, enabled by default, with independent in-game visibility, RGB and alpha controls, a live preview, default reset, cancel, and save-and-reload controls;
+- Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar and level indicator;
+- Added a default-enabled custom oxygen meter that replaces vanilla air bubbles, appears beneath the crosshair, and shifts from light blue toward red as air runs out;
 - Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior.
 
 ## Creative inventory organization

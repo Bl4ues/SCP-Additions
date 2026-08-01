@@ -6,7 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-/** Sound events for the selectable player voice profiles. */
+/** Sound events for selectable player voices and shared breathing audio. */
 public final class PlayerVoiceSounds {
     public static final String MODID = "scp_additions_voice";
 
@@ -19,6 +19,8 @@ public final class PlayerVoiceSounds {
             register("voice_profile_a_gasp");
     public static final RegistryObject<SoundEvent> VOICE_PROFILE_B_GASP =
             register("voice_profile_b_gasp");
+    public static final RegistryObject<SoundEvent> DROWNING_LOOP =
+            register("drowning_loop");
 
     private PlayerVoiceSounds() {
     }

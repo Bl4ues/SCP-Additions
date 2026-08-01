@@ -109,7 +109,7 @@ public final class ScpAdditionsModulesConfig {
 	}
 
 	public static final class Crosshair {
-		public boolean enabled = false;
+		public boolean enabled = true;
 
 		@SerializedName("in_game_enabled")
 		public boolean inGameEnabled = true;

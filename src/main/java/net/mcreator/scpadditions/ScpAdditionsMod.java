@@ -41,6 +41,7 @@ import net.mcreator.scpadditions.init.Scp131Items;
 import net.mcreator.scpadditions.init.Scp714Items;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
+import net.mcreator.scpadditions.init.PlayerVoiceSounds;
 import net.mcreator.scpadditions.init.Scp106Sounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.init.ScpAdditionsModMenus;
@@ -70,6 +71,7 @@ public class ScpAdditionsMod {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         bus.addListener(this::commonSetup);
         ScpAdditionsModSounds.REGISTRY.register(bus);
+        PlayerVoiceSounds.REGISTRY.register(bus);
         Scp106Sounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);

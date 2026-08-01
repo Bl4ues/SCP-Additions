@@ -67,7 +67,7 @@
 
 - Added a default-enabled module that hides the vanilla hunger bar and converts food nutrition directly into health;
 - Added a default-enabled module that removes vanilla status-effect icons from the HUD while preserving inventory and SCP Conditions displays;
-- Added a default-disabled **Require Equipped Weapon to Attack** module that prevents entity attacks and empty-air punches unless a Weapon is equipped, while leaving block mining available;
+- Added a default-disabled module that prevents entity attacks and empty-air punches unless a Weapon is equipped, while leaving block mining available;
 - Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 15 seconds without damage;
 - Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration;
 - Made the custom health module hide both the vanilla heart display and armor bar while its replacement HUD is active;
@@ -131,27 +131,3 @@
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with shaders.
 
----
----
----
-
-# SCP Additions 3.0.7 — Hotfix
-
-## Multiplayer and configuration synchronization
-
-- Made the host's gameplay configuration authoritative for connected clients, including item rules and effects, hidden Status effects, Codex definitions, contextual interactions, entity interaction rules, and SCP-173 target configuration;
-- Added configuration synchronization on login and after supported save, delete, and reload operations;
-- Cleared synchronized host snapshots when clients disconnect so single-player and later servers cannot inherit stale settings;
-- Synchronized Survival `USABLE` and `WEAPON` tool sessions with the real selected hotbar slot, fixing mining and item-use behavior that could disagree between client and server.
-
-## Gameplay fixes and refinements
-
-- Corrected SCP-294 cups having missing-texture outputs;
-- Corrected duplicated `Cup of Cup of` names on configurable SCP-294 drinks;
-- Made item category changes update immediately after saving them through the in-game editor;
-- Made context interactions ignore missing block and entity IDs instead of incorrectly assigning them to vanilla entries;
-- Made SCP-173 immune to attacks dealing 6 damage or less while allowing stronger weapons to damage it;
-- Prevented damaged SCP-173 instance from restoring all health when their chunk or world is loaded again;
-- Corrected SCP-173 observer handling so players retain broad on-screen observation, configured generic mobs must face the statue directly, and SCP-131 uses its own intentional viewing threshold;
-- Changed the SCP-572 advancement title to **The Chosen One**;
-- Removed the bundled legacy context rule and ignored exact obsolete copies so old defaults do not reappear;

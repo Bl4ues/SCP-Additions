@@ -17,5 +17,10 @@
     "sounds": [
       { "name": "scp_additions:female_gasp", "stream": false, "volume": 1.0 }
     ]
+  },
+  "drowning_loop": {
+    "sounds": [
+      { "name": "scp_additions:drowning", "stream": false, "volume": 1.0 }
+    ]
   }
 }

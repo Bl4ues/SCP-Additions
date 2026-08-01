@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.config.ui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -34,10 +35,15 @@ public final class ConfigCenterNetwork {
     }
 
     public static void openFor(ServerPlayer player, SimpleChannel channel) {
-        if (!ConfigCenterService.canEdit(player)) return;
+        if (player == null) return;
         try {
+            JsonObject snapshot = ConfigCenterService.snapshot();
+            JsonObject metadata = new JsonObject();
+            metadata.addProperty("can_edit_server",
+                    ConfigCenterService.canEdit(player));
+            snapshot.add("__permissions", metadata);
             channel.send(PacketDistributor.PLAYER.with(() -> player),
-                    new Snapshot(GSON.toJson(ConfigCenterService.snapshot())));
+                    new Snapshot(GSON.toJson(snapshot)));
         } catch (Exception exception) {
             channel.send(PacketDistributor.PLAYER.with(() -> player),
                     new SaveResult(false, "Could not read configuration files: "
@@ -52,14 +58,10 @@ public final class ConfigCenterNetwork {
             NetworkEvent.Context context = supplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player == null) return;
-                if (!ConfigCenterService.canEdit(player)) {
-                    com.bl4ues.scpinventory.network.ModNetwork.CHANNEL.send(
-                            PacketDistributor.PLAYER.with(() -> player),
-                            new SaveResult(false, "Operator permission level 2 is required to edit server configuration.", "", List.of()));
-                    return;
+                if (player != null) {
+                    openFor(player,
+                            com.bl4ues.scpinventory.network.ModNetwork.CHANNEL);
                 }
-                openFor(player, com.bl4ues.scpinventory.network.ModNetwork.CHANNEL);
             });
             context.setPacketHandled(true);
         }

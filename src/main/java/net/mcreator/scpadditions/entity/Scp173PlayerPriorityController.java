@@ -28,9 +28,9 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class Scp173PlayerPriorityController {
-    private static final double SEARCH_RANGE = 48.0D;
+    private static final double SEARCH_RANGE = 96.0D;
     private static final double SEARCH_RANGE_SQR = SEARCH_RANGE * SEARCH_RANGE;
-    private static final double DIRECT_CORRIDOR_STEP = 0.35D;
+    private static final double DIRECT_CORRIDOR_STEP = 0.03125D;
     private static final double DIRECT_CORRIDOR_MAX_HEIGHT_DELTA = 0.80D;
     private static final double CONTACT_MARGIN = 0.82D;
 
@@ -73,13 +73,12 @@ public final class Scp173PlayerPriorityController {
                 entity -> entity.isAlive() && entity.isActivated()
                         && entity.distanceToSqr(player)
                         <= SEARCH_RANGE_SQR)) {
-            if (!hasClearDirectCorridor(statue, player)
-                    && !hasReachablePath(statue, player)) {
+            boolean directCorridor = hasClearDirectCorridor(statue, player);
+            if (!directCorridor && !hasReachablePath(statue, player)) {
                 continue;
             }
 
-            forcePlayerTarget(statue, player,
-                    hasClearDirectCorridor(statue, player));
+            forcePlayerTarget(statue, player, directCorridor);
         }
     }
 

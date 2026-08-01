@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -20,6 +21,7 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.PlayerVoiceSounds;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 
 import java.util.UUID;
@@ -33,11 +35,15 @@ public final class PlayerDamageAudioClient {
     private static final double LOCAL_PLAYER_SOUND_RADIUS_SQ = 9.0D;
     private static final long MOB_IMPACT_WINDOW_NANOS = 300_000_000L;
     private static final float HEALTH_EPSILON = 1.0E-3F;
+    private static final float GASP_AIR_THRESHOLD = 0.30F;
 
     private static volatile long suppressMobImpactUntilNanos = Long.MIN_VALUE;
     private static UUID trackedPlayerId;
     private static int previousHurtTime;
     private static float previousEffectiveHealth = Float.NaN;
+    private static int previousAirSupply = -1;
+    private static int lowestAirSupply = Integer.MAX_VALUE;
+    private static boolean recoveryGaspArmed;
 
     private PlayerDamageAudioClient() {
     }
@@ -105,6 +111,9 @@ public final class PlayerDamageAudioClient {
             trackedPlayerId = playerId;
             previousHurtTime = hurtTime;
             previousEffectiveHealth = effectiveHealth;
+            previousAirSupply = player.getAirSupply();
+            lowestAirSupply = previousAirSupply;
+            recoveryGaspArmed = false;
             return;
         }
 
@@ -119,6 +128,7 @@ public final class PlayerDamageAudioClient {
             playLocalHurt(isDrowningDamage(player));
         }
 
+        updateRecoveryGasp(player);
         previousHurtTime = hurtTime;
         previousEffectiveHealth = effectiveHealth;
     }
@@ -157,15 +167,68 @@ public final class PlayerDamageAudioClient {
         }
     }
 
+    /** Plays a clean sample of the currently selected hurt voice. */
+    public static void previewSelectedVoice() {
+        playRelative(selectedHurtSound(), 1.0F, 1.0F);
+    }
+
     private static void playLocalHurt(boolean drowning) {
         RandomSource random = RandomSource.create();
         float volume = drowning ? 0.62F : 1.0F;
         float pitch = drowning
                 ? 0.72F + random.nextFloat() * 0.06F
                 : 0.96F + random.nextFloat() * 0.08F;
+        playRelative(selectedHurtSound(), volume, pitch, random);
+    }
+
+    private static void updateRecoveryGasp(Player player) {
+        int maximumAir = Math.max(1, player.getMaxAirSupply());
+        int currentAir = Math.max(0, player.getAirSupply());
+        int threshold = Math.round(maximumAir * GASP_AIR_THRESHOLD);
+
+        if (player.isUnderWater() || currentAir < maximumAir) {
+            lowestAirSupply = Math.min(lowestAirSupply, currentAir);
+            if (lowestAirSupply <= threshold) recoveryGaspArmed = true;
+        }
+
+        boolean recovering = !player.isUnderWater()
+                && previousAirSupply >= 0
+                && currentAir > previousAirSupply;
+        if (recoveryGaspArmed && recovering) {
+            if (InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()) {
+                playRelative(selectedGaspSound(), 1.0F, 1.0F);
+            }
+            recoveryGaspArmed = false;
+            lowestAirSupply = currentAir;
+        } else if (!player.isUnderWater() && currentAir >= maximumAir
+                && !recoveryGaspArmed) {
+            lowestAirSupply = maximumAir;
+        }
+
+        previousAirSupply = currentAir;
+    }
+
+    private static SoundEvent selectedHurtSound() {
+        return InventoryModuleRuntimeState.useVoiceProfileBForClient()
+                ? PlayerVoiceSounds.VOICE_PROFILE_B_HURT.get()
+                : ScpAdditionsModSounds.PLAYER_HURT.get();
+    }
+
+    private static SoundEvent selectedGaspSound() {
+        return InventoryModuleRuntimeState.useVoiceProfileBForClient()
+                ? PlayerVoiceSounds.VOICE_PROFILE_B_GASP.get()
+                : PlayerVoiceSounds.VOICE_PROFILE_A_GASP.get();
+    }
+
+    private static void playRelative(SoundEvent sound, float volume,
+            float pitch) {
+        playRelative(sound, volume, pitch, RandomSource.create());
+    }
+
+    private static void playRelative(SoundEvent sound, float volume,
+            float pitch, RandomSource random) {
         Minecraft.getInstance().getSoundManager().play(
-                new SimpleSoundInstance(
-                        ScpAdditionsModSounds.PLAYER_HURT.get().getLocation(),
+                new SimpleSoundInstance(sound.getLocation(),
                         SoundSource.PLAYERS, volume, pitch, random,
                         false, 0, SoundInstance.Attenuation.NONE,
                         0.0D, 0.0D, 0.0D, true));
@@ -181,6 +244,9 @@ public final class PlayerDamageAudioClient {
         trackedPlayerId = null;
         previousHurtTime = 0;
         previousEffectiveHealth = Float.NaN;
+        previousAirSupply = -1;
+        lowestAirSupply = Integer.MAX_VALUE;
+        recoveryGaspArmed = false;
     }
 
     private static boolean isLocalPlayerSound(SoundInstance sound) {

@@ -43,8 +43,10 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.network.Scp173ObservationPacket;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -71,6 +73,15 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private static final double AUTOMATIC_BLINK_TRAVEL_DISTANCE = 6.0D;
     private static final double STOP_DISTANCE = 0.72D;
     private static final double PATH_NODE_REACHED_DISTANCE_SQR = 0.55D * 0.55D;
+    private static final int ROUTE_MEMORY_TICKS = 100;
+    private static final int ROUTE_REPLAN_INTERVAL_TICKS = 4;
+    private static final int ROUTE_REPLAN_AFTER_STALLS = 2;
+    private static final int ROUTE_ABANDON_AFTER_STALLS = 8;
+    private static final int MAX_REMEMBERED_ROUTE_NODES = 128;
+    private static final double ROUTE_ENDPOINT_IMPROVEMENT_SQR = 0.75D;
+    private static final double ROUTE_EQUIVALENT_ENDPOINT_MARGIN_SQR = 0.25D;
+    private static final double ROUTE_FIRST_NODE_DIFFERENCE_SQR = 0.50D * 0.50D;
+    private static final double ROUTE_TARGET_SHIFT_REPLAN_SQR = 2.0D * 2.0D;
     private static final double FROZEN_AIR_GRAVITY = 0.08D;
     private static final double FROZEN_WATER_GRAVITY = 0.045D;
     private static final double FROZEN_MAX_AIR_FALL_SPEED = -3.92D;
@@ -95,7 +106,15 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private int nextClientObservationReportTick;
     private final Map<UUID, Integer> clientObservationUntilTicks = new HashMap<>();
     private final Map<UUID, Double> automaticBlinkTravelRemaining = new HashMap<>();
+    private final List<Vec3> rememberedRouteNodes = new ArrayList<>();
     private LivingEntity lastObservationGraceObserver;
+    private UUID rememberedRouteTarget;
+    private Vec3 rememberedRouteTargetPosition;
+    private int rememberedRouteIndex;
+    private int rememberedRouteExpiresTick = Integer.MIN_VALUE;
+    private int nextRouteReplanTick;
+    private int routeStallAttempts;
+    private double rememberedRouteEndpointDistanceSqr = Double.POSITIVE_INFINITY;
     private int lastSeenOrCloseTick;
     private int observationGraceUntilTick = Integer.MIN_VALUE;
     private int nextAttackTick;
@@ -150,6 +169,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
         setPersistenceRequired();
         lastSeenOrCloseTick = tickCount;
         setTarget(null);
+        clearStrategicRoute();
         getNavigation().stop();
     }
 
@@ -192,6 +212,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
         FrozenPose preTickPose = capturePose();
         if (!ScpAdditionsModulesConfig.get().scp173.enabled) {
+            clearStrategicRoute();
             stopAndLock(preTickPose);
             return;
         }
@@ -201,6 +222,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
             // explicit target and scraping reset also protects worlds saved before 3.0.1.
             setNoAi(true);
             setTarget(null);
+            clearStrategicRoute();
             getNavigation().stop();
             entityData.set(SCRAPING, false);
             super.tick();
@@ -236,6 +258,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
             if (target instanceof Player && distanceToSqr(target) <= DESPAWN_DISTANCE_SQR) lastSeenOrCloseTick = tickCount;
             if (!trySnapAttack(target)) reactImmediatelyToTarget(target);
         } else {
+            clearStrategicRoute();
             stopAndLock(preTickPose);
         }
         handleRoutineDespawn();
@@ -298,6 +321,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
         setActivated(activationConfirmed && tag.getBoolean("Activated"));
         entityData.set(ROUTINE_SPAWN, tag.getBoolean("RoutineSpawn"));
         lastSeenOrCloseTick = tag.getInt("LastSeenOrCloseTick");
+        clearStrategicRoute();
         if (!isActivated()) {
             setNoAi(true);
             setTarget(null);
@@ -809,35 +833,204 @@ public class Scp173Entity extends BlinkWatcherEntity {
         automaticBlinkTravelRemaining.put(playerId, Math.max(0.0D, remaining - distance));
     }
 
-    private Vec3 chooseChaseStep(LivingEntity target, Vec3 directHorizontal, double distance, double maxStep) {
+    private Vec3 chooseChaseStep(LivingEntity target, Vec3 directHorizontal,
+            double distance, double maxStep) {
         double stepDistance = Math.min(maxStep, distance - STOP_DISTANCE);
-        if (stepDistance <= 0.001D || directHorizontal.lengthSqr() <= 0.000001D) return Vec3.ZERO;
-        Vec3 directStep = directHorizontal.scale(1.0D / distance).scale(stepDistance);
-        if (canMoveBy(directStep)) { getNavigation().stop(); return directStep; }
-        Vec3 pathStep = pathStepToward(target, stepDistance);
-        return largestClearPathStep(pathStep);
+        if (stepDistance <= 0.001D
+                || directHorizontal.lengthSqr() <= 0.000001D) {
+            return Vec3.ZERO;
+        }
+
+        Vec3 directStep = directHorizontal.scale(1.0D / distance)
+                .scale(stepDistance);
+        if (canMoveBy(directStep)) {
+            rememberDirectApproach(target);
+            getNavigation().stop();
+            return directStep;
+        }
+        return strategicPathStep(target, stepDistance);
     }
 
-    private Vec3 pathStepToward(LivingEntity target, double stepDistance) {
-        // The path is a direction source only. Do not install it into active
-        // navigation, which would add vanilla motion on the following tick.
-        Path path = getNavigation().createPath(target, 0);
-        // Partial paths are still useful: they let the statue take the shortest
-        // available route up to a closed doorway. Once the door opens, the path
-        // is rebuilt on the next movement opportunity and continues through it.
-        // Path.canReach() is intentionally not used here because an accuracy of
-        // zero can report false for reachable players near walls or block edges.
-        if (path == null || path.isDone()) return Vec3.ZERO;
-        Vec3 next = path.getNextEntityPos(this);
-        Vec3 horizontal = new Vec3(next.x - getX(), 0.0D, next.z - getZ());
-        if (horizontal.lengthSqr() <= PATH_NODE_REACHED_DISTANCE_SQR) {
-            path.advance();
-            if (path.isDone()) return Vec3.ZERO;
-            next = path.getNextEntityPos(this);
-            horizontal = new Vec3(next.x - getX(), 0.0D, next.z - getZ());
+    /**
+     * Reuses the last credible route when a door closes between path updates,
+     * while periodically asking pathfinding for a better or newly opened flank.
+     * The statue advances to the last reachable staging point, then gives up
+     * only after repeated blocked movement opportunities.
+     */
+    private Vec3 strategicPathStep(LivingEntity target, double stepDistance) {
+        prepareRouteTarget(target);
+        boolean routeExpired = !hasUsableRememberedRoute(target);
+        boolean targetShifted = rememberedRouteTargetPosition == null
+                || horizontalDistanceSqr(rememberedRouteTargetPosition,
+                        target.position()) >= ROUTE_TARGET_SHIFT_REPLAN_SQR;
+        if (routeExpired || targetShifted
+                || tickCount >= nextRouteReplanTick
+                || routeStallAttempts >= ROUTE_REPLAN_AFTER_STALLS) {
+            considerFreshRoute(target);
+            nextRouteReplanTick = tickCount + ROUTE_REPLAN_INTERVAL_TICKS;
         }
+
+        Vec3 step = stepAlongRememberedRoute(stepDistance);
+        if (step.lengthSqr() > 0.000001D) {
+            routeStallAttempts = 0;
+            rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+            return step;
+        }
+
+        routeStallAttempts++;
+        if (routeStallAttempts >= ROUTE_REPLAN_AFTER_STALLS) {
+            nextRouteReplanTick = tickCount;
+            if (considerFreshRoute(target)) {
+                step = stepAlongRememberedRoute(stepDistance);
+                if (step.lengthSqr() > 0.000001D) {
+                    routeStallAttempts = 0;
+                    rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+                    return step;
+                }
+            }
+        }
+
+        if (routeStallAttempts >= ROUTE_ABANDON_AFTER_STALLS) {
+            clearStrategicRoute();
+        }
+        return Vec3.ZERO;
+    }
+
+    private void prepareRouteTarget(LivingEntity target) {
+        UUID targetId = target.getUUID();
+        if (rememberedRouteTarget == null
+                || !rememberedRouteTarget.equals(targetId)) {
+            clearStrategicRoute();
+            rememberedRouteTarget = targetId;
+            rememberedRouteTargetPosition = target.position();
+        }
+    }
+
+    private void rememberDirectApproach(LivingEntity target) {
+        prepareRouteTarget(target);
+        rememberedRouteNodes.clear();
+        rememberedRouteNodes.add(target.position());
+        rememberedRouteIndex = 0;
+        rememberedRouteTargetPosition = target.position();
+        rememberedRouteEndpointDistanceSqr = 0.0D;
+        rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+        nextRouteReplanTick = tickCount + ROUTE_REPLAN_INTERVAL_TICKS;
+        routeStallAttempts = 0;
+    }
+
+    private boolean considerFreshRoute(LivingEntity target) {
+        Path path = getNavigation().createPath(target, 0);
+        List<Vec3> freshNodes = capturePathNodes(path);
+        trimReachedNodes(freshNodes);
+        if (freshNodes.isEmpty()) return false;
+
+        Vec3 freshEndpoint = freshNodes.get(freshNodes.size() - 1);
+        double freshEndpointDistance = horizontalDistanceSqr(
+                freshEndpoint, target.position());
+        boolean hasCurrent = hasUsableRememberedRoute(target);
+        boolean clearlyBetter = !hasCurrent
+                || freshEndpointDistance + ROUTE_ENDPOINT_IMPROVEMENT_SQR
+                < rememberedRouteEndpointDistanceSqr;
+        boolean equivalentAlternative = hasCurrent
+                && routeStallAttempts >= ROUTE_REPLAN_AFTER_STALLS
+                && freshEndpointDistance
+                <= rememberedRouteEndpointDistanceSqr
+                        + ROUTE_EQUIVALENT_ENDPOINT_MARGIN_SQR
+                && firstNodeDiffers(freshNodes);
+        if (!clearlyBetter && !equivalentAlternative) {
+            rememberedRouteTargetPosition = target.position();
+            return false;
+        }
+
+        rememberedRouteNodes.clear();
+        rememberedRouteNodes.addAll(freshNodes);
+        rememberedRouteIndex = 0;
+        rememberedRouteTarget = target.getUUID();
+        rememberedRouteTargetPosition = target.position();
+        rememberedRouteEndpointDistanceSqr = freshEndpointDistance;
+        rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+        return true;
+    }
+
+    private List<Vec3> capturePathNodes(Path path) {
+        List<Vec3> nodes = new ArrayList<>();
+        if (path == null || path.isDone()) return nodes;
+
+        Vec3 previous = null;
+        int safety = 0;
+        while (!path.isDone() && safety++ < MAX_REMEMBERED_ROUTE_NODES) {
+            Vec3 node = path.getNextEntityPos(this);
+            if (previous == null
+                    || horizontalDistanceSqr(previous, node) > 0.01D) {
+                nodes.add(node);
+                previous = node;
+            }
+            path.advance();
+        }
+        return nodes;
+    }
+
+    private void trimReachedNodes(List<Vec3> nodes) {
+        while (!nodes.isEmpty()
+                && horizontalDistanceSqr(position(), nodes.get(0))
+                <= PATH_NODE_REACHED_DISTANCE_SQR) {
+            nodes.remove(0);
+        }
+    }
+
+    private boolean firstNodeDiffers(List<Vec3> freshNodes) {
+        if (freshNodes.isEmpty() || rememberedRouteIndex
+                >= rememberedRouteNodes.size()) return true;
+        return horizontalDistanceSqr(freshNodes.get(0),
+                rememberedRouteNodes.get(rememberedRouteIndex))
+                >= ROUTE_FIRST_NODE_DIFFERENCE_SQR;
+    }
+
+    private Vec3 stepAlongRememberedRoute(double stepDistance) {
+        while (rememberedRouteIndex < rememberedRouteNodes.size()
+                && horizontalDistanceSqr(position(),
+                        rememberedRouteNodes.get(rememberedRouteIndex))
+                <= PATH_NODE_REACHED_DISTANCE_SQR) {
+            rememberedRouteIndex++;
+        }
+        if (rememberedRouteIndex >= rememberedRouteNodes.size()) {
+            return Vec3.ZERO;
+        }
+
+        Vec3 waypoint = rememberedRouteNodes.get(rememberedRouteIndex);
+        Vec3 horizontal = new Vec3(waypoint.x - getX(), 0.0D,
+                waypoint.z - getZ());
         double length = horizontal.length();
-        return length <= 0.001D ? Vec3.ZERO : horizontal.scale(1.0D / length).scale(Math.min(stepDistance, length));
+        if (length <= 0.001D) return Vec3.ZERO;
+        Vec3 desired = horizontal.scale(1.0D / length)
+                .scale(Math.min(stepDistance, length));
+        return largestClearPathStep(desired);
+    }
+
+    private boolean hasUsableRememberedRoute(LivingEntity target) {
+        return target != null
+                && rememberedRouteTarget != null
+                && rememberedRouteTarget.equals(target.getUUID())
+                && tickCount <= rememberedRouteExpiresTick
+                && rememberedRouteIndex < rememberedRouteNodes.size();
+    }
+
+    private void clearStrategicRoute() {
+        rememberedRouteNodes.clear();
+        rememberedRouteIndex = 0;
+        rememberedRouteTarget = null;
+        rememberedRouteTargetPosition = null;
+        rememberedRouteExpiresTick = Integer.MIN_VALUE;
+        nextRouteReplanTick = 0;
+        routeStallAttempts = 0;
+        rememberedRouteEndpointDistanceSqr = Double.POSITIVE_INFINITY;
+    }
+
+    private static double horizontalDistanceSqr(Vec3 first, Vec3 second) {
+        if (first == null || second == null) return Double.POSITIVE_INFINITY;
+        double dx = first.x - second.x;
+        double dz = first.z - second.z;
+        return dx * dx + dz * dz;
     }
 
     private Vec3 largestClearPathStep(Vec3 desiredStep) {

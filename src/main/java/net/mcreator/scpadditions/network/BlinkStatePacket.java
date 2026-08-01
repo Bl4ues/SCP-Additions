@@ -6,6 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.client.BlinkClient;
+import net.mcreator.scpadditions.client.Scp173EncounterAudioClient;
 
 import java.util.function.Supplier;
 
@@ -36,6 +37,7 @@ public final class BlinkStatePacket {
                             && !minecraft.player.isCreative()
                             && !minecraft.player.isSpectator();
                     BlinkClient.setActive(allowed);
+                    Scp173EncounterAudioClient.setThreatActive(allowed);
                 }));
         context.setPacketHandled(true);
     }

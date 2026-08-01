@@ -17,6 +17,7 @@
   "key.scpinventory.open_inventory": "Open SCP Inventory",
   "key.scpinventory.context_interact": "Context Interact",
   "key.scpinventory.context_config_select": "Context Config Select",
+  "key.scpinventory.stow_held_item": "Stow Held Item",
   "key.scpinventory.blink": "Blink",
   "key.scpinventory.scp_131_dismiss": "Dismiss SCP-131",
   "notice.scp_additions.scp_131.following": "SCP-131 has started following you. Hold %s to dismiss",

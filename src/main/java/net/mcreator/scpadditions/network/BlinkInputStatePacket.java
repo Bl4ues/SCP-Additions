@@ -6,7 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.BlinkServerState;
 import net.mcreator.scpadditions.entity.Scp173Entity;
-import net.mcreator.scpadditions.entity.Scp173PlayerPriorityController;
+import net.mcreator.scpadditions.entity.Scp173MovementController;
 
 import java.util.function.Supplier;
 
@@ -46,7 +46,7 @@ public final class BlinkInputStatePacket {
                     manual);
             if (changed) {
                 if (closed) {
-                    Scp173PlayerPriorityController
+                    Scp173MovementController
                             .prioritizeBlinkingPlayer(player);
                 }
                 Scp173Entity.reactToBlinkState(player, closed, manual);

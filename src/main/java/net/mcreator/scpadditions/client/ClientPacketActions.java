@@ -7,6 +7,7 @@ public final class ClientPacketActions {
 
     public static void playScareSound() {
         BlinkClient.playScareSound();
+        Scp173EncounterAudioClient.onScare();
     }
 
     public static void playScp1176Music() {

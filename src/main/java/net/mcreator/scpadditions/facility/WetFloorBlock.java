@@ -19,10 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.mcreator.scpadditions.entity.Scp173Entity;
 
 import javax.annotation.Nullable;
 
@@ -94,17 +92,6 @@ public final class WetFloorBlock extends BaseEntityBlock {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
             CollisionContext context) {
-        // The authored sign occupies most of one navigation cell even though it
-        // is only a light decorative prop. Minecraft's node grid consequently
-        // treats several otherwise open arrangements as sealed, and SCP-173's
-        // collision-safe snap movement repeatedly stages against the oversized
-        // bounding prism. The statue ignores only this prop's physical shape;
-        // players and every other entity retain the normal model-matched
-        // collision and selection box.
-        if (context instanceof EntityCollisionContext entityContext
-                && entityContext.getEntity() instanceof Scp173Entity) {
-            return Shapes.empty();
-        }
         return getShape(state, level, pos, context);
     }
 

@@ -11,6 +11,9 @@ public record InventoryModuleStatePacket(boolean enabled,
         boolean replacePlayerHurtSounds, boolean muteNonPlayerHitSounds,
         boolean disableVanillaMusic,
         boolean hideActiveEffectIndicators,
+        boolean hideEmptyHand,
+        boolean disableExperienceBar,
+        boolean customOxygenBar,
         boolean customCrosshairEnabled,
         boolean inGameCrosshairEnabled,
         float crosshairRed, float crosshairGreen,
@@ -24,6 +27,9 @@ public record InventoryModuleStatePacket(boolean enabled,
         buffer.writeBoolean(message.muteNonPlayerHitSounds);
         buffer.writeBoolean(message.disableVanillaMusic);
         buffer.writeBoolean(message.hideActiveEffectIndicators);
+        buffer.writeBoolean(message.hideEmptyHand);
+        buffer.writeBoolean(message.disableExperienceBar);
+        buffer.writeBoolean(message.customOxygenBar);
         buffer.writeBoolean(message.customCrosshairEnabled);
         buffer.writeBoolean(message.inGameCrosshairEnabled);
         buffer.writeFloat(message.crosshairRed);
@@ -38,8 +44,10 @@ public record InventoryModuleStatePacket(boolean enabled,
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readBoolean(), buffer.readFloat(),
                 buffer.readFloat(), buffer.readFloat(),
-                buffer.readFloat(), buffer.readFloat());
+                buffer.readFloat());
     }
 
     public static void handle(InventoryModuleStatePacket message,
@@ -51,6 +59,9 @@ public record InventoryModuleStatePacket(boolean enabled,
                 message.muteNonPlayerHitSounds,
                 message.disableVanillaMusic,
                 message.hideActiveEffectIndicators,
+                message.hideEmptyHand,
+                message.disableExperienceBar,
+                message.customOxygenBar,
                 message.customCrosshairEnabled,
                 message.inGameCrosshairEnabled,
                 message.crosshairRed, message.crosshairGreen,

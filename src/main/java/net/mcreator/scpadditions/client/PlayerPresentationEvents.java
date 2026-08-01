@@ -41,8 +41,11 @@ public final class PlayerPresentationEvents {
             return;
         }
 
-        if (event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())
-                && customHotbarActive()) {
+        if (customHotbarActive()
+                && (event.getOverlay().id().equals(
+                        VanillaGuiOverlay.HOTBAR.id())
+                || event.getOverlay().id().equals(
+                        VanillaGuiOverlay.ITEM_NAME.id()))) {
             event.setCanceled(true);
         }
     }

@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.vitals;
 
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 /**
@@ -10,15 +11,16 @@ public final class VitalsModule {
     private VitalsModule() {
     }
 
-    /** Controls all custom vitals rendering, but not stamina gameplay. */
+    /** Controls client rendering only; stamina gameplay remains host-owned. */
     public static boolean hudEnabled() {
-        return ScpAdditionsModulesConfig.get().hud.enabled;
+        return InventoryModuleRuntimeState.hudEnabledForClient();
     }
 
     /** Custom health bar is visible and vanilla hearts should be hidden. */
     public static boolean healthHudEnabled() {
         return hudEnabled()
-                && ScpAdditionsModulesConfig.get().vitals.customHealthEnabled;
+                && InventoryModuleRuntimeState
+                .customHealthEnabledForClient();
     }
 
     /** Server/client stamina drain, regeneration and sprint enforcement. */

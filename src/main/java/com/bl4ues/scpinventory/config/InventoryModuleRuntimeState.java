@@ -8,6 +8,7 @@ public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverReduceScp012VisualEffects;
     private static volatile Boolean serverHungerDisabled;
     private static volatile Boolean serverReplacePlayerHurtSounds;
+    private static volatile Boolean serverUseVoiceProfileB;
     private static volatile Boolean serverMuteNonPlayerHitSounds;
     private static volatile Boolean serverDisableVanillaMusic;
     private static volatile Boolean serverHideActiveEffectIndicators;
@@ -46,6 +47,12 @@ public final class InventoryModuleRuntimeState {
         Boolean synced = serverReplacePlayerHurtSounds;
         return synced != null ? synced
                 : ScpAdditionsModulesConfig.get().audio.replacePlayerHurtSounds;
+    }
+
+    public static boolean useVoiceProfileBForClient() {
+        Boolean synced = serverUseVoiceProfileB;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().audio.useVoiceProfileB;
     }
 
     public static boolean muteNonPlayerHitSoundsForClient() {
@@ -124,6 +131,7 @@ public final class InventoryModuleRuntimeState {
     public static void updateFromServer(boolean enabled,
             boolean reduceScp012VisualEffects, boolean hungerDisabled,
             boolean replacePlayerHurtSounds,
+            boolean useVoiceProfileB,
             boolean muteNonPlayerHitSounds,
             boolean disableVanillaMusic,
             boolean hideActiveEffectIndicators,
@@ -138,6 +146,7 @@ public final class InventoryModuleRuntimeState {
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
         serverHungerDisabled = hungerDisabled;
         serverReplacePlayerHurtSounds = replacePlayerHurtSounds;
+        serverUseVoiceProfileB = useVoiceProfileB;
         serverMuteNonPlayerHitSounds = muteNonPlayerHitSounds;
         serverDisableVanillaMusic = disableVanillaMusic;
         serverHideActiveEffectIndicators = hideActiveEffectIndicators;
@@ -157,6 +166,7 @@ public final class InventoryModuleRuntimeState {
         serverReduceScp012VisualEffects = null;
         serverHungerDisabled = null;
         serverReplacePlayerHurtSounds = null;
+        serverUseVoiceProfileB = null;
         serverMuteNonPlayerHitSounds = null;
         serverDisableVanillaMusic = null;
         serverHideActiveEffectIndicators = null;

@@ -1,6 +1,7 @@
 package com.bl4ues.scpinventory.client;
 
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -66,7 +67,11 @@ public final class ClientPacketHandlers {
         if (shouldClientApply && hotbarSlot >= 0 && hotbarSlot < 9 && !usableStack.isEmpty()) {
             minecraft.execute(() -> applyUsableHotbarItem(hotbarSlot, usableStack));
         }
-        minecraft.player.displayClientMessage(Component.literal("Right click to use"), true);
+        Component prompt = Component.literal("Right click to use");
+        if (InventoryModuleRuntimeState.actionBarsRobotoForClient()) {
+            prompt = ScpFonts.roboto(prompt);
+        }
+        minecraft.player.displayClientMessage(prompt, true);
     }
 
     private static boolean shouldClientApplyUsableHotbarCopy(ItemStack stack) {

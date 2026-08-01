@@ -46,6 +46,7 @@ public final class PlayerDamageAudioClient {
     private static boolean wasUnderWater;
     private static boolean recoveryGaspArmed;
     private static boolean awaitingRecoveryGasp;
+    private static DrowningLoopSound drowningLoop;
 
     private PlayerDamageAudioClient() {
     }
@@ -110,6 +111,7 @@ public final class PlayerDamageAudioClient {
 
         if (!playerId.equals(trackedPlayerId)
                 || Float.isNaN(previousEffectiveHealth)) {
+            fadeOutDrowningLoop();
             trackedPlayerId = playerId;
             previousHurtTime = hurtTime;
             previousEffectiveHealth = effectiveHealth;
@@ -126,12 +128,22 @@ public final class PlayerDamageAudioClient {
                 || (hurtTime > 0
                 && effectiveHealth + HEALTH_EPSILON
                 < previousEffectiveHealth));
+        boolean customVoices = InventoryModuleRuntimeState
+                .replacePlayerHurtSoundsForClient();
+        boolean drowningDamage = newHurtPulse && isDrowningDamage(player);
 
-        if (newHurtPulse
-                && InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()
-                && !isDrowningDamage(player)) {
+        if (customVoices && drowningDamage) {
+            ensureDrowningLoop();
+        } else if (customVoices && newHurtPulse) {
             playLocalHurt();
         }
+
+        if (!customVoices || !player.isAlive()
+                || !player.isUnderWater()
+                || player.getAirSupply() > 0) {
+            fadeOutDrowningLoop();
+        }
+        clearFinishedDrowningLoop();
 
         updateRecoveryGasp(player);
         previousHurtTime = hurtTime;
@@ -181,6 +193,26 @@ public final class PlayerDamageAudioClient {
         RandomSource random = RandomSource.create();
         float pitch = 0.96F + random.nextFloat() * 0.08F;
         playRelative(selectedHurtSound(), 1.0F, pitch, random);
+    }
+
+    private static void ensureDrowningLoop() {
+        clearFinishedDrowningLoop();
+        if (drowningLoop == null) {
+            drowningLoop = new DrowningLoopSound();
+            Minecraft.getInstance().getSoundManager().play(drowningLoop);
+        } else {
+            drowningLoop.resume();
+        }
+    }
+
+    private static void fadeOutDrowningLoop() {
+        if (drowningLoop != null) drowningLoop.beginFadeOut();
+    }
+
+    private static void clearFinishedDrowningLoop() {
+        if (drowningLoop != null && drowningLoop.isFinished()) {
+            drowningLoop = null;
+        }
     }
 
     private static void updateRecoveryGasp(Player player) {
@@ -258,6 +290,8 @@ public final class PlayerDamageAudioClient {
     }
 
     private static void resetDamageTracking() {
+        fadeOutDrowningLoop();
+        clearFinishedDrowningLoop();
         trackedPlayerId = null;
         previousHurtTime = 0;
         previousEffectiveHealth = Float.NaN;

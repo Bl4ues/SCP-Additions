@@ -5,6 +5,7 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 /** Client view of server-authoritative module settings needed by client-only systems. */
 public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverEnabled;
+    private static volatile Boolean serverRequireEquippedWeaponToAttack;
     private static volatile Boolean serverReduceScp012VisualEffects;
     private static volatile Boolean serverHungerDisabled;
     private static volatile Boolean serverReplacePlayerHurtSounds;
@@ -28,6 +29,13 @@ public final class InventoryModuleRuntimeState {
     public static boolean isEnabledForClient() {
         Boolean synced = serverEnabled;
         return synced != null ? synced : ScpAdditionsModulesConfig.get().inventory.enabled;
+    }
+
+    public static boolean requireEquippedWeaponToAttackForClient() {
+        Boolean synced = serverRequireEquippedWeaponToAttack;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().inventory
+                .requireEquippedWeaponToAttack;
     }
 
     public static boolean reduceScp012VisualEffectsForClient() {
@@ -129,6 +137,7 @@ public final class InventoryModuleRuntimeState {
     }
 
     public static void updateFromServer(boolean enabled,
+            boolean requireEquippedWeaponToAttack,
             boolean reduceScp012VisualEffects, boolean hungerDisabled,
             boolean replacePlayerHurtSounds,
             boolean useVoiceProfileB,
@@ -143,6 +152,7 @@ public final class InventoryModuleRuntimeState {
             float crosshairRed, float crosshairGreen,
             float crosshairBlue, float crosshairAlpha) {
         serverEnabled = enabled;
+        serverRequireEquippedWeaponToAttack = requireEquippedWeaponToAttack;
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
         serverHungerDisabled = hungerDisabled;
         serverReplacePlayerHurtSounds = replacePlayerHurtSounds;
@@ -163,6 +173,7 @@ public final class InventoryModuleRuntimeState {
 
     public static void clearServerState() {
         serverEnabled = null;
+        serverRequireEquippedWeaponToAttack = null;
         serverReduceScp012VisualEffects = null;
         serverHungerDisabled = null;
         serverReplacePlayerHurtSounds = null;

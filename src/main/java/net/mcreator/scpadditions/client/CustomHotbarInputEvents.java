@@ -24,7 +24,8 @@ public final class CustomHotbarInputEvents {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
-        if (event.getDeltaY() == 0.0D) return;
+        double scrollDelta = event.getScrollDelta();
+        if (scrollDelta == 0.0D) return;
 
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
@@ -34,7 +35,7 @@ public final class CustomHotbarInputEvents {
         List<Integer> occupied = occupiedSlots(inventory);
         if (occupied.isEmpty()) return;
 
-        int direction = event.getDeltaY() < 0.0D ? 1 : -1;
+        int direction = scrollDelta < 0.0D ? 1 : -1;
         int nextSlot = nextSlot(inventory, occupied, direction);
         if (nextSlot < 0 || nextSlot == inventory.selected) {
             event.setCanceled(true);

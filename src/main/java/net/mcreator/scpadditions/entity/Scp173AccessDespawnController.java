@@ -10,9 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -42,7 +40,6 @@ public final class Scp173AccessDespawnController {
         }
 
         long gameTime = level.getGameTime();
-        Set<UUID> present = new HashSet<>();
         for (Entity entity : level.getAllEntities()) {
             if (!(entity instanceof Scp173Entity scp173)
                     || !scp173.isAlive() || scp173.isRemoved()
@@ -51,7 +48,6 @@ public final class Scp173AccessDespawnController {
             }
 
             UUID id = scp173.getUUID();
-            present.add(id);
             long nextCheck = NEXT_ACCESS_CHECK.getOrDefault(id, 0L);
             if (gameTime < nextCheck) continue;
             NEXT_ACCESS_CHECK.put(id,
@@ -70,9 +66,6 @@ public final class Scp173AccessDespawnController {
                 NEXT_ACCESS_CHECK.remove(id);
             }
         }
-
-        NO_ACCESS_SINCE.keySet().removeIf(id -> !present.contains(id));
-        NEXT_ACCESS_CHECK.keySet().removeIf(id -> !present.contains(id));
     }
 
     private static boolean hasReachablePlayer(ServerLevel level,

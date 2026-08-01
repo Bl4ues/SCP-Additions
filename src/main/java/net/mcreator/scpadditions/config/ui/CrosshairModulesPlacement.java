@@ -185,11 +185,13 @@ public final class CrosshairModulesPlacement {
 
             List<Button> buttons = (List<Button>) rawButtons;
             Map<Button, Component> labels = (Map<Button, Component>) rawLabels;
+            Button existing = NAVIGATION_BUTTONS.get(screen);
             Button source = null;
             Component sourceLabel = null;
             for (Map.Entry<Button, Component> entry : labels.entrySet()) {
                 String label = entry.getValue().getString();
-                if (label.startsWith("Crosshair: ")) {
+                if (entry.getKey() != existing
+                        && label.startsWith("Crosshair: ")) {
                     source = entry.getKey();
                     sourceLabel = entry.getValue();
                     break;
@@ -197,7 +199,6 @@ public final class CrosshairModulesPlacement {
             }
             if (source == null || sourceLabel == null) return;
 
-            Button existing = NAVIGATION_BUTTONS.get(screen);
             if (existing != null && buttons.contains(existing)) {
                 source.visible = false;
                 source.active = false;
@@ -257,16 +258,19 @@ public final class CrosshairModulesPlacement {
 
             List<Button> buttons = (List<Button>) rawButtons;
             Map<Button, Component> labels = (Map<Button, Component>) rawLabels;
+            Button existing = DEFAULT_BUTTONS.get(screen);
             Button source = null;
+            Component sourceLabel = null;
             for (Map.Entry<Button, Component> entry : labels.entrySet()) {
-                if ("Defaults".equals(entry.getValue().getString())) {
+                if (entry.getKey() != existing
+                        && "Defaults".equals(entry.getValue().getString())) {
                     source = entry.getKey();
+                    sourceLabel = entry.getValue();
                     break;
                 }
             }
-            if (source == null) return;
+            if (source == null || sourceLabel == null) return;
 
-            Button existing = DEFAULT_BUTTONS.get(screen);
             if (existing != null && buttons.contains(existing)) {
                 source.visible = false;
                 source.active = false;
@@ -280,7 +284,7 @@ public final class CrosshairModulesPlacement {
                     .bounds(source.getX(), source.getY(),
                             source.getWidth(), source.getHeight())
                     .build();
-            labels.put(replacement, Component.literal("Defaults"));
+            labels.put(replacement, sourceLabel);
             buttons.add(replacement);
             addRenderableWidget(screen, replacement);
             DEFAULT_BUTTONS.put(screen, replacement);

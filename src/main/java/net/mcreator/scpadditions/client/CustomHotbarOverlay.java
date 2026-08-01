@@ -20,7 +20,7 @@ public final class CustomHotbarOverlay {
     private static final int SLOT_SIZE = 24;
     private static final int SELECTED_SLOT_SIZE = 28;
     private static final int CELL_GAP = 4;
-    private static final int MIN_CELL_WIDTH = 34;
+    private static final int MIN_CELL_WIDTH = 30;
     private static final int MAX_CELL_WIDTH = 82;
     private static final float LABEL_SCALE = 0.75F;
 
@@ -101,20 +101,16 @@ public final class CustomHotbarOverlay {
 
     private static void fitCells(List<HotbarEntry> entries,
             int maximumContentWidth) {
-        int current = totalWidth(entries);
-        if (current <= maximumContentWidth) return;
-
-        int excess = current - maximumContentWidth;
-        int remaining = entries.size();
-        for (int i = 0; i < entries.size() && excess > 0; i++) {
-            HotbarEntry entry = entries.get(i);
-            int fairShare = Math.max(1,
-                    (int) Math.ceil(excess / (double) remaining));
-            int reduction = Math.min(fairShare,
-                    Math.max(0, entry.cellWidth() - MIN_CELL_WIDTH));
-            entries.set(i, entry.withCellWidth(entry.cellWidth() - reduction));
-            excess -= reduction;
-            remaining--;
+        while (totalWidth(entries) > maximumContentWidth) {
+            boolean reduced = false;
+            for (int i = 0; i < entries.size(); i++) {
+                HotbarEntry entry = entries.get(i);
+                if (entry.cellWidth() <= MIN_CELL_WIDTH) continue;
+                entries.set(i, entry.withCellWidth(entry.cellWidth() - 1));
+                reduced = true;
+                if (totalWidth(entries) <= maximumContentWidth) return;
+            }
+            if (!reduced) return;
         }
     }
 

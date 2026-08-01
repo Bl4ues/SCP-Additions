@@ -14,6 +14,10 @@ public final class CustomHotbarModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+        event.registerAboveAll("elevator_arrival_overlay",
+                (gui, graphics, partialTick, width, height) ->
+                        ElevatorArrivalOverlay.render(
+                                graphics, width, height));
         event.registerAboveAll("custom_hotbar_overlay",
                 (gui, graphics, partialTick, width, height) ->
                         CustomHotbarOverlay.render(graphics, width, height));

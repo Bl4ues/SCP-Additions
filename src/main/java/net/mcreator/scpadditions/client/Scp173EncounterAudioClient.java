@@ -15,9 +15,14 @@ import net.mcreator.scpadditions.entity.Scp173Entity;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp173EncounterAudioClient {
     private static final ResourceLocation ENCOUNTER = new ResourceLocation(
-            "scp173music", "encounter");
+            ScpAdditionsMod.MODID, "scp_173_encounter");
     private static final ResourceLocation PARANOIA = new ResourceLocation(
-            "scp173music", "paranoia");
+            ScpAdditionsMod.MODID, "scp_173_paranoia");
+
+    private static final float ENCOUNTER_BACKGROUND_VOLUME = 0.035F;
+    private static final float ENCOUNTER_FOREGROUND_VOLUME = 0.55F;
+    private static final float PARANOIA_BACKGROUND_VOLUME = 0.04F;
+    private static final float PARANOIA_FOREGROUND_VOLUME = 0.82F;
 
     // The server already keeps the Blink HUD alive for ten seconds after the
     // last confirmed threat. This additional delay moves the musical swap near
@@ -135,8 +140,10 @@ public final class Scp173EncounterAudioClient {
         if (reusable) return;
 
         stopImmediately();
-        encounter = new Scp173EncounterLayerSound(ENCOUNTER);
-        paranoia = new Scp173EncounterLayerSound(PARANOIA);
+        encounter = new Scp173EncounterLayerSound(ENCOUNTER,
+                ENCOUNTER_BACKGROUND_VOLUME, ENCOUNTER_FOREGROUND_VOLUME);
+        paranoia = new Scp173EncounterLayerSound(PARANOIA,
+                PARANOIA_BACKGROUND_VOLUME, PARANOIA_FOREGROUND_VOLUME);
         encounter.setForeground(true);
         paranoia.setForeground(false);
         ticksSinceStart = 0;

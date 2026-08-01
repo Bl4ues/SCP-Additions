@@ -11,6 +11,7 @@ import net.mcreator.scpadditions.init.PlayerVoiceSounds;
 
 /** Shared drowning vocal loop with a smooth recovery fade. */
 public final class DrowningLoopSound extends AbstractTickableSoundInstance {
+    private static final float START_VOLUME = 0.02F;
     private static final float TARGET_VOLUME = 1.0F;
     private static final float FADE_IN_PER_TICK = 0.16F;
     private static final float FADE_OUT_PER_TICK = 0.065F;
@@ -23,7 +24,9 @@ public final class DrowningLoopSound extends AbstractTickableSoundInstance {
                 RandomSource.create());
         this.looping = true;
         this.delay = 0;
-        this.volume = 0.0F;
+        // Minecraft may discard a sound submitted at absolute zero volume.
+        // Begin barely audible, then perform the intended fade-in normally.
+        this.volume = START_VOLUME;
         this.pitch = 1.0F;
         this.relative = true;
         this.attenuation = SoundInstance.Attenuation.NONE;

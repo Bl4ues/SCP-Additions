@@ -31,6 +31,7 @@ public final class ModMusicExclusivityClient {
 
     private static boolean hasActiveModMusic() {
         return Scp1176MusicClient.isPlaying()
-                || Scp106ChaseAudioClient.isPlaying();
+                || Scp106ChaseAudioClient.isPlaying()
+                || Scp173EncounterAudioClient.isPlaying();
     }
 }

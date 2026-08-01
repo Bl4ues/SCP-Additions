@@ -4,8 +4,12 @@ import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 
-/** Compact oxygen meter rendered beneath the crosshair while air matters. */
+import java.util.UUID;
+
+/** Compact oxygen meter and progressive suffocation presentation. */
 public final class CustomOxygenOverlay {
     private static final int BAR_WIDTH = 156;
     private static final int BAR_HEIGHT = 8;
@@ -19,28 +23,173 @@ public final class CustomOxygenOverlay {
     private static final int WARNING_RED = 0xFFED5E55;
     private static final int CRITICAL_RED = 0xFFFF2A2A;
 
+    private static final float VIGNETTE_START_RATIO = 0.85F;
+    private static final float MAX_VIGNETTE_STRENGTH = 0.72F;
+    private static final float VIGNETTE_RESPONSE = 6.0F;
+    private static final int VIGNETTE_BANDS = 28;
+    private static final float DROWNING_DARKNESS_STEP = 0.14F;
+    private static final float MAX_DROWNING_DARKNESS = 0.86F;
+    private static final float DARKNESS_RECOVERY_PER_SECOND = 0.36F;
+    private static final float HEALTH_EPSILON = 1.0E-3F;
+
+    private static UUID trackedPlayerId;
+    private static float previousEffectiveHealth = Float.NaN;
+    private static int previousHurtTime;
+    private static int previousAirSupply = -1;
+    private static float vignetteStrength;
+    private static float drowningDarkness;
+    private static long lastFrameNanos;
+
     private CustomOxygenOverlay() {
     }
 
     public static void render(GuiGraphics graphics, int screenWidth,
             int screenHeight) {
-        if (!InventoryModuleRuntimeState.customOxygenBarForClient()) return;
+        if (!InventoryModuleRuntimeState.customOxygenBarForClient()) {
+            resetVisualState();
+            return;
+        }
 
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || player.isCreative() || player.isSpectator()
-                || minecraft.options.hideGui || minecraft.screen != null) {
+                || minecraft.screen != null) {
+            resetVisualState();
             return;
         }
 
+        long now = System.nanoTime();
+        float deltaSeconds = frameDelta(now);
+        initializePlayerState(player);
+
         int maximumAir = Math.max(1, player.getMaxAirSupply());
         int air = Math.max(0, Math.min(maximumAir, player.getAirSupply()));
-        if (!player.isUnderWater() && air >= maximumAir) return;
-
         float ratio = air / (float) maximumAir;
-        int x = (screenWidth - BAR_WIDTH) / 2;
-        int y = screenHeight / 2 + CROSSHAIR_GAP;
-        drawBar(graphics, x, y, BAR_WIDTH, BAR_HEIGHT, ratio);
+
+        updateSuffocationState(player, air, ratio, deltaSeconds);
+        drawSuffocationEffects(graphics, screenWidth, screenHeight);
+
+        if (!minecraft.options.hideGui
+                && (player.isUnderWater() || air < maximumAir)) {
+            int x = (screenWidth - BAR_WIDTH) / 2;
+            int y = screenHeight / 2 + CROSSHAIR_GAP;
+            drawBar(graphics, x, y, BAR_WIDTH, BAR_HEIGHT, ratio);
+        }
+    }
+
+    private static void initializePlayerState(LocalPlayer player) {
+        UUID playerId = player.getUUID();
+        if (playerId.equals(trackedPlayerId)
+                && !Float.isNaN(previousEffectiveHealth)) {
+            return;
+        }
+
+        trackedPlayerId = playerId;
+        previousEffectiveHealth = player.getHealth()
+                + player.getAbsorptionAmount();
+        previousHurtTime = player.hurtTime;
+        previousAirSupply = player.getAirSupply();
+        vignetteStrength = 0.0F;
+        drowningDarkness = 0.0F;
+    }
+
+    private static void updateSuffocationState(LocalPlayer player, int air,
+            float ratio, float deltaSeconds) {
+        float depletion = clamp01((VIGNETTE_START_RATIO - ratio)
+                / VIGNETTE_START_RATIO);
+        float targetVignette = smoothstep(depletion)
+                * MAX_VIGNETTE_STRENGTH;
+        float response = 1.0F - (float) Math.exp(
+                -VIGNETTE_RESPONSE * deltaSeconds);
+        vignetteStrength += (targetVignette - vignetteStrength) * response;
+
+        float effectiveHealth = player.getHealth()
+                + player.getAbsorptionAmount();
+        boolean drowningDamage = player.isUnderWater() && air <= 0
+                && isDrowningDamage(player);
+        boolean newDrowningPulse = drowningDamage
+                && (player.hurtTime > previousHurtTime
+                || effectiveHealth + HEALTH_EPSILON
+                < previousEffectiveHealth);
+        if (newDrowningPulse) {
+            drowningDarkness = Math.min(MAX_DROWNING_DARKNESS,
+                    drowningDarkness + DROWNING_DARKNESS_STEP);
+        }
+
+        boolean airRecovering = previousAirSupply >= 0
+                && air > previousAirSupply;
+        if (!player.isUnderWater() || airRecovering || air > 0) {
+            float recoveryMultiplier = airRecovering ? 1.35F : 1.0F;
+            drowningDarkness = Math.max(0.0F,
+                    drowningDarkness
+                            - DARKNESS_RECOVERY_PER_SECOND
+                            * recoveryMultiplier * deltaSeconds);
+        }
+
+        previousEffectiveHealth = effectiveHealth;
+        previousHurtTime = player.hurtTime;
+        previousAirSupply = air;
+    }
+
+    private static boolean isDrowningDamage(LocalPlayer player) {
+        DamageSource source = player.getLastDamageSource();
+        return source != null && source.is(DamageTypes.DROWN);
+    }
+
+    private static void drawSuffocationEffects(GuiGraphics graphics,
+            int width, int height) {
+        if (drowningDarkness > 0.001F) {
+            graphics.fill(0, 0, width, height,
+                    alphaBlack(drowningDarkness));
+        }
+        if (vignetteStrength > 0.001F) {
+            drawVignette(graphics, width, height, vignetteStrength);
+        }
+    }
+
+    private static void drawVignette(GuiGraphics graphics, int width,
+            int height, float strength) {
+        int maximumInset = Math.max(24,
+                Math.min(width, height) / 4);
+        for (int band = 0; band < VIGNETTE_BANDS; band++) {
+            int outer = Math.round(maximumInset
+                    * band / (float) VIGNETTE_BANDS);
+            int inner = Math.round(maximumInset
+                    * (band + 1) / (float) VIGNETTE_BANDS);
+            if (inner <= outer) continue;
+
+            float edgeAmount = 1.0F
+                    - band / (float) (VIGNETTE_BANDS - 1);
+            float alpha = strength * edgeAmount * edgeAmount;
+            int color = alphaBlack(alpha);
+
+            graphics.fill(outer, outer, width - outer, inner, color);
+            graphics.fill(outer, height - inner,
+                    width - outer, height - outer, color);
+            graphics.fill(outer, inner, inner, height - inner, color);
+            graphics.fill(width - inner, inner,
+                    width - outer, height - inner, color);
+        }
+    }
+
+    private static float frameDelta(long now) {
+        if (lastFrameNanos == 0L) {
+            lastFrameNanos = now;
+            return 1.0F / 60.0F;
+        }
+        float delta = (now - lastFrameNanos) / 1_000_000_000.0F;
+        lastFrameNanos = now;
+        return Math.max(0.0F, Math.min(0.10F, delta));
+    }
+
+    private static void resetVisualState() {
+        trackedPlayerId = null;
+        previousEffectiveHealth = Float.NaN;
+        previousHurtTime = 0;
+        previousAirSupply = -1;
+        vignetteStrength = 0.0F;
+        drowningDarkness = 0.0F;
+        lastFrameNanos = 0L;
     }
 
     private static void drawBar(GuiGraphics graphics, int x, int y,
@@ -74,7 +223,7 @@ public final class CustomOxygenOverlay {
     }
 
     private static int oxygenColor(float ratio) {
-        float value = Math.max(0.0F, Math.min(1.0F, ratio));
+        float value = clamp01(ratio);
         if (value >= 0.50F) {
             return lerpColor(MID_BLUE, FULL_BLUE,
                     (value - 0.50F) / 0.50F);
@@ -96,7 +245,7 @@ public final class CustomOxygenOverlay {
     }
 
     private static int lerpColor(int from, int to, float amount) {
-        float value = Math.max(0.0F, Math.min(1.0F, amount));
+        float value = clamp01(amount);
         int alpha = Math.round(((from >>> 24) & 0xFF)
                 + (((to >>> 24) & 0xFF) - ((from >>> 24) & 0xFF)) * value);
         int red = Math.round(((from >> 16) & 0xFF)
@@ -112,5 +261,20 @@ public final class CustomOxygenOverlay {
         int value = Math.max(0, Math.min(255,
                 Math.round(alpha * 255.0F)));
         return (value << 24) | (color & 0x00FFFFFF);
+    }
+
+    private static int alphaBlack(float alpha) {
+        int value = Math.max(0, Math.min(255,
+                Math.round(clamp01(alpha) * 255.0F)));
+        return value << 24;
+    }
+
+    private static float smoothstep(float value) {
+        float clamped = clamp01(value);
+        return clamped * clamped * (3.0F - 2.0F * clamped);
+    }
+
+    private static float clamp01(float value) {
+        return Math.max(0.0F, Math.min(1.0F, value));
     }
 }

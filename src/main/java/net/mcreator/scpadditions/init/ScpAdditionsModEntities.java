@@ -34,7 +34,10 @@ public class ScpAdditionsModEntities {
 
 	public static final RegistryObject<EntityType<Scp173Entity>> SCP_173 = REGISTRY.register("scp_173",
 			() -> EntityType.Builder.of(Scp173Entity::new, MobCategory.MONSTER)
-					.sized(0.85F, 1.95F).clientTrackingRange(12).updateInterval(1).build("scp_173"));
+					// Keep the rendered statue broad, but use a player-like collision
+					// footprint so slight path-node offsets cannot wedge it against
+					// one-block facility door frames.
+					.sized(0.70F, 1.90F).clientTrackingRange(12).updateInterval(1).build("scp_173"));
 
 	@SubscribeEvent
 	public static void createAttributes(EntityAttributeCreationEvent event) {

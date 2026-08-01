@@ -5,10 +5,11 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /** Sound events for selectable player voices and shared breathing audio. */
 public final class PlayerVoiceSounds {
-    public static final String MODID = "scp_additions_voice";
+    public static final String MODID = ScpAdditionsMod.MODID;
 
     public static final DeferredRegister<SoundEvent> REGISTRY =
             DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MODID);

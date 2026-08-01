@@ -1,10 +1,12 @@
 package net.mcreator.scpadditions.entity;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -15,9 +17,7 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -49,13 +49,38 @@ public final class Scp173PlayerPriorityController {
             return;
         }
 
-        Set<UUID> present = new HashSet<>();
         for (Entity entity : level.getAllEntities()) {
-            if (!(entity instanceof Scp173Entity statue)) continue;
-            present.add(statue.getUUID());
-            prioritizePlayer(level, statue);
+            if (entity instanceof Scp173Entity statue) {
+                prioritizePlayer(level, statue);
+            }
         }
-        STATES.keySet().removeIf(id -> !present.contains(id));
+    }
+
+    /**
+     * Runs in the same server task that receives the blink input. This removes
+     * the old one-tick loophole where a statue targeting something else ignored
+     * the newly vulnerable player until its next ordinary target evaluation.
+     */
+    public static void prioritizeBlinkingPlayer(ServerPlayer player) {
+        if (!isValidPlayer(player)
+                || !ScpAdditionsModulesConfig.get().scp173.enabled) {
+            return;
+        }
+
+        AABB area = player.getBoundingBox().inflate(SEARCH_RANGE);
+        for (Scp173Entity statue : player.serverLevel().getEntitiesOfClass(
+                Scp173Entity.class, area,
+                entity -> entity.isAlive() && entity.isActivated()
+                        && entity.distanceToSqr(player)
+                        <= SEARCH_RANGE_SQR)) {
+            if (!hasClearDirectCorridor(statue, player)
+                    && !hasReachablePath(statue, player)) {
+                continue;
+            }
+
+            forcePlayerTarget(statue, player,
+                    hasClearDirectCorridor(statue, player));
+        }
     }
 
     private static void prioritizePlayer(ServerLevel level,
@@ -101,10 +126,16 @@ public final class Scp173PlayerPriorityController {
             return;
         }
 
+        forcePlayerTarget(statue, chosen, chosen == directPlayer);
+    }
+
+    private static void forcePlayerTarget(Scp173Entity statue, Player chosen,
+            boolean directCorridor) {
+        PriorityState state = STATES.computeIfAbsent(statue.getUUID(),
+                ignored -> new PriorityState());
         LivingEntity previous = statue.getTarget();
         boolean targetChanged = previous == null
                 || !previous.getUUID().equals(chosen.getUUID());
-        boolean directCorridor = chosen == directPlayer;
         boolean directRouteOpened = directCorridor
                 && (!state.directCorridor
                 || state.targetId == null

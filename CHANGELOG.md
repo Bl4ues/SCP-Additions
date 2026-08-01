@@ -42,6 +42,7 @@
 
 - Reduced SCP-173's rendered height to approximately two blocks;
 - Updated and Reworked SCP-173's movement audio;
+- Added a synchronized two-layer encounter score triggered by SCP-173 reveal scares: the first layer dominates during direct danger, the second paranoia layer crossfades in as the Blink HUD disappears, and the score lingers after the statue leaves before fading out;
 - Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists; it now waits silently and resumes as soon as a route becomes available.
 
 ## SCP-131
@@ -67,6 +68,7 @@
 - SCP-106 begins checking for a possible encounter earlier than SCP-173, while both continue with recurring checks afterward;
 - When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
+- Added a sixty-second no-access timeout for routine SCP-173 encounters trapped by sealed layouts, while preserving manually placed statues;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
 

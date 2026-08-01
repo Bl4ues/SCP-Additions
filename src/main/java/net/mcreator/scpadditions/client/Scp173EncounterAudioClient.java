@@ -67,6 +67,10 @@ public final class Scp173EncounterAudioClient {
         }
     }
 
+    public static boolean isPlaying() {
+        return encounter != null || paranoia != null;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;

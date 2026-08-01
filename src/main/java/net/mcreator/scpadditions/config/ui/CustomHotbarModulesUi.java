@@ -84,8 +84,8 @@ public final class CustomHotbarModulesUi {
                 constructor.setAccessible(true);
                 Object row = constructor.newInstance(
                         "inventory", "custom_hotbar", HOTBAR_LABEL,
-                        "Replaces the vanilla hotbar visually with a compact category-based item list.",
-                        false);
+                        "Replaces the vanilla hotbar with a rotating category-based item list.",
+                        true);
 
                 List<Object> updated = new ArrayList<>(currentRows);
                 int insertAt = inventoryIndex >= 0

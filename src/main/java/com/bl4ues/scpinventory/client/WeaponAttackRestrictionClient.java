@@ -12,7 +12,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Removes the punch action while the equipped-weapon requirement is active. */
+/** Removes the punch action unless a weapon is actually held. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class WeaponAttackRestrictionClient {
     private WeaponAttackRestrictionClient() {
@@ -31,7 +31,8 @@ public final class WeaponAttackRestrictionClient {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         if (player == null || player.isCreative() || player.isSpectator()
-                || WeaponAttackRestrictionEvents.hasEquippedWeapon(player)) {
+                || WeaponAttackRestrictionEvents
+                .hasWeaponInMainHand(player)) {
             return;
         }
 

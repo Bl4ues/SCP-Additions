@@ -11,6 +11,9 @@ public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverMuteNonPlayerHitSounds;
     private static volatile Boolean serverDisableVanillaMusic;
     private static volatile Boolean serverHideActiveEffectIndicators;
+    private static volatile Boolean serverHideEmptyHand;
+    private static volatile Boolean serverDisableExperienceBar;
+    private static volatile Boolean serverCustomOxygenBar;
     private static volatile Boolean serverCustomCrosshairEnabled;
     private static volatile Boolean serverInGameCrosshairEnabled;
     private static volatile Float serverCrosshairRed;
@@ -64,6 +67,24 @@ public final class InventoryModuleRuntimeState {
                 .hideActiveEffectIndicators;
     }
 
+    public static boolean hideEmptyHandForClient() {
+        Boolean synced = serverHideEmptyHand;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().hud.hideEmptyHand;
+    }
+
+    public static boolean disableExperienceBarForClient() {
+        Boolean synced = serverDisableExperienceBar;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().hud.disableExperienceBar;
+    }
+
+    public static boolean customOxygenBarForClient() {
+        Boolean synced = serverCustomOxygenBar;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().hud.customOxygenBar;
+    }
+
     public static boolean customCrosshairEnabledForClient() {
         Boolean synced = serverCustomCrosshairEnabled;
         return synced != null ? synced
@@ -106,6 +127,9 @@ public final class InventoryModuleRuntimeState {
             boolean muteNonPlayerHitSounds,
             boolean disableVanillaMusic,
             boolean hideActiveEffectIndicators,
+            boolean hideEmptyHand,
+            boolean disableExperienceBar,
+            boolean customOxygenBar,
             boolean customCrosshairEnabled,
             boolean inGameCrosshairEnabled,
             float crosshairRed, float crosshairGreen,
@@ -117,6 +141,9 @@ public final class InventoryModuleRuntimeState {
         serverMuteNonPlayerHitSounds = muteNonPlayerHitSounds;
         serverDisableVanillaMusic = disableVanillaMusic;
         serverHideActiveEffectIndicators = hideActiveEffectIndicators;
+        serverHideEmptyHand = hideEmptyHand;
+        serverDisableExperienceBar = disableExperienceBar;
+        serverCustomOxygenBar = customOxygenBar;
         serverCustomCrosshairEnabled = customCrosshairEnabled;
         serverInGameCrosshairEnabled = inGameCrosshairEnabled;
         serverCrosshairRed = clampUnit(crosshairRed);
@@ -133,6 +160,9 @@ public final class InventoryModuleRuntimeState {
         serverMuteNonPlayerHitSounds = null;
         serverDisableVanillaMusic = null;
         serverHideActiveEffectIndicators = null;
+        serverHideEmptyHand = null;
+        serverDisableExperienceBar = null;
+        serverCustomOxygenBar = null;
         serverCustomCrosshairEnabled = null;
         serverInGameCrosshairEnabled = null;
         serverCrosshairRed = null;

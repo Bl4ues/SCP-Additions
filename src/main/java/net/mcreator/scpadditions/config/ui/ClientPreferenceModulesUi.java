@@ -444,14 +444,11 @@ public final class ClientPreferenceModulesUi {
         int panelHeight = Math.min(310, screen.height - 20);
         int panelX = Math.max(8, (screen.width - panelWidth) / 2);
         int panelY = Math.max(10, (screen.height - panelHeight) / 2);
-        graphics.fill(panelX + 10, panelY + 27,
-                panelX + panelWidth - 10, panelY + 49, PANEL);
-        graphics.drawString(font,
-                ScpFonts.roboto("Personal preferences apply only to you."),
-                panelX + 14, panelY + 29, PERSONAL, false);
-        graphics.drawString(font,
-                ScpFonts.roboto("World and gameplay rules require the host or an operator."),
-                panelX + 14, panelY + 40, MUTED, false);
+        graphics.fill(panelX + 10, panelY + 44,
+                panelX + panelWidth - 10, panelY + 58, PANEL);
+        graphics.drawString(font, ScpFonts.roboto(
+                        "Personal settings affect only you; gameplay settings require the host."),
+                panelX + 14, panelY + 47, PERSONAL, false);
     }
 
     private static void renderModuleDisclaimer(GuiGraphics graphics,

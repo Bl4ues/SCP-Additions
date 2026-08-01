@@ -39,10 +39,11 @@ public final class ClientPreferenceModulesUi {
     private static final String CROSSHAIR_SCREEN =
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$CrosshairScreen";
 
-    private static final int PANEL = 0xEE111317;
-    private static final int MUTED = 0xFF9CA3AF;
-    private static final int PERSONAL = 0xFF79D58B;
-    private static final int HOST = 0xFFFFC56D;
+    private static final int CLIENT_SCOPE = 0xFF79D58B;
+    private static final int SERVER_SCOPE = 0xFFFFC56D;
+    private static final int SERVER_LOCKED_SCOPE = 0xFFFF7373;
+    private static final int BADGE_BACKGROUND = 0xE6081022;
+    private static final float BADGE_SCALE = 0.74F;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting()
             .disableHtmlEscaping().create();
@@ -77,9 +78,8 @@ public final class ClientPreferenceModulesUi {
     public static void onRenderPost(ScreenEvent.Render.Post event) {
         Screen screen = event.getScreen();
         refresh(screen);
-        if (isHome(screen)) renderHomeDisclaimer(event.getGuiGraphics(), screen);
         if (isExtended(screen)) {
-            renderModuleDisclaimer(event.getGuiGraphics(), screen);
+            renderScopeBadges(event.getGuiGraphics(), screen);
         }
     }
 
@@ -148,12 +148,8 @@ public final class ClientPreferenceModulesUi {
             for (Button button : buttons) {
                 Component label = labels.get(button);
                 if (label == null || !button.visible) continue;
-                String plain = label.getString();
-                String base = stripState(plain);
-                Boolean personal = scopes.get(base);
-                if (personal == null) {
-                    personal = specialPersonalControl(base);
-                }
+                Boolean personal = scopeForLabel(scopes,
+                        stripState(label.getString()));
                 if (personal != null) {
                     button.active = personal || canEdit;
                 }
@@ -162,6 +158,70 @@ public final class ClientPreferenceModulesUi {
             ScpAdditionsMod.LOGGER.warn(
                     "Could not apply module permission scopes", exception);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void renderScopeBadges(GuiGraphics graphics,
+            Screen screen) {
+        try {
+            Field buttonsField = screen.getClass().getDeclaredField("buttons");
+            Field labelsField = screen.getClass().getDeclaredField("labels");
+            buttonsField.setAccessible(true);
+            labelsField.setAccessible(true);
+            Object buttonsValue = buttonsField.get(screen);
+            Object labelsValue = labelsField.get(screen);
+            if (!(buttonsValue instanceof List<?> rawButtons)
+                    || !(labelsValue instanceof Map<?, ?> rawLabels)) return;
+
+            List<Button> buttons = (List<Button>) rawButtons;
+            Map<Button, Component> labels = (Map<Button, Component>) rawLabels;
+            Map<String, Boolean> scopes = rowScopes(screen);
+            boolean canEdit = canEditServer();
+            Font font = Minecraft.getInstance().font;
+
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, 1450.0F);
+            for (Button button : buttons) {
+                if (!button.visible) continue;
+                Component label = labels.get(button);
+                if (label == null) continue;
+                String base = stripState(label.getString());
+                if ("Test Voice".equals(base)) continue;
+                Boolean personal = scopeForLabel(scopes, base);
+                if (personal == null) continue;
+
+                String text = personal ? "Client-side" : "Server-side";
+                Component badge = ScpFonts.roboto(text);
+                int color = personal ? CLIENT_SCOPE
+                        : canEdit ? SERVER_SCOPE : SERVER_LOCKED_SCOPE;
+                int scaledWidth = Math.round(font.width(badge) * BADGE_SCALE);
+                int scaledHeight = Math.max(6,
+                        Math.round(font.lineHeight * BADGE_SCALE));
+                int right = button.getX() + button.getWidth() - 7;
+                int x = right - scaledWidth;
+                int y = button.getY()
+                        + Math.max(1, (button.getHeight() - scaledHeight) / 2);
+
+                graphics.fill(x - 4, button.getY() + 2,
+                        right + 3, button.getY() + button.getHeight() - 2,
+                        BADGE_BACKGROUND);
+                graphics.pose().pushPose();
+                graphics.pose().translate(x, y, 0.0F);
+                graphics.pose().scale(BADGE_SCALE, BADGE_SCALE, 1.0F);
+                graphics.drawString(font, badge, 0, 0, color, false);
+                graphics.pose().popPose();
+            }
+            graphics.pose().popPose();
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not render module permission scopes", exception);
+        }
+    }
+
+    private static Boolean scopeForLabel(Map<String, Boolean> scopes,
+            String label) {
+        Boolean personal = scopes.get(label);
+        return personal != null ? personal : specialPersonalControl(label);
     }
 
     @SuppressWarnings("unchecked")
@@ -435,47 +495,5 @@ public final class ClientPreferenceModulesUi {
             }
         }
         return null;
-    }
-
-    private static void renderHomeDisclaimer(GuiGraphics graphics,
-            Screen screen) {
-        Font font = Minecraft.getInstance().font;
-        int panelWidth = Math.min(420, screen.width - 20);
-        int panelHeight = Math.min(310, screen.height - 20);
-        int panelX = Math.max(8, (screen.width - panelWidth) / 2);
-        int panelY = Math.max(10, (screen.height - panelHeight) / 2);
-        graphics.fill(panelX + 10, panelY + 44,
-                panelX + panelWidth - 10, panelY + 58, PANEL);
-        graphics.drawString(font, ScpFonts.roboto(
-                        "Personal settings affect only you; gameplay settings require the host."),
-                panelX + 14, panelY + 47, PERSONAL, false);
-    }
-
-    private static void renderModuleDisclaimer(GuiGraphics graphics,
-            Screen screen) {
-        Font font = Minecraft.getInstance().font;
-        int panelWidth = Math.min(560, screen.width - 20);
-        int rowCount;
-        try {
-            rowCount = rowScopes(screen).size();
-        } catch (ReflectiveOperationException ignored) {
-            rowCount = 8;
-        }
-        int preferredHeight = rowCount <= 4 ? 240 : 380;
-        int panelHeight = Math.min(preferredHeight, screen.height - 16);
-        int panelX = Math.max(8, (screen.width - panelWidth) / 2);
-        int panelY = Math.max(8, (screen.height - panelHeight) / 2);
-        graphics.fill(panelX + 10, panelY + 27,
-                panelX + panelWidth - 10, panelY + 41, PANEL);
-        graphics.drawString(font,
-                ScpFonts.roboto("Personal: per-player presentation"),
-                panelX + 16, panelY + 30, PERSONAL, false);
-        String hostText = canEditServer()
-                ? "Host: world and gameplay rules"
-                : "Host: locked without operator permission";
-        int hostWidth = font.width(ScpFonts.roboto(hostText));
-        graphics.drawString(font, ScpFonts.roboto(hostText),
-                panelX + panelWidth - hostWidth - 16,
-                panelY + 30, HOST, false);
     }
 }

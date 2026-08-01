@@ -128,14 +128,13 @@ public final class ElevatorArrivalOverlay {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    @SubscribeEvent
-    public static void render(RenderGuiOverlayEvent.Post event) {
-        if (!event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) {
-            return;
-        }
+    /** Rendered from an independent Forge overlay so hiding the vanilla hotbar
+     * cannot suppress or strand the arrival sequence. */
+    public static void render(GuiGraphics graphics, int width, int height) {
         long now = System.nanoTime();
         updateTimeline(now);
         if (!active) return;
+
         double time = (now - startedAtNanos) / 1_000_000_000.0D;
         if (time < 0.0D || time >= LINE_OUT_END) {
             finishSequence(now);
@@ -144,9 +143,7 @@ public final class ElevatorArrivalOverlay {
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.options.hideGui || minecraft.player == null) return;
-        GuiGraphics graphics = event.getGuiGraphics();
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        int height = minecraft.getWindow().getGuiScaledHeight();
+
         int overlayCenterX = width / 2 + OVERLAY_HORIZONTAL_BIAS;
         int lineY = Math.round(height * 0.498F);
 
@@ -241,6 +238,11 @@ public final class ElevatorArrivalOverlay {
             pending = false;
             active = true;
             startedAtNanos = scheduledStartNanos;
+        }
+        if (active && startedAtNanos > 0L
+                && (now - startedAtNanos) / 1_000_000_000.0D
+                >= LINE_OUT_END) {
+            finishSequence(now);
         }
     }
 

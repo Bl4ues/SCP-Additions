@@ -9,6 +9,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -18,24 +19,31 @@ import java.util.List;
 
 /** Rotating SCP Additions hotbar with the active item anchored on the right. */
 public final class CustomHotbarOverlay {
+    private static final ResourceLocation PICKUP_ICON = new ResourceLocation(
+            "scpinventory", "textures/gui/pickup.png");
+    private static final int PICKUP_ICON_SOURCE_SIZE = 128;
+
     private static final int HOTBAR_SLOT_COUNT = 9;
     private static final int SLOT_SIZE = 24;
     private static final int SELECTED_SLOT_SIZE = 29;
     private static final int CELL_GAP = 4;
-    private static final int MIN_CELL_WIDTH = 31;
+    private static final int MIN_CELL_WIDTH = 27;
     private static final int MAX_CELL_WIDTH = 82;
     private static final int INFO_GAP = 11;
-    private static final int MAX_INFO_WIDTH = 190;
+    private static final int MIN_INFO_WIDTH = 150;
+    private static final int MAX_INFO_WIDTH = 220;
+    private static final int MAX_DETAIL_LINES = 3;
     private static final float LABEL_SCALE = 0.75F;
     private static final float DETAIL_SCALE = 0.70F;
+    private static final float MIN_NAME_SCALE = 0.68F;
 
-    private static final int SLOT_BACKGROUND = 0xA8081022;
-    private static final int SELECTED_BACKGROUND = 0xF0081022;
+    private static final int SLOT_BACKGROUND = 0x70081022;
+    private static final int SELECTED_BACKGROUND = 0xA0081022;
     private static final int SELECTED_BORDER = 0xFFC59A2A;
-    private static final int CATEGORY_TEXT = 0xFF9EA6B3;
-    private static final int SELECTED_CATEGORY_TEXT = 0xFFE5D49A;
-    private static final int ITEM_NAME_TEXT = 0xFFE5D49A;
-    private static final int ITEM_DETAIL_TEXT = 0xFFA9B0BC;
+    private static final int CATEGORY_TEXT = 0xD89EA6B3;
+    private static final int SELECTED_CATEGORY_TEXT = 0xF2E5D49A;
+    private static final int ITEM_NAME_TEXT = 0xF2E5D49A;
+    private static final int ITEM_DETAIL_TEXT = 0xD0A9B0BC;
 
     private CustomHotbarOverlay() {
     }
@@ -65,15 +73,21 @@ public final class CustomHotbarOverlay {
         ItemInfo info = itemInfo(selectedEntry.stack(), player, font);
 
         int availableWidth = Math.max(1, screenWidth - 16);
-        int desiredInfoWidth = Math.min(MAX_INFO_WIDTH,
-                Math.max(76, info.naturalWidth()));
-        int maximumListWidth = Math.max(MIN_CELL_WIDTH,
-                availableWidth - INFO_GAP - desiredInfoWidth);
+        int desiredInfoWidth = info.visible()
+                ? Math.min(MAX_INFO_WIDTH,
+                        Math.max(MIN_INFO_WIDTH, info.naturalWidth() + 8))
+                : 0;
+        int maximumListWidth = desiredInfoWidth > 0
+                ? Math.max(MIN_CELL_WIDTH,
+                        availableWidth - INFO_GAP - desiredInfoWidth)
+                : availableWidth;
         fitCells(entries, maximumListWidth);
 
         int listWidth = totalWidth(entries);
-        int infoWidth = Math.max(0, Math.min(desiredInfoWidth,
-                availableWidth - listWidth - INFO_GAP));
+        int infoWidth = desiredInfoWidth > 0
+                ? Math.max(0, Math.min(desiredInfoWidth,
+                        availableWidth - listWidth - INFO_GAP))
+                : 0;
         int combinedWidth = listWidth
                 + (infoWidth > 0 ? INFO_GAP + infoWidth : 0);
         int cursorX = (screenWidth - combinedWidth) / 2;
@@ -96,8 +110,13 @@ public final class CustomHotbarOverlay {
                                 ? SELECTED_CATEGORY_TEXT : CATEGORY_TEXT);
             }
             drawSlot(graphics, slotX, slotY, slotSize, selected);
-            drawItem(graphics, font, entry.stack(), cellCenterX,
-                    slotY + slotSize / 2, selected);
+            if (entry.stack().isEmpty()) {
+                drawPickupIcon(graphics, cellCenterX,
+                        slotY + slotSize / 2);
+            } else {
+                drawItem(graphics, font, entry.stack(), cellCenterX,
+                        slotY + slotSize / 2, selected);
+            }
 
             if (selected) {
                 selectedRight = slotX + slotSize;
@@ -106,7 +125,7 @@ public final class CustomHotbarOverlay {
             cursorX += entry.cellWidth() + CELL_GAP;
         }
 
-        if (infoWidth > 0) {
+        if (infoWidth > 0 && info.visible()) {
             drawItemInfo(graphics, font, info,
                     selectedRight + INFO_GAP, selectedTop + 3, infoWidth);
         }
@@ -180,9 +199,7 @@ public final class CustomHotbarOverlay {
     private static ItemInfo itemInfo(ItemStack stack, LocalPlayer player,
             Font font) {
         if (stack == null || stack.isEmpty()) {
-            String name = "Empty Hand";
-            return new ItemInfo(name, List.of(),
-                    font.width(ScpFonts.roboto(name)));
+            return ItemInfo.hidden();
         }
 
         String name = stack.getHoverName().getString();
@@ -199,7 +216,7 @@ public final class CustomHotbarOverlay {
             width = Math.max(width, Math.round(
                     font.width(ScpFonts.roboto(detail)) * DETAIL_SCALE));
         }
-        return new ItemInfo(name, List.copyOf(details), width);
+        return new ItemInfo(name, List.copyOf(details), width, true);
     }
 
     private static void fitCells(List<HotbarEntry> entries,
@@ -239,12 +256,10 @@ public final class CustomHotbarOverlay {
 
     private static void drawItem(GuiGraphics graphics, Font font,
             ItemStack stack, int centerX, int centerY, boolean selected) {
-        if (stack == null || stack.isEmpty()) return;
-
         int itemX = centerX - 8;
         int itemY = centerY - 8;
         if (!selected) {
-            RenderSystem.setShaderColor(0.68F, 0.68F, 0.68F, 0.78F);
+            RenderSystem.setShaderColor(0.66F, 0.66F, 0.66F, 0.66F);
             graphics.renderItem(stack, itemX, itemY);
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
             graphics.renderItemDecorations(font, stack, itemX, itemY);
@@ -259,26 +274,90 @@ public final class CustomHotbarOverlay {
         graphics.renderItemDecorations(font, stack, itemX, itemY);
     }
 
+    private static void drawPickupIcon(GuiGraphics graphics,
+            int centerX, int centerY) {
+        int size = 16;
+        int x = centerX - size / 2;
+        int y = centerY - size / 2;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.72F);
+        graphics.blit(PICKUP_ICON, x, y, size, size,
+                0.0F, 0.0F,
+                PICKUP_ICON_SOURCE_SIZE, PICKUP_ICON_SOURCE_SIZE,
+                PICKUP_ICON_SOURCE_SIZE, PICKUP_ICON_SOURCE_SIZE);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+    }
+
     private static void drawItemInfo(GuiGraphics graphics, Font font,
             ItemInfo info, int x, int y, int availableWidth) {
-        String name = trim(font, info.name(), availableWidth, 1.0F);
-        graphics.drawString(font, ScpFonts.roboto(name), x, y,
-                ITEM_NAME_TEXT, false);
+        drawFitted(graphics, font, info.name(), x, y,
+                availableWidth, 1.0F, MIN_NAME_SCALE, ITEM_NAME_TEXT);
 
         int detailY = y + 12;
+        int renderedLines = 0;
         for (String detail : info.details()) {
-            String trimmed = trim(font, detail, availableWidth, DETAIL_SCALE);
-            drawScaled(graphics, font, trimmed, x, detailY,
-                    DETAIL_SCALE, ITEM_DETAIL_TEXT);
-            detailY += 8;
+            for (String line : wrap(font, detail, availableWidth,
+                    DETAIL_SCALE)) {
+                if (renderedLines >= MAX_DETAIL_LINES) return;
+                drawScaled(graphics, font, line, x, detailY,
+                        DETAIL_SCALE, ITEM_DETAIL_TEXT);
+                detailY += 8;
+                renderedLines++;
+            }
         }
     }
 
-    private static String trim(Font font, String text, int width,
-            float scale) {
-        int unscaledWidth = Math.max(1, Math.round(width / scale));
-        return font.plainSubstrByWidth(text == null ? "" : text,
-                unscaledWidth);
+    private static void drawFitted(GuiGraphics graphics, Font font,
+            String text, int x, int y, int availableWidth,
+            float preferredScale, float minimumScale, int color) {
+        Component component = ScpFonts.roboto(text);
+        int textWidth = Math.max(1, font.width(component));
+        float scale = Math.min(preferredScale,
+                availableWidth / (float) textWidth);
+        scale = Math.max(minimumScale, scale);
+        drawScaled(graphics, font, text, x, y, scale, color);
+    }
+
+    private static List<String> wrap(Font font, String text,
+            int availableWidth, float scale) {
+        List<String> lines = new ArrayList<>();
+        String remaining = text == null ? "" : text.trim();
+        if (remaining.isBlank()) return lines;
+
+        int unscaledWidth = Math.max(1,
+                (int) Math.floor(availableWidth / scale));
+        while (!remaining.isBlank() && lines.size() < MAX_DETAIL_LINES) {
+            if (font.width(ScpFonts.roboto(remaining)) <= unscaledWidth) {
+                lines.add(remaining);
+                break;
+            }
+
+            int split = bestSplit(font, remaining, unscaledWidth);
+            if (split <= 0) {
+                split = Math.max(1, font.plainSubstrByWidth(
+                        remaining, unscaledWidth).length());
+            }
+            lines.add(remaining.substring(0, split).trim());
+            remaining = remaining.substring(split).trim();
+        }
+        return lines;
+    }
+
+    private static int bestSplit(Font font, String text,
+            int unscaledWidth) {
+        int best = -1;
+        for (int i = 1; i < text.length(); i++) {
+            if (!Character.isWhitespace(text.charAt(i))) continue;
+            String candidate = text.substring(0, i).trim();
+            if (font.width(ScpFonts.roboto(candidate)) <= unscaledWidth) {
+                best = i;
+            } else {
+                break;
+            }
+        }
+        return best;
     }
 
     private static void drawScaledCentered(GuiGraphics graphics, Font font,
@@ -315,6 +394,9 @@ public final class CustomHotbarOverlay {
     }
 
     private record ItemInfo(String name, List<String> details,
-                            int naturalWidth) {
+                            int naturalWidth, boolean visible) {
+        private static ItemInfo hidden() {
+            return new ItemInfo("", List.of(), 0, false);
+        }
     }
 }

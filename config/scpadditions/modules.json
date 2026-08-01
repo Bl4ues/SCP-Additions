@@ -17,7 +17,10 @@
   },
   "hud": {
     "enabled": true,
-    "hide_active_effect_indicators": true
+    "hide_active_effect_indicators": true,
+    "hide_empty_hand": true,
+    "disable_experience_bar": true,
+    "custom_oxygen_bar": true
   },
   "vitals": {
     "custom_health_enabled": true,

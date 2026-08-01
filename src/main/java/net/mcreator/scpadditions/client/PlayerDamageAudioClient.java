@@ -43,7 +43,9 @@ public final class PlayerDamageAudioClient {
     private static float previousEffectiveHealth = Float.NaN;
     private static int previousAirSupply = -1;
     private static int lowestAirSupply = Integer.MAX_VALUE;
+    private static boolean wasUnderWater;
     private static boolean recoveryGaspArmed;
+    private static boolean awaitingRecoveryGasp;
 
     private PlayerDamageAudioClient() {
     }
@@ -113,7 +115,9 @@ public final class PlayerDamageAudioClient {
             previousEffectiveHealth = effectiveHealth;
             previousAirSupply = player.getAirSupply();
             lowestAirSupply = previousAirSupply;
+            wasUnderWater = player.isUnderWater();
             recoveryGaspArmed = false;
+            awaitingRecoveryGasp = false;
             return;
         }
 
@@ -124,8 +128,9 @@ public final class PlayerDamageAudioClient {
                 < previousEffectiveHealth));
 
         if (newHurtPulse
-                && InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()) {
-            playLocalHurt(isDrowningDamage(player));
+                && InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()
+                && !isDrowningDamage(player)) {
+            playLocalHurt();
         }
 
         updateRecoveryGasp(player);
@@ -172,39 +177,51 @@ public final class PlayerDamageAudioClient {
         playRelative(selectedHurtSound(), 1.0F, 1.0F);
     }
 
-    private static void playLocalHurt(boolean drowning) {
+    private static void playLocalHurt() {
         RandomSource random = RandomSource.create();
-        float volume = drowning ? 0.62F : 1.0F;
-        float pitch = drowning
-                ? 0.72F + random.nextFloat() * 0.06F
-                : 0.96F + random.nextFloat() * 0.08F;
-        playRelative(selectedHurtSound(), volume, pitch, random);
+        float pitch = 0.96F + random.nextFloat() * 0.08F;
+        playRelative(selectedHurtSound(), 1.0F, pitch, random);
     }
 
     private static void updateRecoveryGasp(Player player) {
         int maximumAir = Math.max(1, player.getMaxAirSupply());
         int currentAir = Math.max(0, player.getAirSupply());
         int threshold = Math.round(maximumAir * GASP_AIR_THRESHOLD);
+        boolean underWater = player.isUnderWater();
 
-        if (player.isUnderWater() || currentAir < maximumAir) {
-            lowestAirSupply = Math.min(lowestAirSupply, currentAir);
-            if (lowestAirSupply <= threshold) recoveryGaspArmed = true;
-        }
-
-        boolean recovering = !player.isUnderWater()
-                && previousAirSupply >= 0
-                && currentAir > previousAirSupply;
-        if (recoveryGaspArmed && recovering) {
-            if (InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()) {
-                playRelative(selectedGaspSound(), 1.0F, 1.0F);
+        if (underWater) {
+            if (!wasUnderWater) {
+                lowestAirSupply = currentAir;
+                recoveryGaspArmed = false;
+                awaitingRecoveryGasp = false;
             }
-            recoveryGaspArmed = false;
-            lowestAirSupply = currentAir;
-        } else if (!player.isUnderWater() && currentAir >= maximumAir
-                && !recoveryGaspArmed) {
-            lowestAirSupply = maximumAir;
+            lowestAirSupply = Math.min(lowestAirSupply, currentAir);
+            if (lowestAirSupply <= threshold) {
+                recoveryGaspArmed = true;
+            }
+        } else {
+            if (wasUnderWater && recoveryGaspArmed) {
+                awaitingRecoveryGasp = true;
+            }
+
+            boolean recovering = previousAirSupply >= 0
+                    && currentAir > previousAirSupply;
+            if (awaitingRecoveryGasp && recovering) {
+                if (InventoryModuleRuntimeState
+                        .replacePlayerHurtSoundsForClient()) {
+                    playRelative(selectedGaspSound(), 1.0F, 1.0F);
+                }
+                awaitingRecoveryGasp = false;
+                recoveryGaspArmed = false;
+                lowestAirSupply = maximumAir;
+            } else if (currentAir >= maximumAir
+                    && !awaitingRecoveryGasp) {
+                recoveryGaspArmed = false;
+                lowestAirSupply = maximumAir;
+            }
         }
 
+        wasUnderWater = underWater;
         previousAirSupply = currentAir;
     }
 
@@ -246,7 +263,9 @@ public final class PlayerDamageAudioClient {
         previousEffectiveHealth = Float.NaN;
         previousAirSupply = -1;
         lowestAirSupply = Integer.MAX_VALUE;
+        wasUnderWater = false;
         recoveryGaspArmed = false;
+        awaitingRecoveryGasp = false;
     }
 
     private static boolean isLocalPlayerSound(SoundInstance sound) {

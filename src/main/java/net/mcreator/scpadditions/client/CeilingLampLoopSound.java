@@ -29,7 +29,7 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
         this.level = level;
         this.looping = true;
         this.delay = 0;
-        this.volume = 0.58F;
+        this.volume = 0.29F;
         this.pitch = 0.98F + RandomSource.create().nextFloat() * 0.04F;
         this.relative = false;
         this.attenuation = SoundInstance.Attenuation.LINEAR;

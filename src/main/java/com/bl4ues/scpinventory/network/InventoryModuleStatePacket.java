@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 
 public record InventoryModuleStatePacket(boolean enabled,
         boolean requireEquippedWeaponToAttack,
+        boolean customHotbar,
         boolean reduceScp012VisualEffects, boolean hungerDisabled,
         boolean replacePlayerHurtSounds, boolean useVoiceProfileB,
         boolean muteNonPlayerHitSounds, boolean disableVanillaMusic,
@@ -23,6 +24,7 @@ public record InventoryModuleStatePacket(boolean enabled,
             FriendlyByteBuf buffer) {
         buffer.writeBoolean(message.enabled);
         buffer.writeBoolean(message.requireEquippedWeaponToAttack);
+        buffer.writeBoolean(message.customHotbar);
         buffer.writeBoolean(message.reduceScp012VisualEffects);
         buffer.writeBoolean(message.hungerDisabled);
         buffer.writeBoolean(message.replacePlayerHurtSounds);
@@ -49,9 +51,9 @@ public record InventoryModuleStatePacket(boolean enabled,
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
-                buffer.readBoolean(), buffer.readFloat(),
+                buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readFloat(), buffer.readFloat(),
-                buffer.readFloat());
+                buffer.readFloat(), buffer.readFloat());
     }
 
     public static void handle(InventoryModuleStatePacket message,
@@ -60,6 +62,7 @@ public record InventoryModuleStatePacket(boolean enabled,
         context.enqueueWork(() -> InventoryModuleRuntimeState.updateFromServer(
                 message.enabled,
                 message.requireEquippedWeaponToAttack,
+                message.customHotbar,
                 message.reduceScp012VisualEffects,
                 message.hungerDisabled, message.replacePlayerHurtSounds,
                 message.useVoiceProfileB,

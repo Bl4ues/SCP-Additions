@@ -18,6 +18,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -33,7 +34,7 @@ public final class PlayerDamageAudioClient {
     private static final String PLAYER_DEATH_PREFIX = "entity.player.death";
     private static final String PLAYER_ATTACK_PREFIX = "entity.player.attack.";
     private static final double LOCAL_PLAYER_SOUND_RADIUS_SQ = 9.0D;
-    private static final long MOB_IMPACT_WINDOW_NANOS = 300_000_000L;
+    private static final long MOB_IMPACT_WINDOW_NANOS = 500_000_000L;
     private static final float HEALTH_EPSILON = 1.0E-3F;
     private static final float GASP_AIR_THRESHOLD = 0.30F;
 
@@ -53,10 +54,10 @@ public final class PlayerDamageAudioClient {
 
     /**
      * Mark the local mob attack before Minecraft creates its attack sound.
-     * AttackEntityEvent can arrive too late or only on the logical server, so
-     * the client input event is the authoritative timing source here.
+     * This listener receives canceled attacks as well so an attack rejected by
+     * the held-weapon module cannot still produce the vanilla impact click.
      */
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public static void onInteractionKeyMapping(
             InputEvent.InteractionKeyMappingTriggered event) {
         if (!event.isAttack()) return;
@@ -73,7 +74,7 @@ public final class PlayerDamageAudioClient {
     }
 
     /** Server/integrated-server fallback for attacks not exposed by input. */
-    @SubscribeEvent
+    @SubscribeEvent(receiveCanceled = true)
     public static void onAttackEntity(AttackEntityEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
@@ -173,13 +174,14 @@ public final class PlayerDamageAudioClient {
         /*
          * Attack sounds are commonly positioned at the struck entity rather
          * than at the attacker, so the local-player distance test is invalid
-         * here. The short pre-attack window already proves this came from the
-         * local player hitting a non-player living entity.
+         * here. The remembered input window and current crosshair target cover
+         * both successful attacks and attacks canceled before a packet is sent.
          */
         if (InventoryModuleRuntimeState.muteNonPlayerHitSoundsForClient()
                 && minecraftSound
                 && path.startsWith(PLAYER_ATTACK_PREFIX)
-                && isNonPlayerMobImpact()) {
+                && (isNonPlayerMobImpact()
+                || isCurrentNonPlayerMobTarget())) {
             event.setSound(null);
         }
     }
@@ -315,5 +317,12 @@ public final class PlayerDamageAudioClient {
 
     private static boolean isNonPlayerMobImpact() {
         return System.nanoTime() <= suppressMobImpactUntilNanos;
+    }
+
+    private static boolean isCurrentNonPlayerMobTarget() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.hitResult instanceof EntityHitResult hit
+                && hit.getEntity() instanceof LivingEntity
+                && !(hit.getEntity() instanceof Player);
     }
 }

@@ -46,6 +46,7 @@ public final class CrosshairModulesPlacement {
         Screen screen = event.getScreen();
         if (isGeneralModulesScreen(screen)) {
             injectCrosshairRow(screen);
+            injectActionBarRow(screen);
         } else if (isCrosshairScreen(screen)) {
             ensureCrosshairDefaultsPresent(screen);
         }
@@ -69,8 +70,6 @@ public final class CrosshairModulesPlacement {
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
         Screen screen = event.getScreen();
         if (isHomeScreen(screen)) {
-            // Another extension adds its widgets during Init.Post. Reapply this
-            // every frame so the obsolete home entry can never reappear.
             compactHomeLayout(screen);
         } else if (isGeneralModulesScreen(screen)) {
             wireCrosshairNavigation(screen);
@@ -96,15 +95,20 @@ public final class CrosshairModulesPlacement {
     }
 
     private static void compactHomeLayout(Screen screen) {
-        Button crosshair = findButton(screen, "Crosshair");
         Button general = findButton(screen, "General & Modules");
-        if (crosshair == null || general == null) return;
+        if (general == null) return;
 
-        int startY = crosshair.getY();
-        int step = 27;
-        crosshair.visible = false;
-        crosshair.active = false;
-        crosshair.setX(-10_000);
+        Button crosshair = findButton(screen, "Crosshair");
+        if (crosshair != null) {
+            crosshair.visible = false;
+            crosshair.active = false;
+            crosshair.setX(-10_000);
+        }
+
+        int panelHeight = Math.min(310, screen.height - 20);
+        int panelY = Math.max(10, (screen.height - panelHeight) / 2);
+        int startY = panelY + 60;
+        int step = 31;
 
         general.setY(startY);
         setY(screen, "Inventory, Equipment & Codex", startY + step);
@@ -113,8 +117,8 @@ public final class CrosshairModulesPlacement {
         setY(screen, "SCP-914 Recipes", startY + step * 4);
         setY(screen, "Accessibility", startY + step * 5);
         setY(screen, "Debug Tools", startY + step * 5);
-        setY(screen, "Reload Snapshot", startY + step * 6 + 3);
-        setY(screen, "Done", startY + step * 6 + 3);
+        setY(screen, "Reload Snapshot", startY + step * 6 + 6);
+        setY(screen, "Done", startY + step * 6 + 6);
     }
 
     private static Button findButton(Screen screen, String label) {
@@ -166,6 +170,44 @@ public final class CrosshairModulesPlacement {
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
                     "Could not place Crosshair in Preferences",
+                    exception);
+        }
+    }
+
+    private static void injectActionBarRow(Screen screen) {
+        try {
+            Field rowsField = screen.getClass().getDeclaredField("rows");
+            rowsField.setAccessible(true);
+            Object value = rowsField.get(screen);
+            if (!(value instanceof List<?> currentRows)) return;
+
+            Class<?> rowType = Class.forName(ROW_TYPE);
+            Method labelMethod = rowType.getDeclaredMethod("label");
+            labelMethod.setAccessible(true);
+            int insertAt = currentRows.size();
+            for (int i = 0; i < currentRows.size(); i++) {
+                String label = String.valueOf(labelMethod.invoke(currentRows.get(i)));
+                if ("Action Bars in Roboto".equals(label)) return;
+                if ("Hide Active Effect Indicators".equals(label)) {
+                    insertAt = i + 1;
+                }
+            }
+
+            Constructor<?> constructor = rowType.getDeclaredConstructor(
+                    String.class, String.class, String.class,
+                    String.class, boolean.class);
+            constructor.setAccessible(true);
+            Object row = constructor.newInstance(
+                    "hud", "action_bars_roboto", "Action Bars in Roboto",
+                    "Renders action-bar messages with the SCP Inventory Roboto font.",
+                    true);
+
+            List<Object> updated = new ArrayList<>(currentRows);
+            updated.add(Math.min(insertAt, updated.size()), row);
+            rowsField.set(screen, List.copyOf(updated));
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not place Action Bars in Roboto in Preferences",
                     exception);
         }
     }

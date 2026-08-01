@@ -1,13 +1,9 @@
 package net.mcreator.scpadditions.config.ui;
 
-import com.bl4ues.scpinventory.client.ScpFonts;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,10 +15,14 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
-/** Places Crosshair with the gameplay modules instead of the Configuration Center home screen. */
+/** Places Crosshair as the first Gameplay Features entry instead of a home-screen category. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CrosshairModulesPlacement {
     private static final String HOME_SCREEN =
@@ -31,29 +31,49 @@ public final class CrosshairModulesPlacement {
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$ExtendedToggleScreen";
     private static final String CROSSHAIR_SCREEN =
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$CrosshairScreen";
+    private static final String ROW_TYPE =
+            "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$Row";
 
-    private static final int NAVY = 0xFF081022;
-    private static final int NAVY_HOVER = 0xFF131E36;
-    private static final int BORDER = 0xFF46536C;
-    private static final int BORDER_HOVER = 0xFF73809A;
-    private static final int ACCENT_SOFT = 0xFF8D711F;
-    private static final int WHITE = 0xFFF7F8FC;
+    private static final Map<Screen, Button> NAVIGATION_BUTTONS =
+            new WeakHashMap<>();
 
     private CrosshairModulesPlacement() {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onScreenInit(ScreenEvent.Init.Post event) {
+    public static void onScreenInitPre(ScreenEvent.Init.Pre event) {
+        Screen screen = event.getScreen();
+        if (isGeneralModulesScreen(screen)) {
+            injectCrosshairRow(screen);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onScreenInitPost(ScreenEvent.Init.Post event) {
         Screen screen = event.getScreen();
         if (screen == null) return;
 
-        String screenClass = screen.getClass().getName();
-        if (HOME_SCREEN.equals(screenClass)) {
+        if (HOME_SCREEN.equals(screen.getClass().getName())) {
             restoreCompactHomeLayout(event);
-        } else if (EXTENDED_MODULES_SCREEN.equals(screenClass)
-                && "General & Modules".equals(screen.getTitle().getString())) {
-            addCrosshairGameplayEntry(event, screen);
+        } else if (isGeneralModulesScreen(screen)) {
+            wireCrosshairNavigation(screen);
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
+        Screen screen = event.getScreen();
+        if (isGeneralModulesScreen(screen)) {
+            // The module screen rebuilds its widgets after toggles and scrolling.
+            // Rewire the navigation entry whenever that happens.
+            wireCrosshairNavigation(screen);
+        }
+    }
+
+    private static boolean isGeneralModulesScreen(Screen screen) {
+        return screen != null
+                && EXTENDED_MODULES_SCREEN.equals(screen.getClass().getName())
+                && "General & Modules".equals(screen.getTitle().getString());
     }
 
     private static void restoreCompactHomeLayout(ScreenEvent.Init.Post event) {
@@ -99,20 +119,113 @@ public final class CrosshairModulesPlacement {
         done.setY(bottomY);
     }
 
-    private static void addCrosshairGameplayEntry(ScreenEvent.Init.Post event,
-            Screen screen) {
-        int panelWidth = Math.min(560, screen.width - 20);
-        int panelHeight = Math.min(380, screen.height - 16);
-        int panelX = Math.max(8, (screen.width - panelWidth) / 2);
-        int panelY = Math.max(8, (screen.height - panelHeight) / 2);
+    private static void injectCrosshairRow(Screen screen) {
+        try {
+            Field rowsField = screen.getClass().getDeclaredField("rows");
+            rowsField.setAccessible(true);
+            Object value = rowsField.get(screen);
+            if (!(value instanceof List<?> currentRows)) return;
 
-        // Gameplay Features occupies the first row. Crosshair is its first
-        // control, placed over the decorative continuation line on the right.
-        int buttonWidth = 138;
-        int buttonX = panelX + panelWidth - buttonWidth - 18;
-        int buttonY = panelY + 48;
-        event.addListener(new NavigationButton(buttonX, buttonY, buttonWidth, 20,
-                ScpFonts.roboto("Crosshair"), () -> openCrosshair(screen)));
+            Class<?> rowType = Class.forName(ROW_TYPE);
+            Method labelMethod = rowType.getDeclaredMethod("label");
+            labelMethod.setAccessible(true);
+            for (Object row : currentRows) {
+                Object label = labelMethod.invoke(row);
+                if ("Crosshair".equals(label)) return;
+            }
+
+            Constructor<?> constructor = rowType.getDeclaredConstructor(
+                    String.class, String.class, String.class,
+                    String.class, boolean.class);
+            constructor.setAccessible(true);
+            Object crosshairRow = constructor.newInstance(
+                    "crosshair", "enabled", "Crosshair",
+                    "Configures the custom crosshair, visibility, color, and opacity.",
+                    false);
+
+            List<Object> updated = new ArrayList<>(currentRows);
+            int insertAt = Math.min(1, updated.size());
+            updated.add(insertAt, crosshairRow);
+            rowsField.set(screen, List.copyOf(updated));
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not place Crosshair in Gameplay Features",
+                    exception);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void wireCrosshairNavigation(Screen screen) {
+        try {
+            Field buttonsField = screen.getClass().getDeclaredField("buttons");
+            Field labelsField = screen.getClass().getDeclaredField("labels");
+            buttonsField.setAccessible(true);
+            labelsField.setAccessible(true);
+
+            Object buttonsValue = buttonsField.get(screen);
+            Object labelsValue = labelsField.get(screen);
+            if (!(buttonsValue instanceof List<?> rawButtons)
+                    || !(labelsValue instanceof Map<?, ?> rawLabels)) {
+                return;
+            }
+
+            List<Button> buttons = (List<Button>) rawButtons;
+            Map<Button, Component> labels = (Map<Button, Component>) rawLabels;
+            Button source = null;
+            Component sourceLabel = null;
+            for (Map.Entry<Button, Component> entry : labels.entrySet()) {
+                String label = entry.getValue().getString();
+                if (label.startsWith("Crosshair: ")) {
+                    source = entry.getKey();
+                    sourceLabel = entry.getValue();
+                    break;
+                }
+            }
+            if (source == null || sourceLabel == null) return;
+
+            Button existing = NAVIGATION_BUTTONS.get(screen);
+            if (existing != null && buttons.contains(existing)) {
+                source.visible = false;
+                source.active = false;
+                return;
+            }
+
+            source.visible = false;
+            source.active = false;
+            Button navigation = Button.builder(Component.empty(),
+                    button -> openCrosshair(screen))
+                    .bounds(source.getX(), source.getY(),
+                            source.getWidth(), source.getHeight())
+                    .build();
+            labels.put(navigation, sourceLabel);
+            buttons.add(navigation);
+            addRenderableWidget(screen, navigation);
+            NAVIGATION_BUTTONS.put(screen, navigation);
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not wire the Crosshair gameplay entry",
+                    exception);
+        }
+    }
+
+    private static void addRenderableWidget(Screen screen, Button button)
+            throws ReflectiveOperationException {
+        Method target = null;
+        for (Class<?> type = screen.getClass(); type != null && target == null;
+                type = type.getSuperclass()) {
+            for (Method method : type.getDeclaredMethods()) {
+                if ("addRenderableWidget".equals(method.getName())
+                        && method.getParameterCount() == 1) {
+                    target = method;
+                    break;
+                }
+            }
+        }
+        if (target == null) {
+            throw new NoSuchMethodException("Screen.addRenderableWidget");
+        }
+        target.setAccessible(true);
+        target.invoke(screen, button);
     }
 
     private static void openCrosshair(Screen parent) {
@@ -134,53 +247,6 @@ public final class CrosshairModulesPlacement {
             ScpAdditionsMod.LOGGER.warn(
                     "Could not open Crosshair from General & Modules",
                     exception);
-        }
-    }
-
-    private static final class NavigationButton extends AbstractButton {
-        private final Runnable action;
-
-        private NavigationButton(int x, int y, int width, int height,
-                Component message, Runnable action) {
-            super(x, y, width, height, message);
-            this.action = action;
-        }
-
-        @Override
-        public void onPress() {
-            action.run();
-        }
-
-        @Override
-        protected void updateWidgetNarration(NarrationElementOutput output) {
-            defaultButtonNarrationText(output);
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY,
-                float partialTick) {
-            boolean hovered = isHoveredOrFocused();
-            int left = getX();
-            int top = getY();
-            int right = left + getWidth();
-            int bottom = top + getHeight();
-            int border = hovered ? BORDER_HOVER : BORDER;
-
-            graphics.fill(left, top, right, bottom,
-                    hovered ? NAVY_HOVER : NAVY);
-            graphics.fill(left, top, right, top + 1, border);
-            graphics.fill(left, bottom - 1, right, bottom, border);
-            graphics.fill(left, top, left + 1, bottom, border);
-            graphics.fill(right - 1, top, right, bottom, border);
-            graphics.fill(left + 1, top + 1,
-                    left + (hovered ? 4 : 2), bottom - 1,
-                    hovered ? ACCENT_SOFT : BORDER);
-
-            int textX = left + Math.max(5,
-                    (getWidth() - Minecraft.getInstance().font.width(getMessage())) / 2);
-            int textY = top + Math.max(1, (getHeight() - 8) / 2);
-            graphics.drawString(Minecraft.getInstance().font, getMessage(),
-                    textX, textY, WHITE, false);
         }
     }
 }

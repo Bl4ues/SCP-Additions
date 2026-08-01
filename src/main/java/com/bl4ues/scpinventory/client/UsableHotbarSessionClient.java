@@ -160,6 +160,13 @@ public final class UsableHotbarSessionClient {
             return;
         }
 
+        // While the custom hotbar keeps several real slots selectable, only
+        // intercept Q when the active usable item is the one actually held.
+        if (customHotbarActive(player)
+                && player.getInventory().selected != activeSlot) {
+            return;
+        }
+
         if (!minecraft.options.keyDrop.consumeClick()) {
             return;
         }

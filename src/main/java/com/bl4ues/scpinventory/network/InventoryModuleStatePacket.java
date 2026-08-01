@@ -7,6 +7,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record InventoryModuleStatePacket(boolean enabled,
+        boolean requireEquippedWeaponToAttack,
         boolean reduceScp012VisualEffects, boolean hungerDisabled,
         boolean replacePlayerHurtSounds, boolean useVoiceProfileB,
         boolean muteNonPlayerHitSounds, boolean disableVanillaMusic,
@@ -21,6 +22,7 @@ public record InventoryModuleStatePacket(boolean enabled,
     public static void encode(InventoryModuleStatePacket message,
             FriendlyByteBuf buffer) {
         buffer.writeBoolean(message.enabled);
+        buffer.writeBoolean(message.requireEquippedWeaponToAttack);
         buffer.writeBoolean(message.reduceScp012VisualEffects);
         buffer.writeBoolean(message.hungerDisabled);
         buffer.writeBoolean(message.replacePlayerHurtSounds);
@@ -47,15 +49,18 @@ public record InventoryModuleStatePacket(boolean enabled,
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
                 buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readBoolean(), buffer.readFloat(),
                 buffer.readFloat(), buffer.readFloat(),
-                buffer.readFloat(), buffer.readFloat());
+                buffer.readFloat());
     }
 
     public static void handle(InventoryModuleStatePacket message,
             Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> InventoryModuleRuntimeState.updateFromServer(
-                message.enabled, message.reduceScp012VisualEffects,
+                message.enabled,
+                message.requireEquippedWeaponToAttack,
+                message.reduceScp012VisualEffects,
                 message.hungerDisabled, message.replacePlayerHurtSounds,
                 message.useVoiceProfileB,
                 message.muteNonPlayerHitSounds,

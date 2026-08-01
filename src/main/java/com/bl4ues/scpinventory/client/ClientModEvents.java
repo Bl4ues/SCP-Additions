@@ -34,5 +34,6 @@ public final class ClientModEvents {
         event.register(Keybinds.OPEN_SCP_INVENTORY);
         event.register(Keybinds.CONTEXT_INTERACT);
         event.register(Keybinds.CONTEXT_CONFIG_SELECT);
+        event.register(Keybinds.STOW_HELD_ITEM);
     }
 }

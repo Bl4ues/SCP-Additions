@@ -37,11 +37,8 @@ public final class ConfigCenterNetwork {
     public static void openFor(ServerPlayer player, SimpleChannel channel) {
         if (player == null) return;
         try {
-            JsonObject snapshot = ConfigCenterService.snapshot();
-            JsonObject metadata = new JsonObject();
-            metadata.addProperty("can_edit_server",
-                    ConfigCenterService.canEdit(player));
-            snapshot.add("__permissions", metadata);
+            JsonObject snapshot = withPermissions(player,
+                    ConfigCenterService.snapshot());
             channel.send(PacketDistributor.PLAYER.with(() -> player),
                     new Snapshot(GSON.toJson(snapshot)));
         } catch (Exception exception) {
@@ -101,7 +98,10 @@ public final class ConfigCenterNetwork {
                     com.bl4ues.scpinventory.network.ModNetwork.syncModuleState(
                             player.server.getPlayerList().getPlayers());
                 }
-                String snapshot = result.success() ? GSON.toJson(result.snapshot()) : "";
+                JsonObject responseSnapshot = result.success()
+                        ? withPermissions(player, result.snapshot()) : null;
+                String snapshot = responseSnapshot == null
+                        ? "" : GSON.toJson(responseSnapshot);
                 com.bl4ues.scpinventory.network.ModNetwork.CHANNEL.send(
                         PacketDistributor.PLAYER.with(() -> player),
                         new SaveResult(result.success(), result.message(), snapshot, result.warnings()));
@@ -286,6 +286,17 @@ public final class ConfigCenterNetwork {
             });
             context.setPacketHandled(true);
         }
+    }
+
+    private static JsonObject withPermissions(ServerPlayer player,
+            JsonObject snapshot) {
+        JsonObject result = snapshot == null
+                ? new JsonObject() : snapshot.deepCopy();
+        JsonObject metadata = new JsonObject();
+        metadata.addProperty("can_edit_server",
+                ConfigCenterService.canEdit(player));
+        result.add("__permissions", metadata);
+        return result;
     }
 
     private static String readable(Throwable throwable) {

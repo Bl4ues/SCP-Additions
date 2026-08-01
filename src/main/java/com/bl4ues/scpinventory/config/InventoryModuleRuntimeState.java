@@ -25,6 +25,7 @@ public final class InventoryModuleRuntimeState {
     private static volatile Boolean localHideEmptyHand;
     private static volatile Boolean localDisableExperienceBar;
     private static volatile Boolean localCustomOxygenBar;
+    private static volatile Boolean localActionBarsRoboto;
     private static volatile Boolean localCustomCrosshairEnabled;
     private static volatile Boolean localInGameCrosshairEnabled;
     private static volatile Float localCrosshairRed;
@@ -140,6 +141,12 @@ public final class InventoryModuleRuntimeState {
                 : ScpAdditionsModulesConfig.get().hud.customOxygenBar;
     }
 
+    public static boolean actionBarsRobotoForClient() {
+        Boolean local = localActionBarsRoboto;
+        return local != null ? local
+                : ScpAdditionsModulesConfig.get().hud.actionBarsRoboto;
+    }
+
     public static boolean customCrosshairEnabledForClient() {
         Boolean local = localCustomCrosshairEnabled;
         return local != null ? local
@@ -184,6 +191,7 @@ public final class InventoryModuleRuntimeState {
             boolean muteNonPlayerHitSounds, boolean disableVanillaMusic,
             boolean hideActiveEffectIndicators, boolean hideEmptyHand,
             boolean disableExperienceBar, boolean customOxygenBar,
+            boolean actionBarsRoboto,
             boolean customCrosshairEnabled,
             boolean inGameCrosshairEnabled,
             float crosshairRed, float crosshairGreen,
@@ -202,6 +210,7 @@ public final class InventoryModuleRuntimeState {
         localHideEmptyHand = hideEmptyHand;
         localDisableExperienceBar = disableExperienceBar;
         localCustomOxygenBar = customOxygenBar;
+        localActionBarsRoboto = actionBarsRoboto;
         localCustomCrosshairEnabled = customCrosshairEnabled;
         localInGameCrosshairEnabled = inGameCrosshairEnabled;
         localCrosshairRed = clampUnit(crosshairRed);

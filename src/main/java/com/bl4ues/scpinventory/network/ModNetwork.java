@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "13";
+    private static final String PROTOCOL_VERSION = "14";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -80,6 +80,9 @@ public final class ModNetwork {
                         modules.audio.muteNonPlayerHitSounds,
                         modules.audio.disableVanillaMusic,
                         modules.hud.hideActiveEffectIndicators,
+                        modules.hud.hideEmptyHand,
+                        modules.hud.disableExperienceBar,
+                        modules.hud.customOxygenBar,
                         modules.crosshair.enabled,
                         modules.crosshair.inGameEnabled,
                         (float) modules.crosshair.red,

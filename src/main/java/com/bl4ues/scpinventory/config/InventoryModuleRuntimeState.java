@@ -6,6 +6,7 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 public final class InventoryModuleRuntimeState {
     private static volatile Boolean serverEnabled;
     private static volatile Boolean serverRequireEquippedWeaponToAttack;
+    private static volatile Boolean serverCustomHotbar;
     private static volatile Boolean serverReduceScp012VisualEffects;
     private static volatile Boolean serverHungerDisabled;
     private static volatile Boolean serverReplacePlayerHurtSounds;
@@ -36,6 +37,12 @@ public final class InventoryModuleRuntimeState {
         return synced != null ? synced
                 : ScpAdditionsModulesConfig.get().inventory
                 .requireEquippedWeaponToAttack;
+    }
+
+    public static boolean customHotbarForClient() {
+        Boolean synced = serverCustomHotbar;
+        return synced != null ? synced
+                : ScpAdditionsModulesConfig.get().inventory.customHotbar;
     }
 
     public static boolean reduceScp012VisualEffectsForClient() {
@@ -138,6 +145,7 @@ public final class InventoryModuleRuntimeState {
 
     public static void updateFromServer(boolean enabled,
             boolean requireEquippedWeaponToAttack,
+            boolean customHotbar,
             boolean reduceScp012VisualEffects, boolean hungerDisabled,
             boolean replacePlayerHurtSounds,
             boolean useVoiceProfileB,
@@ -153,6 +161,7 @@ public final class InventoryModuleRuntimeState {
             float crosshairBlue, float crosshairAlpha) {
         serverEnabled = enabled;
         serverRequireEquippedWeaponToAttack = requireEquippedWeaponToAttack;
+        serverCustomHotbar = customHotbar;
         serverReduceScp012VisualEffects = reduceScp012VisualEffects;
         serverHungerDisabled = hungerDisabled;
         serverReplacePlayerHurtSounds = replacePlayerHurtSounds;
@@ -174,6 +183,7 @@ public final class InventoryModuleRuntimeState {
     public static void clearServerState() {
         serverEnabled = null;
         serverRequireEquippedWeaponToAttack = null;
+        serverCustomHotbar = null;
         serverReduceScp012VisualEffects = null;
         serverHungerDisabled = null;
         serverReplacePlayerHurtSounds = null;

@@ -158,6 +158,9 @@ public final class ScpAdditionsModulesConfig {
 	public static final class Inventory extends Toggle {
 		@SerializedName("remember_ui_state")
 		public boolean rememberUiState = true;
+
+		@SerializedName("require_equipped_weapon_to_attack")
+		public boolean requireEquippedWeaponToAttack = false;
 	}
 
 	public static final class Vitals {

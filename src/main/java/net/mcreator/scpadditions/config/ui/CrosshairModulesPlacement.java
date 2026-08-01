@@ -105,7 +105,6 @@ public final class CrosshairModulesPlacement {
         crosshair.visible = false;
         crosshair.active = false;
         crosshair.setX(-10_000);
-        crosshair.setY(-10_000);
 
         general.setY(startY);
         setY(screen, "Inventory, Equipment & Codex", startY + step);

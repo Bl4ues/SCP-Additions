@@ -276,7 +276,7 @@ public final class CustomHotbarOverlay {
 
     private static void drawPickupIcon(GuiGraphics graphics,
             int centerX, int centerY) {
-        int size = 20;
+        int size = 22;
         int x = centerX - size / 2;
         int y = centerY - size / 2;
         RenderSystem.enableBlend();

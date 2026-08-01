@@ -12,23 +12,27 @@ import net.minecraft.util.RandomSource;
 /** One continuously synchronized layer of SCP-173's local encounter score. */
 public final class Scp173EncounterLayerSound
         extends AbstractTickableSoundInstance {
-    public static final float BACKGROUND_VOLUME = 0.02F;
-    public static final float FOREGROUND_VOLUME = 1.0F;
-
-    private static final float CROSSFADE_STEP = 0.025F;
+    private static final float CROSSFADE_STEP = 0.018F;
     private static final float STOP_FADE_STEP = 0.0125F;
 
-    private float targetVolume = BACKGROUND_VOLUME;
+    private final float backgroundVolume;
+    private final float foregroundVolume;
+    private float targetVolume;
     private boolean fadingOut;
 
-    public Scp173EncounterLayerSound(ResourceLocation soundId) {
+    public Scp173EncounterLayerSound(ResourceLocation soundId,
+            float backgroundVolume, float foregroundVolume) {
         super(SoundEvent.createVariableRangeEvent(soundId),
                 SoundSource.MUSIC, RandomSource.create());
+        this.backgroundVolume = Mth.clamp(backgroundVolume, 0.01F, 1.0F);
+        this.foregroundVolume = Mth.clamp(foregroundVolume,
+                this.backgroundVolume, 1.0F);
+        this.targetVolume = this.backgroundVolume;
         this.looping = true;
         this.delay = 0;
         // Never start at absolute zero. Minecraft may discard a sound before
         // later ticks can raise its volume.
-        this.volume = BACKGROUND_VOLUME;
+        this.volume = this.backgroundVolume;
         this.pitch = 1.0F;
         this.relative = true;
         this.attenuation = SoundInstance.Attenuation.NONE;
@@ -55,13 +59,13 @@ public final class Scp173EncounterLayerSound
     }
 
     public void setForeground(boolean foreground) {
-        setTargetVolume(foreground ? FOREGROUND_VOLUME : BACKGROUND_VOLUME);
+        setTargetVolume(foreground ? foregroundVolume : backgroundVolume);
     }
 
     public void setTargetVolume(float target) {
         if (fadingOut) return;
-        targetVolume = Mth.clamp(target, BACKGROUND_VOLUME,
-                FOREGROUND_VOLUME);
+        targetVolume = Mth.clamp(target, backgroundVolume,
+                foregroundVolume);
     }
 
     public void beginFadeOut() {

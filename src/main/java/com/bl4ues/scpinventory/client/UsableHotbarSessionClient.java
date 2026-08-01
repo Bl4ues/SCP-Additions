@@ -2,6 +2,7 @@ package com.bl4ues.scpinventory.client;
 
 import com.bl4ues.scpinventory.ScpInventoryMod;
 import com.bl4ues.scpinventory.capability.IScpInventory;
+import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.bl4ues.scpinventory.network.UsableSessionDropPacket;
@@ -115,7 +116,8 @@ public final class UsableHotbarSessionClient {
             syncTicks--;
         }
 
-        if (player.getInventory().selected != activeSlot) {
+        if (!customHotbarActive(player)
+                && player.getInventory().selected != activeSlot) {
             forceSelectedSlot(player);
         }
     }
@@ -129,6 +131,12 @@ public final class UsableHotbarSessionClient {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || minecraft.screen != null || player.isCreative() || player.isSpectator()) {
+            return;
+        }
+
+        // The custom hotbar owns scroll navigation and intentionally keeps the
+        // active usable mirror available while another slot is selected.
+        if (customHotbarActive(player)) {
             return;
         }
 
@@ -190,10 +198,13 @@ public final class UsableHotbarSessionClient {
         ItemStack copy = activeStack.copy();
         copy.setCount(1);
         player.getInventory().setItem(activeSlot, copy);
-        player.getInventory().selected = activeSlot;
         player.getInventory().setChanged();
-        if (player.connection != null) {
-            player.connection.send(new ServerboundSetCarriedItemPacket(activeSlot));
+        if (!customHotbarActive(player)) {
+            player.getInventory().selected = activeSlot;
+            if (player.connection != null) {
+                player.connection.send(
+                        new ServerboundSetCarriedItemPacket(activeSlot));
+            }
         }
     }
 
@@ -215,6 +226,12 @@ public final class UsableHotbarSessionClient {
 
         activeStack = normalizedSingle(hotbarStack);
         return true;
+    }
+
+    private static boolean customHotbarActive(LocalPlayer player) {
+        return player != null
+                && InventoryModuleRuntimeState.isEnabledForClient()
+                && InventoryModuleRuntimeState.customHotbarForClient();
     }
 
     private static void forceSelectedSlot(LocalPlayer player) {

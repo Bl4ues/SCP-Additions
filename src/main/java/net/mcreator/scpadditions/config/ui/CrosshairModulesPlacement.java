@@ -17,12 +17,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-/** Places Crosshair as the first Gameplay Features entry instead of a home-screen category. */
+/** Keeps all Crosshair controls inside General & Modules preferences. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CrosshairModulesPlacement {
     private static final String HOME_SCREEN =
@@ -57,8 +56,8 @@ public final class CrosshairModulesPlacement {
         Screen screen = event.getScreen();
         if (screen == null) return;
 
-        if (HOME_SCREEN.equals(screen.getClass().getName())) {
-            restoreCompactHomeLayout(event);
+        if (isHomeScreen(screen)) {
+            compactHomeLayout(screen);
         } else if (isGeneralModulesScreen(screen)) {
             wireCrosshairNavigation(screen);
         } else if (isCrosshairScreen(screen)) {
@@ -69,14 +68,20 @@ public final class CrosshairModulesPlacement {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
         Screen screen = event.getScreen();
-        if (isGeneralModulesScreen(screen)) {
-            // The module screen rebuilds its widgets after toggles and scrolling.
-            // Rewire the navigation entry whenever that happens.
+        if (isHomeScreen(screen)) {
+            // Another extension adds its widgets during Init.Post. Reapply this
+            // every frame so the obsolete home entry can never reappear.
+            compactHomeLayout(screen);
+        } else if (isGeneralModulesScreen(screen)) {
             wireCrosshairNavigation(screen);
         } else if (isCrosshairScreen(screen)) {
-            // The Crosshair screen also rebuilds after every toggle and reset.
             wireEnabledDefaultsButton(screen);
         }
+    }
+
+    private static boolean isHomeScreen(Screen screen) {
+        return screen != null
+                && HOME_SCREEN.equals(screen.getClass().getName());
     }
 
     private static boolean isGeneralModulesScreen(Screen screen) {
@@ -90,47 +95,42 @@ public final class CrosshairModulesPlacement {
                 && CROSSHAIR_SCREEN.equals(screen.getClass().getName());
     }
 
-    private static void restoreCompactHomeLayout(ScreenEvent.Init.Post event) {
-        Map<String, Button> buttons = new LinkedHashMap<>();
-        for (GuiEventListener listener : event.getListenersList()) {
-            if (listener instanceof Button button) {
-                buttons.put(button.getMessage().getString(), button);
-            }
-        }
-
-        Button crosshair = buttons.get("Crosshair");
-        Button general = buttons.get("General & Modules");
-        Button inventory = buttons.get("Inventory, Equipment & Codex");
-        Button interactions = buttons.get("Contextual Interactions");
-        Button drinks = buttons.get("SCP-294 Drinks");
-        Button recipes = buttons.get("SCP-914 Recipes");
-        Button accessibility = buttons.get("Accessibility");
-        Button debug = buttons.get("Debug Tools");
-        Button reload = buttons.get("Reload Snapshot");
-        Button done = buttons.get("Done");
-        if (crosshair == null || general == null || inventory == null
-                || interactions == null || drinks == null || recipes == null
-                || accessibility == null || debug == null || reload == null
-                || done == null) {
-            return;
-        }
+    private static void compactHomeLayout(Screen screen) {
+        Button crosshair = findButton(screen, "Crosshair");
+        Button general = findButton(screen, "General & Modules");
+        if (crosshair == null || general == null) return;
 
         int startY = crosshair.getY();
         int step = 27;
         crosshair.visible = false;
         crosshair.active = false;
+        crosshair.setX(-10_000);
+        crosshair.setY(-10_000);
 
         general.setY(startY);
-        inventory.setY(startY + step);
-        interactions.setY(startY + step * 2);
-        drinks.setY(startY + step * 3);
-        recipes.setY(startY + step * 4);
-        accessibility.setY(startY + step * 5);
-        debug.setY(startY + step * 5);
+        setY(screen, "Inventory, Equipment & Codex", startY + step);
+        setY(screen, "Contextual Interactions", startY + step * 2);
+        setY(screen, "SCP-294 Drinks", startY + step * 3);
+        setY(screen, "SCP-914 Recipes", startY + step * 4);
+        setY(screen, "Accessibility", startY + step * 5);
+        setY(screen, "Debug Tools", startY + step * 5);
+        setY(screen, "Reload Snapshot", startY + step * 6 + 3);
+        setY(screen, "Done", startY + step * 6 + 3);
+    }
 
-        int bottomY = startY + step * 6 + 3;
-        reload.setY(bottomY);
-        done.setY(bottomY);
+    private static Button findButton(Screen screen, String label) {
+        for (GuiEventListener listener : screen.children()) {
+            if (listener instanceof Button button
+                    && label.equals(button.getMessage().getString())) {
+                return button;
+            }
+        }
+        return null;
+    }
+
+    private static void setY(Screen screen, String label, int y) {
+        Button button = findButton(screen, label);
+        if (button != null) button.setY(y);
     }
 
     private static void injectCrosshairRow(Screen screen) {
@@ -143,9 +143,11 @@ public final class CrosshairModulesPlacement {
             Class<?> rowType = Class.forName(ROW_TYPE);
             Method labelMethod = rowType.getDeclaredMethod("label");
             labelMethod.setAccessible(true);
-            for (Object row : currentRows) {
-                Object label = labelMethod.invoke(row);
+            int preferencesIndex = -1;
+            for (int i = 0; i < currentRows.size(); i++) {
+                Object label = labelMethod.invoke(currentRows.get(i));
                 if ("Crosshair".equals(label)) return;
+                if ("Preferences".equals(label)) preferencesIndex = i;
             }
 
             Constructor<?> constructor = rowType.getDeclaredConstructor(
@@ -158,12 +160,13 @@ public final class CrosshairModulesPlacement {
                     true);
 
             List<Object> updated = new ArrayList<>(currentRows);
-            int insertAt = Math.min(1, updated.size());
+            int insertAt = preferencesIndex >= 0
+                    ? preferencesIndex + 1 : Math.min(1, updated.size());
             updated.add(insertAt, crosshairRow);
             rowsField.set(screen, List.copyOf(updated));
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not place Crosshair in Gameplay Features",
+                    "Could not place Crosshair in Preferences",
                     exception);
         }
     }
@@ -218,7 +221,7 @@ public final class CrosshairModulesPlacement {
             NAVIGATION_BUTTONS.put(screen, navigation);
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not wire the Crosshair gameplay entry",
+                    "Could not wire the Crosshair preference entry",
                     exception);
         }
     }
@@ -375,7 +378,7 @@ public final class CrosshairModulesPlacement {
             }
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not open Crosshair from General & Modules",
+                    "Could not open Crosshair from Preferences",
                     exception);
         }
     }

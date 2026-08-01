@@ -5,8 +5,8 @@
 ## Interface and presentation
 
 - Added an optional SCP: Unity-inspired custom crosshair, enabled by default, with independent in-game visibility, RGB and alpha controls, a live preview, default reset, cancel, and save-and-reload controls;
-- Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar and level indicator;
-- Added a default-enabled custom oxygen meter that replaces vanilla air bubbles, appears beneath the crosshair, and shifts from light blue toward red as air runs out;
+- Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar, level indicator, experience-orb rendering, and XP pickup and level-up sounds;
+- Added a default-enabled custom oxygen meter that replaces vanilla air bubbles, appears beneath the crosshair, shifts from light blue toward red as air runs out, adds a progressively stronger suffocation vignette, and darkens the screen further with each drowning-damage pulse until air recovery;
 - Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior.
 
 ## Creative inventory organization
@@ -131,3 +131,27 @@
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with shaders.
 
+---
+---
+---
+
+# SCP Additions 3.0.7 — Hotfix
+
+## Multiplayer and configuration synchronization
+
+- Made the host's gameplay configuration authoritative for connected clients, including item rules and effects, hidden Status effects, Codex definitions, contextual interactions, entity interaction rules, and SCP-173 target configuration;
+- Added configuration synchronization on login and after supported save, delete, and reload operations;
+- Cleared synchronized host snapshots when clients disconnect so single-player and later servers cannot inherit stale settings;
+- Synchronized Survival `USABLE` and `WEAPON` tool sessions with the real selected hotbar slot, fixing mining and item-use behavior that could disagree between client and server.
+
+## Gameplay fixes and refinements
+
+- Corrected SCP-294 cups having missing-texture outputs;
+- Corrected duplicated `Cup of Cup of` names on configurable SCP-294 drinks;
+- Made item category changes update immediately after saving them through the in-game editor;
+- Made context interactions ignore missing block and entity IDs instead of incorrectly assigning them to vanilla entries;
+- Made SCP-173 immune to attacks dealing 6 damage or less while allowing stronger weapons to damage it;
+- Prevented damaged SCP-173 instance from restoring all health when their chunk or world is loaded again;
+- Corrected SCP-173 observer handling so players retain broad on-screen observation, configured generic mobs must face the statue directly, and SCP-131 uses its own intentional viewing threshold;
+- Changed the SCP-572 advancement title to **The Chosen One**;
+- Removed the bundled legacy context rule and ignored exact obsolete copies so old defaults do not reappear;

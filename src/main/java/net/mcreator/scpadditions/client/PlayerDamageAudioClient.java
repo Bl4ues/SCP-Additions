@@ -7,6 +7,8 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
@@ -114,7 +116,7 @@ public final class PlayerDamageAudioClient {
 
         if (newHurtPulse
                 && InventoryModuleRuntimeState.replacePlayerHurtSoundsForClient()) {
-            playLocalHurt();
+            playLocalHurt(isDrowningDamage(player));
         }
 
         previousHurtTime = hurtTime;
@@ -155,15 +157,24 @@ public final class PlayerDamageAudioClient {
         }
     }
 
-    private static void playLocalHurt() {
+    private static void playLocalHurt(boolean drowning) {
         RandomSource random = RandomSource.create();
-        float pitch = 0.96F + random.nextFloat() * 0.08F;
+        float volume = drowning ? 0.62F : 1.0F;
+        float pitch = drowning
+                ? 0.72F + random.nextFloat() * 0.06F
+                : 0.96F + random.nextFloat() * 0.08F;
         Minecraft.getInstance().getSoundManager().play(
                 new SimpleSoundInstance(
                         ScpAdditionsModSounds.PLAYER_HURT.get().getLocation(),
-                        SoundSource.PLAYERS, 1.0F, pitch, random,
+                        SoundSource.PLAYERS, volume, pitch, random,
                         false, 0, SoundInstance.Attenuation.NONE,
                         0.0D, 0.0D, 0.0D, true));
+    }
+
+    private static boolean isDrowningDamage(Player player) {
+        DamageSource source = player.getLastDamageSource();
+        return source != null && source.is(DamageTypes.DROWN)
+                || player.isUnderWater() && player.getAirSupply() <= 0;
     }
 
     private static void resetDamageTracking() {

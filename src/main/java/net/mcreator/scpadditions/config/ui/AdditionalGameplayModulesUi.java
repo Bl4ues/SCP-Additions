@@ -26,7 +26,7 @@ public final class AdditionalGameplayModulesUi {
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$CrosshairScreen";
     private static final String ROW_TYPE =
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$Row";
-    private static final int PANEL = 0xFF111317;
+    private static final int PANEL = 0xEE111317;
 
     private AdditionalGameplayModulesUi() {
     }
@@ -52,11 +52,12 @@ public final class AdditionalGameplayModulesUi {
         // preview or the controls around it.
         GuiGraphics graphics = event.getGuiGraphics();
         int panelWidth = Math.min(650, screen.width - 20);
-        int panelHeight = Math.min(360, screen.height - 16);
         int panelX = Math.max(8, (screen.width - panelWidth) / 2);
-        int panelY = Math.max(8, (screen.height - panelHeight) / 2);
+        int panelY = Math.max(8,
+                (screen.height - Math.min(360, screen.height - 16)) / 2);
+        int coverRight = Math.min(panelX + panelWidth - 8, panelX + 242);
         graphics.fill(panelX + 16, panelY + 232,
-                panelX + 242, panelY + 250, PANEL);
+                coverRight, panelY + 250, PANEL);
     }
 
     private static boolean isGeneralModulesScreen(Screen screen) {

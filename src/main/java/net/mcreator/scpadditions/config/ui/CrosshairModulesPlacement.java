@@ -36,6 +36,8 @@ public final class CrosshairModulesPlacement {
 
     private static final Map<Screen, Button> NAVIGATION_BUTTONS =
             new WeakHashMap<>();
+    private static final Map<Screen, Button> DEFAULT_BUTTONS =
+            new WeakHashMap<>();
 
     private CrosshairModulesPlacement() {
     }
@@ -45,6 +47,8 @@ public final class CrosshairModulesPlacement {
         Screen screen = event.getScreen();
         if (isGeneralModulesScreen(screen)) {
             injectCrosshairRow(screen);
+        } else if (isCrosshairScreen(screen)) {
+            ensureCrosshairDefaultsPresent(screen);
         }
     }
 
@@ -57,6 +61,8 @@ public final class CrosshairModulesPlacement {
             restoreCompactHomeLayout(event);
         } else if (isGeneralModulesScreen(screen)) {
             wireCrosshairNavigation(screen);
+        } else if (isCrosshairScreen(screen)) {
+            wireEnabledDefaultsButton(screen);
         }
     }
 
@@ -67,6 +73,9 @@ public final class CrosshairModulesPlacement {
             // The module screen rebuilds its widgets after toggles and scrolling.
             // Rewire the navigation entry whenever that happens.
             wireCrosshairNavigation(screen);
+        } else if (isCrosshairScreen(screen)) {
+            // The Crosshair screen also rebuilds after every toggle and reset.
+            wireEnabledDefaultsButton(screen);
         }
     }
 
@@ -74,6 +83,11 @@ public final class CrosshairModulesPlacement {
         return screen != null
                 && EXTENDED_MODULES_SCREEN.equals(screen.getClass().getName())
                 && "General & Modules".equals(screen.getTitle().getString());
+    }
+
+    private static boolean isCrosshairScreen(Screen screen) {
+        return screen != null
+                && CROSSHAIR_SCREEN.equals(screen.getClass().getName());
     }
 
     private static void restoreCompactHomeLayout(ScreenEvent.Init.Post event) {
@@ -141,7 +155,7 @@ public final class CrosshairModulesPlacement {
             Object crosshairRow = constructor.newInstance(
                     "crosshair", "enabled", "Crosshair",
                     "Configures the custom crosshair, visibility, color, and opacity.",
-                    false);
+                    true);
 
             List<Object> updated = new ArrayList<>(currentRows);
             int insertAt = Math.min(1, updated.size());
@@ -208,24 +222,136 @@ public final class CrosshairModulesPlacement {
         }
     }
 
-    private static void addRenderableWidget(Screen screen, Button button)
-            throws ReflectiveOperationException {
-        Method target = null;
-        for (Class<?> type = screen.getClass(); type != null && target == null;
-                type = type.getSuperclass()) {
-            for (Method method : type.getDeclaredMethods()) {
-                if ("addRenderableWidget".equals(method.getName())
-                        && method.getParameterCount() == 1) {
-                    target = method;
+    private static void ensureCrosshairDefaultsPresent(Screen screen) {
+        try {
+            JsonObject settings = crosshairSettings(screen);
+            if (!settings.has("enabled")) settings.addProperty("enabled", true);
+            if (!settings.has("in_game_enabled")) {
+                settings.addProperty("in_game_enabled", true);
+            }
+            if (!settings.has("red")) settings.addProperty("red", 1.0D);
+            if (!settings.has("green")) settings.addProperty("green", 1.0D);
+            if (!settings.has("blue")) settings.addProperty("blue", 1.0D);
+            if (!settings.has("alpha")) settings.addProperty("alpha", 1.0D);
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not apply Crosshair UI defaults",
+                    exception);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void wireEnabledDefaultsButton(Screen screen) {
+        try {
+            Field buttonsField = screen.getClass().getDeclaredField("buttons");
+            Field labelsField = screen.getClass().getDeclaredField("labels");
+            buttonsField.setAccessible(true);
+            labelsField.setAccessible(true);
+
+            Object buttonsValue = buttonsField.get(screen);
+            Object labelsValue = labelsField.get(screen);
+            if (!(buttonsValue instanceof List<?> rawButtons)
+                    || !(labelsValue instanceof Map<?, ?> rawLabels)) {
+                return;
+            }
+
+            List<Button> buttons = (List<Button>) rawButtons;
+            Map<Button, Component> labels = (Map<Button, Component>) rawLabels;
+            Button source = null;
+            for (Map.Entry<Button, Component> entry : labels.entrySet()) {
+                if ("Defaults".equals(entry.getValue().getString())) {
+                    source = entry.getKey();
                     break;
                 }
             }
+            if (source == null) return;
+
+            Button existing = DEFAULT_BUTTONS.get(screen);
+            if (existing != null && buttons.contains(existing)) {
+                source.visible = false;
+                source.active = false;
+                return;
+            }
+
+            source.visible = false;
+            source.active = false;
+            Button replacement = Button.builder(Component.empty(),
+                    button -> resetCrosshairDefaults(screen))
+                    .bounds(source.getX(), source.getY(),
+                            source.getWidth(), source.getHeight())
+                    .build();
+            labels.put(replacement, Component.literal("Defaults"));
+            buttons.add(replacement);
+            addRenderableWidget(screen, replacement);
+            DEFAULT_BUTTONS.put(screen, replacement);
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not wire enabled Crosshair defaults",
+                    exception);
         }
+    }
+
+    private static void resetCrosshairDefaults(Screen screen) {
+        try {
+            JsonObject settings = crosshairSettings(screen);
+            settings.addProperty("enabled", true);
+            settings.addProperty("in_game_enabled", true);
+            settings.addProperty("red", 1.0D);
+            settings.addProperty("green", 1.0D);
+            settings.addProperty("blue", 1.0D);
+            settings.addProperty("alpha", 1.0D);
+            invokeNoArg(screen, "rebuildWidgets");
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not restore Crosshair defaults",
+                    exception);
+        }
+    }
+
+    private static JsonObject crosshairSettings(Screen screen)
+            throws ReflectiveOperationException {
+        Field workingField = screen.getClass().getDeclaredField("working");
+        workingField.setAccessible(true);
+        Object value = workingField.get(screen);
+        if (!(value instanceof JsonObject working)) {
+            throw new IllegalStateException("Missing Crosshair working config");
+        }
+        if (!working.has("crosshair")
+                || !working.get("crosshair").isJsonObject()) {
+            working.add("crosshair", new JsonObject());
+        }
+        return working.getAsJsonObject("crosshair");
+    }
+
+    private static void addRenderableWidget(Screen screen, Button button)
+            throws ReflectiveOperationException {
+        Method target = findMethod(screen.getClass(), "addRenderableWidget", 1);
         if (target == null) {
             throw new NoSuchMethodException("Screen.addRenderableWidget");
         }
         target.setAccessible(true);
         target.invoke(screen, button);
+    }
+
+    private static void invokeNoArg(Screen screen, String methodName)
+            throws ReflectiveOperationException {
+        Method target = findMethod(screen.getClass(), methodName, 0);
+        if (target == null) throw new NoSuchMethodException(methodName);
+        target.setAccessible(true);
+        target.invoke(screen);
+    }
+
+    private static Method findMethod(Class<?> start, String name,
+            int parameterCount) {
+        for (Class<?> type = start; type != null; type = type.getSuperclass()) {
+            for (Method method : type.getDeclaredMethods()) {
+                if (name.equals(method.getName())
+                        && method.getParameterCount() == parameterCount) {
+                    return method;
+                }
+            }
+        }
+        return null;
     }
 
     private static void openCrosshair(Screen parent) {

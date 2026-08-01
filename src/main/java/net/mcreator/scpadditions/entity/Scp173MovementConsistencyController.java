@@ -2,18 +2,14 @@ package net.mcreator.scpadditions.entity;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.client.BlinkClient;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -24,10 +20,10 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Keeps SCP-173's server position, collision and rendered pose under one strict
- * rule: observed statues do not move, and every unobserved snap must traverse a
- * completely collision-free segment. Two END passes validate both the entity's
- * own movement and the later strategic-pursuit repair pass.
+ * Keeps SCP-173's server position and collision under one strict rule: observed
+ * statues do not move, and every unobserved snap must traverse a completely
+ * collision-free segment. Two END passes validate both the entity's own motion
+ * and the later strategic-pursuit repair pass.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class Scp173MovementConsistencyController {
@@ -212,77 +208,6 @@ public final class Scp173MovementConsistencyController {
                                   boolean observedAtStart) {
         private Vec3 position() {
             return new Vec3(x, y, z);
-        }
-    }
-
-    /** Client render lock that rejects late server interpolation while watched. */
-    @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
-    public static final class ClientVisualLock {
-        private static final Map<UUID, VisualSnapshot> LOCKS = new HashMap<>();
-        private static final Method CLIENT_OBSERVED = method(
-                "isClientObservedByLocalPlayer");
-
-        private ClientVisualLock() {
-        }
-
-        @SubscribeEvent
-        public static void onClientTick(TickEvent.ClientTickEvent event) {
-            if (event.phase != TickEvent.Phase.END) return;
-            net.minecraft.client.Minecraft minecraft =
-                    net.minecraft.client.Minecraft.getInstance();
-            if (minecraft.level == null || minecraft.player == null) {
-                LOCKS.clear();
-                return;
-            }
-
-            Set<UUID> present = new HashSet<>();
-            for (Scp173Entity statue : minecraft.level.getEntitiesOfClass(
-                    Scp173Entity.class,
-                    minecraft.player.getBoundingBox().inflate(128.0D))) {
-                present.add(statue.getUUID());
-                enforce(statue);
-            }
-            LOCKS.keySet().removeIf(id -> !present.contains(id));
-        }
-
-        @SubscribeEvent
-        public static void onRenderLiving(RenderLivingEvent.Pre<?, ?> event) {
-            if (event.getEntity() instanceof Scp173Entity statue) {
-                enforce(statue);
-            }
-        }
-
-        private static void enforce(Scp173Entity statue) {
-            boolean observed = isLocallyObserved(statue);
-            if (!observed) {
-                LOCKS.remove(statue.getUUID());
-                return;
-            }
-
-            VisualSnapshot lock = LOCKS.computeIfAbsent(statue.getUUID(),
-                    ignored -> new VisualSnapshot(statue.getX(), statue.getY(),
-                            statue.getZ(), statue.getYRot()));
-            statue.absMoveTo(lock.x(), lock.y(), lock.z(), lock.yaw(), 0.0F);
-            statue.setDeltaMovement(Vec3.ZERO);
-        }
-
-        private static boolean isLocallyObserved(Scp173Entity statue) {
-            if (BlinkClient.isBlinkClosedLocally()) return false;
-            if (CLIENT_OBSERVED != null) {
-                try {
-                    return (boolean) CLIENT_OBSERVED.invoke(statue);
-                } catch (ReflectiveOperationException exception) {
-                    warnReflection(exception);
-                }
-            }
-            net.minecraft.client.Minecraft minecraft =
-                    net.minecraft.client.Minecraft.getInstance();
-            return minecraft.player != null
-                    && statue.isObservedBy(minecraft.player);
-        }
-
-        private record VisualSnapshot(double x, double y, double z,
-                                      float yaw) {
         }
     }
 }

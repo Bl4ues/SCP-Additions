@@ -1,0 +1,31 @@
+package net.mcreator.scpadditions.init;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+/** Sound events for the selectable player voice profiles. */
+public final class PlayerVoiceSounds {
+    public static final String MODID = "scp_additions_voice";
+
+    public static final DeferredRegister<SoundEvent> REGISTRY =
+            DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MODID);
+
+    public static final RegistryObject<SoundEvent> VOICE_PROFILE_B_HURT =
+            register("voice_profile_b_hurt");
+    public static final RegistryObject<SoundEvent> VOICE_PROFILE_A_GASP =
+            register("voice_profile_a_gasp");
+    public static final RegistryObject<SoundEvent> VOICE_PROFILE_B_GASP =
+            register("voice_profile_b_gasp");
+
+    private PlayerVoiceSounds() {
+    }
+
+    private static RegistryObject<SoundEvent> register(String name) {
+        ResourceLocation id = new ResourceLocation(MODID, name);
+        return REGISTRY.register(name,
+                () -> SoundEvent.createVariableRangeEvent(id));
+    }
+}

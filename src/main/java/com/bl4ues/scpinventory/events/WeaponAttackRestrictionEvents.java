@@ -19,7 +19,10 @@ public final class WeaponAttackRestrictionEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onAttackEntity(AttackEntityEvent event) {
         Player player = event.getEntity();
-        if (!shouldBlockServerAttack(player)) return;
+        if (player.level().isClientSide()
+                || !shouldBlockServerAttack(player)) {
+            return;
+        }
         event.setCanceled(true);
     }
 

@@ -161,6 +161,9 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("require_equipped_weapon_to_attack")
 		public boolean requireEquippedWeaponToAttack = false;
+
+		@SerializedName("custom_hotbar")
+		public boolean customHotbar = false;
 	}
 
 	public static final class Vitals {

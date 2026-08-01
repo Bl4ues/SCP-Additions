@@ -1,11 +1,13 @@
 package net.mcreator.scpadditions.config.ui;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,7 +16,6 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import com.bl4ues.scpinventory.client.ScpFonts;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -105,8 +106,8 @@ public final class CrosshairModulesPlacement {
         int panelX = Math.max(8, (screen.width - panelWidth) / 2);
         int panelY = Math.max(8, (screen.height - panelHeight) / 2);
 
-        // The Gameplay Features heading occupies the first row. The entry sits
-        // on that row where the decorative divider normally continues.
+        // Gameplay Features occupies the first row. Crosshair is its first
+        // control, placed over the decorative continuation line on the right.
         int buttonWidth = 138;
         int buttonX = panelX + panelWidth - buttonWidth - 18;
         int buttonY = panelY + 48;
@@ -148,6 +149,11 @@ public final class CrosshairModulesPlacement {
         @Override
         public void onPress() {
             action.run();
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
         }
 
         @Override

@@ -1,8 +1,9 @@
 package com.bl4ues.scpinventory.events;
 
-import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
-import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
+import com.bl4ues.scpinventory.item.ScpItemClassifier;
+import com.bl4ues.scpinventory.item.ScpItemType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -10,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
-/** Prevents unarmed entity attacks when the optional gameplay module is enabled. */
+/** Prevents entity attacks unless a weapon is actually held in the main hand. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID)
 public final class WeaponAttackRestrictionEvents {
     private WeaponAttackRestrictionEvents() {
@@ -26,12 +27,11 @@ public final class WeaponAttackRestrictionEvents {
         event.setCanceled(true);
     }
 
-    public static boolean hasEquippedWeapon(Player player) {
+    public static boolean hasWeaponInMainHand(Player player) {
         if (player == null) return false;
-        return player.getCapability(ScpInventoryCapability.INSTANCE)
-                .map(inventory -> !inventory.getEquipment(
-                        ScpEquipmentSlot.WEAPON).isEmpty())
-                .orElse(false);
+        ItemStack held = player.getMainHandItem();
+        return held != null && !held.isEmpty()
+                && ScpItemClassifier.getType(held) == ScpItemType.WEAPON;
     }
 
     private static boolean shouldBlockServerAttack(Player player) {
@@ -42,6 +42,6 @@ public final class WeaponAttackRestrictionEvents {
                 ScpAdditionsModulesConfig.get();
         return modules.inventory.enabled
                 && modules.inventory.requireEquippedWeaponToAttack
-                && !hasEquippedWeapon(player);
+                && !hasWeaponInMainHand(player);
     }
 }

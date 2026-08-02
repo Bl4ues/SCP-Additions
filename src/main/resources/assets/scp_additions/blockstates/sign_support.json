@@ -1,0 +1,16 @@
+{
+  "multipart": [
+    {"when":{"facing":"north","position":"left"},"apply":{"model":"scp_additions:block/framed_sign_left"}},
+    {"when":{"facing":"north","position":"center"},"apply":{"model":"scp_additions:block/framed_sign_center"}},
+    {"when":{"facing":"north","position":"right"},"apply":{"model":"scp_additions:block/framed_sign_right"}},
+    {"when":{"facing":"east","position":"left"},"apply":{"model":"scp_additions:block/framed_sign_left","y":90}},
+    {"when":{"facing":"east","position":"center"},"apply":{"model":"scp_additions:block/framed_sign_center","y":90}},
+    {"when":{"facing":"east","position":"right"},"apply":{"model":"scp_additions:block/framed_sign_right","y":90}},
+    {"when":{"facing":"south","position":"left"},"apply":{"model":"scp_additions:block/framed_sign_left","y":180}},
+    {"when":{"facing":"south","position":"center"},"apply":{"model":"scp_additions:block/framed_sign_center","y":180}},
+    {"when":{"facing":"south","position":"right"},"apply":{"model":"scp_additions:block/framed_sign_right","y":180}},
+    {"when":{"facing":"west","position":"left"},"apply":{"model":"scp_additions:block/framed_sign_left","y":270}},
+    {"when":{"facing":"west","position":"center"},"apply":{"model":"scp_additions:block/framed_sign_center","y":270}},
+    {"when":{"facing":"west","position":"right"},"apply":{"model":"scp_additions:block/framed_sign_right","y":270}}
+  ]
+}

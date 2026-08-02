@@ -13,6 +13,9 @@ public final class FramedSignShapes {
 
     public static VoxelShape controllerShape(Direction facing,
             FramedSignPosition position) {
+        if (facing == null || facing.getAxis() == Direction.Axis.Y) {
+            return Shapes.empty();
+        }
         VoxelShape north = Block.box(
                 0.2D + position.modelOffsetBlocks() * 16.0D,
                 2.65D,
@@ -26,7 +29,10 @@ public final class FramedSignShapes {
     public static VoxelShape partShape(FacilityPropPartBlock.Part part,
             Direction facing) {
         FramedSignPosition position = part.position();
-        if (position == null) return Shapes.empty();
+        if (position == null || facing == null
+                || facing.getAxis() == Direction.Axis.Y) {
+            return Shapes.empty();
+        }
 
         BlockPos relative = BlockPos.ZERO
                 .relative(facing.getClockWise(), part.sideOffset())

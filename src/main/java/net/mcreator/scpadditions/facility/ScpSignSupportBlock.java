@@ -16,10 +16,15 @@ import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import javax.annotation.Nullable;
 
-/** Controller block for the wall-mounted, editable SCP Unity-style sign. */
+/** Controller block for the wall-mounted, editable facility sign. */
 public final class ScpSignSupportBlock extends AbstractFramedSignBlock {
     public ScpSignSupportBlock() {
         super(FacilityLargePropStructure.Kind.SIGN_SUPPORT);
+    }
+
+    @Override
+    public String getDescriptionId() {
+        return "Facility Sign";
     }
 
     @Nullable

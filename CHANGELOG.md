@@ -95,7 +95,7 @@
 
 - Added the Facility Direction Sign and Door Sign, both editable with the Screwdriver;
 - Upgraded the SCP Sign with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass;
-- Added the **Area Under Construction Sign** as a decorative glass-backed facility prop using the supplied construction artwork;
+- Added the Area Under Construction Sign and SCP-914 Usage Notice as decorative facility props;
 - Reworked the shared glass-backed sign frame so the editable SCP Sign, SCP-914 Usage Notice, and Area Under Construction Sign use corrected in-block vertical anchors and can be placed in left, centered, or right wall-relative positions according to the clicked third of the block.
 
 ## Facility construction

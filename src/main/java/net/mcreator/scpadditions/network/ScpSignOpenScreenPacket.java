@@ -6,7 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.client.ScpSignTemplateClient;
-import net.mcreator.scpadditions.client.gui.ScpSignTemplateEditorScreen;
+import net.mcreator.scpadditions.client.gui.ScpSignEditorScreen;
 import net.mcreator.scpadditions.facility.ScpSignData;
 import net.mcreator.scpadditions.facility.ScpSignTemplateLibrary;
 import net.mcreator.scpadditions.facility.ScpSignTemplateSummary;
@@ -76,8 +76,7 @@ public final class ScpSignOpenScreenPacket {
                                 message.data.templateId(), message.imageName,
                                 message.image);
                     }
-                    ScpSignTemplateEditorScreen.open(message.pos,
-                            message.data);
+                    ScpSignEditorScreen.open(message.pos, message.data);
                 }));
         context.setPacketHandled(true);
     }

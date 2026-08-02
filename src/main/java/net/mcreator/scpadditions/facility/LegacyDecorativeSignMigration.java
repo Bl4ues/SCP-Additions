@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -23,10 +24,12 @@ public final class LegacyDecorativeSignMigration {
 
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (!(event.getLevel() instanceof ServerLevel level)
+                || !(event.getChunk() instanceof LevelChunk chunk)) {
+            return;
+        }
         List<BlockPos> positions = new ArrayList<>();
-        for (BlockEntity blockEntity : event.getChunk()
-                .getBlockEntities().values()) {
+        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (blockEntity instanceof Scp914UsageNoticeBlockEntity
                     || blockEntity
                     instanceof AreaUnderConstructionSignBlockEntity) {

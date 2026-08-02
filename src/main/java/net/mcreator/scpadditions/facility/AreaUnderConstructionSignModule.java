@@ -1,20 +1,21 @@
 package net.mcreator.scpadditions.facility;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import javax.annotation.Nullable;
@@ -26,29 +27,35 @@ import java.util.List;
         bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class AreaUnderConstructionSignModule {
     public static final String PATH = "area_under_construction_sign";
-    public static final ResourceLocation ID = new ResourceLocation(
-            ScpAdditionsMod.MODID, PATH);
 
-    public static final AreaUnderConstructionSignBlock BLOCK =
-            new AreaUnderConstructionSignBlock();
-    public static final Item ITEM = new ConstructionSignItem(BLOCK,
-            new Item.Properties());
-    public static final BlockEntityType<AreaUnderConstructionSignBlockEntity>
-            BLOCK_ENTITY = BlockEntityType.Builder.of(
-                    AreaUnderConstructionSignBlockEntity::new, BLOCK)
-                    .build(null);
+    private static final DeferredRegister<Block> BLOCKS =
+            DeferredRegister.create(ForgeRegistries.BLOCKS,
+                    ScpAdditionsMod.MODID);
+    private static final DeferredRegister<Item> ITEMS =
+            DeferredRegister.create(ForgeRegistries.ITEMS,
+                    ScpAdditionsMod.MODID);
+    private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES,
+                    ScpAdditionsMod.MODID);
+
+    public static final RegistryObject<AreaUnderConstructionSignBlock> BLOCK =
+            BLOCKS.register(PATH, AreaUnderConstructionSignBlock::new);
+    public static final RegistryObject<Item> ITEM = ITEMS.register(PATH,
+            () -> new ConstructionSignItem(BLOCK.get(),
+                    new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<
+            AreaUnderConstructionSignBlockEntity>> BLOCK_ENTITY =
+            BLOCK_ENTITIES.register(PATH, () -> BlockEntityType.Builder.of(
+                    AreaUnderConstructionSignBlockEntity::new, BLOCK.get())
+                    .build(null));
 
     private AreaUnderConstructionSignModule() {
     }
 
-    @SubscribeEvent
-    public static void register(RegisterEvent event) {
-        event.register(ForgeRegistries.Keys.BLOCKS,
-                helper -> helper.register(ID, BLOCK));
-        event.register(ForgeRegistries.Keys.ITEMS,
-                helper -> helper.register(ID, ITEM));
-        event.register(Registries.BLOCK_ENTITY_TYPE,
-                helper -> helper.register(ID, BLOCK_ENTITY));
+    public static void register(IEventBus bus) {
+        BLOCKS.register(bus);
+        ITEMS.register(bus);
+        BLOCK_ENTITIES.register(bus);
     }
 
     @SubscribeEvent
@@ -56,7 +63,7 @@ public final class AreaUnderConstructionSignModule {
             BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey().location().equals(
                 FacilityModule.SCP_FACILITY_BLOCKS.getId())) {
-            event.accept(ITEM);
+            event.accept(ITEM.get());
         }
     }
 
@@ -70,13 +77,13 @@ public final class AreaUnderConstructionSignModule {
             for (ItemStack stack : section.items()) {
                 items.add(stack.copy());
                 if (stack.is(FacilityModule.SCP_914_USAGE_NOTICE.get().asItem())) {
-                    items.add(new ItemStack(ITEM));
+                    items.add(new ItemStack(ITEM.get()));
                     inserted = true;
                 }
             }
             if (!inserted && section.sprite().getPath().endsWith(
                     "/proptab.png")) {
-                items.add(new ItemStack(ITEM));
+                items.add(new ItemStack(ITEM.get()));
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     List.copyOf(items)));

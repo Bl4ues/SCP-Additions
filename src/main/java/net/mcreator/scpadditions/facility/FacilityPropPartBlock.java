@@ -82,8 +82,12 @@ public final class FacilityPropPartBlock extends Block
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return FacilityLargePropStructure.partShape(
-                state.getValue(PART), state.getValue(FACING));
+        Part part = state.getValue(PART);
+        Direction facing = state.getValue(FACING);
+        if (part.kind().framedSign() && !part.legacy()) {
+            return FramedSignShapes.partShape(part, facing);
+        }
+        return FacilityLargePropStructure.partShape(part, facing);
     }
 
     @Override

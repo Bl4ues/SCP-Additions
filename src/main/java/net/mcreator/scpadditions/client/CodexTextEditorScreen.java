@@ -83,7 +83,7 @@ public final class CodexTextEditorScreen extends Screen {
         int editorTop = top + 82;
         int bottom = top + panelHeight - 54;
         int visible = Math.max(5, (bottom - editorTop) / 22);
-        scroll = Math.max(0, Math.mein(Math.max(0,
+        scroll = Math.max(0, Math.min(Math.max(0,
                 lines.size() - visible), scroll));
 
         int toolbarWidth = (panelWidth - 50) / 4;
@@ -93,7 +93,7 @@ public final class CodexTextEditorScreen extends Screen {
         addRenderableWidget(Button.builder(ScpFonts.roboto("* Italic *"),
                 b -> wrapFocused("*", "*"))
                 .bounds(left + 22 + toolbarWidth, top + 57,
-                        toolbarWidth, 20).build();
+                        toolbarWidth, 20).build());
         addRenderableWidget(Button.builder(ScpFonts.roboto("--- Divider"),
                 b -> insertDivider())
                 .bounds(left + 28 + toolbarWidth * 2, top + 57,

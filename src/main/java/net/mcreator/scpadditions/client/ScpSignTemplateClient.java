@@ -124,8 +124,10 @@ public final class ScpSignTemplateClient {
         if (builtIn != null) return builtIn;
         if (!ScpSignTemplates.isCustom(clean)) return null;
         ResourceLocation texture = TEXTURES.get(clean);
-        if (texture == null && CUSTOM.containsKey(clean)
-                && REQUESTED.add(clean)) {
+        // A player can encounter an already-placed custom sign before ever
+        // opening its editor. Request by the block-entity ID itself; the server
+        // remains authoritative and simply ignores unknown/deleted templates.
+        if (texture == null && REQUESTED.add(clean)) {
             ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                     new ScpSignTemplateRequestPacket(clean));
         }

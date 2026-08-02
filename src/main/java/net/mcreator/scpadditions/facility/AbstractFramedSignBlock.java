@@ -143,7 +143,7 @@ public abstract class AbstractFramedSignBlock extends BaseEntityBlock
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return FacilityLargePropStructure.controllerShape(kind,
+        return FramedSignShapes.controllerShape(
                 state.getValue(FACING), state.getValue(POSITION));
     }
 
@@ -167,7 +167,7 @@ public abstract class AbstractFramedSignBlock extends BaseEntityBlock
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.INVISIBLE;
     }
 
     @Override

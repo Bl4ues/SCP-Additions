@@ -94,9 +94,12 @@
 ## Facility signs
 
 - Added the Facility Direction Sign and Door Sign, both editable with the Screwdriver;
-- Upgraded the SCP Sign with a Screwdriver editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms rendered behind its glass;
-- Added the Area Under Construction Sign and SCP-914 Usage Notice as decorative facility props;
-- Reworked the shared glass-backed sign frame so the editable SCP Sign, SCP-914 Usage Notice, and Area Under Construction Sign use corrected in-block vertical anchors and can be placed in left, centered, or right wall-relative positions according to the clicked third of the block.
+- Upgraded the SCP Sign into a unified glass-backed sign system whose first editor option selects between **SCP Information Sign**, **SCP-914 Usage Notice**, **Area Under Construction Sign**, and reusable custom world templates;
+- Preserved the SCP Information editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms;
+- Added template previews to the selector and support for naming, uploading, reusing, and deleting custom PNG sign templates stored with the server world;
+- Custom artwork uses an 8:5 canvas, recommends 1024×640 images, and automatically resizes other image proportions before upload;
+- Retired the separate SCP-914 Usage Notice and Area Under Construction Sign creative items while retaining compatibility registrations for existing worlds;
+- Reworked the shared sign frame so every template can be placed in left, centered, or right wall-relative positions according to the clicked third of the block.
 
 ## Facility construction
 
@@ -105,7 +108,7 @@
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
-- Added decorative Emergency Button, Fire Extinguisher, Wet Floor Sign, Non-potable Water Faucet, and SCP-914 Usage Notice facility props;
+- Added decorative Emergency Button, Fire Extinguisher, Wet Floor Sign, and Non-potable Water Faucet facility props;
 - Added clear tooltips to facility props that have no gameplay function;
 - Standardized wall-mounted signs, props, door buttons, and keycard readers so they follow the clicked surface, require solid wall support, and break when that support is removed;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;

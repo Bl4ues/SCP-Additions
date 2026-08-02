@@ -216,7 +216,7 @@ public final class FacilityLargePropStructure {
             case SIGN_SUPPORT -> FacilityModule.SIGN_SUPPORT.get();
             case SCP_914_NOTICE -> FacilityModule.SCP_914_USAGE_NOTICE.get();
             case UNDER_CONSTRUCTION_NOTICE ->
-                    AreaUnderConstructionSignModule.BLOCK;
+                    AreaUnderConstructionSignModule.BLOCK.get();
             case TV -> FacilityModule.TV.get();
         };
     }

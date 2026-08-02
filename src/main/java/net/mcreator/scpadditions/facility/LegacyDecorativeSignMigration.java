@@ -3,9 +3,7 @@ package net.mcreator.scpadditions.facility;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -24,16 +22,13 @@ public final class LegacyDecorativeSignMigration {
 
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
-        if (!(event.getLevel() instanceof ServerLevel level)
-                || !(event.getChunk() instanceof LevelChunk chunk)) {
-            return;
-        }
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
         List<BlockPos> positions = new ArrayList<>();
-        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
-            if (blockEntity instanceof Scp914UsageNoticeBlockEntity
-                    || blockEntity
-                    instanceof AreaUnderConstructionSignBlockEntity) {
-                positions.add(blockEntity.getBlockPos().immutable());
+        for (BlockPos pos : event.getChunk().getBlockEntitiesPos()) {
+            Block block = event.getChunk().getBlockState(pos).getBlock();
+            if (block == FacilityModule.SCP_914_USAGE_NOTICE.get()
+                    || block == AreaUnderConstructionSignModule.BLOCK.get()) {
+                positions.add(pos.immutable());
             }
         }
         if (!positions.isEmpty()) {

@@ -38,24 +38,16 @@ public final class AreaUnderConstructionSignModule {
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES,
                     ScpAdditionsMod.MODID);
 
-    public static final AreaUnderConstructionSignBlock BLOCK =
-            new AreaUnderConstructionSignBlock();
-    public static final Item ITEM = new ConstructionSignItem(BLOCK,
-            new Item.Properties());
-    public static final BlockEntityType<AreaUnderConstructionSignBlockEntity>
-            BLOCK_ENTITY = BlockEntityType.Builder.of(
-                    AreaUnderConstructionSignBlockEntity::new, BLOCK)
-                    .build(null);
-
-    @SuppressWarnings("unused")
-    private static final RegistryObject<Block> BLOCK_ENTRY =
-            BLOCKS.register(PATH, () -> BLOCK);
-    @SuppressWarnings("unused")
-    private static final RegistryObject<Item> ITEM_ENTRY =
-            ITEMS.register(PATH, () -> ITEM);
-    @SuppressWarnings("unused")
-    private static final RegistryObject<BlockEntityType<?>> BLOCK_ENTITY_ENTRY =
-            BLOCK_ENTITIES.register(PATH, () -> BLOCK_ENTITY);
+    public static final RegistryObject<AreaUnderConstructionSignBlock> BLOCK =
+            BLOCKS.register(PATH, AreaUnderConstructionSignBlock::new);
+    public static final RegistryObject<Item> ITEM = ITEMS.register(PATH,
+            () -> new ConstructionSignItem(BLOCK.get(),
+                    new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<
+            AreaUnderConstructionSignBlockEntity>> BLOCK_ENTITY =
+            BLOCK_ENTITIES.register(PATH, () -> BlockEntityType.Builder.of(
+                    AreaUnderConstructionSignBlockEntity::new, BLOCK.get())
+                    .build(null));
 
     private AreaUnderConstructionSignModule() {
     }
@@ -71,7 +63,7 @@ public final class AreaUnderConstructionSignModule {
             BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey().location().equals(
                 FacilityModule.SCP_FACILITY_BLOCKS.getId())) {
-            event.accept(ITEM);
+            event.accept(ITEM.get());
         }
     }
 
@@ -85,13 +77,13 @@ public final class AreaUnderConstructionSignModule {
             for (ItemStack stack : section.items()) {
                 items.add(stack.copy());
                 if (stack.is(FacilityModule.SCP_914_USAGE_NOTICE.get().asItem())) {
-                    items.add(new ItemStack(ITEM));
+                    items.add(new ItemStack(ITEM.get()));
                     inserted = true;
                 }
             }
             if (!inserted && section.sprite().getPath().endsWith(
                     "/proptab.png")) {
-                items.add(new ItemStack(ITEM));
+                items.add(new ItemStack(ITEM.get()));
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     List.copyOf(items)));

@@ -5,36 +5,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/** Converts retired standalone notice blocks without damaging existing worlds. */
+/** Converts retired standalone notice blocks only when they are newly placed. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class LegacyDecorativeSignMigration {
     private LegacyDecorativeSignMigration() {
-    }
-
-    @SubscribeEvent
-    public static void onChunkLoad(ChunkEvent.Load event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        List<BlockPos> positions = new ArrayList<>();
-        for (BlockPos pos : event.getChunk().getBlockEntitiesPos()) {
-            Block block = event.getChunk().getBlockState(pos).getBlock();
-            if (block == FacilityModule.SCP_914_USAGE_NOTICE.get()
-                    || block == AreaUnderConstructionSignModule.BLOCK.get()) {
-                positions.add(pos.immutable());
-            }
-        }
-        if (!positions.isEmpty()) {
-            level.getServer().execute(() -> positions.forEach(pos ->
-                    migrateIfNeeded(level, pos)));
-        }
     }
 
     @SubscribeEvent

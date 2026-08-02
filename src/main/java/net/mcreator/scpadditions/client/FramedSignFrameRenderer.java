@@ -24,11 +24,13 @@ public final class FramedSignFrameRenderer {
             "scp_unity_extra_blocks", "textures/block/metal.png");
 
     /**
-     * Depth order from wall to viewer: background, custom details, glass.
-     * All planes remain separated enough to avoid shader z-fighting.
+     * The wall is toward Z=16 and the viewer is toward smaller Z values.
+     * Artwork therefore uses a larger Z than the glass plane so it is visibly
+     * enclosed behind the translucent sheet. Details stay slightly in front of
+     * the paper while remaining safely behind the glass.
      */
-    static final float ARTWORK_Z = 15.55F / 16.0F;
-    static final float ARTWORK_DETAIL_Z = 15.68F / 16.0F;
+    static final float ARTWORK_Z = 15.94F / 16.0F;
+    static final float ARTWORK_DETAIL_Z = 15.89F / 16.0F;
 
     private FramedSignFrameRenderer() {
     }

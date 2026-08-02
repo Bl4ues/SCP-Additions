@@ -16,11 +16,11 @@ import net.mcreator.scpadditions.network.ScpSignTemplateRequestPacket;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 
 /** Client-only dynamic textures and metadata synchronized from the world. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT,
@@ -86,11 +86,17 @@ public final class ScpSignTemplateClient {
                 || png.length == 0) {
             return;
         }
-        try (NativeImage image = NativeImage.read(
-                new ByteArrayInputStream(png))) {
-            NativeImage owned = new NativeImage(image.format(),
-                    image.getWidth(), image.getHeight(), false);
-            owned.copyFrom(image);
+
+        NativeImage image = null;
+        try {
+            image = NativeImage.read(new ByteArrayInputStream(png));
+            if (image.getWidth() != ScpSignTemplates.TARGET_WIDTH
+                    || image.getHeight() != ScpSignTemplates.TARGET_HEIGHT) {
+                image.close();
+                REQUESTED.remove(cleanId);
+                return;
+            }
+
             Minecraft minecraft = Minecraft.getInstance();
             ResourceLocation old = TEXTURES.remove(cleanId);
             if (old != null) minecraft.getTextureManager().release(old);
@@ -98,7 +104,8 @@ public final class ScpSignTemplateClient {
                     .register("scp_sign_template/"
                             + cleanId.substring(
                             ScpSignTemplates.CUSTOM_PREFIX.length()),
-                            new DynamicTexture(owned));
+                            new DynamicTexture(image));
+            image = null;
             TEXTURES.put(cleanId, registered);
             CUSTOM.put(cleanId, new ScpSignTemplateSummary(cleanId, name,
                     true));
@@ -106,6 +113,7 @@ public final class ScpSignTemplateClient {
             lastChangedId = cleanId;
             revision++;
         } catch (IOException | RuntimeException ignored) {
+            if (image != null) image.close();
             REQUESTED.remove(cleanId);
         }
     }

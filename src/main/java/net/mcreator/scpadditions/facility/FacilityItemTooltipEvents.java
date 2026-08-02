@@ -19,11 +19,14 @@ public final class FacilityItemTooltipEvents {
         if (!event.getItemStack().is(FacilityModule.SIGN_SUPPORT.get().asItem())) {
             return;
         }
-        event.getToolTip().add(Component.translatable(
-                        "tooltip.scp_additions.sign_support_primary")
+        event.getToolTip().add(Component.literal(
+                        "Choose SCP information, facility notices, or custom artwork")
                 .withStyle(ChatFormatting.GRAY));
-        event.getToolTip().add(Component.translatable(
-                        "tooltip.scp_additions.sign_support_secondary")
+        event.getToolTip().add(Component.literal(
+                        "Place it, then use a Screwdriver to edit the sign")
                 .withStyle(ChatFormatting.AQUA));
+        event.getToolTip().add(Component.literal(
+                        "Custom templates are shared by the current world")
+                .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

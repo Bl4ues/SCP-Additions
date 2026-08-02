@@ -12,6 +12,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.AbstractFramedSignBlock;
 import net.mcreator.scpadditions.facility.Scp914UsageNoticeBlock;
 import net.mcreator.scpadditions.facility.Scp914UsageNoticeBlockEntity;
 import org.joml.Matrix3f;
@@ -23,10 +24,10 @@ public final class Scp914UsageNoticeBlockEntityRenderer
     private static final ResourceLocation NOTICE = new ResourceLocation(
             ScpAdditionsMod.MODID,
             "textures/screens/scpsign/914-notice.png");
-    private static final float PANEL_MIN_X = 8.2F / 16.0F;
-    private static final float PANEL_MAX_X = 23.7F / 16.0F;
-    private static final float PANEL_MIN_Y = -12.85F / 16.0F;
-    private static final float PANEL_MAX_Y = -3.15F / 16.0F;
+    private static final float PANEL_MIN_X = 0.2F / 16.0F;
+    private static final float PANEL_MAX_X = 15.7F / 16.0F;
+    private static final float PANEL_MIN_Y = 3.15F / 16.0F;
+    private static final float PANEL_MAX_Y = 12.85F / 16.0F;
     private static final float IMAGE_Z = 15.86F / 16.0F;
 
     public Scp914UsageNoticeBlockEntityRenderer(
@@ -43,8 +44,10 @@ public final class Scp914UsageNoticeBlockEntityRenderer
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
         poseStack.mulPose(Axis.YP.rotationDegrees(rotationDegrees(
-                state.getValue(Scp914UsageNoticeBlock.FACING))));
+                state.getValue(AbstractFramedSignBlock.FACING))));
         poseStack.translate(-0.5D, -0.5D, -0.5D);
+        poseStack.translate(state.getValue(AbstractFramedSignBlock.POSITION)
+                .modelOffsetBlocks(), 0.0D, 0.0D);
 
         VertexConsumer consumer = buffer.getBuffer(
                 RenderType.entityTranslucent(NOTICE));

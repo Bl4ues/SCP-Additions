@@ -9,7 +9,7 @@ public record ScpSignData(String scpNumber,
         ContainmentClass containmentClass, String customContainmentClass,
         int clearanceLevel,
         AnomalyType anomalyType, String customAnomalyType,
-        List<String> hazards) {
+        List<String> hazards, String templateId) {
     public static final int MAX_SCP_NUMBER_LENGTH = 5;
     public static final int MAX_CONTAINMENT_CLASS_LENGTH = 20;
     public static final int MAX_ANOMALY_TYPE_LENGTH = 32;
@@ -17,7 +17,19 @@ public record ScpSignData(String scpNumber,
 
     public static final ScpSignData DEFAULT = new ScpSignData(
             "", ContainmentClass.SAFE, "", 1,
-            AnomalyType.HARMLESS, "", List.of());
+            AnomalyType.HARMLESS, "", List.of(),
+            ScpSignTemplates.INFORMATION);
+
+    /** Keeps every existing caller source-compatible as information signs. */
+    public ScpSignData(String scpNumber,
+            ContainmentClass containmentClass, String customContainmentClass,
+            int clearanceLevel,
+            AnomalyType anomalyType, String customAnomalyType,
+            List<String> hazards) {
+        this(scpNumber, containmentClass, customContainmentClass,
+                clearanceLevel, anomalyType, customAnomalyType, hazards,
+                ScpSignTemplates.INFORMATION);
+    }
 
     public ScpSignData {
         scpNumber = digitsOnly(scpNumber, MAX_SCP_NUMBER_LENGTH);
@@ -30,6 +42,11 @@ public record ScpSignData(String scpNumber,
         customAnomalyType = cleanText(customAnomalyType,
                 MAX_ANOMALY_TYPE_LENGTH);
         hazards = ScpSignHazards.normalizeSlots(hazards);
+        templateId = ScpSignTemplates.cleanId(templateId);
+        if (!ScpSignTemplates.isBuiltIn(templateId)
+                && !ScpSignTemplates.isCustom(templateId)) {
+            templateId = ScpSignTemplates.INFORMATION;
+        }
     }
 
     public String scpLabel() {
@@ -53,7 +70,13 @@ public record ScpSignData(String scpNumber,
         if (slot >= 0 && slot < HAZARD_SLOTS) updated.set(slot, id);
         return new ScpSignData(scpNumber, containmentClass,
                 customContainmentClass, clearanceLevel, anomalyType,
-                customAnomalyType, updated);
+                customAnomalyType, updated, templateId);
+    }
+
+    public ScpSignData withTemplateId(String selectedTemplateId) {
+        return new ScpSignData(scpNumber, containmentClass,
+                customContainmentClass, clearanceLevel, anomalyType,
+                customAnomalyType, hazards, selectedTemplateId);
     }
 
     private static String fallback(String value, String fallback) {

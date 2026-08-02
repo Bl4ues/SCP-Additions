@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * Selects the sign artwork before exposing template-specific controls. Built-in
- * notices and world-saved custom images all use the single SCP Sign block.
+ * notices and world-saved custom images all use the single Facility Sign block.
  */
 public final class ScpSignTemplateEditorScreen extends Screen {
     private static final int PANEL_BACKGROUND = 0xF01B2024;
@@ -76,7 +76,7 @@ public final class ScpSignTemplateEditorScreen extends Screen {
     private boolean statusError;
 
     private ScpSignTemplateEditorScreen(BlockPos signPos, ScpSignData data) {
-        super(Component.literal("SCP Sign Editor"));
+        super(Component.literal("Facility Sign Editor"));
         this.signPos = signPos.immutable();
         this.initialData = data == null ? ScpSignData.DEFAULT : data;
         this.selectedId = this.initialData.templateId();
@@ -337,7 +337,7 @@ public final class ScpSignTemplateEditorScreen extends Screen {
         outline(graphics, panelLeft, panelTop, panelWidth, panelHeight,
                 PANEL_EDGE);
         graphics.drawString(font, ScpFonts.montserrat(
-                        Component.literal("SCP Sign Editor")),
+                        Component.literal("Facility Sign Editor")),
                 panelLeft + 20, panelTop + 16, TEXT_PRIMARY, false);
         graphics.fill(panelLeft + 18, panelTop + 45,
                 panelLeft + panelWidth - 18, panelTop + 46, 0xFF343D43);

@@ -39,8 +39,9 @@ public final class ScpSignSupportBlockEntityRenderer
     private static final float PANEL_MAX_Y = 12.85F / 16.0F;
     private static final float PANEL_WIDTH = PANEL_MAX_X - PANEL_MIN_X;
     private static final float PANEL_HEIGHT = PANEL_MAX_Y - PANEL_MIN_Y;
-    private static final float BASE_Z = 15.86F / 16.0F;
-    private static final float CONTENT_Z = 15.83F / 16.0F;
+    private static final float BASE_Z = FramedSignFrameRenderer.ARTWORK_Z;
+    private static final float CONTENT_Z =
+            FramedSignFrameRenderer.ARTWORK_DETAIL_Z;
     private static final float FONT_HEIGHT = 7.5F;
     private static final int TEXT_COLOR = 0xFF000000;
 

@@ -16,26 +16,22 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
- * The original Unity TV and wall-sign support models are authored one block
- * below their logical anchor. Shift their placement target upward so the visible
- * object appears on the block face the player actually selected.
+ * The original Unity TV remains authored one block below its logical anchor.
+ * Framed signs now carry corrected model coordinates and use ordinary placement.
  */
-@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class RaisedFacilityPlacementEvents {
     private RaisedFacilityPlacementEvents() {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+    public static void onRightClickBlock(
+            PlayerInteractEvent.RightClickBlock event) {
         Player player = event.getEntity();
         ItemStack stack = player.getItemInHand(event.getHand());
-
-        if (!stack.is(FacilityModule.itemByPath("sign_support").get())
-                && !stack.is(FacilityModule.itemByPath("scp_914_usage_notice").get())
-                && !stack.is(FacilityModule.itemByPath("tv").get())) {
-            return;
-        }
-        if (!(stack.getItem() instanceof BlockItem blockItem)) {
+        if (!stack.is(FacilityModule.itemByPath("tv").get())
+                || !(stack.getItem() instanceof BlockItem blockItem)) {
             return;
         }
 
@@ -45,17 +41,10 @@ public final class RaisedFacilityPlacementEvents {
         BlockPos raisedTarget = original.getClickedPos().above();
 
         Vec3 raisedLocation = hit.getLocation().add(0.0D, 1.0D, 0.0D);
-        BlockHitResult raisedHit = new BlockHitResult(
-                raisedLocation,
-                hit.getDirection(),
-                raisedTarget,
-                hit.isInside());
+        BlockHitResult raisedHit = new BlockHitResult(raisedLocation,
+                hit.getDirection(), raisedTarget, hit.isInside());
         BlockPlaceContext raisedContext = new BlockPlaceContext(
-                player.level(),
-                player,
-                event.getHand(),
-                stack,
-                raisedHit);
+                player.level(), player, event.getHand(), stack, raisedHit);
 
         if (!raisedContext.getClickedPos().equals(raisedTarget)) {
             event.setCanceled(true);

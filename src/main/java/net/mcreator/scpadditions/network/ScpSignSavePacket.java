@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import net.mcreator.scpadditions.facility.ScpSignData;
 import net.mcreator.scpadditions.facility.ScpSignSupportBlockEntity;
+import net.mcreator.scpadditions.facility.ScpSignTemplateLibrary;
 import net.mcreator.scpadditions.keycard.KeycardReaderInteractionEvents;
 
 import java.util.function.Supplier;
@@ -39,7 +40,8 @@ public final class ScpSignSavePacket {
             ServerPlayer player = context.getSender();
             if (player == null
                     || player.distanceToSqr(Vec3.atCenterOf(message.pos)) > 100.0D
-                    || !player.level().hasChunkAt(message.pos)) {
+                    || !player.level().hasChunkAt(message.pos)
+                    || player.getServer() == null) {
                 return;
             }
             if (player.level().getBlockEntity(message.pos)
@@ -49,7 +51,11 @@ public final class ScpSignSavePacket {
                 boolean firstPlacementSave =
                         sign.data().equals(ScpSignData.DEFAULT);
                 if (screwdriver.isEmpty() && !firstPlacementSave) return;
-                sign.setData(message.data);
+                ScpSignTemplateLibrary library =
+                        ScpSignTemplateLibrary.get(player.getServer());
+                String validTemplate = library.validateSelection(
+                        message.data.templateId());
+                sign.setData(message.data.withTemplateId(validTemplate));
             }
         });
         context.setPacketHandled(true);

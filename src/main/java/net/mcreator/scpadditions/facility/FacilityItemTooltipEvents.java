@@ -20,13 +20,13 @@ public final class FacilityItemTooltipEvents {
             return;
         }
         event.getToolTip().add(Component.literal(
-                        "Choose SCP information, facility notices, or custom artwork")
+                        "Displays SCP information, facility notices, or custom artwork")
                 .withStyle(ChatFormatting.GRAY));
         event.getToolTip().add(Component.literal(
-                        "Place it, then use a Screwdriver to edit the sign")
+                        "Place it, then use a Screwdriver to configure the sign")
                 .withStyle(ChatFormatting.AQUA));
         event.getToolTip().add(Component.literal(
-                        "Custom templates are shared by the current world")
+                        "Custom templates are saved to and shared by this world")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

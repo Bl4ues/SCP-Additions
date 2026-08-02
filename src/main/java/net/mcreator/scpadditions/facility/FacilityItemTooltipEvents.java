@@ -23,10 +23,7 @@ public final class FacilityItemTooltipEvents {
                         "Displays SCP information, facility notices, or custom artwork")
                 .withStyle(ChatFormatting.GRAY));
         event.getToolTip().add(Component.literal(
-                        "Place it, then use a Screwdriver to configure the sign")
+                        "Use a Screwdriver to configure after placement")
                 .withStyle(ChatFormatting.AQUA));
-        event.getToolTip().add(Component.literal(
-                        "Custom templates are saved to and shared by this world")
-                .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

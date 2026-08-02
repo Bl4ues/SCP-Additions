@@ -21,15 +21,15 @@ import net.mcreator.scpadditions.facility.ScpSignData;
 import net.mcreator.scpadditions.facility.ScpSignHazards;
 import net.mcreator.scpadditions.facility.ScpSignSupportBlock;
 import net.mcreator.scpadditions.facility.ScpSignSupportBlockEntity;
+import net.mcreator.scpadditions.facility.ScpSignTemplates;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
-/** Renders the configurable paper directly behind the Sign Support glass. */
+/** Renders the selected sign artwork directly behind the shared glass. */
 public final class ScpSignSupportBlockEntityRenderer
         implements BlockEntityRenderer<ScpSignSupportBlockEntity> {
-    private static final ResourceLocation BASE = new ResourceLocation(
-            ScpAdditionsMod.MODID,
-            "textures/screens/scpsign/scp_sign_base.png");
+    private static final ResourceLocation BASE =
+            ScpSignTemplates.INFORMATION_TEXTURE;
 
     private static final float IMAGE_WIDTH = 1024.0F;
     private static final float IMAGE_HEIGHT = 640.0F;
@@ -84,11 +84,30 @@ public final class ScpSignSupportBlockEntityRenderer
         poseStack.translate(state.getValue(AbstractFramedSignBlock.POSITION)
                 .modelOffsetBlocks(), 0.0D, 0.0D);
 
+        ScpSignData data = sign.data();
+        String templateId = data.templateId();
+        if (!ScpSignTemplates.isInformation(templateId)) {
+            ResourceLocation selected = ScpSignTemplateClient.texture(
+                    templateId);
+            if (selected != null) {
+                renderImage(selected, new ImageArea(0.0F, 0.0F,
+                        IMAGE_WIDTH, IMAGE_HEIGHT), BASE_Z,
+                        poseStack, buffer, packedLight);
+                poseStack.popPose();
+                return;
+            }
+        }
+
+        renderInformation(data, poseStack, buffer, packedLight);
+        poseStack.popPose();
+    }
+
+    private void renderInformation(ScpSignData data, PoseStack poseStack,
+            MultiBufferSource buffer, int packedLight) {
         renderImage(BASE, new ImageArea(0.0F, 0.0F,
                 IMAGE_WIDTH, IMAGE_HEIGHT), BASE_Z,
                 poseStack, buffer, packedLight);
 
-        ScpSignData data = sign.data();
         for (int slot = 0; slot < ScpSignData.HAZARD_SLOTS; slot++) {
             ScpSignHazards.Option option = ScpSignHazards.option(
                     data.hazards().get(slot));
@@ -110,8 +129,6 @@ public final class ScpSignSupportBlockEntityRenderer
                 poseStack, buffer, packedLight);
         renderText(data.anomalyLabel(), ANOMALY, true,
                 poseStack, buffer, packedLight);
-
-        poseStack.popPose();
     }
 
     private void renderText(String value, ImageArea area, boolean centered,
@@ -175,7 +192,7 @@ public final class ScpSignSupportBlockEntityRenderer
     }
 
     private static boolean resourceExists(ResourceLocation texture) {
-        return Minecraft.getInstance().getResourceManager()
+        return texture != null && Minecraft.getInstance().getResourceManager()
                 .getResource(texture).isPresent();
     }
 

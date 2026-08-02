@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** Styled form editor and live 1024x640 preview for the SCP Sign Support. */
+/** Styled form editor and live preview for the SCP Information Sign. */
 public final class ScpSignEditorScreen extends Screen {
     private static final ResourceLocation BASE = new ResourceLocation(
             ScpAdditionsMod.MODID,
@@ -81,7 +81,7 @@ public final class ScpSignEditorScreen extends Screen {
     private int traitControlY;
 
     private ScpSignEditorScreen(BlockPos signPos, ScpSignData data) {
-        super(Component.translatable("screen.scp_additions.scp_sign_editor"));
+        super(Component.literal("SCP Information Sign Editor"));
         this.signPos = signPos.immutable();
         this.initialData = data == null ? ScpSignData.DEFAULT : data;
     }
@@ -267,8 +267,8 @@ public final class ScpSignEditorScreen extends Screen {
                 graphics.fill(x, y, x + 1, y + 1, 0x242F383E);
             }
         }
-        graphics.drawString(font, ScpFonts.montserrat(Component.translatable(
-                        "screen.scp_additions.scp_sign_editor")),
+        graphics.drawString(font, ScpFonts.montserrat(Component.literal(
+                        "SCP Information Sign Editor")),
                 panelLeft + 18, panelTop + 14, TEXT_PRIMARY, false);
     }
 

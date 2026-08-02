@@ -8,6 +8,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.Scp079DecisionLog;
 import net.mcreator.scpadditions.facility.FacilitySignBlockEntity;
 import net.mcreator.scpadditions.facility.ScpSignSupportBlockEntity;
+import net.mcreator.scpadditions.facility.ScpSignTemplateLibrary;
 import net.mcreator.scpadditions.network.Scp079DecisionPacket.DecisionEntry;
 import net.mcreator.scpadditions.network.Scp079EnergyPacket.RoamerEntry;
 import net.mcreator.scpadditions.roamer.RoamerDebugSnapshot;
@@ -117,6 +118,26 @@ public final class ScpEntityNetwork {
                 ScpSignSavePacket::encode,
                 ScpSignSavePacket::decode,
                 ScpSignSavePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignTemplateRequestPacket.class,
+                ScpSignTemplateRequestPacket::encode,
+                ScpSignTemplateRequestPacket::decode,
+                ScpSignTemplateRequestPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignTemplateDataPacket.class,
+                ScpSignTemplateDataPacket::encode,
+                ScpSignTemplateDataPacket::decode,
+                ScpSignTemplateDataPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignTemplateLibraryPacket.class,
+                ScpSignTemplateLibraryPacket::encode,
+                ScpSignTemplateLibraryPacket::decode,
+                ScpSignTemplateLibraryPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignTemplateUploadPacket.class,
+                ScpSignTemplateUploadPacket::encode,
+                ScpSignTemplateUploadPacket::decode,
+                ScpSignTemplateUploadPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(ScpSignTemplateDeletePacket.class,
+                ScpSignTemplateDeletePacket::encode,
+                ScpSignTemplateDeletePacket::decode,
+                ScpSignTemplateDeletePacket::handle);
         ScpAdditionsMod.addNetworkMessage(
                 ElevatorArrivalOpenScreenPacket.class,
                 ElevatorArrivalOpenScreenPacket::encode,
@@ -284,10 +305,17 @@ public final class ScpEntityNetwork {
 
     public static void openScpSignScreen(ServerPlayer player,
             ScpSignSupportBlockEntity sign) {
-        if (player == null || sign == null) return;
+        if (player == null || sign == null || player.getServer() == null) {
+            return;
+        }
+        ScpSignTemplateLibrary library =
+                ScpSignTemplateLibrary.get(player.getServer());
+        ScpSignTemplateLibrary.Entry selected =
+                library.entry(sign.data().templateId());
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new ScpSignOpenScreenPacket(sign.getBlockPos(), sign.data()));
+                new ScpSignOpenScreenPacket(sign.getBlockPos(), sign.data(),
+                        library.summaries(), selected));
     }
 
     public static void openElevatorArrivalEditor(ServerPlayer player,
@@ -308,5 +336,4 @@ public final class ScpEntityNetwork {
                 PacketDistributor.PLAYER.with(() -> player),
                 new ElevatorArrivalDisplayPacket(data, delayTicks));
     }
-
 }

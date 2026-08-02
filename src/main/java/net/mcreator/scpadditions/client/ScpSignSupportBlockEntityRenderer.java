@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.block.state.BlockState;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.AbstractFramedSignBlock;
 import net.mcreator.scpadditions.facility.ScpSignData;
 import net.mcreator.scpadditions.facility.ScpSignHazards;
 import net.mcreator.scpadditions.facility.ScpSignSupportBlock;
@@ -32,10 +33,10 @@ public final class ScpSignSupportBlockEntityRenderer
 
     private static final float IMAGE_WIDTH = 1024.0F;
     private static final float IMAGE_HEIGHT = 640.0F;
-    private static final float PANEL_MIN_X = 8.2F / 16.0F;
-    private static final float PANEL_MAX_X = 23.7F / 16.0F;
-    private static final float PANEL_MIN_Y = -12.85F / 16.0F;
-    private static final float PANEL_MAX_Y = -3.15F / 16.0F;
+    private static final float PANEL_MIN_X = 0.2F / 16.0F;
+    private static final float PANEL_MAX_X = 15.7F / 16.0F;
+    private static final float PANEL_MIN_Y = 3.15F / 16.0F;
+    private static final float PANEL_MAX_Y = 12.85F / 16.0F;
     private static final float PANEL_WIDTH = PANEL_MAX_X - PANEL_MIN_X;
     private static final float PANEL_HEIGHT = PANEL_MAX_Y - PANEL_MIN_Y;
     private static final float BASE_Z = 15.86F / 16.0F;
@@ -74,8 +75,10 @@ public final class ScpSignSupportBlockEntityRenderer
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
         poseStack.mulPose(Axis.YP.rotationDegrees(rotationDegrees(
-                state.getValue(ScpSignSupportBlock.FACING))));
+                state.getValue(AbstractFramedSignBlock.FACING))));
         poseStack.translate(-0.5D, -0.5D, -0.5D);
+        poseStack.translate(state.getValue(AbstractFramedSignBlock.POSITION)
+                .modelOffsetBlocks(), 0.0D, 0.0D);
 
         renderImage(BASE, new ImageArea(0.0F, 0.0F,
                 IMAGE_WIDTH, IMAGE_HEIGHT), BASE_Z,

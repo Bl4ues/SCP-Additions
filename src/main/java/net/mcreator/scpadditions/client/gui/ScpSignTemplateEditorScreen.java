@@ -224,7 +224,12 @@ public final class ScpSignTemplateEditorScreen extends Screen {
         if (selectedPath == null || selectedPath.isBlank()) return;
 
         try {
-            byte[] png = normalizeImage(new File(selectedPath));
+            File file = new File(selectedPath);
+            if (!file.isFile() || file.length() > 16_000_000L) {
+                fail("The selected PNG is too large or unavailable.");
+                return;
+            }
+            byte[] png = normalizeImage(file);
             if (png.length > ScpSignTemplates.MAX_IMAGE_BYTES) {
                 fail("The resized PNG is too large. Simplify the image.");
                 return;
@@ -242,6 +247,9 @@ public final class ScpSignTemplateEditorScreen extends Screen {
     private static byte[] normalizeImage(File file) throws IOException {
         BufferedImage source = ImageIO.read(file);
         if (source == null) throw new IOException("Unsupported image");
+        if (source.getWidth() > 8192 || source.getHeight() > 8192) {
+            throw new IOException("Image dimensions are too large");
+        }
         BufferedImage target = new BufferedImage(
                 ScpSignTemplates.TARGET_WIDTH,
                 ScpSignTemplates.TARGET_HEIGHT,
@@ -529,7 +537,8 @@ public final class ScpSignTemplateEditorScreen extends Screen {
                     Math.max(1, getWidth() - 28));
             graphics.drawString(font, ScpFonts.roboto(clipped), getX() + 7,
                     getY() + 7, TEXT_PRIMARY, false);
-            graphics.drawCenteredString(font, ScpFonts.roboto(open ? "▲" : "▼"),
+            graphics.drawCenteredString(font,
+                    ScpFonts.roboto(open ? "▲" : "▼"),
                     getX() + getWidth() - 11, getY() + 7, TEXT_MUTED);
         }
 
@@ -537,12 +546,12 @@ public final class ScpSignTemplateEditorScreen extends Screen {
                 int mouseY) {
             int visible = Math.min(MAX_ROWS, options.size());
             int top = listTop(visible);
-            int height = visible * ROW_HEIGHT + 2;
+            int listHeight = visible * ROW_HEIGHT + 2;
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, 500.0F);
-            graphics.fill(getX(), top, getX() + getWidth(), top + height,
-                    0xFF171C20);
-            outline(graphics, getX(), top, getWidth(), height, ACCENT);
+            graphics.fill(getX(), top, getX() + getWidth(),
+                    top + listHeight, 0xFF171C20);
+            outline(graphics, getX(), top, getWidth(), listHeight, ACCENT);
 
             for (int row = 0; row < visible; row++) {
                 int index = scrollOffset + row;
@@ -619,7 +628,8 @@ public final class ScpSignTemplateEditorScreen extends Screen {
         private int listTop(int visible) {
             int listHeight = visible * ROW_HEIGHT + 2;
             int below = getY() + getHeight() + 2;
-            return below + listHeight <= height - 6
+            return below + listHeight
+                    <= ScpSignTemplateEditorScreen.this.height - 6
                     ? below : getY() - listHeight - 2;
         }
 

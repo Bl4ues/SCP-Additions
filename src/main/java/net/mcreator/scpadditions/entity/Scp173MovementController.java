@@ -533,7 +533,7 @@ public final class Scp173MovementController {
         List<GridNode> result = new ArrayList<>(unique);
         result.sort((first, second) -> Double.compare(
                 first.position(start.y).distanceToSqr(start),
-                second.position(start.y).distanceToSqr(start))));
+                second.position(start.y).distanceToSqr(start)));
         return result;
     }
 

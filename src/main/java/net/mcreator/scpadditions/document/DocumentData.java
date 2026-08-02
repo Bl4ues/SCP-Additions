@@ -153,7 +153,7 @@ public final class DocumentData {
                 clean(state.value3(), MAX_SHORT_TEXT),
                 cleanPreserveWhitespace(state.body(), MAX_BODY_TEXT),
                 clean(state.photoKey(), MAX_ASSET_KEY),
-                Math.max(0, Math.min(4096, state.photWidth())),
+                Math.max(0, Math.min(4096, state.photoWidth())),
                 Math.max(0, Math.min(4096, state.photoHeight())),
                 clean(state.caption(), MAX_SHORT_TEXT)
         );
@@ -193,7 +193,7 @@ public final class DocumentData {
                         "Clearance Level", "0",
                         "Item #", "SCP-000",
                         "Object Class", "Euclid",
-                        "**Special Containment Procedures:j* Template Document\n\n"
+                        "**Special Containment Procedures:** Template Document\n\n"
                                 + "**Description:** Template Document",
                         "", 0, 0, "");
                 case FACILITY_DOCUMENT -> new State(documentId, this,

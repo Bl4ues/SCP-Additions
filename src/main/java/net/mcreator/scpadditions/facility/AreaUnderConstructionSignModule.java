@@ -9,9 +9,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -22,7 +20,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Registration and creative-tab integration for the construction-area sign. */
+/**
+ * Compatibility registration for construction signs placed before the unified
+ * SCP Sign template system. The item is intentionally absent from creative
+ * menus; existing worlds continue to load without missing-registry damage.
+ */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class AreaUnderConstructionSignModule {
@@ -58,35 +60,19 @@ public final class AreaUnderConstructionSignModule {
         BLOCK_ENTITIES.register(bus);
     }
 
-    @SubscribeEvent
-    public static void addToFacilityTab(
-            BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey().location().equals(
-                FacilityModule.SCP_FACILITY_BLOCKS.getId())) {
-            event.accept(ITEM.get());
-        }
-    }
-
-    /** Facility sections with the new prop immediately after the 914 notice. */
+    /** Curated sections with both retired standalone sign items removed. */
     public static List<FacilityModule.CreativeSection> creativeSections() {
         List<FacilityModule.CreativeSection> result = new ArrayList<>();
         for (FacilityModule.CreativeSection section :
                 FacilityModule.creativeSections()) {
-            List<ItemStack> items = new ArrayList<>();
-            boolean inserted = false;
-            for (ItemStack stack : section.items()) {
-                items.add(stack.copy());
-                if (stack.is(FacilityModule.SCP_914_USAGE_NOTICE.get().asItem())) {
-                    items.add(new ItemStack(ITEM.get()));
-                    inserted = true;
-                }
-            }
-            if (!inserted && section.sprite().getPath().endsWith(
-                    "/proptab.png")) {
-                items.add(new ItemStack(ITEM.get()));
-            }
+            List<ItemStack> items = section.items().stream()
+                    .filter(stack -> !stack.is(ITEM.get()))
+                    .filter(stack -> !stack.is(
+                            FacilityModule.SCP_914_USAGE_NOTICE.get().asItem()))
+                    .map(ItemStack::copy)
+                    .toList();
             result.add(new FacilityModule.CreativeSection(section.sprite(),
-                    List.copyOf(items)));
+                    items));
         }
         return List.copyOf(result);
     }
@@ -123,14 +109,14 @@ public final class AreaUnderConstructionSignModule {
 
         @Override
         public Component getName(ItemStack stack) {
-            return Component.literal("Area Under Construction Sign");
+            return Component.literal("Area Under Construction Sign (Legacy)");
         }
 
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
-            tooltip.add(Component.translatable(
-                    "tooltip.scp_additions.decorative_prop")
+            tooltip.add(Component.literal(
+                            "Retired: use the configurable SCP Sign instead")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

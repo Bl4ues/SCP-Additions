@@ -50,6 +50,13 @@ public final class ScpSignTemplateUploadPacket {
             ScpSignTemplateLibrary.Entry created = library.create(
                     message.name, message.image);
             if (created == null) return;
+
+            // Metadata is shared immediately. Other clients fetch the PNG only
+            // when a nearby sign or open editor actually needs it.
+            ScpAdditionsMod.PACKET_HANDLER.send(
+                    PacketDistributor.ALL.noArg(),
+                    new ScpSignTemplateLibraryPacket(library.summaries(),
+                            "", "", new byte[0]));
             ScpAdditionsMod.PACKET_HANDLER.send(
                     PacketDistributor.PLAYER.with(() -> player),
                     ScpSignTemplateLibraryPacket.from(library, created));

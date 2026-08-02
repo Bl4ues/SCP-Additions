@@ -12,17 +12,34 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.ScpFonts;
+import net.mcreator.scpadditions.client.ScpSignTemplateClient;
 import net.mcreator.scpadditions.facility.ScpSignData;
 import net.mcreator.scpadditions.facility.ScpSignHazards;
+import net.mcreator.scpadditions.facility.ScpSignTemplateSummary;
+import net.mcreator.scpadditions.facility.ScpSignTemplates;
 import net.mcreator.scpadditions.network.ScpSignSavePacket;
+import net.mcreator.scpadditions.network.ScpSignTemplateDeletePacket;
+import net.mcreator.scpadditions.network.ScpSignTemplateUploadPacket;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
+import javax.imageio.ImageIO;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** Styled form editor and live preview for the SCP Information Sign. */
+/**
+ * Unified editor for the Facility Sign. Template selection is part of the same
+ * form as the SCP information controls instead of opening a separate screen.
+ */
 public final class ScpSignEditorScreen extends Screen {
     private static final ResourceLocation BASE = new ResourceLocation(
             ScpAdditionsMod.MODID,
@@ -41,6 +58,8 @@ public final class ScpSignEditorScreen extends Screen {
     private static final int ACCENT_TEXT = 0xFFE5D49A;
     private static final int TEXT_PRIMARY = 0xFFE4E8EA;
     private static final int TEXT_MUTED = 0xFF879097;
+    private static final int ERROR_TEXT = 0xFFFF7777;
+    private static final int SUCCESS_TEXT = 0xFF79D58B;
     private static final int PREVIEW_TEXT = 0xFF000000;
     private static final float FONT_HEIGHT = 7.5F;
     private static final int TEXT_FIELD_Y_OFFSET = 5;
@@ -62,6 +81,16 @@ public final class ScpSignEditorScreen extends Screen {
     private final BlockPos signPos;
     private final ScpSignData initialData;
 
+    private List<ScpSignTemplateSummary> templateOptions = List.of();
+    private String selectedTemplateId;
+    private int observedTemplateRevision;
+
+    private TemplateDropdown templateDropdown;
+    private EditBox customTemplateNameField;
+    private EditorButton uploadButton;
+    private EditorButton deleteTemplateButton;
+    private EditorButton saveButton;
+
     private EditBox scpNumberField;
     private StyledDropdown<ScpSignData.ContainmentClass> containmentDropdown;
     private EditBox customContainmentField;
@@ -78,12 +107,17 @@ public final class ScpSignEditorScreen extends Screen {
     private int previewLeft;
     private int previewTop;
     private float previewScale;
+    private int templateControlY;
+    private int firstInformationControlY;
     private int traitControlY;
+    private String status = "";
+    private boolean statusError;
 
     private ScpSignEditorScreen(BlockPos signPos, ScpSignData data) {
-        super(Component.literal("SCP Information Sign Editor"));
+        super(Component.literal("Facility Sign Editor"));
         this.signPos = signPos.immutable();
         this.initialData = data == null ? ScpSignData.DEFAULT : data;
+        this.selectedTemplateId = this.initialData.templateId();
     }
 
     public static void open(BlockPos signPos, ScpSignData data) {
@@ -95,11 +129,18 @@ public final class ScpSignEditorScreen extends Screen {
     protected void init() {
         calculateLayout();
         openSelector = null;
+        refreshTemplateOptions(false);
 
         int formX = panelLeft + 18;
         int fieldX = formX + 124;
-        int fieldWidth = 220;
-        int y = panelTop + 48;
+        int fieldWidth = 214;
+
+        templateControlY = panelTop + 46;
+        templateDropdown = addRenderableWidget(new TemplateDropdown(
+                fieldX, templateControlY, fieldWidth, 20));
+
+        firstInformationControlY = templateControlY + 29;
+        int y = firstInformationControlY;
 
         scpNumberField = configureField(new EditBox(font, fieldX,
                 y + TEXT_FIELD_Y_OFFSET,
@@ -119,7 +160,7 @@ public final class ScpSignEditorScreen extends Screen {
                 List.of(ScpSignData.ContainmentClass.values()),
                 initialData.containmentClass(),
                 value -> Component.literal(value.displayName()),
-                value -> updateCustomVisibility()));
+                value -> updateControlVisibility()));
         y += 27;
 
         customContainmentField = configureField(new EditBox(font, fieldX,
@@ -145,7 +186,7 @@ public final class ScpSignEditorScreen extends Screen {
                 List.of(ScpSignData.AnomalyType.values()),
                 initialData.anomalyType(),
                 value -> Component.literal(value.displayName()),
-                value -> updateCustomVisibility()));
+                value -> updateControlVisibility()));
         y += 27;
 
         customAnomalyField = configureField(new EditBox(font, fieldX,
@@ -162,15 +203,36 @@ public final class ScpSignEditorScreen extends Screen {
                 fieldX, traitControlY, fieldWidth, 20,
                 initialData.hazards()));
 
+        customTemplateNameField = configureField(new EditBox(font, fieldX,
+                firstInformationControlY + TEXT_FIELD_Y_OFFSET,
+                fieldWidth, 20, Component.literal("Template name")));
+        customTemplateNameField.setMaxLength(
+                ScpSignTemplates.MAX_NAME_LENGTH);
+        customTemplateNameField.setValue("Custom Sign");
+        addRenderableWidget(customTemplateNameField);
+
+        uploadButton = addRenderableWidget(new EditorButton(fieldX,
+                firstInformationControlY + 31, fieldWidth, 20,
+                Component.literal("Choose PNG and Upload"),
+                ButtonStyle.PRIMARY, this::chooseAndUpload));
+
+        deleteTemplateButton = addRenderableWidget(new EditorButton(fieldX,
+                firstInformationControlY, fieldWidth, 20,
+                Component.literal("Delete Custom Template"),
+                ButtonStyle.DANGER, this::deleteSelectedTemplate));
+
         int bottomY = panelTop + panelHeight - 29;
-        addRenderableWidget(new EditorButton(panelLeft + panelWidth - 178,
-                bottomY, 78, 20, Component.translatable("gui.done"),
+        saveButton = addRenderableWidget(new EditorButton(
+                panelLeft + panelWidth - 178, bottomY, 78, 20,
+                Component.translatable("gui.done"),
                 ButtonStyle.PRIMARY, this::saveAndClose));
-        addRenderableWidget(new EditorButton(panelLeft + panelWidth - 94,
-                bottomY, 78, 20, Component.translatable("gui.cancel"),
+        addRenderableWidget(new EditorButton(
+                panelLeft + panelWidth - 94, bottomY, 78, 20,
+                Component.translatable("gui.cancel"),
                 ButtonStyle.NEUTRAL, this::onClose));
 
-        updateCustomVisibility();
+        observedTemplateRevision = ScpSignTemplateClient.revision();
+        updateControlVisibility();
     }
 
     private EditBox configureField(EditBox field) {
@@ -181,33 +243,95 @@ public final class ScpSignEditorScreen extends Screen {
     }
 
     private void calculateLayout() {
-        panelWidth = Math.min(980, Math.max(680, width - 20));
-        panelHeight = Math.min(470, Math.max(410, height - 20));
+        panelWidth = Math.min(980, Math.max(700, width - 20));
+        panelHeight = Math.min(500, Math.max(430, height - 20));
         panelLeft = (width - panelWidth) / 2;
         panelTop = (height - panelHeight) / 2;
 
-        int availableWidth = panelWidth - 382;
-        int availableHeight = panelHeight - 76;
+        int availableWidth = panelWidth - 390;
+        int availableHeight = panelHeight - 82;
         previewScale = Math.min(availableWidth / (float) IMAGE_WIDTH,
                 availableHeight / (float) IMAGE_HEIGHT);
         previewScale = Math.max(0.15F, previewScale);
-        previewLeft = panelLeft + 366
+        previewLeft = panelLeft + 372
                 + Math.max(0, (availableWidth
                 - Math.round(IMAGE_WIDTH * previewScale)) / 2);
-        previewTop = panelTop + 40
+        previewTop = panelTop + 48
                 + Math.max(0, (availableHeight
                 - Math.round(IMAGE_HEIGHT * previewScale)) / 2);
     }
 
-    private void updateCustomVisibility() {
-        if (customContainmentField != null && containmentDropdown != null) {
-            customContainmentField.visible = containmentDropdown.getValue()
-                    == ScpSignData.ContainmentClass.CUSTOM;
+    @Override
+    public void tick() {
+        super.tick();
+        int revision = ScpSignTemplateClient.revision();
+        if (revision != observedTemplateRevision) {
+            observedTemplateRevision = revision;
+            refreshTemplateOptions(true);
+            if (templateDropdown != null) {
+                templateDropdown.ensureSelectionVisible();
+            }
+            updateControlVisibility();
         }
-        if (customAnomalyField != null && anomalyDropdown != null) {
-            customAnomalyField.visible = anomalyDropdown.getValue()
-                    == ScpSignData.AnomalyType.CUSTOM;
+    }
+
+    private void refreshTemplateOptions(boolean preferChanged) {
+        templateOptions = ScpSignTemplateClient.options();
+        String changedId = ScpSignTemplateClient.lastChangedId();
+        if (preferChanged && ScpSignTemplates.isCustom(changedId)
+                && templateOption(changedId) != null) {
+            selectedTemplateId = changedId;
+            status = "Custom template saved to this world.";
+            statusError = false;
         }
+        if (templateOption(selectedTemplateId) == null
+                || ScpSignTemplates.CREATE_CUSTOM.equals(
+                selectedTemplateId)) {
+            selectedTemplateId = ScpSignTemplates.INFORMATION;
+        }
+    }
+
+    private ScpSignTemplateSummary templateOption(String id) {
+        if (id == null) return null;
+        return templateOptions.stream()
+                .filter(option -> option.id().equals(id))
+                .findFirst().orElse(null);
+    }
+
+    private void selectTemplate(String id) {
+        selectedTemplateId = id;
+        status = "";
+        updateControlVisibility();
+        if (ScpSignTemplates.isCustom(id)) {
+            ScpSignTemplateClient.texture(id);
+        }
+    }
+
+    private void updateControlVisibility() {
+        if (scpNumberField == null) return;
+        boolean information = ScpSignTemplates.INFORMATION.equals(
+                selectedTemplateId);
+        boolean createCustom = ScpSignTemplates.CREATE_CUSTOM.equals(
+                selectedTemplateId);
+        boolean savedCustom = ScpSignTemplates.isCustom(
+                selectedTemplateId);
+
+        scpNumberField.visible = information;
+        containmentDropdown.visible = information;
+        customContainmentField.visible = information
+                && containmentDropdown.getValue()
+                == ScpSignData.ContainmentClass.CUSTOM;
+        clearanceDropdown.visible = information;
+        anomalyDropdown.visible = information;
+        customAnomalyField.visible = information
+                && anomalyDropdown.getValue()
+                == ScpSignData.AnomalyType.CUSTOM;
+        traitSelector.visible = information;
+
+        customTemplateNameField.visible = createCustom;
+        uploadButton.visible = createCustom;
+        deleteTemplateButton.visible = savedCustom;
+        saveButton.active = !createCustom;
     }
 
     private ScpSignData currentData() {
@@ -215,13 +339,101 @@ public final class ScpSignEditorScreen extends Screen {
                 containmentDropdown.getValue(),
                 customContainmentField.getValue(),
                 clearanceDropdown.getValue(), anomalyDropdown.getValue(),
-                customAnomalyField.getValue(), traitSelector.selectedIds());
+                customAnomalyField.getValue(), traitSelector.selectedIds())
+                .withTemplateId(selectedTemplateId);
     }
 
     private void saveAndClose() {
+        if (ScpSignTemplates.CREATE_CUSTOM.equals(selectedTemplateId)) {
+            return;
+        }
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new ScpSignSavePacket(signPos, currentData()));
         onClose();
+    }
+
+    private void chooseAndUpload() {
+        String selectedPath;
+        try {
+            selectedPath = TinyFileDialogs.tinyfd_openFileDialog(
+                    "Choose sign artwork (PNG)", "", null,
+                    "PNG image (*.png)", false);
+        } catch (RuntimeException | LinkageError exception) {
+            fail("Could not open the native file chooser.");
+            return;
+        }
+        if (selectedPath == null || selectedPath.isBlank()) return;
+
+        File file = new File(selectedPath);
+        if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".png")) {
+            fail("Select a PNG image.");
+            return;
+        }
+
+        try {
+            if (!file.isFile() || file.length() > 16_000_000L) {
+                fail("The selected PNG is too large or unavailable.");
+                return;
+            }
+            byte[] png = normalizeImage(file);
+            if (png.length > ScpSignTemplates.MAX_IMAGE_BYTES) {
+                fail("The resized PNG is too large. Simplify the image.");
+                return;
+            }
+            ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                    new ScpSignTemplateUploadPacket(signPos,
+                            customTemplateNameField.getValue(), png));
+            status = "Uploading template to the world...";
+            statusError = false;
+        } catch (IOException | RuntimeException exception) {
+            fail("Could not read that PNG image.");
+        }
+    }
+
+    private static byte[] normalizeImage(File file) throws IOException {
+        BufferedImage source = ImageIO.read(file);
+        if (source == null) throw new IOException("Unsupported image");
+        if (source.getWidth() > 8192 || source.getHeight() > 8192) {
+            throw new IOException("Image dimensions are too large");
+        }
+        BufferedImage target = new BufferedImage(
+                ScpSignTemplates.TARGET_WIDTH,
+                ScpSignTemplates.TARGET_HEIGHT,
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = target.createGraphics();
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            graphics.drawImage(source, 0, 0,
+                    ScpSignTemplates.TARGET_WIDTH,
+                    ScpSignTemplates.TARGET_HEIGHT, null);
+        } finally {
+            graphics.dispose();
+        }
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        if (!ImageIO.write(target, "PNG", output)) {
+            throw new IOException("PNG encoder unavailable");
+        }
+        return output.toByteArray();
+    }
+
+    private void deleteSelectedTemplate() {
+        if (!ScpSignTemplates.isCustom(selectedTemplateId)) return;
+        String deletedId = selectedTemplateId;
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                new ScpSignTemplateDeletePacket(signPos, deletedId));
+        selectedTemplateId = ScpSignTemplates.INFORMATION;
+        status = "Deleting custom template from this world...";
+        statusError = false;
+        updateControlVisibility();
+    }
+
+    private void fail(String message) {
+        status = message;
+        statusError = true;
     }
 
     @Override
@@ -253,7 +465,7 @@ public final class ScpSignEditorScreen extends Screen {
         drawPanel(graphics);
         drawFormLabels(graphics);
         drawFieldFrames(graphics);
-        drawPreview(graphics, currentData());
+        drawPreview(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
@@ -267,18 +479,21 @@ public final class ScpSignEditorScreen extends Screen {
                 graphics.fill(x, y, x + 1, y + 1, 0x242F383E);
             }
         }
-        graphics.drawString(font, ScpFonts.montserrat(Component.literal(
-                        "SCP Information Sign Editor")),
+        graphics.drawString(font, ScpFonts.montserrat(
+                        Component.literal("Facility Sign Editor")),
                 panelLeft + 18, panelTop + 14, TEXT_PRIMARY, false);
     }
 
     private void drawFieldFrames(GuiGraphics graphics) {
-        drawField(graphics, scpNumberField);
+        if (scpNumberField.visible) drawField(graphics, scpNumberField);
         if (customContainmentField.visible) {
             drawField(graphics, customContainmentField);
         }
         if (customAnomalyField.visible) {
             drawField(graphics, customAnomalyField);
+        }
+        if (customTemplateNameField.visible) {
+            drawField(graphics, customTemplateNameField);
         }
     }
 
@@ -293,18 +508,75 @@ public final class ScpSignEditorScreen extends Screen {
 
     private void drawFormLabels(GuiGraphics graphics) {
         int x = panelLeft + 18;
-        int y = panelTop + 54;
+        graphics.drawString(font, ScpFonts.roboto("Sign Template"),
+                x, templateControlY + 6, TEXT_PRIMARY, false);
+
+        if (ScpSignTemplates.INFORMATION.equals(selectedTemplateId)) {
+            drawInformationLabels(graphics, x);
+        } else if (ScpSignTemplates.CREATE_CUSTOM.equals(
+                selectedTemplateId)) {
+            graphics.drawString(font, ScpFonts.roboto("Template Name"),
+                    x, firstInformationControlY + 6,
+                    TEXT_PRIMARY, false);
+            graphics.drawString(font, ScpFonts.roboto(
+                            "Required proportion: 8:5 (recommended 1024 x 640)."),
+                    x, firstInformationControlY + 63,
+                    TEXT_MUTED, false);
+            graphics.drawString(font, ScpFonts.roboto(
+                            "Other proportions are resized automatically."),
+                    x, firstInformationControlY + 77,
+                    TEXT_MUTED, false);
+            graphics.drawString(font, ScpFonts.roboto(
+                            "PNG only. The normalized image is saved in this world."),
+                    x, firstInformationControlY + 91,
+                    TEXT_MUTED, false);
+        } else if (ScpSignTemplates.isCustom(selectedTemplateId)) {
+            ScpSignTemplateSummary summary =
+                    templateOption(selectedTemplateId);
+            graphics.drawString(font, ScpFonts.roboto("World Template"),
+                    x, firstInformationControlY + 6,
+                    TEXT_PRIMARY, false);
+            graphics.drawString(font, ScpFonts.roboto(
+                            summary == null ? "Custom Sign" : summary.name()),
+                    x, firstInformationControlY + 31,
+                    ACCENT_TEXT, false);
+            graphics.drawString(font, ScpFonts.roboto(
+                            "Deleting it removes it from this world's library."),
+                    x, firstInformationControlY + 59,
+                    TEXT_MUTED, false);
+        } else {
+            graphics.drawString(font, ScpFonts.roboto(
+                            "This built-in notice has no editable fields."),
+                    x, firstInformationControlY + 6,
+                    TEXT_MUTED, false);
+        }
+
+        if (!status.isBlank()) {
+            graphics.drawString(font, ScpFonts.roboto(status),
+                    panelLeft + 18, panelTop + panelHeight - 46,
+                    statusError ? ERROR_TEXT : SUCCESS_TEXT, false);
+        }
+    }
+
+    private void drawInformationLabels(GuiGraphics graphics, int x) {
+        int y = firstInformationControlY + 6;
         Component[] labels = {
                 Component.translatable("screen.scp_additions.scp_sign_number"),
-                Component.translatable("screen.scp_additions.scp_sign_containment"),
-                Component.translatable("screen.scp_additions.scp_sign_custom_containment"),
-                Component.translatable("screen.scp_additions.scp_sign_clearance"),
-                Component.translatable("screen.scp_additions.scp_sign_anomaly"),
-                Component.translatable("screen.scp_additions.scp_sign_custom_anomaly")
+                Component.translatable(
+                        "screen.scp_additions.scp_sign_containment"),
+                Component.translatable(
+                        "screen.scp_additions.scp_sign_custom_containment"),
+                Component.translatable(
+                        "screen.scp_additions.scp_sign_clearance"),
+                Component.translatable(
+                        "screen.scp_additions.scp_sign_anomaly"),
+                Component.translatable(
+                        "screen.scp_additions.scp_sign_custom_anomaly")
         };
         int[] gaps = {27, 27, 27, 27, 27, 31};
         for (int index = 0; index < labels.length; index++) {
-            boolean customHidden = index == 2 && !customContainmentField.visible
+            boolean customHidden = index == 2
+                    && !customContainmentField.visible
                     || index == 5 && !customAnomalyField.visible;
             if (!customHidden) {
                 graphics.drawString(font, ScpFonts.roboto(labels[index]),
@@ -320,7 +592,59 @@ public final class ScpSignEditorScreen extends Screen {
                 panelLeft + 18, traitControlY + 26, TEXT_MUTED, false);
     }
 
-    private void drawPreview(GuiGraphics graphics, ScpSignData data) {
+    private void drawPreview(GuiGraphics graphics) {
+        int previewWidth = Math.round(IMAGE_WIDTH * previewScale);
+        int previewHeight = Math.round(IMAGE_HEIGHT * previewScale);
+        graphics.fill(previewLeft - 5, previewTop - 20,
+                previewLeft + previewWidth + 5,
+                previewTop + previewHeight + 5, 0xFF111518);
+        outline(graphics, previewLeft - 5, previewTop - 20,
+                previewWidth + 10, previewHeight + 25, FIELD_EDGE);
+        graphics.drawString(font, ScpFonts.roboto("Preview"),
+                previewLeft, previewTop - 14, TEXT_PRIMARY, false);
+
+        if (ScpSignTemplates.INFORMATION.equals(selectedTemplateId)) {
+            drawInformationPreview(graphics, currentData());
+            return;
+        }
+
+        if (ScpSignTemplates.CREATE_CUSTOM.equals(selectedTemplateId)) {
+            graphics.fill(previewLeft, previewTop,
+                    previewLeft + previewWidth,
+                    previewTop + previewHeight, 0xFF252B2F);
+            graphics.drawCenteredString(font, ScpFonts.roboto(
+                            "Choose a PNG to create this template"),
+                    previewLeft + previewWidth / 2,
+                    previewTop + previewHeight / 2 - 4, TEXT_MUTED);
+            return;
+        }
+
+        ResourceLocation texture =
+                ScpSignTemplateClient.texture(selectedTemplateId);
+        if (texture == null) {
+            graphics.fill(previewLeft, previewTop,
+                    previewLeft + previewWidth,
+                    previewTop + previewHeight, 0xFF252B2F);
+            graphics.drawCenteredString(font,
+                    ScpFonts.roboto("Loading template preview..."),
+                    previewLeft + previewWidth / 2,
+                    previewTop + previewHeight / 2 - 4, TEXT_MUTED);
+            return;
+        }
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        graphics.pose().pushPose();
+        graphics.pose().translate(previewLeft, previewTop, 0.0F);
+        graphics.pose().scale(previewScale, previewScale, 1.0F);
+        graphics.blit(texture, 0, 0, 0.0F, 0.0F,
+                IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGHT);
+        graphics.pose().popPose();
+        RenderSystem.disableBlend();
+    }
+
+    private void drawInformationPreview(GuiGraphics graphics,
+            ScpSignData data) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         graphics.pose().pushPose();
@@ -342,9 +666,11 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         drawPreviewText(graphics,
-                String.format("%02d", data.clearanceLevel()), CLEARANCE, true);
+                String.format("%02d", data.clearanceLevel()),
+                CLEARANCE, true);
         drawPreviewText(graphics, data.scpLabel(), SCP_NUMBER, false);
-        drawPreviewText(graphics, data.containmentLabel(), CONTAINMENT, false);
+        drawPreviewText(graphics, data.containmentLabel(),
+                CONTAINMENT, false);
         drawPreviewText(graphics, data.anomalyLabel(), ANOMALY, true);
         graphics.pose().popPose();
         RenderSystem.disableBlend();
@@ -365,7 +691,8 @@ public final class ScpSignEditorScreen extends Screen {
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 2.0F);
         graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(font, component, 0, 0, PREVIEW_TEXT, false);
+        graphics.drawString(font, component, 0, 0,
+                PREVIEW_TEXT, false);
         graphics.pose().popPose();
     }
 
@@ -381,7 +708,8 @@ public final class ScpSignEditorScreen extends Screen {
     }
 
     private static boolean resourceExists(ResourceLocation texture) {
-        return texture != null && Minecraft.getInstance().getResourceManager()
+        return texture != null
+                && Minecraft.getInstance().getResourceManager()
                 .getResource(texture).isPresent();
     }
 
@@ -401,7 +729,8 @@ public final class ScpSignEditorScreen extends Screen {
     private interface ExpandableSelector {
         void setOpen(boolean open);
 
-        boolean handleExpandedClick(double mouseX, double mouseY, int button);
+        boolean handleExpandedClick(double mouseX, double mouseY,
+                int button);
 
         boolean handleExpandedScroll(double mouseX, double mouseY,
                 double delta);
@@ -426,7 +755,8 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         @Override
-        protected void updateWidgetNarration(NarrationElementOutput output) {
+        protected void updateWidgetNarration(
+                NarrationElementOutput output) {
             defaultButtonNarrationText(output);
         }
 
@@ -434,22 +764,273 @@ public final class ScpSignEditorScreen extends Screen {
         protected void renderWidget(GuiGraphics graphics, int mouseX,
                 int mouseY, float partialTick) {
             int background = !active ? 0xFF22282D
-                    : isHoveredOrFocused() ? CONTROL_HOVER : CONTROL_BACKGROUND;
-            int edge = style == ButtonStyle.PRIMARY
-                    ? isHoveredOrFocused() ? ACCENT_TEXT : ACCENT
-                    : isHoveredOrFocused() ? 0xFFD8E0E4 : CONTROL_EDGE;
+                    : isHoveredOrFocused()
+                    ? CONTROL_HOVER : CONTROL_BACKGROUND;
+            int edge = switch (style) {
+                case PRIMARY -> isHoveredOrFocused()
+                        ? ACCENT_TEXT : ACCENT;
+                case DANGER -> isHoveredOrFocused()
+                        ? 0xFFFFA0A0 : 0xFFB65353;
+                default -> isHoveredOrFocused()
+                        ? 0xFFD8E0E4 : CONTROL_EDGE;
+            };
             int text = !active ? TEXT_MUTED
-                    : style == ButtonStyle.PRIMARY ? ACCENT_TEXT : TEXT_PRIMARY;
+                    : style == ButtonStyle.PRIMARY ? ACCENT_TEXT
+                    : style == ButtonStyle.DANGER
+                    ? 0xFFFFA0A0 : TEXT_PRIMARY;
             graphics.fill(getX(), getY(), getX() + getWidth(),
                     getY() + getHeight(), background);
-            outline(graphics, getX(), getY(), getWidth(), getHeight(), edge);
+            outline(graphics, getX(), getY(),
+                    getWidth(), getHeight(), edge);
             if (style == ButtonStyle.PRIMARY) {
-                graphics.fill(getX() + 1, getY() + 1, getX() + 4,
-                        getY() + getHeight() - 1, edge);
+                graphics.fill(getX() + 1, getY() + 1,
+                        getX() + 4, getY() + getHeight() - 1, edge);
             }
-            graphics.drawCenteredString(font, ScpFonts.roboto(getMessage()),
+            graphics.drawCenteredString(font,
+                    ScpFonts.roboto(getMessage()),
                     getX() + getWidth() / 2,
                     getY() + (getHeight() - 8) / 2, text);
+        }
+    }
+
+    private final class TemplateDropdown extends AbstractButton
+            implements ExpandableSelector {
+        private static final int ROW_HEIGHT = 32;
+        private static final int MAX_VISIBLE_ROWS = 8;
+        private static final int THUMB_WIDTH = 40;
+        private static final int THUMB_HEIGHT = 25;
+
+        private boolean open;
+        private int scrollOffset;
+
+        private TemplateDropdown(int x, int y, int width, int height) {
+            super(x, y, width, height, Component.empty());
+        }
+
+        @Override
+        public void setOpen(boolean shouldOpen) {
+            if (open == shouldOpen) return;
+            if (shouldOpen) {
+                if (openSelector != null && openSelector != this) {
+                    openSelector.setOpen(false);
+                }
+                openSelector = this;
+                ensureSelectionVisible();
+            } else if (openSelector == this) {
+                openSelector = null;
+            }
+            open = shouldOpen;
+        }
+
+        @Override
+        public void onPress() {
+            setOpen(!open);
+        }
+
+        @Override
+        protected void updateWidgetNarration(
+                NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX,
+                int mouseY, float partialTick) {
+            int background = isHoveredOrFocused() || open
+                    ? CONTROL_HOVER : CONTROL_BACKGROUND;
+            int edge = open ? ACCENT
+                    : isHoveredOrFocused()
+                    ? 0xFFD8E0E4 : CONTROL_EDGE;
+            graphics.fill(getX(), getY(), getX() + getWidth(),
+                    getY() + getHeight(), background);
+            outline(graphics, getX(), getY(),
+                    getWidth(), getHeight(), edge);
+
+            ScpSignTemplateSummary selected =
+                    templateOption(selectedTemplateId);
+            int textX = getX() + 7;
+            if (selected != null
+                    && !ScpSignTemplates.CREATE_CUSTOM.equals(
+                    selected.id())) {
+                ResourceLocation texture =
+                        ScpSignTemplateClient.texture(selected.id());
+                if (texture != null) {
+                    int thumbHeight = 14;
+                    int thumbWidth = Math.round(
+                            thumbHeight * 1024.0F / 640.0F);
+                    drawThumbnail(graphics, texture,
+                            getX() + 4, getY() + 3,
+                            thumbWidth, thumbHeight);
+                    textX = getX() + thumbWidth + 9;
+                }
+            }
+
+            String label = selected == null
+                    ? "SCP Information Sign" : selected.name();
+            String clipped = font.plainSubstrByWidth(label,
+                    Math.max(1, getX() + getWidth() - 25 - textX));
+            graphics.drawString(font, ScpFonts.roboto(clipped), textX,
+                    getY() + (getHeight() - 8) / 2,
+                    TEXT_PRIMARY, false);
+            graphics.drawCenteredString(font,
+                    ScpFonts.roboto(open ? "▲" : "▼"),
+                    getX() + getWidth() - 11,
+                    getY() + (getHeight() - 8) / 2, TEXT_MUTED);
+
+            if (open) renderExpanded(graphics, mouseX, mouseY);
+        }
+
+        private void renderExpanded(GuiGraphics graphics,
+                int mouseX, int mouseY) {
+            int visible = visibleRows();
+            int top = listTop();
+            int listHeight = visible * ROW_HEIGHT + 2;
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, 400.0F);
+            graphics.fill(getX(), top, getX() + getWidth(),
+                    top + listHeight, 0xFF171C20);
+            outline(graphics, getX(), top,
+                    getWidth(), listHeight, ACCENT);
+
+            for (int row = 0; row < visible; row++) {
+                int index = scrollOffset + row;
+                if (index >= templateOptions.size()) break;
+                ScpSignTemplateSummary option =
+                        templateOptions.get(index);
+                int rowY = top + 1 + row * ROW_HEIGHT;
+                boolean hovered = mouseX >= getX()
+                        && mouseX < getX() + getWidth()
+                        && mouseY >= rowY
+                        && mouseY < rowY + ROW_HEIGHT;
+                boolean selected = option.id().equals(
+                        selectedTemplateId);
+                graphics.fill(getX() + 1, rowY,
+                        getX() + getWidth() - 1,
+                        rowY + ROW_HEIGHT,
+                        selected ? 0xFF4B3F27
+                                : hovered ? 0xFF3D484F
+                                : 0xFF242B30);
+
+                int textX = getX() + 7;
+                if (ScpSignTemplates.CREATE_CUSTOM.equals(option.id())) {
+                    graphics.fill(getX() + 5, rowY + 5,
+                            getX() + 5 + THUMB_WIDTH,
+                            rowY + 5 + THUMB_HEIGHT,
+                            0xFF30383E);
+                    outline(graphics, getX() + 5, rowY + 5,
+                            THUMB_WIDTH, THUMB_HEIGHT, CONTROL_EDGE);
+                    graphics.drawCenteredString(font,
+                            ScpFonts.roboto("+"),
+                            getX() + 5 + THUMB_WIDTH / 2,
+                            rowY + 13, ACCENT_TEXT);
+                    textX = getX() + THUMB_WIDTH + 11;
+                } else {
+                    ResourceLocation texture =
+                            ScpSignTemplateClient.texture(option.id());
+                    if (texture != null) {
+                        drawThumbnail(graphics, texture,
+                                getX() + 5, rowY + 4,
+                                THUMB_WIDTH, THUMB_HEIGHT);
+                        textX = getX() + THUMB_WIDTH + 11;
+                    }
+                }
+
+                String clipped = font.plainSubstrByWidth(option.name(),
+                        Math.max(1, getX() + getWidth() - 8 - textX));
+                graphics.drawString(font, ScpFonts.roboto(clipped),
+                        textX, rowY + (ROW_HEIGHT - 8) / 2,
+                        selected ? ACCENT_TEXT : TEXT_PRIMARY, false);
+            }
+            graphics.pose().popPose();
+        }
+
+        private void drawThumbnail(GuiGraphics graphics,
+                ResourceLocation texture, int x, int y,
+                int width, int height) {
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            graphics.pose().pushPose();
+            graphics.pose().translate(x, y, 0.0F);
+            graphics.pose().scale(width / 1024.0F,
+                    height / 640.0F, 1.0F);
+            graphics.blit(texture, 0, 0, 0.0F, 0.0F,
+                    1024, 640, 1024, 640);
+            graphics.pose().popPose();
+            RenderSystem.disableBlend();
+        }
+
+        @Override
+        public boolean handleExpandedClick(double mouseX,
+                double mouseY, int button) {
+            if (!open || button != 0) return false;
+            int top = listTop();
+            int visible = visibleRows();
+            if (mouseX >= getX()
+                    && mouseX < getX() + getWidth()
+                    && mouseY >= top
+                    && mouseY < top + visible * ROW_HEIGHT + 2) {
+                int row = (int) ((mouseY - top - 1) / ROW_HEIGHT);
+                if (row >= 0 && row < visible) {
+                    int index = scrollOffset + row;
+                    if (index < templateOptions.size()) {
+                        selectTemplate(templateOptions.get(index).id());
+                    }
+                }
+                setOpen(false);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean handleExpandedScroll(double mouseX,
+                double mouseY, double delta) {
+            if (!open || templateOptions.size() <= visibleRows()) {
+                return false;
+            }
+            int top = listTop();
+            int listHeight = visibleRows() * ROW_HEIGHT + 2;
+            if (mouseX < getX() || mouseX >= getX() + getWidth()
+                    || mouseY < top
+                    || mouseY >= top + listHeight) {
+                return false;
+            }
+            scrollOffset = Math.max(0, Math.min(maxScroll(),
+                    scrollOffset + (delta > 0.0D ? -1 : 1)));
+            return true;
+        }
+
+        private int visibleRows() {
+            return Math.min(MAX_VISIBLE_ROWS, templateOptions.size());
+        }
+
+        private int maxScroll() {
+            return Math.max(0,
+                    templateOptions.size() - visibleRows());
+        }
+
+        private int listTop() {
+            int listHeight = visibleRows() * ROW_HEIGHT + 2;
+            int below = getY() + getHeight() + 2;
+            return below + listHeight
+                    <= ScpSignEditorScreen.this.height - 6
+                    ? below : getY() - listHeight - 2;
+        }
+
+        private void ensureSelectionVisible() {
+            ScpSignTemplateSummary selected =
+                    templateOption(selectedTemplateId);
+            int selectedIndex = selected == null
+                    ? 0 : templateOptions.indexOf(selected);
+            selectedIndex = Math.max(0, selectedIndex);
+            if (selectedIndex < scrollOffset) {
+                scrollOffset = selectedIndex;
+            }
+            if (selectedIndex >= scrollOffset + visibleRows()) {
+                scrollOffset = selectedIndex - visibleRows() + 1;
+            }
+            scrollOffset = Math.max(0,
+                    Math.min(maxScroll(), scrollOffset));
         }
     }
 
@@ -469,7 +1050,8 @@ public final class ScpSignEditorScreen extends Screen {
                 List<T> values, T initialValue,
                 Function<T, Component> labelFunction,
                 Consumer<T> onChange) {
-            super(x, y, width, height, labelFunction.apply(initialValue));
+            super(x, y, width, height,
+                    labelFunction.apply(initialValue));
             this.values = List.copyOf(values);
             this.labelFunction = labelFunction;
             this.onChange = onChange;
@@ -481,7 +1063,8 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         private void setValue(T newValue, boolean notify) {
-            if (newValue == null || Objects.equals(value, newValue)) return;
+            if (newValue == null
+                    || Objects.equals(value, newValue)) return;
             value = newValue;
             setMessage(labelFunction.apply(newValue));
             if (notify) onChange.accept(newValue);
@@ -508,7 +1091,8 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         @Override
-        protected void updateWidgetNarration(NarrationElementOutput output) {
+        protected void updateWidgetNarration(
+                NarrationElementOutput output) {
             defaultButtonNarrationText(output);
         }
 
@@ -518,16 +1102,21 @@ public final class ScpSignEditorScreen extends Screen {
             int background = isHoveredOrFocused() || open
                     ? CONTROL_HOVER : CONTROL_BACKGROUND;
             int edge = open ? ACCENT
-                    : isHoveredOrFocused() ? 0xFFD8E0E4 : CONTROL_EDGE;
-            graphics.fill(getX(), getY(), getX() + getWidth(),
-                    getY() + getHeight(), background);
-            outline(graphics, getX(), getY(), getWidth(), getHeight(), edge);
+                    : isHoveredOrFocused()
+                    ? 0xFFD8E0E4 : CONTROL_EDGE;
+            graphics.fill(getX(), getY(),
+                    getX() + getWidth(), getY() + getHeight(),
+                    background);
+            outline(graphics, getX(), getY(),
+                    getWidth(), getHeight(), edge);
 
             String label = labelFunction.apply(value).getString();
             String clipped = font.plainSubstrByWidth(label,
                     Math.max(1, getWidth() - 30));
-            graphics.drawString(font, ScpFonts.roboto(clipped), getX() + 7,
-                    getY() + (getHeight() - 8) / 2, TEXT_PRIMARY, false);
+            graphics.drawString(font, ScpFonts.roboto(clipped),
+                    getX() + 7,
+                    getY() + (getHeight() - 8) / 2,
+                    TEXT_PRIMARY, false);
             graphics.drawCenteredString(font,
                     ScpFonts.roboto(open ? "▲" : "▼"),
                     getX() + getWidth() - 11,
@@ -536,8 +1125,8 @@ public final class ScpSignEditorScreen extends Screen {
             if (open) renderExpanded(graphics, mouseX, mouseY);
         }
 
-        private void renderExpanded(GuiGraphics graphics, int mouseX,
-                int mouseY) {
+        private void renderExpanded(GuiGraphics graphics,
+                int mouseX, int mouseY) {
             int top = listTop();
             int visible = visibleRows();
             int listHeight = visible * ROW_HEIGHT + 2;
@@ -545,7 +1134,8 @@ public final class ScpSignEditorScreen extends Screen {
             graphics.pose().translate(0.0F, 0.0F, 300.0F);
             graphics.fill(getX(), top, getX() + getWidth(),
                     top + listHeight, 0xFF171C20);
-            outline(graphics, getX(), top, getWidth(), listHeight, ACCENT);
+            outline(graphics, getX(), top,
+                    getWidth(), listHeight, ACCENT);
 
             for (int row = 0; row < visible; row++) {
                 int index = scrollOffset + row;
@@ -554,7 +1144,8 @@ public final class ScpSignEditorScreen extends Screen {
                 int rowY = top + 1 + row * ROW_HEIGHT;
                 boolean hovered = mouseX >= getX()
                         && mouseX < getX() + getWidth()
-                        && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
+                        && mouseY >= rowY
+                        && mouseY < rowY + ROW_HEIGHT;
                 boolean selected = Objects.equals(option, value);
                 int rowColor = selected ? 0xFF4B3F27
                         : hovered ? 0xFF3D484F : 0xFF242B30;
@@ -565,15 +1156,17 @@ public final class ScpSignEditorScreen extends Screen {
                 String clipped = font.plainSubstrByWidth(label,
                         Math.max(1, getWidth() - 14));
                 graphics.drawString(font, ScpFonts.roboto(clipped),
-                        getX() + 7, rowY + (ROW_HEIGHT - 8) / 2,
-                        selected ? ACCENT_TEXT : TEXT_PRIMARY, false);
+                        getX() + 7,
+                        rowY + (ROW_HEIGHT - 8) / 2,
+                        selected ? ACCENT_TEXT : TEXT_PRIMARY,
+                        false);
             }
             graphics.pose().popPose();
         }
 
         @Override
-        public boolean handleExpandedClick(double mouseX, double mouseY,
-                int button) {
+        public boolean handleExpandedClick(double mouseX,
+                double mouseY, int button) {
             if (!open || button != 0) return false;
             int top = listTop();
             int visible = visibleRows();
@@ -594,13 +1187,14 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         @Override
-        public boolean handleExpandedScroll(double mouseX, double mouseY,
-                double delta) {
+        public boolean handleExpandedScroll(double mouseX,
+                double mouseY, double delta) {
             if (!open || values.size() <= visibleRows()) return false;
             int top = listTop();
             int listHeight = visibleRows() * ROW_HEIGHT + 2;
             if (mouseX < getX() || mouseX >= getX() + getWidth()
-                    || mouseY < top || mouseY >= top + listHeight) {
+                    || mouseY < top
+                    || mouseY >= top + listHeight) {
                 return false;
             }
             scrollOffset = Math.max(0, Math.min(maxScroll(),
@@ -619,7 +1213,8 @@ public final class ScpSignEditorScreen extends Screen {
         private int listTop() {
             int listHeight = visibleRows() * ROW_HEIGHT + 2;
             int below = getY() + getHeight() + 2;
-            return below + listHeight <= ScpSignEditorScreen.this.height - 6
+            return below + listHeight
+                    <= ScpSignEditorScreen.this.height - 6
                     ? below : getY() - listHeight - 2;
         }
 
@@ -629,7 +1224,8 @@ public final class ScpSignEditorScreen extends Screen {
             if (selected >= scrollOffset + visibleRows()) {
                 scrollOffset = selected - visibleRows() + 1;
             }
-            scrollOffset = Math.max(0, Math.min(maxScroll(), scrollOffset));
+            scrollOffset = Math.max(0,
+                    Math.min(maxScroll(), scrollOffset));
         }
     }
 
@@ -641,7 +1237,8 @@ public final class ScpSignEditorScreen extends Screen {
         private static final int ICON_SIZE = 24;
 
         private final List<ScpSignHazards.Option> options;
-        private final List<ScpSignHazards.Option> selected = new ArrayList<>();
+        private final List<ScpSignHazards.Option> selected =
+                new ArrayList<>();
         private boolean open;
         private int scrollOffset;
 
@@ -652,7 +1249,8 @@ public final class ScpSignEditorScreen extends Screen {
             options = ScpSignHazards.OPTIONS.stream()
                     .filter(option -> !option.isNone()).toList();
             for (String id : initialIds) {
-                ScpSignHazards.Option option = ScpSignHazards.option(id);
+                ScpSignHazards.Option option =
+                        ScpSignHazards.option(id);
                 if (!option.isNone() && !selected.contains(option)
                         && selected.size() < MAX_SELECTED) {
                     selected.add(option);
@@ -662,13 +1260,15 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         private List<String> selectedIds() {
-            return selected.stream().map(ScpSignHazards.Option::id).toList();
+            return selected.stream()
+                    .map(ScpSignHazards.Option::id).toList();
         }
 
         private void updateMessage() {
             setMessage(Component.literal(selected.isEmpty()
                     ? "No traits selected"
-                    : selected.size() + " / " + MAX_SELECTED + " selected"));
+                    : selected.size() + " / "
+                    + MAX_SELECTED + " selected"));
         }
 
         @Override
@@ -692,7 +1292,8 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         @Override
-        protected void updateWidgetNarration(NarrationElementOutput output) {
+        protected void updateWidgetNarration(
+                NarrationElementOutput output) {
             defaultButtonNarrationText(output);
         }
 
@@ -702,33 +1303,40 @@ public final class ScpSignEditorScreen extends Screen {
             int background = isHoveredOrFocused() || open
                     ? CONTROL_HOVER : CONTROL_BACKGROUND;
             int edge = open ? ACCENT
-                    : isHoveredOrFocused() ? 0xFFD8E0E4 : CONTROL_EDGE;
-            graphics.fill(getX(), getY(), getX() + getWidth(),
-                    getY() + getHeight(), background);
-            outline(graphics, getX(), getY(), getWidth(), getHeight(), edge);
+                    : isHoveredOrFocused()
+                    ? 0xFFD8E0E4 : CONTROL_EDGE;
+            graphics.fill(getX(), getY(),
+                    getX() + getWidth(), getY() + getHeight(),
+                    background);
+            outline(graphics, getX(), getY(),
+                    getWidth(), getHeight(), edge);
 
             int iconX = getX() + 3;
             for (ScpSignHazards.Option option : selected) {
-                drawSmallIcon(graphics, option.texture(), iconX,
-                        getY() - 1, 18);
+                drawSmallIcon(graphics, option.texture(),
+                        iconX, getY() - 1, 18);
                 iconX += 20;
             }
-            int textX = selected.isEmpty() ? getX() + 7 : iconX + 2;
-            String clipped = font.plainSubstrByWidth(getMessage().getString(),
+            int textX = selected.isEmpty()
+                    ? getX() + 7 : iconX + 2;
+            String clipped = font.plainSubstrByWidth(
+                    getMessage().getString(),
                     Math.max(1, getX() + getWidth() - 24 - textX));
-            graphics.drawString(font, ScpFonts.roboto(clipped), textX,
-                    getY() + (getHeight() - 8) / 2,
-                    selected.isEmpty() ? TEXT_MUTED : TEXT_PRIMARY, false);
+            graphics.drawString(font, ScpFonts.roboto(clipped),
+                    textX, getY() + (getHeight() - 8) / 2,
+                    selected.isEmpty() ? TEXT_MUTED : TEXT_PRIMARY,
+                    false);
             graphics.drawCenteredString(font,
                     ScpFonts.roboto(open ? "▲" : "▼"),
                     getX() + getWidth() - 11,
-                    getY() + (getHeight() - 8) / 2, TEXT_MUTED);
+                    getY() + (getHeight() - 8) / 2,
+                    TEXT_MUTED);
 
             if (open) renderExpanded(graphics, mouseX, mouseY);
         }
 
-        private void renderExpanded(GuiGraphics graphics, int mouseX,
-                int mouseY) {
+        private void renderExpanded(GuiGraphics graphics,
+                int mouseX, int mouseY) {
             int top = listTop();
             int visible = visibleRows();
             int listHeight = visible * ROW_HEIGHT + 2;
@@ -736,7 +1344,8 @@ public final class ScpSignEditorScreen extends Screen {
             graphics.pose().translate(0.0F, 0.0F, 300.0F);
             graphics.fill(getX(), top, getX() + getWidth(),
                     top + listHeight, 0xFF171C20);
-            outline(graphics, getX(), top, getWidth(), listHeight, ACCENT);
+            outline(graphics, getX(), top,
+                    getWidth(), listHeight, ACCENT);
 
             for (int row = 0; row < visible; row++) {
                 int index = scrollOffset + row;
@@ -745,10 +1354,13 @@ public final class ScpSignEditorScreen extends Screen {
                 int rowY = top + 1 + row * ROW_HEIGHT;
                 int selectedIndex = selected.indexOf(option);
                 boolean isSelected = selectedIndex >= 0;
-                boolean enabled = isSelected || selected.size() < MAX_SELECTED;
-                boolean hovered = enabled && mouseX >= getX()
+                boolean enabled = isSelected
+                        || selected.size() < MAX_SELECTED;
+                boolean hovered = enabled
+                        && mouseX >= getX()
                         && mouseX < getX() + getWidth()
-                        && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
+                        && mouseY >= rowY
+                        && mouseY < rowY + ROW_HEIGHT;
                 int rowColor = isSelected ? 0xFF4B3F27
                         : hovered ? 0xFF3D484F
                         : enabled ? 0xFF242B30 : 0xFF1D2226;
@@ -756,20 +1368,25 @@ public final class ScpSignEditorScreen extends Screen {
                         getX() + getWidth() - 1,
                         rowY + ROW_HEIGHT, rowColor);
 
-                drawSmallIcon(graphics, option.texture(), getX() + 2,
-                        rowY + 2, ICON_SIZE);
+                drawSmallIcon(graphics, option.texture(),
+                        getX() + 2, rowY + 2, ICON_SIZE);
                 int textColor = !enabled ? 0xFF5F686E
                         : isSelected ? ACCENT_TEXT : TEXT_PRIMARY;
-                String clipped = font.plainSubstrByWidth(option.displayName(),
-                        Math.max(1, getWidth() - ICON_SIZE - 31));
+                String clipped = font.plainSubstrByWidth(
+                        option.displayName(),
+                        Math.max(1,
+                                getWidth() - ICON_SIZE - 31));
                 graphics.drawString(font, ScpFonts.roboto(clipped),
                         getX() + ICON_SIZE + 7,
-                        rowY + (ROW_HEIGHT - 8) / 2 + 2, textColor, false);
+                        rowY + (ROW_HEIGHT - 8) / 2 + 2,
+                        textColor, false);
                 if (isSelected) {
                     graphics.drawCenteredString(font,
-                            ScpFonts.roboto(Integer.toString(selectedIndex + 1)),
+                            ScpFonts.roboto(Integer.toString(
+                                    selectedIndex + 1)),
                             getX() + getWidth() - 12,
-                            rowY + (ROW_HEIGHT - 8) / 2 + 2, ACCENT_TEXT);
+                            rowY + (ROW_HEIGHT - 8) / 2 + 2,
+                            ACCENT_TEXT);
                 }
             }
 
@@ -781,8 +1398,10 @@ public final class ScpSignEditorScreen extends Screen {
                         trackTop + trackHeight, 0xFF30383E);
                 int thumbHeight = Math.max(8,
                         trackHeight * visible / options.size());
-                int maxScroll = Math.max(1, options.size() - visible);
-                int thumbY = trackTop + (trackHeight - thumbHeight)
+                int maxScroll = Math.max(1,
+                        options.size() - visible);
+                int thumbY = trackTop
+                        + (trackHeight - thumbHeight)
                         * scrollOffset / maxScroll;
                 graphics.fill(trackX, thumbY, trackX + 2,
                         thumbY + thumbHeight, ACCENT);
@@ -791,12 +1410,13 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         @Override
-        public boolean handleExpandedClick(double mouseX, double mouseY,
-                int button) {
+        public boolean handleExpandedClick(double mouseX,
+                double mouseY, int button) {
             if (!open || button != 0) return false;
             int top = listTop();
             int visible = visibleRows();
-            if (mouseX >= getX() && mouseX < getX() + getWidth()
+            if (mouseX >= getX()
+                    && mouseX < getX() + getWidth()
                     && mouseY >= top
                     && mouseY < top + visible * ROW_HEIGHT + 2) {
                 int row = (int) ((mouseY - top - 1) / ROW_HEIGHT);
@@ -822,13 +1442,15 @@ public final class ScpSignEditorScreen extends Screen {
         }
 
         @Override
-        public boolean handleExpandedScroll(double mouseX, double mouseY,
-                double delta) {
+        public boolean handleExpandedScroll(double mouseX,
+                double mouseY, double delta) {
             if (!open || options.size() <= visibleRows()) return false;
             int top = listTop();
             int listHeight = visibleRows() * ROW_HEIGHT + 2;
-            if (mouseX < getX() || mouseX >= getX() + getWidth()
-                    || mouseY < top || mouseY >= top + listHeight) {
+            if (mouseX < getX()
+                    || mouseX >= getX() + getWidth()
+                    || mouseY < top
+                    || mouseY >= top + listHeight) {
                 return false;
             }
             scrollOffset = Math.max(0, Math.min(maxScroll(),
@@ -847,7 +1469,8 @@ public final class ScpSignEditorScreen extends Screen {
         private int listTop() {
             int listHeight = visibleRows() * ROW_HEIGHT + 2;
             int below = getY() + getHeight() + 2;
-            return below + listHeight <= ScpSignEditorScreen.this.height - 6
+            return below + listHeight
+                    <= ScpSignEditorScreen.this.height - 6
                     ? below : getY() - listHeight - 2;
         }
 
@@ -864,10 +1487,6 @@ public final class ScpSignEditorScreen extends Screen {
                 ResourceLocation texture, int x, int y, int size) {
             if (!resourceExists(texture)) return;
 
-            // Only sample the pictogram inside the hazard triangle. The source
-            // vertices are (128, 44), (52, 176) and (204, 176); rendering one
-            // horizontal strip per destination row preserves that triangular
-            // crop without bringing the border or caption into the preview.
             final int sourceTopX = 128;
             final int sourceTopY = 44;
             final int sourceBaseY = 176;
@@ -876,7 +1495,8 @@ public final class ScpSignEditorScreen extends Screen {
 
             for (int row = 0; row < size; row++) {
                 float progress = (row + 1.0F) / size;
-                int sourceY = sourceTopY + Math.min(sourceHeight - 1,
+                int sourceY = sourceTopY + Math.min(
+                        sourceHeight - 1,
                         (int) (progress * sourceHeight));
                 int halfWidth = Math.max(1,
                         (int) Math.ceil(sourceHalfWidth * progress));
@@ -887,14 +1507,18 @@ public final class ScpSignEditorScreen extends Screen {
                         (int) Math.ceil(size * 0.5F * progress));
                 int destinationWidth = Math.min(size,
                         destinationHalfWidth * 2);
-                int destinationX = x + (size - destinationWidth) / 2;
+                int destinationX = x
+                        + (size - destinationWidth) / 2;
 
                 graphics.pose().pushPose();
-                graphics.pose().translate(destinationX, y + row, 1.0F);
-                graphics.pose().scale(destinationWidth / (float) sourceWidth,
+                graphics.pose().translate(
+                        destinationX, y + row, 1.0F);
+                graphics.pose().scale(
+                        destinationWidth / (float) sourceWidth,
                         1.0F, 1.0F);
-                graphics.blit(texture, 0, 0, (float) sourceX,
-                        (float) sourceY, sourceWidth, 1, 256, 256);
+                graphics.blit(texture, 0, 0,
+                        (float) sourceX, (float) sourceY,
+                        sourceWidth, 1, 256, 256);
                 graphics.pose().popPose();
             }
         }
@@ -902,7 +1526,8 @@ public final class ScpSignEditorScreen extends Screen {
 
     private enum ButtonStyle {
         NEUTRAL,
-        PRIMARY
+        PRIMARY,
+        DANGER
     }
 
     private record ImageArea(int x, int y, int width, int height) {

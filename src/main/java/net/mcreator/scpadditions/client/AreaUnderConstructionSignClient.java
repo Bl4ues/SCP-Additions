@@ -20,7 +20,7 @@ public final class AreaUnderConstructionSignClient {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(
-                AreaUnderConstructionSignModule.BLOCK,
+                AreaUnderConstructionSignModule.BLOCK.get(),
                 RenderType.translucent()));
     }
 
@@ -28,7 +28,7 @@ public final class AreaUnderConstructionSignClient {
     public static void registerRenderers(
             EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
-                AreaUnderConstructionSignModule.BLOCK_ENTITY,
+                AreaUnderConstructionSignModule.BLOCK_ENTITY.get(),
                 AreaUnderConstructionSignBlockEntityRenderer::new);
     }
 }

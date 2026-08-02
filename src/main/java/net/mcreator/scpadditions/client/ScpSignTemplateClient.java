@@ -100,11 +100,13 @@ public final class ScpSignTemplateClient {
             Minecraft minecraft = Minecraft.getInstance();
             ResourceLocation old = TEXTURES.remove(cleanId);
             if (old != null) minecraft.getTextureManager().release(old);
-            ResourceLocation registered = minecraft.getTextureManager()
-                    .register("scp_sign_template/"
+            ResourceLocation registered = new ResourceLocation(
+                    ScpAdditionsMod.MODID,
+                    "world_sign_templates/"
                             + cleanId.substring(
-                            ScpSignTemplates.CUSTOM_PREFIX.length()),
-                            new DynamicTexture(image));
+                            ScpSignTemplates.CUSTOM_PREFIX.length()));
+            minecraft.getTextureManager().register(registered,
+                    new DynamicTexture(image));
             image = null;
             TEXTURES.put(cleanId, registered);
             CUSTOM.put(cleanId, new ScpSignTemplateSummary(cleanId, name,

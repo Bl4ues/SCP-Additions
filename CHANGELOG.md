@@ -19,6 +19,15 @@
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
 - Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**.
 
+## Codex and documents
+
+- Added a dedicated, non-stackable Document item to the **SCP Additions - Items** creative tab, temporarily using Minecraft's paper texture until its final model is produced;
+- Added an in-world document editor with **SCP Document**, **Facility Document**, and **Blank Document** templates, editable titles and Codex categories, three header labels and values, a Markdown body, an optional photograph, and an optional caption;
+- Added a live split-screen preview using the official document template, Roboto typography, centered photograph cropping, and the supplied picture-frame overlay;
+- Added Markdown rendering for bold text, italic text, horizontal dividers, and `[[redacted]]` black bars in both structured documents and legacy Codex transcriptions;
+- Made new Config Center Codex definitions default to the dedicated Document item and unique-item matching while retaining support for selecting any registered item and for legacy full-page image documents;
+- Prioritized unique Codex definitions before generic item definitions so broad item rules no longer hide uniquely tagged documents.
+
 ## SCP-106
 
 - Added SCP-106 as a new roaming threat;

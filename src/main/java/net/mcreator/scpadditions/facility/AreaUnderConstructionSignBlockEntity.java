@@ -8,6 +8,6 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class AreaUnderConstructionSignBlockEntity extends BlockEntity {
     public AreaUnderConstructionSignBlockEntity(BlockPos pos,
             BlockState state) {
-        super(AreaUnderConstructionSignModule.BLOCK_ENTITY, pos, state);
+        super(AreaUnderConstructionSignModule.BLOCK_ENTITY.get(), pos, state);
     }
 }

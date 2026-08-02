@@ -19,9 +19,10 @@ import net.mcreator.scpadditions.facility.ScpSignTemplates;
 import net.mcreator.scpadditions.network.ScpSignSavePacket;
 import net.mcreator.scpadditions.network.ScpSignTemplateDeletePacket;
 import net.mcreator.scpadditions.network.ScpSignTemplateUploadPacket;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -218,14 +219,19 @@ public final class ScpSignTemplateEditorScreen extends Screen {
     }
 
     private void chooseAndUpload() {
-        String selectedPath = TinyFileDialogs.tinyfd_openFileDialog(
-                "Choose sign artwork (PNG)", "",
-                new String[]{"*.png"}, "PNG images", false);
-        if (selectedPath == null || selectedPath.isBlank()) return;
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Choose sign artwork (PNG)");
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileFilter(new FileNameExtensionFilter(
+                "PNG images", "png"));
+        if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
 
         try {
-            File file = new File(selectedPath);
-            if (!file.isFile() || file.length() > 16_000_000L) {
+            File file = chooser.getSelectedFile();
+            if (file == null || !file.isFile()
+                    || file.length() > 16_000_000L) {
                 fail("The selected PNG is too large or unavailable.");
                 return;
             }

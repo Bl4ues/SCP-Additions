@@ -23,9 +23,12 @@ public final class FramedSignFrameRenderer {
     private static final ResourceLocation METAL = new ResourceLocation(
             "scp_unity_extra_blocks", "textures/block/metal.png");
 
-    /** Paper sits distinctly behind the glass plane to avoid shader z-fighting. */
-    static final float ARTWORK_Z = 15.65F / 16.0F;
-    static final float ARTWORK_DETAIL_Z = 15.62F / 16.0F;
+    /**
+     * Depth order from wall to viewer: background, custom details, glass.
+     * All planes remain separated enough to avoid shader z-fighting.
+     */
+    static final float ARTWORK_Z = 15.55F / 16.0F;
+    static final float ARTWORK_DETAIL_Z = 15.68F / 16.0F;
 
     private FramedSignFrameRenderer() {
     }

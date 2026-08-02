@@ -29,6 +29,7 @@ public final class FramedSignFrameRenderer {
      * enclosed behind the translucent sheet. Details stay slightly in front of
      * the paper while remaining safely behind the glass.
      */
+    static final float GLASS_Z = 15.72F / 16.0F;
     static final float ARTWORK_Z = 15.94F / 16.0F;
     static final float ARTWORK_DETAIL_Z = 15.89F / 16.0F;
 
@@ -49,8 +50,8 @@ public final class FramedSignFrameRenderer {
 
         VertexConsumer glass = buffer.getBuffer(
                 RenderType.entityTranslucent(GLASS));
-        renderPanel(glass, poseStack, packedLight, packedOverlay,
-                px(0.2F), px(3.15F), px(15.7F), px(12.85F), px(15.8F));
+        renderFrontPanel(glass, poseStack, packedLight, packedOverlay,
+                px(0.2F), px(3.15F), px(15.7F), px(12.85F), GLASS_Z);
         renderBox(glass, poseStack, packedLight, packedOverlay,
                 px(0.2F), px(2.65F), px(15.7F), px(3.15F),
                 px(15.7F), px(15.9F));
@@ -86,17 +87,19 @@ public final class FramedSignFrameRenderer {
         poseStack.popPose();
     }
 
-    private static void renderPanel(VertexConsumer consumer,
+    /**
+     * Only the viewer-facing glass surface is needed for a wall-mounted sign.
+     * The former implementation rendered two opposite quads at the exact same
+     * depth, so the glass was fighting with itself before shaders even reached
+     * the artwork behind it.
+     */
+    private static void renderFrontPanel(VertexConsumer consumer,
             PoseStack poseStack, int packedLight, int packedOverlay,
             float minX, float minY, float maxX, float maxY, float z) {
         quad(consumer, poseStack, packedLight, packedOverlay,
                 maxX, maxY, z, maxX, minY, z,
                 minX, minY, z, minX, maxY, z,
                 0.0F, 0.0F, -1.0F);
-        quad(consumer, poseStack, packedLight, packedOverlay,
-                minX, maxY, z, minX, minY, z,
-                maxX, minY, z, maxX, maxY, z,
-                0.0F, 0.0F, 1.0F);
     }
 
     private static void renderBox(VertexConsumer consumer,

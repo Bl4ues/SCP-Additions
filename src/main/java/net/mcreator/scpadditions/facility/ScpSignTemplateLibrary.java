@@ -1,17 +1,11 @@
 package net.mcreator.scpadditions.facility;
 
-import net.minecraft.nbt.ByteArrayTag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,6 +20,11 @@ public final class ScpSignTemplateLibrary extends SavedData {
     private static final String ID_KEY = "Id";
     private static final String NAME_KEY = "Name";
     private static final String IMAGE_KEY = "Image";
+
+    private static final byte[] PNG_SIGNATURE = {
+            (byte) 0x89, 0x50, 0x4E, 0x47,
+            0x0D, 0x0A, 0x1A, 0x0A
+    };
 
     private final Map<String, Entry> entries = new LinkedHashMap<>();
 
@@ -118,7 +117,7 @@ public final class ScpSignTemplateLibrary extends SavedData {
             CompoundTag entryTag = new CompoundTag();
             entryTag.putString(ID_KEY, entry.id());
             entryTag.putString(NAME_KEY, entry.name());
-            entryTag.put(IMAGE_KEY, new ByteArrayTag(entry.image()));
+            entryTag.putByteArray(IMAGE_KEY, entry.image());
             list.add(entryTag);
         }
         tag.put(ENTRIES_KEY, list);
@@ -150,19 +149,34 @@ public final class ScpSignTemplateLibrary extends SavedData {
         return total;
     }
 
+    /**
+     * Every valid PNG begins with the signature followed immediately by IHDR.
+     * Reading those fixed bytes is enough to validate the normalized dimensions
+     * without loading java.desktop on a dedicated server.
+     */
     private static boolean validImage(byte[] image) {
         if (image == null || image.length < 24
                 || image.length > ScpSignTemplates.MAX_IMAGE_BYTES) {
             return false;
         }
-        try (ByteArrayInputStream input = new ByteArrayInputStream(image)) {
-            BufferedImage decoded = ImageIO.read(input);
-            return decoded != null
-                    && decoded.getWidth() == ScpSignTemplates.TARGET_WIDTH
-                    && decoded.getHeight() == ScpSignTemplates.TARGET_HEIGHT;
-        } catch (IOException | RuntimeException ignored) {
+        for (int index = 0; index < PNG_SIGNATURE.length; index++) {
+            if (image[index] != PNG_SIGNATURE[index]) return false;
+        }
+        if (image[12] != 'I' || image[13] != 'H'
+                || image[14] != 'D' || image[15] != 'R') {
             return false;
         }
+        int width = readInt(image, 16);
+        int height = readInt(image, 20);
+        return width == ScpSignTemplates.TARGET_WIDTH
+                && height == ScpSignTemplates.TARGET_HEIGHT;
+    }
+
+    private static int readInt(byte[] bytes, int offset) {
+        return (bytes[offset] & 0xFF) << 24
+                | (bytes[offset + 1] & 0xFF) << 16
+                | (bytes[offset + 2] & 0xFF) << 8
+                | bytes[offset + 3] & 0xFF;
     }
 
     public record Entry(String id, String name, byte[] image) {

@@ -12,6 +12,7 @@ import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.AreaUnderConstructionSignModule;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
 
@@ -66,10 +67,11 @@ public final class CreativeTabPresentation {
         setIcon(ScpAdditionsModTabs.SC_PADDITIONS_SC_PS.get(),
                 ScpAdditionsModTabs.scpStacks(), step);
         setIcon(FacilityModule.SCP_FACILITY_BLOCKS.get(),
-                FacilityModule.creativeTabIconStacks(), step);
+                AreaUnderConstructionSignModule.creativeTabIconStacks(), step);
     }
 
-    private static void setIcon(CreativeModeTab tab, List<ItemStack> stacks, long step) {
+    private static void setIcon(CreativeModeTab tab, List<ItemStack> stacks,
+            long step) {
         if (stacks.isEmpty()) return;
         int index = Math.floorMod(step, stacks.size());
         tab.iconItemStack = stacks.get(index).copy();
@@ -77,7 +79,8 @@ public final class CreativeTabPresentation {
 
     private static void ensureFacilitySectionLayout(
             CreativeModeInventoryScreen screen) {
-        List<ItemStack> layout = FacilityModule.creativeTabDisplayStacks();
+        List<ItemStack> layout =
+                AreaUnderConstructionSignModule.creativeTabDisplayStacks();
         List<ItemStack> current = screen.getMenu().items;
         if (hasSectionLayout(current, layout.size())) return;
 
@@ -87,7 +90,8 @@ public final class CreativeTabPresentation {
         screen.getMenu().scrollTo(0.0F);
     }
 
-    private static boolean hasSectionLayout(List<ItemStack> items, int expectedSize) {
+    private static boolean hasSectionLayout(List<ItemStack> items,
+            int expectedSize) {
         if (items.size() != expectedSize || items.size() < 9) return false;
         for (int i = 0; i < 9; i++) {
             if (!items.get(i).isEmpty()) return false;
@@ -95,20 +99,21 @@ public final class CreativeTabPresentation {
         return true;
     }
 
-    private static void renderFacilityHeaders(CreativeModeInventoryScreen screen,
-            GuiGraphics graphics) {
+    private static void renderFacilityHeaders(
+            CreativeModeInventoryScreen screen, GuiGraphics graphics) {
         int currentRow = rowIndexForScroll(screen.scrollOffs,
                 screen.getMenu().items.size());
         int sectionRow = 0;
         int left = screen.getGuiLeft() + 8;
         int top = screen.getGuiTop() + 17;
         for (FacilityModule.CreativeSection section :
-                FacilityModule.creativeSections()) {
+                AreaUnderConstructionSignModule.creativeSections()) {
             int visibleRow = sectionRow - currentRow;
             if (visibleRow >= 0 && visibleRow < 5) {
                 int y = top + visibleRow * HEADER_HEIGHT;
                 graphics.blit(section.sprite(), left, y, 0.0F, 0.0F,
-                        HEADER_WIDTH, HEADER_HEIGHT, HEADER_WIDTH, HEADER_HEIGHT);
+                        HEADER_WIDTH, HEADER_HEIGHT, HEADER_WIDTH,
+                        HEADER_HEIGHT);
             }
             sectionRow += 1 + (section.items().size() + 8) / 9;
         }

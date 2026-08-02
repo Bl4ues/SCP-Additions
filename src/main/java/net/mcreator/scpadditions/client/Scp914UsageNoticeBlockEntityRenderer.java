@@ -41,6 +41,9 @@ public final class Scp914UsageNoticeBlockEntityRenderer
         BlockState state = notice.getBlockState();
         if (!(state.getBlock() instanceof Scp914UsageNoticeBlock)) return;
 
+        FramedSignFrameRenderer.render(state, poseStack, buffer,
+                packedLight, packedOverlay);
+
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
         poseStack.mulPose(Axis.YP.rotationDegrees(rotationDegrees(

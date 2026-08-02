@@ -1,16 +1,17 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.network.ModNetwork;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
-import com.bl4ues.scpinventory.network.ModNetwork;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +29,8 @@ public final class CodexAssetClient {
     }
 
     public static void upload(String kind, String fileName, byte[] data,
-                              Consumer<String> success, Consumer<String> failure) {
+                              Consumer<String> success,
+                              Consumer<String> failure) {
         String requestId = UUID.randomUUID().toString();
         UPLOADS.put(requestId, new PendingUpload(kind, data, success, failure));
         ModNetwork.CHANNEL.sendToServer(new ConfigCenterNetwork.AssetUploadRequest(
@@ -119,9 +121,13 @@ public final class CodexAssetClient {
     }
 
     private static String cacheKey(String kind, String key) {
-        String normalized = kind == null ? "" : kind.trim().toLowerCase(java.util.Locale.ROOT);
+        String normalized = kind == null ? ""
+                : kind.trim().toLowerCase(Locale.ROOT);
         if ("png".equals(normalized) || "jpg".equals(normalized)
-                || "jpeg".equals(normalized)) normalized = "image";
+                || "jpeg".equals(normalized)
+                || "document_image".equals(normalized)) {
+            normalized = "image";
+        }
         return normalized + ":" + (key == null ? "" : key);
     }
 

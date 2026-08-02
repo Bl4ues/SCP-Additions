@@ -34,15 +34,15 @@ public final class CodexTextEditorScreen extends Screen {
 
     public CodexTextEditorScreen(Screen parent, String existingKey,
                                  Consumer<String> callback) {
-        super(ScpFonts.roboto("Write Codex Text"));
+        super(ScpFonts.roboto("Write Codex Markdown"));
         this.parent = parent;
         this.existingKey = existingKey == null ? "" : existingKey;
         this.callback = callback;
         setText("");
         this.loadedExisting = this.existingKey.isBlank();
         this.notice = this.loadedExisting
-                ? "Enter creates a line. You may also drop one UTF-8 text file."
-                : "Loading the text saved in this world...";
+                ? "Markdown: **bold**, *italic*, ---, and [[redacted]]."
+                : "Loading the Markdown saved in this world...";
     }
 
     private void setText(String text) {
@@ -55,7 +55,9 @@ public final class CodexTextEditorScreen extends Screen {
     }
 
     @Override
-    protected void init() { buildWidgets(); }
+    protected void init() {
+        buildWidgets();
+    }
 
     @Override
     public void tick() {
@@ -65,7 +67,7 @@ public final class CodexTextEditorScreen extends Screen {
             if (loaded.isPresent()) {
                 loadedExisting = true;
                 setText(loaded.get());
-                notice = "Loaded the text saved in this world.";
+                notice = "Loaded the Markdown saved in this world.";
                 noticeColor = 0xFF79D58B;
                 rebuild();
             }
@@ -78,15 +80,34 @@ public final class CodexTextEditorScreen extends Screen {
         int panelHeight = Math.min(460, height - 16);
         int left = (width - panelWidth) / 2;
         int top = Math.max(8, (height - panelHeight) / 2);
-        int editorTop = top + 58;
+        int editorTop = top + 82;
         int bottom = top + panelHeight - 54;
         int visible = Math.max(5, (bottom - editorTop) / 22);
-        scroll = Math.max(0, Math.min(Math.max(0, lines.size() - visible), scroll));
+        scroll = Math.max(0, Math.mein(Math.max(0,
+                lines.size() - visible), scroll));
+
+        int toolbarWidth = (panelWidth - 50) / 4;
+        addRenderableWidget(Button.builder(ScpFonts.roboto("** Bold **"),
+                b -> wrapFocused("**", "**"))
+                .bounds(left + 16, top + 57, toolbarWidth, 20).build());
+        addRenderableWidget(Button.builder(ScpFonts.roboto("* Italic *"),
+                b -> wrapFocused("*", "*"))
+                .bounds(left + 22 + toolbarWidth, top + 57,
+                        toolbarWidth, 20).build();
+        addRenderableWidget(Button.builder(ScpFonts.roboto("--- Divider"),
+                b -> insertDivider())
+                .bounds(left + 28 + toolbarWidth * 2, top + 57,
+                        toolbarWidth, 20).build());
+        addRenderableWidget(Button.builder(ScpFonts.roboto("[[ Redact ]]"),
+                b -> wrapFocused("[[", "]]"))
+                .bounds(left + 34 + toolbarWidth * 3, top + 57,
+                        panelWidth - 50 - toolbarWidth * 3, 20).build());
+
         for (int row = 0; row < visible; row++) {
             int logical = scroll + row;
             if (logical >= lines.size()) break;
-            EditBox box = new EditBox(font, left + 50, editorTop + row * 22,
-                    panelWidth - 70, 20,
+            EditBox box = new EditBox(font, left + 50,
+                    editorTop + row * 22, panelWidth - 70, 20,
                     Component.literal("Line " + (logical + 1)));
             box.setMaxLength(4096);
             box.setValue(lines.get(logical));
@@ -98,12 +119,12 @@ public final class CodexTextEditorScreen extends Screen {
             if (logical == focusLine) box.setFocused(true);
         }
         int third = (panelWidth - 52) / 3;
-        addRenderableWidget(Button.builder(ScpFonts.roboto("Clear Text"), b -> {
+        addRenderableWidget(Button.builder(ScpFonts.roboto("Clear Markdown"), b -> {
             syncVisible();
             setText("");
             rebuild();
         }).bounds(left + 16, top + panelHeight - 30, third, 22).build());
-        addRenderableWidget(Button.builder(ScpFonts.roboto("Save Text"),
+        addRenderableWidget(Button.builder(ScpFonts.roboto("Save Markdown"),
                 b -> save()).bounds(left + 26 + third,
                 top + panelHeight - 30, third, 22).build());
         addRenderableWidget(Button.builder(ScpFonts.roboto("Cancel"),
@@ -112,7 +133,36 @@ public final class CodexTextEditorScreen extends Screen {
                         top + panelHeight - 30, third, 22).build());
     }
 
-    private void rebuild() { clearWidgets(); buildWidgets(); }
+    private void wrapFocused(String prefix, String suffix) {
+        EditBox focused = focusedBox();
+        if (focused == null) {
+            notice = "Select a Markdown line first.";
+            noticeColor = 0xFFD46060;
+            return;
+        }
+        focused.setValue(prefix + focused.getValue() + suffix);
+        lines.set(lineBoxes.get(focused), focused.getValue());
+    }
+
+    private void insertDivider() {
+        EditBox focused = focusedBox();
+        int index = focused == null ? lines.size() - 1 : lineBoxes.get(focused);
+        syncVisible();
+        lines.add(Math.max(0, index + 1), "---");
+        focusLine = Math.max(0, index + 1);
+        ensureVisible(focusLine);
+        rebuild();
+    }
+
+    private EditBox focusedBox() {
+        for (EditBox box : lineBoxes.keySet()) if (box.isFocused()) return box;
+        return null;
+    }
+
+    private void rebuild() {
+        clearWidgets();
+        buildWidgets();
+    }
 
     private void syncVisible() {
         for (Map.Entry<EditBox, Integer> entry : lineBoxes.entrySet()) {
@@ -125,7 +175,7 @@ public final class CodexTextEditorScreen extends Screen {
         syncVisible();
         String text = String.join("\n", lines);
         if (text.length() > MAX_TEXT_LENGTH) {
-            notice = "Text is too long. Maximum: 65,536 characters.";
+            notice = "Markdown is too long. Maximum: 65,536 characters.";
             noticeColor = 0xFFD46060;
             return;
         }
@@ -134,9 +184,9 @@ public final class CodexTextEditorScreen extends Screen {
             return;
         }
         uploading = true;
-        notice = "Saving text in this world...";
+        notice = "Saving Markdown in this world...";
         noticeColor = 0xFFE5D49A;
-        CodexAssetClient.upload("text", "codex-document.txt",
+        CodexAssetClient.upload("text", "codex-document.md",
                 text.getBytes(StandardCharsets.UTF_8), key -> {
                     uploading = false;
                     if (callback != null) callback.accept(key);
@@ -162,12 +212,19 @@ public final class CodexTextEditorScreen extends Screen {
                 return true;
             }
             if (keyCode == GLFW.GLFW_KEY_UP && index > 0) {
-                syncVisible(); focusLine = index - 1;
-                ensureVisible(focusLine); rebuild(); return true;
+                syncVisible();
+                focusLine = index - 1;
+                ensureVisible(focusLine);
+                rebuild();
+                return true;
             }
-            if (keyCode == GLFW.GLFW_KEY_DOWN && index + 1 < lines.size()) {
-                syncVisible(); focusLine = index + 1;
-                ensureVisible(focusLine); rebuild(); return true;
+            if (keyCode == GLFW.GLFW_KEY_DOWN
+                    && index + 1 < lines.size()) {
+                syncVisible();
+                focusLine = index + 1;
+                ensureVisible(focusLine);
+                rebuild();
+                return true;
             }
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -175,7 +232,7 @@ public final class CodexTextEditorScreen extends Screen {
 
     private void ensureVisible(int line) {
         int panelHeight = Math.min(460, height - 16);
-        int visible = Math.max(5, (panelHeight - 112) / 22);
+        int visible = Math.max(5, (panelHeight - 136) / 22);
         if (line < scroll) scroll = line;
         if (line >= scroll + visible) scroll = line - visible + 1;
     }
@@ -183,11 +240,16 @@ public final class CodexTextEditorScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         syncVisible();
-        int visible = Math.max(5, (Math.min(460, height - 16) - 112) / 22);
-        int next = Math.max(0, Math.min(Math.max(0, lines.size() - visible),
+        int visible = Math.max(5,
+                (Math.min(460, height - 16) - 136) / 22);
+        int next = Math.max(0, Math.min(Math.max(0,
+                        lines.size() - visible),
                 scroll + (delta < 0 ? 1 : -1)));
         if (next != scroll) {
-            scroll = next; focusLine = -1; rebuild(); return true;
+            scroll = next;
+            focusLine = -1;
+            rebuild();
+            return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
@@ -195,7 +257,7 @@ public final class CodexTextEditorScreen extends Screen {
     @Override
     public void onFilesDrop(List<Path> paths) {
         if (paths == null || paths.size() != 1) {
-            notice = "Drop exactly one UTF-8 text file.";
+            notice = "Drop exactly one UTF-8 Markdown or text file.";
             noticeColor = 0xFFD46060;
             return;
         }
@@ -203,7 +265,7 @@ public final class CodexTextEditorScreen extends Screen {
             byte[] bytes = Files.readAllBytes(paths.get(0));
             String text = new String(bytes, StandardCharsets.UTF_8);
             if (text.length() > MAX_TEXT_LENGTH) {
-                notice = "Text exceeds 65,536 characters.";
+                notice = "Markdown exceeds 65,536 characters.";
                 noticeColor = 0xFFD46060;
                 return;
             }
@@ -213,7 +275,7 @@ public final class CodexTextEditorScreen extends Screen {
             noticeColor = 0xFF79D58B;
             rebuild();
         } catch (Exception exception) {
-            notice = "Could not read that text file.";
+            notice = "Could not read that Markdown file.";
             noticeColor = 0xFFD46060;
         }
     }
@@ -226,10 +288,13 @@ public final class CodexTextEditorScreen extends Screen {
         int panelHeight = Math.min(460, height - 16);
         int left = (width - panelWidth) / 2;
         int top = Math.max(8, (height - panelHeight) / 2);
-        graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xFF111317);
-        graphics.fill(left, top, left + panelWidth, top + 34, 0xFF24282E);
-        graphics.fill(left, top + 33, left + panelWidth, top + 34, 0xFFC59A2A);
-        graphics.drawString(font, ScpFonts.montserrat("WRITE CODEX TEXT"),
+        graphics.fill(left, top, left + panelWidth, top + panelHeight,
+                0xFF111317);
+        graphics.fill(left, top, left + panelWidth, top + 34,
+                0xFF24282E);
+        graphics.fill(left, top + 33, left + panelWidth, top + 34,
+                0xFFC59A2A);
+        graphics.drawString(font, ScpFonts.montserrat("WRITE CODEX MARKDOWN"),
                 left + 16, top + 12, 0xFFF7F8FC, false);
         graphics.drawString(font, ScpFonts.roboto(notice),
                 left + 16, top + 42, noticeColor, false);
@@ -242,12 +307,18 @@ public final class CodexTextEditorScreen extends Screen {
         graphics.drawString(font, ScpFonts.roboto(lines.size() + " line(s) · "
                         + String.join("\n", lines).length() + "/"
                         + MAX_TEXT_LENGTH + " characters"),
-                left + 16, top + panelHeight - 43, 0xFFA9AFBA, false);
+                left + 16, top + panelHeight - 43,
+                0xFFA9AFBA, false);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
-    public void onClose() { Minecraft.getInstance().setScreen(parent); }
+    public void onClose() {
+        Minecraft.getInstance().setScreen(parent);
+    }
+
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() {
+        return false;
+    }
 }

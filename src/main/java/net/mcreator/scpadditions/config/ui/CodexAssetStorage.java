@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.document.DocumentData;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -41,11 +42,21 @@ public final class CodexAssetStorage {
 
     public static UploadResult save(ServerPlayer player, String kind,
                                     String originalName, byte[] bytes) {
-        if (!ConfigCenterService.canEdit(player)) {
-            return UploadResult.failure("Operator permission level 2 is required.");
+        boolean documentPhoto = "document_image".equalsIgnoreCase(
+                kind == null ? "" : kind.trim());
+        boolean holdingDocument = player != null
+                && (DocumentData.isDedicatedItem(player.getMainHandItem())
+                || DocumentData.isDedicatedItem(player.getOffhandItem()));
+        if (!ConfigCenterService.canEdit(player)
+                && !(documentPhoto && holdingDocument)) {
+            return UploadResult.failure(documentPhoto
+                    ? "Hold a Document item to upload a document photo."
+                    : "Operator permission level 2 is required.");
         }
         String normalized = normalizeKind(kind);
-        if (normalized.isEmpty()) return UploadResult.failure("Unsupported Codex asset type.");
+        if (normalized.isEmpty()) {
+            return UploadResult.failure("Unsupported Codex asset type.");
+        }
         byte[] data = bytes == null ? new byte[0] : bytes;
         int limit = "image".equals(normalized) ? MAX_IMAGE_BYTES : MAX_TEXT_BYTES;
         if (data.length == 0 || data.length > limit) {
@@ -56,16 +67,22 @@ public final class CodexAssetStorage {
         if ("image".equals(normalized)) {
             extension = detectImageExtension(data);
             if (extension.isEmpty()) {
-                return UploadResult.failure("Only PNG and JPEG Codex images are supported.");
+                return UploadResult.failure(
+                        "Only PNG and JPEG Codex images are supported.");
             }
         } else {
-            if (!isUtf8(data)) return UploadResult.failure("The uploaded text is not valid UTF-8.");
+            if (!isUtf8(data)) {
+                return UploadResult.failure(
+                        "The uploaded text is not valid UTF-8.");
+            }
             extension = ".txt";
         }
 
         try {
             MinecraftServer server = player.getServer();
-            if (server == null) return UploadResult.failure("No server world is available.");
+            if (server == null) {
+                return UploadResult.failure("No server world is available.");
+            }
             String folder = "image".equals(normalized) ? "images" : "texts";
             String key = folder + "/" + UUID.randomUUID() + extension;
             Path target = resolve(server, key);
@@ -78,9 +95,11 @@ public final class CodexAssetStorage {
                 Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
             }
             return UploadResult.success(key,
-                    "Saved " + safeName(originalName) + " in this world's Codex assets.");
+                    "Saved " + safeName(originalName)
+                            + " in this world's Codex assets.");
         } catch (Exception exception) {
-            return UploadResult.failure("Could not save Codex asset: " + readable(exception));
+            return UploadResult.failure(
+                    "Could not save Codex asset: " + readable(exception));
         }
     }
 
@@ -100,44 +119,51 @@ public final class CodexAssetStorage {
 
     public static boolean giveDocument(ServerPlayer player, String itemId,
                                        String codexId, String displayName) {
-        if (!ConfigCenterService.canEdit(player) || codexId == null || codexId.isBlank()) {
-            return false;
-        }
-        ResourceLocation id = ResourceLocation.tryParse(itemId == null ? "" : itemId);
+        if (!ConfigCenterService.canEdit(player) || codexId == null
+                || codexId.isBlank()) return false;
+        ResourceLocation id = ResourceLocation.tryParse(
+                itemId == null ? "" : itemId);
         Item item = id == null ? null : ForgeRegistries.ITEMS.getValue(id);
         if (item == null) return false;
         ItemStack stack = new ItemStack(item);
-        stack.getOrCreateTag().putString(CodexDocumentDefinition.UNIQUE_TAG, codexId.trim());
+        stack.getOrCreateTag().putString(CodexDocumentDefinition.UNIQUE_TAG,
+                codexId.trim());
         if (displayName != null && !displayName.isBlank()) {
             stack.setHoverName(Component.literal(displayName.trim()));
         }
         if (ScpAdditionsModulesConfig.get().inventory.enabled
                 && ScpItemClassifier.getCodexDocument(stack).isPresent()) {
             boolean[] stored = {false};
-            player.getCapability(ScpInventoryProvider.INSTANCE).ifPresent(inventory -> {
-                if (inventory.addDocumentItem(stack.copy())) {
-                    stored[0] = true;
-                    ModNetwork.syncTo(player, inventory);
-                }
-            });
+            player.getCapability(ScpInventoryProvider.INSTANCE)
+                    .ifPresent(inventory -> {
+                        if (inventory.addDocumentItem(stack.copy())) {
+                            stored[0] = true;
+                            ModNetwork.syncTo(player, inventory);
+                        }
+                    });
             if (stored[0]) return true;
         }
         if (!player.getInventory().add(stack)) player.drop(stack, false);
         return true;
     }
 
-    private static Path resolve(MinecraftServer server, String key) throws IOException {
+    private static Path resolve(MinecraftServer server, String key)
+            throws IOException {
         Path root = server.getWorldPath(LevelResource.ROOT)
                 .resolve("scp_additions").resolve("codex_assets").normalize();
         Path target = root.resolve(key).normalize();
-        if (!target.startsWith(root)) throw new IOException("Unsafe Codex asset path");
+        if (!target.startsWith(root)) {
+            throw new IOException("Unsafe Codex asset path");
+        }
         return target;
     }
 
     private static String normalizeKind(String kind) {
-        String value = kind == null ? "" : kind.trim().toLowerCase(Locale.ROOT);
+        String value = kind == null ? ""
+                : kind.trim().toLowerCase(Locale.ROOT);
         if ("image".equals(value) || "png".equals(value)
-                || "jpg".equals(value) || "jpeg".equals(value)) return "image";
+                || "jpg".equals(value) || "jpeg".equals(value)
+                || "document_image".equals(value)) return "image";
         return "text".equals(value) ? "text" : "";
     }
 
@@ -192,6 +218,7 @@ public final class CodexAssetStorage {
         public static UploadResult success(String key, String message) {
             return new UploadResult(true, key, message);
         }
+
         public static UploadResult failure(String message) {
             return new UploadResult(false, "", message);
         }

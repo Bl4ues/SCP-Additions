@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.mcreator.scpadditions.document.DocumentData;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -12,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class CodexDocumentDefinition {
-
     public static final String UNIQUE_TAG = "ScpCodexId";
     private static final int DEFAULT_IMAGE_WIDTH = 1279;
     private static final int DEFAULT_IMAGE_HEIGHT = 1920;
@@ -70,6 +70,18 @@ public final class CodexDocumentDefinition {
                 null, null, "", "", "item", "",
                 DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT,
                 "", "", "", "", ""));
+    }
+
+    public static CodexDocumentDefinition dedicated(ItemStack stack) {
+        DocumentData.State state = DocumentData.read(stack);
+        ResourceLocation itemId = stack == null || stack.isEmpty()
+                ? new ResourceLocation("scp_additions", "document")
+                : BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return new CodexDocumentDefinition(itemId,
+                state.category(), state.title(), null, null,
+                "", "", "unique", state.documentId(),
+                DocumentRendererDefaults.WIDTH, DocumentRendererDefaults.HEIGHT,
+                "", "", "", "", "");
     }
 
     public static CodexDocumentDefinition fallback(ItemStack stack) {
@@ -223,5 +235,11 @@ public final class CodexDocumentDefinition {
     private static String normalize(String value) {
         return value == null ? "" : value.replace(" ", "").replace("[", "")
                 .replace("]", "").replace("\"", "").trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** Avoid a client-only renderer dependency in this common definition class. */
+    private static final class DocumentRendererDefaults {
+        private static final int WIDTH = 1365;
+        private static final int HEIGHT = 2048;
     }
 }

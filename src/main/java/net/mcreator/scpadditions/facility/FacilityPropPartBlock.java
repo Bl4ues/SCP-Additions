@@ -161,8 +161,11 @@ public final class FacilityPropPartBlock extends Block
         Direction facing = state.getValue(FACING);
         BlockPos controller = FacilityLargePropStructure.controllerPosition(
                 pos, state);
+        BlockState controllerState = level.getBlockState(controller);
         FacilityLargePropStructure.ensureParts(level, controller,
-                part.kind(), facing);
+                part.kind(), facing,
+                FacilityLargePropStructure.position(controllerState,
+                        part.kind()));
         level.scheduleTick(pos, this, 40);
     }
 
@@ -201,36 +204,72 @@ public final class FacilityPropPartBlock extends Block
     }
 
     public enum Part implements StringRepresentable {
+        // Legacy cells remain decodable so existing worlds load cleanly. They
+        // are no longer generated and self-remove during their validation tick.
         SIGN_NEAR("sign_near",
-                FacilityLargePropStructure.Kind.SIGN_SUPPORT, 0, -1),
+                FacilityLargePropStructure.Kind.SIGN_SUPPORT, 0, -1,
+                null, true),
         SIGN_FAR("sign_far",
-                FacilityLargePropStructure.Kind.SIGN_SUPPORT, 1, -1),
+                FacilityLargePropStructure.Kind.SIGN_SUPPORT, 1, -1,
+                null, true),
         NOTICE_NEAR("notice_near",
-                FacilityLargePropStructure.Kind.SCP_914_NOTICE, 0, -1),
+                FacilityLargePropStructure.Kind.SCP_914_NOTICE, 0, -1,
+                null, true),
         NOTICE_FAR("notice_far",
-                FacilityLargePropStructure.Kind.SCP_914_NOTICE, 1, -1),
+                FacilityLargePropStructure.Kind.SCP_914_NOTICE, 1, -1,
+                null, true),
+
+        SIGN_LEFT("sign_left",
+                FacilityLargePropStructure.Kind.SIGN_SUPPORT, 1, 0,
+                FramedSignPosition.LEFT, false),
+        SIGN_RIGHT("sign_right",
+                FacilityLargePropStructure.Kind.SIGN_SUPPORT, -1, 0,
+                FramedSignPosition.RIGHT, false),
+        NOTICE_LEFT("notice_left",
+                FacilityLargePropStructure.Kind.SCP_914_NOTICE, 1, 0,
+                FramedSignPosition.LEFT, false),
+        NOTICE_RIGHT("notice_right",
+                FacilityLargePropStructure.Kind.SCP_914_NOTICE, -1, 0,
+                FramedSignPosition.RIGHT, false),
+        CONSTRUCTION_LEFT("construction_left",
+                FacilityLargePropStructure.Kind.UNDER_CONSTRUCTION_NOTICE,
+                1, 0, FramedSignPosition.LEFT, false),
+        CONSTRUCTION_RIGHT("construction_right",
+                FacilityLargePropStructure.Kind.UNDER_CONSTRUCTION_NOTICE,
+                -1, 0, FramedSignPosition.RIGHT, false),
+
         TV_LEFT_LOWER("tv_left_lower",
-                FacilityLargePropStructure.Kind.TV, -1, -1),
+                FacilityLargePropStructure.Kind.TV, -1, -1,
+                null, false),
         TV_CENTER_LOWER("tv_center_lower",
-                FacilityLargePropStructure.Kind.TV, 0, -1),
+                FacilityLargePropStructure.Kind.TV, 0, -1,
+                null, false),
         TV_RIGHT_LOWER("tv_right_lower",
-                FacilityLargePropStructure.Kind.TV, 1, -1),
+                FacilityLargePropStructure.Kind.TV, 1, -1,
+                null, false),
         TV_LEFT_CURRENT("tv_left_current",
-                FacilityLargePropStructure.Kind.TV, -1, 0),
+                FacilityLargePropStructure.Kind.TV, -1, 0,
+                null, false),
         TV_RIGHT_CURRENT("tv_right_current",
-                FacilityLargePropStructure.Kind.TV, 1, 0);
+                FacilityLargePropStructure.Kind.TV, 1, 0,
+                null, false);
 
         private final String serializedName;
         private final FacilityLargePropStructure.Kind kind;
         private final int sideOffset;
         private final int rowOffset;
+        private final FramedSignPosition position;
+        private final boolean legacy;
 
         Part(String serializedName, FacilityLargePropStructure.Kind kind,
-                int sideOffset, int rowOffset) {
+                int sideOffset, int rowOffset,
+                FramedSignPosition position, boolean legacy) {
             this.serializedName = serializedName;
             this.kind = kind;
             this.sideOffset = sideOffset;
             this.rowOffset = rowOffset;
+            this.position = position;
+            this.legacy = legacy;
         }
 
         public FacilityLargePropStructure.Kind kind() {
@@ -245,10 +284,28 @@ public final class FacilityPropPartBlock extends Block
             return rowOffset;
         }
 
+        public FramedSignPosition position() {
+            return position;
+        }
+
+        public boolean legacy() {
+            return legacy;
+        }
+
         public static List<Part> forKind(
                 FacilityLargePropStructure.Kind kind) {
             return Arrays.stream(values())
-                    .filter(part -> part.kind == kind)
+                    .filter(part -> part.kind == kind && !part.legacy)
+                    .toList();
+        }
+
+        public static List<Part> forKind(
+                FacilityLargePropStructure.Kind kind,
+                FramedSignPosition position) {
+            return Arrays.stream(values())
+                    .filter(part -> part.kind == kind && !part.legacy)
+                    .filter(part -> kind == FacilityLargePropStructure.Kind.TV
+                            || part.position == position)
                     .toList();
         }
 

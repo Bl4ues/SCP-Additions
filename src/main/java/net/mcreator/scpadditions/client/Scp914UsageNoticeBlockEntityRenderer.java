@@ -28,7 +28,7 @@ public final class Scp914UsageNoticeBlockEntityRenderer
     private static final float PANEL_MAX_X = 15.7F / 16.0F;
     private static final float PANEL_MIN_Y = 3.15F / 16.0F;
     private static final float PANEL_MAX_Y = 12.85F / 16.0F;
-    private static final float IMAGE_Z = 15.86F / 16.0F;
+    private static final float IMAGE_Z = FramedSignFrameRenderer.ARTWORK_Z;
 
     public Scp914UsageNoticeBlockEntityRenderer(
             BlockEntityRendererProvider.Context context) {

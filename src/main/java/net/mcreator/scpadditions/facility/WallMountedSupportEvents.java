@@ -20,11 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-/**
- * Shared support contract for facility objects whose visible model is mounted
- * on a wall. Offset Unity buttons, readers and large props need a nearby scan
- * because their logical block is not always the cell in which the model appears.
- */
+/** Shared support contract for facility objects mounted on wall faces. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class WallMountedSupportEvents {
@@ -42,18 +38,22 @@ public final class WallMountedSupportEvents {
                 level, supportPos, facing);
     }
 
-    /** Checks every visible cell occupied by a large wall-mounted prop. */
     public static boolean hasLargePropWallSupport(LevelReader level,
             BlockPos controllerPos, FacilityLargePropStructure.Kind kind,
             Direction facing) {
-        if (facing == null || facing.getAxis() == Direction.Axis.Y) return false;
+        return hasLargePropWallSupport(level, controllerPos, kind, facing,
+                FramedSignPosition.CENTER);
+    }
 
-        if (kind == FacilityLargePropStructure.Kind.TV
-                && !hasWallSupport(level, controllerPos, facing)) {
-            return false;
-        }
+    /** Checks every visible cell occupied by the chosen placement variant. */
+    public static boolean hasLargePropWallSupport(LevelReader level,
+            BlockPos controllerPos, FacilityLargePropStructure.Kind kind,
+            Direction facing, FramedSignPosition position) {
+        if (facing == null || facing.getAxis() == Direction.Axis.Y) return false;
+        if (!hasWallSupport(level, controllerPos, facing)) return false;
+
         for (FacilityPropPartBlock.Part part :
-                FacilityPropPartBlock.Part.forKind(kind)) {
+                FacilityPropPartBlock.Part.forKind(kind, position)) {
             BlockPos visualCell = FacilityLargePropStructure.partPosition(
                     controllerPos, facing, part);
             if (!hasWallSupport(level, visualCell, facing)) return false;
@@ -125,17 +125,15 @@ public final class WallMountedSupportEvents {
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         Block block = state.getBlock();
 
-        if (block == FacilityModule.SIGN_SUPPORT.get()) {
+        if (block instanceof AbstractFramedSignBlock framedSign) {
             return hasLargePropWallSupport(level, pos,
-                    FacilityLargePropStructure.Kind.SIGN_SUPPORT, facing);
-        }
-        if (block == FacilityModule.SCP_914_USAGE_NOTICE.get()) {
-            return hasLargePropWallSupport(level, pos,
-                    FacilityLargePropStructure.Kind.SCP_914_NOTICE, facing);
+                    framedSign.framedSignKind(), facing,
+                    state.getValue(AbstractFramedSignBlock.POSITION));
         }
         if (block == FacilityModule.TV.get()) {
             return hasLargePropWallSupport(level, pos,
-                    FacilityLargePropStructure.Kind.TV, facing);
+                    FacilityLargePropStructure.Kind.TV, facing,
+                    FramedSignPosition.CENTER);
         }
 
         if (isDoorButton(block)) {
@@ -176,8 +174,7 @@ public final class WallMountedSupportEvents {
                 || block == FacilityModule.EMERGENCY_BUTTON.get()
                 || block == FacilityModule.FIRE_EXTINGUISHER.get()
                 || block == FacilityModule.WATER_FAUCET.get()
-                || block == FacilityModule.SIGN_SUPPORT.get()
-                || block == FacilityModule.SCP_914_USAGE_NOTICE.get()
+                || block instanceof AbstractFramedSignBlock
                 || block == FacilityModule.CORE_ROOM_SIGN.get()
                 || block == FacilityModule.DOOR_SIGN.get()
                 || block == FacilityModule.TV.get()

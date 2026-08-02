@@ -1,6 +1,3 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "scp_additions:item/underconstruction"
-  }
+  "parent": "scp_additions:item/sign_support"
 }

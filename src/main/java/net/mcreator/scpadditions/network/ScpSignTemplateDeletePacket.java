@@ -45,7 +45,7 @@ public final class ScpSignTemplateDeletePacket {
                     ScpSignTemplateLibrary.get(player.getServer());
             if (!library.delete(message.id)) return;
             ScpAdditionsMod.PACKET_HANDLER.send(
-                    PacketDistributor.PLAYER.with(() -> player),
+                    PacketDistributor.ALL.noArg(),
                     new ScpSignTemplateLibraryPacket(library.summaries(),
                             message.id, "", new byte[0]));
         });

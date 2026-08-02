@@ -23,6 +23,7 @@ public final class ScpSignSupportBlockEntity extends BlockEntity {
     private static final String ANOMALY_KEY = "AnomalyType";
     private static final String CUSTOM_ANOMALY_KEY = "CustomAnomalyType";
     private static final String HAZARDS_KEY = "Hazards";
+    private static final String TEMPLATE_KEY = "TemplateId";
 
     private ScpSignData data = ScpSignData.DEFAULT;
 
@@ -52,8 +53,11 @@ public final class ScpSignSupportBlockEntity extends BlockEntity {
         tag.putInt(CLEARANCE_KEY, data.clearanceLevel());
         tag.putString(ANOMALY_KEY, data.anomalyType().name());
         tag.putString(CUSTOM_ANOMALY_KEY, data.customAnomalyType());
+        tag.putString(TEMPLATE_KEY, data.templateId());
         ListTag hazards = new ListTag();
-        for (String hazard : data.hazards()) hazards.add(StringTag.valueOf(hazard));
+        for (String hazard : data.hazards()) {
+            hazards.add(StringTag.valueOf(hazard));
+        }
         tag.put(HAZARDS_KEY, hazards);
     }
 
@@ -68,12 +72,16 @@ public final class ScpSignSupportBlockEntity extends BlockEntity {
         }
         data = new ScpSignData(
                 tag.getString(SCP_NUMBER_KEY),
-                ScpSignData.ContainmentClass.parse(tag.getString(CONTAINMENT_KEY)),
+                ScpSignData.ContainmentClass.parse(
+                        tag.getString(CONTAINMENT_KEY)),
                 tag.getString(CUSTOM_CONTAINMENT_KEY),
                 tag.contains(CLEARANCE_KEY, Tag.TAG_INT)
                         ? tag.getInt(CLEARANCE_KEY) : 1,
                 ScpSignData.AnomalyType.parse(tag.getString(ANOMALY_KEY)),
-                tag.getString(CUSTOM_ANOMALY_KEY), hazards);
+                tag.getString(CUSTOM_ANOMALY_KEY), hazards,
+                tag.contains(TEMPLATE_KEY, Tag.TAG_STRING)
+                        ? tag.getString(TEMPLATE_KEY)
+                        : ScpSignTemplates.INFORMATION);
     }
 
     @Override

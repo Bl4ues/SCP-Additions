@@ -2,13 +2,13 @@ package net.mcreator.scpadditions.init;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
-import net.mcreator.scpadditions.document.DocumentData;
 import net.mcreator.scpadditions.item.DocumentItem;
 
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -37,7 +37,9 @@ public final class DocumentItems {
     @SubscribeEvent
     public static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey().equals(ScpAdditionsModTabs.SCP_ADDITIONS.getKey())) {
-            event.accept(DocumentData.createDefaultStack());
+            // Keep the catalog stack uninitialized. Each copy receives its own
+            // Codex ID on first use instead of cloning one tab-wide UUID.
+            event.accept(new ItemStack(getDocument()));
         }
     }
 }

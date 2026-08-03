@@ -21,6 +21,7 @@ import org.joml.Matrix4f;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 /** Client renderers for the authored elevator assets and procedural cables. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -78,6 +79,7 @@ public final class CoreRoomElevatorClient {
             GeoBlockRenderer<CoreRoomElevatorModule.StationBlockEntity> {
         public StationRenderer(BlockEntityRendererProvider.Context context) {
             super(new StationModel());
+            addRenderLayer(new AutoGlowingGeoLayer<>(this));
         }
 
         @Override
@@ -169,6 +171,7 @@ public final class CoreRoomElevatorClient {
         public CarriageRenderer(EntityRendererProvider.Context context) {
             super(context, new CarriageModel());
             shadowRadius = 0.0F;
+            addRenderLayer(new AutoGlowingGeoLayer<>(this));
         }
 
         @Override

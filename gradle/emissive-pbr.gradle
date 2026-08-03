@@ -1,0 +1,99 @@
+// Adds LabPBR emission to every authored OptiFine-style *_e.png overlay.
+// Existing _s RGB material channels are preserved; only their alpha emission
+// channel is generated. When no _s map exists, a neutral non-metal material is
+// created so the emissive texture still works with shader packs.
+gradle.afterProject { evaluatedProject, state ->
+    if (state.failure != null) {
+        return
+    }
+
+    def resourceTask = evaluatedProject.tasks.findByName('processResources')
+    if (resourceTask == null) {
+        return
+    }
+
+    resourceTask.doLast {
+        File assetsRoot = evaluatedProject.file(
+                "${evaluatedProject.buildDir}/resources/main/assets")
+        if (!assetsRoot.isDirectory()) {
+            return
+        }
+
+        evaluatedProject.fileTree(assetsRoot).matching {
+            include '**/*_e.png'
+        }.files.sort { first, second ->
+            first.path <=> second.path
+        }.each { File emissiveFile ->
+            def emissiveImage = javax.imageio.ImageIO.read(emissiveFile)
+            if (emissiveImage == null) {
+                evaluatedProject.logger.warn(
+                        'Could not read emissive texture {}', emissiveFile)
+                return
+            }
+
+            String specularName = emissiveFile.name.replaceFirst(
+                    /_e\.png$/, '_s.png')
+            File specularFile = new File(emissiveFile.parentFile,
+                    specularName)
+            java.awt.image.BufferedImage specularImage
+
+            if (specularFile.isFile()) {
+                def sourceSpecular = javax.imageio.ImageIO.read(specularFile)
+                if (sourceSpecular == null
+                        || sourceSpecular.width != emissiveImage.width
+                        || sourceSpecular.height != emissiveImage.height) {
+                    evaluatedProject.logger.warn(
+                            'Skipping LabPBR emission for {} because {} has incompatible dimensions',
+                            emissiveFile, specularFile)
+                    return
+                }
+
+                specularImage = new java.awt.image.BufferedImage(
+                        sourceSpecular.width, sourceSpecular.height,
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                def graphics = specularImage.createGraphics()
+                try {
+                    graphics.drawImage(sourceSpecular, 0, 0, null)
+                } finally {
+                    graphics.dispose()
+                }
+            } else {
+                specularImage = new java.awt.image.BufferedImage(
+                        emissiveImage.width, emissiveImage.height,
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                for (int y = 0; y < specularImage.height; y++) {
+                    for (int x = 0; x < specularImage.width; x++) {
+                        // LabPBR defaults: rough dielectric, no porosity/SSS,
+                        // and alpha 255 so non-emissive pixels are ignored.
+                        specularImage.setRGB(x, y, 0xFF000000 as int)
+                    }
+                }
+            }
+
+            for (int y = 0; y < emissiveImage.height; y++) {
+                for (int x = 0; x < emissiveImage.width; x++) {
+                    int mask = emissiveImage.getRGB(x, y)
+                    int maskAlpha = (mask >>> 24) & 0xFF
+                    int red = (mask >>> 16) & 0xFF
+                    int green = (mask >>> 8) & 0xFF
+                    int blue = mask & 0xFF
+                    int brightness = Math.max(red, Math.max(green, blue))
+                    if (maskAlpha == 0 || brightness == 0) {
+                        continue
+                    }
+
+                    // The separate _e artwork already defines which pixels are
+                    // emissive and carries their light color. Use maximum LabPBR
+                    // strength so shaders produce the same decisive glow as the
+                    // GeckoLib glowmask path instead of a faint full-bright tint.
+                    int material = specularImage.getRGB(x, y)
+                    specularImage.setRGB(x, y,
+                            (254 << 24) | (material & 0x00FFFFFF))
+                }
+            }
+
+            specularFile.parentFile.mkdirs()
+            javax.imageio.ImageIO.write(specularImage, 'png', specularFile)
+        }
+    }
+}

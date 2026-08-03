@@ -9,7 +9,7 @@ import net.mcreator.scpadditions.entity.RoombaEntity;
 public final class RoombaLoopSound extends AbstractTickableSoundInstance {
     public static final int SEGMENT_TICKS = 40;
     public static final int CROSSFADE_TICKS = 8;
-    private static final float BASE_VOLUME = 0.275F;
+    private static final float BASE_VOLUME = 0.22F;
 
     private final RoombaEntity entity;
     private int age;

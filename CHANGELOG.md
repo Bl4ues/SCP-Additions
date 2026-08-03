@@ -98,8 +98,7 @@
 - Added two mutually exclusive **Voice Profile** choices with an in-menu voice test, using profile-matched hurt reactions and a gasp after recovering from severe oxygen loss;
 - Added a shared looping drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers, independently of the selected voice profile;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
-- Added a default-disabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music;
-- Reduced Roomba motor volume further while retaining its overlapping fade-in and fade-out loop segments.
+- Added a default-disabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music.
 
 ## Facility signs
 
@@ -117,8 +116,6 @@
 - Refined Roomba obstacle turns with a short contact pause, gradual mechanical acceleration and braking, and a brief settling pause before forward movement resumes;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel; Also, if clicked with a Screwdriver in the Elevator Station, a sector and level can be configured to be displayed while arriving in the destination, e.g. "Light Containment Zone - Sublevel 01" just like in SCP Unity;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
-- Enabled the authored glowmask on both the elevator carriage and Floor Station while retaining their normal and specular maps;
-- Added automatic LabPBR emission generation for every authored `_e.png` overlay, preserving existing `_s.png` material channels while giving lamps, displays, terminals, signs, and other illuminated surfaces stronger shader-compatible glow;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
@@ -143,7 +140,6 @@
 
 ## Bug Fixes
 
-- Corrected **Save Game Sound** being styled as a primary save action instead of a normal module option;
 - Synchronized the SCP Inventory immediately on login, respawn, and dimension changes, and made Tesla Terminal authentication receive a server-authoritative Security Credentials snapshot when opened;
 - Changed enabled Tesla Gates from ten-tick polling to continuous sensing without duplicate activation queues, and added swept trajectory checks so running entities cannot tunnel through the unchanged visible discharge arc between ticks;
 - Assigned a blood type on first login for new and legacy players and preserved it across death instead of leaving Status as Unknown until the first respawn;

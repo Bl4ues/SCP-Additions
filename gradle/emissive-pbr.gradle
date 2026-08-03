@@ -19,11 +19,24 @@ gradle.afterProject { evaluatedProject, state ->
             return
         }
 
+        // One malformed optional material must not abort the complete resource
+        // build. Record the exact path so the source asset can be repaired,
+        // while allowing every other valid emissive texture to be processed.
+        def readPng = { File imageFile ->
+            try {
+                return javax.imageio.ImageIO.read(imageFile)
+            } catch (Exception exception) {
+                evaluatedProject.logger.warn(
+                        "Skipping unreadable PNG ${imageFile}: ${exception.message}")
+                return null
+            }
+        }
+
         // The Floor Station is a GeckoLib block entity, but its authored light
         // artwork uses the same glowmask convention as entities. Mirror that
         // mask to an _e overlay in processed resources so shader packs also see
-        // it through the normal LabPBR material path. The explicit GeckoLib
-        // full-bright layer remains as a non-PBR fallback.
+        // it through the normal LabPBR material path. The GeckoLib glowing layer
+        // remains as the renderer-level emissive path.
         [
                 'scp_additions/textures/entities/core_room_elevator_floor_station',
                 'scp_additions/textures/block/core_room_elevator_floor_station'
@@ -44,101 +57,74 @@ gradle.afterProject { evaluatedProject, state ->
         }.files.sort { first, second ->
             first.path <=> second.path
         }.each { File emissiveFile ->
-            try {
-                def emissiveImage = javax.imageio.ImageIO.read(emissiveFile)
-                if (emissiveImage == null) {
+            def emissiveImage = readPng(emissiveFile)
+            if (emissiveImage == null) {
+                return
+            }
+
+            String specularName = emissiveFile.name.replaceFirst(
+                    /_e\.png$/, '_s.png')
+            File specularFile = new File(emissiveFile.parentFile,
+                    specularName)
+            java.awt.image.BufferedImage specularImage
+
+            if (specularFile.isFile()) {
+                def sourceSpecular = readPng(specularFile)
+                if (sourceSpecular == null
+                        || sourceSpecular.width != emissiveImage.width
+                        || sourceSpecular.height != emissiveImage.height) {
                     evaluatedProject.logger.warn(
-                            'Skipping unreadable emissive texture {}',
-                            emissiveFile)
+                            'Skipping LabPBR emission for {} because {} is unreadable or has incompatible dimensions',
+                            emissiveFile, specularFile)
                     return
                 }
 
-                String specularName = emissiveFile.name.replaceFirst(
-                        /_e\.png$/, '_s.png')
-                File specularFile = new File(emissiveFile.parentFile,
-                        specularName)
-                java.awt.image.BufferedImage specularImage
-
-                if (specularFile.isFile()) {
-                    def sourceSpecular
-                    try {
-                        sourceSpecular = javax.imageio.ImageIO.read(specularFile)
-                    } catch (Exception specularError) {
-                        evaluatedProject.logger.warn(
-                                'Skipping LabPBR emission for {} because existing specular map {} could not be decoded: {}',
-                                emissiveFile, specularFile,
-                                specularError.message)
-                        return
-                    }
-
-                    if (sourceSpecular == null
-                            || sourceSpecular.width != emissiveImage.width
-                            || sourceSpecular.height != emissiveImage.height) {
-                        evaluatedProject.logger.warn(
-                                'Skipping LabPBR emission for {} because {} is unreadable or has incompatible dimensions',
-                                emissiveFile, specularFile)
-                        return
-                    }
-
-                    specularImage = new java.awt.image.BufferedImage(
-                            sourceSpecular.width, sourceSpecular.height,
-                            java.awt.image.BufferedImage.TYPE_INT_ARGB)
-                    def graphics = specularImage.createGraphics()
-                    try {
-                        graphics.drawImage(sourceSpecular, 0, 0, null)
-                    } finally {
-                        graphics.dispose()
-                    }
-                } else {
-                    specularImage = new java.awt.image.BufferedImage(
-                            emissiveImage.width, emissiveImage.height,
-                            java.awt.image.BufferedImage.TYPE_INT_ARGB)
-                    for (int y = 0; y < specularImage.height; y++) {
-                        for (int x = 0; x < specularImage.width; x++) {
-                            // LabPBR defaults: rough dielectric, no porosity/SSS,
-                            // and alpha 255 so non-emissive pixels are ignored.
-                            specularImage.setRGB(x, y, 0xFF000000 as int)
-                        }
+                specularImage = new java.awt.image.BufferedImage(
+                        sourceSpecular.width, sourceSpecular.height,
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                def graphics = specularImage.createGraphics()
+                try {
+                    graphics.drawImage(sourceSpecular, 0, 0, null)
+                } finally {
+                    graphics.dispose()
+                }
+            } else {
+                specularImage = new java.awt.image.BufferedImage(
+                        emissiveImage.width, emissiveImage.height,
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                for (int y = 0; y < specularImage.height; y++) {
+                    for (int x = 0; x < specularImage.width; x++) {
+                        // LabPBR defaults: rough dielectric, no porosity/SSS,
+                        // and alpha 255 so non-emissive pixels are ignored.
+                        specularImage.setRGB(x, y, 0xFF000000 as int)
                     }
                 }
-
-                for (int y = 0; y < emissiveImage.height; y++) {
-                    for (int x = 0; x < emissiveImage.width; x++) {
-                        int mask = emissiveImage.getRGB(x, y)
-                        int maskAlpha = (mask >>> 24) & 0xFF
-                        int red = (mask >>> 16) & 0xFF
-                        int green = (mask >>> 8) & 0xFF
-                        int blue = mask & 0xFF
-                        int brightness = Math.max(red, Math.max(green, blue))
-                        if (maskAlpha == 0 || brightness == 0) {
-                            continue
-                        }
-
-                        // The separate _e artwork already defines which pixels are
-                        // emissive and carries their light color. Use maximum LabPBR
-                        // strength so shaders produce decisive bloom instead of a
-                        // merely full-bright surface.
-                        int material = specularImage.getRGB(x, y)
-                        specularImage.setRGB(x, y,
-                                (254 << 24) | (material & 0x00FFFFFF))
-                    }
-                }
-
-                specularFile.parentFile.mkdirs()
-                if (!javax.imageio.ImageIO.write(
-                        specularImage, 'png', specularFile)) {
-                    evaluatedProject.logger.warn(
-                            'No PNG writer was available for generated LabPBR map {}',
-                            specularFile)
-                }
-            } catch (Exception emissiveError) {
-                // One malformed PNG must not make processResources fail for the
-                // entire mod. Log the exact offender and leave its original
-                // resources untouched so the remaining emissive maps still build.
-                evaluatedProject.logger.warn(
-                        'Skipping LabPBR emission for malformed texture {}: {}',
-                        emissiveFile, emissiveError.message)
             }
+
+            for (int y = 0; y < emissiveImage.height; y++) {
+                for (int x = 0; x < emissiveImage.width; x++) {
+                    int mask = emissiveImage.getRGB(x, y)
+                    int maskAlpha = (mask >>> 24) & 0xFF
+                    int red = (mask >>> 16) & 0xFF
+                    int green = (mask >>> 8) & 0xFF
+                    int blue = mask & 0xFF
+                    int brightness = Math.max(red, Math.max(green, blue))
+                    if (maskAlpha == 0 || brightness == 0) {
+                        continue
+                    }
+
+                    // The separate _e artwork already defines which pixels are
+                    // emissive and carries their light color. Use maximum LabPBR
+                    // strength so shaders produce decisive bloom instead of a
+                    // merely full-bright surface.
+                    int material = specularImage.getRGB(x, y)
+                    specularImage.setRGB(x, y,
+                            (254 << 24) | (material & 0x00FFFFFF))
+                }
+            }
+
+            specularFile.parentFile.mkdirs()
+            javax.imageio.ImageIO.write(specularImage, 'png', specularFile)
         }
     }
 }

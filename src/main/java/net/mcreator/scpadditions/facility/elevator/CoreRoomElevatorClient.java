@@ -18,12 +18,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 /** Client renderers for the authored elevator assets and procedural cables. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -31,7 +29,6 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 public final class CoreRoomElevatorClient {
     private static final ResourceLocation CABLE_TEXTURE = new ResourceLocation(
             "minecraft", "textures/block/black_concrete.png");
-    private static final int FULL_BRIGHT = 0xF000F0;
 
     private CoreRoomElevatorClient() {
     }
@@ -82,27 +79,9 @@ public final class CoreRoomElevatorClient {
             GeoBlockRenderer<CoreRoomElevatorModule.StationBlockEntity> {
         public StationRenderer(BlockEntityRendererProvider.Context context) {
             super(new StationModel());
-            // Do not route the station mask through AutoGlowingTexture. It can
-            // be swallowed by block-entity/PBR wrappers before the generated
-            // texture is bound. Re-render the baked model directly with the
-            // authored mask and a guaranteed full-bright light value.
-            addRenderLayer(new GeoRenderLayer<>(this) {
-                @Override
-                public void render(PoseStack poseStack,
-                        CoreRoomElevatorModule.StationBlockEntity animatable,
-                        BakedGeoModel bakedModel, RenderType renderType,
-                        MultiBufferSource bufferSource, VertexConsumer buffer,
-                        float partialTick, int packedLight,
-                        int packedOverlay) {
-                    RenderType emissive = RenderType.eyes(
-                            ElevatorAssets.FLOOR_STATION_GLOWMASK);
-                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
-                            animatable, emissive,
-                            bufferSource.getBuffer(emissive), partialTick,
-                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                            1.0F, 1.0F, 1.0F, 1.0F);
-                }
-            });
+            // Use the same GeckoLib emissive path as the carriage so block and
+            // entity elevator lights are rendered through an identical layer.
+            addRenderLayer(new AutoGlowingGeoLayer<>(this));
         }
 
         @Override

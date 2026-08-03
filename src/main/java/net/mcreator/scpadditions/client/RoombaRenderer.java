@@ -6,11 +6,13 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.entity.RoombaEntity;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 public final class RoombaRenderer extends GeoEntityRenderer<RoombaEntity> {
     public RoombaRenderer(EntityRendererProvider.Context context) {
         super(context, new RoombaModel());
         shadowRadius = 0.28F;
+        addRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 
     @Override

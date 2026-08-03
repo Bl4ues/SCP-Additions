@@ -28,7 +28,7 @@ public final class MarkdownTextRenderer {
                                    float textScale, Font font) {
         return layout(markdown, 0, Integer.MAX_VALUE, 1,
                 textScale, ignored -> Math.max(1, width),
-                font, null, 0, 0, false);
+                font, null, 0, 0, false, false);
     }
 
     public static int render(GuiGraphics graphics, String markdown,
@@ -38,14 +38,30 @@ public final class MarkdownTextRenderer {
         Font font = Minecraft.getInstance().font;
         return layout(markdown, x, maxY, lineHeight,
                 textScale, widthAtY, font, graphics,
-                startY, color, true);
+                startY, color, true, false);
+    }
+
+    /**
+     * Renders the same typography while keeping every mark in the supplied
+     * text color. This is used by the Codex transcription view so yellow and
+     * black marks do not clash with its monochrome interface.
+     */
+    public static int renderMonochrome(GuiGraphics graphics, String markdown,
+                                       int x, int startY, int maxY,
+                                       int lineHeight, float textScale,
+                                       IntUnaryOperator widthAtY, int color) {
+        Font font = Minecraft.getInstance().font;
+        return layout(markdown, x, maxY, lineHeight,
+                textScale, widthAtY, font, graphics,
+                startY, color, true, true);
     }
 
     private static int layout(String markdown, int startX, int maxY,
                               int lineHeight, float textScale,
                               IntUnaryOperator widthAtY, Font font,
                               GuiGraphics graphics, int startY,
-                              int color, boolean draw) {
+                              int color, boolean draw,
+                              boolean monochrome) {
         String normalized = markdown == null ? ""
                 : markdown.replace("\r\n", "\n").replace('\r', '\n');
         String[] paragraphs = normalized.split("\n", -1);
@@ -66,7 +82,7 @@ public final class MarkdownTextRenderer {
                             startX + available,
                             center + Math.max(1,
                                     Math.round(textScale * 0.7F)),
-                            0xAA202020);
+                            monochrome ? color : 0xAA202020);
                 }
                 y += lineHeight;
                 if (paragraphIndex + 1 < paragraphs.length) {
@@ -129,7 +145,8 @@ public final class MarkdownTextRenderer {
                 if (draw && y + lineHeight >= 0 && y <= maxY) {
                     renderLine(graphics, font, line, startX, y,
                             available, naturalWidth, spaceCount,
-                            justify, lineHeight, textScale, color);
+                            justify, lineHeight, textScale, color,
+                            monochrome);
                 }
 
                 y += lineHeight;
@@ -163,7 +180,7 @@ public final class MarkdownTextRenderer {
                                    int available, int naturalWidth,
                                    int spaceCount, boolean justify,
                                    int lineHeight, float textScale,
-                                   int color) {
+                                   int color, boolean monochrome) {
         int extra = justify
                 ? Math.max(0, available - naturalWidth) : 0;
         int distributed = 0;
@@ -189,28 +206,27 @@ public final class MarkdownTextRenderer {
 
             Word word = placed.word();
             if (word.redacted()) {
-                int desiredHeight = Math.max(5, Math.round(
-                        font.lineHeight * textScale * 1.08F));
-                int barHeight = Math.min(
-                        Math.max(5, lineHeight - 1),
-                        desiredHeight);
-                int barY = y + Math.max(0,
-                        (lineHeight - barHeight) / 2);
+                int barHeight = Math.max(6, lineHeight);
+                int barY = y - Math.max(1,
+                        Math.round(textScale * 0.65F));
                 graphics.fill(x, barY,
                         x + placed.width(), barY + barHeight,
-                        0xFF101010);
+                        monochrome ? color : 0xFF101010);
             } else {
                 if (word.highlighted()) {
-                    int markHeight = Math.max(3, Math.round(
-                            font.lineHeight * textScale * 0.78F));
-                    int markY = y + Math.max(0, Math.round(
-                            font.lineHeight * textScale * 0.20F));
+                    int markHeight = Math.max(5, Math.round(
+                            font.lineHeight * textScale * 1.03F));
+                    int markY = y - Math.max(1,
+                            Math.round(textScale * 0.32F));
                     int markX = previousHighlighted
                             && placed.spaceBefore() ? gapStart : x - 1;
+                    int markColor = monochrome
+                            ? withAlpha(color, 0x88)
+                            : HIGHLIGHT_COLOR;
                     graphics.fill(markX, markY,
                             x + placed.width() + 1,
                             markY + markHeight,
-                            HIGHLIGHT_COLOR);
+                            markColor);
                 }
                 drawScaled(graphics, word.component(),
                         x, y, color, textScale, word.bold());
@@ -218,6 +234,10 @@ public final class MarkdownTextRenderer {
             x += placed.width();
             previousHighlighted = word.highlighted();
         }
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return (alpha << 24) | (color & 0x00FFFFFF);
     }
 
     private static void drawScaled(GuiGraphics graphics,

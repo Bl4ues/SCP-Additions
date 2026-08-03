@@ -16,6 +16,10 @@ public final class Scp714MusicClient {
     private Scp714MusicClient() {
     }
 
+    public static boolean isPlaying() {
+        return music != null;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
@@ -43,6 +47,7 @@ public final class Scp714MusicClient {
             minecraft.getSoundManager().stop(music);
         }
         music = new Scp714MusicSound();
+        ModMusicExclusivityClient.stopVanillaMusicNow();
         minecraft.getSoundManager().play(music);
     }
 }

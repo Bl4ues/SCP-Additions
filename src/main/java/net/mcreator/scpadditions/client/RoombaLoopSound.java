@@ -21,7 +21,10 @@ public final class RoombaLoopSound extends AbstractTickableSoundInstance {
         this.entity = entity;
         looping = false;
         delay = 0;
-        volume = 0.0F;
+        // SoundEngine may discard a new sound whose initial volume is exactly
+        // zero. Begin on the first fade-in step so the segment is admitted,
+        // then continue the smooth crossfade from tick().
+        volume = BASE_VOLUME / CROSSFADE_TICKS;
         pitch = 1.0F;
         updatePosition();
     }

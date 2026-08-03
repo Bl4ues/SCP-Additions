@@ -72,7 +72,10 @@ public final class ConfigurationHomePolish {
             int step = 31;
 
             general.setY(startY);
+            // Keep compatibility with both the original label and the renamed
+            // mixed-content hub. Only one of these buttons exists at runtime.
             setY(screen, "Inventory, Equipment & Codex", startY + step);
+            setY(screen, "Items, Entities & Codex", startY + step);
             setY(screen, "Contextual Interactions", startY + step * 2);
             setY(screen, "SCP-294 Drinks", startY + step * 3);
             setY(screen, "SCP-914 Recipes", startY + step * 4);

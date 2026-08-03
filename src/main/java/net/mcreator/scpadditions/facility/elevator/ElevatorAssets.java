@@ -19,6 +19,8 @@ public final class ElevatorAssets {
             "geo/block/core_room_elevator_floor_station.geo.json");
     public static final ResourceLocation FLOOR_STATION_TEXTURE = resource(
             "textures/entities/core_room_elevator_floor_station.png");
+    public static final ResourceLocation FLOOR_STATION_GLOWMASK = resource(
+            "textures/entities/core_room_elevator_floor_station_glowmask.png");
     public static final ResourceLocation FLOOR_STATION_ANIMATION = resource(
             "animations/block/core_room_elevator_floor_station.animation.json");
 

@@ -19,6 +19,26 @@ gradle.afterProject { evaluatedProject, state ->
             return
         }
 
+        // The Floor Station is a GeckoLib block entity, but its authored light
+        // artwork uses the same glowmask convention as entities. Mirror that
+        // mask to an _e overlay in processed resources so shader packs also see
+        // it through the normal LabPBR material path. The explicit GeckoLib
+        // full-bright layer remains as a non-PBR fallback.
+        [
+                'scp_additions/textures/entities/core_room_elevator_floor_station',
+                'scp_additions/textures/block/core_room_elevator_floor_station'
+        ].each { relativeBase ->
+            File glowmask = new File(assetsRoot,
+                    "${relativeBase}_glowmask.png")
+            File emissive = new File(assetsRoot,
+                    "${relativeBase}_e.png")
+            if (glowmask.isFile()) {
+                emissive.parentFile.mkdirs()
+                java.nio.file.Files.copy(glowmask.toPath(), emissive.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            }
+        }
+
         evaluatedProject.fileTree(assetsRoot).matching {
             include '**/*_e.png'
         }.files.sort { first, second ->
@@ -84,8 +104,8 @@ gradle.afterProject { evaluatedProject, state ->
 
                     // The separate _e artwork already defines which pixels are
                     // emissive and carries their light color. Use maximum LabPBR
-                    // strength so shaders produce the same decisive glow as the
-                    // GeckoLib glowmask path instead of a faint full-bright tint.
+                    // strength so shaders produce decisive bloom instead of a
+                    // merely full-bright surface.
                     int material = specularImage.getRGB(x, y)
                     specularImage.setRGB(x, y,
                             (254 << 24) | (material & 0x00FFFFFF))

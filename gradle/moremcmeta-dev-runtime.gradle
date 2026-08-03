@@ -55,18 +55,20 @@ gradle.afterProject { evaluatedProject, state ->
     }
 
     // CI uses this task after clean so a green build also proves that the
-    // development runtime can actually be resolved by ForgeGradle.
+    // development runtime can actually be resolved by ForgeGradle. The
+    // run-specific copy is created lazily, so ordinary CI falls back to the
+    // standard runtime classpath containing the same fg.deobf dependencies.
     evaluatedProject.tasks.register('verifyMoreMcmetaDevRuntime') {
         group = 'verification'
-        description = 'Resolves the runClient runtime after clean.'
+        description = 'Resolves the runClient dependencies after clean.'
         mustRunAfter evaluatedProject.tasks.named('clean')
 
         doLast {
             def runtimeConfiguration = evaluatedProject.configurations
                     .findByName('runtimeClasspathCopy')
             if (runtimeConfiguration == null) {
-                throw new GradleException(
-                        'ForgeGradle runtimeClasspathCopy configuration was not created.')
+                runtimeConfiguration = evaluatedProject.configurations
+                        .getByName('runtimeClasspath')
             }
 
             runtimeConfiguration.resolve()

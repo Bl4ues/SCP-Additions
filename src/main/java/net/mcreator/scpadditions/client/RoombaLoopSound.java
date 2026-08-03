@@ -15,7 +15,7 @@ public final class RoombaLoopSound extends AbstractTickableSoundInstance {
         this.entity = entity;
         looping = true;
         delay = 0;
-        volume = 0.55F;
+        volume = 0.275F;
         pitch = 1.0F;
         tick();
     }

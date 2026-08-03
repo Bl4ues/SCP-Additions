@@ -15,7 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** Keeps SCP Additions tooltip punctuation consistent without flattening styles. */
+/**
+ * Keeps SCP Additions tooltip punctuation consistent while retaining each
+ * formatted text segment's original style.
+ */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TooltipPunctuationNormalizer {

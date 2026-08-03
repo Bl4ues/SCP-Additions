@@ -10,9 +10,12 @@
   "entity.scp_additions.scp_131_a": "SCP-131-A",
   "entity.scp_additions.scp_131_b": "SCP-131-B",
   "entity.scp_additions.scp_173": "SCP-173",
+  "entity.scp_additions.roomba": "Roomba",
   "item.scp_additions.scp_131_a_spawn_egg": "SCP-131-A Spawn Egg",
   "item.scp_additions.scp_131_b_spawn_egg": "SCP-131-B Spawn Egg",
   "item.scp_additions.scp_173_spawn_egg": "SCP-173 Spawn Egg",
+  "item.scp_additions.roomba_spawn_egg": "Roomba Spawn Egg",
+  "tooltip.scp_additions.roomba_spawn_egg": "A persistent facility cleaning robot",
   "key.categories.scpinventory": "SCP Inventory",
   "key.scpinventory.open_inventory": "Open SCP Inventory",
   "key.scpinventory.context_interact": "Context Interact",
@@ -36,5 +39,6 @@
   "subtitles.scpinventory.neck_snap": "Neck snaps",
   "subtitles.scpinventory.eye_pod_idle": "SCP-131 murmurs",
   "subtitles.scpinventory.eye_pod_move": "SCP-131 walks",
-  "subtitles.scpinventory.eye_pod_voice": "SCP-131 chirps"
+  "subtitles.scpinventory.eye_pod_voice": "SCP-131 chirps",
+  "subtitles.scp_additions.roomba": "Roomba hums"
 }

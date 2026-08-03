@@ -3,7 +3,9 @@ package net.mcreator.scpadditions.facility.elevator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -19,10 +21,10 @@ import java.util.Set;
 /**
  * Adds a restrained client-side light source near the carriage ceiling.
  *
- * <p>No blocks are placed in the world. The source is injected into the client
- * light engine and moved only when the carriage crosses into another block,
- * keeping the effect inexpensive and avoiding persistent invisible light
- * blocks in saves.</p>
+ * <p>The invisible vanilla light block exists only in the client level and is
+ * restored as soon as the carriage leaves its block. Nothing is written to the
+ * server world or saved to disk, while normal block-light propagation remains
+ * compatible with the vanilla renderer and shader packs.</p>
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -32,6 +34,8 @@ public final class CoreRoomElevatorDynamicLight {
     private static final int REFRESH_INTERVAL_TICKS = 20;
     private static final double TRACKING_RANGE = 64.0D;
     private static final Map<Integer, BlockPos> SOURCES = new HashMap<>();
+    private static final Map<BlockPos, BlockState> ORIGINAL_STATES =
+            new HashMap<>();
     private static ClientLevel trackedLevel;
 
     private CoreRoomElevatorDynamicLight() {
@@ -68,7 +72,7 @@ public final class CoreRoomElevatorDynamicLight {
                 level.getEntitiesOfClass(CoreRoomElevatorCarriageEntity.class,
                         searchArea, entity -> !entity.isRemoved())) {
             BlockPos source = BlockPos.containing(carriage.getX(),
-                    carriage.getY() + 2.35D, carriage.getZ()).immutable();
+                    carriage.getY() + 3.05D, carriage.getZ()).immutable();
             nextSources.put(carriage.getId(), source);
         }
 
@@ -95,15 +99,26 @@ public final class CoreRoomElevatorDynamicLight {
         if (!level.hasChunkAt(position)) {
             return;
         }
-        LevelLightEngine lightEngine = level.getChunkSource().getLightEngine();
-        lightEngine.onBlockEmissionIncrease(position, LIGHT_LEVEL);
+        BlockState current = level.getBlockState(position);
+        if (current.is(Blocks.LIGHT)) {
+            return;
+        }
+        if (!current.isAir()) {
+            return;
+        }
+        ORIGINAL_STATES.putIfAbsent(position, current);
+        level.setBlock(position, Blocks.LIGHT.defaultBlockState()
+                .setValue(LightBlock.LEVEL, LIGHT_LEVEL), 3);
     }
 
     private static void removeSource(ClientLevel level, BlockPos position) {
-        if (!level.hasChunkAt(position)) {
+        BlockState original = ORIGINAL_STATES.remove(position);
+        if (original == null || !level.hasChunkAt(position)) {
             return;
         }
-        level.getChunkSource().getLightEngine().checkBlock(position);
+        if (level.getBlockState(position).is(Blocks.LIGHT)) {
+            level.setBlock(position, original, 3);
+        }
     }
 
     private static void clearTrackedSources() {
@@ -113,5 +128,6 @@ public final class CoreRoomElevatorDynamicLight {
             }
         }
         SOURCES.clear();
+        ORIGINAL_STATES.clear();
     }
 }

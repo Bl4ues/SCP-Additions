@@ -82,12 +82,13 @@ gradle.afterProject { evaluatedProject, state ->
                         continue
                     }
 
-                    int emission = Math.round(brightness
-                            * (maskAlpha / 255.0F))
-                    emission = Math.max(1, Math.min(254, emission))
+                    // The separate _e artwork already defines which pixels are
+                    // emissive and carries their light color. Use maximum LabPBR
+                    // strength so shaders produce the same decisive glow as the
+                    // GeckoLib glowmask path instead of a faint full-bright tint.
                     int material = specularImage.getRGB(x, y)
                     specularImage.setRGB(x, y,
-                            (emission << 24) | (material & 0x00FFFFFF))
+                            (254 << 24) | (material & 0x00FFFFFF))
                 }
             }
 

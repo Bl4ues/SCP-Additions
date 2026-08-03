@@ -77,10 +77,9 @@
 - Added a sixty-second no-access timeout for routine SCP-173 encounters trapped by sealed layouts, while preserving manually placed statues;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
-- Added sparse natural Roomba encounters on approved facility flooring, with strict local density checks and a separate much rarer chance for a two-Roomba room encounter;
-- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters independently;
-- Renamed the Configuration Center's mixed inventory hub to **Items, Entities & Codex** and added a **Roomba Spawning** editor;
-- Made Blue Floor, Metal Floor, and Concrete Floor permanent integrated Roomba spawn surfaces while allowing operators to add, edit, and remove extra block IDs without overriding future built-in floors.
+- Added sparse natural Roomba encounters on approved facility flooring;
+- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters;
+- Renamed the Configuration Center's mixed inventory hub to **Items, Entities & Codex** and added a **Roomba Spawning** editor.
 
 ## Survival
 

@@ -17,10 +17,13 @@ public final class ElevatorAssets {
 
     public static final ResourceLocation FLOOR_STATION_MODEL = resource(
             "geo/block/core_room_elevator_floor_station.geo.json");
+    // The station is a block entity, so its authored PBR material must stay in
+    // textures/block. Shader and MoreMcmeta look up the matching _n and _s maps
+    // beside this exact base texture path.
     public static final ResourceLocation FLOOR_STATION_TEXTURE = resource(
-            "textures/entities/core_room_elevator_floor_station.png");
+            "textures/block/core_room_elevator_floor_station.png");
     public static final ResourceLocation FLOOR_STATION_GLOWMASK = resource(
-            "textures/entities/core_room_elevator_floor_station_glowmask.png");
+            "textures/block/core_room_elevator_floor_station_glowmask.png");
     public static final ResourceLocation FLOOR_STATION_ANIMATION = resource(
             "animations/block/core_room_elevator_floor_station.animation.json");
 

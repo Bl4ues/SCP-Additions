@@ -38,8 +38,8 @@ public final class DocumentRenderer {
     private static final int CAPTION_BOTTOM = 1145;
 
     private static final float HEADER_SCALE = 4.0F;
-    private static final float BODY_SCALE = 3.58F;
-    private static final int BODY_LINE_HEIGHT = 39;
+    private static final float BODY_SCALE = 3.72F;
+    private static final int BODY_LINE_HEIGHT = 40;
     private static final int TEXT_COLOR = 0xFF303030;
 
     private DocumentRenderer() {
@@ -146,7 +146,7 @@ public final class DocumentRenderer {
         if (!state.caption().isBlank()) {
             Component caption = ScpFonts.roboto(state.caption())
                     .withStyle(style -> style.withItalic(true));
-            float captionScale = 3.15F;
+            float captionScale = 3.55F;
             int width = Math.round(Minecraft.getInstance().font.width(caption)
                     * captionScale);
             int maxWidth = frameWidth - 28;
@@ -159,7 +159,7 @@ public final class DocumentRenderer {
             int textHeight = Math.round(
                     Minecraft.getInstance().font.lineHeight * fittedScale);
             int y = CAPTION_TOP
-                    + (CAPTION_BOTTOM - CAPTION_TOP - textHeight) / 2 + 1;
+                    + (CAPTION_BOTTOM - CAPTION_TOP - textHeight) / 2 + 6;
             drawScaledText(graphics, caption, x, y, TEXT_COLOR,
                     fittedScale, false);
         }

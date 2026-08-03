@@ -74,7 +74,7 @@ public final class DocumentEditorScreen extends Screen {
     private int bodyW;
     private int bodyH;
     private int noticeY;
-    private String notice = "Markdown: **bold**, *italic*, ---, and [[redacted]].";
+    private String notice = "Markdown: **bold**, *italic*, ==highlight==, ---, and [[redacted]].";
 
     private DocumentEditorScreen(InteractionHand hand, ItemStack stack) {
         super(ScpFonts.roboto("Document Editor"));
@@ -203,20 +203,24 @@ public final class DocumentEditorScreen extends Screen {
     }
 
     private void addFormattingButtons(int x, int width) {
-        int quarter = (width - 18) / 4;
+        int fifth = (width - 24) / 5;
         addRenderableWidget(new EditorButton(x, toolbarY,
-                quarter, 22, Component.literal("Bold"),
+                fifth, 22, Component.literal("Bold"),
                 ButtonStyle.NEUTRAL,
                 () -> applyMarkdownWrap("**", "**", "Bold")));
-        addRenderableWidget(new EditorButton(x + quarter + 6, toolbarY,
-                quarter, 22, Component.literal("Italic"),
+        addRenderableWidget(new EditorButton(x + fifth + 6, toolbarY,
+                fifth, 22, Component.literal("Italic"),
                 ButtonStyle.NEUTRAL,
                 () -> applyMarkdownWrap("*", "*", "Italic")));
-        addRenderableWidget(new EditorButton(x + (quarter + 6) * 2,
-                toolbarY, quarter, 22, Component.literal("Divider"),
+        addRenderableWidget(new EditorButton(x + (fifth + 6) * 2,
+                toolbarY, fifth, 22, Component.literal("Highlight"),
+                ButtonStyle.NEUTRAL,
+                () -> applyMarkdownWrap("==", "==", "Highlight")));
+        addRenderableWidget(new EditorButton(x + (fifth + 6) * 3,
+                toolbarY, fifth, 22, Component.literal("Divider"),
                 ButtonStyle.NEUTRAL, this::insertDivider));
-        addRenderableWidget(new EditorButton(x + (quarter + 6) * 3,
-                toolbarY, width - (quarter + 6) * 3, 22,
+        addRenderableWidget(new EditorButton(x + (fifth + 6) * 4,
+                toolbarY, width - (fifth + 6) * 4, 22,
                 Component.literal("Redact"),
                 ButtonStyle.NEUTRAL,
                 () -> applyMarkdownWrap("[[", "]]", "Redaction")));

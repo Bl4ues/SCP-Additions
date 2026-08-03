@@ -22,6 +22,7 @@ final class LineMarkdownEditor {
 
     private int scroll;
     private int focus = -1;
+    private int desiredCursor = -1;
     private int visibleCount = 4;
     private EditBox focusedWidget;
 
@@ -39,6 +40,7 @@ final class LineMarkdownEditor {
         if (lines.isEmpty()) lines.add("");
         scroll = 0;
         focus = -1;
+        desiredCursor = -1;
         focusedWidget = null;
         visible.clear();
     }
@@ -58,7 +60,7 @@ final class LineMarkdownEditor {
             EditBox box = new EditBox(font,
                     x + 34, y + row * ROW_HEIGHT + 4,
                     Math.max(40, width - 40), 18,
-                    Component.literal("Body line " + (index + 1)));
+                    Component.literal("Body paragraph " + (index + 1)));
             box.setBordered(false);
             box.setTextColor(TEXT_PRIMARY);
             box.setTextColorUneditable(TEXT_MUTED);
@@ -70,6 +72,12 @@ final class LineMarkdownEditor {
 
             if (index == focus) {
                 box.setFocused(true);
+                int cursor = desiredCursor < 0
+                        ? box.getValue().length()
+                        : Math.min(desiredCursor, box.getValue().length());
+                box.setCursorPosition(cursor);
+                box.setHighlightPos(cursor);
+                desiredCursor = -1;
                 focusedWidget = box;
             }
 
@@ -136,6 +144,41 @@ final class LineMarkdownEditor {
             lines.set(index, before);
             lines.add(index + 1, after);
             focus = index + 1;
+            desiredCursor = 0;
+            reveal();
+            visible.clear();
+            focusedWidget = null;
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_BACKSPACE
+                && box.getCursorPosition() == 0
+                && box.getHighlightPos() == 0
+                && index > 0) {
+            sync();
+            String previous = lines.get(index - 1);
+            String current = lines.get(index);
+            int joinCursor = previous.length();
+            lines.set(index - 1, previous + current);
+            lines.remove(index);
+            focus = index - 1;
+            desiredCursor = joinCursor;
+            reveal();
+            visible.clear();
+            focusedWidget = null;
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_DELETE
+                && box.getCursorPosition() == box.getValue().length()
+                && box.getHighlightPos() == box.getCursorPosition()
+                && index + 1 < lines.size()) {
+            sync();
+            int joinCursor = lines.get(index).length();
+            lines.set(index, lines.get(index) + lines.get(index + 1));
+            lines.remove(index + 1);
+            focus = index;
+            desiredCursor = joinCursor;
             reveal();
             visible.clear();
             focusedWidget = null;
@@ -145,6 +188,8 @@ final class LineMarkdownEditor {
         if (keyCode == GLFW.GLFW_KEY_UP && index > 0) {
             sync();
             focus = index - 1;
+            desiredCursor = Math.min(box.getCursorPosition(),
+                    lines.get(focus).length());
             reveal();
             visible.clear();
             focusedWidget = null;
@@ -155,6 +200,8 @@ final class LineMarkdownEditor {
                 && index + 1 < lines.size()) {
             sync();
             focus = index + 1;
+            desiredCursor = Math.min(box.getCursorPosition(),
+                    lines.get(focus).length());
             reveal();
             visible.clear();
             focusedWidget = null;
@@ -172,6 +219,7 @@ final class LineMarkdownEditor {
         if (next == scroll) return false;
         scroll = next;
         focus = -1;
+        desiredCursor = -1;
         visible.clear();
         focusedWidget = null;
         return true;
@@ -200,6 +248,7 @@ final class LineMarkdownEditor {
         sync();
         lines.add(Math.max(0, index + 1), "---");
         focus = Math.max(0, index + 1);
+        desiredCursor = 3;
         reveal();
         visible.clear();
         focusedWidget = null;

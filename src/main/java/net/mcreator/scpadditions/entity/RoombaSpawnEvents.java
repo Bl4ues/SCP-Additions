@@ -72,11 +72,12 @@ public final class RoombaSpawnEvents {
 
         RoombaSpawnConfig.reloadIfChanged();
         RandomSource random = player.getRandom();
+        int regionalCount = countRoombas(level, player.getX(), player.getY(),
+                player.getZ(), REGIONAL_RADIUS);
         if (random.nextInt(PRIMARY_CHANCE_BOUND) != 0
                 || countRoombas(level, player.getX(), player.getY(),
                 player.getZ(), LOCAL_EXCLUSION_RADIUS) > 0
-                || countRoombas(level, player.getX(), player.getY(),
-                player.getZ(), REGIONAL_RADIUS) >= REGIONAL_CAP) {
+                || regionalCount >= REGIONAL_CAP) {
             return;
         }
 
@@ -86,7 +87,8 @@ public final class RoombaSpawnEvents {
         }
 
         RoombaEntity primary = spawnAt(level, floor.get(), random);
-        if (primary == null || random.nextInt(PAIR_CHANCE_BOUND) != 0) {
+        if (primary == null || regionalCount > 0
+                || random.nextInt(PAIR_CHANCE_BOUND) != 0) {
             return;
         }
 

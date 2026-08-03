@@ -19,13 +19,6 @@
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
 - Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**.
 
-## Facility inhabitants
-
-- Added the Roomba as a persistent facility-cleaning entity with a spawn egg in **SCP Additions - Items** and a positional looping motor sound;
-- Roombas move slowly in straight cleaning passes, turn gradually after reaching walls or ledges, choose a new direction from nearby clearance, refuse to climb steps or stairs, and treat every facility-door state as an impassable boundary even while the door is open;
-- Made Roombas immune to all damage and knockback, excluded them from natural despawning, and limited removal to right-clicking them with a Screwdriver;
-- Prevented Roombas, SCP-173, SCP-106, and both SCP-131 variants from jumping.
-
 ## Codex and documents
 
 - Added a dedicated Document item to the creative tab;
@@ -116,6 +109,7 @@
 
 ## Facility construction
 
+- Added Roombas;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel; Also, if clicked with a Screwdriver in the Elevator Station, a sector and level can be configured to be displayed while arriving in the destination, e.g. "Light Containment Zone - Sublevel 01" just like in SCP Unity;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;

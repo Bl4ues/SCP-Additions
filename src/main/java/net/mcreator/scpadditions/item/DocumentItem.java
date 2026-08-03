@@ -23,15 +23,26 @@ public final class DocumentItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player,
+    public InteractionResultHolder<ItemStack> use(Level level,
+                                                   Player player,
                                                    InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (!player.isCreative()) {
+            if (!level.isClientSide) {
+                player.displayClientMessage(Component.literal(
+                        "Documents can only be edited in Creative mode."), true);
+            }
+            return InteractionResultHolder.fail(stack);
+        }
+
         DocumentData.ensureInitialized(stack);
         if (level.isClientSide) {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                    () -> () -> DocumentClientHooks.openEditor(hand, stack.copy()));
+                    () -> () -> DocumentClientHooks.openEditor(
+                            hand, stack.copy()));
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        return InteractionResultHolder.sidedSuccess(
+                stack, level.isClientSide);
     }
 
     @Override
@@ -43,13 +54,15 @@ public final class DocumentItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Level level,
-                                List<Component> tooltip, TooltipFlag flag) {
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
         DocumentData.State state = DocumentData.read(stack);
         if (!state.category().isBlank()) {
             tooltip.add(Component.literal(state.category())
                     .withStyle(ChatFormatting.GRAY));
         }
-        tooltip.add(Component.literal("Right-click to edit")
+        tooltip.add(Component.literal(
+                        "Creative mode: right-click to edit")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

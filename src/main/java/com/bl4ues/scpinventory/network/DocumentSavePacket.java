@@ -6,16 +6,18 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
-import net.mcreator.scpadditions.document.DocumentData;
 import net.mcreator.scpadditions.config.ui.CodexAssetStorage;
+import net.mcreator.scpadditions.document.DocumentData;
 
 import java.util.function.Supplier;
 
 /** Saves edits to the actual held document after server-side sanitization. */
-public record DocumentSavePacket(InteractionHand hand, CompoundTag documentTag) {
+public record DocumentSavePacket(InteractionHand hand,
+                                 CompoundTag documentTag) {
     public DocumentSavePacket {
         hand = hand == null ? InteractionHand.MAIN_HAND : hand;
-        documentTag = documentTag == null ? new CompoundTag() : documentTag.copy();
+        documentTag = documentTag == null
+                ? new CompoundTag() : documentTag.copy();
     }
 
     public static void encode(DocumentSavePacket message,
@@ -37,18 +39,25 @@ public record DocumentSavePacket(InteractionHand hand, CompoundTag documentTag) 
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player == null || player.isSpectator()) return;
+            if (player == null || !player.isCreative()) return;
+
             ItemStack stack = player.getItemInHand(message.hand);
             if (!DocumentData.isDedicatedItem(stack)) return;
 
-            DocumentData.State submitted = DocumentData.read(message.documentTag);
-            DocumentData.State existing = DocumentData.read(stack);
+            DocumentData.State submitted =
+                    DocumentData.read(message.documentTag);
+            DocumentData.State existing =
+                    DocumentData.read(stack);
             String id = existing.documentId().isBlank()
-                    ? submitted.documentId() : existing.documentId();
+                    ? submitted.documentId()
+                    : existing.documentId();
+
             String photoKey = submitted.photoKey();
-            if (!photoKey.isBlank() && !CodexAssetStorage.isSafeKey(photoKey)) {
+            if (!photoKey.isBlank()
+                    && !CodexAssetStorage.isSafeKey(photoKey)) {
                 photoKey = "";
             }
+
             DocumentData.State safe = new DocumentData.State(
                     id,
                     submitted.template(),
@@ -65,6 +74,7 @@ public record DocumentSavePacket(InteractionHand hand, CompoundTag documentTag) 
                     submitted.photoWidth(),
                     submitted.photoHeight(),
                     submitted.caption());
+
             DocumentData.write(stack, safe);
             player.getInventory().setChanged();
             player.containerMenu.broadcastChanges();

@@ -13,104 +13,228 @@ import java.util.Map;
 
 /** Compact line-based multiline editor used by the live document composer. */
 final class LineMarkdownEditor {
+    private static final int ROW_HEIGHT = 24;
+    private static final int TEXT_PRIMARY = 0xFFE4E8EA;
+    private static final int TEXT_MUTED = 0xFF879097;
+
     private final List<String> lines = new ArrayList<>();
     private final Map<EditBox, Integer> visible = new LinkedHashMap<>();
+
     private int scroll;
     private int focus = -1;
     private int visibleCount = 4;
+    private EditBox focusedWidget;
 
-    LineMarkdownEditor(String body) { setText(body); }
+    LineMarkdownEditor(String body) {
+        setText(body);
+    }
 
     void setText(String text) {
         lines.clear();
-        String normalized = text == null ? "" : text.replace("\r\n", "\n").replace('\r', '\n');
-        for (String line : normalized.split("\n", -1)) lines.add(line);
+        String normalized = text == null ? ""
+                : text.replace("\r\n", "\n").replace('\r', '\n');
+        for (String line : normalized.split("\n", -1)) {
+            lines.add(line);
+        }
         if (lines.isEmpty()) lines.add("");
         scroll = 0;
         focus = -1;
+        focusedWidget = null;
+        visible.clear();
     }
 
-    List<EditBox> build(Font font, int x, int y, int width, int height) {
+    List<EditBox> build(Font font, int x, int y,
+                        int width, int height) {
         visible.clear();
-        visibleCount = Math.max(3, height / 22);
+        focusedWidget = null;
+        visibleCount = Math.max(3, height / ROW_HEIGHT);
         clamp();
+
         List<EditBox> widgets = new ArrayList<>();
         for (int row = 0; row < visibleCount; row++) {
             int index = scroll + row;
             if (index >= lines.size()) break;
-            EditBox box = new EditBox(font, x + 28, y + row * 22, width - 28, 20,
+
+            EditBox box = new EditBox(font,
+                    x + 34, y + row * ROW_HEIGHT + 2,
+                    Math.max(40, width - 40), 18,
                     Component.literal("Body line " + (index + 1)));
+            box.setBordered(false);
+            box.setTextColor(TEXT_PRIMARY);
+            box.setTextColorUneditable(TEXT_MUTED);
             box.setMaxLength(4096);
             box.setValue(lines.get(index));
-            box.setFormatter((value, cursor) -> ScpFonts.roboto(value).getVisualOrderText());
+            box.setFormatter((value, cursor) ->
+                    ScpFonts.roboto(value).getVisualOrderText());
             box.setResponder(value -> lines.set(index, value));
-            if (index == focus) box.setFocused(true);
+
+            if (index == focus) {
+                box.setFocused(true);
+                focusedWidget = box;
+            }
+
             visible.put(box, index);
             widgets.add(box);
         }
         return widgets;
     }
 
-    Map<EditBox, Integer> visible() { return visible; }
+    Map<EditBox, Integer> visible() {
+        return visible;
+    }
 
-    String text() { sync(); return String.join("\n", lines); }
+    EditBox focusedWidget() {
+        return focusedWidget;
+    }
+
+    String text() {
+        sync();
+        return String.join("\n", lines);
+    }
 
     void sync() {
+        rememberFocus();
         visible.forEach((box, index) -> {
-            if (index >= 0 && index < lines.size()) lines.set(index, box.getValue());
+            if (index >= 0 && index < lines.size()) {
+                lines.set(index, box.getValue());
+            }
         });
     }
 
-    boolean keyPressed(int keyCode) {
+    void rememberFocus() {
         for (Map.Entry<EditBox, Integer> entry : visible.entrySet()) {
-            if (!entry.getKey().isFocused()) continue;
-            int index = entry.getValue();
-            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                sync(); lines.add(index + 1, ""); focus = index + 1; reveal(); return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_UP && index > 0) {
-                sync(); focus = index - 1; reveal(); return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_DOWN && index + 1 < lines.size()) {
-                sync(); focus = index + 1; reveal(); return true;
+            if (entry.getKey().isFocused()) {
+                focus = entry.getValue();
+                focusedWidget = entry.getKey();
+                return;
             }
         }
+    }
+
+    void detach() {
+        sync();
+        visible.clear();
+        focusedWidget = null;
+    }
+
+    boolean keyPressed(int keyCode) {
+        EditBox box = activeBox();
+        if (box == null) return false;
+        Integer indexValue = visible.get(box);
+        if (indexValue == null) return false;
+        int index = indexValue;
+
+        if (keyCode == GLFW.GLFW_KEY_ENTER
+                || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+            sync();
+            int cursor = Math.max(0,
+                    Math.min(box.getCursorPosition(),
+                            lines.get(index).length()));
+            String current = lines.get(index);
+            String before = current.substring(0, cursor);
+            String after = current.substring(cursor);
+            lines.set(index, before);
+            lines.add(index + 1, after);
+            focus = index + 1;
+            reveal();
+            visible.clear();
+            focusedWidget = null;
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_UP && index > 0) {
+            sync();
+            focus = index - 1;
+            reveal();
+            visible.clear();
+            focusedWidget = null;
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_DOWN
+                && index + 1 < lines.size()) {
+            sync();
+            focus = index + 1;
+            reveal();
+            visible.clear();
+            focusedWidget = null;
+            return true;
+        }
+
         return false;
     }
 
     boolean scroll(double delta) {
         sync();
-        int next = Math.max(0, Math.min(Math.max(0, lines.size() - visibleCount),
+        int next = Math.max(0, Math.min(
+                Math.max(0, lines.size() - visibleCount),
                 scroll + (delta < 0 ? 1 : -1)));
         if (next == scroll) return false;
-        scroll = next; focus = -1; return true;
+        scroll = next;
+        focus = -1;
+        visible.clear();
+        focusedWidget = null;
+        return true;
     }
 
-    void wrapFocused(String before, String after) {
-        EditBox box = focusedBox();
-        if (box == null) return;
-        box.setValue(before + box.getValue() + after);
-        lines.set(visible.get(box), box.getValue());
+    boolean wrapFocused(String before, String after) {
+        EditBox box = activeBox();
+        if (box == null) return false;
+        Integer index = visible.get(box);
+        if (index == null) return false;
+
+        String value = box.getValue();
+        box.setValue(before + value + after);
+        lines.set(index, box.getValue());
+        focus = index;
+        return true;
     }
 
-    void divider() {
-        EditBox box = focusedBox();
-        int index = box == null ? lines.size() - 1 : visible.get(box);
-        sync(); lines.add(Math.max(0, index + 1), "---"); focus = Math.max(0, index + 1); reveal();
+    boolean divider() {
+        EditBox box = activeBox();
+        if (box == null && lines.isEmpty()) return false;
+        int index = box == null
+                ? Math.max(0, lines.size() - 1)
+                : visible.getOrDefault(box, Math.max(0, lines.size() - 1));
+
+        sync();
+        lines.add(Math.max(0, index + 1), "---");
+        focus = Math.max(0, index + 1);
+        reveal();
+        visible.clear();
+        focusedWidget = null;
+        return true;
     }
 
-    private EditBox focusedBox() {
-        for (EditBox box : visible.keySet()) if (box.isFocused()) return box;
-        return null;
+    private EditBox activeBox() {
+        for (EditBox box : visible.keySet()) {
+            if (box.isFocused()) {
+                focusedWidget = box;
+                focus = visible.get(box);
+                return box;
+            }
+        }
+        if (focus >= 0) {
+            for (Map.Entry<EditBox, Integer> entry : visible.entrySet()) {
+                if (entry.getValue() == focus) {
+                    focusedWidget = entry.getKey();
+                    return entry.getKey();
+                }
+            }
+        }
+        return focusedWidget;
     }
 
     private void reveal() {
         if (focus < scroll) scroll = focus;
-        if (focus >= scroll + visibleCount) scroll = focus - visibleCount + 1;
+        if (focus >= scroll + visibleCount) {
+            scroll = focus - visibleCount + 1;
+        }
         clamp();
     }
 
     private void clamp() {
-        scroll = Math.max(0, Math.min(Math.max(0, lines.size() - visibleCount), scroll));
+        scroll = Math.max(0, Math.min(
+                Math.max(0, lines.size() - visibleCount), scroll));
     }
 }

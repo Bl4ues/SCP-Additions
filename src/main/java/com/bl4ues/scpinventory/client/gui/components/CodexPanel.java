@@ -146,8 +146,11 @@ public class CodexPanel {
         if (showingText) renderText(g, stack, definition);
         else {
             int y2 = buttonY();
-            CodexDocumentView.renderPage(g, stack, definition, left() + 4, top(),
-                    Math.max(40, right() - left() - 8), Math.max(40, y2 - top() - 8));
+            int previewTop = Math.max(titleY + 14, top() - 18);
+            CodexDocumentView.renderPage(g, stack, definition,
+                    left() + 2, previewTop,
+                    Math.max(40, right() - left() - 4),
+                    Math.max(40, y2 - previewTop - 8));
             int gap = 6, width = (right() - left() - gap) / 2;
             button(g, left(), y2, width, "Show Document as Text", over(mouseX, mouseY, left(), y2, width, BUTTON_H));
             button(g, left() + width + gap, y2, width, "Expand Document",

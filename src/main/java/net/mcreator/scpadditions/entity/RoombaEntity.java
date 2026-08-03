@@ -38,7 +38,12 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  */
 public final class RoombaEntity extends PathfinderMob implements GeoEntity {
     private static final double FORWARD_SPEED = 0.025D;
-    private static final float TURN_SPEED_DEGREES = 3.5F;
+    private static final float TURN_MAX_SPEED_DEGREES = 1.75F;
+    private static final float TURN_MIN_SPEED_DEGREES = 0.32F;
+    private static final float TURN_ACCELERATION = 0.11F;
+    private static final float TURN_BRAKE_FACTOR = 0.085F;
+    private static final int TURN_CONTACT_PAUSE_TICKS = 4;
+    private static final int TURN_SETTLE_TICKS = 3;
     private static final double IMMEDIATE_PROBE_DISTANCE = 0.42D;
     private static final double DOOR_PROBE_EXTRA = 0.38D;
     private static final double FLOOR_DROP_TOLERANCE = 0.18D;
@@ -57,6 +62,9 @@ public final class RoombaEntity extends PathfinderMob implements GeoEntity {
             GeckoLibUtil.createInstanceCache(this);
     private boolean turning;
     private float targetYaw;
+    private float turnVelocity;
+    private int turnPauseTicks;
+    private int settleTicks;
 
     public RoombaEntity(EntityType<? extends RoombaEntity> type, Level level) {
         super(type, level);
@@ -99,6 +107,9 @@ public final class RoombaEntity extends PathfinderMob implements GeoEntity {
 
         if (turning) {
             turnTowardTarget();
+        } else if (settleTicks > 0) {
+            stopHorizontalMotion();
+            settleTicks--;
         } else if (horizontalCollision
                 || routeBlocked(getYRot(), IMMEDIATE_PROBE_DISTANCE)) {
             beginBestTurn();
@@ -138,19 +149,37 @@ public final class RoombaEntity extends PathfinderMob implements GeoEntity {
 
         targetYaw = Mth.wrapDegrees(baseYaw + chosenOffset);
         turning = true;
+        turnVelocity = 0.0F;
+        turnPauseTicks = TURN_CONTACT_PAUSE_TICKS;
+        settleTicks = 0;
         stopHorizontalMotion();
     }
 
     private void turnTowardTarget() {
         stopHorizontalMotion();
-        float difference = Mth.wrapDegrees(targetYaw - getYRot());
-        if (Math.abs(difference) <= TURN_SPEED_DEGREES) {
-            setYRot(targetYaw);
-            turning = false;
+        if (turnPauseTicks > 0) {
+            turnPauseTicks--;
             return;
         }
+
+        float difference = Mth.wrapDegrees(targetYaw - getYRot());
+        float absoluteDifference = Math.abs(difference);
+        if (absoluteDifference <= TURN_MIN_SPEED_DEGREES) {
+            setYRot(targetYaw);
+            turning = false;
+            turnVelocity = 0.0F;
+            settleTicks = TURN_SETTLE_TICKS;
+            return;
+        }
+
+        float brakingSpeed = Mth.clamp(
+                absoluteDifference * TURN_BRAKE_FACTOR,
+                TURN_MIN_SPEED_DEGREES, TURN_MAX_SPEED_DEGREES);
+        turnVelocity = Math.min(brakingSpeed,
+                turnVelocity + TURN_ACCELERATION);
+        float step = Math.min(absoluteDifference, turnVelocity);
         setYRot(Mth.wrapDegrees(getYRot()
-                + Math.copySign(TURN_SPEED_DEGREES, difference)));
+                + Math.copySign(step, difference)));
     }
 
     private void stopHorizontalMotion() {
@@ -280,6 +309,9 @@ public final class RoombaEntity extends PathfinderMob implements GeoEntity {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("RoombaTurning", turning);
         tag.putFloat("RoombaTargetYaw", targetYaw);
+        tag.putFloat("RoombaTurnVelocity", turnVelocity);
+        tag.putInt("RoombaTurnPause", turnPauseTicks);
+        tag.putInt("RoombaSettleTicks", settleTicks);
     }
 
     @Override
@@ -288,6 +320,10 @@ public final class RoombaEntity extends PathfinderMob implements GeoEntity {
         turning = tag.getBoolean("RoombaTurning");
         targetYaw = tag.contains("RoombaTargetYaw")
                 ? tag.getFloat("RoombaTargetYaw") : getYRot();
+        turnVelocity = tag.contains("RoombaTurnVelocity")
+                ? tag.getFloat("RoombaTurnVelocity") : 0.0F;
+        turnPauseTicks = tag.getInt("RoombaTurnPause");
+        settleTicks = tag.getInt("RoombaSettleTicks");
         setPersistenceRequired();
         setMaxUpStep(0.0F);
     }

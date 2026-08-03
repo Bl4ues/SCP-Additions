@@ -76,7 +76,11 @@
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
 - Added a sixty-second no-access timeout for routine SCP-173 encounters trapped by sealed layouts, while preserving manually placed statues;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
-- Added optional Debug Tools displays showing each roamer's state, next check, and latest result.
+- Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
+- Added sparse natural Roomba encounters on approved facility flooring, with strict local density checks and a separate much rarer chance for a two-Roomba room encounter;
+- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters independently;
+- Renamed the Configuration Center's mixed inventory hub to **Items, Entities & Codex** and added a **Roomba Spawning** editor;
+- Made Blue Floor, Metal Floor, and Concrete Floor permanent integrated Roomba spawn surfaces while allowing operators to add, edit, and remove extra block IDs without overriding future built-in floors.
 
 ## Survival
 
@@ -95,7 +99,8 @@
 - Added two mutually exclusive **Voice Profile** choices with an in-menu voice test, using profile-matched hurt reactions and a gasp after recovering from severe oxygen loss;
 - Added a shared looping drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers, independently of the selected voice profile;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
-- Added a default-disabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music.
+- Added a default-disabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music;
+- Reduced Roomba motor volume and replaced the audible hard loop boundary with overlapping fade-in and fade-out segments.
 
 ## Facility signs
 
@@ -110,8 +115,10 @@
 ## Facility construction
 
 - Added Roombas;
+- Refined Roomba obstacle turns with a short contact pause, gradual mechanical acceleration and braking, and a brief settling pause before forward movement resumes;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel; Also, if clicked with a Screwdriver in the Elevator Station, a sector and level can be configured to be displayed while arriving in the destination, e.g. "Light Containment Zone - Sublevel 01" just like in SCP Unity;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
+- Enabled the authored glowmask on both the elevator carriage and Floor Station while retaining their normal and specular maps;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;

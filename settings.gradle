@@ -12,6 +12,7 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.5.0'
 }
 
-// Keep the resource-processing details out of the already crowded main build
-// script while still installing the hook before the root project is evaluated.
+// Keep resource-processing details out of the already crowded main build
+// script while still installing the hooks before the root project is evaluated.
 apply from: file('gradle/emissive-pbr.gradle')
+apply from: file('gradle/roomba-sound.gradle')

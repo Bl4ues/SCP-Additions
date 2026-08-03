@@ -165,8 +165,13 @@ public final class DocumentEditorScreen extends Screen {
                 Component.literal("Cancel"),
                 ButtonStyle.NEUTRAL, this::onClose));
 
-        if (templateMenu) addTemplateChoices(innerLeft,
-                templateY + 24, innerWidth - 118);
+        if (templateMenu) {
+            int menuY = templateY + 24;
+            int menuWidth = innerWidth - 118;
+            suppressFieldsBehindMenu(innerLeft, menuY,
+                    menuWidth, templateMenuHeight());
+            addTemplateChoices(innerLeft, menuY, menuWidth);
+        }
     }
 
     private void calculateLayout() {
@@ -235,7 +240,7 @@ public final class DocumentEditorScreen extends Screen {
     private EditBox field(int x, int y, int width,
                           String hint, String value) {
         fieldFrames.add(new FieldFrame(x, y, Math.max(40, width), 22));
-        EditBox box = new EditBox(font, x + 5, y + 2,
+        EditBox box = new EditBox(font, x + 5, y + 4,
                 Math.max(30, width - 10), 18, Component.literal(hint));
         box.setBordered(false);
         box.setTextColor(TEXT_PRIMARY);
@@ -412,6 +417,53 @@ public final class DocumentEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         body.rememberFocus();
+        if (templateMenu) {
+            if (button != 0) return true;
+
+            int innerLeft = panelX + 18;
+            int innerWidth = panelW - 36;
+            int menuX = innerLeft;
+            int menuY = templateY + 24;
+            int menuWidth = innerWidth - 118;
+            int menuHeight = templateMenuHeight();
+
+            if (inside(mouseX, mouseY,
+                    menuX, menuY, menuWidth, menuHeight)) {
+                int relativeY = (int) mouseY - menuY;
+                int index = relativeY / 23;
+                int withinRow = relativeY % 23;
+                DocumentData.Template[] choices =
+                        DocumentData.Template.values();
+                if (index >= 0 && index < choices.length
+                        && withinRow < 22) {
+                    captureDraft();
+                    template = choices[index];
+                    templateMenu = false;
+                    rebuildEditor(false);
+                }
+                return true;
+            }
+
+            if (inside(mouseX, mouseY,
+                    innerLeft, templateY,
+                    innerWidth - 118, 22)) {
+                toggleTemplateMenu();
+                return true;
+            }
+
+            if (inside(mouseX, mouseY,
+                    innerLeft + innerWidth - 112,
+                    templateY, 112, 22)) {
+                templateMenu = false;
+                applyTemplate();
+                return true;
+            }
+
+            captureDraft();
+            templateMenu = false;
+            rebuildEditor(false);
+            return true;
+        }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -464,7 +516,7 @@ public final class DocumentEditorScreen extends Screen {
 
         for (Map.Entry<EditBox, Integer> entry : body.visible().entrySet()) {
             EditBox box = entry.getKey();
-            int rowY = box.getY() - 2;
+            int rowY = box.getY() - 4;
             graphics.fill(bodyX, rowY,
                     bodyX + bodyW, rowY + 22, ROW_BACKGROUND);
             outline(graphics, bodyX, rowY, bodyW, 22, FIELD_EDGE);
@@ -472,7 +524,7 @@ public final class DocumentEditorScreen extends Screen {
                     bodyX + 30, rowY + 19, 0xFF30383E);
             graphics.drawCenteredString(font,
                     ScpFonts.roboto(Integer.toString(entry.getValue() + 1)),
-                    bodyX + 14, rowY + 7, TEXT_MUTED);
+                    bodyX + 14, rowY + 8, TEXT_MUTED);
         }
 
         graphics.drawString(font, ScpFonts.roboto(notice),
@@ -514,6 +566,54 @@ public final class DocumentEditorScreen extends Screen {
         body.detach();
         clearWidgets();
         init();
+    }
+
+    private int templateMenuHeight() {
+        return Math.max(0,
+                DocumentData.Template.values().length * 23 - 1);
+    }
+
+    private void suppressFieldsBehindMenu(int x, int y,
+                                          int width, int height) {
+        hideIfIntersects(title, x, y, width, height);
+        hideIfIntersects(category, x, y, width, height);
+        hideIfIntersects(caption, x, y, width, height);
+        for (EditBox box : labels) {
+            hideIfIntersects(box, x, y, width, height);
+        }
+        for (EditBox box : values) {
+            hideIfIntersects(box, x, y, width, height);
+        }
+        for (EditBox box : body.visible().keySet()) {
+            hideIfIntersects(box, x, y, width, height);
+        }
+    }
+
+    private static void hideIfIntersects(EditBox box,
+                                         int x, int y,
+                                         int width, int height) {
+        if (box == null || !intersects(box.getX(), box.getY(),
+                box.getWidth(), box.getHeight(),
+                x, y, width, height)) {
+            return;
+        }
+        box.visible = false;
+        box.active = false;
+    }
+
+    private static boolean inside(double mouseX, double mouseY,
+                                  int x, int y,
+                                  int width, int height) {
+        return mouseX >= x && mouseX < x + width
+                && mouseY >= y && mouseY < y + height;
+    }
+
+    private static boolean intersects(int x1, int y1,
+                                      int width1, int height1,
+                                      int x2, int y2,
+                                      int width2, int height2) {
+        return x1 < x2 + width2 && x1 + width1 > x2
+                && y1 < y2 + height2 && y1 + height1 > y2;
     }
 
     private static void drawField(GuiGraphics graphics, int x, int y,

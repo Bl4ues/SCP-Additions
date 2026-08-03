@@ -59,6 +59,7 @@ public class ScpAdditionsModTabs {
         stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_5_KEYCARD.get()));
         stacks.add(new ItemStack(ScpAdditionsModItems.LEVEL_6_KEYCARD.get()));
         stacks.add(new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()));
+        stacks.add(new ItemStack(Scp131Items.ROOMBA_SPAWN_EGG.get()));
         stacks.add(new ItemStack(ScpAdditionsModItems.HAZMAT_SUIT.get()));
         stacks.add(new ItemStack(ScpAdditionsModItems.PLAYING_CARD.get()));
         stacks.add(new ItemStack(ScpAdditionsModItems.CREDIT_CARD.get()));

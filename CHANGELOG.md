@@ -99,7 +99,7 @@
 - Added a shared looping drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers, independently of the selected voice profile;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
 - Added a default-disabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music;
-- Reduced Roomba motor volume and replaced the audible hard loop boundary with overlapping fade-in and fade-out segments.
+- Reduced Roomba motor volume further while retaining its overlapping fade-in and fade-out loop segments.
 
 ## Facility signs
 
@@ -118,6 +118,7 @@
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel; Also, if clicked with a Screwdriver in the Elevator Station, a sector and level can be configured to be displayed while arriving in the destination, e.g. "Light Containment Zone - Sublevel 01" just like in SCP Unity;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Enabled the authored glowmask on both the elevator carriage and Floor Station while retaining their normal and specular maps;
+- Added automatic LabPBR emission generation for every authored `_e.png` overlay, preserving existing `_s.png` material channels while giving lamps, displays, terminals, signs, and other illuminated surfaces stronger shader-compatible glow;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
@@ -149,9 +150,10 @@
 - Limited Tesla Gate damage to the visible, rotation-aware electrical arc while preserving the broader 3×3×3 volume only as its activation sensor;
 - Rebuilt the Decontamination Checkpoint collision as an invisible model-matched shell, removing the obstruction through the chamber center and allowing any visible section to break the complete structure;
 - Prevented Decontamination Checkpoints and Tesla Gates from changing animation states while being mined, so breaking progress no longer resets repeatedly;
-- Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays.
+- Moved the SCP-173 blink vignette behind the complete HUD while preserving the Hazmat Suit visor above view effects as the ordering rule for future equipped-item overlays;
+- Replaced the Floor Station's unreliable automatic emissive lookup with an explicit full-bright GeckoLib render pass for its authored button glowmask;
 - Fixed SCP-914 recipe selection when several compatible items are placed in the intake, preferring the transformation that uses the complete input instead of whichever matching recipe appears first;
-- Fixed the Blink system remaining active after being disabled or appearing in Creative and Spectator modes, with the server now clearing stale blink states and enforcing the module setting.
+- Fixed the Blink system remaining active after being disabled or appearing in Creative and Spectator modes, with the server now clearing stale blink states and enforcing the module setting;
 - Fixed TV placement so it follows the clicked wall face instead of the player's viewing direction, and rebuilt its collision to match the visible model;
 - Fixed Trashbin transparent sections clipping through its own faces by using alpha cutout rendering, expanded its collision to include the upper structure, and moved its front icon clear of the casing;
 - Rendered SCP-012 with alpha cutout;

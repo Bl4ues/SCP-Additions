@@ -17,7 +17,7 @@ public class CodexPanel {
     private static final Minecraft MC = Minecraft.getInstance();
     private static final int WHITE = 0xFFB2B3B3, GRAY = 0xFF6A6C6C;
     private static final int BUTTON = 0x446A6C6C, BUTTON_HOVER = 0x667A7C7C;
-    private static final int TRACK = 0x33000000, THUMB = 0x886A6C6C, OVERLAY = 0xCC000000;
+    private static final int TRACK = 0x33000000, THUMB = 0x886A6C6C;
     private static final int BUTTON_H = 14, BAR_W = 5, LINE_H = 11;
     private static final double DRAG_THRESHOLD = 4.0D;
     private final ContextMenu contextMenu = new ContextMenu();
@@ -57,15 +57,38 @@ public class CodexPanel {
     }
 
     public void render(GuiGraphics g, int mouseX, int mouseY) {
-        title(g, listTitleX, "CLASSIFICATION"); title(g, detailTitleX, "DOCUMENT");
-        normalize(); list.render(g, selectedIndex); renderDetails(g, mouseX, mouseY);
-        if (!expandedImage) {
-            contextMenu.render(g, mouseX, mouseY);
-            if (dragMoved && !dragged.isEmpty()) {
-                g.fill(mouseX - 12, mouseY - 12, mouseX + 12, mouseY + 12, 0x99303638);
-                g.renderItem(dragged, mouseX - 8, mouseY - 8);
-            }
+        normalize();
+        if (expandedImage && valid()) {
+            renderExpanded(g);
+            return;
         }
+
+        title(g, listTitleX, "CLASSIFICATION");
+        title(g, detailTitleX, "DOCUMENT");
+        list.render(g, selectedIndex);
+        renderDetails(g, mouseX, mouseY);
+        contextMenu.render(g, mouseX, mouseY);
+        if (dragMoved && !dragged.isEmpty()) {
+            g.fill(mouseX - 12, mouseY - 12, mouseX + 12, mouseY + 12, 0x99303638);
+            g.renderItem(dragged, mouseX - 8, mouseY - 8);
+        }
+    }
+
+    private void renderExpanded(GuiGraphics g) {
+        ItemStack stack = documents.get(selectedIndex);
+        CodexDocumentDefinition definition =
+                ScpItemClassifier.getCodexDefinitionOrFallback(stack);
+        int sw = MC.getWindow().getGuiScaledWidth();
+        int sh = MC.getWindow().getGuiScaledHeight();
+        int mx = Math.max(18, sw / 16);
+        int my = Math.max(12, sh / 24);
+
+        g.pose().pushPose();
+        g.pose().translate(0.0F, 0.0F, 500.0F);
+        g.fill(0, 0, sw, sh, 0xFF000000);
+        CodexDocumentView.renderPage(g, stack, definition,
+                mx, my, sw - mx * 2, sh - my * 2);
+        g.pose().popPose();
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -129,12 +152,6 @@ public class CodexPanel {
             button(g, left(), y2, width, "Show Document as Text", over(mouseX, mouseY, left(), y2, width, BUTTON_H));
             button(g, left() + width + gap, y2, width, "Expand Document",
                     over(mouseX, mouseY, left() + width + gap, y2, width, BUTTON_H));
-        }
-        if (expandedImage) {
-            int sw = MC.getWindow().getGuiScaledWidth(), sh = MC.getWindow().getGuiScaledHeight();
-            g.fill(0, 0, sw, sh, OVERLAY);
-            int mx = Math.max(18, sw / 16), my = Math.max(12, sh / 24);
-            CodexDocumentView.renderPage(g, stack, definition, mx, my, sw - mx * 2, sh - my * 2);
         }
     }
 

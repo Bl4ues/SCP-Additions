@@ -92,7 +92,7 @@ final class CodexDocumentView {
                                int lineHeight) {
         g.enableScissor(x, y, x + width, y + height);
         int shiftedY = y - scrollLines * lineHeight;
-        MarkdownTextRenderer.render(g, markdown, x, shiftedY,
+        MarkdownTextRenderer.renderMonochrome(g, markdown, x, shiftedY,
                 shiftedY + height + scrollLines * lineHeight,
                 lineHeight, 1.0F, ignored -> width, TEXT_BODY);
         g.disableScissor();

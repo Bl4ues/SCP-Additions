@@ -22,6 +22,7 @@ final class LineMarkdownEditor {
 
     private int scroll;
     private int focus = -1;
+    private int desiredCursor = -1;
     private int visibleCount = 4;
     private EditBox focusedWidget;
 
@@ -33,12 +34,11 @@ final class LineMarkdownEditor {
         lines.clear();
         String normalized = text == null ? ""
                 : text.replace("\r\n", "\n").replace('\r', '\n');
-        for (String line : normalized.split("\n", -1)) {
-            lines.add(line);
-        }
+        for (String line : normalized.split("\n", -1)) lines.add(line);
         if (lines.isEmpty()) lines.add("");
         scroll = 0;
         focus = -1;
+        desiredCursor = -1;
         focusedWidget = null;
         visible.clear();
     }
@@ -58,7 +58,7 @@ final class LineMarkdownEditor {
             EditBox box = new EditBox(font,
                     x + 34, y + row * ROW_HEIGHT + 4,
                     Math.max(40, width - 40), 18,
-                    Component.literal("Body line " + (index + 1)));
+                    Component.literal("Body paragraph " + (index + 1)));
             box.setBordered(false);
             box.setTextColor(TEXT_PRIMARY);
             box.setTextColorUneditable(TEXT_MUTED);
@@ -70,6 +70,12 @@ final class LineMarkdownEditor {
 
             if (index == focus) {
                 box.setFocused(true);
+                int cursor = desiredCursor < 0
+                        ? box.getValue().length()
+                        : Math.min(desiredCursor, box.getValue().length());
+                box.setCursorPosition(cursor);
+                box.setHighlightPos(cursor);
+                desiredCursor = -1;
                 focusedWidget = box;
             }
 
@@ -79,13 +85,8 @@ final class LineMarkdownEditor {
         return widgets;
     }
 
-    Map<EditBox, Integer> visible() {
-        return visible;
-    }
-
-    EditBox focusedWidget() {
-        return focusedWidget;
-    }
+    Map<EditBox, Integer> visible() { return visible; }
+    EditBox focusedWidget() { return focusedWidget; }
 
     String text() {
         sync();
@@ -131,23 +132,46 @@ final class LineMarkdownEditor {
                     Math.min(box.getCursorPosition(),
                             lines.get(index).length()));
             String current = lines.get(index);
-            String before = current.substring(0, cursor);
-            String after = current.substring(cursor);
-            lines.set(index, before);
-            lines.add(index + 1, after);
+            lines.set(index, current.substring(0, cursor));
+            lines.add(index + 1, current.substring(cursor));
             focus = index + 1;
-            reveal();
-            visible.clear();
-            focusedWidget = null;
+            desiredCursor = 0;
+            rebuildFocus();
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_BACKSPACE
+                && box.getCursorPosition() == 0 && index > 0) {
+            sync();
+            String previous = lines.get(index - 1);
+            int joinCursor = previous.length();
+            lines.set(index - 1, previous + lines.get(index));
+            lines.remove(index);
+            focus = index - 1;
+            desiredCursor = joinCursor;
+            rebuildFocus();
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_DELETE
+                && box.getCursorPosition() == box.getValue().length()
+                && index + 1 < lines.size()) {
+            sync();
+            int joinCursor = lines.get(index).length();
+            lines.set(index, lines.get(index) + lines.get(index + 1));
+            lines.remove(index + 1);
+            focus = index;
+            desiredCursor = joinCursor;
+            rebuildFocus();
             return true;
         }
 
         if (keyCode == GLFW.GLFW_KEY_UP && index > 0) {
             sync();
             focus = index - 1;
-            reveal();
-            visible.clear();
-            focusedWidget = null;
+            desiredCursor = Math.min(box.getCursorPosition(),
+                    lines.get(focus).length());
+            rebuildFocus();
             return true;
         }
 
@@ -155,13 +179,19 @@ final class LineMarkdownEditor {
                 && index + 1 < lines.size()) {
             sync();
             focus = index + 1;
-            reveal();
-            visible.clear();
-            focusedWidget = null;
+            desiredCursor = Math.min(box.getCursorPosition(),
+                    lines.get(focus).length());
+            rebuildFocus();
             return true;
         }
 
         return false;
+    }
+
+    private void rebuildFocus() {
+        reveal();
+        visible.clear();
+        focusedWidget = null;
     }
 
     boolean scroll(double delta) {
@@ -172,6 +202,7 @@ final class LineMarkdownEditor {
         if (next == scroll) return false;
         scroll = next;
         focus = -1;
+        desiredCursor = -1;
         visible.clear();
         focusedWidget = null;
         return true;
@@ -182,9 +213,7 @@ final class LineMarkdownEditor {
         if (box == null) return false;
         Integer index = visible.get(box);
         if (index == null) return false;
-
-        String value = box.getValue();
-        box.setValue(before + value + after);
+        box.setValue(before + box.getValue() + after);
         lines.set(index, box.getValue());
         focus = index;
         return true;
@@ -196,13 +225,11 @@ final class LineMarkdownEditor {
         int index = box == null
                 ? Math.max(0, lines.size() - 1)
                 : visible.getOrDefault(box, Math.max(0, lines.size() - 1));
-
         sync();
         lines.add(Math.max(0, index + 1), "---");
         focus = Math.max(0, index + 1);
-        reveal();
-        visible.clear();
-        focusedWidget = null;
+        desiredCursor = 3;
+        rebuildFocus();
         return true;
     }
 

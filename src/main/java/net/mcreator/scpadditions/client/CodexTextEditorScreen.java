@@ -41,7 +41,7 @@ public final class CodexTextEditorScreen extends Screen {
         setText("");
         this.loadedExisting = this.existingKey.isBlank();
         this.notice = this.loadedExisting
-                ? "Markdown: **bold**, *italic*, ---, and [[redacted]]."
+                ? "Markdown: **bold**, *italic*, ==highlight==, ---, and [[redacted]]."
                 : "Loading the Markdown saved in this world...";
     }
 
@@ -86,7 +86,7 @@ public final class CodexTextEditorScreen extends Screen {
         scroll = Math.max(0, Math.min(Math.max(0,
                 lines.size() - visible), scroll));
 
-        int toolbarWidth = (panelWidth - 50) / 4;
+        int toolbarWidth = (panelWidth - 56) / 5;
         addRenderableWidget(Button.builder(ScpFonts.roboto("** Bold **"),
                 b -> wrapFocused("**", "**"))
                 .bounds(left + 16, top + 57, toolbarWidth, 20).build());
@@ -94,14 +94,18 @@ public final class CodexTextEditorScreen extends Screen {
                 b -> wrapFocused("*", "*"))
                 .bounds(left + 22 + toolbarWidth, top + 57,
                         toolbarWidth, 20).build());
+        addRenderableWidget(Button.builder(ScpFonts.roboto("== Highlight =="),
+                b -> wrapFocused("==", "=="))
+                .bounds(left + 28 + toolbarWidth * 2, top + 57,
+                        toolbarWidth, 20).build());
         addRenderableWidget(Button.builder(ScpFonts.roboto("--- Divider"),
                 b -> insertDivider())
-                .bounds(left + 28 + toolbarWidth * 2, top + 57,
+                .bounds(left + 34 + toolbarWidth * 3, top + 57,
                         toolbarWidth, 20).build());
         addRenderableWidget(Button.builder(ScpFonts.roboto("[[ Redact ]]"),
                 b -> wrapFocused("[[", "]]"))
-                .bounds(left + 34 + toolbarWidth * 3, top + 57,
-                        panelWidth - 50 - toolbarWidth * 3, 20).build());
+                .bounds(left + 40 + toolbarWidth * 4, top + 57,
+                        panelWidth - 56 - toolbarWidth * 4, 20).build());
 
         for (int row = 0; row < visible; row++) {
             int logical = scroll + row;

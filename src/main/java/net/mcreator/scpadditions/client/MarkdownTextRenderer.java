@@ -15,9 +15,12 @@ import java.util.function.IntUnaryOperator;
  * Small Markdown subset shared by structured documents and legacy Codex text.
  *
  * <p>Supported syntax: {@code **bold**}, {@code *italic*},
- * {@code ***bold italic***}, {@code ---}, and {@code [[redacted]]}.</p>
+ * {@code ***bold italic***}, {@code ==highlight==}, {@code ---}, and
+ * {@code [[redacted]]}.</p>
  */
 public final class MarkdownTextRenderer {
+    private static final int HIGHLIGHT_COLOR = 0x99E8D75F;
+
     private MarkdownTextRenderer() {
     }
 
@@ -167,8 +170,10 @@ public final class MarkdownTextRenderer {
         int encounteredSpaces = 0;
         int x = startX;
         int baseSpace = scaledSpaceWidth(font, textScale);
+        boolean previousHighlighted = false;
 
         for (LineWord placed : line) {
+            int gapStart = x;
             if (placed.spaceBefore()) {
                 int bonus = 0;
                 if (justify && spaceCount > 0) {
@@ -184,10 +189,10 @@ public final class MarkdownTextRenderer {
 
             Word word = placed.word();
             if (word.redacted()) {
-                int desiredHeight = Math.max(4, Math.round(
-                        font.lineHeight * textScale * 0.92F));
+                int desiredHeight = Math.max(5, Math.round(
+                        font.lineHeight * textScale * 1.08F));
                 int barHeight = Math.min(
-                        Math.max(4, lineHeight - 2),
+                        Math.max(5, lineHeight - 1),
                         desiredHeight);
                 int barY = y + Math.max(0,
                         (lineHeight - barHeight) / 2);
@@ -195,10 +200,23 @@ public final class MarkdownTextRenderer {
                         x + placed.width(), barY + barHeight,
                         0xFF101010);
             } else {
+                if (word.highlighted()) {
+                    int markHeight = Math.max(3, Math.round(
+                            font.lineHeight * textScale * 0.78F));
+                    int markY = y + Math.max(0, Math.round(
+                            font.lineHeight * textScale * 0.20F));
+                    int markX = previousHighlighted
+                            && placed.spaceBefore() ? gapStart : x - 1;
+                    graphics.fill(markX, markY,
+                            x + placed.width() + 1,
+                            markY + markHeight,
+                            HIGHLIGHT_COLOR);
+                }
                 drawScaled(graphics, word.component(),
                         x, y, color, textScale, word.bold());
             }
             x += placed.width();
+            previousHighlighted = word.highlighted();
         }
     }
 
@@ -256,7 +274,8 @@ public final class MarkdownTextRenderer {
                                             style.withItalic(
                                                     run.italic()));
                     words.add(new Word(component, run.bold(),
-                            true, pendingSpace || leadingSpace));
+                            true, false,
+                            pendingSpace || leadingSpace));
                 }
                 pendingSpace = trailingSpace;
                 continue;
@@ -283,7 +302,7 @@ public final class MarkdownTextRenderer {
                                 .withStyle(style ->
                                         style.withItalic(run.italic()));
                 words.add(new Word(component, run.bold(),
-                        false, pendingSpace));
+                        false, run.highlighted(), pendingSpace));
                 pendingSpace = false;
                 cursor = end;
             }
@@ -300,14 +319,14 @@ public final class MarkdownTextRenderer {
             Marker marker = nextMarker(line, cursor);
             if (marker == null) {
                 runs.add(new Run(line.substring(cursor),
-                        false, false, false));
+                        false, false, false, false));
                 break;
             }
 
             if (marker.index() > cursor) {
                 runs.add(new Run(
                         line.substring(cursor, marker.index()),
-                        false, false, false));
+                        false, false, false, false));
             }
 
             int contentStart = marker.index()
@@ -315,18 +334,20 @@ public final class MarkdownTextRenderer {
             int end = line.indexOf(marker.close(), contentStart);
             if (end < 0) {
                 runs.add(new Run(line.substring(marker.index()),
-                        false, false, false));
+                        false, false, false, false));
                 break;
             }
 
             String content = line.substring(contentStart, end);
             runs.add(new Run(content, marker.bold(),
-                    marker.italic(), marker.redacted()));
+                    marker.italic(), marker.redacted(),
+                    marker.highlighted()));
             cursor = end + marker.close().length();
         }
 
         if (runs.isEmpty() && !line.isEmpty()) {
-            runs.add(new Run(line, false, false, false));
+            runs.add(new Run(line,
+                    false, false, false, false));
         }
         return runs;
     }
@@ -335,13 +356,15 @@ public final class MarkdownTextRenderer {
         Marker best = null;
         for (Marker candidate : List.of(
                 new Marker(line.indexOf("[[", start),
-                        "[[", "]]", false, false, true),
+                        "[[", "]]", false, false, true, false),
                 new Marker(line.indexOf("***", start),
-                        "***", "***", true, true, false),
+                        "***", "***", true, true, false, false),
                 new Marker(line.indexOf("**", start),
-                        "**", "**", true, false, false),
+                        "**", "**", true, false, false, false),
+                new Marker(line.indexOf("==", start),
+                        "==", "==", false, false, false, true),
                 new Marker(line.indexOf("*", start),
-                        "*", "*", false, true, false))) {
+                        "*", "*", false, true, false, false))) {
             if (candidate.index() < 0) continue;
             if (best == null
                     || candidate.index() < best.index()
@@ -355,11 +378,13 @@ public final class MarkdownTextRenderer {
     }
 
     private record Run(String text, boolean bold,
-                       boolean italic, boolean redacted) {
+                       boolean italic, boolean redacted,
+                       boolean highlighted) {
     }
 
     private record Word(Component component, boolean bold,
-                        boolean redacted, boolean spaceBefore) {
+                        boolean redacted, boolean highlighted,
+                        boolean spaceBefore) {
     }
 
     private record LineWord(Word word, boolean spaceBefore,
@@ -368,6 +393,6 @@ public final class MarkdownTextRenderer {
 
     private record Marker(int index, String open, String close,
                           boolean bold, boolean italic,
-                          boolean redacted) {
+                          boolean redacted, boolean highlighted) {
     }
 }

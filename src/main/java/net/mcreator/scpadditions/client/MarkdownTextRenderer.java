@@ -47,9 +47,13 @@ public final class MarkdownTextRenderer {
                 : markdown.replace("\r\n", "\n").replace('\r', '\n');
         String[] paragraphs = normalized.split("\n", -1);
         int y = startY;
-        int lineCount = 0;
+        int paragraphGap = Math.max(3,
+                Math.round(lineHeight * 0.28F));
 
-        for (String paragraph : paragraphs) {
+        for (int paragraphIndex = 0;
+             paragraphIndex < paragraphs.length;
+             paragraphIndex++) {
+            String paragraph = paragraphs[paragraphIndex];
             int available = Math.max(1, widthAtY.applyAsInt(y));
 
             if (paragraph.trim().equals("---")) {
@@ -62,15 +66,20 @@ public final class MarkdownTextRenderer {
                             0xAA202020);
                 }
                 y += lineHeight;
-                lineCount++;
-                if (draw && y > maxY) break;
+                if (paragraphIndex + 1 < paragraphs.length) {
+                    y += paragraphGap;
+                }
+                if (draw && y > maxY) {
+                    return heightInLines(startY, y, lineHeight);
+                }
                 continue;
             }
 
             if (paragraph.isEmpty()) {
                 y += lineHeight;
-                lineCount++;
-                if (draw && y > maxY) break;
+                if (draw && y > maxY) {
+                    return heightInLines(startY, y, lineHeight);
+                }
                 continue;
             }
 
@@ -121,14 +130,28 @@ public final class MarkdownTextRenderer {
                 }
 
                 y += lineHeight;
-                lineCount++;
                 if (draw && y > maxY) {
-                    return Math.max(1, lineCount);
+                    return heightInLines(startY, y, lineHeight);
+                }
+            }
+
+            if (paragraphIndex + 1 < paragraphs.length) {
+                y += paragraphGap;
+                if (draw && y > maxY) {
+                    return heightInLines(startY, y, lineHeight);
                 }
             }
         }
 
-        return Math.max(1, lineCount);
+        return heightInLines(startY, y, lineHeight);
+    }
+
+    private static int heightInLines(int startY, int endY,
+                                     int lineHeight) {
+        int height = Math.max(lineHeight, endY - startY);
+        return Math.max(1,
+                (height + Math.max(1, lineHeight) - 1)
+                        / Math.max(1, lineHeight));
     }
 
     private static void renderLine(GuiGraphics graphics, Font font,
@@ -161,8 +184,11 @@ public final class MarkdownTextRenderer {
 
             Word word = placed.word();
             if (word.redacted()) {
-                int barHeight = Math.max(3, Math.round(
-                        font.lineHeight * textScale * 0.70F));
+                int desiredHeight = Math.max(4, Math.round(
+                        font.lineHeight * textScale * 0.92F));
+                int barHeight = Math.min(
+                        Math.max(4, lineHeight - 2),
+                        desiredHeight);
                 int barY = y + Math.max(0,
                         (lineHeight - barHeight) / 2);
                 graphics.fill(x, barY,

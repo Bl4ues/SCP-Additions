@@ -56,7 +56,7 @@ final class LineMarkdownEditor {
             if (index >= lines.size()) break;
 
             EditBox box = new EditBox(font,
-                    x + 34, y + row * ROW_HEIGHT + 2,
+                    x + 34, y + row * ROW_HEIGHT + 4,
                     Math.max(40, width - 40), 18,
                     Component.literal("Body line " + (index + 1)));
             box.setBordered(false);

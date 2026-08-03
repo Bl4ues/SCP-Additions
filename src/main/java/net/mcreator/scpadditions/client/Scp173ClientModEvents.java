@@ -64,6 +64,8 @@ public final class Scp173ClientModEvents {
             EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ScpAdditionsModEntities.SCP_173.get(),
                 Scp173Renderer::new);
+        event.registerEntityRenderer(ScpAdditionsModEntities.ROOMBA.get(),
+                RoombaRenderer::new);
     }
 
     @SubscribeEvent

@@ -19,6 +19,13 @@
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
 - Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**.
 
+## Facility inhabitants
+
+- Added the Roomba as a persistent facility-cleaning entity with a spawn egg in **SCP Additions - Items** and a positional looping motor sound;
+- Roombas move slowly in straight cleaning passes, turn gradually after reaching walls or ledges, choose a new direction from nearby clearance, refuse to climb steps or stairs, and treat every facility-door state as an impassable boundary even while the door is open;
+- Made Roombas immune to all damage and knockback, excluded them from natural despawning, and limited removal to right-clicking them with a Screwdriver;
+- Prevented Roombas, SCP-173, SCP-106, and both SCP-131 variants from jumping.
+
 ## Codex and documents
 
 - Added a dedicated Document item to the creative tab;

@@ -79,7 +79,17 @@ public final class CoreRoomElevatorClient {
             GeoBlockRenderer<CoreRoomElevatorModule.StationBlockEntity> {
         public StationRenderer(BlockEntityRendererProvider.Context context) {
             super(new StationModel());
-            addRenderLayer(new AutoGlowingGeoLayer<>(this));
+            // The station is a block entity and its texture may be wrapped by
+            // shader/PBR resource handlers. Render the authored mask directly
+            // instead of asking AutoGlowingTexture to derive it from the base.
+            addRenderLayer(new AutoGlowingGeoLayer<>(this) {
+                @Override
+                protected RenderType getRenderType(
+                        CoreRoomElevatorModule.StationBlockEntity animatable) {
+                    return RenderType.eyes(
+                            ElevatorAssets.FLOOR_STATION_GLOWMASK);
+                }
+            });
         }
 
         @Override

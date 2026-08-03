@@ -1,0 +1,12 @@
+{
+  "loop": {
+    "subtitle": "subtitles.scp_additions.roomba",
+    "sounds": [
+      {
+        "name": "scp_additions:roomba",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  }
+}

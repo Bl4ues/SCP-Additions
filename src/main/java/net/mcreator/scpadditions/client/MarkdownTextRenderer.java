@@ -14,12 +14,13 @@ import java.util.function.IntUnaryOperator;
 /**
  * Small Markdown subset shared by structured documents and legacy Codex text.
  *
- * <p>Supported syntax: {@code **bold**}, {@code *italic*},
+ * <p>Supported syntax: {@code **bold**}, {@code *italic**},
  * {@code ***bold italic***}, {@code ==highlight==}, {@code ---}, and
  * {@code [[redacted]]}.</p>
  */
 public final class MarkdownTextRenderer {
     private static final int HIGHLIGHT_COLOR = 0x99E8D75F;
+    private static final int MONOCHROME_HIGHLIGHT_TEXT = 0xFF444B4D;
 
     private MarkdownTextRenderer() {
     }
@@ -206,9 +207,9 @@ public final class MarkdownTextRenderer {
 
             Word word = placed.word();
             if (word.redacted()) {
-                int barHeight = Math.max(6, lineHeight);
-                int barY = y - Math.max(1,
-                        Math.round(textScale * 0.65F));
+                int barHeight = Math.max(7, lineHeight + 2);
+                int barY = y - Math.max(2,
+                        Math.round(textScale * 1.10F));
                 graphics.fill(x, barY,
                         x + placed.width(), barY + barHeight,
                         monochrome ? color : 0xFF101010);
@@ -228,8 +229,10 @@ public final class MarkdownTextRenderer {
                             markY + markHeight,
                             markColor);
                 }
+                int wordColor = monochrome && word.highlighted()
+                        ? MONOCHROME_HIGHLIGHT_TEXT : color;
                 drawScaled(graphics, word.component(),
-                        x, y, color, textScale, word.bold());
+                        x, y, wordColor, textScale, word.bold());
             }
             x += placed.width();
             previousHighlighted = word.highlighted();

@@ -24,6 +24,11 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import javax.annotation.Nullable;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,15 +37,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Adds a full-bright overlay to ordinary baked block and block-item models.
  *
  * <p>Source resources keep the convenient {@code *_e.png} authoring suffix.
- * Resource processing copies those masks to {@code *_native_emissive.png} and
- * explicitly stitches them into the block atlas. Keeping the runtime name
- * private prevents MoreMcmeta from drawing the same overlay a second time when
- * it happens to be installed.</p>
+ * Resource processing copies block masks to {@code *_native_emissive.png},
+ * explicitly stitches them into the block atlas and writes a compact manifest
+ * of base textures. Keeping the runtime name private prevents MoreMcmeta from
+ * drawing the same overlay a second time when it happens to be installed.</p>
  *
  * <p>The overlay uses Forge's native maximum-lightmap quad transformer. It is
  * therefore visible without MoreMcmeta or a shader pack. Compatible shader
@@ -51,6 +57,8 @@ import java.util.Set;
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class NativeEmissiveModelEvents {
     private static final String RUNTIME_SUFFIX = "_native_emissive";
+    private static final String TEXTURE_MANIFEST =
+            "/assets/scp_additions/native_emissive_textures.txt";
     private static final RenderType BLOCK_OVERLAY_TYPE = RenderType.cutout();
     private static final RenderType ITEM_OVERLAY_TYPE = Sheets.cutoutBlockSheet();
     private static final ChunkRenderTypeSet BLOCK_OVERLAY_TYPES =
@@ -61,14 +69,20 @@ public final class NativeEmissiveModelEvents {
 
     private static final Set<String> OWNED_MODEL_NAMESPACES = Set.of(
             ScpAdditionsMod.MODID,
+            "scp_keycards",
             "scp_ublocks",
             "scp_unity_extra_blocks");
+    private static final Set<ResourceLocation> EMISSIVE_BASE_TEXTURES =
+            loadEmissiveTextureManifest();
 
     private NativeEmissiveModelEvents() {
     }
 
     @SubscribeEvent
     public static void modifyBakedModels(ModelEvent.ModifyBakingResult event) {
+        if (EMISSIVE_BASE_TEXTURES.isEmpty()) {
+            return;
+        }
         event.getModels().replaceAll((location, model) ->
                 shouldWrap(location, model)
                         ? new NativeEmissiveBakedModel(model)
@@ -83,9 +97,37 @@ public final class NativeEmissiveModelEvents {
                 && !(model instanceof EmissiveItemPassModel);
     }
 
+    private static Set<ResourceLocation> loadEmissiveTextureManifest() {
+        InputStream stream = NativeEmissiveModelEvents.class
+                .getResourceAsStream(TEXTURE_MANIFEST);
+        if (stream == null) {
+            return Set.of();
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                stream, StandardCharsets.UTF_8))) {
+            return reader.lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                    .map(ResourceLocation::tryParse)
+                    .filter(location -> location != null)
+                    .collect(Collectors.toUnmodifiableSet());
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Unable to read native emissive texture manifest",
+                    exception);
+        }
+    }
+
     private static final class NativeEmissiveBakedModel
             extends BakedModelWrapper<BakedModel> {
         private final QuadOverlayCache overlays = new QuadOverlayCache();
+        private final Map<BlockState, Boolean> blockEmission =
+                Collections.synchronizedMap(new IdentityHashMap<>());
+        private final Map<BakedModel, Boolean> itemEmission =
+                Collections.synchronizedMap(new IdentityHashMap<>());
+        private final Map<BakedModel, BakedModel> itemOverlayPasses =
+                Collections.synchronizedMap(new IdentityHashMap<>());
 
         private NativeEmissiveBakedModel(BakedModel originalModel) {
             super(originalModel);
@@ -94,8 +136,10 @@ public final class NativeEmissiveModelEvents {
         @Override
         public List<BakedQuad> getQuads(@Nullable BlockState state,
                 @Nullable Direction side, RandomSource random) {
-            List<BakedQuad> base = originalModel.getQuads(state, side, random);
-            return appendOverlays(base, overlays.forQuads(base));
+            // Native overlays are supplied through a dedicated block layer or
+            // item render pass. Returning them here would draw them twice in
+            // fallback render paths.
+            return originalModel.getQuads(state, side, random);
         }
 
         @Override
@@ -103,9 +147,8 @@ public final class NativeEmissiveModelEvents {
                 @Nullable Direction side, RandomSource random,
                 ModelData modelData, @Nullable RenderType renderType) {
             if (renderType == null) {
-                List<BakedQuad> base = originalModel.getQuads(state, side,
-                        random, modelData, null);
-                return appendOverlays(base, overlays.forQuads(base));
+                return originalModel.getQuads(state, side, random, modelData,
+                        null);
             }
 
             if (renderType == BLOCK_OVERLAY_TYPE) {
@@ -131,9 +174,26 @@ public final class NativeEmissiveModelEvents {
         @Override
         public ChunkRenderTypeSet getRenderTypes(BlockState state,
                 RandomSource random, ModelData modelData) {
-            return ChunkRenderTypeSet.union(
-                    originalModel.getRenderTypes(state, random, modelData),
-                    BLOCK_OVERLAY_TYPES);
+            ChunkRenderTypeSet original = originalModel.getRenderTypes(state,
+                    random, modelData);
+            if (!hasBlockEmission(state, modelData)) {
+                return original;
+            }
+            return ChunkRenderTypeSet.union(original, BLOCK_OVERLAY_TYPES);
+        }
+
+        private boolean hasBlockEmission(BlockState state,
+                ModelData modelData) {
+            Boolean cached;
+            synchronized (blockEmission) {
+                cached = blockEmission.get(state);
+                if (cached == null) {
+                    cached = overlays.modelHasEmissiveQuads(originalModel,
+                            state, modelData);
+                    blockEmission.put(state, cached);
+                }
+            }
+            return cached;
         }
 
         @Override
@@ -143,9 +203,31 @@ public final class NativeEmissiveModelEvents {
             for (BakedModel pass : originalModel.getRenderPasses(stack,
                     fabulous)) {
                 result.add(pass);
-                result.add(new EmissiveItemPassModel(pass, overlays));
+                if (hasItemEmission(pass)) {
+                    result.add(itemOverlayPass(pass));
+                }
             }
             return List.copyOf(result);
+        }
+
+        private boolean hasItemEmission(BakedModel pass) {
+            Boolean cached;
+            synchronized (itemEmission) {
+                cached = itemEmission.get(pass);
+                if (cached == null) {
+                    cached = overlays.modelHasEmissiveQuads(pass, null,
+                            ModelData.EMPTY);
+                    itemEmission.put(pass, cached);
+                }
+            }
+            return cached;
+        }
+
+        private BakedModel itemOverlayPass(BakedModel pass) {
+            synchronized (itemOverlayPasses) {
+                return itemOverlayPasses.computeIfAbsent(pass,
+                        model -> new EmissiveItemPassModel(model, overlays));
+            }
         }
     }
 
@@ -189,8 +271,36 @@ public final class NativeEmissiveModelEvents {
     }
 
     private static final class QuadOverlayCache {
+        private static final long INSPECTION_SEED = 42L;
         private final Map<BakedQuad, Optional<BakedQuad>> bySource =
                 Collections.synchronizedMap(new IdentityHashMap<>());
+
+        private boolean modelHasEmissiveQuads(BakedModel model,
+                @Nullable BlockState state, ModelData modelData) {
+            RandomSource random = RandomSource.create(INSPECTION_SEED);
+            if (containsEmissiveSprite(model.getQuads(state, null, random,
+                    modelData, null))) {
+                return true;
+            }
+            for (Direction side : Direction.values()) {
+                random.setSeed(INSPECTION_SEED);
+                if (containsEmissiveSprite(model.getQuads(state, side, random,
+                        modelData, null))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean containsEmissiveSprite(List<BakedQuad> quads) {
+            for (BakedQuad quad : quads) {
+                if (EMISSIVE_BASE_TEXTURES.contains(
+                        quad.getSprite().contents().name())) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private List<BakedQuad> forQuads(List<BakedQuad> source) {
             if (source.isEmpty()) {
@@ -225,7 +335,8 @@ public final class NativeEmissiveModelEvents {
     private static BakedQuad createOverlay(BakedQuad source) {
         TextureAtlasSprite baseSprite = source.getSprite();
         ResourceLocation baseTexture = baseSprite.contents().name();
-        if (baseTexture.getPath().endsWith(RUNTIME_SUFFIX)) {
+        if (!EMISSIVE_BASE_TEXTURES.contains(baseTexture)
+                || baseTexture.getPath().endsWith(RUNTIME_SUFFIX)) {
             return null;
         }
 

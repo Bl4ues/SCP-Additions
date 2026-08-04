@@ -1339,7 +1339,11 @@ public final class FacilityModule {
             DoorFamily family = family();
             switch (stage) {
                 case CLOSED -> {
-                    if (doorPowered(level, pos)) startOpening(level, pos, state, family);
+                    if (doorPowered(level, pos)) {
+                        startOpening(level, pos, state, family);
+                        Scp079FacilityAccessManager.recordActivity(level,
+                                Scp079FacilityAccessManager.Activity.DOOR_OPENED);
+                    }
                 }
                 case OPEN -> {
                     if (!family.directUse() && !doorPowered(level, pos)) {

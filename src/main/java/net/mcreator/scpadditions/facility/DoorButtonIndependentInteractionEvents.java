@@ -95,10 +95,6 @@ public final class DoorButtonIndependentInteractionEvents {
                     counterpartLeft, transition);
         }
 
-        if (playerInitiated && phase == Phase.CLOSED) {
-            Scp079FacilityAccessManager.recordActivity(level,
-                    Scp079FacilityAccessManager.Activity.DOOR_OPENED);
-        }
 
         ScpAdditionsMod.queueServerWork(TRANSITION_TICKS, () -> {
             completeTransition(level, pos, endpoint);

@@ -91,6 +91,7 @@ public final class Scp012InfluenceEvents {
                             "precautionary trap for "
                                     + player.getGameProfile().getName()
                                     + protection);
+                    Scp079FacilityAccessManager.awardFirstInterference(player);
                 } else {
                     Scp079ProcessingManager.refund(level,
                             SCP_012_BOX_OPEN_COST);

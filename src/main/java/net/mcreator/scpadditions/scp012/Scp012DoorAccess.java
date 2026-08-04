@@ -16,6 +16,7 @@ import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.facility.HeavyDoorControlPanelAccess;
 import net.mcreator.scpadditions.facility.Scp079DecisionLog;
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
 
 import java.util.HashSet;
@@ -180,6 +181,7 @@ public final class Scp012DoorAccess {
                 "attempt " + attempts + " for "
                         + player.getGameProfile().getName()
                         + " · contest total " + Math.round(spent) + " AP");
+        Scp079FacilityAccessManager.awardFirstInterference(player);
         return true;
     }
 

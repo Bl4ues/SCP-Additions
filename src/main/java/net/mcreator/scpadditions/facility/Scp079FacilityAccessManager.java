@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -24,8 +23,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.block.Scp079AuxiliaryPowerBlock;
 import net.mcreator.scpadditions.block.TeslaGateStructure;
-import net.mcreator.scpadditions.entity.Scp106Entity;
-import net.mcreator.scpadditions.entity.Scp173Entity;
+import net.mcreator.scpadditions.roamer.RoamerManager;
+import net.mcreator.scpadditions.roamer.RoamerType;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
@@ -123,7 +122,7 @@ public final class Scp079FacilityAccessManager {
         pruneLoadedPositions(server, data);
 
         if (data.auxiliaryPowerOnline() && !data.hosts().isEmpty()
-                && !data.facilityAccess()) {
+                && !data.facilityAccess() && !data.protocolExposed()) {
             data.setProtocolExposed(true);
             addDiscovery(server, data, SCAN_DISCOVERY);
         }
@@ -225,9 +224,14 @@ public final class Scp079FacilityAccessManager {
         }
         MinecraftServer server = event.getServer();
         Scp079FacilityAccessSavedData data = data(server);
-        if (data.facilityAccess()
-                && (!data.auxiliaryPowerOnline() || data.hosts().isEmpty())) {
-            resetCompromise(server, data);
+        if (!data.auxiliaryPowerOnline()
+                || (data.hosts().isEmpty()
+                && (data.protocolExposed() || data.facilityAccess()
+                || data.discoveryProgress() > 0.0D))) {
+            if (data.protocolExposed() || data.facilityAccess()
+                    || data.discoveryProgress() > 0.0D) {
+                resetCompromise(server, data);
+            }
             return;
         }
         if (data.auxiliaryPowerOnline() && data.protocolExposed()
@@ -280,12 +284,10 @@ public final class Scp079FacilityAccessManager {
 
     private static int countUncontainedScps(MinecraftServer server) {
         int count = 0;
-        for (ServerLevel level : server.getAllLevels()) {
-            for (Entity entity : level.getAllEntities()) {
-                if (entity.isAlive() && (entity instanceof Scp173Entity
-                        || entity instanceof Scp106Entity)) {
-                    count++;
-                }
+        for (RoamerType type : RoamerType.values()) {
+            if (RoamerManager.hasActive(server, type)
+                    && !RoamerManager.isContained(server, type)) {
+                count++;
             }
         }
         return count;
@@ -367,7 +369,9 @@ public final class Scp079FacilityAccessManager {
                 state.getBlock()
                         == ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get());
         if (changed) data.markChanged();
-        if (data.hosts().isEmpty() && data.facilityAccess()) {
+        if (data.hosts().isEmpty()
+                && (data.protocolExposed() || data.facilityAccess()
+                || data.discoveryProgress() > 0.0D)) {
             resetCompromise(server, data);
         }
     }

@@ -1,0 +1,46 @@
+{
+  "variants": {
+    "transition=none": {
+      "model": "scp_additions:block/sl_1_kitchen_floor"
+    },
+    "transition=full": {
+      "model": "scp_ublocks:block/sl_1_floor_2"
+    },
+    "transition=corner_sw": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_1"
+    },
+    "transition=edge_w": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_2"
+    },
+    "transition=inner_nw": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_3"
+    },
+    "transition=corner_nw": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_4"
+    },
+    "transition=edge_n": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_5"
+    },
+    "transition=inner_ne": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_6"
+    },
+    "transition=corner_ne": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_7"
+    },
+    "transition=edge_e": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_8"
+    },
+    "transition=inner_se": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_9"
+    },
+    "transition=corner_se": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_10"
+    },
+    "transition=edge_s": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_11"
+    },
+    "transition=inner_sw": {
+      "model": "scp_additions:block/sl_1_kitchen_floor_12"
+    }
+  }
+}

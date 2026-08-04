@@ -1,12 +1,13 @@
-// Converts every authored OptiFine-style *_e.png mask into two complementary
+// Converts every authored OptiFine-style *_e.png mask into complementary
 // emission paths:
-//   1. a private, atlas-stitched texture used by SCP Additions' native
-//      full-bright baked-model overlay; and
-//   2. LabPBR emission in the matching _s alpha channel for shader packs.
+//   1. block masks become private, atlas-stitched textures used by SCP
+//      Additions' native full-bright baked-model overlay; and
+//   2. every mask continues to write LabPBR emission into matching _s alpha.
 //
-// The source *_e.png files remain the authoring convention, but they are removed
-// from processed resources after conversion so MoreMcmeta cannot draw a second
-// copy of the same overlay when it happens to be installed.
+// Block source *_e.png files remain the authoring convention, but are removed
+// from processed resources after native conversion so MoreMcmeta cannot draw a
+// second copy of the same overlay when it happens to be installed. Entity masks
+// are left untouched because their renderer path is separate from baked blocks.
 gradle.afterProject { evaluatedProject, state ->
     if (state.failure != null) {
         return
@@ -42,8 +43,8 @@ gradle.afterProject { evaluatedProject, state ->
 
         // The Floor Station is a GeckoLib block entity, but its authored light
         // artwork uses the same glowmask convention as entities. Mirror that
-        // mask to an _e source before the common conversion so the LabPBR path
-        // remains available alongside its GeckoLib glowing layer.
+        // mask to an _e source before the common LabPBR conversion. Its ordinary
+        // baked block texture additionally receives the native overlay below.
         [
                 'scp_additions/textures/entities/core_room_elevator_floor_station',
                 'scp_additions/textures/block/core_room_elevator_floor_station'
@@ -135,6 +136,15 @@ gradle.afterProject { evaluatedProject, state ->
             specularFile.parentFile.mkdirs()
             javax.imageio.ImageIO.write(specularImage, 'png', specularFile)
 
+            String sourceRelative = assetsRoot.toPath()
+                    .relativize(emissiveFile.toPath())
+                    .toString().replace('\\', '/')
+            boolean bakedBlockTexture = sourceRelative.contains('/textures/block/')
+                    || sourceRelative.contains('/textures/blocks/')
+            if (!bakedBlockTexture) {
+                return
+            }
+
             String runtimeName = emissiveFile.name.replaceFirst(
                     /_e\.png$/, "${runtimeSuffix}.png")
             File runtimeFile = new File(emissiveFile.parentFile, runtimeName)
@@ -164,7 +174,8 @@ gradle.afterProject { evaluatedProject, state ->
             }
 
             // Avoid duplicate overlays from MoreMcmeta Emissive. The public JAR
-            // contains only the private native mask and the generated LabPBR map.
+            // contains only the private native mask and generated LabPBR map for
+            // baked block textures.
             evaluatedProject.delete(emissiveFile)
             if (sourceMetadata.isFile()) {
                 evaluatedProject.delete(sourceMetadata)

@@ -1,8 +1,10 @@
 name: Apply Blue Kitchen floor pairing fix
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/apply-blue-kitchen-fix.yml
 
 permissions:
   contents: write
@@ -11,11 +13,11 @@ jobs:
   apply-fix:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Check out pull request branch
+      - name: Check out master
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Set up Java 17
@@ -257,4 +259,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix Blue and Kitchen floor transition ownership"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin HEAD:master

@@ -100,6 +100,8 @@ public final class NativeEmissiveShaderBloomRenderer {
     @Nullable
     private static ClientLevel cachedLevel;
     private static int rescanCursor;
+    private static boolean previousShaderPackState;
+    private static boolean shaderStateInitialized;
 
     private NativeEmissiveShaderBloomRenderer() {
     }
@@ -130,6 +132,20 @@ public final class NativeEmissiveShaderBloomRenderer {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
+        boolean shaderPackState = isShaderPackInUse();
+        if (!shaderStateInitialized) {
+            previousShaderPackState = shaderPackState;
+            shaderStateInitialized = true;
+        } else if (previousShaderPackState != shaderPackState) {
+            previousShaderPackState = shaderPackState;
+            // Chunk meshes contain the native full-bright overlay only while
+            // shaders are disabled. Rebuild once when the active shader state
+            // changes so stale coplanar geometry cannot survive a mode switch.
+            if (minecraft.level != null) {
+                minecraft.levelRenderer.allChanged();
+            }
+        }
+
         ClientLevel level = minecraft.level;
         if (level == null || minecraft.player == null) {
             clearLevelCache();
@@ -429,6 +445,11 @@ public final class NativeEmissiveShaderBloomRenderer {
                 ModelEvent.ModifyBakingResult event) {
             clearModelCaches();
         }
+    }
+
+    /** Shared shader-state query used by the baked-model fallback pass. */
+    static boolean isShaderPackInUse() {
+        return ShaderBridge.isShaderPackInUse();
     }
 
     /** Optional Iris/Oculus bridge kept reflection-only for a clean runtime. */

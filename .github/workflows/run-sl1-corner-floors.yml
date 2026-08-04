@@ -1,49 +1,56 @@
 name: Run SL1 corner floor integration
 
 on:
-  push:
+  pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened]
     paths:
       - tools/hotfix/RUN_SL1_CORNER_FLOORS
+      - tools/hotfix/apply_sl1_corner_floors.py
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Skip completed integration
+        id: marker
+        shell: bash
+        run: |
+          if [ -f tools/hotfix/RUN_SL1_CORNER_FLOORS ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-java@v4
+        if: steps.marker.outputs.run == 'true'
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: Execute integration payload
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import textwrap
-
-          source = Path('.github/workflows/apply-sl1-corner-floors.yml').read_text(encoding='utf-8')
-          payload = source.split("          python3 - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
-          exec(compile(textwrap.dedent(payload), '<sl1-corner-floors>', 'exec'))
-          PY
+      - name: Apply requested changes
+        if: steps.marker.outputs.run == 'true'
+        run: python3 tools/hotfix/apply_sl1_corner_floors.py
 
       - name: Build and commit integration
+        if: steps.marker.outputs.run == 'true'
         shell: bash
         run: |
           set +e
           chmod +x gradlew
-          ./gradlew clean build --no-daemon --stacktrace > tools/sl1-corner-floors-build.log 2>&1
+          ./gradlew clean verifyMoreMcmetaDevRuntime build --no-daemon --stacktrace > tools/sl1-corner-floors-build.log 2>&1
           code=$?
           cat tools/sl1-corner-floors-build.log
 
@@ -53,14 +60,15 @@ jobs:
           if [ "$code" -eq 0 ]; then
             rm -f tools/sl1-corner-floors-build.log
             rm -f tools/hotfix/RUN_SL1_CORNER_FLOORS
+            rm -f tools/hotfix/apply_sl1_corner_floors.py
             rm -f .github/workflows/apply-sl1-corner-floors.yml
             rm -f .github/workflows/run-sl1-corner-floors.yml
             git add -A
-            git commit -m "Add SL1 corner floor transitions" -m "Register the Metal Alternative Bottom Wall, Resting Corner Floor, and Kitchen Corner Floor; reuse the existing fixed-orientation transition system with the requested Metal and Blue relationships; add complete models, blockstates, tooltips, creative ordering, and changelog documentation."
+            git commit -m "Add SL1 corner floors and polish block text" -m "Add the alternative metal wall and the Resting and Kitchen corner floors, preserve the established fixed-orientation transition mapping, normalize user-facing block names and tooltip punctuation, and turn the Vent item display toward the viewer."
           else
             git add -f tools/sl1-corner-floors-build.log
             git commit -m "Record SL1 corner floor build failure"
           fi
 
-          git push origin HEAD:master
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
           exit "$code"

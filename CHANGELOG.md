@@ -10,6 +10,7 @@
 - Added a default-enabled custom hotbar, available only while SCP Inventory is enabled, that replaces the vanilla bar with a centered list of occupied slots, category labels, navy-and-gold selected-item styling, compact scrolling that skips empty slots, and one blank selection between the end and beginning of the list;
 - Added the **Stow Held Item** control, bound to H by default, which returns an active Usable item or equipped Weapon to the SCP Inventory without dropping it;
 - Added a default-enabled module that renders Action Bar messages in Roboto;
+- Added native full-bright emissive overlays for authored block textures, removing the MoreMcmeta requirement while retaining LabPBR material emission for compatible shader packs;
 - Split configuration modules into personal presentation preferences and host-authoritative gameplay rules: each player can independently choose their HUD, crosshair, custom hotbar, voice profile, presentation audio, music suppression, and accessibility settings without operator permission, while mechanics that alter gameplay or the world remain controlled by the host;
 - Added clear Configuration Center notices identifying per-player preferences and host-only settings, and kept server configuration editors locked for players without operator permission;
 - Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior.

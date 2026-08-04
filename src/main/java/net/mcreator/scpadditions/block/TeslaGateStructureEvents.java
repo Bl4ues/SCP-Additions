@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.FacilityStructureBreakGuard;
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 
 /**
  * Makes every visible or invisible part behave as one Tesla Gate structure.
@@ -30,12 +31,18 @@ public final class TeslaGateStructureEvents {
                     event.getPos(), state);
             event.setCanceled(true);
             FacilityStructureBreakGuard.clear(level, controllerPos);
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                Scp079FacilityAccessManager.unregisterTeslaGate(server, controllerPos);
+            }
             TeslaGateStructure.destroyFromCollision(level, event.getPos(), state,
                     !event.getPlayer().isCreative());
             return;
         }
 
         if (TeslaGateStructure.isController(state)) {
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                Scp079FacilityAccessManager.unregisterTeslaGate(server, event.getPos());
+            }
             FacilityStructureBreakGuard.clear(level, event.getPos());
             TeslaGateStructure.removeCollisionParts(level, event.getPos(), state);
         }

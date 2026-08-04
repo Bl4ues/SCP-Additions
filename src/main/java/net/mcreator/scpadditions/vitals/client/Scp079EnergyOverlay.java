@@ -21,8 +21,8 @@ public final class Scp079EnergyOverlay {
     private static final ResourceLocation ROBOTO_FONT =
             new ResourceLocation("scpinventory", "roboto");
 
-    private static final int ENERGY_WIDTH = 94;
-    private static final int ENERGY_HEIGHT = 32;
+    private static final int ENERGY_WIDTH = 126;
+    private static final int ENERGY_HEIGHT = 50;
     private static final int FEED_WIDTH = 238;
     private static final int FEED_HEADER_HEIGHT = 16;
     private static final int ENTRY_HEIGHT = 27;
@@ -81,29 +81,52 @@ public final class Scp079EnergyOverlay {
         boolean active = Scp079EnergyClientState.active();
         float energy = Math.max(0.0F,
                 Math.min(100.0F, Scp079EnergyClientState.energy()));
+        float discovery = Math.max(0.0F,
+                Math.min(100.0F, Scp079EnergyClientState.discovery()));
         int x = screenWidth - ENERGY_WIDTH - MARGIN;
 
         graphics.fill(x, y, x + ENERGY_WIDTH, y + ENERGY_HEIGHT,
                 active ? PANEL : PANEL_INACTIVE);
         border(graphics, x, y, ENERGY_WIDTH, ENERGY_HEIGHT, WHITE);
-
         ItemStack icon = new ItemStack(ScpAdditionsModItems.SCP_079ON.get());
         graphics.renderItem(icon, x + 6, y + 6);
 
-        draw(graphics, minecraft.font, active ? "PROCESSING" : "OFFLINE",
+        draw(graphics, minecraft.font, active ? "AP ONLINE" : "AP OFFLINE",
                 x + 28, y + 5, active ? WHITE : MUTED);
-        draw(graphics, minecraft.font, Integer.toString(Math.round(energy)),
-                x + 28, y + 15, WHITE);
+        drawBar(graphics, minecraft, "PROCESSING", energy,
+                x + 28, y + 16, active ? WHITE : MUTED);
 
-        int barX = x + 51;
-        int barY = y + 18;
-        int barWidth = ENERGY_WIDTH - 57;
-        graphics.fill(barX, barY, barX + barWidth, barY + 3, TRACK);
-        int fill = Math.round(barWidth * energy / 100.0F);
-        if (fill > 0) {
-            graphics.fill(barX, barY, barX + fill, barY + 3,
-                    active ? WHITE : MUTED);
+        String state = !Scp079EnergyClientState.auxiliaryOnline()
+                ? "AUX ISOLATED"
+                : !Scp079EnergyClientState.hostPresent()
+                ? "NO PHYSICAL HOST"
+                : !Scp079EnergyClientState.protocolExposed()
+                ? "PROTOCOL HIDDEN"
+                : active ? "ACCESS ACQUIRED" : "DISCOVERY";
+        draw(graphics, minecraft.font, state, x + 7, y + 31,
+                active ? WHITE : MUTED);
+        drawBar(graphics, minecraft, "", discovery,
+                x + 7, y + 41, active ? WHITE : MUTED);
+    }
+
+    private static void drawBar(GuiGraphics graphics, Minecraft minecraft,
+            String label, float value, int x, int y, int fillColor) {
+        if (!label.isBlank()) {
+            draw(graphics, minecraft.font, label, x, y, WHITE);
         }
+        String number = Integer.toString(Math.round(value));
+        int numberWidth = minecraft.font.width(styled(number));
+        int barX = label.isBlank() ? x : x + 54;
+        int barWidth = ENERGY_WIDTH - (barX - (minecraft.screen == null
+                ? Minecraft.getInstance().getWindow().getGuiScaledWidth()
+                - ENERGY_WIDTH - MARGIN : 0)) - 8 - numberWidth;
+        if (label.isBlank()) barWidth = ENERGY_WIDTH - 28;
+        barWidth = Math.max(16, Math.min(62, barWidth));
+        graphics.fill(barX, y + 2, barX + barWidth, y + 5, TRACK);
+        int fill = Math.round(barWidth * value / 100.0F);
+        if (fill > 0) graphics.fill(barX, y + 2, barX + fill, y + 5, fillColor);
+        draw(graphics, minecraft.font, number, barX + barWidth + 4,
+                y - 1, WHITE);
     }
 
     private static void renderDecisionFeed(GuiGraphics graphics,

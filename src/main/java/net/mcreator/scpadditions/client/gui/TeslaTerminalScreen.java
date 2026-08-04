@@ -41,6 +41,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private static final ResourceLocation SCREEN_OVERRIDE_STANDBY = screen("9");
 	private static final ResourceLocation SCREEN_OVERRIDE_ENGAGED = screen("10");
 	private static final ResourceLocation SCREEN_ON_OVERRIDE = screen("11");
+	private static final ResourceLocation SCREEN_AUXILIARY_OFFLINE = screen("12");
 
 	private static final Rect OVERRIDE_TOGGLE = new Rect(1269, 637, 1393, 689);
 	private static final Rect TESLA_TOGGLE = new Rect(1050, 1007, 1393, 1069);
@@ -61,6 +62,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	private boolean displayedTeslaGatesEnabled = true;
 	private boolean displayedManualOverride = false;
 	private boolean clickVariant = false;
+	private boolean lastAuxiliaryPowerOnline = false;
 
 	public TeslaTerminalScreen(TeslaTerminalMenu container, Inventory inventory, Component text) {
 		super(container, inventory, text);
@@ -77,6 +79,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	protected void init() {
 		super.init();
 		ClientNetwork.requestInventorySync();
+		lastAuxiliaryPowerOnline = menu.auxiliaryPowerOnline;
 	}
 
 	private static ResourceLocation screen(String id) {
@@ -108,6 +111,12 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 			if (isOverlayState()) {
 				renderOverlay(guiGraphics);
 			}
+		}
+
+		if (!menu.auxiliaryPowerOnline) {
+			RenderSystem.setShaderColor(1, 1, 1, 1);
+			guiGraphics.blit(SCREEN_AUXILIARY_OFFLINE, 0, 0, 0, 0,
+					TEX_W, TEX_H, TEX_W, TEX_H);
 		}
 
 		guiGraphics.pose().popPose();
@@ -185,6 +194,9 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		if (button != 0) {
 			return true;
 		}
+		if (!menu.auxiliaryPowerOnline) {
+			return true;
+		}
 		double tx = textureX(mouseX);
 		double ty = textureY(mouseY);
 		playRandomClick();
@@ -260,6 +272,15 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	@Override
 	public void containerTick() {
 		super.containerTick();
+		boolean auxiliaryOnline = menu.auxiliaryPowerOnline;
+		if (auxiliaryOnline != lastAuxiliaryPowerOnline) {
+			lastAuxiliaryPowerOnline = auxiliaryOnline;
+			authenticated = false;
+			resetToMain();
+		}
+		if (!auxiliaryOnline) {
+			return;
+		}
 		if (visualTimer > 0) {
 			visualTimer--;
 			if (visualTimer <= 0) {

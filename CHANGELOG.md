@@ -66,6 +66,12 @@
 
 ## SCP-079
 
+- Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and a placeholder Auxiliary Power Unit;
+- Added a black-and-green Foundation diagnostic interface reporting vague global containment, Tesla-grid, override, and connected-door telemetry;
+- SCP-079 now requires a physical computer in the world, begins hidden protocol discovery only after a powered diagnostic scan, learns faster from door use and Tesla activity, and gains AP regeneration only after completing access discovery;
+- Cutting auxiliary power now erases SCP-079's learned access and disables the diagnostic and Tesla buses, forcing the AI to investigate the system again after restoration;
+- Expanded the SCP-079 developer HUD with a discovery-progress bar and moved the hidden **Not Your Decision** advancement to the first facility decision that actually affects a player;
+
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
 - Added a strategic expenditure model that protects emergency reserves, tracks recent spending and repeated tactical lanes, permits brief high-power bursts, becomes increasingly conservative below 60% power, and reserves sub-30% expenditure for exceptional traps or critical device opportunities;
 - SCP-079 now evaluates action utility against cost, remaining power, recent expenditure, repeated-action pressure, and the strategic importance of the requesting subsystem instead of spending whenever an action is merely affordable;

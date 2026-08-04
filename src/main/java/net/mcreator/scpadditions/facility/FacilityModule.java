@@ -294,6 +294,7 @@ public final class FacilityModule {
         addExternalCreativeItem(functional, UnifiedReaderItems.KEYCARD_READER.get());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
+        addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get().asItem());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
         addFacilityCreativeItem(functional, "default_door");
         addFacilityCreativeItem(functional, "yellow_closed");
@@ -1299,6 +1300,10 @@ public final class FacilityModule {
         public void onPlace(BlockState state, Level level, BlockPos pos,
                 BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
+            if (!level.isClientSide && level instanceof ServerLevel server
+                    && !(oldState.getBlock() instanceof AnimatedDoorBlock)) {
+                Scp079FacilityAccessManager.registerDoor(server, pos);
+            }
             int delay = stage == DoorStage.OPENING || stage == DoorStage.CLOSING
                     ? family().frameDelay() : 1;
             level.scheduleTick(pos, this, delay);
@@ -1320,8 +1325,11 @@ public final class FacilityModule {
                 return InteractionResult.PASS;
             }
             if (!level.isClientSide && level instanceof ServerLevel server) {
-                if (stage == DoorStage.CLOSED) startOpening(server, pos, state, family);
-                else startClosing(server, pos, state, family);
+                if (stage == DoorStage.CLOSED) {
+                    startOpening(server, pos, state, family);
+                    Scp079FacilityAccessManager.recordActivity(server,
+                            Scp079FacilityAccessManager.Activity.DOOR_OPENED);
+                } else startClosing(server, pos, state, family);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -1331,7 +1339,11 @@ public final class FacilityModule {
             DoorFamily family = family();
             switch (stage) {
                 case CLOSED -> {
-                    if (doorPowered(level, pos)) startOpening(level, pos, state, family);
+                    if (doorPowered(level, pos)) {
+                        startOpening(level, pos, state, family);
+                        Scp079FacilityAccessManager.recordActivity(level,
+                                Scp079FacilityAccessManager.Activity.DOOR_OPENED);
+                    }
                 }
                 case OPEN -> {
                     if (!family.directUse() && !doorPowered(level, pos)) {
@@ -1367,6 +1379,16 @@ public final class FacilityModule {
                     SoundSource.BLOCKS, 1.0F, 1.0F);
             level.setBlock(pos, copyFacing(state, family.closing().get(0).get()),
                     Block.UPDATE_ALL);
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean moving) {
+            if (!level.isClientSide && level instanceof ServerLevel server
+                    && !(newState.getBlock() instanceof AnimatedDoorBlock)) {
+                Scp079FacilityAccessManager.unregisterDoor(server, pos);
+            }
+            super.onRemove(state, level, pos, newState, moving);
         }
 
         @Override
@@ -1454,7 +1476,7 @@ public final class FacilityModule {
                 return InteractionResult.PASS;
             }
             if (!level.isClientSide && level instanceof ServerLevel server) {
-                DoorButtonIndependentInteractionEvents.activateButton(server, pos);
+                DoorButtonIndependentInteractionEvents.activateButton(server, pos, true);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }

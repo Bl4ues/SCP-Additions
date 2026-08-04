@@ -34,6 +34,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.procedures.TeslaGateUpdateTickProcedure;
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
 
 import java.util.Collections;
@@ -167,6 +168,9 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
 
         super.onPlace(state, level, pos, oldState, moving);
         if (!level.isClientSide()) {
+            if (level instanceof ServerLevel server) {
+                Scp079FacilityAccessManager.registerTeslaGate(server, pos);
+            }
             boolean activationQueued = TeslaGateUpdateTickProcedure.execute(
                     level, pos.getX(), pos.getY(), pos.getZ());
             if (!activationQueued && isEnabled(level)) {
@@ -221,9 +225,10 @@ public class TeslaGateBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     private static boolean isEnabled(Level level) {
-        return level.getGameRules().getBoolean(
+        return Scp079FacilityAccessManager.isAuxiliaryPowerOnline(level)
+                && (level.getGameRules().getBoolean(
                 ScpAdditionsModGameRules.TESLAGATEON)
                 || level.getGameRules().getBoolean(
-                ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
+                ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE));
     }
 }

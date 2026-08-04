@@ -93,6 +93,9 @@ public final class Scp079TeslaSuppression {
                         + pursuer.getDisplayName().getString()
                         + " pursuing " + targetName + " · " + mode
                         + " · " + SUPPRESSION_TICKS / 20.0D + "s");
+        if (target != null) {
+            Scp079FacilityAccessManager.awardFirstInterference(target);
+        }
         return true;
     }
 

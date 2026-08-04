@@ -90,6 +90,10 @@ public final class ScpEntityNetwork {
                 Scp079EnergyPacket::encode,
                 Scp079EnergyPacket::decode,
                 Scp079EnergyPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(FacilityDiagnosticsPacket.class,
+                FacilityDiagnosticsPacket::encode,
+                FacilityDiagnosticsPacket::decode,
+                FacilityDiagnosticsPacket::handle);
         ScpAdditionsMod.addNetworkMessage(Scp079DecisionPacket.class,
                 Scp079DecisionPacket::encode,
                 Scp079DecisionPacket::decode,
@@ -219,7 +223,8 @@ public final class ScpEntityNetwork {
 
     public static void syncDebugState(ServerPlayer player,
             boolean energyVisible, boolean active, float energy,
-            boolean spawnTimersVisible,
+            float discovery, boolean auxiliaryOnline, boolean hostPresent,
+            boolean protocolExposed, boolean spawnTimersVisible,
             List<RoamerDebugSnapshot> snapshots) {
         if (player == null) return;
         MinecraftServer server = player.getServer();
@@ -234,8 +239,18 @@ public final class ScpEntityNetwork {
         }
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new Scp079EnergyPacket(energyVisible, active, energy,
+                new Scp079EnergyPacket(energyVisible, active, energy, discovery,
+                        auxiliaryOnline, hostPresent, protocolExposed,
                         spawnTimersVisible, entries));
+    }
+
+    public static void openFacilityDiagnostics(ServerPlayer player,
+            net.mcreator.scpadditions.facility.Scp079FacilityAccessManager
+                    .DiagnosticSnapshot snapshot) {
+        if (player == null || snapshot == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new FacilityDiagnosticsPacket(snapshot));
     }
 
     public static void syncScp079Decisions(ServerPlayer player,

@@ -175,6 +175,7 @@ public final class FacilityBlockMiningEvents {
                 || path.startsWith("decon_")
                 || path.contains("reader")
                 || path.equals("scp_079_system_control")
+                || path.equals("scp_079_auxiliary_power")
                 || path.equals("scp_079control")
                 || path.equals("scp_079controloff");
     }

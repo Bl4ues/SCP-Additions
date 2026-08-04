@@ -19,14 +19,24 @@ public final class Scp079EnergyPacket {
     private final boolean energyVisible;
     private final boolean active;
     private final float energy;
+    private final float discovery;
+    private final boolean auxiliaryOnline;
+    private final boolean hostPresent;
+    private final boolean protocolExposed;
     private final boolean spawnTimersVisible;
     private final List<RoamerEntry> roamers;
 
     public Scp079EnergyPacket(boolean energyVisible, boolean active, float energy,
-            boolean spawnTimersVisible, List<RoamerEntry> roamers) {
+            float discovery, boolean auxiliaryOnline, boolean hostPresent,
+            boolean protocolExposed, boolean spawnTimersVisible,
+            List<RoamerEntry> roamers) {
         this.energyVisible = energyVisible;
         this.active = active;
         this.energy = Mth.clamp(energy, 0.0F, 100.0F);
+        this.discovery = Mth.clamp(discovery, 0.0F, 100.0F);
+        this.auxiliaryOnline = auxiliaryOnline;
+        this.hostPresent = hostPresent;
+        this.protocolExposed = protocolExposed;
         this.spawnTimersVisible = spawnTimersVisible;
         this.roamers = roamers == null ? List.of() : List.copyOf(roamers);
     }
@@ -36,6 +46,10 @@ public final class Scp079EnergyPacket {
         buffer.writeBoolean(message.energyVisible);
         buffer.writeBoolean(message.active);
         buffer.writeFloat(message.energy);
+        buffer.writeFloat(message.discovery);
+        buffer.writeBoolean(message.auxiliaryOnline);
+        buffer.writeBoolean(message.hostPresent);
+        buffer.writeBoolean(message.protocolExposed);
         buffer.writeBoolean(message.spawnTimersVisible);
         buffer.writeVarInt(message.roamers.size());
         for (RoamerEntry entry : message.roamers) {
@@ -50,6 +64,10 @@ public final class Scp079EnergyPacket {
         boolean energyVisible = buffer.readBoolean();
         boolean active = buffer.readBoolean();
         float energy = buffer.readFloat();
+        float discovery = buffer.readFloat();
+        boolean auxiliaryOnline = buffer.readBoolean();
+        boolean hostPresent = buffer.readBoolean();
+        boolean protocolExposed = buffer.readBoolean();
         boolean spawnTimersVisible = buffer.readBoolean();
         int size = Mth.clamp(buffer.readVarInt(), 0, 64);
         List<RoamerEntry> roamers = new ArrayList<>(size);
@@ -63,7 +81,8 @@ public final class Scp079EnergyPacket {
             roamers.add(new RoamerEntry(type, state, result,
                     Math.max(-1, buffer.readInt())));
         }
-        return new Scp079EnergyPacket(energyVisible, active, energy,
+        return new Scp079EnergyPacket(energyVisible, active, energy, discovery,
+                auxiliaryOnline, hostPresent, protocolExposed,
                 spawnTimersVisible, roamers);
     }
 
@@ -73,6 +92,8 @@ public final class Scp079EnergyPacket {
         context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                 () -> () -> Scp079EnergyClientState.update(
                         message.energyVisible, message.active, message.energy,
+                        message.discovery, message.auxiliaryOnline,
+                        message.hostPresent, message.protocolExposed,
                         message.spawnTimersVisible, message.roamers)));
         context.setPacketHandled(true);
     }

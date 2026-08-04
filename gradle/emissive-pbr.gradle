@@ -27,6 +27,7 @@ gradle.afterProject { evaluatedProject, state ->
 
         final String runtimeSuffix = '_native_emissive'
         def nativeSprites = new TreeSet<String>()
+        def nativeBaseTextures = new TreeSet<String>()
 
         // One malformed optional material must not abort the complete resource
         // build. Record the exact path so the source asset can be repaired,
@@ -145,6 +146,18 @@ gradle.afterProject { evaluatedProject, state ->
                 return
             }
 
+            int sourceTextureMarker = sourceRelative.indexOf('/textures/')
+            if (sourceTextureMarker > 0 && sourceRelative.endsWith('.png')) {
+                String namespace = sourceRelative.substring(0,
+                        sourceTextureMarker)
+                String authoredTexturePath = sourceRelative.substring(
+                        sourceTextureMarker + '/textures/'.length(),
+                        sourceRelative.length() - '.png'.length())
+                String baseTexturePath = authoredTexturePath.replaceFirst(
+                        /_e$/, '')
+                nativeBaseTextures.add("${namespace}:${baseTexturePath}")
+            }
+
             String runtimeName = emissiveFile.name.replaceFirst(
                     /_e\.png$/, "${runtimeSuffix}.png")
             File runtimeFile = new File(emissiveFile.parentFile, runtimeName)
@@ -181,6 +194,17 @@ gradle.afterProject { evaluatedProject, state ->
                 evaluatedProject.delete(sourceMetadata)
             }
         }
+
+        // Runtime model wrappers consult this manifest before adding render
+        // passes, so blocks without emissive artwork incur no empty cutout pass.
+        File manifestFile = new File(assetsRoot,
+                'scp_additions/native_emissive_textures.txt')
+        manifestFile.parentFile.mkdirs()
+        String manifestText = nativeBaseTextures.join(System.lineSeparator())
+        if (!manifestText.isEmpty()) {
+            manifestText += System.lineSeparator()
+        }
+        manifestFile.setText(manifestText, 'UTF-8')
 
         if (!nativeSprites.isEmpty()) {
             // Atlas configuration files from multiple resource packs are merged

@@ -32,7 +32,9 @@ jobs:
           java-version: '17'
 
       - name: Apply facility discovery system
-        run: python3 tools/hotfix/apply_scp079_facility_discovery.py
+        run: |
+          python3 tools/hotfix/apply_scp079_facility_discovery.py
+          python3 tools/hotfix/fix_scp079_facility_discovery_import.py
 
       - name: Validate build
         run: |

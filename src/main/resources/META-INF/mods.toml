@@ -39,11 +39,3 @@ SCP Additions is an SCP survival horror and facility-building mod for Minecraft 
     versionRange="[0,)"
     ordering="AFTER"
     side="CLIENT"
-
-
-[[dependencies.scp_additions]]
-    modId="moremcmeta_emissive_plugin"
-    mandatory=false
-    versionRange="[0,)"
-    ordering="AFTER"
-    side="CLIENT"

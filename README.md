@@ -31,7 +31,7 @@ SCP Additions is currently developed and released for **Minecraft 1.20.1 with Fo
 Optional client integrations:
 
 - [Kleiders Custom Renderer API](https://modrinth.com/mod/kleiders-custom-renderer-api) renders custom SCP-914 **1:1** player skins. All other SCP-914 behavior works without it.
-- Shader packs with LabPBR support can add material-aware emission and bloom to supported block textures. Built-in emissive block overlays remain full-bright without shaders or MoreMcmeta.
+- Shader packs with LabPBR support can add material-aware emission and bloom to supported block textures. Built-in emissive block overlays remain full-bright without shaders or additional emissive-texture mods.
 
 ## Main features
 

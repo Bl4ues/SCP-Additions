@@ -14,6 +14,5 @@ plugins {
 
 // Keep resource-processing details out of the already crowded main build
 // script while still installing the hooks before the root project is evaluated.
-apply from: file('gradle/moremcmeta-dev-runtime.gradle')
-apply from: file('gradle/emissive-pbr.gradle')
+apply from: file('gradle/native-emissives.gradle')
 apply from: file('gradle/roomba-sound.gradle')

@@ -45,11 +45,11 @@ import java.util.stream.Collectors;
  * <p>Source resources keep the convenient {@code *_e.png} authoring suffix.
  * Resource processing copies block masks to {@code *_native_emissive.png},
  * explicitly stitches them into the block atlas and writes a compact manifest
- * of base textures. Keeping the runtime name private prevents MoreMcmeta from
- * drawing the same overlay a second time when it happens to be installed.</p>
+ * of base textures. Keeping the runtime name private prevents external
+ * emissive-texture loaders from drawing the same overlay a second time.</p>
  *
  * <p>The overlay uses Forge's native maximum-lightmap quad transformer. It is
- * therefore visible without MoreMcmeta or a shader pack. Compatible shader
+ * therefore visible without an external emissive-texture mod or shader pack. Compatible shader
  * packs can additionally use the LabPBR emission written into the matching
  * specular map during resource processing.</p>
  */

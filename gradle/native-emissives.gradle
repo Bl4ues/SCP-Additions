@@ -5,8 +5,8 @@
 //   2. every mask continues to write LabPBR emission into matching _s alpha.
 //
 // Block source *_e.png files remain the authoring convention, but are removed
-// from processed resources after native conversion so MoreMcmeta cannot draw a
-// second copy of the same overlay when it happens to be installed. Entity masks
+// from processed resources after native conversion so external emissive-texture
+// loaders cannot draw a second copy of the same overlay. Entity masks
 // are left untouched because their renderer path is separate from baked blocks.
 gradle.afterProject { evaluatedProject, state ->
     if (state.failure != null) {
@@ -162,7 +162,7 @@ gradle.afterProject { evaluatedProject, state ->
                     /_e\.png$/, "${runtimeSuffix}.png")
             File runtimeFile = new File(emissiveFile.parentFile, runtimeName)
 
-            // MoreMcmeta treats opaque black as a non-emissive mask value, but
+            // Legacy emissive-mask conventions treat opaque black as a non-emissive value, but
             // a native cutout overlay would render that black over the original
             // block. Convert every zero-brightness pixel to transparent while
             // preserving the authored color and alpha of actual light pixels.
@@ -206,9 +206,9 @@ gradle.afterProject { evaluatedProject, state ->
                 nativeSprites.add("${namespace}:${texturePath}")
             }
 
-            // Avoid duplicate overlays from MoreMcmeta Emissive. The public JAR
-            // contains only the private native mask and generated LabPBR map for
-            // baked block textures.
+            // The public JAR contains only the private native mask and generated
+            // LabPBR map for baked block textures, preventing duplicate overlays
+            // from external emissive-texture loaders.
             evaluatedProject.delete(emissiveFile)
             if (sourceMetadata.isFile()) {
                 evaluatedProject.delete(sourceMetadata)

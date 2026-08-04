@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
@@ -103,8 +105,7 @@ public final class Scp079SustainedDoorLocks {
     private static boolean isStrategicallyUseful(ServerLevel level,
             BlockPos doorPos, ActiveLock lock) {
         BlockState doorState = level.getBlockState(doorPos);
-        if (!level.getGameRules().getBoolean(
-                ScpAdditionsModGameRules.SCP079CONTROLON)
+        if (!Scp079FacilityAccessManager.hasFacilityAccess(level)
                 || !isClosedOrClosingDoor(doorState)) {
             return false;
         }

@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.procedures;
 
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
+
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.LevelAccessor;
@@ -12,7 +14,7 @@ import java.util.Map;
 
 public class Scp079controlonUpdateTickProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z) {
-		if (world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.SCP079CONTROLON) == true) {
+		if (Scp079FacilityAccessManager.hasFacilityAccess(world) == true) {
 			{
 				BlockPos _bp = BlockPos.containing(x, y, z);
 				BlockState _bs = ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().defaultBlockState();
@@ -28,7 +30,7 @@ public class Scp079controlonUpdateTickProcedure {
 				world.setBlock(_bp, _bs, 3);
 			}
 		}
-		if (world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.SCP079CONTROLON) == false) {
+		if (Scp079FacilityAccessManager.hasFacilityAccess(world) == false) {
 			{
 				BlockPos _bp = BlockPos.containing(x, y, z);
 				BlockState _bs = ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().defaultBlockState();

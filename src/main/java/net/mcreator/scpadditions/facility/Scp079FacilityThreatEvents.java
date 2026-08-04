@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.facility;
 
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -99,8 +101,7 @@ public final class Scp079FacilityThreatEvents {
         long gameTime = level.getGameTime();
         rememberTravel(player, gameTime);
         if ((gameTime + player.getId()) % CHECK_INTERVAL_TICKS != 0L
-                || !level.getGameRules().getBoolean(
-                ScpAdditionsModGameRules.SCP079CONTROLON)) {
+                || !Scp079FacilityAccessManager.hasFacilityAccess(level)) {
             return;
         }
 
@@ -240,6 +241,7 @@ public final class Scp079FacilityThreatEvents {
                 "closed SCP-173 ahead away from "
                         + player.getGameProfile().getName()
                         + " · lock upkeep 1.5 AP/s");
+        Scp079FacilityAccessManager.awardFirstInterference(player);
         return true;
     }
 
@@ -509,6 +511,9 @@ public final class Scp079FacilityThreatEvents {
         Scp079DecisionLog.record(level, type,
                 Scp079DecisionLog.DecisionOutcome.EXECUTED,
                 action.door().pos(), totalCost, context);
+        if (player != null) {
+            Scp079FacilityAccessManager.awardFirstInterference(player);
+        }
         return true;
     }
 

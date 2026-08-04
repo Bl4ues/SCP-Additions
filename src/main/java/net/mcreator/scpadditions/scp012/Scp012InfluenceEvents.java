@@ -1,5 +1,7 @@
 package net.mcreator.scpadditions.scp012;
 
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -64,8 +66,7 @@ public final class Scp012InfluenceEvents {
             return;
         }
 
-        boolean systemControl = level.getGameRules().getBoolean(
-                ScpAdditionsModGameRules.SCP079CONTROLON);
+        boolean systemControl = Scp079FacilityAccessManager.hasFacilityAccess(level);
         Vec3 attraction = Scp012Module.attractionPoint(level, nearby);
         double distance = player.position().distanceTo(attraction);
 

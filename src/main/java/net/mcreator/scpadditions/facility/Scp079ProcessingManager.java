@@ -79,8 +79,8 @@ public final class Scp079ProcessingManager {
     }
 
     public static boolean isActive(ServerLevel level) {
-        return level != null && level.getGameRules().getBoolean(
-                ScpAdditionsModGameRules.SCP079CONTROLON);
+        return level != null
+                && Scp079FacilityAccessManager.hasFacilityAccess(level);
     }
 
     public static float getPower(ServerLevel level) {
@@ -300,6 +300,18 @@ public final class Scp079ProcessingManager {
         boolean active = energyVisible && isActive(player.serverLevel());
         int roundedPower = energyVisible
                 ? Math.round(getPower(player.serverLevel())) : 0;
+        int roundedDiscovery = energyVisible
+                ? Math.round(Scp079FacilityAccessManager.discoveryProgress(
+                        player.getServer())) : 0;
+        boolean auxiliaryOnline = energyVisible
+                && Scp079FacilityAccessManager.auxiliaryPowerOnline(
+                        player.getServer());
+        boolean hostPresent = energyVisible
+                && Scp079FacilityAccessManager.hasPhysicalScp079(
+                        player.getServer());
+        boolean protocolExposed = energyVisible
+                && Scp079FacilityAccessManager.protocolExposed(
+                        player.getServer());
         List<RoamerDebugSnapshot> roamers = spawnTimersVisible
                 ? RoamerManager.debugSnapshots(player) : List.of();
         Scp079DecisionLog.Snapshot decisionSnapshot = decisionVisible
@@ -307,13 +319,15 @@ public final class Scp079ProcessingManager {
                 : new Scp079DecisionLog.Snapshot(-1L, List.of());
 
         ClientSnapshot next = new ClientSnapshot(energyVisible, decisionVisible,
-                active, roundedPower, spawnTimersVisible, roamers,
+                active, roundedPower, roundedDiscovery, auxiliaryOnline,
+                hostPresent, protocolExposed, spawnTimersVisible, roamers,
                 decisionSnapshot.version());
         ClientSnapshot previous = LAST_CLIENT_SYNC.get(player.getUUID());
 
         if (previous == null || !next.sameCoreState(previous)) {
             ScpEntityNetwork.syncDebugState(player, energyVisible, active,
-                    roundedPower, spawnTimersVisible, roamers);
+                    roundedPower, roundedDiscovery, auxiliaryOnline,
+                    hostPresent, protocolExposed, spawnTimersVisible, roamers);
         }
 
         if (decisionVisible) {
@@ -431,6 +445,8 @@ public final class Scp079ProcessingManager {
 
     private record ClientSnapshot(boolean energyVisible,
             boolean decisionVisible, boolean active, int roundedPower,
+            int roundedDiscovery, boolean auxiliaryOnline,
+            boolean hostPresent, boolean protocolExposed,
             boolean spawnTimersVisible, List<RoamerDebugSnapshot> roamers,
             long decisionVersion) {
         private ClientSnapshot {
@@ -442,6 +458,10 @@ public final class Scp079ProcessingManager {
                     && energyVisible == other.energyVisible
                     && active == other.active
                     && roundedPower == other.roundedPower
+                    && roundedDiscovery == other.roundedDiscovery
+                    && auxiliaryOnline == other.auxiliaryOnline
+                    && hostPresent == other.hostPresent
+                    && protocolExposed == other.protocolExposed
                     && spawnTimersVisible == other.spawnTimersVisible
                     && roamers.equals(other.roamers);
         }

@@ -43,6 +43,7 @@ import net.mcreator.scpadditions.block.Scp079offBlock;
 import net.mcreator.scpadditions.block.Scp079controloffBlock;
 import net.mcreator.scpadditions.block.Scp079controlBlock;
 import net.mcreator.scpadditions.block.SCP079SystemControlBlock;
+import net.mcreator.scpadditions.block.Scp079AuxiliaryPowerBlock;
 import net.mcreator.scpadditions.block.RightReaderWrongBlock;
 import net.mcreator.scpadditions.block.RightReaderBlock;
 import net.mcreator.scpadditions.block.RightReaderAcceptBlock;
@@ -96,6 +97,7 @@ public class ScpAdditionsModBlocks {
 	public static final RegistryObject<Block> TESLA_TERMINAL_OFF = REGISTRY.register("tesla_terminal_off", () -> new TeslaTerminalOffBlock());
 	public static final RegistryObject<Block> DECON_OPEN = REGISTRY.register("decon_open", () -> new DeconOpenBlock());
 	public static final RegistryObject<Block> SCP_079_SYSTEM_CONTROL = REGISTRY.register("scp_079_system_control", () -> new SCP079SystemControlBlock());
+	public static final RegistryObject<Block> SCP_079_AUXILIARY_POWER = REGISTRY.register("scp_079_auxiliary_power", Scp079AuxiliaryPowerBlock::new);
 	public static final RegistryObject<Block> SCP_079CONTROLOFF = REGISTRY.register("scp_079controloff", () -> new Scp079controloffBlock());
 	public static final RegistryObject<Block> SCP_079ON = REGISTRY.register("scp_079on", () -> new Scp079onBlock());
 	public static final RegistryObject<Block> SCP_294 = REGISTRY.register("scp_294", () -> new Scp294Block());

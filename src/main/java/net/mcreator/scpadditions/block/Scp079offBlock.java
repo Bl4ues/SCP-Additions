@@ -33,6 +33,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 import net.mcreator.scpadditions.procedures.Scp079onPProcedure;
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
@@ -140,7 +141,21 @@ public class Scp079offBlock extends Block implements SimpleWaterloggedBlock {
 	@Override
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
 		super.onPlace(blockstate, world, pos, oldState, moving);
+		if (!world.isClientSide && world instanceof ServerLevel server) {
+			Scp079FacilityAccessManager.registerHost(server, pos);
+		}
 		world.scheduleTick(pos, this, 20);
+	}
+
+	@Override
+	public void onRemove(BlockState state, Level world, BlockPos pos,
+			BlockState newState, boolean moving) {
+		if (!world.isClientSide && world instanceof ServerLevel server
+				&& newState.getBlock() != ScpAdditionsModBlocks.SCP_079ON.get()
+				&& newState.getBlock() != ScpAdditionsModBlocks.SCP_079OFF.get()) {
+			Scp079FacilityAccessManager.unregisterHost(server, pos);
+		}
+		super.onRemove(state, world, pos, newState, moving);
 	}
 
 	@Override

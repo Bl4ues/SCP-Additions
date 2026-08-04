@@ -52,12 +52,17 @@ public final class DoorButtonIndependentInteractionEvents {
         event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide));
 
         if (event.getLevel() instanceof ServerLevel level) {
-            activateButton(level, pos);
+            activateButton(level, pos, true);
         }
     }
 
     /** Direct block-level fallback used by every visual variant. */
     public static boolean activateButton(ServerLevel level, BlockPos pos) {
+        return activateButton(level, pos, false);
+    }
+
+    public static boolean activateButton(ServerLevel level, BlockPos pos,
+            boolean playerInitiated) {
         if (level == null || pos == null) {
             return false;
         }
@@ -88,6 +93,11 @@ public final class DoorButtonIndependentInteractionEvents {
         if (linked) {
             setState(level, counterpartPos, counterpartFacing,
                     counterpartLeft, transition);
+        }
+
+        if (playerInitiated && phase == Phase.CLOSED) {
+            Scp079FacilityAccessManager.recordActivity(level,
+                    Scp079FacilityAccessManager.Activity.DOOR_OPENED);
         }
 
         ScpAdditionsMod.queueServerWork(TRANSITION_TICKS, () -> {

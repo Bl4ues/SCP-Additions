@@ -27,6 +27,10 @@ public final class Scp079EnergyClientState {
     private static boolean decisionLogVisible;
     private static boolean active;
     private static float energy;
+    private static float discovery;
+    private static boolean auxiliaryOnline;
+    private static boolean hostPresent;
+    private static boolean protocolExposed;
     private static boolean spawnTimersVisible;
     private static final Map<RoamerType, ClientRoamerSnapshot> ROAMERS =
             new EnumMap<>(RoamerType.class);
@@ -37,11 +41,17 @@ public final class Scp079EnergyClientState {
     }
 
     public static void update(boolean shouldShowEnergy, boolean systemActive,
-            float currentEnergy, boolean shouldShowSpawnTimers,
+            float currentEnergy, float discoveryProgress,
+            boolean isAuxiliaryOnline, boolean hasHost,
+            boolean isProtocolExposed, boolean shouldShowSpawnTimers,
             List<RoamerEntry> entries) {
         energyVisible = shouldShowEnergy;
         active = systemActive;
         energy = Math.max(0.0F, Math.min(100.0F, currentEnergy));
+        discovery = Math.max(0.0F, Math.min(100.0F, discoveryProgress));
+        auxiliaryOnline = isAuxiliaryOnline;
+        hostPresent = hasHost;
+        protocolExposed = isProtocolExposed;
         spawnTimersVisible = shouldShowSpawnTimers;
         ROAMERS.clear();
         long now = clientGameTick();
@@ -84,6 +94,11 @@ public final class Scp079EnergyClientState {
         return energy;
     }
 
+    public static float discovery() { return discovery; }
+    public static boolean auxiliaryOnline() { return auxiliaryOnline; }
+    public static boolean hostPresent() { return hostPresent; }
+    public static boolean protocolExposed() { return protocolExposed; }
+
     public static boolean spawnTimersVisible() {
         return spawnTimersVisible;
     }
@@ -115,6 +130,10 @@ public final class Scp079EnergyClientState {
         decisionLogVisible = false;
         active = false;
         energy = 0.0F;
+        discovery = 0.0F;
+        auxiliaryOnline = false;
+        hostPresent = false;
+        protocolExposed = false;
         spawnTimersVisible = false;
         ROAMERS.clear();
         DECISIONS.clear();

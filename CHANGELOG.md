@@ -19,7 +19,7 @@
 - Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
 - Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**;
 - Added **Alternative Metal Wall (Bottom)**, **Rest Area Corner Floor**, and **Kitchen Corner Floor** to **LCZ - Sublevel 1**;
-- Added fixed-orientation automatic transitions from Rest Area Corner Floor to Metal Floor and from Kitchen Corner Floor to Blue Floor, using the original Blue/Metal floor corner, edge, inner-corner, and full-connection mapping.
+- Added fixed-orientation automatic transitions from Rest Area Corner Floor to Metal Floor and from Blue Floor to Kitchen Corner Floor, using the original Blue/Metal floor corner, edge, inner-corner, and full-connection mapping.
 
 ## Codex and documents
 

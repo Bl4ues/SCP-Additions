@@ -76,19 +76,21 @@ write("settings.gradle", settings)
 
 # The native pipeline no longer advertises or orders an optional plugin.
 mods = read("src/main/resources/META-INF/mods.toml")
-mods = replace_once(
-    mods,
-    """
-
-[[dependencies.scp_additions]]
-    modId="moremcmeta_emissive_plugin"
-    mandatory=false
-    versionRange="[0,)"
-    ordering="AFTER"
-    side="CLIENT""" + "\n",
-    "\n",
-    "optional emissive plugin metadata",
-)
+plugin_header = "[[dependencies.scp_additions]]\n    modId=\"moremcmeta_emissive_plugin\""
+plugin_start = mods.find(plugin_header)
+if plugin_start < 0:
+    raise RuntimeError("optional emissive plugin metadata was not found")
+remove_start = plugin_start
+while remove_start > 0 and mods[remove_start - 1] == "\n":
+    remove_start -= 1
+plugin_end_marker = "    side=\"CLIENT\""
+plugin_end = mods.find(plugin_end_marker, plugin_start)
+if plugin_end < 0:
+    raise RuntimeError("optional emissive plugin metadata end was not found")
+plugin_end += len(plugin_end_marker)
+while plugin_end < len(mods) and mods[plugin_end] == "\n":
+    plugin_end += 1
+mods = mods[:remove_start] + "\n" + mods[plugin_end:]
 write("src/main/resources/META-INF/mods.toml", mods)
 
 # CI must prove that a normal clean build works without the removed runtime.

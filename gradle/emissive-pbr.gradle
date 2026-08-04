@@ -161,8 +161,28 @@ gradle.afterProject { evaluatedProject, state ->
             String runtimeName = emissiveFile.name.replaceFirst(
                     /_e\.png$/, "${runtimeSuffix}.png")
             File runtimeFile = new File(emissiveFile.parentFile, runtimeName)
-            java.nio.file.Files.copy(emissiveFile.toPath(), runtimeFile.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+
+            // MoreMcmeta treats opaque black as a non-emissive mask value, but
+            // a native cutout overlay would render that black over the original
+            // block. Convert every zero-brightness pixel to transparent while
+            // preserving the authored color and alpha of actual light pixels.
+            def runtimeImage = new java.awt.image.BufferedImage(
+                    emissiveImage.width, emissiveImage.height,
+                    java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            for (int y = 0; y < emissiveImage.height; y++) {
+                for (int x = 0; x < emissiveImage.width; x++) {
+                    int mask = emissiveImage.getRGB(x, y)
+                    int maskAlpha = (mask >>> 24) & 0xFF
+                    int red = (mask >>> 16) & 0xFF
+                    int green = (mask >>> 8) & 0xFF
+                    int blue = mask & 0xFF
+                    int brightness = Math.max(red, Math.max(green, blue))
+                    runtimeImage.setRGB(x, y,
+                            maskAlpha == 0 || brightness == 0 ? 0 : mask)
+                }
+            }
+            runtimeFile.parentFile.mkdirs()
+            javax.imageio.ImageIO.write(runtimeImage, 'png', runtimeFile)
 
             File sourceMetadata = new File(emissiveFile.parentFile,
                     emissiveFile.name + '.mcmeta')

@@ -1,0 +1,48 @@
+name: Apply Foundation Durability
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, synchronize]
+    paths:
+      - tools/hotfix/APPLY_FOUNDATION_DURABILITY
+      - tools/hotfix/apply_foundation_durability.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Apply durability system
+        run: python3 tools/hotfix/apply_foundation_durability.py
+
+      - name: Validate build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Harden Foundation facility blocks" -m "Require an iron-tier pickaxe for Foundation infrastructure, normalize effective mining hardness so iron matches diamond on obsidian, protect facility blocks and powered doors from explosions, and preserve explosion vulnerability for manual doors."
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

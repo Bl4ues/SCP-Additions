@@ -64,16 +64,16 @@ public final class UBlocksModule {
     private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
     private static final List<RegistryObject<Block>> CUTOUT_BLOCKS = new ArrayList<>();
 
-    // Sector 1 structural set. Metal Floor is a static connection target;
-    // Blue, Rest Area and Kitchen floors own fixed-orientation transition states.
+    // Sector 1 structural set. Metal and Kitchen floors are static connection
+    // targets; Blue and Rest Area own fixed-orientation transition states.
     public static final RegistryObject<Block> SL_1_FLOOR_1 = registerBlock(
             "sl_1_floor_1", GrayConnectedFloorBlock::new, false);
     public static final RegistryObject<Block> SL_1_FLOOR_2 = registerBlock(
-            "sl_1_floor_2", () -> new TransitionConnectedFloorBlock(ConnectionTarget.METAL), false);
+            "sl_1_floor_2", BlueConnectedFloorBlock::new, false);
     public static final RegistryObject<Block> SL_1_RESTING_FLOOR = registerBlock(
             "sl_1_resting_floor", () -> new TransitionConnectedFloorBlock(ConnectionTarget.METAL), false);
     public static final RegistryObject<Block> SL_1_KITCHEN_FLOOR = registerBlock(
-            "sl_1_kitchen_floor", () -> new TransitionConnectedFloorBlock(ConnectionTarget.BLUE), false);
+            "sl_1_kitchen_floor", GrayConnectedFloorBlock::new, false);
     public static final RegistryObject<Block> SL1_WALL_BOT = structure("sl1_wall_bot");
     public static final RegistryObject<Block> SL1_BOTTOM_ALT = structure("sl1_bottom_alt");
     public static final RegistryObject<Block> SL1_WALL_MID = structure("sl1_wall_mid");
@@ -570,6 +570,42 @@ public final class UBlocksModule {
         }
     }
 
+
+    private static final class BlueConnectedFloorBlock extends ConnectedFloorBlock {
+        private static final EnumProperty<BlueFloorTransition> TRANSITION =
+                EnumProperty.create("transition", BlueFloorTransition.class);
+
+        private BlueConnectedFloorBlock() {
+            super();
+            registerDefaultState(stateDefinition.any()
+                    .setValue(TRANSITION, BlueFloorTransition.NONE));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(TRANSITION);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(TRANSITION,
+                    resolveBlueTransition(context.getLevel(),
+                            context.getClickedPos(), null, null));
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction,
+                BlockState neighborState, LevelAccessor level,
+                BlockPos currentPos, BlockPos neighborPos) {
+            BlueFloorTransition transition = resolveBlueTransition(level,
+                    currentPos, neighborPos, neighborState);
+            return state.getValue(TRANSITION) == transition
+                    ? state
+                    : state.setValue(TRANSITION, transition);
+        }
+    }
+
     private static void refreshTransitionFloors(Level level, BlockPos changedPos,
             BlockState replacementState) {
         for (int x = -1; x <= 1; x++) {
@@ -578,19 +614,48 @@ public final class UBlocksModule {
                 BlockState targetState = target.equals(changedPos)
                         ? replacementState
                         : level.getBlockState(target);
-                if (!(targetState.getBlock() instanceof TransitionConnectedFloorBlock floor)) {
+
+                if (targetState.getBlock() instanceof TransitionConnectedFloorBlock floor) {
+                    FloorTransition transition = resolveTransition(level, target,
+                            changedPos, replacementState, floor.connectionTarget);
+                    if (targetState.getValue(TransitionConnectedFloorBlock.TRANSITION)
+                            != transition) {
+                        level.setBlock(target,
+                                targetState.setValue(
+                                        TransitionConnectedFloorBlock.TRANSITION,
+                                        transition),
+                                Block.UPDATE_CLIENTS);
+                    }
                     continue;
                 }
 
-                FloorTransition transition = resolveTransition(level, target,
-                        changedPos, replacementState, floor.connectionTarget);
-                if (targetState.getValue(TransitionConnectedFloorBlock.TRANSITION) != transition) {
-                    level.setBlock(target,
-                            targetState.setValue(TransitionConnectedFloorBlock.TRANSITION, transition),
-                            Block.UPDATE_CLIENTS);
+                if (targetState.getBlock() instanceof BlueConnectedFloorBlock) {
+                    BlueFloorTransition transition = resolveBlueTransition(level,
+                            target, changedPos, replacementState);
+                    if (targetState.getValue(BlueConnectedFloorBlock.TRANSITION)
+                            != transition) {
+                        level.setBlock(target,
+                                targetState.setValue(
+                                        BlueConnectedFloorBlock.TRANSITION,
+                                        transition),
+                                Block.UPDATE_CLIENTS);
+                    }
                 }
             }
         }
+    }
+
+    private static BlueFloorTransition resolveBlueTransition(BlockGetter level,
+            BlockPos pos, BlockPos overriddenPos, BlockState overriddenState) {
+        FloorTransition kitchenTransition = resolveTransition(level, pos,
+                overriddenPos, overriddenState, ConnectionTarget.KITCHEN);
+        if (kitchenTransition != FloorTransition.NONE) {
+            return BlueFloorTransition.from(kitchenTransition, true);
+        }
+
+        FloorTransition metalTransition = resolveTransition(level, pos,
+                overriddenPos, overriddenState, ConnectionTarget.METAL);
+        return BlueFloorTransition.from(metalTransition, false);
     }
 
     private static FloorTransition resolveTransition(BlockGetter level, BlockPos pos,
@@ -667,10 +732,10 @@ public final class UBlocksModule {
                 return state.is(SL_1_FLOOR_1.get());
             }
         },
-        BLUE {
+        KITCHEN {
             @Override
             boolean matches(BlockState state) {
-                return state.is(SL_1_FLOOR_2.get());
+                return state.is(SL_1_KITCHEN_FLOOR.get());
             }
         };
 
@@ -705,6 +770,86 @@ public final class UBlocksModule {
 
         FloorTransition(String serializedName) {
             this.serializedName = serializedName;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return serializedName;
+        }
+    }
+
+
+    private enum BlueFloorTransition implements StringRepresentable {
+        NONE("none"),
+        CORNER_SW("corner_sw"),
+        CORNER_NW("corner_nw"),
+        CORNER_NE("corner_ne"),
+        CORNER_SE("corner_se"),
+        EDGE_W("edge_w"),
+        EDGE_N("edge_n"),
+        EDGE_E("edge_e"),
+        EDGE_S("edge_s"),
+        INNER_NW("inner_nw"),
+        INNER_NE("inner_ne"),
+        INNER_SE("inner_se"),
+        INNER_SW("inner_sw"),
+        FULL("full"),
+        KITCHEN_CORNER_SW("kitchen_corner_sw"),
+        KITCHEN_CORNER_NW("kitchen_corner_nw"),
+        KITCHEN_CORNER_NE("kitchen_corner_ne"),
+        KITCHEN_CORNER_SE("kitchen_corner_se"),
+        KITCHEN_EDGE_W("kitchen_edge_w"),
+        KITCHEN_EDGE_N("kitchen_edge_n"),
+        KITCHEN_EDGE_E("kitchen_edge_e"),
+        KITCHEN_EDGE_S("kitchen_edge_s"),
+        KITCHEN_INNER_NW("kitchen_inner_nw"),
+        KITCHEN_INNER_NE("kitchen_inner_ne"),
+        KITCHEN_INNER_SE("kitchen_inner_se"),
+        KITCHEN_INNER_SW("kitchen_inner_sw"),
+        KITCHEN_FULL("kitchen_full");
+
+        private final String serializedName;
+
+        BlueFloorTransition(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        private static BlueFloorTransition from(FloorTransition transition,
+                boolean kitchen) {
+            if (!kitchen) {
+                return switch (transition) {
+                    case CORNER_SW -> CORNER_SW;
+                    case CORNER_NW -> CORNER_NW;
+                    case CORNER_NE -> CORNER_NE;
+                    case CORNER_SE -> CORNER_SE;
+                    case EDGE_W -> EDGE_W;
+                    case EDGE_N -> EDGE_N;
+                    case EDGE_E -> EDGE_E;
+                    case EDGE_S -> EDGE_S;
+                    case INNER_NW -> INNER_NW;
+                    case INNER_NE -> INNER_NE;
+                    case INNER_SE -> INNER_SE;
+                    case INNER_SW -> INNER_SW;
+                    case FULL -> FULL;
+                    default -> NONE;
+                };
+            }
+            return switch (transition) {
+                case CORNER_SW -> KITCHEN_CORNER_SW;
+                case CORNER_NW -> KITCHEN_CORNER_NW;
+                case CORNER_NE -> KITCHEN_CORNER_NE;
+                case CORNER_SE -> KITCHEN_CORNER_SE;
+                case EDGE_W -> KITCHEN_EDGE_W;
+                case EDGE_N -> KITCHEN_EDGE_N;
+                case EDGE_E -> KITCHEN_EDGE_E;
+                case EDGE_S -> KITCHEN_EDGE_S;
+                case INNER_NW -> KITCHEN_INNER_NW;
+                case INNER_NE -> KITCHEN_INNER_NE;
+                case INNER_SE -> KITCHEN_INNER_SE;
+                case INNER_SW -> KITCHEN_INNER_SW;
+                case FULL -> KITCHEN_FULL;
+                default -> NONE;
+            };
         }
 
         @Override

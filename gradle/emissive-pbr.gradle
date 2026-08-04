@@ -1,7 +1,13 @@
-// Adds LabPBR emission to every authored OptiFine-style *_e.png overlay.
-// Existing _s RGB material channels are preserved; only their alpha emission
-// channel is generated. When no _s map exists, a neutral non-metal material is
-// created so the emissive texture still works with shader packs.
+// Converts every authored OptiFine-style *_e.png mask into complementary
+// emission paths:
+//   1. block masks become private, atlas-stitched textures used by SCP
+//      Additions' native full-bright baked-model overlay; and
+//   2. every mask continues to write LabPBR emission into matching _s alpha.
+//
+// Block source *_e.png files remain the authoring convention, but are removed
+// from processed resources after native conversion so MoreMcmeta cannot draw a
+// second copy of the same overlay when it happens to be installed. Entity masks
+// are left untouched because their renderer path is separate from baked blocks.
 gradle.afterProject { evaluatedProject, state ->
     if (state.failure != null) {
         return
@@ -19,6 +25,10 @@ gradle.afterProject { evaluatedProject, state ->
             return
         }
 
+        final String runtimeSuffix = '_native_emissive'
+        def nativeSprites = new TreeSet<String>()
+        def nativeBaseTextures = new TreeSet<String>()
+
         // One malformed optional material must not abort the complete resource
         // build. Record the exact path so the source asset can be repaired,
         // while allowing every other valid emissive texture to be processed.
@@ -34,9 +44,8 @@ gradle.afterProject { evaluatedProject, state ->
 
         // The Floor Station is a GeckoLib block entity, but its authored light
         // artwork uses the same glowmask convention as entities. Mirror that
-        // mask to an _e overlay in processed resources so shader packs also see
-        // it through the normal LabPBR material path. The GeckoLib glowing layer
-        // remains as the renderer-level emissive path.
+        // mask to an _e source before the common LabPBR conversion. Its ordinary
+        // baked block texture additionally receives the native overlay below.
         [
                 'scp_additions/textures/entities/core_room_elevator_floor_station',
                 'scp_additions/textures/block/core_room_elevator_floor_station'
@@ -52,11 +61,13 @@ gradle.afterProject { evaluatedProject, state ->
             }
         }
 
-        evaluatedProject.fileTree(assetsRoot).matching {
+        def emissiveFiles = evaluatedProject.fileTree(assetsRoot).matching {
             include '**/*_e.png'
         }.files.sort { first, second ->
             first.path <=> second.path
-        }.each { File emissiveFile ->
+        }
+
+        emissiveFiles.each { File emissiveFile ->
             def emissiveImage = readPng(emissiveFile)
             if (emissiveImage == null) {
                 return
@@ -115,8 +126,8 @@ gradle.afterProject { evaluatedProject, state ->
 
                     // The separate _e artwork already defines which pixels are
                     // emissive and carries their light color. Use maximum LabPBR
-                    // strength so shaders produce decisive bloom instead of a
-                    // merely full-bright surface.
+                    // strength so shaders can produce decisive bloom instead of
+                    // a merely full-bright surface.
                     int material = specularImage.getRGB(x, y)
                     specularImage.setRGB(x, y,
                             (254 << 24) | (material & 0x00FFFFFF))
@@ -125,6 +136,126 @@ gradle.afterProject { evaluatedProject, state ->
 
             specularFile.parentFile.mkdirs()
             javax.imageio.ImageIO.write(specularImage, 'png', specularFile)
+
+            String sourceRelative = assetsRoot.toPath()
+                    .relativize(emissiveFile.toPath())
+                    .toString().replace('\\', '/')
+            boolean bakedBlockTexture = sourceRelative.contains('/textures/block/')
+                    || sourceRelative.contains('/textures/blocks/')
+            if (!bakedBlockTexture) {
+                return
+            }
+
+            int sourceTextureMarker = sourceRelative.indexOf('/textures/')
+            if (sourceTextureMarker > 0 && sourceRelative.endsWith('.png')) {
+                String namespace = sourceRelative.substring(0,
+                        sourceTextureMarker)
+                String authoredTexturePath = sourceRelative.substring(
+                        sourceTextureMarker + '/textures/'.length(),
+                        sourceRelative.length() - '.png'.length())
+                String baseTexturePath = authoredTexturePath.replaceFirst(
+                        /_e$/, '')
+                nativeBaseTextures.add("${namespace}:${baseTexturePath}")
+            }
+
+            String runtimeName = emissiveFile.name.replaceFirst(
+                    /_e\.png$/, "${runtimeSuffix}.png")
+            File runtimeFile = new File(emissiveFile.parentFile, runtimeName)
+
+            // MoreMcmeta treats opaque black as a non-emissive mask value, but
+            // a native cutout overlay would render that black over the original
+            // block. Convert every zero-brightness pixel to transparent while
+            // preserving the authored color and alpha of actual light pixels.
+            def runtimeImage = new java.awt.image.BufferedImage(
+                    emissiveImage.width, emissiveImage.height,
+                    java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            for (int y = 0; y < emissiveImage.height; y++) {
+                for (int x = 0; x < emissiveImage.width; x++) {
+                    int mask = emissiveImage.getRGB(x, y)
+                    int maskAlpha = (mask >>> 24) & 0xFF
+                    int red = (mask >>> 16) & 0xFF
+                    int green = (mask >>> 8) & 0xFF
+                    int blue = mask & 0xFF
+                    int brightness = Math.max(red, Math.max(green, blue))
+                    runtimeImage.setRGB(x, y,
+                            maskAlpha == 0 || brightness == 0 ? 0 : mask)
+                }
+            }
+            runtimeFile.parentFile.mkdirs()
+            javax.imageio.ImageIO.write(runtimeImage, 'png', runtimeFile)
+
+            File sourceMetadata = new File(emissiveFile.parentFile,
+                    emissiveFile.name + '.mcmeta')
+            if (sourceMetadata.isFile()) {
+                File runtimeMetadata = new File(runtimeFile.parentFile,
+                        runtimeFile.name + '.mcmeta')
+                java.nio.file.Files.copy(sourceMetadata.toPath(),
+                        runtimeMetadata.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            }
+
+            String relative = assetsRoot.toPath()
+                    .relativize(runtimeFile.toPath())
+                    .toString().replace('\\', '/')
+            int textureMarker = relative.indexOf('/textures/')
+            if (textureMarker > 0 && relative.endsWith('.png')) {
+                String namespace = relative.substring(0, textureMarker)
+                String texturePath = relative.substring(
+                        textureMarker + '/textures/'.length(),
+                        relative.length() - '.png'.length())
+                nativeSprites.add("${namespace}:${texturePath}")
+            }
+
+            // Avoid duplicate overlays from MoreMcmeta Emissive. The public JAR
+            // contains only the private native mask and generated LabPBR map for
+            // baked block textures.
+            evaluatedProject.delete(emissiveFile)
+            if (sourceMetadata.isFile()) {
+                evaluatedProject.delete(sourceMetadata)
+            }
+        }
+
+        // Runtime model wrappers consult this manifest before adding render
+        // passes, so blocks without emissive artwork incur no empty cutout pass.
+        File manifestFile = new File(assetsRoot,
+                'scp_additions/native_emissive_textures.txt')
+        manifestFile.parentFile.mkdirs()
+        String manifestText = nativeBaseTextures.join(System.lineSeparator())
+        if (!manifestText.isEmpty()) {
+            manifestText += System.lineSeparator()
+        }
+        manifestFile.setText(manifestText, 'UTF-8')
+
+        if (!nativeSprites.isEmpty()) {
+            // Atlas configuration files from multiple resource packs are merged
+            // by Minecraft. Add every private mask explicitly because no normal
+            // JSON model references these second-pass textures directly.
+            File atlasFile = new File(assetsRoot,
+                    'minecraft/atlases/blocks.json')
+            def atlasData = atlasFile.isFile()
+                    ? new groovy.json.JsonSlurper().parse(atlasFile)
+                    : [:]
+            def sources = atlasData.sources instanceof List
+                    ? new ArrayList(atlasData.sources)
+                    : []
+
+            sources.removeAll { source ->
+                source instanceof Map
+                        && source.type == 'single'
+                        && source.resource instanceof String
+                        && source.resource.endsWith(runtimeSuffix)
+            }
+            nativeSprites.each { sprite ->
+                sources.add([type: 'single', resource: sprite])
+            }
+            atlasData.sources = sources
+
+            atlasFile.parentFile.mkdirs()
+            atlasFile.setText(
+                    groovy.json.JsonOutput.prettyPrint(
+                            groovy.json.JsonOutput.toJson(atlasData))
+                            + System.lineSeparator(),
+                    'UTF-8')
         }
     }
 }

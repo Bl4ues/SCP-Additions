@@ -343,7 +343,10 @@ public final class FacilityModule {
         List<ItemStack> sublevel1 = new ArrayList<>();
         addUBlockCreativeItem(sublevel1, "sl_1_floor_2");
         addUBlockCreativeItem(sublevel1, "sl_1_floor_1");
+        addUBlockCreativeItem(sublevel1, "sl_1_resting_floor");
+        addUBlockCreativeItem(sublevel1, "sl_1_kitchen_floor");
         addUBlockCreativeItem(sublevel1, "sl1_wall_bot");
+        addUBlockCreativeItem(sublevel1, "sl1_bottom_alt");
         addUBlockCreativeItem(sublevel1, "sl1_wall_mid");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_top");
         addUBlockCreativeItem(sublevel1, "sl1_ceiling");

@@ -64,13 +64,18 @@ public final class UBlocksModule {
     private static final List<RegistryObject<Item>> CREATIVE_ITEMS = new ArrayList<>();
     private static final List<RegistryObject<Block>> CUTOUT_BLOCKS = new ArrayList<>();
 
-    // Sector 1 structural set. Floor 1 is the static gray surface; Floor 2 owns
-    // the visual transition states rendered around neighboring gray tiles.
+    // Sector 1 structural set. Metal Floor is a static connection target;
+    // Blue, Rest Area and Kitchen floors own fixed-orientation transition states.
     public static final RegistryObject<Block> SL_1_FLOOR_1 = registerBlock(
             "sl_1_floor_1", GrayConnectedFloorBlock::new, false);
     public static final RegistryObject<Block> SL_1_FLOOR_2 = registerBlock(
-            "sl_1_floor_2", BlueConnectedFloorBlock::new, false);
+            "sl_1_floor_2", () -> new TransitionConnectedFloorBlock(ConnectionTarget.METAL), false);
+    public static final RegistryObject<Block> SL_1_RESTING_FLOOR = registerBlock(
+            "sl_1_resting_floor", () -> new TransitionConnectedFloorBlock(ConnectionTarget.METAL), false);
+    public static final RegistryObject<Block> SL_1_KITCHEN_FLOOR = registerBlock(
+            "sl_1_kitchen_floor", () -> new TransitionConnectedFloorBlock(ConnectionTarget.BLUE), false);
     public static final RegistryObject<Block> SL1_WALL_BOT = structure("sl1_wall_bot");
+    public static final RegistryObject<Block> SL1_BOTTOM_ALT = structure("sl1_bottom_alt");
     public static final RegistryObject<Block> SL1_WALL_MID = structure("sl1_wall_mid");
     public static final RegistryObject<Block> SL_1_WALL_TOP = structure("sl_1_wall_top");
     public static final RegistryObject<Block> SL1_CEILING = structure("sl1_ceiling");
@@ -261,7 +266,10 @@ public final class UBlocksModule {
     }
 
     private static boolean isConnectedFloorPath(String path) {
-        return "sl_1_floor_1".equals(path) || "sl_1_floor_2".equals(path);
+        return "sl_1_floor_1".equals(path)
+                || "sl_1_floor_2".equals(path)
+                || "sl_1_resting_floor".equals(path)
+                || "sl_1_kitchen_floor".equals(path);
     }
 
     private static final class ConnectedFloorBlockItem extends BlockItem {
@@ -277,9 +285,13 @@ public final class UBlocksModule {
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
             appendZoneTooltip(path, tooltip);
-            String connectionKey = "sl_1_floor_1".equals(path)
-                    ? "tooltip.scp_additions.sl1_metal_floor_connection"
-                    : "tooltip.scp_additions.sl1_blue_floor_connection";
+            String connectionKey = switch (path) {
+                case "sl_1_floor_1" -> "tooltip.scp_additions.sl1_metal_floor_connection";
+                case "sl_1_floor_2" -> "tooltip.scp_additions.sl1_blue_floor_connection";
+                case "sl_1_resting_floor" -> "tooltip.scp_additions.sl1_resting_floor_connection";
+                case "sl_1_kitchen_floor" -> "tooltip.scp_additions.sl1_kitchen_floor_connection";
+                default -> "tooltip.scp_additions.sl1_connected_floors";
+            };
             tooltip.add(Component.translatable(connectionKey)
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
@@ -501,7 +513,7 @@ public final class UBlocksModule {
                 BlockState oldState, boolean movedByPiston) {
             super.onPlace(state, level, pos, oldState, movedByPiston);
             if (oldState.getBlock() != state.getBlock()) {
-                refreshBlueFloors(level, pos, state);
+                refreshTransitionFloors(level, pos, state);
             }
         }
 
@@ -511,7 +523,7 @@ public final class UBlocksModule {
             if (state.getBlock() != newState.getBlock()) {
                 // onRemove runs before the replacement is fully visible through
                 // the level, so pass it explicitly while recalculating neighbors.
-                refreshBlueFloors(level, pos, newState);
+                refreshTransitionFloors(level, pos, newState);
             }
             super.onRemove(state, level, pos, newState, movedByPiston);
         }
@@ -523,12 +535,14 @@ public final class UBlocksModule {
         }
     }
 
-    private static final class BlueConnectedFloorBlock extends ConnectedFloorBlock {
+    private static final class TransitionConnectedFloorBlock extends ConnectedFloorBlock {
         private static final EnumProperty<FloorTransition> TRANSITION =
                 EnumProperty.create("transition", FloorTransition.class);
+        private final ConnectionTarget connectionTarget;
 
-        private BlueConnectedFloorBlock() {
+        private TransitionConnectedFloorBlock(ConnectionTarget connectionTarget) {
             super();
+            this.connectionTarget = connectionTarget;
             registerDefaultState(stateDefinition.any().setValue(TRANSITION, FloorTransition.NONE));
         }
 
@@ -540,21 +554,23 @@ public final class UBlocksModule {
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
             return defaultBlockState().setValue(TRANSITION,
-                    resolveTransition(context.getLevel(), context.getClickedPos(), null, null));
+                    resolveTransition(context.getLevel(), context.getClickedPos(),
+                            null, null, connectionTarget));
         }
 
         @Override
         public BlockState updateShape(BlockState state, Direction direction,
                 BlockState neighborState, LevelAccessor level, BlockPos currentPos,
                 BlockPos neighborPos) {
-            FloorTransition transition = resolveTransition(level, currentPos, neighborPos, neighborState);
+            FloorTransition transition = resolveTransition(level, currentPos,
+                    neighborPos, neighborState, connectionTarget);
             return state.getValue(TRANSITION) == transition
                     ? state
                     : state.setValue(TRANSITION, transition);
         }
     }
 
-    private static void refreshBlueFloors(Level level, BlockPos changedPos,
+    private static void refreshTransitionFloors(Level level, BlockPos changedPos,
             BlockState replacementState) {
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
@@ -562,15 +578,15 @@ public final class UBlocksModule {
                 BlockState targetState = target.equals(changedPos)
                         ? replacementState
                         : level.getBlockState(target);
-                if (!(targetState.getBlock() instanceof BlueConnectedFloorBlock)) {
+                if (!(targetState.getBlock() instanceof TransitionConnectedFloorBlock floor)) {
                     continue;
                 }
 
-                FloorTransition transition = resolveTransition(
-                        level, target, changedPos, replacementState);
-                if (targetState.getValue(BlueConnectedFloorBlock.TRANSITION) != transition) {
+                FloorTransition transition = resolveTransition(level, target,
+                        changedPos, replacementState, floor.connectionTarget);
+                if (targetState.getValue(TransitionConnectedFloorBlock.TRANSITION) != transition) {
                     level.setBlock(target,
-                            targetState.setValue(BlueConnectedFloorBlock.TRANSITION, transition),
+                            targetState.setValue(TransitionConnectedFloorBlock.TRANSITION, transition),
                             Block.UPDATE_CLIENTS);
                 }
             }
@@ -578,11 +594,16 @@ public final class UBlocksModule {
     }
 
     private static FloorTransition resolveTransition(BlockGetter level, BlockPos pos,
-            BlockPos overriddenPos, BlockState overriddenState) {
-        boolean north = isGray(level, pos.north(), overriddenPos, overriddenState);
-        boolean east = isGray(level, pos.east(), overriddenPos, overriddenState);
-        boolean south = isGray(level, pos.south(), overriddenPos, overriddenState);
-        boolean west = isGray(level, pos.west(), overriddenPos, overriddenState);
+            BlockPos overriddenPos, BlockState overriddenState,
+            ConnectionTarget connectionTarget) {
+        boolean north = isConnectionTarget(level, pos.north(), overriddenPos,
+                overriddenState, connectionTarget);
+        boolean east = isConnectionTarget(level, pos.east(), overriddenPos,
+                overriddenState, connectionTarget);
+        boolean south = isConnectionTarget(level, pos.south(), overriddenPos,
+                overriddenState, connectionTarget);
+        boolean west = isConnectionTarget(level, pos.west(), overriddenPos,
+                overriddenState, connectionTarget);
 
         int cardinalCount = count(north, east, south, west);
         if (cardinalCount >= 3 || (north && south) || (east && west)) {
@@ -597,10 +618,14 @@ public final class UBlocksModule {
         if (south) return FloorTransition.EDGE_S;
         if (west) return FloorTransition.EDGE_W;
 
-        boolean northWest = isGray(level, pos.north().west(), overriddenPos, overriddenState);
-        boolean northEast = isGray(level, pos.north().east(), overriddenPos, overriddenState);
-        boolean southEast = isGray(level, pos.south().east(), overriddenPos, overriddenState);
-        boolean southWest = isGray(level, pos.south().west(), overriddenPos, overriddenState);
+        boolean northWest = isConnectionTarget(level, pos.north().west(),
+                overriddenPos, overriddenState, connectionTarget);
+        boolean northEast = isConnectionTarget(level, pos.north().east(),
+                overriddenPos, overriddenState, connectionTarget);
+        boolean southEast = isConnectionTarget(level, pos.south().east(),
+                overriddenPos, overriddenState, connectionTarget);
+        boolean southWest = isConnectionTarget(level, pos.south().west(),
+                overriddenPos, overriddenState, connectionTarget);
 
         int diagonalCount = count(northWest, northEast, southEast, southWest);
         if (diagonalCount == 4) return FloorTransition.FULL;
@@ -615,8 +640,8 @@ public final class UBlocksModule {
             if (northEast && southEast) return FloorTransition.EDGE_E;
             if (southEast && southWest) return FloorTransition.EDGE_S;
             if (southWest && northWest) return FloorTransition.EDGE_W;
-            // Dedicated orientation textures still cannot express the two
-            // opposite-corner checkerboard cases without a separate pattern.
+            // The supplied twelve transition textures do not include the two
+            // opposite-corner checkerboard cases.
             return FloorTransition.NONE;
         }
         if (northWest) return FloorTransition.CORNER_NW;
@@ -626,12 +651,30 @@ public final class UBlocksModule {
         return FloorTransition.NONE;
     }
 
-    private static boolean isGray(BlockGetter level, BlockPos pos,
-            BlockPos overriddenPos, BlockState overriddenState) {
+    private static boolean isConnectionTarget(BlockGetter level, BlockPos pos,
+            BlockPos overriddenPos, BlockState overriddenState,
+            ConnectionTarget connectionTarget) {
         BlockState state = overriddenPos != null && overriddenPos.equals(pos)
                 ? overriddenState
                 : level.getBlockState(pos);
-        return state != null && state.getBlock() instanceof GrayConnectedFloorBlock;
+        return state != null && connectionTarget.matches(state);
+    }
+
+    private enum ConnectionTarget {
+        METAL {
+            @Override
+            boolean matches(BlockState state) {
+                return state.is(SL_1_FLOOR_1.get());
+            }
+        },
+        BLUE {
+            @Override
+            boolean matches(BlockState state) {
+                return state.is(SL_1_FLOOR_2.get());
+            }
+        };
+
+        abstract boolean matches(BlockState state);
     }
 
     private static int count(boolean... values) {

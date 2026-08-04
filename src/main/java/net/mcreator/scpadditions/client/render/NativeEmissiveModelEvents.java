@@ -152,6 +152,15 @@ public final class NativeEmissiveModelEvents {
             }
 
             if (renderType == BLOCK_OVERLAY_TYPE) {
+                // Shader bloom uses a separate eyes/spidereyes pass. Keeping
+                // this coplanar full-bright overlay at the same time causes
+                // depth flicker on bright masks, so the chunk pass supplies
+                // only the model's original cutout geometry while shaders run.
+                if (NativeEmissiveShaderBloomRenderer.isShaderPackInUse()) {
+                    return originalModel.getQuads(state, side, random,
+                            modelData, renderType);
+                }
+
                 List<BakedQuad> source = originalModel.getQuads(state, side,
                         random, modelData, null);
                 List<BakedQuad> emissive = overlays.forQuads(source);
@@ -176,7 +185,8 @@ public final class NativeEmissiveModelEvents {
                 RandomSource random, ModelData modelData) {
             ChunkRenderTypeSet original = originalModel.getRenderTypes(state,
                     random, modelData);
-            if (!hasBlockEmission(state, modelData)) {
+            if (NativeEmissiveShaderBloomRenderer.isShaderPackInUse()
+                    || !hasBlockEmission(state, modelData)) {
                 return original;
             }
             return ChunkRenderTypeSet.union(original, BLOCK_OVERLAY_TYPES);

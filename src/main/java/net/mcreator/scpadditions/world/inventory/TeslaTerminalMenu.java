@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.Entity;
@@ -17,6 +18,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModMenus;
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 
 import java.util.function.Supplier;
 import java.util.Map;
@@ -30,6 +32,7 @@ public class TeslaTerminalMenu extends AbstractContainerMenu implements Supplier
 	public boolean initialTeslaGatesEnabled = true;
 	public boolean initialManualOverride = false;
 	public boolean initialHasSecurityCredentials = false;
+	public boolean auxiliaryPowerOnline = false;
 	private ContainerLevelAccess access = ContainerLevelAccess.NULL;
 	private IItemHandler internal;
 	private final Map<Integer, Slot> customSlots = new HashMap<>();
@@ -56,8 +59,27 @@ public class TeslaTerminalMenu extends AbstractContainerMenu implements Supplier
 			if (extraData.readableBytes() >= 1) {
 				this.initialHasSecurityCredentials = extraData.readBoolean();
 			}
+			if (extraData.readableBytes() >= 1) {
+				this.auxiliaryPowerOnline = extraData.readBoolean();
+			}
 			access = ContainerLevelAccess.create(world, pos);
 		}
+
+		this.addDataSlot(new DataSlot() {
+			@Override
+			public int get() {
+				if (TeslaTerminalMenu.this.world.isClientSide) {
+					return TeslaTerminalMenu.this.auxiliaryPowerOnline ? 1 : 0;
+				}
+				return Scp079FacilityAccessManager.isAuxiliaryPowerOnline(
+						TeslaTerminalMenu.this.world) ? 1 : 0;
+			}
+
+			@Override
+			public void set(int value) {
+				TeslaTerminalMenu.this.auxiliaryPowerOnline = value != 0;
+			}
+		});
 	}
 
 	@Override

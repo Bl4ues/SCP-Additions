@@ -47,6 +47,7 @@ import net.minecraft.core.BlockPos;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 import net.mcreator.scpadditions.procedures.TeslaTerminalController;
 import net.mcreator.scpadditions.item.ScrewdriverItem;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
@@ -176,6 +177,8 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 			boolean teslaOn = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEON);
 			boolean manualOverride = world.getLevelData().getGameRules().getBoolean(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE);
 			boolean hasSecurityCredentials = TeslaTerminalController.hasSecurityCredentials(player);
+			boolean auxiliaryPowerOnline = Scp079FacilityAccessManager
+					.isAuxiliaryPowerOnline(world);
 			NetworkHooks.openScreen(player, new MenuProvider() {
 				@Override
 				public Component getDisplayName() {
@@ -188,6 +191,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 					data.writeBoolean(teslaOn);
 					data.writeBoolean(manualOverride);
 					data.writeBoolean(hasSecurityCredentials);
+					data.writeBoolean(auxiliaryPowerOnline);
 					return new TeslaTerminalMenu(id, inventory, data);
 				}
 			}, data -> {
@@ -195,6 +199,7 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 				data.writeBoolean(teslaOn);
 				data.writeBoolean(manualOverride);
 				data.writeBoolean(hasSecurityCredentials);
+				data.writeBoolean(auxiliaryPowerOnline);
 			});
 		}
 		return InteractionResult.sidedSuccess(world.isClientSide);

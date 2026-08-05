@@ -15,7 +15,8 @@ import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
 /** Seamless positional generator loop with quick startup and shutdown fades. */
 public final class AuxiliaryGeneratorLoopSound
         extends AbstractTickableSoundInstance {
-    private static final float MINIMUM_AUDIBLE_VOLUME = 0.015F;
+    private static final float START_VOLUME = 0.015F;
+    private static final float STOP_VOLUME = 0.001F;
     private static final float TARGET_VOLUME = 0.22F;
     private static final int FADE_IN_TICKS = 12;
     private static final int FADE_OUT_TICKS = 18;
@@ -35,7 +36,7 @@ public final class AuxiliaryGeneratorLoopSound
         this.level = level;
         this.looping = true;
         this.delay = 0;
-        this.volume = MINIMUM_AUDIBLE_VOLUME;
+        this.volume = START_VOLUME;
         this.pitch = 1.0F;
         this.relative = false;
         this.attenuation = SoundInstance.Attenuation.LINEAR;
@@ -76,15 +77,14 @@ public final class AuxiliaryGeneratorLoopSound
         boolean powered = !stopRequested && level.hasChunkAt(target)
                 && shouldPlayFor(level.getBlockState(target));
         if (powered) {
-            float step = (TARGET_VOLUME - MINIMUM_AUDIBLE_VOLUME)
-                    / FADE_IN_TICKS;
+            float step = (TARGET_VOLUME - START_VOLUME) / FADE_IN_TICKS;
             this.volume = Mth.approach(this.volume, TARGET_VOLUME, step);
             return;
         }
 
         float step = TARGET_VOLUME / FADE_OUT_TICKS;
-        this.volume = Mth.approach(this.volume, MINIMUM_AUDIBLE_VOLUME, step);
-        if (this.volume <= MINIMUM_AUDIBLE_VOLUME + 0.0005F) finish();
+        this.volume = Mth.approach(this.volume, STOP_VOLUME, step);
+        if (this.volume <= STOP_VOLUME + 0.0005F) finish();
     }
 
     static boolean shouldPlayFor(BlockState state) {

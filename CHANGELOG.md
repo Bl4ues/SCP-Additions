@@ -1,5 +1,12 @@
 # Changelog
 
+## SCiPNET terminal and auxiliary generator models
+
+- Added the authored ARC-Site-48 SCiPNET terminal model, cutout rendering, double-sided thin geometry, and glowmask layer;
+- Replaced the auxiliary generator placeholder with the authored two-block model and double-sided cutout geometry;
+- Auxiliary generators now require redstone, emit chimney smoke while powered, and contribute 0.1 AP/s each to cumulative SCP-079 regeneration;
+- Updated terminal and generator tooltips for the new power, cache, and telemetry behavior.
+
 ## SCP-079 auxiliary isolation and SCiPNET reindexing
 
 - Auxiliary power isolation now suspends SCP-079 actions and drains AP toward 25 without erasing learned facility access;

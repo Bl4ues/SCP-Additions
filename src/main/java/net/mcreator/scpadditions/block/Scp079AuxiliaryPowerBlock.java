@@ -2,12 +2,10 @@ package net.mcreator.scpadditions.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -28,20 +26,26 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.phys.BlockHitResult;
 import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 
 import java.util.Collections;
 import java.util.List;
 
-/** Placeholder generator block for the global auxiliary facility bus. */
+/** Redstone-fed auxiliary generator for the global SCiPNET facility bus. */
 public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
         implements SimpleWaterloggedBlock {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    public static final BooleanProperty WATERLOGGED =
+            BlockStateProperties.WATERLOGGED;
+
+    private static final double CHIMNEY_X = 1.5D / 16.0D;
+    private static final double CHIMNEY_Y = 24.5D / 16.0D;
+    private static final double CHIMNEY_Z = 18.6D / 16.0D;
+
     public Scp079AuxiliaryPowerBlock() {
         super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
-                .strength(30.0F, 100.0F).noOcclusion());
+                .strength(30.0F, 100.0F).noOcclusion()
+                .isRedstoneConductor((state, level, pos) -> false));
         registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(POWERED, false)
@@ -56,17 +60,88 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
         return defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
-                .setValue(POWERED, Scp079FacilityAccessManager
-                        .isAuxiliaryPowerOnline(context.getLevel()))
-                .setValue(WATERLOGGED, context.getLevel().getFluidState(
-                        context.getClickedPos()).getType() == Fluids.WATER);
+                .setValue(FACING,
+                        context.getHorizontalDirection().getOpposite())
+                .setValue(POWERED, level.hasNeighborSignal(pos))
+                .setValue(WATERLOGGED,
+                        level.getFluidState(pos).getType() == Fluids.WATER);
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos,
+            Block neighborBlock, BlockPos neighborPos, boolean moving) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos,
+                moving);
+        if (level.isClientSide) return;
+        boolean powered = level.hasNeighborSignal(pos);
+        if (powered == state.getValue(POWERED)) return;
+
+        BlockState updated = state.setValue(POWERED, powered);
+        level.setBlock(pos, updated, Block.UPDATE_ALL);
+        if (level instanceof ServerLevel server) {
+            Scp079FacilityAccessManager.updateAuxiliaryUnitPower(server, pos,
+                    powered);
+        }
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos,
+            RandomSource random) {
+        super.animateTick(state, level, pos, random);
+        if (!state.getValue(POWERED) || state.getValue(WATERLOGGED)
+                || random.nextInt(3) != 0) {
+            return;
+        }
+
+        double[] rotated = rotateLocal(CHIMNEY_X, CHIMNEY_Z,
+                state.getValue(FACING));
+        level.addParticle(ParticleTypes.SMOKE,
+                pos.getX() + rotated[0],
+                pos.getY() + CHIMNEY_Y,
+                pos.getZ() + rotated[1],
+                (random.nextDouble() - 0.5D) * 0.006D,
+                0.020D + random.nextDouble() * 0.016D,
+                (random.nextDouble() - 0.5D) * 0.006D);
+    }
+
+    private static double[] rotateLocal(double x, double z,
+            Direction facing) {
+        return switch (facing) {
+            case EAST -> new double[] {1.0D - z, x};
+            case SOUTH -> new double[] {1.0D - x, 1.0D - z};
+            case WEST -> new double[] {z, 1.0D - x};
+            default -> new double[] {x, z};
+        };
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos,
+            BlockState oldState, boolean moving) {
+        super.onPlace(state, level, pos, oldState, moving);
+        if (!level.isClientSide && level instanceof ServerLevel server
+                && oldState.getBlock() != this) {
+            Scp079FacilityAccessManager.registerAuxiliaryUnit(server, pos,
+                    state.getValue(POWERED));
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos,
+            BlockState newState, boolean moving) {
+        if (!level.isClientSide && level instanceof ServerLevel server
+                && newState.getBlock() != this) {
+            Scp079FacilityAccessManager.unregisterAuxiliaryUnit(server, pos);
+        }
+        super.onRemove(state, level, pos, newState, moving);
     }
 
     @Override
     public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        return state.setValue(FACING,
+                rotation.rotate(state.getValue(FACING)));
     }
 
     @Override
@@ -93,43 +168,16 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-            Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide && level instanceof ServerLevel server
-                && player instanceof ServerPlayer serverPlayer) {
-            Scp079FacilityAccessManager.toggleAuxiliaryPower(server,
-                    serverPlayer);
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos,
-            BlockState oldState, boolean moving) {
-        super.onPlace(state, level, pos, oldState, moving);
-        if (!level.isClientSide && level instanceof ServerLevel server
-                && oldState.getBlock() != this) {
-            Scp079FacilityAccessManager.registerAuxiliaryUnit(server, pos);
-        }
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos,
-            BlockState newState, boolean moving) {
-        if (!level.isClientSide && level instanceof ServerLevel server
-                && newState.getBlock() != this) {
-            Scp079FacilityAccessManager.unregisterAuxiliaryUnit(server, pos);
-        }
-        super.onRemove(state, level, pos, newState, moving);
-    }
-
-    @Override
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal(
-                "Supplies the global diagnostic and Tesla security buses."));
+                "Redstone-fed auxiliary generator for SCiPNET and facility defense buses."));
         tooltip.add(Component.literal(
-                "Isolation suspends remote control but preserves cached access."));
+                "Each powered unit contributes 0.1 AP/s to remote processing capacity."));
+        tooltip.add(Component.literal(
+                "Output stacks with additional powered generators."));
+        tooltip.add(Component.literal(
+                "Loss of all auxiliary output suspends remote actions but preserves cached access."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
 

@@ -11,7 +11,8 @@ import java.util.Set;
 
 /** Persistent state for the powered facility diagnostic bus and SCP-079 discovery. */
 final class Scp079FacilityAccessSavedData extends SavedData {
-    private static final String DATA_NAME = "scp_additions_scp079_facility_access";
+    private static final String DATA_NAME =
+            "scp_additions_scp079_facility_access";
 
     private boolean auxiliaryPowerOnline;
     private boolean protocolExposed;
@@ -23,6 +24,8 @@ final class Scp079FacilityAccessSavedData extends SavedData {
     private final Set<TrackedPosition> doors = new LinkedHashSet<>();
     private final Set<TrackedPosition> teslaGates = new LinkedHashSet<>();
     private final Set<TrackedPosition> auxiliaryUnits = new LinkedHashSet<>();
+    private final Set<TrackedPosition> poweredAuxiliaryUnits =
+            new LinkedHashSet<>();
 
     private Scp079FacilityAccessSavedData() {
     }
@@ -35,12 +38,15 @@ final class Scp079FacilityAccessSavedData extends SavedData {
     }
 
     private static Scp079FacilityAccessSavedData load(CompoundTag tag) {
-        Scp079FacilityAccessSavedData data = new Scp079FacilityAccessSavedData();
-        data.auxiliaryPowerOnline = tag.getBoolean("AuxiliaryPowerOnline");
+        Scp079FacilityAccessSavedData data =
+                new Scp079FacilityAccessSavedData();
+        data.auxiliaryPowerOnline =
+                tag.getBoolean("AuxiliaryPowerOnline");
         data.protocolExposed = tag.getBoolean("ProtocolExposed");
         data.facilityAccess = tag.getBoolean("FacilityAccess");
         if (tag.contains("DiscoveryProgress", Tag.TAG_ANY_NUMERIC)) {
-            data.discoveryProgress = clamp(tag.getDouble("DiscoveryProgress"));
+            data.discoveryProgress =
+                    clamp(tag.getDouble("DiscoveryProgress"));
         }
         if (tag.contains("CachePurgeLockoutUntilGameTime",
                 Tag.TAG_ANY_NUMERIC)) {
@@ -51,6 +57,8 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         readPositions(tag, "Doors", data.doors);
         readPositions(tag, "TeslaGates", data.teslaGates);
         readPositions(tag, "AuxiliaryUnits", data.auxiliaryUnits);
+        readPositions(tag, "PoweredAuxiliaryUnits",
+                data.poweredAuxiliaryUnits);
         return data;
     }
 
@@ -122,6 +130,10 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         return auxiliaryUnits;
     }
 
+    Set<TrackedPosition> poweredAuxiliaryUnits() {
+        return poweredAuxiliaryUnits;
+    }
+
     void markChanged() {
         setDirty();
     }
@@ -138,6 +150,8 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         writePositions(tag, "Doors", doors);
         writePositions(tag, "TeslaGates", teslaGates);
         writePositions(tag, "AuxiliaryUnits", auxiliaryUnits);
+        writePositions(tag, "PoweredAuxiliaryUnits",
+                poweredAuxiliaryUnits);
         return tag;
     }
 
@@ -160,7 +174,8 @@ final class Scp079FacilityAccessSavedData extends SavedData {
             CompoundTag entry = list.getCompound(index);
             String dimension = entry.getString("Dimension");
             if (!dimension.isBlank()) {
-                target.add(new TrackedPosition(dimension, entry.getLong("Pos")));
+                target.add(new TrackedPosition(dimension,
+                        entry.getLong("Pos")));
             }
         }
     }

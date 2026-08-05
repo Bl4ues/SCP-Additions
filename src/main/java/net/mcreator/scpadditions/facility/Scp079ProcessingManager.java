@@ -41,10 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Scp079ProcessingManager {
     public static final float MAX_POWER = 100.0F;
     public static final float INITIAL_POWER = 25.0F;
-    public static final float REGEN_PER_SECOND = 0.5F;
+    public static final float AP_PER_POWERED_GENERATOR_PER_SECOND = 0.1F;
     public static final float OFFLINE_DECAY_PER_SECOND = 0.5F;
 
-    private static final double REGEN_PER_TICK = REGEN_PER_SECOND / 20.0D;
     private static final double OFFLINE_DECAY_PER_TICK =
             OFFLINE_DECAY_PER_SECOND / 20.0D;
     private static final long STRATEGIC_WINDOW_TICKS = 200L;
@@ -394,7 +393,11 @@ public final class Scp079ProcessingManager {
         if (elapsed > 0L) {
             double power = state.data.power();
             if (state.active) {
-                state.data.setPower(power + elapsed * REGEN_PER_TICK);
+                int generators = Scp079FacilityAccessManager
+                        .activeAuxiliaryGenerators(server);
+                double regenPerTick = generators
+                        * AP_PER_POWERED_GENERATOR_PER_SECOND / 20.0D;
+                state.data.setPower(power + elapsed * regenPerTick);
             } else if (power > INITIAL_POWER) {
                 state.data.setPower(Math.max(INITIAL_POWER,
                         power - elapsed * OFFLINE_DECAY_PER_TICK));

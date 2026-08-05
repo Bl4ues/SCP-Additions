@@ -20,14 +20,20 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -35,17 +41,21 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.mcreator.scpadditions.block.entity.SystemTerminalBlockEntity;
 import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Global Foundation diagnostic terminal. It never grants access by redstone. */
-public class SCP079SystemControlBlock extends Block
+/** ARC-Site-48 SCiPNET facility diagnostic terminal. */
+public class SCP079SystemControlBlock extends BaseEntityBlock
         implements SimpleWaterloggedBlock {
+    public static final DirectionProperty FACING =
+            BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty WATERLOGGED =
             BlockStateProperties.WATERLOGGED;
     private static final Map<Long, Long> TERMINAL_LOOP_NEXT_TICK =
@@ -55,7 +65,20 @@ public class SCP079SystemControlBlock extends Block
         super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                 .strength(30.0F, 100.0F).noOcclusion()
                 .isRedstoneConductor((state, level, pos) -> false));
-        registerDefaultState(stateDefinition.any().setValue(WATERLOGGED, false));
+        registerDefaultState(stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(WATERLOGGED, false));
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new SystemTerminalBlockEntity(pos, state);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -96,10 +119,58 @@ public class SCP079SystemControlBlock extends Block
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal(
-                "Displays a global Foundation facility diagnostic summary."));
+                "ARC-Site-48 SCiPNET facility diagnostic terminal."));
         tooltip.add(Component.literal(
-                "Auxiliary power is required for live telemetry."));
+                "Displays containment and facility telemetry while auxiliary power is online."));
+        tooltip.add(Component.literal(
+                "Cache purge terminates remote sessions and rebuilds site indexes."));
         super.appendHoverText(stack, level, tooltip, flag);
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block,
+            BlockState> builder) {
+        builder.add(FACING, WATERLOGGED);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState()
+                .setValue(FACING,
+                        context.getHorizontalDirection().getOpposite())
+                .setValue(WATERLOGGED,
+                        context.getLevel().getFluidState(
+                                context.getClickedPos()).getType()
+                                == Fluids.WATER);
+    }
+
+    @Override
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING,
+                rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    }
+
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED)
+                ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public BlockState updateShape(BlockState state, Direction direction,
+            BlockState neighbor, LevelAccessor level, BlockPos pos,
+            BlockPos neighborPos) {
+        if (state.getValue(WATERLOGGED)) {
+            level.scheduleTick(pos, Fluids.WATER,
+                    Fluids.WATER.getTickDelay(level));
+        }
+        return super.updateShape(state, direction, neighbor, level, pos,
+                neighborPos);
     }
 
     @Override
@@ -121,34 +192,9 @@ public class SCP079SystemControlBlock extends Block
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block,
-            BlockState> builder) {
-        builder.add(WATERLOGGED);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(WATERLOGGED,
-                context.getLevel().getFluidState(context.getClickedPos())
-                        .getType() == Fluids.WATER);
-    }
-
-    @Override
-    public FluidState getFluidState(BlockState state) {
-        return state.getValue(WATERLOGGED)
-                ? Fluids.WATER.getSource(false) : super.getFluidState(state);
-    }
-
-    @Override
-    public BlockState updateShape(BlockState state, Direction direction,
-            BlockState neighbor, LevelAccessor level, BlockPos pos,
-            BlockPos neighborPos) {
-        if (state.getValue(WATERLOGGED)) {
-            level.scheduleTick(pos, Fluids.WATER,
-                    Fluids.WATER.getTickDelay(level));
-        }
-        return super.updateShape(state, direction, neighbor, level, pos,
-                neighborPos);
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
+            BlockPos pos) {
+        return Shapes.empty();
     }
 
     @Override

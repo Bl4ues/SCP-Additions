@@ -43,6 +43,8 @@ import java.util.Set;
 public final class Scp079FacilityAccessManager {
     private static final double PASSIVE_DISCOVERY_PER_SECOND = 0.025D;
     private static final double SCAN_DISCOVERY = 8.0D;
+    private static final long CACHE_PURGE_LOCKOUT_TICKS =
+            5L * 60L * 20L;
 
     private Scp079FacilityAccessManager() {
     }
@@ -89,6 +91,24 @@ public final class Scp079FacilityAccessManager {
         return server != null && data(server).auxiliaryPowerOnline();
     }
 
+    public static int cachePurgeCooldownTicks(MinecraftServer server) {
+        if (server == null) return 0;
+        Scp079FacilityAccessSavedData data = data(server);
+        long remaining = data.cachePurgeLockoutUntilGameTime()
+                - server.overworld().getGameTime();
+        if (remaining <= 0L) {
+            if (data.cachePurgeLockoutUntilGameTime() != 0L) {
+                data.setCachePurgeLockoutUntilGameTime(0L);
+            }
+            return 0;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, remaining);
+    }
+
+    private static boolean cachePurgeLocked(MinecraftServer server) {
+        return cachePurgeCooldownTicks(server) > 0;
+    }
+
     public static boolean toggleAuxiliaryPower(ServerLevel level,
             ServerPlayer actor) {
         if (level == null) return false;
@@ -133,6 +153,7 @@ public final class Scp079FacilityAccessManager {
         pruneLoadedPositions(server, data);
 
         if (exposeProtocol && data.auxiliaryPowerOnline()
+                && !cachePurgeLocked(server)
                 && !data.hosts().isEmpty() && !data.facilityAccess()
                 && !data.protocolExposed()) {
             data.setProtocolExposed(true);
@@ -148,23 +169,42 @@ public final class Scp079FacilityAccessManager {
         int activeGates = data.auxiliaryPowerOnline()
                 && (configured || override) ? totalGates : 0;
         return new DiagnosticSnapshot(uncontained, activeGates, totalGates,
-                override, data.doors().size(), data.auxiliaryPowerOnline());
+                override, data.doors().size(), data.auxiliaryPowerOnline(),
+                cachePurgeCooldownTicks(server));
     }
 
     public static void resetRemoteSession(ServerPlayer actor) {
         MinecraftServer server = actor == null ? null : actor.getServer();
         if (server == null) return;
-        resetCompromise(server, data(server));
+        Scp079FacilityAccessSavedData data = data(server);
+        if (!data.auxiliaryPowerOnline()) {
+            actor.displayClientMessage(Component.literal(
+                    "CACHE PURGE UNAVAILABLE: AUXILIARY POWER OFFLINE"),
+                    true);
+            return;
+        }
+        int remaining = cachePurgeCooldownTicks(server);
+        if (remaining > 0) {
+            actor.displayClientMessage(Component.literal(
+                    "REMOTE SESSION CACHE LOCKOUT: "
+                            + ((remaining + 19) / 20) + "s"), true);
+            return;
+        }
+        resetCompromise(server, data);
+        data.setCachePurgeLockoutUntilGameTime(
+                server.overworld().getGameTime()
+                        + CACHE_PURGE_LOCKOUT_TICKS);
         actor.displayClientMessage(Component.literal(
-                "REMOTE SESSION CACHE: RESET COMPLETE"), true);
+                "REMOTE SESSION CACHE: PURGE COMPLETE"), true);
     }
 
     public static void recordActivity(LevelAccessor level, Activity activity) {
         MinecraftServer server = server(level);
         if (server == null || activity == null) return;
         Scp079FacilityAccessSavedData data = data(server);
-        if (!data.auxiliaryPowerOnline() || !data.protocolExposed()
-                || data.hosts().isEmpty() || data.facilityAccess()) {
+        if (!data.auxiliaryPowerOnline() || cachePurgeLocked(server)
+                || !data.protocolExposed() || data.hosts().isEmpty()
+                || data.facilityAccess()) {
             return;
         }
         addDiscovery(server, data, activity.discovery);
@@ -244,6 +284,19 @@ public final class Scp079FacilityAccessManager {
         }
         MinecraftServer server = event.getServer();
         Scp079FacilityAccessSavedData data = data(server);
+        if (cachePurgeLocked(server)) {
+            if (data.protocolExposed() || data.facilityAccess()
+                    || data.discoveryProgress() > 0.0D) {
+                resetCompromise(server, data);
+            }
+            if (server.getGameRules().getBoolean(
+                    ScpAdditionsModGameRules.SCP079CONTROLON)) {
+                server.getGameRules().getRule(
+                        ScpAdditionsModGameRules.SCP079CONTROLON)
+                        .set(false, server);
+            }
+            return;
+        }
         if (!data.auxiliaryPowerOnline()
                 || (data.hosts().isEmpty()
                 && (data.protocolExposed() || data.facilityAccess()
@@ -279,6 +332,7 @@ public final class Scp079FacilityAccessManager {
 
     private static void addDiscovery(MinecraftServer server,
             Scp079FacilityAccessSavedData data, double amount) {
+        if (cachePurgeLocked(server)) return;
         data.setDiscoveryProgress(data.discoveryProgress() + amount);
         if (data.discoveryProgress() >= 100.0D && !data.facilityAccess()) {
             data.setDiscoveryProgress(100.0D);
@@ -482,8 +536,9 @@ public final class Scp079FacilityAccessManager {
     public record DiagnosticSnapshot(int uncontainedScps,
             int activeTeslaGates, int registeredTeslaGates,
             boolean teslaOverride, int connectedDoors,
-            boolean auxiliaryPowerOnline) {
+            boolean auxiliaryPowerOnline,
+            int cachePurgeCooldownTicks) {
         public static final DiagnosticSnapshot EMPTY =
-                new DiagnosticSnapshot(0, 0, 0, false, 0, false);
+                new DiagnosticSnapshot(0, 0, 0, false, 0, false, 0);
     }
 }

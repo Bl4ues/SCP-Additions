@@ -3,10 +3,10 @@ package net.mcreator.scpadditions.client;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.minecraft.Util;
-import net.minecraft.core.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -21,22 +21,25 @@ public final class FacilityDiagnosticsScreen extends Screen {
     private static final ResourceLocation TERMINAL_LOGO = new ResourceLocation(
             "scp_additions", "textures/screens/terminallogo.png");
 
-    private static final int BACKDROP = 0xFF0C1720;
-    private static final int SHADOW = 0xFF05090C;
-    private static final int BEZEL = 0xFF9A9A9A;
-    private static final int BEZEL_LIGHT = 0xFFD8D8D4;
-    private static final int BEZEL_DARK = 0xFF485864;
-    private static final int SCREEN = 0xFF142735;
-    private static final int HEADER = 0xFF1D3443;
-    private static final int STEEL_BLUE = 0xFF283C4A;
-    private static final int FOUNDATION_RED = 0xFFB53F41;
-    private static final int OFF_WHITE = 0xFFEEEEEE;
-    private static final int METAL_GRAY = 0xFFA1A0A2;
-    private static final int SIGNAL_GOLD = 0xFFC49916;
-    private static final int MUTED_BLUE = 0xFF72828D;
-    private static final int BUTTON = 0xFF213746;
-    private static final int BUTTON_HOVER = 0xFF304D5E;
-    private static final int RESET_HEIGHT = 20;
+    private static final int BACKDROP = 0xFF0B151D;
+    private static final int SHADOW = 0xFF04080B;
+    private static final int BEZEL = 0xFF91989B;
+    private static final int BEZEL_LIGHT = 0xFFD7D8D4;
+    private static final int BEZEL_DARK = 0xFF465663;
+    private static final int SCREEN = 0xFF122532;
+    private static final int HEADER = 0xFF1C3443;
+    private static final int PANEL = 0xE61A303E;
+    private static final int PANEL_ALT = 0xB5213A49;
+    private static final int STEEL_BLUE = 0xFF2A4353;
+    private static final int FOUNDATION_RED = 0xFFB94145;
+    private static final int OFF_WHITE = 0xFFE9EDEB;
+    private static final int METAL_GRAY = 0xFFA6AFB2;
+    private static final int SIGNAL_GOLD = 0xFFC9A21A;
+    private static final int MUTED_BLUE = 0xFF70838D;
+    private static final int DIM_BLUE = 0xFF415966;
+    private static final int BUTTON = 0xFF233C4B;
+    private static final int BUTTON_HOVER = 0xFF315365;
+    private static final int RESET_HEIGHT = 24;
     private static final int MAX_FRAME_WIDTH = 560;
     private static final int MAX_FRAME_HEIGHT = 420;
 
@@ -88,153 +91,232 @@ public final class FacilityDiagnosticsScreen extends Screen {
         graphics.fill(screenX, screenY, screenX + screenWidth,
                 screenY + screenHeight, SCREEN);
         drawScanlines(graphics, screenX, screenY, screenWidth, screenHeight);
+        drawGrid(graphics, screenX, screenY, screenWidth, screenHeight);
 
         renderHeader(graphics, screenX, screenY, screenWidth);
 
-        int contentX = screenX + 12;
-        int contentY = screenY + 70;
-        int contentWidth = screenWidth - 24;
-        if (data.auxiliaryPowerOnline()) {
-            renderOnline(graphics, mouseX, mouseY, contentX, contentY,
-                    contentWidth);
-        } else {
-            renderOffline(graphics, contentX, contentY, contentWidth);
-        }
+        int contentX = screenX + 14;
+        int contentY = screenY + 62;
+        int contentWidth = screenWidth - 28;
+        renderDashboard(graphics, mouseX, mouseY, contentX, contentY,
+                contentWidth, data.auxiliaryPowerOnline());
 
-        drawBody(graphics, "NODE ARC48-SYS-01 // ESC TO TERMINATE SESSION",
-                contentX, screenY + screenHeight - 13, MUTED_BLUE);
+        renderFooter(graphics, screenX, screenY, screenWidth, screenHeight);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderHeader(GuiGraphics graphics, int x, int y, int width) {
-        graphics.fill(x, y, x + width, y + 60, HEADER);
-        graphics.fill(x, y + 57, x + width, y + 60, FOUNDATION_RED);
+        graphics.fill(x, y, x + width, y + 52, HEADER);
+        graphics.fill(x, y + 49, x + width, y + 52, FOUNDATION_RED);
 
         graphics.pose().pushPose();
-        graphics.pose().translate(x + 10.0F, y + 6.0F, 0.0F);
-        float logoScale = 48.0F / 128.0F;
+        graphics.pose().translate(x + 11.0F, y + 5.0F, 0.0F);
+        float logoScale = 42.0F / 128.0F;
         graphics.pose().scale(logoScale, logoScale, 1.0F);
         graphics.blit(TERMINAL_LOGO, 0, 0, 0, 0,
                 128, 128, 128, 128);
         graphics.pose().popPose();
 
-        drawHeading(graphics, "SCiPNET TERMINAL v3.2.6",
-                x + 68, y + 9, OFF_WHITE);
+        drawHeading(graphics, "SCiPNET FACILITY STATUS",
+                x + 62, y + 8, OFF_WHITE);
         drawHeading(graphics, "ARC-SITE-48 // INTERNAL SYSTEMS NODE",
-                x + 68, y + 23, METAL_GRAY);
-        drawHeading(graphics, "ARMED RESEARCH & CONTAINMENT FACILITY",
-                x + 68, y + 37, MUTED_BLUE);
+                x + 62, y + 23, METAL_GRAY);
+        drawBody(graphics, "NODE ARC48-SYS-01", x + 62, y + 38, MUTED_BLUE);
 
-        Component site = heading("ARC-SITE-48");
-        int badgeWidth = font.width(site) + 14;
-        int badgeX = x + width - badgeWidth - 10;
-        graphics.fill(badgeX, y + 8, badgeX + badgeWidth, y + 24,
-                FOUNDATION_RED);
-        centered(graphics, site, badgeX, y + 8, badgeWidth, 16, OFF_WHITE);
+        Component build = body("BUILD 3.2.6");
+        int buildWidth = font.width(build) + 12;
+        int buildX = x + width - buildWidth - 10;
+        graphics.fill(buildX, y + 8, buildX + buildWidth, y + 24,
+                0xAA233C4B);
+        border(graphics, buildX, y + 8, buildWidth, 16, DIM_BLUE);
+        centered(graphics, build, buildX, y + 8, buildWidth, 16, METAL_GRAY);
     }
 
-    private void renderOnline(GuiGraphics graphics, int mouseX, int mouseY,
-            int x, int y, int width) {
-        sectionHeader(graphics, "CONTAINMENT INDEX", x, y, width);
-        metric(graphics, "UNCONTAINED SCP SIGNATURES",
-                twoDigits(data.uncontainedScps()), x, y + 20, width,
-                data.uncontainedScps() == 0 ? SIGNAL_GOLD : FOUNDATION_RED);
-        String integrity = data.uncontainedScps() == 0 ? "NOMINAL"
-                : data.uncontainedScps() <= 2 ? "DEGRADED" : "CRITICAL";
-        metric(graphics, "CONTAINMENT INTEGRITY", integrity,
-                x, y + 34, width,
-                data.uncontainedScps() == 0 ? SIGNAL_GOLD : FOUNDATION_RED);
-
-        sectionHeader(graphics, "FACILITY TELEMETRY", x, y + 54, width);
-        metric(graphics, "TESLA GATE SYSTEMS ACTIVE",
-                twoDigits(data.activeTeslaGates()), x, y + 74, width,
-                OFF_WHITE);
-        metric(graphics, "TESLA GATE SYSTEMS REGISTERED",
-                twoDigits(data.registeredTeslaGates()), x, y + 88, width,
-                METAL_GRAY);
-        metric(graphics, "TESLA GATE SYSTEMS MANUAL OVERRIDE",
-                data.teslaOverride() ? "ACTIVE" : "INACTIVE",
-                x, y + 102, width,
-                data.teslaOverride() ? FOUNDATION_RED : METAL_GRAY);
-        metric(graphics, "DOOR SYSTEM ENDPOINTS",
-                twoDigits(data.connectedDoors()), x, y + 116, width,
-                OFF_WHITE);
-
-        statusStrip(graphics, "AUXILIARY POWER BUS", "ONLINE",
-                x, y + 138, width, SIGNAL_GOLD);
-        renderPurgeButton(graphics, mouseX, mouseY, x, y + 166, width, true);
-    }
-
-    private void renderOffline(GuiGraphics graphics, int x, int y, int width) {
-        sectionHeader(graphics, "CONTAINMENT INDEX", x, y, width);
-        metric(graphics, "UNCONTAINED SCP SIGNATURES", "UNAVAILABLE",
-                x, y + 20, width, METAL_GRAY);
-        metric(graphics, "CONTAINMENT INTEGRITY", "UNAVAILABLE",
-                x, y + 34, width, METAL_GRAY);
-
-        sectionHeader(graphics, "FACILITY TELEMETRY", x, y + 54, width);
-        metric(graphics, "TESLA GATE SYSTEMS ACTIVE", "UNAVAILABLE",
-                x, y + 74, width, METAL_GRAY);
-        metric(graphics, "TESLA GATE SYSTEMS REGISTERED", "UNAVAILABLE",
-                x, y + 88, width, METAL_GRAY);
-        metric(graphics, "TESLA GATE SYSTEMS MANUAL OVERRIDE", "UNAVAILABLE",
-                x, y + 102, width, METAL_GRAY);
-        metric(graphics, "DOOR SYSTEM ENDPOINTS", "UNAVAILABLE",
-                x, y + 116, width, METAL_GRAY);
-
-        statusStrip(graphics, "AUXILIARY POWER BUS", "OFFLINE",
-                x, y + 138, width, FOUNDATION_RED);
-        renderPurgeButton(graphics, 0, 0, x, y + 166, width, false);
-    }
-
-    private void renderPurgeButton(GuiGraphics graphics, int mouseX,
+    private void renderDashboard(GuiGraphics graphics, int mouseX,
             int mouseY, int x, int y, int width, boolean powered) {
-        resetX = x;
-        resetY = y;
-        resetWidth = width;
+        int gap = 8;
+        int leftWidth = Math.max(168, width * 36 / 100);
+        int rightWidth = width - leftWidth - gap;
+        int panelHeight = 110;
+
+        renderContainmentPanel(graphics, x, y, leftWidth, panelHeight,
+                powered);
+        renderFacilityPanel(graphics, x + leftWidth + gap, y, rightWidth,
+                panelHeight, powered);
+
+        int controlY = y + panelHeight + 10;
+        renderOperationsPanel(graphics, mouseX, mouseY, x, controlY, width,
+                powered);
+
+        int logY = controlY + 66;
+        renderSystemLog(graphics, x, logY, width, powered);
+    }
+
+    private void renderContainmentPanel(GuiGraphics graphics, int x, int y,
+            int width, int height, boolean powered) {
+        panel(graphics, x, y, width, height, "CONTAINMENT INDEX", "CI-01");
+        String signatures = powered ? twoDigits(data.uncontainedScps())
+                : "UNAVAILABLE";
+        String integrity = powered
+                ? data.uncontainedScps() == 0 ? "NOMINAL"
+                : data.uncontainedScps() <= 2 ? "DEGRADED" : "CRITICAL"
+                : "UNAVAILABLE";
+        int threatColor = !powered ? METAL_GRAY
+                : data.uncontainedScps() == 0 ? SIGNAL_GOLD : FOUNDATION_RED;
+
+        panelRow(graphics, "UNCONTAINED SIGNATURES", signatures,
+                x + 7, y + 25, width - 14, threatColor);
+        panelRow(graphics, "INTEGRITY STATE", integrity,
+                x + 7, y + 52, width - 14, threatColor);
+        drawBody(graphics, powered ? "SCOPE // SITE-WIDE REGISTRY"
+                        : "REGISTRY LINK // SUSPENDED",
+                x + 9, y + height - 15, MUTED_BLUE);
+    }
+
+    private void renderFacilityPanel(GuiGraphics graphics, int x, int y,
+            int width, int height, boolean powered) {
+        panel(graphics, x, y, width, height, "FACILITY TELEMETRY", "FT-02");
+        String teslaGrid = powered
+                ? twoDigits(data.activeTeslaGates()) + " / "
+                        + twoDigits(data.registeredTeslaGates()) + " ONLINE"
+                : "UNAVAILABLE";
+        String override = powered
+                ? data.teslaOverride() ? "ACTIVE" : "INACTIVE"
+                : "UNAVAILABLE";
+        String doors = powered ? twoDigits(data.connectedDoors())
+                : "UNAVAILABLE";
+
+        panelRow(graphics, "TESLA GATE SYSTEMS", teslaGrid,
+                x + 7, y + 25, width - 14,
+                powered ? OFF_WHITE : METAL_GRAY);
+        panelRow(graphics, "TESLA GATE SYSTEMS MANUAL OVERRIDE", override,
+                x + 7, y + 48, width - 14,
+                powered && data.teslaOverride() ? FOUNDATION_RED : METAL_GRAY);
+        panelRow(graphics, "DOOR SYSTEM ENDPOINTS", doors,
+                x + 7, y + 71, width - 14,
+                powered ? OFF_WHITE : METAL_GRAY);
+        drawBody(graphics, powered ? "LINK // ENDPOINT REGISTRY CURRENT"
+                        : "ENDPOINT BUS // SUSPENDED",
+                x + 9, y + height - 15, MUTED_BLUE);
+    }
+
+    private void renderOperationsPanel(GuiGraphics graphics, int mouseX,
+            int mouseY, int x, int y, int width, boolean powered) {
+        int height = 56;
+        graphics.fill(x, y, x + width, y + height, PANEL);
+        border(graphics, x, y, width, height, DIM_BLUE);
+        graphics.fill(x, y, x + 4, y + height, FOUNDATION_RED);
+
+        drawHeading(graphics, "SCiPNET OPERATIONS", x + 10, y + 7,
+                OFF_WHITE);
+
         int cooldown = cooldownRemainingTicks();
+        String powerState = powered ? "ONLINE" : "OFFLINE";
+        int powerColor = powered ? SIGNAL_GOLD : FOUNDATION_RED;
+        String cacheState = !powered ? "UNAVAILABLE"
+                : cooldown > 0 ? "LOCKOUT " + formatCooldown(cooldown)
+                : resetRequested ? "PURGE REQUESTED" : "READY";
+        int cacheColor = !powered ? METAL_GRAY
+                : cooldown > 0 ? SIGNAL_GOLD : OFF_WHITE;
+
+        drawBody(graphics, "AUXILIARY BUS", x + 10, y + 24, METAL_GRAY);
+        drawBody(graphics, powerState, x + 92, y + 24, powerColor);
+        drawBody(graphics, "SESSION CACHE", x + 10, y + 38, METAL_GRAY);
+        drawBody(graphics, cacheState, x + 92, y + 38, cacheColor);
+
+        int buttonWidth = Math.max(136, Math.min(190, width * 38 / 100));
+        resetX = x + width - buttonWidth - 8;
+        resetY = y + 18;
+        resetWidth = buttonWidth;
         boolean enabled = powered && cooldown <= 0 && !resetRequested;
         boolean hovered = enabled && inside(mouseX, mouseY, resetX, resetY,
                 resetWidth, RESET_HEIGHT);
         graphics.fill(resetX, resetY, resetX + resetWidth,
                 resetY + RESET_HEIGHT, hovered ? BUTTON_HOVER : BUTTON);
         border(graphics, resetX, resetY, resetWidth, RESET_HEIGHT,
-                hovered ? FOUNDATION_RED : BEZEL_DARK);
+                hovered ? FOUNDATION_RED : DIM_BLUE);
 
-        String label;
-        int color;
-        if (!powered) {
-            label = "REMOTE SESSION CACHE PURGE UNAVAILABLE // AUX POWER OFFLINE";
-            color = METAL_GRAY;
-        } else if (resetRequested) {
-            label = "REMOTE SESSION CACHE PURGE REQUESTED";
-            color = METAL_GRAY;
-        } else if (cooldown > 0) {
-            label = "REMOTE SESSION CACHE LOCKOUT // "
-                    + formatCooldown(cooldown);
-            color = SIGNAL_GOLD;
-        } else {
-            label = "PURGE REMOTE SESSION CACHE";
-            color = OFF_WHITE;
-        }
+        String label = !powered ? "PURGE UNAVAILABLE"
+                : cooldown > 0 ? "CACHE LOCKOUT ACTIVE"
+                : resetRequested ? "PURGE REQUESTED"
+                : "PURGE SESSION CACHE";
         centered(graphics, body(label), resetX, resetY, resetWidth,
-                RESET_HEIGHT, color);
+                RESET_HEIGHT, enabled ? OFF_WHITE : METAL_GRAY);
     }
 
-    private void sectionHeader(GuiGraphics graphics, String title,
-            int x, int y, int width) {
-        graphics.fill(x, y, x + width, y + 15, STEEL_BLUE);
-        graphics.fill(x, y, x + 4, y + 15, FOUNDATION_RED);
-        drawHeading(graphics, title, x + 9, y + 3, OFF_WHITE);
+    private void renderSystemLog(GuiGraphics graphics, int x, int y,
+            int width, boolean powered) {
+        int height = 88;
+        graphics.fill(x, y, x + width, y + height, 0xB5142B38);
+        border(graphics, x, y, width, height, DIM_BLUE);
+        drawHeading(graphics, "SYSTEM LOG", x + 9, y + 7, METAL_GRAY);
+        drawBody(graphics, "BUFFER 03", x + width - 58, y + 7, MUTED_BLUE);
+        graphics.fill(x + 8, y + 20, x + width - 8, y + 21, DIM_BLUE);
+
+        int cooldown = cooldownRemainingTicks();
+        if (powered) {
+            logLine(graphics, "SYS/00", "FACILITY SNAPSHOT ACQUIRED",
+                    x + 9, y + 28, OFF_WHITE);
+            logLine(graphics, "NET/12", "ENDPOINT REGISTRY SYNCHRONIZED",
+                    x + 9, y + 43, METAL_GRAY);
+            logLine(graphics, "SEC/07",
+                    cooldown > 0 ? "REMOTE SESSION CACHE LOCKOUT ACTIVE"
+                            : "REMOTE SESSION CACHE READY",
+                    x + 9, y + 58,
+                    cooldown > 0 ? SIGNAL_GOLD : METAL_GRAY);
+        } else {
+            logLine(graphics, "PWR/01", "AUXILIARY POWER BUS OFFLINE",
+                    x + 9, y + 28, FOUNDATION_RED);
+            logLine(graphics, "NET/12", "LIVE FACILITY TELEMETRY SUSPENDED",
+                    x + 9, y + 43, METAL_GRAY);
+            logLine(graphics, "SEC/07", "SESSION CACHE CONTROL UNAVAILABLE",
+                    x + 9, y + 58, METAL_GRAY);
+        }
+
+        drawBody(graphics, "ARC48:SCIPNET>", x + 9, y + 74, MUTED_BLUE);
+        if ((Util.getMillis() / 500L) % 2L == 0L) {
+            graphics.fill(x + 88, y + 75, x + 93, y + 83, METAL_GRAY);
+        }
     }
 
-    private void statusStrip(GuiGraphics graphics, String label, String value,
+    private void renderFooter(GuiGraphics graphics, int x, int y, int width,
+            int height) {
+        drawBody(graphics, "FOUNDATION INTERNAL // SESSION ACTIVE",
+                x + 14, y + height - 13, MUTED_BLUE);
+        Component close = body("ESC // CLOSE");
+        rightAligned(graphics, close, x + width - 14, y + height - 13,
+                MUTED_BLUE);
+    }
+
+    private void panel(GuiGraphics graphics, int x, int y, int width,
+            int height, String title, String code) {
+        graphics.fill(x, y, x + width, y + height, PANEL);
+        border(graphics, x, y, width, height, DIM_BLUE);
+        graphics.fill(x, y, x + width, y + 18, STEEL_BLUE);
+        graphics.fill(x, y, x + 4, y + 18, FOUNDATION_RED);
+        drawHeading(graphics, title, x + 9, y + 4, OFF_WHITE);
+        Component codeText = body(code);
+        rightAligned(graphics, codeText, x + width - 8, y + 5, MUTED_BLUE);
+    }
+
+    private void panelRow(GuiGraphics graphics, String label, String value,
             int x, int y, int width, int valueColor) {
-        graphics.fill(x, y, x + width, y + 19, HEADER);
-        border(graphics, x, y, width, 19, BEZEL_DARK);
-        drawBody(graphics, label, x + 7, y + 5, METAL_GRAY);
-        rightAligned(graphics, body(value), x + width - 7, y + 5,
+        graphics.fill(x, y, x + width, y + 21, PANEL_ALT);
+        graphics.fill(x, y + 20, x + width, y + 21, DIM_BLUE);
+        drawBody(graphics, label, x + 5, y + 6, METAL_GRAY);
+
+        Component valueText = body(value);
+        int valueWidth = Math.max(34, font.width(valueText) + 12);
+        int valueX = x + width - valueWidth - 4;
+        graphics.fill(valueX, y + 3, x + width - 4, y + 18, 0x88122532);
+        centered(graphics, valueText, valueX, y + 3, valueWidth, 15,
                 valueColor);
+    }
+
+    private void logLine(GuiGraphics graphics, String channel, String text,
+            int x, int y, int color) {
+        drawBody(graphics, channel, x, y, MUTED_BLUE);
+        drawBody(graphics, text, x + 44, y, color);
     }
 
     @Override
@@ -283,18 +365,6 @@ public final class FacilityDiagnosticsScreen extends Screen {
         return false;
     }
 
-    private void metric(GuiGraphics graphics, String label, Object value,
-            int x, int y, int width, int valueColor) {
-        Component left = body(label + " ");
-        Component right = body(String.valueOf(value));
-        Component dot = body(".");
-        int available = width - font.width(left) - font.width(right) - 8;
-        int dots = Math.max(2, available / Math.max(1, font.width(dot)));
-        drawBody(graphics, label + " " + ".".repeat(dots),
-                x, y, METAL_GRAY);
-        rightAligned(graphics, right, x + width, y, valueColor);
-    }
-
     private void rightAligned(GuiGraphics graphics, Component text,
             int right, int y, int color) {
         graphics.drawString(font, text, right - font.width(text), y,
@@ -320,7 +390,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
     }
 
     private static Component body(String text) {
-        return ScpFonts.anonymousPro(text);
+        return ScpFonts.titillium(text);
     }
 
     private static Component heading(String text) {
@@ -355,6 +425,13 @@ public final class FacilityDiagnosticsScreen extends Screen {
             int width, int height) {
         for (int lineY = y + 1; lineY < y + height; lineY += 4) {
             graphics.fill(x, lineY, x + width, lineY + 1, 0x12000000);
+        }
+    }
+
+    private static void drawGrid(GuiGraphics graphics, int x, int y,
+            int width, int height) {
+        for (int lineX = x + 32; lineX < x + width; lineX += 32) {
+            graphics.fill(lineX, y, lineX + 1, y + height, 0x08000000);
         }
     }
 

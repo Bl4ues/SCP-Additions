@@ -20,6 +20,8 @@ import net.mcreator.scpadditions.network.FacilityDiagnosticsResetPacket;
 public final class FacilityDiagnosticsScreen extends Screen {
     private static final ResourceLocation TERMINAL_LOGO = new ResourceLocation(
             "scp_additions", "textures/screens/terminallogo.png");
+    private static final ResourceLocation TERMINAL_TEXT = new ResourceLocation(
+            "scp_additions", "scipnet_terminal");
 
     private static final int BACKDROP = 0xFF0B151D;
     private static final int SHADOW = 0xFF04080B;
@@ -135,7 +137,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
     private void renderDashboard(GuiGraphics graphics, int mouseX,
             int mouseY, int x, int y, int width, boolean powered) {
         int gap = 8;
-        int leftWidth = Math.max(168, width * 36 / 100);
+        int leftWidth = Math.max(190, width * 40 / 100);
         int rightWidth = width - leftWidth - gap;
         int panelHeight = 110;
 
@@ -148,7 +150,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
         renderOperationsPanel(graphics, mouseX, mouseY, x, controlY, width,
                 powered);
 
-        int logY = controlY + 66;
+        int logY = controlY + 102;
         renderSystemLog(graphics, x, logY, width, powered);
     }
 
@@ -202,7 +204,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
 
     private void renderOperationsPanel(GuiGraphics graphics, int mouseX,
             int mouseY, int x, int y, int width, boolean powered) {
-        int height = 56;
+        int height = 92;
         graphics.fill(x, y, x + width, y + height, PANEL);
         border(graphics, x, y, width, height, DIM_BLUE);
         graphics.fill(x, y, x + 4, y + height, FOUNDATION_RED);
@@ -219,14 +221,17 @@ public final class FacilityDiagnosticsScreen extends Screen {
         int cacheColor = !powered ? METAL_GRAY
                 : cooldown > 0 ? SIGNAL_GOLD : OFF_WHITE;
 
+        int midpoint = x + width / 2;
         drawBody(graphics, "AUXILIARY BUS", x + 10, y + 24, METAL_GRAY);
         drawBody(graphics, powerState, x + 92, y + 24, powerColor);
-        drawBody(graphics, "SESSION CACHE", x + 10, y + 38, METAL_GRAY);
-        drawBody(graphics, cacheState, x + 92, y + 38, cacheColor);
+        drawBody(graphics, "SESSION CACHE", midpoint + 8, y + 24,
+                METAL_GRAY);
+        rightAligned(graphics, body(cacheState), x + width - 10, y + 24,
+                cacheColor);
 
-        int buttonWidth = Math.max(136, Math.min(190, width * 38 / 100));
-        resetX = x + width - buttonWidth - 8;
-        resetY = y + 18;
+        int buttonWidth = Math.max(190, Math.min(232, width * 46 / 100));
+        resetX = x + (width - buttonWidth) / 2;
+        resetY = y + 38;
         resetWidth = buttonWidth;
         boolean enabled = powered && cooldown <= 0 && !resetRequested;
         boolean hovered = enabled && inside(mouseX, mouseY, resetX, resetY,
@@ -240,8 +245,15 @@ public final class FacilityDiagnosticsScreen extends Screen {
                 : cooldown > 0 ? "CACHE LOCKOUT ACTIVE"
                 : resetRequested ? "PURGE REQUESTED"
                 : "PURGE SESSION CACHE";
-        centered(graphics, body(label), resetX, resetY, resetWidth,
+        centeredBody(graphics, label, resetX, resetY, resetWidth,
                 RESET_HEIGHT, enabled ? OFF_WHITE : METAL_GRAY);
+
+        centeredBody(graphics,
+                "WARNING // PURGE TERMINATES ACTIVE REMOTE MAINTENANCE SESSIONS",
+                x + 8, y + 66, width - 16, 10, FOUNDATION_RED);
+        centeredBody(graphics,
+                "CURRENT ACCESS TOKENS WILL BE INVALIDATED.",
+                x + 8, y + 78, width - 16, 10, MUTED_BLUE);
     }
 
     private void renderSystemLog(GuiGraphics graphics, int x, int y,
@@ -250,7 +262,8 @@ public final class FacilityDiagnosticsScreen extends Screen {
         graphics.fill(x, y, x + width, y + height, 0xB5142B38);
         border(graphics, x, y, width, height, DIM_BLUE);
         drawHeading(graphics, "SYSTEM LOG", x + 9, y + 7, METAL_GRAY);
-        drawBody(graphics, "BUFFER 03", x + width - 58, y + 7, MUTED_BLUE);
+        rightAligned(graphics, body("BUFFER 03"), x + width - 9,
+                y + 7, MUTED_BLUE);
         graphics.fill(x + 8, y + 20, x + width - 8, y + 21, DIM_BLUE);
 
         int cooldown = cooldownRemainingTicks();
@@ -273,9 +286,12 @@ public final class FacilityDiagnosticsScreen extends Screen {
                     x + 9, y + 58, METAL_GRAY);
         }
 
-        drawBody(graphics, "ARC48:SCIPNET>", x + 9, y + 74, MUTED_BLUE);
+        Component prompt = body("ARC48:SCIPNET>");
+        graphics.drawString(font, prompt, x + 9, y + 74, MUTED_BLUE, false);
         if ((Util.getMillis() / 500L) % 2L == 0L) {
-            graphics.fill(x + 88, y + 75, x + 93, y + 83, METAL_GRAY);
+            int cursorX = x + 13 + font.width(prompt);
+            graphics.fill(cursorX, y + 75, cursorX + 5, y + 83,
+                    METAL_GRAY);
         }
     }
 
@@ -379,6 +395,15 @@ public final class FacilityDiagnosticsScreen extends Screen {
                 color, false);
     }
 
+    private void centeredBody(GuiGraphics graphics, String text, int x,
+            int y, int width, int height, int color) {
+        Component component = body(text);
+        graphics.drawString(font, component,
+                x + Math.max(0, (width - font.width(component)) / 2),
+                y + Math.max(0, (height - font.lineHeight) / 2) - 1,
+                color, false);
+    }
+
     private void drawBody(GuiGraphics graphics, String text, int x, int y,
             int color) {
         graphics.drawString(font, body(text), x, y, color, false);
@@ -390,7 +415,8 @@ public final class FacilityDiagnosticsScreen extends Screen {
     }
 
     private static Component body(String text) {
-        return ScpFonts.titillium(text);
+        return Component.literal(text == null ? "" : text)
+                .withStyle(style -> style.withFont(TERMINAL_TEXT));
     }
 
     private static Component heading(String text) {

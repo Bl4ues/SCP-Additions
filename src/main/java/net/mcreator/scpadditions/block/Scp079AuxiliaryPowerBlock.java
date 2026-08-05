@@ -172,69 +172,21 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
 
     // BEGIN GENERATED MODEL COLLISION
     private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
-            Block.box(0.0D, 0.0D, -3.0D, 16.0D, 2.0D, 32.0D),
-            Block.box(1.0D, 2.0D, -2.0D, 4.0D, 23.0D, -1.0D),
-            Block.box(12.0D, 2.0D, -2.0D, 15.0D, 23.0D, -1.0D),
-            Block.box(-4.0D, 2.0D, 6.0D, 20.0D, 26.0D, 32.0D),
-            Block.box(-5.0D, 2.0D, 14.0D, -4.0D, 17.0D, 23.0D),
-            Block.box(0.0D, 6.0D, -5.0D, 16.0D, 22.0D, -2.0D),
-            Block.box(0.0D, 6.0D, -2.0D, 1.0D, 23.0D, 6.0D),
-            Block.box(4.0D, 6.0D, -2.0D, 12.0D, 22.0D, 6.0D),
-            Block.box(15.0D, 6.0D, -2.0D, 16.0D, 23.0D, 6.0D),
-            Block.box(1.0D, 6.0D, -1.0D, 4.0D, 23.0D, 6.0D),
-            Block.box(12.0D, 6.0D, -1.0D, 15.0D, 23.0D, 6.0D),
-            Block.box(-2.0D, 9.0D, -2.0D, 0.0D, 23.0D, 6.0D),
-            Block.box(16.0D, 9.0D, -2.0D, 18.0D, 23.0D, 6.0D),
-            Block.box(4.0D, 22.0D, -2.0D, 7.0D, 23.0D, 6.0D),
-            Block.box(9.0D, 22.0D, -2.0D, 12.0D, 23.0D, 6.0D));
+            Block.box(-4, 0, 4, 20, 22, 30),
+            Block.box(0, 0, -3, 16, 7, 5),
+            Block.box(0, 22, 14, 4, 26, 21));
     private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
-            Block.box(-16.0D, 0.0D, 0.0D, 19.0D, 2.0D, 16.0D),
-            Block.box(17.0D, 2.0D, 1.0D, 18.0D, 23.0D, 4.0D),
-            Block.box(17.0D, 2.0D, 12.0D, 18.0D, 23.0D, 15.0D),
-            Block.box(-16.0D, 2.0D, -4.0D, 10.0D, 26.0D, 20.0D),
-            Block.box(-7.0D, 2.0D, -5.0D, 2.0D, 17.0D, -4.0D),
-            Block.box(18.0D, 6.0D, 0.0D, 21.0D, 22.0D, 16.0D),
-            Block.box(10.0D, 6.0D, 0.0D, 18.0D, 23.0D, 1.0D),
-            Block.box(10.0D, 6.0D, 4.0D, 18.0D, 22.0D, 12.0D),
-            Block.box(10.0D, 6.0D, 15.0D, 18.0D, 23.0D, 16.0D),
-            Block.box(10.0D, 6.0D, 1.0D, 17.0D, 23.0D, 4.0D),
-            Block.box(10.0D, 6.0D, 12.0D, 17.0D, 23.0D, 15.0D),
-            Block.box(10.0D, 9.0D, -2.0D, 18.0D, 23.0D, 0.0D),
-            Block.box(10.0D, 9.0D, 16.0D, 18.0D, 23.0D, 18.0D),
-            Block.box(10.0D, 22.0D, 4.0D, 18.0D, 23.0D, 7.0D),
-            Block.box(10.0D, 22.0D, 9.0D, 18.0D, 23.0D, 12.0D));
+            Block.box(-14, 0, -4, 12, 22, 20),
+            Block.box(11, 0, 0, 19, 7, 16),
+            Block.box(-5, 22, 0, 2, 26, 4));
     private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
-            Block.box(0.0D, 0.0D, -16.0D, 16.0D, 2.0D, 19.0D),
-            Block.box(12.0D, 2.0D, 17.0D, 15.0D, 23.0D, 18.0D),
-            Block.box(1.0D, 2.0D, 17.0D, 4.0D, 23.0D, 18.0D),
-            Block.box(-4.0D, 2.0D, -16.0D, 20.0D, 26.0D, 10.0D),
-            Block.box(20.0D, 2.0D, -7.0D, 21.0D, 17.0D, 2.0D),
-            Block.box(0.0D, 6.0D, 18.0D, 16.0D, 22.0D, 21.0D),
-            Block.box(15.0D, 6.0D, 10.0D, 16.0D, 23.0D, 18.0D),
-            Block.box(4.0D, 6.0D, 10.0D, 12.0D, 22.0D, 18.0D),
-            Block.box(0.0D, 6.0D, 10.0D, 1.0D, 23.0D, 18.0D),
-            Block.box(12.0D, 6.0D, 10.0D, 15.0D, 23.0D, 17.0D),
-            Block.box(1.0D, 6.0D, 10.0D, 4.0D, 23.0D, 17.0D),
-            Block.box(16.0D, 9.0D, 10.0D, 18.0D, 23.0D, 18.0D),
-            Block.box(-2.0D, 9.0D, 10.0D, 0.0D, 23.0D, 18.0D),
-            Block.box(9.0D, 22.0D, 10.0D, 12.0D, 23.0D, 18.0D),
-            Block.box(4.0D, 22.0D, 10.0D, 7.0D, 23.0D, 18.0D));
+            Block.box(-4, 0, -14, 20, 22, 12),
+            Block.box(0, 0, 11, 16, 7, 19),
+            Block.box(12, 22, -5, 16, 26, 2));
     private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
-            Block.box(-3.0D, 0.0D, 0.0D, 32.0D, 2.0D, 16.0D),
-            Block.box(-2.0D, 2.0D, 12.0D, -1.0D, 23.0D, 15.0D),
-            Block.box(-2.0D, 2.0D, 1.0D, -1.0D, 23.0D, 4.0D),
-            Block.box(6.0D, 2.0D, -4.0D, 32.0D, 26.0D, 20.0D),
-            Block.box(14.0D, 2.0D, 20.0D, 23.0D, 17.0D, 21.0D),
-            Block.box(-5.0D, 6.0D, 0.0D, -2.0D, 22.0D, 16.0D),
-            Block.box(-2.0D, 6.0D, 15.0D, 6.0D, 23.0D, 16.0D),
-            Block.box(-2.0D, 6.0D, 4.0D, 6.0D, 22.0D, 12.0D),
-            Block.box(-2.0D, 6.0D, 0.0D, 6.0D, 23.0D, 1.0D),
-            Block.box(-1.0D, 6.0D, 12.0D, 6.0D, 23.0D, 15.0D),
-            Block.box(-1.0D, 6.0D, 1.0D, 6.0D, 23.0D, 4.0D),
-            Block.box(-2.0D, 9.0D, 16.0D, 6.0D, 23.0D, 18.0D),
-            Block.box(-2.0D, 9.0D, -2.0D, 6.0D, 23.0D, 0.0D),
-            Block.box(-2.0D, 22.0D, 9.0D, 6.0D, 23.0D, 12.0D),
-            Block.box(-2.0D, 22.0D, 4.0D, 6.0D, 23.0D, 7.0D));
+            Block.box(4, 0, -4, 30, 22, 20),
+            Block.box(-3, 0, 0, 5, 7, 16),
+            Block.box(14, 22, 12, 21, 26, 16));
 
     private static VoxelShape modelShape(Direction facing) {
         return switch (facing) {
@@ -260,8 +212,8 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
     @Override
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Redstone-powered Auxiliary Power Unit."));
-        tooltip.add(Component.literal("Each active unit supplies 0.1 AP/s to SCiPNET."));
+        tooltip.add(Component.literal("Redstone-powered auxiliary generator."));
+        tooltip.add(Component.literal("Adds 0.1 AP/s; output stacks."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
     @Override

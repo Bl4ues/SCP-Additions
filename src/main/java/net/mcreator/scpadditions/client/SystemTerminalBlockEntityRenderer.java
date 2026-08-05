@@ -21,6 +21,6 @@ public final class SystemTerminalBlockEntityRenderer
     public RenderType getRenderType(SystemTerminalBlockEntity animatable,
             ResourceLocation texture, MultiBufferSource bufferSource,
             float partialTick) {
-        return RenderType.entityCutoutNoCull(texture);
+        return RenderType.entityTranslucent(texture);
     }
 }

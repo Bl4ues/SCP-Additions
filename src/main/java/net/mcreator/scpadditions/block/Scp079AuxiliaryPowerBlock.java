@@ -1,16 +1,10 @@
 package net.mcreator.scpadditions.block;
 
-import net.minecraftforge.registries.ForgeRegistries;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -38,18 +32,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /** Placeholder generator block for the global auxiliary facility bus. */
 public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
         implements SimpleWaterloggedBlock {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-    private static final Map<Long, Long> AUXILIARY_LOOP_NEXT_TICK =
-            new HashMap<>();
-
     public Scp079AuxiliaryPowerBlock() {
         super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                 .strength(30.0F, 100.0F).noOcclusion());
@@ -101,33 +90,6 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
         }
         return super.updateShape(state, direction, neighbor, level, pos,
                 neighborPos);
-    }
-
-    @Override
-    public void animateTick(BlockState state, Level level, BlockPos pos,
-            RandomSource random) {
-        super.animateTick(state, level, pos, random);
-        long key = pos.asLong();
-        if (!state.getValue(POWERED)) {
-            AUXILIARY_LOOP_NEXT_TICK.remove(key);
-            return;
-        }
-
-        long gameTime = level.getGameTime();
-        long nextLoop = AUXILIARY_LOOP_NEXT_TICK.getOrDefault(key, 0L);
-        if (gameTime < nextLoop) return;
-
-        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(
-                new ResourceLocation("scp_additions", "auxgen"));
-        if (sound != null) {
-            level.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D,
-                    pos.getZ() + 0.5D, sound, SoundSource.BLOCKS,
-                    0.22F, 1.0F, false);
-        }
-        AUXILIARY_LOOP_NEXT_TICK.put(key, gameTime + 200L);
-        if (AUXILIARY_LOOP_NEXT_TICK.size() > 512) {
-            AUXILIARY_LOOP_NEXT_TICK.clear();
-        }
     }
 
     @Override

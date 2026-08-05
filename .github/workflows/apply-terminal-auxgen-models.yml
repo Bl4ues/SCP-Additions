@@ -37,6 +37,7 @@ jobs:
           rm -f .github/workflows/apply-terminal-auxgen-models.yml
           rm -f tools/hotfix/apply_terminal_auxgen_models.py
           rm -f tools/hotfix/APPLY_TERMINAL_AUXGEN_MODELS
+          rm -rf tools/hotfix/terminal_auxgen_payload
 
       - name: Build
         run: |

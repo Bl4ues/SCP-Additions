@@ -68,7 +68,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
             int tx, int ty, int panelWidth) {
         line(graphics, "[ ANOMALOUS SIGNATURE REGISTRY ]",
                 tx, ty + 48, GREEN);
-        metric(graphics, "UNCONTAINED ROAMER SIGNATURES",
+        metric(graphics, "UNCONTAINED SCP SIGNATURES",
                 data.uncontainedScps(), tx, ty + 62, panelWidth - 24);
         String condition = data.uncontainedScps() == 0 ? "NOMINAL"
                 : data.uncontainedScps() <= 2 ? "DEGRADED" : "CRITICAL";

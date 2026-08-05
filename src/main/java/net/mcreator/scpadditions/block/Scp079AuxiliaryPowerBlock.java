@@ -129,7 +129,7 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
         tooltip.add(Component.literal(
                 "Supplies the global diagnostic and Tesla security buses."));
         tooltip.add(Component.literal(
-                "Isolation removes SCP-079 access but disables those systems."));
+                "Isolation suspends remote control but preserves cached access."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
 

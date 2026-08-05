@@ -261,11 +261,11 @@ public final class FacilityDiagnosticsScreen extends Screen {
                 RESET_HEIGHT, enabled ? OFF_WHITE : METAL_GRAY);
 
         String warningLineOne = cooldown > 0
-                ? "REINDEX ACTIVE // TELEMETRY IS READING SLOWLY"
-                : "PURGE TERMINATES REMOTE TECHNICIAN SESSIONS";
+                ? "REINDEX ACTIVE // TELEMETRY READING SLOWLY"
+                : "WARNING // REMOTE TECHNICIAN SESSIONS END";
         String warningLineTwo = cooldown > 0
-                ? "ACCESS TOKENS INVALID // EST. " + formatCooldown(cooldown)
-                : "FACILITY INDEX REBUILD REQUIRES APPROX. 05:00";
+                ? "REMOTE TOKENS INVALID // EST. " + formatCooldown(cooldown)
+                : "INDEX REBUILD REQUIRES APPROX. 05:00";
         centeredCaption(graphics, warningLineOne, resetX, y + 47,
                 resetWidth, 9, cooldown > 0 ? SIGNAL_GOLD : FOUNDATION_RED);
         centeredCaption(graphics, warningLineTwo, resetX, y + 58,

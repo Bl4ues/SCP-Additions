@@ -176,8 +176,9 @@ public final class Scp079FacilityAccessManager {
         int totalGates = data.teslaGates().size();
         int activeGates = data.auxiliaryPowerOnline()
                 && (configured || override) ? totalGates : 0;
-        boolean unusualNetworkActivity = data.facilityAccess()
-                && !data.hosts().isEmpty();
+        // A learned remote session remains cached even while its physical
+        // host is absent; only an explicit terminal purge clears the advisory.
+        boolean unusualNetworkActivity = data.facilityAccess();
         return new DiagnosticSnapshot(uncontained, activeGates, totalGates,
                 override, data.doors().size(), data.auxiliaryPowerOnline(),
                 cachePurgeCooldownTicks(server), unusualNetworkActivity);

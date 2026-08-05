@@ -1,0 +1,103 @@
+name: Fix Terminal Generator Rendering and Collision
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/fix-terminal-generator-render-collision.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Apply fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          terminal = Path('src/main/java/net/mcreator/scpadditions/block/SCP079SystemControlBlock.java')
+          text = terminal.read_text()
+          text = text.replace('tooltip.add(Component.literal(\n                "ARC-Site-48 SCiPNET facility diagnostic terminal."));\n        tooltip.add(Component.literal(\n                "Displays containment and facility telemetry while auxiliary power is online."));\n        tooltip.add(Component.literal(\n                "Cache purge terminates remote sessions and rebuilds site indexes."));',
+                              'tooltip.add(Component.literal(\n                "SCiPNET facility diagnostic terminal."));\n        tooltip.add(Component.literal(\n                "Displays telemetry and manages remote session cache."));')
+          shape = '''// BEGIN GENERATED MODEL COLLISION
+    private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
+            Block.box(7, 0, 5, 20, 16, 15),
+            Block.box(7, 0, -2, 20, 4, 6),
+            Block.box(-4, 0, 3, 7, 8, 15));
+    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
+            Block.box(1, 0, 7, 11, 16, 20),
+            Block.box(10, 0, 7, 18, 4, 20),
+            Block.box(1, 0, -4, 13, 8, 7));
+    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
+            Block.box(-4, 0, 1, 9, 16, 11),
+            Block.box(-4, 0, 10, 9, 4, 18),
+            Block.box(9, 0, 1, 20, 8, 13));
+    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
+            Block.box(5, 0, -4, 15, 16, 9),
+            Block.box(-2, 0, -4, 6, 4, 9),
+            Block.box(3, 0, 9, 15, 8, 20));
+    // END GENERATED MODEL COLLISION'''
+          text, n = re.subn(r'// BEGIN GENERATED MODEL COLLISION.*?// END GENERATED MODEL COLLISION', shape, text, flags=re.S)
+          if n != 1: raise SystemExit(f'terminal collision region replacements={n}')
+          terminal.write_text(text)
+
+          aux = Path('src/main/java/net/mcreator/scpadditions/block/Scp079AuxiliaryPowerBlock.java')
+          text = aux.read_text()
+          text = text.replace('tooltip.add(Component.literal(\n                "Redstone-powered Auxiliary Power Unit for the SCiPNET bus."));\n        tooltip.add(Component.literal(\n                "Each powered unit contributes 0.1 AP/s to SCP-079 regeneration."));\n        tooltip.add(Component.literal(\n                "Multiple powered units stack; losing all power suspends remote control."));\n        tooltip.add(Component.literal(\n                "Isolation suspends remote control but preserves cached access."));',
+                              'tooltip.add(Component.literal(\n                "Redstone-powered SCiPNET auxiliary generator."));\n        tooltip.add(Component.literal(\n                "Each powered unit adds 0.1 AP/s; output stacks."));')
+          shape = '''// BEGIN GENERATED MODEL COLLISION
+    private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
+            Block.box(-4, 0, 4, 20, 22, 30),
+            Block.box(0, 0, -3, 16, 7, 5),
+            Block.box(0, 22, 14, 4, 26, 21));
+    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
+            Block.box(-14, 0, -4, 12, 22, 20),
+            Block.box(11, 0, 0, 19, 7, 16),
+            Block.box(-5, 22, 0, 2, 26, 4));
+    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
+            Block.box(-4, 0, -14, 20, 22, 12),
+            Block.box(0, 0, 11, 16, 7, 19),
+            Block.box(12, 22, -5, 16, 26, 2));
+    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
+            Block.box(4, 0, -4, 30, 22, 20),
+            Block.box(-3, 0, 0, 5, 7, 16),
+            Block.box(14, 22, 12, 21, 26, 16));
+    // END GENERATED MODEL COLLISION'''
+          text, n = re.subn(r'// BEGIN GENERATED MODEL COLLISION.*?// END GENERATED MODEL COLLISION', shape, text, flags=re.S)
+          if n != 1: raise SystemExit(f'aux collision region replacements={n}')
+          aux.write_text(text)
+
+          for path in [
+              Path('src/main/java/net/mcreator/scpadditions/client/SystemTerminalBlockEntityRenderer.java'),
+              Path('src/main/java/net/mcreator/scpadditions/client/SystemTerminalItemRenderer.java')]:
+              text = path.read_text()
+              text = text.replace('RenderType.entityCutoutNoCull(texture)', 'RenderType.entityTranslucent(texture)')
+              path.write_text(text)
+          PY
+      - name: Remove workflow
+        run: rm .github/workflows/fix-terminal-generator-render-collision.yml
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/block/SCP079SystemControlBlock.java src/main/java/net/mcreator/scpadditions/block/Scp079AuxiliaryPowerBlock.java src/main/java/net/mcreator/scpadditions/client/SystemTerminalBlockEntityRenderer.java src/main/java/net/mcreator/scpadditions/client/SystemTerminalItemRenderer.java .github/workflows/fix-terminal-generator-render-collision.yml
+          git commit -m "Refine terminal and generator rendering and collision"
+          git push origin HEAD:master

@@ -221,17 +221,14 @@ public final class FacilityDiagnosticsScreen extends Screen {
         int cacheColor = !powered ? METAL_GRAY
                 : cooldown > 0 ? SIGNAL_GOLD : OFF_WHITE;
 
-        int midpoint = x + width / 2;
         drawBody(graphics, "AUXILIARY BUS", x + 10, y + 24, METAL_GRAY);
         drawBody(graphics, powerState, x + 92, y + 24, powerColor);
-        drawBody(graphics, "SESSION CACHE", midpoint + 8, y + 24,
-                METAL_GRAY);
-        rightAligned(graphics, body(cacheState), x + width - 10, y + 24,
-                cacheColor);
+        drawBody(graphics, "SESSION CACHE", x + 10, y + 38, METAL_GRAY);
+        drawBody(graphics, cacheState, x + 92, y + 38, cacheColor);
 
-        int buttonWidth = Math.max(190, Math.min(232, width * 46 / 100));
-        resetX = x + (width - buttonWidth) / 2;
-        resetY = y + 38;
+        int buttonWidth = Math.max(136, Math.min(190, width * 38 / 100));
+        resetX = x + width - buttonWidth - 8;
+        resetY = y + 18;
         resetWidth = buttonWidth;
         boolean enabled = powered && cooldown <= 0 && !resetRequested;
         boolean hovered = enabled && inside(mouseX, mouseY, resetX, resetY,
@@ -400,7 +397,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
         Component component = body(text);
         graphics.drawString(font, component,
                 x + Math.max(0, (width - font.width(component)) / 2),
-                y + Math.max(0, (height - font.lineHeight) / 2) - 1,
+                y + Math.max(0, (height - font.lineHeight) / 2),
                 color, false);
     }
 

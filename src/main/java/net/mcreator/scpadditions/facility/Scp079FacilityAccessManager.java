@@ -109,34 +109,36 @@ public final class Scp079FacilityAccessManager {
         return cachePurgeCooldownTicks(server) > 0;
     }
 
-    public static boolean toggleAuxiliaryPower(ServerLevel level,
-            ServerPlayer actor) {
-        if (level == null) return false;
-        Scp079FacilityAccessSavedData data = data(level.getServer());
-        boolean next = !data.auxiliaryPowerOnline();
-        setAuxiliaryPower(level.getServer(), next);
-        if (actor != null) {
-            actor.displayClientMessage(Component.literal(next
-                    ? "AUXILIARY FACILITY BUS: ONLINE"
-                    : "AUXILIARY FACILITY BUS: ISOLATED"), true);
-        }
-        return next;
+    public static int activeAuxiliaryGenerators(MinecraftServer server) {
+        return server == null ? 0
+                : data(server).poweredAuxiliaryUnits().size();
     }
 
-    public static void setAuxiliaryPower(MinecraftServer server,
-            boolean online) {
+    private static void refreshAuxiliaryBus(MinecraftServer server,
+            Scp079FacilityAccessSavedData data) {
         if (server == null) return;
-        Scp079FacilityAccessSavedData data = data(server);
+        boolean online = !data.poweredAuxiliaryUnits().isEmpty();
+        boolean changed = data.auxiliaryPowerOnline() != online;
         data.setAuxiliaryPowerOnline(online);
-        synchronizeAuxiliaryUnits(server, online);
-        if (online) wakeTeslaGates(server, data);
+        if (changed && online) {
+            wakeTeslaGates(server, data);
+        }
+        applyAuxiliaryControlState(server, data);
+    }
 
-        boolean controlActive = online && data.facilityAccess()
-                && !data.hosts().isEmpty();
-        server.getGameRules().getRule(
-                ScpAdditionsModGameRules.SCP079CONTROLON)
-                .set(controlActive, server);
-        if (controlActive) {
+    private static void applyAuxiliaryControlState(MinecraftServer server,
+            Scp079FacilityAccessSavedData data) {
+        boolean expected = data.auxiliaryPowerOnline()
+                && data.facilityAccess() && !data.hosts().isEmpty()
+                && !cachePurgeLocked(server);
+        boolean current = server.getGameRules().getBoolean(
+                ScpAdditionsModGameRules.SCP079CONTROLON);
+        if (current != expected) {
+            server.getGameRules().getRule(
+                    ScpAdditionsModGameRules.SCP079CONTROLON)
+                    .set(expected, server);
+        }
+        if (expected) {
             Scp079ProcessingManager.onControlEnabled(server.overworld());
         } else {
             Scp079ProcessingManager.onControlDisabled(server.overworld());
@@ -271,19 +273,51 @@ public final class Scp079FacilityAccessManager {
         if (data.teslaGates().remove(tracked(level, pos))) data.markChanged();
     }
 
-    public static void registerAuxiliaryUnit(ServerLevel level, BlockPos pos) {
+    public static void registerAuxiliaryUnit(ServerLevel level, BlockPos pos,
+            boolean powered) {
         if (level == null || pos == null) return;
-        Scp079FacilityAccessSavedData data = data(level.getServer());
-        if (data.auxiliaryUnits().add(tracked(level, pos))) data.markChanged();
+        MinecraftServer server = level.getServer();
+        Scp079FacilityAccessSavedData data = data(server);
+        Scp079FacilityAccessSavedData.TrackedPosition tracked =
+                tracked(level, pos);
+        boolean changed = data.auxiliaryUnits().add(tracked);
+        if (powered) {
+            changed |= data.poweredAuxiliaryUnits().add(tracked);
+        } else {
+            changed |= data.poweredAuxiliaryUnits().remove(tracked);
+        }
+        if (changed) data.markChanged();
+        refreshAuxiliaryBus(server, data);
     }
 
-    public static void unregisterAuxiliaryUnit(ServerLevel level, BlockPos pos) {
+    public static void updateAuxiliaryUnitPower(ServerLevel level,
+            BlockPos pos, boolean powered) {
         if (level == null || pos == null) return;
-        Scp079FacilityAccessSavedData data = data(level.getServer());
-        if (data.auxiliaryUnits().remove(tracked(level, pos))) data.markChanged();
-        if (data.auxiliaryUnits().isEmpty()) {
-            setAuxiliaryPower(level.getServer(), false);
+        MinecraftServer server = level.getServer();
+        Scp079FacilityAccessSavedData data = data(server);
+        Scp079FacilityAccessSavedData.TrackedPosition tracked =
+                tracked(level, pos);
+        boolean changed = data.auxiliaryUnits().add(tracked);
+        if (powered) {
+            changed |= data.poweredAuxiliaryUnits().add(tracked);
+        } else {
+            changed |= data.poweredAuxiliaryUnits().remove(tracked);
         }
+        if (changed) data.markChanged();
+        refreshAuxiliaryBus(server, data);
+    }
+
+    public static void unregisterAuxiliaryUnit(ServerLevel level,
+            BlockPos pos) {
+        if (level == null || pos == null) return;
+        MinecraftServer server = level.getServer();
+        Scp079FacilityAccessSavedData data = data(server);
+        Scp079FacilityAccessSavedData.TrackedPosition tracked =
+                tracked(level, pos);
+        boolean changed = data.auxiliaryUnits().remove(tracked);
+        changed |= data.poweredAuxiliaryUnits().remove(tracked);
+        if (changed) data.markChanged();
+        refreshAuxiliaryBus(server, data);
     }
 
     public static void awardFirstInterference(ServerPlayer player) {
@@ -308,6 +342,7 @@ public final class Scp079FacilityAccessManager {
         }
         MinecraftServer server = event.getServer();
         Scp079FacilityAccessSavedData data = data(server);
+        refreshAuxiliaryBus(server, data);
         if (cachePurgeLocked(server)) {
             if (data.protocolExposed() || data.facilityAccess()
                     || data.discoveryProgress() > 0.0D) {
@@ -401,6 +436,8 @@ public final class Scp079FacilityAccessManager {
         removeChunkEntries(data.doors(), dimension, chunkX, chunkZ);
         removeChunkEntries(data.teslaGates(), dimension, chunkX, chunkZ);
         removeChunkEntries(data.auxiliaryUnits(), dimension, chunkX, chunkZ);
+        removeChunkEntries(data.poweredAuxiliaryUnits(), dimension,
+                chunkX, chunkZ);
 
         LevelChunkSection[] sections = chunk.getSections();
         for (int sectionIndex = 0; sectionIndex < sections.length;
@@ -429,12 +466,19 @@ public final class Scp079FacilityAccessManager {
                         if (state.getBlock()
                                 == ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get()) {
                             data.auxiliaryUnits().add(tracked);
+                            if (state.hasProperty(
+                                    Scp079AuxiliaryPowerBlock.POWERED)
+                                    && state.getValue(
+                                    Scp079AuxiliaryPowerBlock.POWERED)) {
+                                data.poweredAuxiliaryUnits().add(tracked);
+                            }
                         }
                     }
                 }
             }
         }
         data.markChanged();
+        refreshAuxiliaryBus(level.getServer(), data);
     }
 
     private static boolean isTracked(BlockState state) {
@@ -467,7 +511,15 @@ public final class Scp079FacilityAccessManager {
         changed |= prune(server, data.auxiliaryUnits(), state ->
                 state.getBlock()
                         == ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get());
+        changed |= prune(server, data.poweredAuxiliaryUnits(), state ->
+                state.getBlock()
+                        == ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get()
+                        && state.hasProperty(
+                        Scp079AuxiliaryPowerBlock.POWERED)
+                        && state.getValue(
+                        Scp079AuxiliaryPowerBlock.POWERED));
         if (changed) data.markChanged();
+        refreshAuxiliaryBus(server, data);
         if (data.hosts().isEmpty()) {
             server.getGameRules().getRule(
                     ScpAdditionsModGameRules.SCP079CONTROLON)
@@ -493,33 +545,6 @@ public final class Scp079FacilityAccessManager {
             }
         }
         return changed;
-    }
-
-    private static void synchronizeAuxiliaryUnits(MinecraftServer server,
-            boolean online) {
-        Scp079FacilityAccessSavedData data = data(server);
-        List<Scp079FacilityAccessSavedData.TrackedPosition> stale =
-                new ArrayList<>();
-        for (Scp079FacilityAccessSavedData.TrackedPosition tracked
-                : List.copyOf(data.auxiliaryUnits())) {
-            ServerLevel level = resolveLevel(server, tracked.dimension());
-            BlockPos pos = BlockPos.of(tracked.packedPos());
-            if (level == null || !level.hasChunkAt(pos)) continue;
-            BlockState state = level.getBlockState(pos);
-            if (state.getBlock()
-                    != ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get()) {
-                stale.add(tracked);
-                continue;
-            }
-            if (state.hasProperty(Scp079AuxiliaryPowerBlock.POWERED)
-                    && state.getValue(Scp079AuxiliaryPowerBlock.POWERED)
-                    != online) {
-                level.setBlock(pos, state.setValue(
-                        Scp079AuxiliaryPowerBlock.POWERED, online),
-                        Block.UPDATE_CLIENTS);
-            }
-        }
-        if (data.auxiliaryUnits().removeAll(stale)) data.markChanged();
     }
 
     private static void wakeTeslaGates(MinecraftServer server,

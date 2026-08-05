@@ -20,7 +20,7 @@ public class ScpAdditionsModItems {
 	public static final RegistryObject<Item> TESLA_TERMINAL_OFF = block(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF);
 	public static final RegistryObject<Item> SECURITY_CREDENTIALS = REGISTRY.register("security_credentials", () -> new SecurityCredentialsItem());
 	public static final RegistryObject<Item> DECON_OPEN = block(ScpAdditionsModBlocks.DECON_OPEN);
-	public static final RegistryObject<Item> SCP_079_SYSTEM_CONTROL = block(ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL);
+	public static final RegistryObject<Item> SCP_079_SYSTEM_CONTROL = REGISTRY.register("scp_079_system_control", () -> new SystemTerminalItem(ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get()));
 	public static final RegistryObject<Item> SCP_079_AUXILIARY_POWER = block(ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER);
 	public static final RegistryObject<Item> SCP_079CONTROLOFF = block(ScpAdditionsModBlocks.SCP_079CONTROLOFF);
 	public static final RegistryObject<Item> SCP_079ON = block(ScpAdditionsModBlocks.SCP_079ON);

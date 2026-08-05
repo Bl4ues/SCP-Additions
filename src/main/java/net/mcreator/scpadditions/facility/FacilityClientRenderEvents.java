@@ -12,6 +12,9 @@ import net.mcreator.scpadditions.client.FacilitySignBlockEntityRenderer;
 import net.mcreator.scpadditions.client.Scp914UsageNoticeBlockEntityRenderer;
 import net.mcreator.scpadditions.client.ScpSignSupportBlockEntityRenderer;
 import net.mcreator.scpadditions.client.WetFloorBlockEntityRenderer;
+import net.mcreator.scpadditions.client.SystemTerminalBlockEntityRenderer;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlockEntities;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 /** Client-only render-layer registration for migrated facility blocks. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -34,6 +37,9 @@ public final class FacilityClientRenderEvents {
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.SCP_914_USAGE_NOTICE.get(),
                     RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(
+                    ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get(),
+                    RenderType.cutout());
 
             ItemBlockRenderTypes.setRenderLayer(
                     MirroredDoorButtons.BUTTON_LOCKED.get(), RenderType.cutout());
@@ -63,5 +69,8 @@ public final class FacilityClientRenderEvents {
         event.registerBlockEntityRenderer(
                 FacilityModule.SCP_914_NOTICE_BLOCK_ENTITY.get(),
                 Scp914UsageNoticeBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(
+                ScpAdditionsModBlockEntities.SCP_079_SYSTEM_CONTROL.get(),
+                SystemTerminalBlockEntityRenderer::new);
     }
 }

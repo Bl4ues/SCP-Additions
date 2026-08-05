@@ -92,3 +92,5 @@ aux.write_text(text)
 for path in [Path('src/main/java/net/mcreator/scpadditions/client/SystemTerminalBlockEntityRenderer.java'), Path('src/main/java/net/mcreator/scpadditions/client/SystemTerminalItemRenderer.java')]:
     text = path.read_text().replace('RenderType.entityCutoutNoCull(texture)', 'RenderType.entityTranslucent(texture)')
     path.write_text(text)
+
+# trigger

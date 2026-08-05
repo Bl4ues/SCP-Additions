@@ -1,0 +1,308 @@
+name: Fix Terminal Auxgen Visual Collision
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/fix-terminal-auxgen-visual-collision-v3.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install image tooling
+        run: python3 -m pip install --quiet pillow
+
+      - name: Apply tooltip shader and collision fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, math, re
+          from PIL import Image
+
+          ROOT = Path('.')
+          terminal_java = ROOT / 'src/main/java/net/mcreator/scpadditions/block/SCP079SystemControlBlock.java'
+          aux_java = ROOT / 'src/main/java/net/mcreator/scpadditions/block/Scp079AuxiliaryPowerBlock.java'
+          terminal_geo = ROOT / 'src/main/resources/assets/scp_additions/geo/block/system_terminal.geo.json'
+          aux_model = ROOT / 'src/main/resources/assets/scp_additions/models/block/scp_079_auxiliary_power_off.json'
+          spec_path = ROOT / 'src/main/resources/assets/scp_additions/textures/block/system_terminal_s.png'
+          glow_path = ROOT / 'src/main/resources/assets/scp_additions/textures/block/system_terminal_glowmask.png'
+
+          def rotate_point(point, pivot, rotation):
+              x, y, z = [point[i] - pivot[i] for i in range(3)]
+              rx, ry, rz = [math.radians(v) for v in rotation]
+              cy, sy = math.cos(rx), math.sin(rx)
+              y, z = y * cy - z * sy, y * sy + z * cy
+              cy, sy = math.cos(ry), math.sin(ry)
+              x, z = x * cy + z * sy, -x * sy + z * cy
+              cy, sy = math.cos(rz), math.sin(rz)
+              x, y = x * cy - y * sy, x * sy + y * cy
+              return (x + pivot[0], y + pivot[1], z + pivot[2])
+
+          def corners(origin, size):
+              return [(origin[0] + dx, origin[1] + dy, origin[2] + dz)
+                      for dx in (0, size[0]) for dy in (0, size[1]) for dz in (0, size[2])]
+
+          def aabb(points):
+              return tuple(min(p[i] for p in points) for i in range(3)) + tuple(max(p[i] for p in points) for i in range(3))
+
+          def terminal_aabbs():
+              data = json.loads(terminal_geo.read_text(encoding='utf-8'))
+              bones = data['minecraft:geometry'][0]['bones']
+              by_name = {bone['name']: bone for bone in bones}
+              result = []
+              for bone in bones:
+                  chain = []
+                  cursor = bone
+                  while cursor:
+                      chain.append(cursor)
+                      cursor = by_name.get(cursor.get('parent'))
+                  for cube in bone.get('cubes', []):
+                      size = [float(v) for v in cube.get('size', [0, 0, 0])]
+                      ranked = sorted(abs(v) for v in size)
+                      if ranked[1] < 1.0 or ranked[2] < 1.5:
+                          continue
+                      origin = [float(v) for v in cube['origin']]
+                      expanded_origin = origin[:]
+                      expanded_size = size[:]
+                      for i, dim in enumerate(expanded_size):
+                          if abs(dim) < 0.5:
+                              expanded_origin[i] -= 0.25
+                              expanded_size[i] = 0.5
+                      pts = corners(expanded_origin, expanded_size)
+                      if cube.get('rotation'):
+                          pivot = [float(v) for v in cube.get('pivot', [origin[i] + size[i] / 2 for i in range(3)])]
+                          pts = [rotate_point(p, pivot, cube['rotation']) for p in pts]
+                      for current in chain:
+                          rotation = current.get('rotation', [0, 0, 0])
+                          if any(abs(float(v)) > 1e-6 for v in rotation):
+                              pivot = [float(v) for v in current.get('pivot', [0, 0, 0])]
+                              pts = [rotate_point(p, pivot, rotation) for p in pts]
+                      box = aabb([(p[0] + 8.0, p[1], p[2] + 8.0) for p in pts])
+                      if box[4] <= 0:
+                          continue
+                      result.append((box[0], max(0.0, box[1]), box[2], box[3], max(0.0, box[4]), box[5]))
+              return result
+
+          def aux_aabbs():
+              data = json.loads(aux_model.read_text(encoding='utf-8'))
+              result = []
+              for element in data.get('elements', []):
+                  start = [float(v) for v in element['from']]
+                  end = [float(v) for v in element['to']]
+                  size = [end[i] - start[i] for i in range(3)]
+                  ranked = sorted(abs(v) for v in size)
+                  if ranked[1] < 1.0 or ranked[2] < 1.5:
+                      continue
+                  expanded_start = start[:]
+                  expanded_size = size[:]
+                  for i, dim in enumerate(expanded_size):
+                      if abs(dim) < 0.5:
+                          expanded_start[i] -= 0.25
+                          expanded_size[i] = 0.5
+                  pts = corners(expanded_start, expanded_size)
+                  rotation = element.get('rotation')
+                  if rotation:
+                      vector = [0.0, 0.0, 0.0]
+                      vector['xyz'.index(rotation['axis'])] = float(rotation['angle'])
+                      pts = [rotate_point(p, [float(v) for v in rotation['origin']], vector) for p in pts]
+                  result.append(aabb(pts))
+              return result
+
+          def merge_voxels(boxes):
+              occupied = set()
+              for x1, y1, z1, x2, y2, z2 in boxes:
+                  ix1, iy1, iz1 = math.floor(x1 + 1e-6), max(0, math.floor(y1 + 1e-6)), math.floor(z1 + 1e-6)
+                  ix2, iy2, iz2 = math.ceil(x2 - 1e-6), math.ceil(y2 - 1e-6), math.ceil(z2 - 1e-6)
+                  for x in range(ix1, ix2):
+                      for y in range(iy1, iy2):
+                          for z in range(iz1, iz2):
+                              occupied.add((x, y, z))
+              merged = []
+              while occupied:
+                  x0, y0, z0 = min(occupied, key=lambda p: (p[1], p[2], p[0]))
+                  x1 = x0 + 1
+                  while (x1, y0, z0) in occupied:
+                      x1 += 1
+                  z1 = z0 + 1
+                  while all((x, y0, z1) in occupied for x in range(x0, x1)):
+                      z1 += 1
+                  y1 = y0 + 1
+                  while all((x, y1, z) in occupied for x in range(x0, x1) for z in range(z0, z1)):
+                      y1 += 1
+                  for x in range(x0, x1):
+                      for y in range(y0, y1):
+                          for z in range(z0, z1):
+                              occupied.discard((x, y, z))
+                  merged.append((x0, y0, z0, x1, y1, z1))
+              return [b for b in merged if (b[3]-b[0])*(b[4]-b[1])*(b[5]-b[2]) >= 2]
+
+          def rotate_box(box, turns):
+              x1, y1, z1, x2, y2, z2 = box
+              for _ in range(turns % 4):
+                  x1, z1, x2, z2 = 16 - z2, x1, 16 - z1, x2
+              return (x1, y1, z1, x2, y2, z2)
+
+          def shape_expr(boxes):
+              calls = [f'Block.box({x1:.1f}D, {y1:.1f}D, {z1:.1f}D, {x2:.1f}D, {y2:.1f}D, {z2:.1f}D)'
+                       for x1, y1, z1, x2, y2, z2 in boxes]
+              if not calls:
+                  raise SystemExit('Generated collision shape is empty')
+              if len(calls) == 1:
+                  return calls[0]
+              return 'Shapes.or(\n            ' + ',\n            '.join(calls) + ')'
+
+          def collision_source(boxes, label):
+              directions = {
+                  'NORTH': boxes,
+                  'EAST': [rotate_box(b, 1) for b in boxes],
+                  'SOUTH': [rotate_box(b, 2) for b in boxes],
+                  'WEST': [rotate_box(b, 3) for b in boxes],
+              }
+              constants = []
+              for name, values in directions.items():
+                  constants.append(f'    private static final VoxelShape MODEL_SHAPE_{name} = {shape_expr(values)};')
+              return '\n'.join([
+                  '    // BEGIN GENERATED MODEL COLLISION',
+                  *constants,
+                  '',
+                  '    private static VoxelShape modelShape(Direction facing) {',
+                  '        return switch (facing) {',
+                  '            case EAST -> MODEL_SHAPE_EAST;',
+                  '            case SOUTH -> MODEL_SHAPE_SOUTH;',
+                  '            case WEST -> MODEL_SHAPE_WEST;',
+                  '            default -> MODEL_SHAPE_NORTH;',
+                  '        };',
+                  '    }',
+                  '',
+                  '    @Override',
+                  '    public VoxelShape getShape(BlockState state, BlockGetter level,',
+                  '            BlockPos pos, CollisionContext context) {',
+                  '        return modelShape(state.getValue(FACING));',
+                  '    }',
+                  '',
+                  '    @Override',
+                  '    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,',
+                  '            BlockPos pos, CollisionContext context) {',
+                  '        return modelShape(state.getValue(FACING));',
+                  '    }',
+                  f'    // END GENERATED MODEL COLLISION ({label})',
+                  ''
+              ])
+
+          def ensure_import(text, import_line):
+              if import_line in text:
+                  return text
+              matches = list(re.finditer(r'^import .*?;\n', text, flags=re.MULTILINE))
+              if not matches:
+                  raise SystemExit(f'No import anchor found for {import_line}')
+              idx = matches[-1].end()
+              return text[:idx] + import_line + '\n' + text[idx:]
+
+          def insert_collision(text, generated):
+              text = re.sub(r'    // BEGIN GENERATED MODEL COLLISION.*?    // END GENERATED MODEL COLLISION.*?\n', '', text, flags=re.DOTALL)
+              if 'public VoxelShape getShape(' in text or 'public VoxelShape getCollisionShape(' in text:
+                  raise SystemExit('Unexpected existing custom shape method without generated marker')
+              anchor = '    @Override\n    public void appendHoverText'
+              if anchor not in text:
+                  raise SystemExit('Tooltip anchor not found')
+              return text.replace(anchor, generated + anchor, 1)
+
+          def replace_tooltip(text, replacement):
+              pattern = r'    @Override\n    public void appendHoverText\(ItemStack stack, BlockGetter level,.*?(?=\n    @Override)'
+              updated, count = re.subn(pattern, replacement.rstrip(), text, count=1, flags=re.DOTALL)
+              if count != 1:
+                  raise SystemExit(f'Expected one appendHoverText method, found {count}')
+              return updated
+
+          terminal_boxes = merge_voxels(terminal_aabbs())
+          aux_boxes = merge_voxels(aux_aabbs())
+          print(f'Terminal collision boxes: {len(terminal_boxes)}')
+          print(f'Auxiliary generator collision boxes: {len(aux_boxes)}')
+
+          terminal = terminal_java.read_text(encoding='utf-8')
+          aux = aux_java.read_text(encoding='utf-8')
+          for imp in ('import net.minecraft.world.phys.shapes.CollisionContext;',
+                      'import net.minecraft.world.phys.shapes.Shapes;',
+                      'import net.minecraft.world.phys.shapes.VoxelShape;'):
+              terminal = ensure_import(terminal, imp)
+              aux = ensure_import(aux, imp)
+          terminal = insert_collision(terminal, collision_source(terminal_boxes, 'system terminal'))
+          aux = insert_collision(aux, collision_source(aux_boxes, 'auxiliary generator'))
+
+          terminal_tooltip = '''    @Override
+              public void appendHoverText(ItemStack stack, BlockGetter level,
+                      List<Component> tooltip, TooltipFlag flag) {
+                  tooltip.add(Component.literal("SCiPNET facility diagnostic terminal."));
+                  tooltip.add(Component.literal("Monitors site systems and remote session cache."));
+                  super.appendHoverText(stack, level, tooltip, flag);
+              }'''
+          aux_tooltip = '''    @Override
+              public void appendHoverText(ItemStack stack, BlockGetter level,
+                      List<Component> tooltip, TooltipFlag flag) {
+                  tooltip.add(Component.literal("Redstone-powered Auxiliary Power Unit."));
+                  tooltip.add(Component.literal("Each active unit supplies 0.1 AP/s to SCiPNET."));
+                  super.appendHoverText(stack, level, tooltip, flag);
+              }'''
+          terminal = replace_tooltip(terminal, terminal_tooltip)
+          aux = replace_tooltip(aux, aux_tooltip)
+          terminal_java.write_text(terminal, encoding='utf-8')
+          aux_java.write_text(aux, encoding='utf-8')
+
+          spec = Image.open(spec_path).convert('RGBA')
+          glow = Image.open(glow_path).convert('RGBA').resize(spec.size, Image.Resampling.NEAREST)
+          out = []
+          changed = 0
+          for sp, gp in zip(spec.getdata(), glow.getdata()):
+              luminance = max(gp[0], gp[1], gp[2]) * gp[3] // 255
+              alpha = sp[3]
+              if luminance >= 16:
+                  alpha = max(alpha, max(160, luminance))
+              if alpha != sp[3]:
+                  changed += 1
+              out.append((sp[0], sp[1], sp[2], alpha))
+          spec.putdata(out)
+          spec.save(spec_path, optimize=False)
+          print(f'Synchronized emissive alpha from glowmask on {changed} specular pixels')
+          if changed == 0:
+              raise SystemExit('Glowmask did not alter the specular emissive channel')
+          PY
+
+      - name: Remove temporary workflow from build tree
+        run: rm -f .github/workflows/fix-terminal-auxgen-visual-collision-v3.yml
+
+      - name: Build final tree
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Commit fixes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/net/mcreator/scpadditions/block/SCP079SystemControlBlock.java \
+                  src/main/java/net/mcreator/scpadditions/block/Scp079AuxiliaryPowerBlock.java \
+                  src/main/resources/assets/scp_additions/textures/block/system_terminal_s.png \
+                  .github/workflows/fix-terminal-auxgen-visual-collision-v3.yml
+          git commit -m "Fix terminal shader display and model collisions"
+          git push origin HEAD:master

@@ -15,7 +15,7 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
         int activeTeslaGates, int registeredTeslaGates,
         boolean teslaOverride, int connectedDoors,
         boolean auxiliaryPowerOnline, int cachePurgeCooldownTicks,
-        BlockPos terminalPos) {
+        boolean unusualNetworkActivity, BlockPos terminalPos) {
 
     public FacilityDiagnosticsPacket {
         cachePurgeCooldownTicks = Math.max(0, cachePurgeCooldownTicks);
@@ -28,7 +28,8 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
         this(snapshot.uncontainedScps(), snapshot.activeTeslaGates(),
                 snapshot.registeredTeslaGates(), snapshot.teslaOverride(),
                 snapshot.connectedDoors(), snapshot.auxiliaryPowerOnline(),
-                snapshot.cachePurgeCooldownTicks(), terminalPos);
+                snapshot.cachePurgeCooldownTicks(),
+                snapshot.unusualNetworkActivity(), terminalPos);
     }
 
     public static void encode(FacilityDiagnosticsPacket message,
@@ -40,6 +41,7 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
         buffer.writeVarInt(Math.max(0, message.connectedDoors));
         buffer.writeBoolean(message.auxiliaryPowerOnline);
         buffer.writeVarInt(Math.max(0, message.cachePurgeCooldownTicks));
+        buffer.writeBoolean(message.unusualNetworkActivity);
         buffer.writeBlockPos(message.terminalPos);
     }
 
@@ -48,7 +50,7 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
                 buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(),
-                buffer.readBlockPos());
+                buffer.readBoolean(), buffer.readBlockPos());
     }
 
     public static void handle(FacilityDiagnosticsPacket message,

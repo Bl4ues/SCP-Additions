@@ -22,6 +22,8 @@ public final class FacilityDiagnosticsScreen extends Screen {
             "scp_additions", "textures/screens/terminallogo.png");
     private static final ResourceLocation TERMINAL_TEXT = new ResourceLocation(
             "scp_additions", "scipnet_terminal");
+    private static final ResourceLocation TERMINAL_CAPTION = new ResourceLocation(
+            "scp_additions", "scipnet_caption");
 
     private static final int BACKDROP = 0xFF0B151D;
     private static final int SHADOW = 0xFF04080B;
@@ -44,6 +46,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
     private static final int RESET_HEIGHT = 24;
     private static final int MAX_FRAME_WIDTH = 560;
     private static final int MAX_FRAME_HEIGHT = 420;
+    private static final int CACHE_PURGE_TOTAL_TICKS = 5 * 60 * 20;
 
     private final FacilityDiagnosticsPacket data;
     private final long snapshotReceivedAtMillis;
@@ -157,12 +160,15 @@ public final class FacilityDiagnosticsScreen extends Screen {
     private void renderContainmentPanel(GuiGraphics graphics, int x, int y,
             int width, int height, boolean powered) {
         panel(graphics, x, y, width, height, "CONTAINMENT INDEX", "CI-01");
-        String signatures = powered ? twoDigits(data.uncontainedScps())
-                : "UNAVAILABLE";
-        String integrity = powered
-                ? data.uncontainedScps() == 0 ? "NOMINAL"
-                : data.uncontainedScps() <= 2 ? "DEGRADED" : "CRITICAL"
-                : "UNAVAILABLE";
+        boolean reindexing = powered && cooldownRemainingTicks() > 0;
+        int reindex = reindexProgressPercent();
+        String signatures = !powered ? "UNAVAILABLE"
+                : reindexing ? "READING " + reindex + "%"
+                : twoDigits(data.uncontainedScps());
+        String integrity = !powered ? "UNAVAILABLE"
+                : reindexing ? "REASSESSING"
+                : data.uncontainedScps() == 0 ? "NOMINAL"
+                : data.uncontainedScps() <= 2 ? "DEGRADED" : "CRITICAL";
         int threatColor = !powered ? METAL_GRAY
                 : data.uncontainedScps() == 0 ? SIGNAL_GOLD : FOUNDATION_RED;
 
@@ -170,23 +176,28 @@ public final class FacilityDiagnosticsScreen extends Screen {
                 x + 7, y + 25, width - 14, threatColor);
         panelRow(graphics, "INTEGRITY STATE", integrity,
                 x + 7, y + 52, width - 14, threatColor);
-        drawBody(graphics, powered ? "SCOPE // SITE-WIDE REGISTRY"
-                        : "REGISTRY LINK // SUSPENDED",
-                x + 9, y + height - 15, MUTED_BLUE);
+        drawBody(graphics, !powered ? "REGISTRY LINK // SUSPENDED"
+                        : reindexing ? "REGISTRY REINDEX // " + reindex + "%"
+                        : "SCOPE // SITE-WIDE REGISTRY",
+                x + 9, y + height - 15,
+                reindexing ? SIGNAL_GOLD : MUTED_BLUE);
     }
 
     private void renderFacilityPanel(GuiGraphics graphics, int x, int y,
             int width, int height, boolean powered) {
         panel(graphics, x, y, width, height, "FACILITY TELEMETRY", "FT-02");
-        String teslaGrid = powered
-                ? twoDigits(data.activeTeslaGates()) + " / "
-                        + twoDigits(data.registeredTeslaGates()) + " ONLINE"
-                : "UNAVAILABLE";
-        String override = powered
-                ? data.teslaOverride() ? "ACTIVE" : "INACTIVE"
-                : "UNAVAILABLE";
-        String doors = powered ? twoDigits(data.connectedDoors())
-                : "UNAVAILABLE";
+        boolean reindexing = powered && cooldownRemainingTicks() > 0;
+        int reindex = reindexProgressPercent();
+        String teslaGrid = !powered ? "UNAVAILABLE"
+                : reindexing ? "READING " + reindex + "%"
+                : twoDigits(data.activeTeslaGates()) + " / "
+                        + twoDigits(data.registeredTeslaGates()) + " ONLINE";
+        String override = !powered ? "UNAVAILABLE"
+                : reindexing ? "VERIFYING"
+                : data.teslaOverride() ? "ACTIVE" : "INACTIVE";
+        String doors = !powered ? "UNAVAILABLE"
+                : reindexing ? "INDEXING " + reindex + "%"
+                : twoDigits(data.connectedDoors());
 
         panelRow(graphics, "TESLA GATE SYSTEMS", teslaGrid,
                 x + 7, y + 25, width - 14,
@@ -197,9 +208,11 @@ public final class FacilityDiagnosticsScreen extends Screen {
         panelRow(graphics, "DOOR SYSTEM ENDPOINTS", doors,
                 x + 7, y + 71, width - 14,
                 powered ? OFF_WHITE : METAL_GRAY);
-        drawBody(graphics, powered ? "LINK // ENDPOINT REGISTRY CURRENT"
-                        : "ENDPOINT BUS // SUSPENDED",
-                x + 9, y + height - 15, MUTED_BLUE);
+        drawBody(graphics, !powered ? "ENDPOINT BUS // SUSPENDED"
+                        : reindexing ? "TELEMETRY REBUILD // " + reindex + "%"
+                        : "LINK // ENDPOINT REGISTRY CURRENT",
+                x + 9, y + height - 15,
+                reindexing ? SIGNAL_GOLD : MUTED_BLUE);
     }
 
     private void renderOperationsPanel(GuiGraphics graphics, int mouseX,
@@ -216,10 +229,12 @@ public final class FacilityDiagnosticsScreen extends Screen {
         String powerState = powered ? "ONLINE" : "OFFLINE";
         int powerColor = powered ? SIGNAL_GOLD : FOUNDATION_RED;
         String cacheState = !powered ? "UNAVAILABLE"
-                : cooldown > 0 ? "LOCKOUT " + formatCooldown(cooldown)
-                : resetRequested ? "PURGE REQUESTED" : "READY";
+                : cooldown > 0 ? "REINDEX " + formatCooldown(cooldown)
+                : resetRequested ? "PURGE REQUESTED"
+                : data.unusualNetworkActivity() ? "REVIEW ADVISED" : "READY";
         int cacheColor = !powered ? METAL_GRAY
-                : cooldown > 0 ? SIGNAL_GOLD : OFF_WHITE;
+                : cooldown > 0 || data.unusualNetworkActivity()
+                        ? SIGNAL_GOLD : OFF_WHITE;
 
         drawBody(graphics, "AUXILIARY BUS", x + 10, y + 24, METAL_GRAY);
         drawBody(graphics, powerState, x + 92, y + 24, powerColor);
@@ -245,12 +260,16 @@ public final class FacilityDiagnosticsScreen extends Screen {
         centeredBody(graphics, label, resetX, resetY, resetWidth,
                 RESET_HEIGHT, enabled ? OFF_WHITE : METAL_GRAY);
 
-        centeredBody(graphics,
-                "WARNING // PURGE TERMINATES ACTIVE REMOTE MAINTENANCE SESSIONS",
-                x + 8, y + 66, width - 16, 10, FOUNDATION_RED);
-        centeredBody(graphics,
-                "CURRENT ACCESS TOKENS WILL BE INVALIDATED.",
-                x + 8, y + 78, width - 16, 10, MUTED_BLUE);
+        String warningLineOne = cooldown > 0
+                ? "REINDEX ACTIVE // TELEMETRY READING SLOWLY"
+                : "WARNING // REMOTE TECHNICIAN SESSIONS END";
+        String warningLineTwo = cooldown > 0
+                ? "REMOTE TOKENS INVALID // EST. " + formatCooldown(cooldown)
+                : "INDEX REBUILD REQUIRES APPROX. 05:00";
+        centeredCaption(graphics, warningLineOne, resetX, y + 47,
+                resetWidth, 9, cooldown > 0 ? SIGNAL_GOLD : FOUNDATION_RED);
+        centeredCaption(graphics, warningLineTwo, resetX, y + 58,
+                resetWidth, 9, MUTED_BLUE);
     }
 
     private void renderSystemLog(GuiGraphics graphics, int x, int y,
@@ -264,22 +283,37 @@ public final class FacilityDiagnosticsScreen extends Screen {
         graphics.fill(x + 8, y + 20, x + width - 8, y + 21, DIM_BLUE);
 
         int cooldown = cooldownRemainingTicks();
-        if (powered) {
-            logLine(graphics, "SYS/00", "FACILITY SNAPSHOT ACQUIRED",
-                    x + 9, y + 28, OFF_WHITE);
-            logLine(graphics, "NET/12", "ENDPOINT REGISTRY SYNCHRONIZED",
-                    x + 9, y + 43, METAL_GRAY);
-            logLine(graphics, "SEC/07",
-                    cooldown > 0 ? "REMOTE SESSION CACHE LOCKOUT ACTIVE"
-                            : "REMOTE SESSION CACHE READY",
-                    x + 9, y + 58,
-                    cooldown > 0 ? SIGNAL_GOLD : METAL_GRAY);
-        } else {
+        int reindex = reindexProgressPercent();
+        if (!powered) {
             logLine(graphics, "PWR/01", "AUXILIARY POWER BUS OFFLINE",
                     x + 9, y + 28, FOUNDATION_RED);
             logLine(graphics, "NET/12", "LIVE FACILITY TELEMETRY SUSPENDED",
                     x + 9, y + 43, METAL_GRAY);
             logLine(graphics, "SEC/07", "SESSION CACHE CONTROL UNAVAILABLE",
+                    x + 9, y + 58, METAL_GRAY);
+        } else if (cooldown > 0) {
+            logLine(graphics, "IDX/03", "FACILITY INDEX REBUILD IN PROGRESS",
+                    x + 9, y + 28, SIGNAL_GOLD);
+            logLine(graphics, "TEL/06",
+                    "TELEMETRY CHANNELS READING // " + reindex + "%",
+                    x + 9, y + 43, METAL_GRAY);
+            logLine(graphics, "SEC/07",
+                    "REMOTE TECHNICIAN TOKENS INVALIDATED",
+                    x + 9, y + 58, METAL_GRAY);
+        } else if (data.unusualNetworkActivity()) {
+            logLine(graphics, "SYS/00", "FACILITY SNAPSHOT ACQUIRED",
+                    x + 9, y + 28, OFF_WHITE);
+            logLine(graphics, "NET/47", "UNUSUAL NETWORK ACTIVITY DETECTED",
+                    x + 9, y + 43, SIGNAL_GOLD);
+            logLine(graphics, "SEC/12",
+                    "CONTACT SITE NETWORK INTEGRITY FOR REVIEW",
+                    x + 9, y + 58, METAL_GRAY);
+        } else {
+            logLine(graphics, "SYS/00", "FACILITY SNAPSHOT ACQUIRED",
+                    x + 9, y + 28, OFF_WHITE);
+            logLine(graphics, "NET/12", "ENDPOINT REGISTRY SYNCHRONIZED",
+                    x + 9, y + 43, METAL_GRAY);
+            logLine(graphics, "SEC/07", "REMOTE SESSION CACHE READY",
                     x + 9, y + 58, METAL_GRAY);
         }
 
@@ -406,6 +440,15 @@ public final class FacilityDiagnosticsScreen extends Screen {
         graphics.drawString(font, body(text), x, y, color, false);
     }
 
+    private void centeredCaption(GuiGraphics graphics, String text, int x,
+            int y, int width, int height, int color) {
+        Component component = caption(text);
+        graphics.drawString(font, component,
+                x + Math.max(0, (width - font.width(component)) / 2),
+                y + Math.max(0, (height - font.lineHeight) / 2),
+                color, false);
+    }
+
     private void drawHeading(GuiGraphics graphics, String text, int x, int y,
             int color) {
         graphics.drawString(font, heading(text), x, y, color, false);
@@ -416,8 +459,22 @@ public final class FacilityDiagnosticsScreen extends Screen {
                 .withStyle(style -> style.withFont(TERMINAL_TEXT));
     }
 
+    private static Component caption(String text) {
+        return Component.literal(text == null ? "" : text)
+                .withStyle(style -> style.withFont(TERMINAL_CAPTION));
+    }
+
     private static Component heading(String text) {
         return ScpFonts.montserrat(text);
+    }
+
+    private int reindexProgressPercent() {
+        int remaining = cooldownRemainingTicks();
+        if (remaining <= 0) return 100;
+        double completed = 1.0D - Math.min(1.0D,
+                remaining / (double) CACHE_PURGE_TOTAL_TICKS);
+        return Math.max(0, Math.min(99,
+                (int) Math.floor(completed * 100.0D)));
     }
 
     private int cooldownRemainingTicks() {

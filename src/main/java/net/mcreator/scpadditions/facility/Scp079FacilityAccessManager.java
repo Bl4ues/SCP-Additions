@@ -304,8 +304,8 @@ public final class Scp079FacilityAccessManager {
     private static int countUncontainedScps(MinecraftServer server) {
         int count = 0;
         for (RoamerType type : RoamerType.values()) {
-            if (!RoamerManager.isContained(server, type)) {
-                count += RoamerManager.activeCount(server, type);
+            if (RoamerManager.isOperationallyUncontained(server, type)) {
+                count++;
             }
         }
         return count;

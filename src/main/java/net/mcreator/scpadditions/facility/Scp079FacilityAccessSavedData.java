@@ -17,6 +17,7 @@ final class Scp079FacilityAccessSavedData extends SavedData {
     private boolean protocolExposed;
     private boolean facilityAccess;
     private double discoveryProgress;
+    private long cachePurgeLockoutUntilGameTime;
 
     private final Set<TrackedPosition> hosts = new LinkedHashSet<>();
     private final Set<TrackedPosition> doors = new LinkedHashSet<>();
@@ -40,6 +41,11 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         data.facilityAccess = tag.getBoolean("FacilityAccess");
         if (tag.contains("DiscoveryProgress", Tag.TAG_ANY_NUMERIC)) {
             data.discoveryProgress = clamp(tag.getDouble("DiscoveryProgress"));
+        }
+        if (tag.contains("CachePurgeLockoutUntilGameTime",
+                Tag.TAG_ANY_NUMERIC)) {
+            data.cachePurgeLockoutUntilGameTime = Math.max(0L,
+                    tag.getLong("CachePurgeLockoutUntilGameTime"));
         }
         readPositions(tag, "Hosts", data.hosts);
         readPositions(tag, "Doors", data.doors);
@@ -89,6 +95,17 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         setDirty();
     }
 
+    long cachePurgeLockoutUntilGameTime() {
+        return cachePurgeLockoutUntilGameTime;
+    }
+
+    void setCachePurgeLockoutUntilGameTime(long value) {
+        long sanitized = Math.max(0L, value);
+        if (cachePurgeLockoutUntilGameTime == sanitized) return;
+        cachePurgeLockoutUntilGameTime = sanitized;
+        setDirty();
+    }
+
     Set<TrackedPosition> hosts() {
         return hosts;
     }
@@ -115,6 +132,8 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         tag.putBoolean("ProtocolExposed", protocolExposed);
         tag.putBoolean("FacilityAccess", facilityAccess);
         tag.putDouble("DiscoveryProgress", discoveryProgress);
+        tag.putLong("CachePurgeLockoutUntilGameTime",
+                cachePurgeLockoutUntilGameTime);
         writePositions(tag, "Hosts", hosts);
         writePositions(tag, "Doors", doors);
         writePositions(tag, "TeslaGates", teslaGates);

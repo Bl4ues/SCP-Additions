@@ -30,6 +30,9 @@ import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 
 import java.util.Collections;
 import java.util.List;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** Redstone-fed auxiliary generator for the global SCiPNET facility bus. */
 public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
@@ -167,20 +170,100 @@ public final class Scp079AuxiliaryPowerBlock extends HorizontalDirectionalBlock
                 neighborPos);
     }
 
+    // BEGIN GENERATED MODEL COLLISION
+    private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
+            Block.box(0.0D, 0.0D, -3.0D, 16.0D, 2.0D, 32.0D),
+            Block.box(1.0D, 2.0D, -2.0D, 4.0D, 23.0D, -1.0D),
+            Block.box(12.0D, 2.0D, -2.0D, 15.0D, 23.0D, -1.0D),
+            Block.box(-4.0D, 2.0D, 6.0D, 20.0D, 26.0D, 32.0D),
+            Block.box(-5.0D, 2.0D, 14.0D, -4.0D, 17.0D, 23.0D),
+            Block.box(0.0D, 6.0D, -5.0D, 16.0D, 22.0D, -2.0D),
+            Block.box(0.0D, 6.0D, -2.0D, 1.0D, 23.0D, 6.0D),
+            Block.box(4.0D, 6.0D, -2.0D, 12.0D, 22.0D, 6.0D),
+            Block.box(15.0D, 6.0D, -2.0D, 16.0D, 23.0D, 6.0D),
+            Block.box(1.0D, 6.0D, -1.0D, 4.0D, 23.0D, 6.0D),
+            Block.box(12.0D, 6.0D, -1.0D, 15.0D, 23.0D, 6.0D),
+            Block.box(-2.0D, 9.0D, -2.0D, 0.0D, 23.0D, 6.0D),
+            Block.box(16.0D, 9.0D, -2.0D, 18.0D, 23.0D, 6.0D),
+            Block.box(4.0D, 22.0D, -2.0D, 7.0D, 23.0D, 6.0D),
+            Block.box(9.0D, 22.0D, -2.0D, 12.0D, 23.0D, 6.0D));
+    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
+            Block.box(-16.0D, 0.0D, 0.0D, 19.0D, 2.0D, 16.0D),
+            Block.box(17.0D, 2.0D, 1.0D, 18.0D, 23.0D, 4.0D),
+            Block.box(17.0D, 2.0D, 12.0D, 18.0D, 23.0D, 15.0D),
+            Block.box(-16.0D, 2.0D, -4.0D, 10.0D, 26.0D, 20.0D),
+            Block.box(-7.0D, 2.0D, -5.0D, 2.0D, 17.0D, -4.0D),
+            Block.box(18.0D, 6.0D, 0.0D, 21.0D, 22.0D, 16.0D),
+            Block.box(10.0D, 6.0D, 0.0D, 18.0D, 23.0D, 1.0D),
+            Block.box(10.0D, 6.0D, 4.0D, 18.0D, 22.0D, 12.0D),
+            Block.box(10.0D, 6.0D, 15.0D, 18.0D, 23.0D, 16.0D),
+            Block.box(10.0D, 6.0D, 1.0D, 17.0D, 23.0D, 4.0D),
+            Block.box(10.0D, 6.0D, 12.0D, 17.0D, 23.0D, 15.0D),
+            Block.box(10.0D, 9.0D, -2.0D, 18.0D, 23.0D, 0.0D),
+            Block.box(10.0D, 9.0D, 16.0D, 18.0D, 23.0D, 18.0D),
+            Block.box(10.0D, 22.0D, 4.0D, 18.0D, 23.0D, 7.0D),
+            Block.box(10.0D, 22.0D, 9.0D, 18.0D, 23.0D, 12.0D));
+    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
+            Block.box(0.0D, 0.0D, -16.0D, 16.0D, 2.0D, 19.0D),
+            Block.box(12.0D, 2.0D, 17.0D, 15.0D, 23.0D, 18.0D),
+            Block.box(1.0D, 2.0D, 17.0D, 4.0D, 23.0D, 18.0D),
+            Block.box(-4.0D, 2.0D, -16.0D, 20.0D, 26.0D, 10.0D),
+            Block.box(20.0D, 2.0D, -7.0D, 21.0D, 17.0D, 2.0D),
+            Block.box(0.0D, 6.0D, 18.0D, 16.0D, 22.0D, 21.0D),
+            Block.box(15.0D, 6.0D, 10.0D, 16.0D, 23.0D, 18.0D),
+            Block.box(4.0D, 6.0D, 10.0D, 12.0D, 22.0D, 18.0D),
+            Block.box(0.0D, 6.0D, 10.0D, 1.0D, 23.0D, 18.0D),
+            Block.box(12.0D, 6.0D, 10.0D, 15.0D, 23.0D, 17.0D),
+            Block.box(1.0D, 6.0D, 10.0D, 4.0D, 23.0D, 17.0D),
+            Block.box(16.0D, 9.0D, 10.0D, 18.0D, 23.0D, 18.0D),
+            Block.box(-2.0D, 9.0D, 10.0D, 0.0D, 23.0D, 18.0D),
+            Block.box(9.0D, 22.0D, 10.0D, 12.0D, 23.0D, 18.0D),
+            Block.box(4.0D, 22.0D, 10.0D, 7.0D, 23.0D, 18.0D));
+    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
+            Block.box(-3.0D, 0.0D, 0.0D, 32.0D, 2.0D, 16.0D),
+            Block.box(-2.0D, 2.0D, 12.0D, -1.0D, 23.0D, 15.0D),
+            Block.box(-2.0D, 2.0D, 1.0D, -1.0D, 23.0D, 4.0D),
+            Block.box(6.0D, 2.0D, -4.0D, 32.0D, 26.0D, 20.0D),
+            Block.box(14.0D, 2.0D, 20.0D, 23.0D, 17.0D, 21.0D),
+            Block.box(-5.0D, 6.0D, 0.0D, -2.0D, 22.0D, 16.0D),
+            Block.box(-2.0D, 6.0D, 15.0D, 6.0D, 23.0D, 16.0D),
+            Block.box(-2.0D, 6.0D, 4.0D, 6.0D, 22.0D, 12.0D),
+            Block.box(-2.0D, 6.0D, 0.0D, 6.0D, 23.0D, 1.0D),
+            Block.box(-1.0D, 6.0D, 12.0D, 6.0D, 23.0D, 15.0D),
+            Block.box(-1.0D, 6.0D, 1.0D, 6.0D, 23.0D, 4.0D),
+            Block.box(-2.0D, 9.0D, 16.0D, 6.0D, 23.0D, 18.0D),
+            Block.box(-2.0D, 9.0D, -2.0D, 6.0D, 23.0D, 0.0D),
+            Block.box(-2.0D, 22.0D, 9.0D, 6.0D, 23.0D, 12.0D),
+            Block.box(-2.0D, 22.0D, 4.0D, 6.0D, 23.0D, 7.0D));
+
+    private static VoxelShape modelShape(Direction facing) {
+        return switch (facing) {
+            case EAST -> MODEL_SHAPE_EAST;
+            case SOUTH -> MODEL_SHAPE_SOUTH;
+            case WEST -> MODEL_SHAPE_WEST;
+            default -> MODEL_SHAPE_NORTH;
+        };
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
+        return modelShape(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
+        return modelShape(state.getValue(FACING));
+    }
+    // END GENERATED MODEL COLLISION (auxiliary generator)
     @Override
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal(
-                "Redstone-fed auxiliary generator for SCiPNET and facility defense buses."));
-        tooltip.add(Component.literal(
-                "Each powered unit contributes 0.1 AP/s to remote processing capacity."));
-        tooltip.add(Component.literal(
-                "Output stacks with additional powered generators."));
-        tooltip.add(Component.literal(
-                "Loss of all auxiliary output suspends remote actions but preserves cached access."));
+        tooltip.add(Component.literal("Redstone-powered Auxiliary Power Unit."));
+        tooltip.add(Component.literal("Each active unit supplies 0.1 AP/s to SCiPNET."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
-
     @Override
     public List<ItemStack> getDrops(BlockState state,
             LootParams.Builder builder) {

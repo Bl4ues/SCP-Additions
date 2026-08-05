@@ -115,18 +115,124 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
+    // BEGIN GENERATED MODEL COLLISION
+    private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
+            Block.box(0.0D, 0.0D, 1.0D, 4.0D, 3.0D, 5.0D),
+            Block.box(4.0D, 0.0D, 2.0D, 8.0D, 1.0D, 16.0D),
+            Block.box(8.0D, 0.0D, 3.0D, 19.0D, 1.0D, 16.0D),
+            Block.box(2.0D, 0.0D, 5.0D, 4.0D, 1.0D, 16.0D),
+            Block.box(19.0D, 0.0D, 7.0D, 20.0D, 4.0D, 16.0D),
+            Block.box(-2.0D, 0.0D, 9.0D, 2.0D, 1.0D, 16.0D),
+            Block.box(8.0D, 1.0D, 7.0D, 19.0D, 4.0D, 16.0D),
+            Block.box(-1.0D, 1.0D, 9.0D, 8.0D, 3.0D, 16.0D),
+            Block.box(-2.0D, 1.0D, 11.0D, -1.0D, 3.0D, 16.0D),
+            Block.box(-1.0D, 3.0D, 9.0D, 8.0D, 4.0D, 14.0D),
+            Block.box(-1.0D, 3.0D, 14.0D, 3.0D, 5.0D, 16.0D),
+            Block.box(16.0D, 4.0D, 7.0D, 20.0D, 10.0D, 14.0D),
+            Block.box(9.0D, 4.0D, 8.0D, 16.0D, 10.0D, 11.0D),
+            Block.box(8.0D, 4.0D, 9.0D, 9.0D, 10.0D, 16.0D),
+            Block.box(9.0D, 4.0D, 11.0D, 11.0D, 10.0D, 16.0D),
+            Block.box(-1.0D, 4.0D, 13.0D, 3.0D, 5.0D, 14.0D),
+            Block.box(11.0D, 4.0D, 13.0D, 16.0D, 10.0D, 16.0D),
+            Block.box(16.0D, 4.0D, 14.0D, 19.0D, 10.0D, 16.0D),
+            Block.box(8.0D, 9.0D, 7.0D, 16.0D, 10.0D, 8.0D),
+            Block.box(11.0D, 9.0D, 11.0D, 16.0D, 10.0D, 13.0D),
+            Block.box(19.0D, 9.0D, 14.0D, 20.0D, 10.0D, 16.0D));
+    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
+            Block.box(11.0D, 0.0D, 0.0D, 15.0D, 3.0D, 4.0D),
+            Block.box(0.0D, 0.0D, 4.0D, 14.0D, 1.0D, 8.0D),
+            Block.box(0.0D, 0.0D, 8.0D, 13.0D, 1.0D, 19.0D),
+            Block.box(0.0D, 0.0D, 2.0D, 11.0D, 1.0D, 4.0D),
+            Block.box(0.0D, 0.0D, 19.0D, 9.0D, 4.0D, 20.0D),
+            Block.box(0.0D, 0.0D, -2.0D, 7.0D, 1.0D, 2.0D),
+            Block.box(0.0D, 1.0D, 8.0D, 9.0D, 4.0D, 19.0D),
+            Block.box(0.0D, 1.0D, -1.0D, 7.0D, 3.0D, 8.0D),
+            Block.box(0.0D, 1.0D, -2.0D, 5.0D, 3.0D, -1.0D),
+            Block.box(2.0D, 3.0D, -1.0D, 7.0D, 4.0D, 8.0D),
+            Block.box(0.0D, 3.0D, -1.0D, 2.0D, 5.0D, 3.0D),
+            Block.box(2.0D, 4.0D, 16.0D, 9.0D, 10.0D, 20.0D),
+            Block.box(5.0D, 4.0D, 9.0D, 8.0D, 10.0D, 16.0D),
+            Block.box(0.0D, 4.0D, 8.0D, 7.0D, 10.0D, 9.0D),
+            Block.box(0.0D, 4.0D, 9.0D, 5.0D, 10.0D, 11.0D),
+            Block.box(2.0D, 4.0D, -1.0D, 3.0D, 5.0D, 3.0D),
+            Block.box(0.0D, 4.0D, 11.0D, 3.0D, 10.0D, 16.0D),
+            Block.box(0.0D, 4.0D, 16.0D, 2.0D, 10.0D, 19.0D),
+            Block.box(8.0D, 9.0D, 8.0D, 9.0D, 10.0D, 16.0D),
+            Block.box(3.0D, 9.0D, 11.0D, 5.0D, 10.0D, 16.0D),
+            Block.box(0.0D, 9.0D, 19.0D, 2.0D, 10.0D, 20.0D));
+    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
+            Block.box(12.0D, 0.0D, 11.0D, 16.0D, 3.0D, 15.0D),
+            Block.box(8.0D, 0.0D, 0.0D, 12.0D, 1.0D, 14.0D),
+            Block.box(-3.0D, 0.0D, 0.0D, 8.0D, 1.0D, 13.0D),
+            Block.box(12.0D, 0.0D, 0.0D, 14.0D, 1.0D, 11.0D),
+            Block.box(-4.0D, 0.0D, 0.0D, -3.0D, 4.0D, 9.0D),
+            Block.box(14.0D, 0.0D, 0.0D, 18.0D, 1.0D, 7.0D),
+            Block.box(-3.0D, 1.0D, 0.0D, 8.0D, 4.0D, 9.0D),
+            Block.box(8.0D, 1.0D, 0.0D, 17.0D, 3.0D, 7.0D),
+            Block.box(17.0D, 1.0D, 0.0D, 18.0D, 3.0D, 5.0D),
+            Block.box(8.0D, 3.0D, 2.0D, 17.0D, 4.0D, 7.0D),
+            Block.box(13.0D, 3.0D, 0.0D, 17.0D, 5.0D, 2.0D),
+            Block.box(-4.0D, 4.0D, 2.0D, 0.0D, 10.0D, 9.0D),
+            Block.box(0.0D, 4.0D, 5.0D, 7.0D, 10.0D, 8.0D),
+            Block.box(7.0D, 4.0D, 0.0D, 8.0D, 10.0D, 7.0D),
+            Block.box(5.0D, 4.0D, 0.0D, 7.0D, 10.0D, 5.0D),
+            Block.box(13.0D, 4.0D, 2.0D, 17.0D, 5.0D, 3.0D),
+            Block.box(0.0D, 4.0D, 0.0D, 5.0D, 10.0D, 3.0D),
+            Block.box(-3.0D, 4.0D, 0.0D, 0.0D, 10.0D, 2.0D),
+            Block.box(0.0D, 9.0D, 8.0D, 8.0D, 10.0D, 9.0D),
+            Block.box(0.0D, 9.0D, 3.0D, 5.0D, 10.0D, 5.0D),
+            Block.box(-4.0D, 9.0D, 0.0D, -3.0D, 10.0D, 2.0D));
+    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
+            Block.box(1.0D, 0.0D, 12.0D, 5.0D, 3.0D, 16.0D),
+            Block.box(2.0D, 0.0D, 8.0D, 16.0D, 1.0D, 12.0D),
+            Block.box(3.0D, 0.0D, -3.0D, 16.0D, 1.0D, 8.0D),
+            Block.box(5.0D, 0.0D, 12.0D, 16.0D, 1.0D, 14.0D),
+            Block.box(7.0D, 0.0D, -4.0D, 16.0D, 4.0D, -3.0D),
+            Block.box(9.0D, 0.0D, 14.0D, 16.0D, 1.0D, 18.0D),
+            Block.box(7.0D, 1.0D, -3.0D, 16.0D, 4.0D, 8.0D),
+            Block.box(9.0D, 1.0D, 8.0D, 16.0D, 3.0D, 17.0D),
+            Block.box(11.0D, 1.0D, 17.0D, 16.0D, 3.0D, 18.0D),
+            Block.box(9.0D, 3.0D, 8.0D, 14.0D, 4.0D, 17.0D),
+            Block.box(14.0D, 3.0D, 13.0D, 16.0D, 5.0D, 17.0D),
+            Block.box(7.0D, 4.0D, -4.0D, 14.0D, 10.0D, 0.0D),
+            Block.box(8.0D, 4.0D, 0.0D, 11.0D, 10.0D, 7.0D),
+            Block.box(9.0D, 4.0D, 7.0D, 16.0D, 10.0D, 8.0D),
+            Block.box(11.0D, 4.0D, 5.0D, 16.0D, 10.0D, 7.0D),
+            Block.box(13.0D, 4.0D, 13.0D, 14.0D, 5.0D, 17.0D),
+            Block.box(13.0D, 4.0D, 0.0D, 16.0D, 10.0D, 5.0D),
+            Block.box(14.0D, 4.0D, -3.0D, 16.0D, 10.0D, 0.0D),
+            Block.box(7.0D, 9.0D, 0.0D, 8.0D, 10.0D, 8.0D),
+            Block.box(11.0D, 9.0D, 0.0D, 13.0D, 10.0D, 5.0D),
+            Block.box(14.0D, 9.0D, -4.0D, 16.0D, 10.0D, -3.0D));
+
+    private static VoxelShape modelShape(Direction facing) {
+        return switch (facing) {
+            case EAST -> MODEL_SHAPE_EAST;
+            case SOUTH -> MODEL_SHAPE_SOUTH;
+            case WEST -> MODEL_SHAPE_WEST;
+            default -> MODEL_SHAPE_NORTH;
+        };
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
+        return modelShape(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
+        return modelShape(state.getValue(FACING));
+    }
+    // END GENERATED MODEL COLLISION (system terminal)
     @Override
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal(
-                "ARC-Site-48 SCiPNET facility diagnostic terminal."));
-        tooltip.add(Component.literal(
-                "Displays containment and facility telemetry while auxiliary power is online."));
-        tooltip.add(Component.literal(
-                "Cache purge terminates remote sessions and rebuilds site indexes."));
+        tooltip.add(Component.literal("SCiPNET facility diagnostic terminal."));
+        tooltip.add(Component.literal("Monitors site systems and remote session cache."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
-
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block,
             BlockState> builder) {

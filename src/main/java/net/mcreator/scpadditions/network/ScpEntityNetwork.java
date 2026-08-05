@@ -156,6 +156,10 @@ public final class ScpEntityNetwork {
                 ElevatorArrivalDisplayPacket::encode,
                 ElevatorArrivalDisplayPacket::decode,
                 ElevatorArrivalDisplayPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(FacilityDiagnosticsResetPacket.class,
+                FacilityDiagnosticsResetPacket::encode,
+                FacilityDiagnosticsResetPacket::decode,
+                FacilityDiagnosticsResetPacket::handle);
     }
 
     public static void showScp131Notice(ServerPlayer player,
@@ -246,11 +250,11 @@ public final class ScpEntityNetwork {
 
     public static void openFacilityDiagnostics(ServerPlayer player,
             net.mcreator.scpadditions.facility.Scp079FacilityAccessManager
-                    .DiagnosticSnapshot snapshot) {
-        if (player == null || snapshot == null) return;
+                    .DiagnosticSnapshot snapshot, BlockPos terminalPos) {
+        if (player == null || snapshot == null || terminalPos == null) return;
         ScpAdditionsMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new FacilityDiagnosticsPacket(snapshot));
+                new FacilityDiagnosticsPacket(snapshot, terminalPos));
     }
 
     public static void syncScp079Decisions(ServerPlayer player,

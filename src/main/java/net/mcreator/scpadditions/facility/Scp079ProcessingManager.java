@@ -78,6 +78,20 @@ public final class Scp079ProcessingManager {
         }
     }
 
+    public static void resetPower(LevelAccessor level) {
+        MinecraftServer server = level == null ? null : level.getServer();
+        if (server == null) return;
+        synchronized (STATES) {
+            State state = state(server, false);
+            state.active = false;
+            state.data.setPower(0.0D);
+            state.recentSpend.clear();
+            state.lastPurposeTick.clear();
+            state.lastTick = server.getTickCount();
+        }
+        LAST_CLIENT_SYNC.clear();
+    }
+
     public static boolean isActive(ServerLevel level) {
         return level != null
                 && Scp079FacilityAccessManager.hasFacilityAccess(level);

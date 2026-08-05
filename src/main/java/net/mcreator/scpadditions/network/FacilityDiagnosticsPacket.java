@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.network;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -9,15 +10,23 @@ import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager.Diagnostic
 
 import java.util.function.Supplier;
 
-/** Opens the read-only old-terminal facility diagnostic screen. */
+/** Opens the Foundation facility diagnostic screen. */
 public record FacilityDiagnosticsPacket(int uncontainedScps,
         int activeTeslaGates, int registeredTeslaGates,
-        boolean teslaOverride, int connectedDoors) {
+        boolean teslaOverride, int connectedDoors,
+        boolean auxiliaryPowerOnline, BlockPos terminalPos) {
 
-    public FacilityDiagnosticsPacket(DiagnosticSnapshot snapshot) {
+    public FacilityDiagnosticsPacket {
+        terminalPos = terminalPos == null
+                ? BlockPos.ZERO : terminalPos.immutable();
+    }
+
+    public FacilityDiagnosticsPacket(DiagnosticSnapshot snapshot,
+            BlockPos terminalPos) {
         this(snapshot.uncontainedScps(), snapshot.activeTeslaGates(),
                 snapshot.registeredTeslaGates(), snapshot.teslaOverride(),
-                snapshot.connectedDoors());
+                snapshot.connectedDoors(), snapshot.auxiliaryPowerOnline(),
+                terminalPos);
     }
 
     public static void encode(FacilityDiagnosticsPacket message,
@@ -27,12 +36,15 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
         buffer.writeVarInt(Math.max(0, message.registeredTeslaGates));
         buffer.writeBoolean(message.teslaOverride);
         buffer.writeVarInt(Math.max(0, message.connectedDoors));
+        buffer.writeBoolean(message.auxiliaryPowerOnline);
+        buffer.writeBlockPos(message.terminalPos);
     }
 
     public static FacilityDiagnosticsPacket decode(FriendlyByteBuf buffer) {
         return new FacilityDiagnosticsPacket(buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readBoolean(), buffer.readVarInt());
+                buffer.readBoolean(), buffer.readVarInt(),
+                buffer.readBoolean(), buffer.readBlockPos());
     }
 
     public static void handle(FacilityDiagnosticsPacket message,

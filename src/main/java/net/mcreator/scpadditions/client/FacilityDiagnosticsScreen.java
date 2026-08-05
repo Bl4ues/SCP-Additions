@@ -1,11 +1,17 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraftforge.registries.ForgeRegistries;
+
 import net.minecraft.Util;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.FacilityDiagnosticsPacket;
 import net.mcreator.scpadditions.network.FacilityDiagnosticsResetPacket;
@@ -40,6 +46,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
     private int resetY;
     private int resetWidth;
     private boolean resetRequested;
+    private boolean clickVariant;
 
     private FacilityDiagnosticsScreen(FacilityDiagnosticsPacket data) {
         super(ScpFonts.montserrat("ARC-Site-48 SCiPNET Diagnostics"));
@@ -232,16 +239,43 @@ public final class FacilityDiagnosticsScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && data.auxiliaryPowerOnline()) {
+            playRandomClick();
+        }
         if (button == 0 && data.auxiliaryPowerOnline() && !resetRequested
                 && cooldownRemainingTicks() <= 0
                 && inside(mouseX, mouseY, resetX, resetY,
                 resetWidth, RESET_HEIGHT)) {
             resetRequested = true;
+            playSelect();
             ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                     new FacilityDiagnosticsResetPacket(data.terminalPos()));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void playRandomClick() {
+        clickVariant = !clickVariant;
+        String id = clickVariant ? "click_1" : "click_2";
+        float pitch = 0.90F + (float) (Math.random() * 0.20D);
+        playBlockSound(id, pitch, 0.2F);
+    }
+
+    private void playSelect() {
+        playBlockSound("select", 1.0F, 1.0F);
+    }
+
+    private void playBlockSound(String soundId, float pitch, float volume) {
+        Level level = Minecraft.getInstance().level;
+        if (level == null) return;
+        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(
+                new ResourceLocation("scp_additions", soundId));
+        if (sound == null) return;
+        BlockPos pos = data.terminalPos();
+        level.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D,
+                pos.getZ() + 0.5D, sound, SoundSource.BLOCKS,
+                volume, pitch, false);
     }
 
     @Override

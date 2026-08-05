@@ -1,10 +1,16 @@
 package net.mcreator.scpadditions.block;
 
+import net.minecraftforge.registries.ForgeRegistries;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -33,19 +39,45 @@ import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Global Foundation diagnostic terminal. It never grants access by redstone. */
 public class SCP079SystemControlBlock extends Block
         implements SimpleWaterloggedBlock {
     public static final BooleanProperty WATERLOGGED =
             BlockStateProperties.WATERLOGGED;
+    private static final Map<Long, Long> TERMINAL_LOOP_NEXT_TICK =
+            new HashMap<>();
 
     public SCP079SystemControlBlock() {
         super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                 .strength(30.0F, 100.0F).noOcclusion()
                 .isRedstoneConductor((state, level, pos) -> false));
         registerDefaultState(stateDefinition.any().setValue(WATERLOGGED, false));
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos,
+            RandomSource random) {
+        super.animateTick(state, level, pos, random);
+        long key = pos.asLong();
+        long gameTime = level.getGameTime();
+        long nextLoop = TERMINAL_LOOP_NEXT_TICK.getOrDefault(key, 0L);
+        if (gameTime < nextLoop) return;
+
+        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(
+                new ResourceLocation("scp_additions", "terminalloop"));
+        if (sound != null) {
+            level.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D,
+                    pos.getZ() + 0.5D, sound, SoundSource.BLOCKS,
+                    0.4F, 1.0F, false);
+        }
+        TERMINAL_LOOP_NEXT_TICK.put(key, gameTime + 160L);
+        if (TERMINAL_LOOP_NEXT_TICK.size() > 512) {
+            TERMINAL_LOOP_NEXT_TICK.clear();
+        }
     }
 
     @Override

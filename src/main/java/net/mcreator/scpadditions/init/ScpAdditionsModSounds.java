@@ -28,6 +28,7 @@ public class ScpAdditionsModSounds {
 	public static final RegistryObject<SoundEvent> TURNINGOFF = REGISTRY.register("turningoff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "turningoff")));
 	public static final RegistryObject<SoundEvent> OVERRIDEON = REGISTRY.register("overrideon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "overrideon")));
 	public static final RegistryObject<SoundEvent> TERMINALLOOP = REGISTRY.register("terminalloop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalloop")));
+	public static final RegistryObject<SoundEvent> AUXGEN = REGISTRY.register("auxgen", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "auxgen")));
 	public static final RegistryObject<SoundEvent> TERMINALON = REGISTRY.register("terminalon", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminalon")));
 	public static final RegistryObject<SoundEvent> TERMINALOFF = REGISTRY.register("terminaloff", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "terminaloff")));
 	public static final RegistryObject<SoundEvent> SCP079_1 = REGISTRY.register("scp079_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_additions", "scp079_1")));

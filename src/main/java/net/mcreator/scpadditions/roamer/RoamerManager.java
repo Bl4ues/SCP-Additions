@@ -260,6 +260,21 @@ public final class RoamerManager {
         }
     }
 
+    /**
+     * Returns whether this SCP profile is enabled and currently released from
+     * containment, regardless of whether an entity is spawned at this moment.
+     */
+    public static boolean isOperationallyUncontained(MinecraftServer server,
+            RoamerType type) {
+        if (server == null || type == null || !type.spawnImplemented()
+                || !moduleEnabled(type) || !isSpawnRuleEnabled(server, type)) {
+            return false;
+        }
+        synchronized (STATES) {
+            return !data(server, type).contained;
+        }
+    }
+
     public static int despawn(MinecraftServer server, RoamerType type) {
         if (server == null || type == null) return 0;
         List<Entity> loaded = findLoaded(server, type);

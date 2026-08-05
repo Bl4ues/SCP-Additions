@@ -67,7 +67,7 @@
 ## SCP-079
 
 - Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and a placeholder Auxiliary Power Unit;
-- Added a black-and-green Foundation diagnostic interface reporting vague global containment, Tesla-grid, override, and connected-door telemetry; it remains accessible without auxiliary power to report system unavailability and includes a manual remote-session cache reset;
+- Restyled the Facility Diagnostic Terminal as an ARC-Site-48 SCiPNET v3.2.6 CRT interface using the site crest palette, retained offline service reporting and remote-session cache purge controls, and corrected uncontained SCP signatures to represent enabled SCP profiles released from containment rather than only currently spawned entities;
 - SCP-079 now requires a physical computer in the world, begins hidden protocol discovery only after a powered diagnostic scan, learns faster from door use and Tesla activity, and gains AP regeneration only after completing access discovery;
 - Cutting auxiliary power now erases SCP-079's learned access and disables the diagnostic and Tesla buses, forcing the AI to investigate the system again after restoration;
 - Expanded the SCP-079 developer HUD with a discovery-progress bar and moved the hidden **Not Your Decision** advancement to the first facility decision that actually affects a player;

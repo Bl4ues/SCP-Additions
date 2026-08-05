@@ -151,9 +151,13 @@ public final class RoamerManager {
     }
 
     public static boolean hasActive(MinecraftServer server, RoamerType type) {
-        if (server == null || type == null) return false;
+        return activeCount(server, type) > 0;
+    }
+
+    public static int activeCount(MinecraftServer server, RoamerType type) {
+        if (server == null || type == null) return 0;
         synchronized (STATES) {
-            return !data(server, type).activeEntityIds.isEmpty();
+            return data(server, type).activeEntityIds.size();
         }
     }
 

@@ -53,15 +53,9 @@ public class SCP079SystemControlBlock extends Block
             Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide && level instanceof ServerLevel
                 && player instanceof ServerPlayer serverPlayer) {
-            if (!Scp079FacilityAccessManager.isAuxiliaryPowerOnline(level)) {
-                serverPlayer.displayClientMessage(Component.literal(
-                        "DIAGNOSTIC BUS UNAVAILABLE: AUXILIARY POWER ISOLATED"),
-                        true);
-            } else {
-                ScpEntityNetwork.openFacilityDiagnostics(serverPlayer,
-                        Scp079FacilityAccessManager.performDiagnosticScan(
-                                serverPlayer));
-            }
+            ScpEntityNetwork.openFacilityDiagnostics(serverPlayer,
+                    Scp079FacilityAccessManager.performDiagnosticScan(
+                            serverPlayer), pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -72,7 +66,7 @@ public class SCP079SystemControlBlock extends Block
         tooltip.add(Component.literal(
                 "Displays a global Foundation facility diagnostic summary."));
         tooltip.add(Component.literal(
-                "Requires the Auxiliary Facility Bus to be online."));
+                "Auxiliary power is required for live telemetry."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
 

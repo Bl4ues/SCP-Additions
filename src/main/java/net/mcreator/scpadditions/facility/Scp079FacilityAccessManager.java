@@ -115,14 +115,26 @@ public final class Scp079FacilityAccessManager {
         if (online) wakeTeslaGates(server, data);
     }
 
-    public static DiagnosticSnapshot performDiagnosticScan(ServerPlayer player) {
-        MinecraftServer server = player.getServer();
+    public static DiagnosticSnapshot performDiagnosticScan(
+            ServerPlayer player) {
+        return diagnosticSnapshot(player, true);
+    }
+
+    public static DiagnosticSnapshot currentDiagnosticSnapshot(
+            ServerPlayer player) {
+        return diagnosticSnapshot(player, false);
+    }
+
+    private static DiagnosticSnapshot diagnosticSnapshot(ServerPlayer player,
+            boolean exposeProtocol) {
+        MinecraftServer server = player == null ? null : player.getServer();
         if (server == null) return DiagnosticSnapshot.EMPTY;
         Scp079FacilityAccessSavedData data = data(server);
         pruneLoadedPositions(server, data);
 
-        if (data.auxiliaryPowerOnline() && !data.hosts().isEmpty()
-                && !data.facilityAccess() && !data.protocolExposed()) {
+        if (exposeProtocol && data.auxiliaryPowerOnline()
+                && !data.hosts().isEmpty() && !data.facilityAccess()
+                && !data.protocolExposed()) {
             data.setProtocolExposed(true);
             addDiscovery(server, data, SCAN_DISCOVERY);
         }
@@ -136,7 +148,15 @@ public final class Scp079FacilityAccessManager {
         int activeGates = data.auxiliaryPowerOnline()
                 && (configured || override) ? totalGates : 0;
         return new DiagnosticSnapshot(uncontained, activeGates, totalGates,
-                override, data.doors().size());
+                override, data.doors().size(), data.auxiliaryPowerOnline());
+    }
+
+    public static void resetRemoteSession(ServerPlayer actor) {
+        MinecraftServer server = actor == null ? null : actor.getServer();
+        if (server == null) return;
+        resetCompromise(server, data(server));
+        actor.displayClientMessage(Component.literal(
+                "REMOTE SESSION CACHE: RESET COMPLETE"), true);
     }
 
     public static void recordActivity(LevelAccessor level, Activity activity) {
@@ -272,22 +292,20 @@ public final class Scp079FacilityAccessManager {
 
     private static void resetCompromise(MinecraftServer server,
             Scp079FacilityAccessSavedData data) {
-        boolean wasActive = data.facilityAccess();
         data.setProtocolExposed(false);
         data.setDiscoveryProgress(0.0D);
         data.setFacilityAccess(false);
         server.getGameRules().getRule(
                 ScpAdditionsModGameRules.SCP079CONTROLON)
                 .set(false, server);
-        if (wasActive) Scp079ProcessingManager.onControlDisabled(server.overworld());
+        Scp079ProcessingManager.resetPower(server.overworld());
     }
 
     private static int countUncontainedScps(MinecraftServer server) {
         int count = 0;
         for (RoamerType type : RoamerType.values()) {
-            if (RoamerManager.hasActive(server, type)
-                    && !RoamerManager.isContained(server, type)) {
-                count++;
+            if (!RoamerManager.isContained(server, type)) {
+                count += RoamerManager.activeCount(server, type);
             }
         }
         return count;
@@ -463,8 +481,9 @@ public final class Scp079FacilityAccessManager {
 
     public record DiagnosticSnapshot(int uncontainedScps,
             int activeTeslaGates, int registeredTeslaGates,
-            boolean teslaOverride, int connectedDoors) {
+            boolean teslaOverride, int connectedDoors,
+            boolean auxiliaryPowerOnline) {
         public static final DiagnosticSnapshot EMPTY =
-                new DiagnosticSnapshot(0, 0, 0, false, 0);
+                new DiagnosticSnapshot(0, 0, 0, false, 0, false);
     }
 }

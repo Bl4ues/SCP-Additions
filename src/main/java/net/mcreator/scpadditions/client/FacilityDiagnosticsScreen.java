@@ -8,7 +8,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.FacilityDiagnosticsPacket;
 import net.mcreator.scpadditions.network.FacilityDiagnosticsResetPacket;
 
-/** Black-and-green Foundation facility diagnostic terminal. */
+/** Black-and-green SCiPNET facility diagnostic terminal. */
 public final class FacilityDiagnosticsScreen extends Screen {
     private static final int GREEN = 0xFF62E17A;
     private static final int DIM_GREEN = 0xFF3F9850;
@@ -25,7 +25,7 @@ public final class FacilityDiagnosticsScreen extends Screen {
     private boolean resetRequested;
 
     private FacilityDiagnosticsScreen(FacilityDiagnosticsPacket data) {
-        super(Component.literal("Foundation Facility Diagnostics"));
+        super(Component.literal("SCiPNET Facility Diagnostics"));
         this.data = data;
     }
 
@@ -46,11 +46,12 @@ public final class FacilityDiagnosticsScreen extends Screen {
 
         int tx = x + 12;
         int ty = y + 10;
-        line(graphics, "SCP FOUNDATION // FACILITY SYSTEMS DIAGNOSTIC",
-                tx, ty, GREEN);
-        line(graphics, "SESSION CLASS: INTERNAL OPERATIONS",
+        line(graphics, "SCiPNET TERMINAL v3.2.6", tx, ty, GREEN);
+        line(graphics, "FOUNDATION INTERNAL DIAGNOSTIC NODE",
                 tx, ty + 12, DIM_GREEN);
-        rule(graphics, tx, ty + 34, panelWidth - 24);
+        line(graphics, "ACCESS CONTEXT: INTERNAL OPERATIONS",
+                tx, ty + 24, DIM_GREEN);
+        rule(graphics, tx, ty + 38, panelWidth - 24);
 
         if (data.auxiliaryPowerOnline()) {
             renderOnline(graphics, mouseX, mouseY, tx, ty, panelWidth);
@@ -58,43 +59,43 @@ public final class FacilityDiagnosticsScreen extends Screen {
             renderOffline(graphics, tx, ty, panelWidth);
         }
 
-        line(graphics, "PRESS ESC TO TERMINATE SESSION", tx, ty + 224,
+        line(graphics, "ESC // TERMINATE SCiPNET SESSION", tx, ty + 224,
                 DIM_GREEN);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderOnline(GuiGraphics graphics, int mouseX, int mouseY,
             int tx, int ty, int panelWidth) {
-        line(graphics, "[ ANOMALOUS CONTAINMENT TELEMETRY ]",
-                tx, ty + 44, GREEN);
-        metric(graphics, "SCP SIGNATURES (UNCONTAINED)",
-                data.uncontainedScps(), tx, ty + 58, panelWidth - 24);
+        line(graphics, "[ ANOMALOUS SIGNATURE REGISTRY ]",
+                tx, ty + 48, GREEN);
+        metric(graphics, "UNCONTAINED ROAMER SIGNATURES",
+                data.uncontainedScps(), tx, ty + 62, panelWidth - 24);
         String condition = data.uncontainedScps() == 0 ? "NOMINAL"
                 : data.uncontainedScps() <= 2 ? "DEGRADED" : "CRITICAL";
-        metric(graphics, "CONTAINMENT ASSURANCE", condition,
-                tx, ty + 70, panelWidth - 24);
+        metric(graphics, "CONTAINMENT INTEGRITY", condition,
+                tx, ty + 74, panelWidth - 24);
 
-        line(graphics, "[ SECURITY INFRASTRUCTURE BUS ]",
-                tx, ty + 90, GREEN);
-        metric(graphics, "TESLA NODES ACTIVE", data.activeTeslaGates(),
-                tx, ty + 104, panelWidth - 24);
-        metric(graphics, "TESLA NODES REGISTERED",
-                data.registeredTeslaGates(), tx, ty + 116,
+        line(graphics, "[ FACILITY DEFENSE TELEMETRY ]",
+                tx, ty + 94, GREEN);
+        metric(graphics, "TESLA GRID NODES ACTIVE", data.activeTeslaGates(),
+                tx, ty + 108, panelWidth - 24);
+        metric(graphics, "TESLA GRID NODES REGISTERED",
+                data.registeredTeslaGates(), tx, ty + 120,
                 panelWidth - 24);
-        metric(graphics, "TESLA MANUAL OVERRIDE",
+        metric(graphics, "TESLA GRID OVERRIDE",
                 data.teslaOverride() ? "ACTIVE" : "INACTIVE",
-                tx, ty + 128, panelWidth - 24);
-        metric(graphics, "DOOR CONTROL ENDPOINTS", data.connectedDoors(),
-                tx, ty + 140, panelWidth - 24);
+                tx, ty + 132, panelWidth - 24);
+        metric(graphics, "DOOR SYSTEM ENDPOINTS", data.connectedDoors(),
+                tx, ty + 144, panelWidth - 24);
 
-        rule(graphics, tx, ty + 158, panelWidth - 24);
-        line(graphics, "AUXILIARY FACILITY BUS: ONLINE",
-                tx, ty + 168, GREEN);
-        line(graphics, "DATA SCOPE: REGISTERED FOUNDATION ASSETS",
-                tx, ty + 180, DIM_GREEN);
+        rule(graphics, tx, ty + 162, panelWidth - 24);
+        line(graphics, "AUXILIARY POWER BUS: ONLINE",
+                tx, ty + 172, GREEN);
+        line(graphics, "TELEMETRY SCOPE: REGISTERED FOUNDATION ASSETS",
+                tx, ty + 184, DIM_GREEN);
 
         resetX = tx;
-        resetY = ty + 196;
+        resetY = ty + 198;
         resetWidth = panelWidth - 24;
         boolean hovered = inside(mouseX, mouseY, resetX, resetY,
                 resetWidth, RESET_HEIGHT);
@@ -103,38 +104,38 @@ public final class FacilityDiagnosticsScreen extends Screen {
         border(graphics, resetX, resetY, resetWidth, RESET_HEIGHT,
                 hovered ? GREEN : DIM_GREEN);
         String label = resetRequested
-                ? "REMOTE SESSION RESET REQUESTED"
-                : "RESET REMOTE SESSION CACHE";
+                ? "REMOTE CACHE PURGE REQUESTED"
+                : "PURGE REMOTE SESSION CACHE";
         centered(graphics, label, resetX, resetY, resetWidth, RESET_HEIGHT,
                 resetRequested ? DIM_GREEN : GREEN);
     }
 
     private void renderOffline(GuiGraphics graphics, int tx, int ty,
             int panelWidth) {
-        line(graphics, "[ SYSTEM AVAILABILITY ]", tx, ty + 44, GREEN);
-        metric(graphics, "AUXILIARY POWER FEED", "OFFLINE",
-                tx, ty + 62, panelWidth - 24);
-        metric(graphics, "FACILITY DIAGNOSTIC BUS", "UNAVAILABLE",
-                tx, ty + 74, panelWidth - 24);
-        metric(graphics, "SECURITY TELEMETRY", "SUSPENDED",
-                tx, ty + 86, panelWidth - 24);
+        line(graphics, "[ SCiPNET SERVICE STATUS ]", tx, ty + 48, GREEN);
+        metric(graphics, "AUXILIARY POWER BUS", "OFFLINE",
+                tx, ty + 66, panelWidth - 24);
+        metric(graphics, "SCiPNET TELEMETRY LINK", "UNAVAILABLE",
+                tx, ty + 78, panelWidth - 24);
+        metric(graphics, "FACILITY DEFENSE DATA", "SUSPENDED",
+                tx, ty + 90, panelWidth - 24);
 
-        rule(graphics, tx, ty + 108, panelWidth - 24);
-        line(graphics, "LIVE FACILITY DATA CANNOT BE ACQUIRED.",
-                tx, ty + 122, DIM_GREEN);
-        line(graphics, "RESTORE AUXILIARY POWER TO RESUME OPERATIONS.",
-                tx, ty + 136, DIM_GREEN);
-        line(graphics, "REMOTE FACILITY ACCESS IS ALREADY ISOLATED.",
-                tx, ty + 158, GREEN);
+        rule(graphics, tx, ty + 112, panelWidth - 24);
+        line(graphics, "LIVE FOUNDATION TELEMETRY CANNOT BE ACQUIRED.",
+                tx, ty + 126, DIM_GREEN);
+        line(graphics, "RESTORE AUXILIARY POWER BUS TO RESUME SERVICE.",
+                tx, ty + 140, DIM_GREEN);
+        line(graphics, "REMOTE ANOMALOUS ACCESS: ISOLATED",
+                tx, ty + 162, GREEN);
 
         resetX = tx;
-        resetY = ty + 196;
+        resetY = ty + 198;
         resetWidth = panelWidth - 24;
         graphics.fill(resetX, resetY, resetX + resetWidth,
                 resetY + RESET_HEIGHT, BUTTON);
         border(graphics, resetX, resetY, resetWidth, RESET_HEIGHT,
                 DIM_GREEN);
-        centered(graphics, "REMOTE SESSION RESET UNAVAILABLE",
+        centered(graphics, "REMOTE CACHE PURGE UNAVAILABLE",
                 resetX, resetY, resetWidth, RESET_HEIGHT, DIM_GREEN);
     }
 

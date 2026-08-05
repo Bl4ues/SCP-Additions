@@ -1,5 +1,11 @@
 # Changelog
 
+## SCP-079 auxiliary isolation and SCiPNET reindexing
+
+- Auxiliary power isolation now suspends SCP-079 actions and drains AP toward 25 without erasing learned facility access;
+- Remote-session cache purge is now the sole operation that clears learned access and forces a five-minute SCiPNET index rebuild;
+- Added gradual reconstruction telemetry, a compact technician-session warning, and a subtle unusual-network-activity advisory after SCP-079 gains access.
+
 # SCP Additions 3.1.0 — In Development
 
 ## Interface and presentation

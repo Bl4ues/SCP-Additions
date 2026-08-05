@@ -128,11 +128,19 @@ public final class Scp079FacilityAccessManager {
         if (server == null) return;
         Scp079FacilityAccessSavedData data = data(server);
         data.setAuxiliaryPowerOnline(online);
-        if (!online) {
-            resetCompromise(server, data);
-        }
         synchronizeAuxiliaryUnits(server, online);
         if (online) wakeTeslaGates(server, data);
+
+        boolean controlActive = online && data.facilityAccess()
+                && !data.hosts().isEmpty();
+        server.getGameRules().getRule(
+                ScpAdditionsModGameRules.SCP079CONTROLON)
+                .set(controlActive, server);
+        if (controlActive) {
+            Scp079ProcessingManager.onControlEnabled(server.overworld());
+        } else {
+            Scp079ProcessingManager.onControlDisabled(server.overworld());
+        }
     }
 
     public static DiagnosticSnapshot performDiagnosticScan(
@@ -168,9 +176,11 @@ public final class Scp079FacilityAccessManager {
         int totalGates = data.teslaGates().size();
         int activeGates = data.auxiliaryPowerOnline()
                 && (configured || override) ? totalGates : 0;
+        boolean unusualNetworkActivity = data.facilityAccess()
+                && !data.hosts().isEmpty();
         return new DiagnosticSnapshot(uncontained, activeGates, totalGates,
                 override, data.doors().size(), data.auxiliaryPowerOnline(),
-                cachePurgeCooldownTicks(server));
+                cachePurgeCooldownTicks(server), unusualNetworkActivity);
     }
 
     public static void resetRemoteSession(ServerPlayer actor) {
@@ -212,15 +222,28 @@ public final class Scp079FacilityAccessManager {
 
     public static void registerHost(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return;
-        Scp079FacilityAccessSavedData data = data(level.getServer());
+        MinecraftServer server = level.getServer();
+        Scp079FacilityAccessSavedData data = data(server);
         if (data.hosts().add(tracked(level, pos))) data.markChanged();
+        if (data.facilityAccess() && data.auxiliaryPowerOnline()) {
+            server.getGameRules().getRule(
+                    ScpAdditionsModGameRules.SCP079CONTROLON)
+                    .set(true, server);
+            Scp079ProcessingManager.onControlEnabled(server.overworld());
+        }
     }
 
     public static void unregisterHost(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return;
-        Scp079FacilityAccessSavedData data = data(level.getServer());
+        MinecraftServer server = level.getServer();
+        Scp079FacilityAccessSavedData data = data(server);
         if (data.hosts().remove(tracked(level, pos))) data.markChanged();
-        if (data.hosts().isEmpty()) resetCompromise(level.getServer(), data);
+        if (data.hosts().isEmpty()) {
+            server.getGameRules().getRule(
+                    ScpAdditionsModGameRules.SCP079CONTROLON)
+                    .set(false, server);
+            Scp079ProcessingManager.onControlDisabled(server.overworld());
+        }
     }
 
     public static void registerDoor(ServerLevel level, BlockPos pos) {
@@ -295,30 +318,33 @@ public final class Scp079FacilityAccessManager {
                         ScpAdditionsModGameRules.SCP079CONTROLON)
                         .set(false, server);
             }
+            Scp079ProcessingManager.onControlDisabled(server.overworld());
             return;
         }
-        if (!data.auxiliaryPowerOnline()
-                || (data.hosts().isEmpty()
-                && (data.protocolExposed() || data.facilityAccess()
-                || data.discoveryProgress() > 0.0D))) {
-            if (data.protocolExposed() || data.facilityAccess()
-                    || data.discoveryProgress() > 0.0D) {
-                resetCompromise(server, data);
-            }
-            return;
-        }
+
         if (data.auxiliaryPowerOnline() && data.protocolExposed()
                 && !data.hosts().isEmpty() && !data.facilityAccess()) {
             addDiscovery(server, data, PASSIVE_DISCOVERY_PER_SECOND);
         }
+
         boolean expectedRule = data.auxiliaryPowerOnline()
                 && data.facilityAccess() && !data.hosts().isEmpty();
-        if (server.getGameRules().getBoolean(
-                ScpAdditionsModGameRules.SCP079CONTROLON) != expectedRule) {
+        boolean currentRule = server.getGameRules().getBoolean(
+                ScpAdditionsModGameRules.SCP079CONTROLON);
+        if (currentRule != expectedRule) {
             server.getGameRules().getRule(
                     ScpAdditionsModGameRules.SCP079CONTROLON)
                     .set(expectedRule, server);
+            if (expectedRule) {
+                Scp079ProcessingManager.onControlEnabled(server.overworld());
+            } else {
+                Scp079ProcessingManager.onControlDisabled(server.overworld());
+            }
         }
+
+        // Force lazy AP regeneration/decay to advance even when no debug HUD
+        // or SCP action happens to query the processing manager.
+        Scp079ProcessingManager.getPower(server.overworld());
     }
 
     @SubscribeEvent
@@ -441,10 +467,11 @@ public final class Scp079FacilityAccessManager {
                 state.getBlock()
                         == ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get());
         if (changed) data.markChanged();
-        if (data.hosts().isEmpty()
-                && (data.protocolExposed() || data.facilityAccess()
-                || data.discoveryProgress() > 0.0D)) {
-            resetCompromise(server, data);
+        if (data.hosts().isEmpty()) {
+            server.getGameRules().getRule(
+                    ScpAdditionsModGameRules.SCP079CONTROLON)
+                    .set(false, server);
+            Scp079ProcessingManager.onControlDisabled(server.overworld());
         }
     }
 
@@ -537,8 +564,9 @@ public final class Scp079FacilityAccessManager {
             int activeTeslaGates, int registeredTeslaGates,
             boolean teslaOverride, int connectedDoors,
             boolean auxiliaryPowerOnline,
-            int cachePurgeCooldownTicks) {
+            int cachePurgeCooldownTicks,
+            boolean unusualNetworkActivity) {
         public static final DiagnosticSnapshot EMPTY =
-                new DiagnosticSnapshot(0, 0, 0, false, 0, false, 0);
+                new DiagnosticSnapshot(0, 0, 0, false, 0, false, 0, false);
     }
 }

@@ -1,13 +1,12 @@
 package net.mcreator.scpadditions.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.mcreator.scpadditions.init.MainMenuSounds;
 
-/** Non-positional looping soundtrack used while the client is outside a world. */
+/** Non-positional looping soundtrack started from the main menu. */
 public final class MainMenuMusicSound extends AbstractTickableSoundInstance {
     public MainMenuMusicSound() {
         super(MainMenuSounds.MAIN_MENU.get(), SoundSource.MUSIC,
@@ -22,9 +21,7 @@ public final class MainMenuMusicSound extends AbstractTickableSoundInstance {
 
     @Override
     public void tick() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null
-                || !ClientModulePreferences.mainMenuMusicEnabled()) {
+        if (!ClientModulePreferences.mainMenuMusicEnabled()) {
             stop();
         }
     }

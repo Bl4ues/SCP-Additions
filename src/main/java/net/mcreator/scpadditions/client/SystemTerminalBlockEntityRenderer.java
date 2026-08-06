@@ -24,11 +24,10 @@ public final class SystemTerminalBlockEntityRenderer
         super(new SystemTerminalGeoModel());
 
         /*
-         * The authored _glowmask already contains the coloured emissive pixels.
-         * Render it directly, exactly like the working elevator station. Using
-         * AutoGlowingTexture here would mutate the shared base texture by
-         * clearing those pixels, which is why the monitor and indicator lights
-         * disappeared even when shaders were disabled.
+         * RenderType.eyes works for the item renderer but can be swallowed by
+         * shader wrappers on placed block entities. The translucent-emissive
+         * entity pass preserves the authored coloured glowmask, remains
+         * full-bright and is accepted by those block-entity render paths.
          */
         addRenderLayer(new GeoRenderLayer<>(this) {
             @Override
@@ -37,7 +36,8 @@ public final class SystemTerminalBlockEntityRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                RenderType emissive = RenderType.eyes(GLOWMASK);
+                RenderType emissive = RenderType.entityTranslucentEmissive(
+                        GLOWMASK, true);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

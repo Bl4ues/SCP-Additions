@@ -618,9 +618,6 @@ public final class Scp079ModulesScreenExtension {
                 drawPreview(graphics, settings, panelX + 96, panelY + 165);
                 graphics.drawCenteredString(font, ScpFonts.roboto("Preview"),
                         panelX + 128, panelY + 121, PALE_GOLD);
-                graphics.drawCenteredString(font,
-                        ScpFonts.roboto("Rendered at 14 px in game"),
-                        panelX + 128, panelY + 238, MUTED);
             }
 
             for (Button button : buttons) button.setMessage(Component.empty());

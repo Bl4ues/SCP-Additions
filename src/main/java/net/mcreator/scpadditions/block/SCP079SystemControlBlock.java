@@ -116,20 +116,24 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /* Four practical envelopes follow the terminal's substantial components. */
+    /*
+     * Four practical envelopes follow the terminal's substantial components.
+     * The authored model's local X axis is mirrored relative to Minecraft's
+     * block-space X axis, so these bounds are mirrored once before rotation.
+     */
     private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
-            // Left diagnostic console.
-            Block.box(-1.50D, 0.00D, 9.00D,
-                    8.00D, 3.50D, 16.00D),
+            // Diagnostic console.
+            Block.box(8.00D, 0.00D, 9.00D,
+                    17.50D, 3.50D, 16.00D),
             // Monitor housing and base.
-            Block.box(8.00D, 0.00D, 7.25D,
-                    19.50D, 10.25D, 16.00D),
+            Block.box(-3.50D, 0.00D, 7.25D,
+                    8.00D, 10.25D, 16.00D),
             // Keyboard shelf.
-            Block.box(7.00D, 0.00D, 3.25D,
-                    18.50D, 1.00D, 10.00D),
+            Block.box(-2.50D, 0.00D, 3.25D,
+                    9.00D, 1.00D, 10.00D),
             // Blue side bin.
-            Block.box(0.25D, 0.00D, 1.25D,
-                    4.50D, 3.25D, 5.00D)).optimize();
+            Block.box(11.50D, 0.00D, 1.25D,
+                    15.75D, 3.25D, 5.00D)).optimize();
     private static final VoxelShape MODEL_SHAPE_EAST =
             rotateNorthShape(MODEL_SHAPE_NORTH, Direction.EAST);
     private static final VoxelShape MODEL_SHAPE_SOUTH =

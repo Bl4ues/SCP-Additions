@@ -4,6 +4,7 @@ import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -19,40 +20,40 @@ public final class EnterSoundClient {
     }
 
     /**
-     * The server packet can arrive while the receiving-level screen is still
-     * visible. Record the request here and execute it only after the client has
-     * actually handed control to gameplay.
+     * The server packet may arrive while Minecraft is still showing the 0-100%
+     * receiving-level screen. Defer the transition until an actual world frame
+     * has completed rendering instead of guessing from screen/player fields.
      */
     public static void play() {
         pendingWorldEntryCue = true;
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !pendingWorldEntryCue) return;
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.getConnection() == null) {
-            pendingWorldEntryCue = false;
+    public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (!pendingWorldEntryCue
+                || event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             return;
         }
 
-        boolean gameplayVisible = minecraft.level != null
-                && minecraft.player != null
-                && minecraft.screen == null
-                && minecraft.getOverlay() == null;
-        if (!gameplayVisible) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null) return;
 
         pendingWorldEntryCue = false;
-
-        // This is the real transition point, regardless of whether enter.ogg
-        // itself is enabled in the client's configuration.
         MainMenuMusicClient.onWorldEntryCue();
 
-        if (!InventoryModuleRuntimeState.enterSoundEnabledForClient()) return;
+        if (InventoryModuleRuntimeState.enterSoundEnabledForClient()) {
+            minecraft.getSoundManager().play(
+                    SimpleSoundInstance.forUI(Scp106Sounds.ENTER.get(),
+                            1.0F, 1.0F));
+        }
+    }
 
-        minecraft.getSoundManager().play(
-                SimpleSoundInstance.forUI(Scp106Sounds.ENTER.get(),
-                        1.0F, 1.0F));
+    /** Clear an abandoned cue if the connection closes before a world renders. */
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && pendingWorldEntryCue
+                && Minecraft.getInstance().getConnection() == null) {
+            pendingWorldEntryCue = false;
+        }
     }
 }

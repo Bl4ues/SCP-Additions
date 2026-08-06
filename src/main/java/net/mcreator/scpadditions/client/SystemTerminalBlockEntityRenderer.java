@@ -1,46 +1,38 @@
 package net.mcreator.scpadditions.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.block.entity.SystemTerminalBlockEntity;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.texture.AutoGlowingTexture;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 /** Shader-safe placed renderer for the Facility Diagnostic Terminal. */
 public final class SystemTerminalBlockEntityRenderer
         extends GeoBlockRenderer<SystemTerminalBlockEntity> {
-    private static final ResourceLocation GLOWMASK = new ResourceLocation(
-            "scp_additions",
-            "textures/block/system_terminal_glowmask.png");
-    private static final int FULL_BRIGHT = 0xF000F0;
+    private static final ResourceLocation BASE_TEXTURE = new ResourceLocation(
+            "scp_additions", "textures/block/system_terminal.png");
 
     public SystemTerminalBlockEntityRenderer(
             BlockEntityRendererProvider.Context context) {
         super(new SystemTerminalGeoModel());
 
-        // AutoGlowingGeoLayer works for the item renderer, but shader wrappers
-        // can swallow it for GeckoLib block entities. Repeat the same explicit
-        // _glowmask pass already used by the working elevator floor station.
-        addRenderLayer(new GeoRenderLayer<>(this) {
+        /*
+         * GeckoLib's _glowmask is not a ready-to-render emissive texture. Its
+         * AutoGlowingTexture loader combines the mask with the base colours and
+         * removes those pixels from the ordinary pass. Keep that processing,
+         * but render the generated texture through vanilla's eyes pass so
+         * Oculus/shader wrappers cannot discard GeckoLib's custom render type.
+         */
+        addRenderLayer(new AutoGlowingGeoLayer<>(this) {
             @Override
-            public void render(PoseStack poseStack,
-                    SystemTerminalBlockEntity animatable,
-                    BakedGeoModel bakedModel, RenderType renderType,
-                    MultiBufferSource bufferSource, VertexConsumer buffer,
-                    float partialTick, int packedLight,
-                    int packedOverlay) {
-                RenderType emissive = RenderType.eyes(GLOWMASK);
-                getRenderer().reRender(bakedModel, poseStack, bufferSource,
-                        animatable, emissive,
-                        bufferSource.getBuffer(emissive), partialTick,
-                        FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                        1.0F, 1.0F, 1.0F, 1.0F);
+            protected RenderType getRenderType(
+                    SystemTerminalBlockEntity animatable) {
+                ResourceLocation generatedGlow =
+                        AutoGlowingTexture.getEmissiveResource(BASE_TEXTURE);
+                return RenderType.eyes(generatedGlow);
             }
         });
     }

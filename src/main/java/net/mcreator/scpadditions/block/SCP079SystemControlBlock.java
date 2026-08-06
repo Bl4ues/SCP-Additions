@@ -117,43 +117,23 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
     }
 
     /*
-     * These boxes are the transformed AABBs of the actual solid cubes in the
-     * authored GeckoLib model. Flat papers, disks and zero-thickness artwork
-     * deliberately have no collision. The monitor frame is split into its
-     * base, rails, sides and rear instead of filling the empty screen cavity.
+     * Four practical envelopes follow the terminal's substantial components.
+     * The authored GeckoLib model faces opposite the placement property's
+     * semantic direction, so getShape applies the opposite facing below.
      */
     private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
             // Left diagnostic console.
-            Block.box(-1.30D, 0.00D, 9.40D,
-                    7.95D, 1.05D, 16.00D),
-            Block.box(-1.30D, 0.95D, 11.10D,
-                    7.75D, 2.50D, 16.00D),
-            Block.box(-0.85D, 0.75D, 9.45D,
-                    7.95D, 3.25D, 13.40D),
-
-            // Monitor base and lower rails.
-            Block.box(8.30D, 0.00D, 7.40D,
-                    19.50D, 2.05D, 15.80D),
-            Block.box(8.90D, 1.95D, 8.00D,
-                    18.90D, 2.55D, 15.20D),
-            Block.box(8.60D, 2.45D, 7.70D,
-                    19.20D, 3.55D, 15.50D),
-
-            // Monitor frame. The centre remains hollow like the model.
-            Block.box(8.60D, 8.95D, 7.70D,
-                    19.20D, 10.05D, 15.50D),
-            Block.box(8.60D, 3.45D, 9.60D,
-                    10.70D, 9.05D, 15.50D),
-            Block.box(16.65D, 3.45D, 7.70D,
-                    19.20D, 9.05D, 13.75D),
-            Block.box(10.40D, 3.20D, 13.35D,
-                    18.70D, 9.30D, 15.75D),
-
-            // Keyboard shelf and blue side bin.
-            Block.box(7.15D, 0.00D, 3.45D,
-                    18.45D, 0.55D, 9.80D),
-            Block.box(0.70D, 0.00D, 1.70D,
-                    3.30D, 2.80D, 4.30D)).optimize();
+            Block.box(-1.50D, 0.00D, 9.00D,
+                    8.00D, 3.50D, 16.00D),
+            // Monitor housing and base.
+            Block.box(8.00D, 0.00D, 7.25D,
+                    19.50D, 10.25D, 16.00D),
+            // Keyboard shelf.
+            Block.box(7.00D, 0.00D, 3.25D,
+                    18.50D, 1.00D, 10.00D),
+            // Blue side bin.
+            Block.box(0.25D, 0.00D, 1.25D,
+                    4.50D, 3.25D, 5.00D)).optimize();
     private static final VoxelShape MODEL_SHAPE_EAST =
             rotateNorthShape(MODEL_SHAPE_NORTH, Direction.EAST);
     private static final VoxelShape MODEL_SHAPE_SOUTH =
@@ -195,13 +175,13 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return modelShape(state.getValue(FACING));
+        return modelShape(state.getValue(FACING).getOpposite());
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return modelShape(state.getValue(FACING));
+        return modelShape(state.getValue(FACING).getOpposite());
     }
 
     @Override

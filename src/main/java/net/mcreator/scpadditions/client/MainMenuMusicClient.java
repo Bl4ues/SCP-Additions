@@ -10,21 +10,22 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 /** Starts the authored menu soundtrack and carries it through world loading. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MainMenuMusicClient {
+    private static final int INITIAL_STREAM_RETRY_TICKS = 200;
+    private static final int LOST_STREAM_RETRY_TICKS = 10;
+
     private static MainMenuMusicSound music;
     private static boolean startedFromMenu;
+    private static boolean currentSubmissionWasActive;
+    private static int inactiveTicks;
 
     private MainMenuMusicClient() {
     }
 
     public static boolean isPlaying() {
-        return startedFromMenu && music != null && !music.isStopped();
+        return startedFromMenu;
     }
 
-    /**
-     * Ends the menu soundtrack at the same authoritative moment as the world
-     * entry cue. This is called even when enter.ogg is disabled, so the config
-     * changes only whether the cue is audible, not the transition timing.
-     */
+    /** Stops the menu soundtrack at the same moment as the world-entry cue. */
     public static void onWorldEntryCue() {
         stopMusic(Minecraft.getInstance(), true);
     }
@@ -40,8 +41,8 @@ public final class MainMenuMusicClient {
         }
 
         if (!startedFromMenu) {
-            // Start only from a genuine menu/loading screen before a level is
-            // available. Pause screens must never begin a new menu session.
+            // Start only from a genuine menu before any world exists. Pause
+            // screens must never begin a new menu-music session.
             if (minecraft.level == null && minecraft.screen != null) {
                 startedFromMenu = true;
                 submitMusic(minecraft);
@@ -50,12 +51,26 @@ public final class MainMenuMusicClient {
         }
 
         /*
-         * The sound engine may discard active sounds while replacing the
-         * client level. Keep resubmitting the authored track until the server's
-         * delayed entry cue explicitly ends the menu session.
+         * World transitions may temporarily discard streamed sounds. Keep the
+         * session alive until EnterSoundClient confirms that gameplay is
+         * actually visible, but do not recreate the stream every tick while it
+         * is still decoding.
          */
-        if (music == null || music.isStopped()
-                || !minecraft.getSoundManager().isActive(music)) {
+        if (music == null || music.isStopped()) {
+            submitMusic(minecraft);
+            return;
+        }
+
+        if (minecraft.getSoundManager().isActive(music)) {
+            currentSubmissionWasActive = true;
+            inactiveTicks = 0;
+            return;
+        }
+
+        inactiveTicks++;
+        int retryAfter = currentSubmissionWasActive
+                ? LOST_STREAM_RETRY_TICKS : INITIAL_STREAM_RETRY_TICKS;
+        if (inactiveTicks >= retryAfter) {
             submitMusic(minecraft);
         }
     }
@@ -65,6 +80,8 @@ public final class MainMenuMusicClient {
             minecraft.getSoundManager().stop(music);
         }
         music = new MainMenuMusicSound();
+        currentSubmissionWasActive = false;
+        inactiveTicks = 0;
         ModMusicExclusivityClient.stopVanillaMusicNow();
         minecraft.getSoundManager().play(music);
     }
@@ -74,6 +91,8 @@ public final class MainMenuMusicClient {
             minecraft.getSoundManager().stop(music);
             music = null;
         }
+        currentSubmissionWasActive = false;
+        inactiveTicks = 0;
         if (resetSession) {
             startedFromMenu = false;
         }

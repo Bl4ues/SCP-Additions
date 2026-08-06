@@ -70,9 +70,7 @@ public final class ClientPreferencesMenu {
             Class<?> client = Class.forName(CONFIG_CLIENT);
             setStatic(client, "rootParent", parent);
             setStatic(client, "files", snapshot);
-            setStatic(client, "homeNotice",
-                    "Client preferences are editable. Server-side settings "
-                            + "require a world host or operator.");
+            setStatic(client, "homeNotice", "");
 
             Class<?> homeType = Class.forName(HOME_SCREEN);
             Constructor<?> constructor = homeType.getDeclaredConstructor();

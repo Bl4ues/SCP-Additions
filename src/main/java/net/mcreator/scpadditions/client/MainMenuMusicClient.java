@@ -10,12 +10,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 /** Starts and maintains the authored soundtrack while no world is open. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MainMenuMusicClient {
-    private static final int INITIAL_DELAY_TICKS = 20;
-    private static final int INACTIVE_RETRY_TICKS = 100;
-
     private static MainMenuMusicSound music;
-    private static int startDelay = INITIAL_DELAY_TICKS;
-    private static int inactiveTicks;
 
     private MainMenuMusicClient() {
     }
@@ -35,49 +30,25 @@ public final class MainMenuMusicClient {
 
         if (!shouldPlay) {
             stopMusic(minecraft);
-            startDelay = INITIAL_DELAY_TICKS;
             return;
         }
 
-        if (music != null) {
-            if (music.isStopped()) {
-                music = null;
-                inactiveTicks = 0;
-                startDelay = INITIAL_DELAY_TICKS;
-                return;
-            }
-
-            // Streamed sounds may need several ticks before SoundEngine marks
-            // them active. Do not replace the instance every tick while it is
-            // still loading, which continuously restarted the track before it
-            // could become audible.
-            if (minecraft.getSoundManager().isActive(music)) {
-                inactiveTicks = 0;
-            } else if (++inactiveTicks >= INACTIVE_RETRY_TICKS) {
-                minecraft.getSoundManager().stop(music);
-                music = null;
-                inactiveTicks = 0;
-                startDelay = INITIAL_DELAY_TICKS;
-            }
-            return;
-        }
-
-        if (startDelay > 0) {
-            startDelay--;
-            return;
-        }
+        /*
+         * A large streamed OGG is not reported as active while SoundEngine is
+         * still decoding it. Keep the submitted instance alive instead of
+         * cancelling and recreating it every five seconds before playback can
+         * begin.
+         */
+        if (music != null && !music.isStopped()) return;
 
         music = new MainMenuMusicSound();
-        inactiveTicks = 0;
         ModMusicExclusivityClient.stopVanillaMusicNow();
         minecraft.getSoundManager().play(music);
     }
 
     private static void stopMusic(Minecraft minecraft) {
-        if (music != null) {
-            minecraft.getSoundManager().stop(music);
-            music = null;
-        }
-        inactiveTicks = 0;
+        if (music == null) return;
+        minecraft.getSoundManager().stop(music);
+        music = null;
     }
 }

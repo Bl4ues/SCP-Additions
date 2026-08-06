@@ -21,12 +21,18 @@ public final class SystemTerminalBlockEntityRenderer
     }
 
     @Override
+    public boolean shouldRenderOffScreen(
+            SystemTerminalBlockEntity blockEntity) {
+        // The authored model extends well beyond its host block. Vanilla's
+        // one-block block-entity bounds can therefore cull the complete model
+        // after the first render/chunk rebuild even while it is still visible.
+        return true;
+    }
+
+    @Override
     public RenderType getRenderType(SystemTerminalBlockEntity animatable,
             ResourceLocation texture, MultiBufferSource bufferSource,
             float partialTick) {
-        // Match the known-good Elevator Floor Station render path. The boolean
-        // variant preserves the base texture while the eyes layer handles only
-        // the authored _e glowmask.
         return RenderType.entityTranslucent(texture, true);
     }
 }

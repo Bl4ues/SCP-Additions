@@ -115,23 +115,24 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    // BEGIN GENERATED MODEL COLLISION
+    // Approximate the three substantial parts of the authored model instead
+    // of treating its entire render envelope as one floor-to-ceiling obstacle.
     private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
-            Block.box(7, 0, 5, 20, 16, 15),
-            Block.box(7, 0, -2, 20, 4, 6),
-            Block.box(-4, 0, 3, 7, 8, 15));
+            Block.box(7, 5, 9, 20, 16, 15),
+            Block.box(7, 2, 2, 21, 6, 10),
+            Block.box(-4, 4, 7, 7, 11, 15));
     private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
-            Block.box(1, 0, 7, 11, 16, 20),
-            Block.box(10, 0, 7, 18, 4, 20),
-            Block.box(1, 0, -4, 13, 8, 7));
+            Block.box(1, 5, 7, 7, 16, 20),
+            Block.box(6, 2, 7, 14, 6, 21),
+            Block.box(1, 4, -4, 9, 11, 7));
     private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
-            Block.box(-4, 0, 1, 9, 16, 11),
-            Block.box(-4, 0, 10, 9, 4, 18),
-            Block.box(9, 0, 1, 20, 8, 13));
+            Block.box(-4, 5, 1, 9, 16, 7),
+            Block.box(-5, 2, 6, 9, 6, 14),
+            Block.box(9, 4, 1, 20, 11, 9));
     private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
-            Block.box(5, 0, -4, 15, 16, 9),
-            Block.box(-2, 0, -4, 6, 4, 9),
-            Block.box(3, 0, 9, 15, 8, 20));
+            Block.box(9, 5, -4, 15, 16, 9),
+            Block.box(2, 2, -5, 10, 6, 9),
+            Block.box(7, 4, 9, 15, 11, 20));
 
     private static VoxelShape modelShape(Direction facing) {
         return switch (facing) {
@@ -153,7 +154,7 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
             BlockPos pos, CollisionContext context) {
         return modelShape(state.getValue(FACING));
     }
-    // END GENERATED MODEL COLLISION (system terminal)
+
     @Override
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
@@ -161,6 +162,7 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         tooltip.add(Component.literal("Telemetry and remote cache control."));
         super.appendHoverText(stack, level, tooltip, flag);
     }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block,
             BlockState> builder) {

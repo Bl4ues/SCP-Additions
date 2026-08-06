@@ -115,24 +115,18 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    // Approximate the three substantial parts of the authored model instead
-    // of treating its entire render envelope as one floor-to-ceiling obstacle.
-    private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
-            Block.box(7, 5, 9, 20, 16, 15),
-            Block.box(7, 2, 2, 21, 6, 10),
-            Block.box(-4, 4, 7, 7, 11, 15));
-    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
-            Block.box(1, 5, 7, 7, 16, 20),
-            Block.box(6, 2, 7, 14, 6, 21),
-            Block.box(1, 4, -4, 9, 11, 7));
-    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
-            Block.box(-4, 5, 1, 9, 16, 7),
-            Block.box(-5, 2, 6, 9, 6, 14),
-            Block.box(9, 4, 1, 20, 11, 9));
-    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
-            Block.box(9, 5, -4, 15, 16, 9),
-            Block.box(2, 2, -5, 10, 6, 9),
-            Block.box(7, 4, 9, 15, 11, 20));
+    // Use one compact wall-mounted envelope around the terminal's substantial
+    // monitor, console and keyboard assembly. The previous independent boxes
+    // were based on mismatched model-space coordinates and appeared detached
+    // from the rendered geometry.
+    private static final VoxelShape MODEL_SHAPE_NORTH =
+            Block.box(-5, 2, 4, 21, 14, 15);
+    private static final VoxelShape MODEL_SHAPE_EAST =
+            Block.box(1, 2, -5, 12, 14, 21);
+    private static final VoxelShape MODEL_SHAPE_SOUTH =
+            Block.box(-5, 2, 1, 21, 14, 12);
+    private static final VoxelShape MODEL_SHAPE_WEST =
+            Block.box(4, 2, -5, 15, 14, 21);
 
     private static VoxelShape modelShape(Direction facing) {
         return switch (facing) {

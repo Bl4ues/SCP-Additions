@@ -115,18 +115,22 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    // Use one compact wall-mounted envelope around the terminal's substantial
-    // monitor, console and keyboard assembly. The previous independent boxes
-    // were based on mismatched model-space coordinates and appeared detached
-    // from the rendered geometry.
-    private static final VoxelShape MODEL_SHAPE_NORTH =
-            Block.box(-5, 2, 4, 21, 14, 15);
-    private static final VoxelShape MODEL_SHAPE_EAST =
-            Block.box(1, 2, -5, 12, 14, 21);
-    private static final VoxelShape MODEL_SHAPE_SOUTH =
-            Block.box(-5, 2, 1, 21, 14, 12);
-    private static final VoxelShape MODEL_SHAPE_WEST =
-            Block.box(4, 2, -5, 15, 14, 21);
+    // The visual assembly extends beyond its host block, but a single block
+    // cannot provide a sensible multi-block collision without helper blocks.
+    // Keep the selectable/collidable area tightly inside the host block and
+    // approximate only the central monitor and keyboard/base assembly.
+    private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
+            Block.box(5, 5, 8, 16, 15, 15),
+            Block.box(3, 1, 3, 16, 6, 11));
+    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
+            Block.box(1, 5, 5, 8, 15, 16),
+            Block.box(5, 1, 3, 13, 6, 16));
+    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
+            Block.box(0, 5, 1, 11, 15, 8),
+            Block.box(0, 1, 5, 13, 6, 13));
+    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
+            Block.box(8, 5, 0, 15, 15, 11),
+            Block.box(3, 1, 0, 11, 6, 13));
 
     private static VoxelShape modelShape(Direction facing) {
         return switch (facing) {

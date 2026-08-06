@@ -38,6 +38,7 @@ import net.mcreator.scpadditions.scp012.Scp012Module;
 import net.mcreator.scpadditions.sound.GameplaySounds;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
+import net.mcreator.scpadditions.init.MainMenuSounds;
 import net.mcreator.scpadditions.init.Scp131Items;
 import net.mcreator.scpadditions.init.Scp714Items;
 import net.mcreator.scpadditions.init.ScpAdditionsModTabs;
@@ -72,6 +73,7 @@ public class ScpAdditionsMod {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         bus.addListener(this::commonSetup);
         ScpAdditionsModSounds.REGISTRY.register(bus);
+        MainMenuSounds.REGISTRY.register(bus);
         PlayerVoiceSounds.REGISTRY.register(bus);
         Scp106Sounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
@@ -139,7 +141,7 @@ public class ScpAdditionsMod {
             workQueue = new ConcurrentLinkedQueue<>();
 
     public static void queueServerWork(int tick, Runnable action) {
-        workQueue.add(new AbstractMap.SimpleEntry(action, tick));
+        workQueue.add(new AbstractMap.SimpleEntry<>(action, tick));
     }
 
     @SubscribeEvent

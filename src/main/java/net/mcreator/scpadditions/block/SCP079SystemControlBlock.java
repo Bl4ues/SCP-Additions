@@ -116,11 +116,7 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /*
-     * Four practical envelopes follow the terminal's substantial components.
-     * The authored GeckoLib model faces opposite the placement property's
-     * semantic direction, so getShape applies the opposite facing below.
-     */
+    /* Four practical envelopes follow the terminal's substantial components. */
     private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
             // Left diagnostic console.
             Block.box(-1.50D, 0.00D, 9.00D,
@@ -175,13 +171,13 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return modelShape(state.getValue(FACING).getOpposite());
+        return modelShape(state.getValue(FACING));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return modelShape(state.getValue(FACING).getOpposite());
+        return modelShape(state.getValue(FACING));
     }
 
     @Override

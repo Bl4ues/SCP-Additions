@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.item.SystemTerminalItem;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -15,6 +16,9 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 public final class SystemTerminalItemRenderer
         extends GeoItemRenderer<SystemTerminalItem> {
     private static final int FULL_BRIGHT = 0xF000F0;
+    private static final ResourceLocation GLOWMASK = new ResourceLocation(
+            ScpAdditionsMod.MODID,
+            "textures/block/system_terminal_glowmask.png");
 
     public SystemTerminalItemRenderer() {
         super(new SystemTerminalItemGeoModel());
@@ -26,9 +30,7 @@ public final class SystemTerminalItemRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                ResourceLocation glowTexture =
-                        SystemTerminalGlowTexture.texture();
-                RenderType emissive = RenderType.eyes(glowTexture);
+                RenderType emissive = RenderType.eyes(GLOWMASK);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

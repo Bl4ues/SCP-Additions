@@ -9,18 +9,14 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.block.entity.SystemTerminalBlockEntity;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.cache.texture.AutoGlowingTexture;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 /** Shader-compatible placed renderer for the Facility Diagnostic Terminal. */
 public final class SystemTerminalBlockEntityRenderer
         extends GeoBlockRenderer<SystemTerminalBlockEntity> {
-    private static final ResourceLocation BASE_TEXTURE = new ResourceLocation(
-            "scp_additions", "textures/block/system_terminal.png");
-    private static final ResourceLocation GENERATED_GLOW_TEXTURE =
-            new ResourceLocation("scp_additions",
-                    "textures/block/system_terminal_glowmask.png");
+    private static final ResourceLocation GLOWMASK = new ResourceLocation(
+            "scp_additions", "textures/block/system_terminal_glowmask.png");
     private static final int FULL_BRIGHT = 0xF000F0;
 
     public SystemTerminalBlockEntityRenderer(
@@ -28,11 +24,11 @@ public final class SystemTerminalBlockEntityRenderer
         super(new SystemTerminalGeoModel());
 
         /*
-         * Match the working elevator station path exactly: GeckoLib block
-         * entities need an explicit second render pass because some shader/PBR
-         * wrappers swallow AutoGlowingGeoLayer. AutoGlowingTexture still owns
-         * generation of the authored system_terminal_glowmask texture, while
-         * the final pass uses vanilla eyes rendering for shader compatibility.
+         * The authored _glowmask already contains the coloured emissive pixels.
+         * Render it directly, exactly like the working elevator station. Using
+         * AutoGlowingTexture here would mutate the shared base texture by
+         * clearing those pixels, which is why the monitor and indicator lights
+         * disappeared even when shaders were disabled.
          */
         addRenderLayer(new GeoRenderLayer<>(this) {
             @Override
@@ -41,10 +37,7 @@ public final class SystemTerminalBlockEntityRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                // Public API call registers the generated glowmask texture.
-                AutoGlowingTexture.getRenderType(BASE_TEXTURE);
-                RenderType emissive = RenderType.eyes(
-                        GENERATED_GLOW_TEXTURE);
+                RenderType emissive = RenderType.eyes(GLOWMASK);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

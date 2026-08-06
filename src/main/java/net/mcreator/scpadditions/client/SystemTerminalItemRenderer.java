@@ -14,16 +14,11 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /** Double-sided item renderer for the SCiPNET terminal. */
 public final class SystemTerminalItemRenderer
         extends GeoItemRenderer<SystemTerminalItem> {
-    private static final ResourceLocation GLOWMASK = new ResourceLocation(
-            "scp_additions", "textures/block/system_terminal_glowmask.png");
     private static final int FULL_BRIGHT = 0xF000F0;
 
     public SystemTerminalItemRenderer() {
         super(new SystemTerminalItemGeoModel());
 
-        /* Keep the item from invoking AutoGlowingTexture on the base texture
-         * shared with the placed block. The authored glowmask is already a
-         * complete coloured emissive texture, so render it directly. */
         addRenderLayer(new GeoRenderLayer<>(this) {
             @Override
             public void render(PoseStack poseStack,
@@ -31,7 +26,9 @@ public final class SystemTerminalItemRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                RenderType emissive = RenderType.eyes(GLOWMASK);
+                ResourceLocation glowTexture =
+                        SystemTerminalGlowTexture.texture();
+                RenderType emissive = RenderType.eyes(glowTexture);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

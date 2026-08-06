@@ -7,7 +7,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Starts and maintains the authored soundtrack while no world is open. */
+/** Starts the authored menu soundtrack and carries it through world loading. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MainMenuMusicClient {
     private static MainMenuMusicSound music;
@@ -24,22 +24,23 @@ public final class MainMenuMusicClient {
         if (event.phase != TickEvent.Phase.END) return;
 
         Minecraft minecraft = Minecraft.getInstance();
-        boolean shouldPlay = minecraft.level == null
-                && minecraft.screen != null
-                && ClientModulePreferences.mainMenuMusicEnabled();
+        boolean enabled = ClientModulePreferences.mainMenuMusicEnabled();
+        boolean worldReady = minecraft.level != null
+                && minecraft.player != null
+                && minecraft.screen == null;
 
-        if (!shouldPlay) {
+        // Keep an existing menu track alive through connection, registry and
+        // terrain loading. Stop it only when gameplay has actually taken over.
+        if (!enabled || worldReady) {
             stopMusic(minecraft);
             return;
         }
 
-        /*
-         * A large streamed OGG is not reported as active while SoundEngine is
-         * still decoding it. Keep the submitted instance alive instead of
-         * cancelling and recreating it every five seconds before playback can
-         * begin.
-         */
         if (music != null && !music.isStopped()) return;
+
+        // Never start a fresh menu track after a world already exists. This
+        // prevents pause screens and connection screens from restarting it.
+        if (minecraft.level != null || minecraft.screen == null) return;
 
         music = new MainMenuMusicSound();
         ModMusicExclusivityClient.stopVanillaMusicNow();

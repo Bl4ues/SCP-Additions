@@ -12,6 +12,11 @@ public final class EnterSoundClient {
 
     public static void play() {
         Minecraft minecraft = Minecraft.getInstance();
+
+        // The packet marks the intended transition point regardless of whether
+        // enter.ogg itself is enabled in the client's configuration.
+        MainMenuMusicClient.onWorldEntryCue();
+
         if (minecraft.player == null || minecraft.level == null
                 || !InventoryModuleRuntimeState
                 .enterSoundEnabledForClient()) {

@@ -24,10 +24,9 @@ public final class SystemTerminalBlockEntityRenderer
         super(new SystemTerminalGeoModel());
 
         /*
-         * RenderType.eyes works for the item renderer but can be swallowed by
-         * shader wrappers on placed block entities. The translucent-emissive
-         * entity pass preserves the authored coloured glowmask, remains
-         * full-bright and is accepted by those block-entity render paths.
+         * Use the exact emissive pass that already works for the terminal item
+         * and the elevator station. The authored _glowmask is rendered as an
+         * independent full-bright overlay, leaving the base texture untouched.
          */
         addRenderLayer(new GeoRenderLayer<>(this) {
             @Override
@@ -36,8 +35,7 @@ public final class SystemTerminalBlockEntityRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                RenderType emissive = RenderType.entityTranslucentEmissive(
-                        GLOWMASK, true);
+                RenderType emissive = RenderType.eyes(GLOWMASK);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

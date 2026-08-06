@@ -15,19 +15,12 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /** Shader-compatible placed renderer for the Facility Diagnostic Terminal. */
 public final class SystemTerminalBlockEntityRenderer
         extends GeoBlockRenderer<SystemTerminalBlockEntity> {
-    private static final ResourceLocation GLOWMASK = new ResourceLocation(
-            "scp_additions", "textures/block/system_terminal_glowmask.png");
     private static final int FULL_BRIGHT = 0xF000F0;
 
     public SystemTerminalBlockEntityRenderer(
             BlockEntityRendererProvider.Context context) {
         super(new SystemTerminalGeoModel());
 
-        /*
-         * Use the exact emissive pass that already works for the terminal item
-         * and the elevator station. The authored _glowmask is rendered as an
-         * independent full-bright overlay, leaving the base texture untouched.
-         */
         addRenderLayer(new GeoRenderLayer<>(this) {
             @Override
             public void render(PoseStack poseStack,
@@ -35,7 +28,9 @@ public final class SystemTerminalBlockEntityRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                RenderType emissive = RenderType.eyes(GLOWMASK);
+                ResourceLocation glowTexture =
+                        SystemTerminalGlowTexture.texture();
+                RenderType emissive = RenderType.eyes(glowTexture);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

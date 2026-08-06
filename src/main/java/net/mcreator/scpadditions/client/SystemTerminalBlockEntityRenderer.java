@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -14,27 +15,39 @@ public final class SystemTerminalBlockEntityRenderer
         extends GeoBlockRenderer<SystemTerminalBlockEntity> {
     private static final ResourceLocation BASE_TEXTURE = new ResourceLocation(
             "scp_additions", "textures/block/system_terminal.png");
+    private static final ResourceLocation GENERATED_GLOW_TEXTURE =
+            new ResourceLocation("scp_additions",
+                    "textures/block/system_terminal_glowmask.png");
+    private static boolean glowTextureRegistered;
 
     public SystemTerminalBlockEntityRenderer(
             BlockEntityRendererProvider.Context context) {
         super(new SystemTerminalGeoModel());
 
         /*
-         * GeckoLib's _glowmask is not a ready-to-render emissive texture. Its
-         * AutoGlowingTexture loader combines the mask with the base colours and
-         * removes those pixels from the ordinary pass. Keep that processing,
-         * but render the generated texture through vanilla's eyes pass so
-         * Oculus/shader wrappers cannot discard GeckoLib's custom render type.
+         * GeckoLib 4.4.9 keeps getEmissiveResource private. Register the same
+         * generated AutoGlowingTexture ourselves, then expose it through the
+         * vanilla eyes pass so shader wrappers do not swallow the emissive
+         * block-entity layer.
          */
         addRenderLayer(new AutoGlowingGeoLayer<>(this) {
             @Override
             protected RenderType getRenderType(
                     SystemTerminalBlockEntity animatable) {
-                ResourceLocation generatedGlow =
-                        AutoGlowingTexture.getEmissiveResource(BASE_TEXTURE);
-                return RenderType.eyes(generatedGlow);
+                ensureGlowTextureRegistered();
+                return RenderType.eyes(GENERATED_GLOW_TEXTURE);
             }
         });
+    }
+
+    private static void ensureGlowTextureRegistered() {
+        if (glowTextureRegistered) return;
+
+        Minecraft.getInstance().getTextureManager().register(
+                GENERATED_GLOW_TEXTURE,
+                new AutoGlowingTexture(BASE_TEXTURE,
+                        GENERATED_GLOW_TEXTURE));
+        glowTextureRegistered = true;
     }
 
     @Override

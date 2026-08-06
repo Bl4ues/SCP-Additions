@@ -18,6 +18,9 @@ public final class SystemTerminalBlockEntityRenderer
         extends GeoBlockRenderer<SystemTerminalBlockEntity> {
     private static final ResourceLocation BASE_TEXTURE = new ResourceLocation(
             "scp_additions", "textures/block/system_terminal.png");
+    private static final ResourceLocation GENERATED_GLOW_TEXTURE =
+            new ResourceLocation("scp_additions",
+                    "textures/block/system_terminal_glowmask.png");
     private static final int FULL_BRIGHT = 0xF000F0;
 
     public SystemTerminalBlockEntityRenderer(
@@ -38,9 +41,10 @@ public final class SystemTerminalBlockEntityRenderer
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
-                ResourceLocation generatedGlow =
-                        AutoGlowingTexture.getEmissiveResource(BASE_TEXTURE);
-                RenderType emissive = RenderType.eyes(generatedGlow);
+                // Public API call registers the generated glowmask texture.
+                AutoGlowingTexture.getRenderType(BASE_TEXTURE);
+                RenderType emissive = RenderType.eyes(
+                        GENERATED_GLOW_TEXTURE);
                 getRenderer().reRender(bakedModel, poseStack, bufferSource,
                         animatable, emissive,
                         bufferSource.getBuffer(emissive), partialTick,

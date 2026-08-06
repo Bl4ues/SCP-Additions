@@ -137,7 +137,8 @@
 - Added two mutually exclusive **Voice Profile** choices with an in-menu voice test, using profile-matched hurt reactions and a gasp after recovering from severe oxygen loss;
 - Added a drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
-- Added a default-disabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music.
+- Added a default-enabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music;
+- Added a default-enabled main menu soundtrack option that loops `main_menu.ogg` across the title screen and other menus until a world is opened.
 
 ## Contextual interactions
 

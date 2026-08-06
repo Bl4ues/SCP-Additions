@@ -55,6 +55,7 @@ public final class ClientModulePreferences {
             "audio.use_voice_profile_b",
             "audio.mute_non_player_hit_sounds",
             "audio.disable_vanilla_music",
+            "audio.main_menu_music_enabled",
             "accessibility.reduce_scp_012_visual_effects"
     );
 
@@ -141,6 +142,8 @@ public final class ClientModulePreferences {
                 next.audio.muteNonPlayerHitSounds);
         next.audio.disableVanillaMusic = bool(audio,
                 "disable_vanilla_music", next.audio.disableVanillaMusic);
+        next.audio.mainMenuMusicEnabled = bool(audio,
+                "main_menu_music_enabled", next.audio.mainMenuMusicEnabled);
 
         JsonObject accessibility = object(modules, "accessibility");
         next.accessibility.reduceScp012VisualEffects = bool(accessibility,
@@ -200,6 +203,8 @@ public final class ClientModulePreferences {
                 value.audio.muteNonPlayerHitSounds);
         audio.addProperty("disable_vanilla_music",
                 value.audio.disableVanillaMusic);
+        audio.addProperty("main_menu_music_enabled",
+                value.audio.mainMenuMusicEnabled);
 
         object(modules, "accessibility").addProperty(
                 "reduce_scp_012_visual_effects",
@@ -243,6 +248,10 @@ public final class ClientModulePreferences {
     public static boolean isClientPreference(String group, String key) {
         if (group == null || key == null) return false;
         return CLIENT_KEYS.contains(group + "." + key);
+    }
+
+    public static boolean mainMenuMusicEnabled() {
+        return current.audio.mainMenuMusicEnabled;
     }
 
     private static synchronized void write() throws IOException {
@@ -370,7 +379,8 @@ public final class ClientModulePreferences {
         private boolean replacePlayerHurtSounds = true;
         private boolean useVoiceProfileB;
         private boolean muteNonPlayerHitSounds;
-        private boolean disableVanillaMusic;
+        private boolean disableVanillaMusic = true;
+        private boolean mainMenuMusicEnabled = true;
     }
 
     private static final class Accessibility {

@@ -1,0 +1,11 @@
+{
+  "main_menu": {
+    "sounds": [
+      {
+        "name": "scp_additions:main_menu",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  }
+}

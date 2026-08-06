@@ -201,7 +201,10 @@ public final class ScpAdditionsModulesConfig {
 		public boolean muteNonPlayerHitSounds = false;
 
 		@SerializedName("disable_vanilla_music")
-		public boolean disableVanillaMusic = false;
+		public boolean disableVanillaMusic = true;
+
+		@SerializedName("main_menu_music_enabled")
+		public boolean mainMenuMusicEnabled = true;
 	}
 
 	public static final class Accessibility {

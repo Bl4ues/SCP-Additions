@@ -52,7 +52,8 @@
     "replace_player_hurt_sounds": true,
     "use_voice_profile_b": false,
     "mute_non_player_hit_sounds": false,
-    "disable_vanilla_music": false,
+    "disable_vanilla_music": true,
+    "main_menu_music_enabled": true,
     "save_game_sound_enabled": true
   }
 }

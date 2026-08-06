@@ -11,7 +11,6 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MainMenuMusicClient {
     private static final int INITIAL_STREAM_RETRY_TICKS = 200;
-    private static final int LOST_STREAM_RETRY_TICKS = 10;
 
     private static MainMenuMusicSound music;
     private static boolean startedFromMenu;
@@ -25,7 +24,7 @@ public final class MainMenuMusicClient {
         return startedFromMenu;
     }
 
-    /** Stops the menu soundtrack at the same moment as the world-entry cue. */
+    /** Stops the soundtrack only after EnterSoundClient sees a rendered world. */
     public static void onWorldEntryCue() {
         stopMusic(Minecraft.getInstance(), true);
     }
@@ -41,8 +40,7 @@ public final class MainMenuMusicClient {
         }
 
         if (!startedFromMenu) {
-            // Start only from a genuine menu before any world exists. Pause
-            // screens must never begin a new menu-music session.
+            // A pause screen must never start a fresh menu soundtrack session.
             if (minecraft.level == null && minecraft.screen != null) {
                 startedFromMenu = true;
                 submitMusic(minecraft);
@@ -50,12 +48,28 @@ public final class MainMenuMusicClient {
             return;
         }
 
-        /*
-         * World transitions may temporarily discard streamed sounds. Keep the
-         * session alive until EnterSoundClient confirms that gameplay is
-         * actually visible, but do not recreate the stream every tick while it
-         * is still decoding.
-         */
+        maintainMusic(minecraft, true);
+    }
+
+    /**
+     * Client ticks can stall while the receiving-level percentage is rendered.
+     * A render-tick watchdog immediately restores the stream if Minecraft's
+     * sound engine discards it during the level handoff.
+     */
+    @SubscribeEvent
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && startedFromMenu) {
+            maintainMusic(Minecraft.getInstance(), false);
+        }
+    }
+
+    private static void maintainMusic(Minecraft minecraft,
+            boolean advanceInitialRetry) {
+        if (!ClientModulePreferences.mainMenuMusicEnabled()) {
+            stopMusic(minecraft, true);
+            return;
+        }
+
         if (music == null || music.isStopped()) {
             submitMusic(minecraft);
             return;
@@ -67,18 +81,20 @@ public final class MainMenuMusicClient {
             return;
         }
 
-        inactiveTicks++;
-        int retryAfter = currentSubmissionWasActive
-                ? LOST_STREAM_RETRY_TICKS : INITIAL_STREAM_RETRY_TICKS;
-        if (inactiveTicks >= retryAfter) {
+        // Once an audible stream disappears, this is a world-transition reset,
+        // not initial decoding. Restore it on the next rendered frame.
+        if (currentSubmissionWasActive) {
+            submitMusic(minecraft);
+            return;
+        }
+
+        if (advanceInitialRetry && ++inactiveTicks >= INITIAL_STREAM_RETRY_TICKS) {
             submitMusic(minecraft);
         }
     }
 
     private static void submitMusic(Minecraft minecraft) {
-        if (music != null) {
-            minecraft.getSoundManager().stop(music);
-        }
+        if (music != null) minecraft.getSoundManager().stop(music);
         music = new MainMenuMusicSound();
         currentSubmissionWasActive = false;
         inactiveTicks = 0;
@@ -93,8 +109,6 @@ public final class MainMenuMusicClient {
         }
         currentSubmissionWasActive = false;
         inactiveTicks = 0;
-        if (resetSession) {
-            startedFromMenu = false;
-        }
+        if (resetSession) startedFromMenu = false;
     }
 }

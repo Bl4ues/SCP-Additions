@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -115,22 +116,50 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    // The visual assembly extends beyond its host block, but a single block
-    // cannot provide a sensible multi-block collision without helper blocks.
-    // Keep the selectable/collidable area tightly inside the host block and
-    // approximate only the central monitor and keyboard/base assembly.
+    /*
+     * Model-space bounds translated around GeckoLib's block-centred origin.
+     * Separate boxes follow the left console, monitor housing/base, keyboard,
+     * and blue side bin instead of enclosing the empty air between them.
+     */
     private static final VoxelShape MODEL_SHAPE_NORTH = Shapes.or(
-            Block.box(5, 5, 8, 16, 15, 15),
-            Block.box(3, 1, 3, 16, 6, 11));
-    private static final VoxelShape MODEL_SHAPE_EAST = Shapes.or(
-            Block.box(1, 5, 5, 8, 15, 16),
-            Block.box(5, 1, 3, 13, 6, 16));
-    private static final VoxelShape MODEL_SHAPE_SOUTH = Shapes.or(
-            Block.box(0, 5, 1, 11, 15, 8),
-            Block.box(0, 1, 5, 13, 6, 13));
-    private static final VoxelShape MODEL_SHAPE_WEST = Shapes.or(
-            Block.box(8, 5, 0, 15, 15, 11),
-            Block.box(3, 1, 0, 11, 6, 13));
+            Block.box(-1.25D, 0.0D, 9.5D,
+                    7.75D, 4.25D, 15.75D),
+            Block.box(8.25D, 0.0D, 8.75D,
+                    19.25D, 3.5D, 15.75D),
+            Block.box(8.75D, 2.5D, 9.25D,
+                    18.75D, 10.25D, 15.75D),
+            Block.box(8.25D, 0.0D, 5.0D,
+                    19.25D, 1.0D, 9.5D),
+            Block.box(0.5D, 0.0D, 1.5D,
+                    4.5D, 3.0D, 4.5D)).optimize();
+    private static final VoxelShape MODEL_SHAPE_EAST =
+            rotateNorthShape(MODEL_SHAPE_NORTH, Direction.EAST);
+    private static final VoxelShape MODEL_SHAPE_SOUTH =
+            rotateNorthShape(MODEL_SHAPE_NORTH, Direction.SOUTH);
+    private static final VoxelShape MODEL_SHAPE_WEST =
+            rotateNorthShape(MODEL_SHAPE_NORTH, Direction.WEST);
+
+    private static VoxelShape rotateNorthShape(VoxelShape north,
+            Direction facing) {
+        if (facing == Direction.NORTH) return north;
+        VoxelShape result = Shapes.empty();
+        for (AABB box : north.toAabbs()) {
+            VoxelShape rotated = switch (facing) {
+                case EAST -> Shapes.box(
+                        1.0D - box.maxZ, box.minY, box.minX,
+                        1.0D - box.minZ, box.maxY, box.maxX);
+                case SOUTH -> Shapes.box(
+                        1.0D - box.maxX, box.minY, 1.0D - box.maxZ,
+                        1.0D - box.minX, box.maxY, 1.0D - box.minZ);
+                case WEST -> Shapes.box(
+                        box.minZ, box.minY, 1.0D - box.maxX,
+                        box.maxZ, box.maxY, 1.0D - box.minX);
+                default -> Shapes.create(box);
+            };
+            result = Shapes.or(result, rotated);
+        }
+        return result.optimize();
+    }
 
     private static VoxelShape modelShape(Direction facing) {
         return switch (facing) {

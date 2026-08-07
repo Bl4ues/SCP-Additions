@@ -1,0 +1,48 @@
+name: Fix context row font binding
+
+on:
+  push:
+    branches:
+      - 'fix/config-center-integrated-context'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Fix context row font binding')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fix row widget font access
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java')
+          text = path.read_text(encoding='utf-8')
+          start = text.index('    private static final class ContextRowButton extends AbstractButton {')
+          end = text.index('    private static final class IntegratedContextDetailScreen', start)
+          block = text[start:end]
+          marker = '        public void renderWidget(GuiGraphics graphics, int mouseX,\n      int mouseY, float partialTick) {\n'
+          if marker not in block:
+              raise SystemExit('ContextRowButton render marker not found')
+          block = block.replace(marker, marker + '  Font rowFont = Minecraft.getInstance().font;\n', 1)
+          block = block.replace('graphics.drawCenteredString(font,', 'graphics.drawCenteredString(rowFont,')
+          block = block.replace('graphics.drawString(font,', 'graphics.drawString(rowFont,')
+          block = block.replace('font.plainSubstrByWidth', 'rowFont.plainSubstrByWidth')
+          block = block.replace('font.width', 'rowFont.width')
+          text = text[:start] + block + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit fix
+        shell: bash
+        run: |
+          rm -f .github/workflows/fix-context-row-font.yml
+          git config user.name "Deyvid Campos"
+          git config user.email "deyvid04campos@gmail.com"
+          git add -A
+          git commit -m "Fix context catalog row rendering"
+          git push origin HEAD:fix/config-center-integrated-context

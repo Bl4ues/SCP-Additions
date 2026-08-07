@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Prepare patch script
+        run: python3 .github/scripts/fix_disable_entry_ui_runner.py
       - name: Patch Configuration Center list toggles
         run: python3 .github/scripts/apply_disable_entry_ui.py
       - name: Verify patch formatting

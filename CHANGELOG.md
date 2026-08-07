@@ -142,6 +142,10 @@
 
 ## Contextual interactions
 
+- Added item-specific contextual interactions and inherited alternate variants, allowing one block or entity to expose different actions according to the item held without duplicating its complete configuration;
+- Rebuilt the in-world **K** interaction editor with responsive **Prompt** and **Anchor** pages, default and variant navigation, duplication and removal controls, held-item selection, independent icons, item requirements, and per-variant anchors;
+- Added the `config.png` contextual icon and native Screwdriver prompts for keycard readers, Tesla Gate Terminals, Core Room elevator floor stations, editable facility signs, SCP-131-A/B, and Roombas;
+- Added Configuration Center badges that identify interactions with alternate variants and item-specific actions.
 - Added an **Off-screen prompts** option to the contextual-interaction editor, allowing selected block prompts to remain available at the edge of the screen while behind the player;
 - Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
 - Added a warning in the visual anchor editor when the selected block probably has no native right-click interaction.

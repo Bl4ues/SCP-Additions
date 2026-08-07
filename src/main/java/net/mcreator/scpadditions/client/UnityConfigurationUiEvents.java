@@ -635,7 +635,7 @@ public final class UnityConfigurationUiEvents {
                 // The generic cup is only a carrier for the configured drink profile.
                 // Show the actual semantic drink here instead of claiming that every
                 // SCP-294 entry produces coffee.
-                resultName = humanizeId(string(drink, "id", title));
+                resultName = "Cup of " + humanizeId(string(drink, "id", title));
             } else {
                 resultName = result == null ? "No item result"
                         : displayNameForItem(resultItem);

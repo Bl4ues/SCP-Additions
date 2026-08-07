@@ -109,6 +109,7 @@ public class ContextInteractPacket {
             for (ContextInteractionRegistry.Rule rule : rules) {
                 if (key.equals(rule.interactionKey())) return rule;
             }
+            return null;
         }
         return rules.get(0);
     }
@@ -135,7 +136,8 @@ public class ContextInteractPacket {
             return;
         }
 
-        if (entity instanceof CoreRoomElevatorCarriageEntity carriage) {
+        if (entity instanceof CoreRoomElevatorCarriageEntity carriage
+                && rule.interactionKey().startsWith("elevator_carriage_")) {
             if (carriage.handleContextInteraction(player,
                     rule.interactionKey())) {
                 player.swing(InteractionHand.MAIN_HAND, true);

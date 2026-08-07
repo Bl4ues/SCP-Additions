@@ -30,7 +30,8 @@ public final class NativeContextVariants {
             "core_room_elevator_station", "Configure Display",
             "sign_support", "Edit",
             "core_room_sign", "Edit",
-            "door_sign", "Edit");
+            "door_sign", "Edit",
+            "facility_prop_part", "Edit");
 
     private static final Set<String> TOOL_ENTITIES = Set.of(
             "scp_131_a", "scp_131_b", "roomba");

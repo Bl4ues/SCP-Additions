@@ -21,6 +21,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.FacilityLargePropStructure;
+import net.mcreator.scpadditions.facility.FacilityPropPartBlock;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorGeometry;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
@@ -353,7 +355,8 @@ public final class ContextInteractionRegistry {
 
         for (String path : List.of("tesla_terminal_block",
                 "tesla_terminal_off", "core_room_elevator_station",
-                "sign_support", "core_room_sign", "door_sign")) {
+                "sign_support", "core_room_sign", "door_sign",
+                "facility_prop_part")) {
             String action = path.contains("sign") ? "Edit"
                     : path.contains("elevator") ? "Configure Display"
                     : "Configure";
@@ -726,6 +729,11 @@ public final class ContextInteractionRegistry {
                                 : ElevatorFoundation.TravelDirection.DOWN;
                 return CoreRoomElevatorManager.hasStationInDirection(
                         level, pos, direction);
+            }
+            if (block instanceof FacilityPropPartBlock && state != null
+                    && state.hasProperty(FacilityPropPartBlock.PART)) {
+                return state.getValue(FacilityPropPartBlock.PART).kind()
+                        == FacilityLargePropStructure.Kind.SIGN_SUPPORT;
             }
             return true;
         }

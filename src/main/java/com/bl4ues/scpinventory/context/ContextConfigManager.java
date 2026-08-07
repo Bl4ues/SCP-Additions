@@ -444,15 +444,22 @@ public final class ContextConfigManager {
         return 1;
     }
 
-    private static ContextConfigOpenPacket packetFromRule(BlockPos pos, ResourceLocation id, BlockState state, JsonObject rule, boolean existing) {
+    private static ContextConfigOpenPacket packetFromRule(BlockPos pos,
+            ResourceLocation id, BlockState state, JsonObject rule,
+            boolean existing) {
         JsonObject text = object(rule, "text");
         JsonObject input = object(rule, "input");
         JsonObject click = object(rule, "click");
         JsonObject anchor = object(rule, "anchor");
         JsonObject visual = object(rule, "visual");
         JsonArray position = positionArray(anchor);
-        String name = string(text, "name", string(rule, "name", state.getBlock().getName().getString()));
-        boolean showName = bool(text, "showName", bool(rule, "showName", !name.isBlank()));
+        String name = string(text, "name", string(rule, "name",
+                state.getBlock().getName().getString()));
+        boolean showName = bool(text, "showName",
+                bool(rule, "showName", !name.isBlank()));
+        String useItem = cleanUseItem(string(rule, "useItem", "hand"));
+        JsonArray variants = NativeContextVariants.mergedVariants(
+                "block", id, rule);
         return new ContextConfigOpenPacket(
                 pos,
                 id.toString(),
@@ -462,16 +469,22 @@ public final class ContextConfigManager {
                 showName,
                 number(rule, "range", 2.25D),
                 bool(input, "allowE", bool(rule, "allowE", true)),
-                bool(input, "allowRightClick", bool(rule, "allowRightClick", true)),
-                bool(visual, "allowOffscreen", bool(rule, "allowOffscreen", false)),
+                bool(input, "allowRightClick",
+                        bool(rule, "allowRightClick", true)),
+                bool(visual, "allowOffscreen",
+                        bool(rule, "allowOffscreen", false)),
                 likelySupportsRightClick(state),
-                cleanUseItem(string(rule, "useItem", "hand")),
-                cleanClickFace(string(click, "face", string(rule, "clickFace", "front"))),
+                useItem,
+                string(visual, "icon", string(rule, "icon", useItem)),
+                string(input, "requiredItem",
+                        string(rule, "requiredItem", "")),
+                GSON.toJson(variants),
+                cleanClickFace(string(click, "face",
+                        string(rule, "clickFace", "front"))),
                 cleanRotateWith(string(anchor, "rotateWith", "none")),
                 position.get(0).getAsDouble(),
                 position.get(1).getAsDouble(),
-                position.get(2).getAsDouble()
-        );
+                position.get(2).getAsDouble());
     }
 
     private static void sendSelectedHelp(ServerPlayer player, ResourceLocation id, boolean created) {

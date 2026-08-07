@@ -221,7 +221,8 @@ public final class ContextPromptClient {
             boolean directHit = blockHit != null
                     && hitBelongsTo(blockHit.getBlockPos(), rulePos, player);
             for (ContextInteractionRegistry.Rule rule : rules) {
-                if (!rule.isAvailable(player.level(), rulePos, ruleState)) continue;
+                if (!rule.isAvailable(player.level(), rulePos, ruleState)
+                        || !rule.isHeldItemSatisfied(player)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(rulePos, ruleState);
                 if (isElevatorStationButton(rule.interactionKey())
                         && !isStationButtonViewedFromFront(eye, anchor,
@@ -232,6 +233,7 @@ public final class ContextPromptClient {
                         directHit, rule.priority(), rule.requiresPreciseAim(),
                         preciseAimRadiusSqr(rule.interactionKey()),
                         rule.allowOffscreen());
+                if (rule.hasRequiredItem()) score -= 0.12D;
                 if (!isElevatorButton(rule.interactionKey())
                         && isCurrentBlockTarget(rulePos,
                         rule.interactionKey())) {
@@ -283,7 +285,8 @@ public final class ContextPromptClient {
             boolean directHit = entityHit != null
                     && entityHit.getEntity().getId() == entity.getId();
             for (ContextInteractionRegistry.Rule rule : rules) {
-                if (!rule.isAvailable(entity)) continue;
+                if (!rule.isAvailable(entity)
+                        || !rule.isHeldItemSatisfied(player)) continue;
                 Vec3 anchor = rule.resolveEntityAnchor(entity);
                 if (isElevatorCarriageButton(rule.interactionKey())
                         && !isCarriageButtonViewedFromFront(eye, anchor,
@@ -295,6 +298,7 @@ public final class ContextPromptClient {
                         rule.requiresPreciseAim(),
                         preciseAimRadiusSqr(rule.interactionKey()),
                         rule.allowOffscreen());
+                if (rule.hasRequiredItem()) score -= 0.12D;
                 if (!isElevatorButton(rule.interactionKey())
                         && isCurrentEntityTarget(entity.getId(),
                         rule.interactionKey())) {

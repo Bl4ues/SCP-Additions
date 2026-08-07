@@ -308,6 +308,46 @@ public final class ConfigCenterService {
             validateId(string(object, "id"), "interactions[" + index + "].id", errors, warnings, false);
             if (object.has("range")) requireNumber(object, "range", "interactions[" + index + "]", errors);
             if (object.has("priority")) requireNumber(object, "priority", "interactions[" + index + "]", errors);
+            JsonObject input = object.has("input") && object.get("input").isJsonObject()
+                    ? object.getAsJsonObject("input") : new JsonObject();
+            String requiredItem = string(input, "requiredItem");
+            if (!requiredItem.isBlank()) {
+                validateId(requiredItem, "interactions[" + index
+                        + "].input.requiredItem", errors, warnings, true);
+            }
+            if (object.has("variants")) {
+                if (!object.get("variants").isJsonArray()) {
+                    errors.add("interactions[" + index + "].variants must be an array");
+                } else {
+                    int variantIndex = 0;
+                    Set<String> keys = new java.util.HashSet<>();
+                    for (JsonElement variantElement : object.getAsJsonArray("variants")) {
+                        String label = "interactions[" + index + "].variants["
+                                + variantIndex + "]";
+                        if (!variantElement.isJsonObject()) {
+                            errors.add(label + " must be an object");
+                        } else {
+                            JsonObject variant = variantElement.getAsJsonObject();
+                            String interactionId = string(variant, "interactionId");
+                            if (interactionId.isBlank()) {
+                                errors.add(label + ".interactionId is required");
+                            } else if (!keys.add(interactionId)) {
+                                errors.add(label + ".interactionId must be unique");
+                            }
+                            JsonObject variantInput = variant.has("input")
+                                    && variant.get("input").isJsonObject()
+                                    ? variant.getAsJsonObject("input")
+                                    : new JsonObject();
+                            String item = string(variantInput, "requiredItem");
+                            if (!item.isBlank()) {
+                                validateId(item, label + ".input.requiredItem",
+                                        errors, warnings, true);
+                            }
+                        }
+                        variantIndex++;
+                    }
+                }
+            }
             index++;
         }
     }

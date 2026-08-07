@@ -109,6 +109,7 @@ public class ContextInteractPacket {
             for (ContextInteractionRegistry.Rule rule : rules) {
                 if (key.equals(rule.interactionKey())) return rule;
             }
+            return null;
         }
         return rules.get(0);
     }
@@ -119,19 +120,24 @@ public class ContextInteractPacket {
         Entity entity = level.getEntity(entityId);
         if (entity == null || !entity.isAlive()) return;
         if (entity instanceof AbstractScp131Entity scp131
-                && scp131.isFollowingPlayer(player)) return;
+                && scp131.isFollowingPlayer(player)
+                && (interactionKey == null
+                || !interactionKey.contains("screwdriver"))) return;
 
         List<ContextInteractionRegistry.Rule> rules =
                 ContextInteractionRegistry.getEntityRules(entity.getType());
         ContextInteractionRegistry.Rule rule = selectedRule(rules,
                 interactionKey);
         if (rule == null || !rule.isAvailable(entity)) return;
+        InteractionHand hand = rule.matchingHand(player);
+        if (hand == null) return;
         Vec3 anchor = rule.resolveEntityAnchor(entity);
         if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
             return;
         }
 
-        if (entity instanceof CoreRoomElevatorCarriageEntity carriage) {
+        if (entity instanceof CoreRoomElevatorCarriageEntity carriage
+                && rule.interactionKey().startsWith("elevator_carriage_")) {
             if (carriage.handleContextInteraction(player,
                     rule.interactionKey())) {
                 player.swing(InteractionHand.MAIN_HAND, true);
@@ -143,12 +149,12 @@ public class ContextInteractPacket {
         InteractionResult result;
         player.setShiftKeyDown(shiftDown);
         try {
-            result = entity.interact(player, InteractionHand.MAIN_HAND);
+            result = entity.interact(player, hand);
         } finally {
             player.setShiftKeyDown(previousShift);
         }
         if (result.consumesAction()) {
-            player.swing(InteractionHand.MAIN_HAND, true);
+            player.swing(hand, true);
         }
     }
 
@@ -163,12 +169,15 @@ public class ContextInteractPacket {
         ContextInteractionRegistry.Rule rule = selectedRule(rules,
                 interactionKey);
         if (rule == null || !rule.isAvailable(level, pos, state)) return;
+        InteractionHand hand = rule.matchingHand(player);
+        if (hand == null) return;
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);
         if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
             return;
         }
 
         if (state.getBlock() instanceof CoreRoomElevatorModule.StationBlock station
+                && rule.interactionKey().startsWith("elevator_station_")
                 && player.level() instanceof ServerLevel serverLevel) {
             InteractionResult result = station.handleContextInteraction(
                     serverLevel, pos, player, rule.interactionKey());
@@ -189,18 +198,18 @@ public class ContextInteractPacket {
                 && state.getValue(BlockStateProperties.OPEN);
         BlockHitResult hit = new BlockHitResult(anchor,
                 rule.resolveClickFace(state, player), pos, false);
-        ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
+        ItemStack heldItem = player.getItemInHand(hand);
         boolean previousShift = player.isShiftKeyDown();
         InteractionResult result;
         player.setShiftKeyDown(shiftDown);
         try {
             result = player.gameMode.useItemOn(player, level, heldItem,
-                    InteractionHand.MAIN_HAND, hit);
+                    hand, hit);
         } finally {
             player.setShiftKeyDown(previousShift);
         }
         if (result.consumesAction()) {
-            player.swing(InteractionHand.MAIN_HAND, true);
+            player.swing(hand, true);
             playDoorSoundForUser(player, level, pos, state, doorBefore,
                     wasOpen);
         }

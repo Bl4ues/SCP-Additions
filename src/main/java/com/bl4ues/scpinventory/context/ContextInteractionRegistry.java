@@ -9,7 +9,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -123,15 +125,20 @@ public final class ContextInteractionRegistry {
             JsonArray configuredInteractions = getInteractions(configuredRoot);
             for (JsonElement element : configuredInteractions) {
                 if (!element.isJsonObject()) continue;
-                JsonObject object = element.getAsJsonObject();
-                InteractionIdentity identity = interactionIdentity(object);
-                if (identity != null) configuredIdentities.add(identity);
-                if (!getBoolean(object, "enabled", true)) continue;
+                JsonObject source = element.getAsJsonObject();
+                for (JsonObject object : expandRuleVariants(source)) {
+                    InteractionIdentity identity = interactionIdentity(object);
+                    if (identity != null) configuredIdentities.add(identity);
+                    if (!getBoolean(source, "enabled", true)
+                            || !getBoolean(object, "enabled", true)) {
+                        continue;
+                    }
 
-                Rule rule = parseRule(object, sequence++);
-                if (rule != null) {
-                    addRule(rule);
-                    configuredCount++;
+                    Rule rule = parseRule(object, sequence++);
+                    if (rule != null) {
+                        addRule(rule);
+                        configuredCount++;
+                    }
                 }
             }
 
@@ -141,19 +148,22 @@ public final class ContextInteractionRegistry {
             Set<InteractionIdentity> integratedIdentities = new HashSet<>();
             for (JsonElement element : getInteractions(integratedRoot)) {
                 if (!element.isJsonObject()) continue;
-                JsonObject object = element.getAsJsonObject();
-                InteractionIdentity identity = interactionIdentity(object);
-                if (identity == null
-                        || configuredIdentities.contains(identity)
-                        || !integratedIdentities.add(identity)
-                        || !getBoolean(object, "enabled", true)) {
-                    continue;
-                }
+                JsonObject source = element.getAsJsonObject();
+                for (JsonObject object : expandRuleVariants(source)) {
+                    InteractionIdentity identity = interactionIdentity(object);
+                    if (identity == null
+                            || configuredIdentities.contains(identity)
+                            || !integratedIdentities.add(identity)
+                            || !getBoolean(source, "enabled", true)
+                            || !getBoolean(object, "enabled", true)) {
+                        continue;
+                    }
 
-                Rule rule = parseRule(object, sequence++);
-                if (rule != null) {
-                    addRule(rule);
-                    integratedCount++;
+                    Rule rule = parseRule(object, sequence++);
+                    if (rule != null) {
+                        addRule(rule);
+                        integratedCount++;
+                    }
                 }
             }
         } catch (Exception exception) {
@@ -162,6 +172,7 @@ public final class ContextInteractionRegistry {
         }
 
         integratedCount += registerElevatorRules(configuredIdentities);
+        integratedCount += registerNativeScrewdriverRules(configuredIdentities);
         loaded = true;
         ScpAdditionsMod.LOGGER.info(
                 "Loaded {} configured and {} integrated contextual interactions",
@@ -183,6 +194,44 @@ public final class ContextInteractionRegistry {
         return root != null && root.has("interactions")
                 && root.get("interactions").isJsonArray()
                 ? root.getAsJsonArray("interactions") : new JsonArray();
+    }
+
+
+    /**
+     * Expands one target definition into its default interaction and optional
+     * inherited variants. Variant objects inherit the target, anchor, text and
+     * input values they do not replace, keeping configuration files compact.
+     */
+    private static List<JsonObject> expandRuleVariants(JsonObject source) {
+        List<JsonObject> expanded = new ArrayList<>();
+        JsonObject base = source.deepCopy();
+        base.remove("variants");
+        expanded.add(base);
+
+        if (!source.has("variants") || !source.get("variants").isJsonArray()) {
+            return expanded;
+        }
+        for (JsonElement element : source.getAsJsonArray("variants")) {
+            if (!element.isJsonObject()) continue;
+            JsonObject variant = base.deepCopy();
+            deepMerge(variant, element.getAsJsonObject());
+            variant.remove("variants");
+            expanded.add(variant);
+        }
+        return expanded;
+    }
+
+    private static void deepMerge(JsonObject target, JsonObject overlay) {
+        for (Map.Entry<String, JsonElement> entry : overlay.entrySet()) {
+            String key = entry.getKey();
+            JsonElement value = entry.getValue();
+            if (value.isJsonObject() && target.has(key)
+                    && target.get(key).isJsonObject()) {
+                deepMerge(target.getAsJsonObject(key), value.getAsJsonObject());
+            } else {
+                target.add(key, value.deepCopy());
+            }
+        }
     }
 
     private static InteractionIdentity interactionIdentity(JsonObject object) {
@@ -232,7 +281,7 @@ public final class ContextInteractionRegistry {
                             x, 21.25D / 16.0D, z,
                             0.0D, 0.0D, 0.0D,
                             RotationMode.HORIZONTAL_FACING, true, true,
-                            "front", "hand", "hand", 0.38D, false));
+                            "front", "hand", "hand", null, 0.38D, false));
             registered += addIntegratedRule(configuredIdentities,
                     new InteractionIdentity("block", stationId.toString(),
                             "elevator_station_down"),
@@ -242,7 +291,7 @@ public final class ContextInteractionRegistry {
                             x, 19.25D / 16.0D, z,
                             0.0D, 0.0D, 0.0D,
                             RotationMode.HORIZONTAL_FACING, true, true,
-                            "front", "hand", "hand", 0.38D, false));
+                            "front", "hand", "hand", null, 0.38D, false));
 
             ResourceLocation carriageId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_carriage");
@@ -256,7 +305,7 @@ public final class ContextInteractionRegistry {
                             0.5D, 0.5D, 0.5D,
                             0.0D, 0.0D, 0.0D,
                             RotationMode.NONE, true, true,
-                            "front", "hand", "hand", 0.38D, false));
+                            "front", "hand", "hand", null, 0.38D, false));
             registered += addIntegratedRule(configuredIdentities,
                     new InteractionIdentity("entity", carriageId.toString(),
                             "elevator_carriage_down"),
@@ -266,7 +315,7 @@ public final class ContextInteractionRegistry {
                             0.5D, 0.5D, 0.5D,
                             0.0D, 0.0D, 0.0D,
                             RotationMode.NONE, true, true,
-                            "front", "hand", "hand", 0.38D, false));
+                            "front", "hand", "hand", null, 0.38D, false));
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error(
                     "Failed to register Core Room elevator interactions",
@@ -280,6 +329,88 @@ public final class ContextInteractionRegistry {
             InteractionIdentity identity, Rule rule) {
         if (configuredIdentities.contains(identity)) return 0;
         addRule(rule);
+        return 1;
+    }
+
+    private static int registerNativeScrewdriverRules(
+            Set<InteractionIdentity> configuredIdentities) {
+        ResourceLocation screwdriver = new ResourceLocation(
+                ScpAdditionsMod.MODID, "screwdriver");
+        int count = 0;
+
+        String[] readers = {
+                "right_reader", "lv_2_right_reader", "lv_3_right_reader",
+                "lv_4_right_reader", "lv_5_right_reader", "lv_6_right_reader",
+                "left_reader", "lv_2_left_reader", "lv_3_left_reader",
+                "lv_4_left_reader", "lv_5_left_reader", "lv_6_left_reader"
+        };
+        for (String path : readers) {
+            count += addToolVariant(configuredIdentities, Kind.BLOCK,
+                    new ResourceLocation(ScpAdditionsMod.MODID, path),
+                    "configure_with_screwdriver", "Configure",
+                    screwdriver, 45);
+        }
+
+        for (String path : List.of("tesla_terminal_block",
+                "tesla_terminal_off", "core_room_elevator_station",
+                "scp_sign", "facility_direction_sign", "door_sign")) {
+            String action = path.contains("sign") ? "Edit"
+                    : path.contains("elevator") ? "Configure Display"
+                    : "Configure";
+            count += addToolVariant(configuredIdentities, Kind.BLOCK,
+                    new ResourceLocation(ScpAdditionsMod.MODID, path),
+                    "configure_with_screwdriver", action, screwdriver, 45);
+        }
+
+        for (String path : List.of("scp_131_a", "scp_131_b", "roomba")) {
+            count += addToolVariant(configuredIdentities, Kind.ENTITY,
+                    new ResourceLocation(ScpAdditionsMod.MODID, path),
+                    "dismantle_with_screwdriver", "Dismantle",
+                    screwdriver, 45);
+        }
+        return count;
+    }
+
+    private static int addToolVariant(
+            Set<InteractionIdentity> configuredIdentities, Kind kind,
+            ResourceLocation id, String key, String action,
+            ResourceLocation requiredItem, int priority) {
+        String type = kind == Kind.BLOCK ? "block" : "entity";
+        InteractionIdentity identity = new InteractionIdentity(type,
+                id.toString(), key);
+        if (configuredIdentities.contains(identity)) return 0;
+
+        if (kind == Kind.BLOCK) {
+            Block block = ForgeRegistries.BLOCKS.getValue(id);
+            if (block == null || block == Blocks.AIR) return 0;
+            Rule template = BLOCK_RULES.getOrDefault(block, List.of()).stream()
+                    .findFirst().orElse(null);
+            if (template != null) {
+                addRule(template.toolVariant(key, action, requiredItem,
+                        priority));
+            } else {
+                addRule(new Rule(kind, id, block, null, key, 2.25D,
+                        priority, action, "", true, true, true,
+                        0.5D, 0.5D, 0.5D, 0.0D, 0.0D, 0.0D,
+                        RotationMode.AUTO, true, true, "front", "hand",
+                        "config", requiredItem, 1.0D, false));
+            }
+            return 1;
+        }
+
+        EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(id);
+        if (entityType == null) return 0;
+        Rule template = ENTITY_RULES.getOrDefault(entityType, List.of()).stream()
+                .findFirst().orElse(null);
+        if (template != null) {
+            addRule(template.toolVariant(key, action, requiredItem, priority));
+        } else {
+            addRule(new Rule(kind, id, null, entityType, key, 2.25D,
+                    priority, action, "", true, true, true,
+                    0.5D, 0.5D, 0.5D, 0.0D, 0.0D, 0.0D,
+                    RotationMode.NONE, true, true, "front", "hand",
+                    "config", requiredItem, 1.0D, false));
+        }
         return 1;
     }
 
@@ -345,6 +476,10 @@ public final class ContextInteractionRegistry {
                 getBoolean(object, "allowE", true));
         boolean allowRightClick = getBoolean(input, "allowRightClick",
                 getBoolean(object, "allowRightClick", true));
+        String requiredItemText = getString(input, "requiredItem",
+                getString(object, "requiredItem", "")).trim();
+        ResourceLocation requiredItem = parseOptionalId(requiredItemText);
+        if (!requiredItemText.isBlank() && requiredItem == null) return null;
         String clickFace = getString(click, "face",
                 getString(object, "clickFace", "front"));
         String useItem = getString(object, "useItem", "hand");
@@ -363,7 +498,16 @@ public final class ContextInteractionRegistry {
                 local[0], local[1], local[2],
                 world[0], world[1], world[2], rotation,
                 allowE, allowRightClick, clickFace, useItem, icon,
-                promptScale, allowOffscreen);
+                requiredItem, promptScale, allowOffscreen);
+    }
+
+    private static ResourceLocation parseOptionalId(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return new ResourceLocation(value.trim());
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static JsonObject getObject(JsonObject object, String key) {
@@ -477,6 +621,7 @@ public final class ContextInteractionRegistry {
         private final String clickFace;
         private final String useItem;
         private final String icon;
+        private final ResourceLocation requiredItem;
         private final double promptScale;
         private final boolean allowOffscreen;
 
@@ -488,8 +633,8 @@ public final class ContextInteractionRegistry {
                 double worldOffsetX, double worldOffsetY,
                 double worldOffsetZ, RotationMode rotationMode,
                 boolean allowE, boolean allowRightClick, String clickFace,
-                String useItem, String icon, double promptScale,
-                boolean allowOffscreen) {
+                String useItem, String icon, ResourceLocation requiredItem,
+                double promptScale, boolean allowOffscreen) {
             this.kind = kind;
             this.id = id;
             this.block = block;
@@ -515,9 +660,20 @@ public final class ContextInteractionRegistry {
             this.clickFace = clickFace == null ? "front" : clickFace;
             this.useItem = useItem == null ? "hand" : useItem;
             this.icon = icon == null || icon.isEmpty() ? this.useItem : icon;
+            this.requiredItem = requiredItem;
             this.promptScale = Math.max(0.35D,
                     Math.min(1.5D, promptScale));
             this.allowOffscreen = allowOffscreen;
+        }
+
+        private Rule toolVariant(String key, String action,
+                ResourceLocation requiredItem, int priority) {
+            return new Rule(kind, id, block, entityType, key, range,
+                    Math.max(this.priority, priority), action, name,
+                    true, showName, autoName, localX, localY, localZ,
+                    worldOffsetX, worldOffsetY, worldOffsetZ, rotationMode,
+                    allowE, allowRightClick, clickFace, "hand", "config",
+                    requiredItem, promptScale, allowOffscreen);
         }
 
         public Kind kind() { return kind; }
@@ -532,6 +688,27 @@ public final class ContextInteractionRegistry {
         public boolean allowRightClick() { return allowRightClick; }
         public String useItem() { return useItem; }
         public String icon() { return icon; }
+        public ResourceLocation requiredItem() { return requiredItem; }
+        public boolean hasRequiredItem() { return requiredItem != null; }
+
+        public InteractionHand matchingHand(Player player) {
+            if (player == null) return null;
+            if (requiredItem == null) return InteractionHand.MAIN_HAND;
+            Item required = ForgeRegistries.ITEMS.getValue(requiredItem);
+            if (required == null) return null;
+            if (player.getMainHandItem().is(required)) {
+                return InteractionHand.MAIN_HAND;
+            }
+            if (player.getOffhandItem().is(required)) {
+                return InteractionHand.OFF_HAND;
+            }
+            return null;
+        }
+
+        public boolean isHeldItemSatisfied(Player player) {
+            return matchingHand(player) != null;
+        }
+
         public double promptScale() { return promptScale; }
         public boolean allowOffscreen() { return allowOffscreen; }
         public boolean requiresPreciseAim() {
@@ -541,7 +718,8 @@ public final class ContextInteractionRegistry {
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state) {
-            if (block == CoreRoomElevatorModule.STATION.get()) {
+            if (block == CoreRoomElevatorModule.STATION.get()
+                    && interactionKey.startsWith("elevator_station_")) {
                 ElevatorFoundation.TravelDirection direction =
                         interactionKey.endsWith("up")
                                 ? ElevatorFoundation.TravelDirection.UP
@@ -575,7 +753,8 @@ public final class ContextInteractionRegistry {
         }
 
         public Vec3 resolveBlockAnchor(BlockPos pos, BlockState state) {
-            if (block == CoreRoomElevatorModule.STATION.get()) {
+            if (block == CoreRoomElevatorModule.STATION.get()
+                    && interactionKey.startsWith("elevator_station_")) {
                 return CoreRoomElevatorGeometry.stationButtonWorld(pos,
                         state.getValue(CoreRoomElevatorModule.FACING),
                         interactionKey.endsWith("up"));

@@ -1324,7 +1324,27 @@ public final class ConfigCenterClient {
             for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
                 JsonObject rule = filtered.get(i);
                 int row = i - scroll;
-                String label = "[" + string(rule, "type", "?") + "] " + string(rule, "id", "unknown") + " — " + string(object(rule, "text"), "action", "Use");
+                int variantCount = rule.has("variants") && rule.get("variants").isJsonArray()
+                        ? rule.getAsJsonArray("variants").size() : 0;
+                int itemVariantCount = 0;
+                if (variantCount > 0) {
+                    for (JsonElement variantElement : rule.getAsJsonArray("variants")) {
+                        if (!variantElement.isJsonObject()) continue;
+                        JsonObject variantInput = object(
+                                variantElement.getAsJsonObject(), "input");
+                        if (!string(variantInput, "requiredItem", "").isBlank()) {
+                            itemVariantCount++;
+                        }
+                    }
+                }
+                String badge = variantCount == 0 ? ""
+                        : "  [" + variantCount + " variant"
+                        + (variantCount == 1 ? "" : "s")
+                        + (itemVariantCount > 0 ? ", " + itemVariantCount
+                        + " item-specific" : "") + "]";
+                String label = "[" + string(rule, "type", "?") + "] "
+                        + string(rule, "id", "unknown") + " — "
+                        + string(object(rule, "text"), "action", "Use") + badge;
                 addRenderableWidget(Button.builder(Component.literal(compact(label, 73)), b -> Minecraft.getInstance().setScreen(new ContextDetailScreen(this, rule)))
                         .bounds(x, listY + row * 24, w - 82, 20).build());
                 addRenderableWidget(Button.builder(Component.literal("X"), b -> { removeIdentity(array(root, "interactions"), rule); rebuildRows(); })

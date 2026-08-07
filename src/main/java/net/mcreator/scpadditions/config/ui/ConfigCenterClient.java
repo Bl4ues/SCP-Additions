@@ -1608,6 +1608,7 @@ public final class ConfigCenterClient {
         @Override
         public void renderWidget(GuiGraphics graphics, int mouseX,
       int mouseY, float partialTick) {
+  Font rowFont = Minecraft.getInstance().font;
   int background = isHoveredOrFocused() ? 0xFF202832 : 0xFF171B22;
   int edge = isHoveredOrFocused() ? ACCENT : 0xFF3C424B;
   graphics.fill(getX(), getY(), getX() + getWidth(),
@@ -1629,7 +1630,7 @@ public final class ConfigCenterClient {
           0xFF1B3948);
   graphics.fill(typeX, typeY, typeX + 3, typeY + 18,
           contextSourceColor(row.view().source()));
-  graphics.drawCenteredString(font, type,
+  graphics.drawCenteredString(rowFont, type,
           typeX + 29, typeY + 5, TEXT);
 
   ItemStack targetStack = contextTargetStack(row.rule());
@@ -1644,14 +1645,14 @@ public final class ConfigCenterClient {
   String main = contextTargetName(row.rule()) + "  —  " + actionText;
   int available = Math.max(20,
           getX() + getWidth() - textX - 8);
-  graphics.drawString(font, font.plainSubstrByWidth(main, available),
+  graphics.drawString(rowFont, rowFont.plainSubstrByWidth(main, available),
           textX, getY() + 5, TEXT, false);
 
   String source = contextSourceLabel(row.view().source());
   int sourceColor = contextSourceColor(row.view().source());
-  graphics.drawString(font, source, textX, getY() + 18,
+  graphics.drawString(rowFont, source, textX, getY() + 18,
           sourceColor, false);
-  int metaX = textX + font.width(source) + 7;
+  int metaX = textX + rowFont.width(source) + 7;
   StringBuilder meta = new StringBuilder();
   if (row.view().variantCount() > 0) {
       meta.append("· +").append(row.view().variantCount())
@@ -1670,8 +1671,8 @@ public final class ConfigCenterClient {
   if (!meta.isEmpty()) {
       int metaAvailable = Math.max(10,
               getX() + getWidth() - metaX - 8);
-      graphics.drawString(font,
-              font.plainSubstrByWidth(meta.toString(), metaAvailable),
+      graphics.drawString(rowFont,
+              rowFont.plainSubstrByWidth(meta.toString(), metaAvailable),
               metaX, getY() + 18, MUTED, false);
   }
         }

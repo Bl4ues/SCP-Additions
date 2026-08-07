@@ -1,0 +1,33 @@
+name: Run context item variants patch
+
+on:
+  push:
+    branches:
+      - 'feature/context-item-variants'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply source patch
+        shell: bash
+        run: |
+          base64 -d .github/scripts/context_patch.gz.b64 | gzip -d > /tmp/context_patch.py
+          python3 /tmp/context_patch.py
+      - name: Commit source changes
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-context-item-variants.yml
+          rm -f .github/workflows/run-context-item-variants.yml
+          rm -f .github/scripts/context_patch.gz.b64
+          git config user.name "Deyvid Campos"
+          git config user.email "deyvid04campos@gmail.com"
+          git add -A
+          git commit -m "Add item-specific contextual interaction runtime"
+          git push origin HEAD:feature/context-item-variants

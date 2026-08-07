@@ -113,6 +113,7 @@ public final class UnityConfigurationUiEvents {
         for (GuiEventListener listener : screen.children()) {
             if (listener instanceof EditBox editBox) styleEditBox(editBox);
             if (listener instanceof AbstractButton button) {
+                if (isSelfRenderedButton(button)) continue;
                 Component current = button.getMessage();
                 if (current != null && !current.getString().isBlank()) {
                     BUTTON_LABELS.put(button, ScpFonts.roboto(current));
@@ -142,7 +143,8 @@ public final class UnityConfigurationUiEvents {
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, 0.0F, 440.0F);
         for (GuiEventListener listener : screen.children()) {
-            if (!(listener instanceof AbstractButton button) || !button.visible) continue;
+            if (!(listener instanceof AbstractButton button) || !button.visible
+                    || isSelfRenderedButton(button)) continue;
             Component label = labelFor(button);
             drawButton(graphics, font, button, label, mouseX, mouseY);
             if (contains(button, mouseX, mouseY)) {
@@ -158,7 +160,6 @@ public final class UnityConfigurationUiEvents {
         if ("DrinkListScreen".equals(name)) renderDrinkRows(graphics, screen, mouseX, mouseY);
         if ("ItemRulesScreen".equals(name)) renderItemRuleRows(graphics, screen, mouseX, mouseY);
         if ("RecipeListScreen".equals(name)) renderRecipeRows(graphics, screen, mouseX, mouseY);
-        if ("ContextListScreen".equals(name)) renderContextRows(graphics, screen, mouseX, mouseY);
         if ("IdListScreen".equals(name)) renderIdRows(graphics, screen, mouseX, mouseY);
         if ("DrinkEffectsScreen".equals(name)) renderDrinkEffectRows(graphics, screen, mouseX, mouseY);
         graphics.pose().popPose();
@@ -179,6 +180,7 @@ public final class UnityConfigurationUiEvents {
     }
 
     private static void prepareWidget(GuiEventListener listener) {
+        if (listener instanceof AbstractButton button && isSelfRenderedButton(button)) return;
         if (listener instanceof AbstractSliderButton slider) {
             slider.setMessage(ScpFonts.roboto(slider.getMessage()));
         } else if (listener instanceof AbstractButton button) {
@@ -369,10 +371,10 @@ public final class UnityConfigurationUiEvents {
             String notice = readStaticField(screen.getClass().getDeclaringClass(),
                     "homeNotice", String.class);
             if (notice != null && !notice.isBlank()) {
-                coverTextLine(graphics, spec.x() + 10, spec.y() + spec.height() - 44,
+                coverTextLine(graphics, spec.x() + 10, spec.y() + spec.height() - 22,
                         spec.width() - 20);
                 graphics.drawString(font, ScpFonts.roboto(compact(notice, 66)),
-                        spec.x() + 14, spec.y() + spec.height() - 40, 0xFF79D58B, false);
+                        spec.x() + 14, spec.y() + spec.height() - 16, 0xFF79D58B, false);
             }
             return;
         }
@@ -580,11 +582,11 @@ public final class UnityConfigurationUiEvents {
             case "InventoryHubScreen" -> { w = Math.min(430, screen.width - 20); h = Math.min(300, screen.height - 20); y = Math.max(10, (screen.height - h) / 2); }
             case "ItemRulesScreen" -> { w = Math.min(650, screen.width - 16); h = Math.min(400, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "ItemRuleDetailScreen" -> { w = Math.min(430, screen.width - 20); h = 280; y = Math.max(10, (screen.height - h) / 2); }
-            case "IdListScreen" -> { w = Math.min(600, screen.width - 18); h = Math.min(380, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
+            case "IdListScreen" -> { w = Math.min(650, screen.width - 18); h = Math.min(390, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "CodexListScreen" -> { w = Math.min(650, screen.width - 18); h = Math.min(390, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "CodexDetailScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(470, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "ItemPickerScreen" -> { w = Math.min(680, screen.width - 16); h = Math.min(410, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
-            case "ContextListScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(410, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
+            case "ContextListScreen" -> { w = Math.min(760, screen.width - 16); h = Math.min(450, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "ContextDetailScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(450, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "DrinkListScreen" -> { w = Math.min(700, screen.width - 16); h = Math.min(410, screen.height - 16); y = Math.max(8, (screen.height - h) / 2); }
             case "DrinkDetailScreen" -> { w = Math.min(730, screen.width - 14); h = Math.min(470, screen.height - 14); y = Math.max(7, (screen.height - h) / 2); }
@@ -611,7 +613,7 @@ public final class UnityConfigurationUiEvents {
         int top = Math.max(8, (screen.height - Math.min(410, screen.height - 16)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(5, Math.min(11, (screen.height - 132) / 24));
-        int rowRight = x + w - 150;
+        int rowRight = x + w - 238;
         Font font = Minecraft.getInstance().font;
 
         for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
@@ -625,8 +627,19 @@ public final class UnityConfigurationUiEvents {
             String alias = firstAlias(drink);
             String title = alias.isBlank() ? humanizeId(string(drink, "id", "Drink")) : alias;
             JsonObject result = childObject(drink, "result");
-            String resultName = result == null ? "No item result"
-                    : displayNameForItem(string(result, "item", ""));
+            String resultItem = result == null ? "" : string(result, "item", "");
+            String resultName;
+            if (!bool(drink, "give_result", true)) {
+                resultName = "No cup dispensed";
+            } else if ("scp_additions:cup_of_coffee".equals(resultItem)) {
+                // The generic cup is only a carrier for the configured drink profile.
+                // Show the actual semantic drink here instead of claiming that every
+                // SCP-294 entry produces coffee.
+                resultName = "Cup of " + humanizeId(string(drink, "id", title));
+            } else {
+                resultName = result == null ? "No item result"
+                        : displayNameForItem(resultItem);
+            }
             int count = result == null ? 1 : integer(result, "count", 1);
             String detail = "→ " + resultName + (count > 1 ? " ×" + count : "");
             if (!bool(drink, "enabled", true)) detail += "  [Disabled]";
@@ -651,7 +664,7 @@ public final class UnityConfigurationUiEvents {
         int top = Math.max(8, (screen.height - Math.min(400, screen.height - 16)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(4, Math.min(10, (screen.height - 128) / 24));
-        int rowRight = x + w - 78;
+        int rowRight = x + w - 164;
         Font font = Minecraft.getInstance().font;
 
         for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
@@ -685,7 +698,7 @@ public final class UnityConfigurationUiEvents {
         int top = Math.max(6, (screen.height - Math.min(440, screen.height - 12)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(5, Math.min(12, (screen.height - 130) / 24));
-        int rowRight = x + w - 154;
+        int rowRight = x + w - 242;
         Font font = Minecraft.getInstance().font;
 
         for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
@@ -762,34 +775,43 @@ public final class UnityConfigurationUiEvents {
 
     private static void renderIdRows(GuiGraphics graphics, Screen screen,
                                      int mouseX, int mouseY) {
-        List<?> raw = readList(screen, "filtered");
-        List<String> filtered = new ArrayList<>();
-        for (Object value : raw) if (value instanceof String text) filtered.add(text);
+        List<?> filtered = readList(screen, "filtered");
         int scroll = integerField(screen, "scroll", 0);
         String key = readField(screen, "key", String.class);
-        int w = Math.min(600, screen.width - 18);
+        int w = Math.min(650, screen.width - 18);
         int x = (screen.width - w) / 2 + 12;
-        int top = Math.max(8, (screen.height - Math.min(380, screen.height - 16)) / 2) + 38;
+        int top = Math.max(8, (screen.height - Math.min(390, screen.height - 16)) / 2) + 38;
         int listY = top + 56;
         int visible = Math.max(4, Math.min(9, (screen.height - 146) / 24));
-        int rowRight = x + w - 88;
+        int rowRight = x + w - 178;
         Font font = Minecraft.getInstance().font;
         boolean effects = "hidden_status_effects".equals(key);
 
         for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
-            String id = filtered.get(i);
+            Object entry = filtered.get(i);
+            String id = entry instanceof String textValue ? textValue
+                    : readField(entry, "value", String.class);
+            if (id == null || id.isBlank()) continue;
+            Boolean enabledField = readField(entry, "enabled", Boolean.class);
+            boolean enabled = enabledField == null || enabledField;
             int rowY = listY + (i - scroll) * 24;
             drawSummaryCard(graphics, x, rowY, rowRight, rowY + 20,
                     mouseX, mouseY);
+            if (!enabled) {
+                graphics.fill(x + 1, rowY + 1, rowRight - 1, rowY + 19,
+                        0x66000000);
+            }
             String badge = effects ? "EFFECT" : "TARGET";
             drawBadge(graphics, x + 4, rowY + 3, x + 62, rowY + 17,
-                    badge, effects ? ENTITY_BADGE : BLOCK_BADGE, WHITE);
+                    badge, effects ? ENTITY_BADGE : BLOCK_BADGE,
+                    enabled ? WHITE : MUTED);
             String display = effects ? displayNameForEffect(id)
                     : id.startsWith("#") ? "Tag: " + humanizeId(id.substring(1))
                     : displayNameForEntity(id);
+            if (!enabled) display += "  [Disabled]";
             graphics.enableScissor(x + 66, rowY, rowRight - 5, rowY + 20);
             graphics.drawString(font, ScpFonts.roboto(display), x + 69, rowY + 6,
-                    WHITE, false);
+                    enabled ? WHITE : MUTED, false);
             graphics.disableScissor();
         }
     }
@@ -1009,14 +1031,18 @@ public final class UnityConfigurationUiEvents {
     private static String displayNameForBlock(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         Block block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
-        return block == null ? humanizeId(idText) : block.getName().getString();
+        if (block == null) return humanizeId(idText);
+        String resolved = block.getName().getString();
+        return resolved.startsWith("block.") ? humanizeId(idText) : resolved;
     }
 
     private static String displayNameForEntity(String idText) {
         ResourceLocation id = ResourceLocation.tryParse(idText == null ? "" : idText);
         net.minecraft.world.entity.EntityType<?> type = id == null
                 ? null : ForgeRegistries.ENTITY_TYPES.getValue(id);
-        return type == null ? humanizeId(idText) : type.getDescription().getString();
+        if (type == null) return humanizeId(idText);
+        String resolved = type.getDescription().getString();
+        return resolved.startsWith("entity.") ? humanizeId(idText) : resolved;
     }
 
     private static String displayNameForEffect(String idText) {
@@ -1073,6 +1099,11 @@ public final class UnityConfigurationUiEvents {
         drink.putInt("cup_color", parseColor(hex, 0xFFFFFF));
         stack.getOrCreateTag().put("Scp294Drink", drink);
         return stack;
+    }
+
+    private static boolean isSelfRenderedButton(AbstractButton button) {
+        return button != null && "ContextRowButton".equals(
+                button.getClass().getSimpleName());
     }
 
     private static boolean isConfigurationScreen(Screen screen) {

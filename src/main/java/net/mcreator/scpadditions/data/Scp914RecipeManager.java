@@ -24,6 +24,7 @@ import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -37,6 +38,7 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public final class Scp914RecipeManager {
@@ -69,7 +71,8 @@ public final class Scp914RecipeManager {
             }
             """;
 
-    private static List<RecipeDefinition> recipes = List.of();
+    private static List<RecipeDefinition> configuredRecipes = List.of();
+    private static List<RecipeDefinition> integratedRecipes = List.of();
     private static MachineConfig machineConfig = MachineConfig.defaults();
 
     private Scp914RecipeManager() {
@@ -77,11 +80,20 @@ public final class Scp914RecipeManager {
 
     public static synchronized void loadFromConfig() {
         ensureConfigExists();
-        List<RecipeDefinition> parsed = new ArrayList<>();
-        readRecipeFile(CONFIG_PATH, parsed, true);
-        readFragmentFiles(parsed);
-        recipes = List.copyOf(parsed);
-        ScpAdditionsMod.LOGGER.info("Loaded {} SCP-914 recipe definitions from config", recipes.size());
+
+        List<RecipeDefinition> configured = new ArrayList<>();
+        Set<ResourceLocation> configuredIds = new LinkedHashSet<>();
+        readRecipeFile(CONFIG_PATH, configured, configuredIds, true);
+        readFragmentFiles(configured, configuredIds);
+
+        List<RecipeDefinition> integrated = new ArrayList<>();
+        readBundledIntegratedRecipes(integrated, configuredIds);
+
+        configuredRecipes = List.copyOf(configured);
+        integratedRecipes = List.copyOf(integrated);
+        ScpAdditionsMod.LOGGER.info(
+                "Loaded {} configured and {} integrated SCP-914 recipe definitions",
+                configuredRecipes.size(), integratedRecipes.size());
     }
 
     private static void ensureConfigExists() {
@@ -108,55 +120,156 @@ public final class Scp914RecipeManager {
         Files.writeString(CONFIG_PATH, DEFAULT_CONFIG, StandardCharsets.UTF_8);
     }
 
-    private static void readFragmentFiles(List<RecipeDefinition> parsed) {
+    private static void readFragmentFiles(List<RecipeDefinition> parsed,
+            Set<ResourceLocation> configuredIds) {
         if (Files.notExists(FRAGMENT_DIR)) return;
         try (Stream<Path> files = Files.list(FRAGMENT_DIR)) {
             files.filter(path -> Files.isRegularFile(path)
                             && path.getFileName().toString().endsWith(".json"))
                     .sorted(Comparator.comparing(path -> path.getFileName().toString()))
-                    .forEach(path -> readRecipeFile(path, parsed, false));
+                    .forEach(path -> readRecipeFile(path, parsed,
+                            configuredIds, false));
         } catch (IOException exception) {
             ScpAdditionsMod.LOGGER.error("Failed to read SCP-914 recipe fragments from {}", FRAGMENT_DIR, exception);
         }
     }
 
-    private static void readRecipeFile(Path path, List<RecipeDefinition> parsed,
-                                       boolean readMachine) {
+    private static void readRecipeFile(Path path,
+            List<RecipeDefinition> parsed,
+            Set<ResourceLocation> configuredIds,
+            boolean readMachine) {
         try {
             prettyPrintConfigIfNeeded(path);
             try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
                 JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
                 if (readMachine) machineConfig = readMachineConfig(root);
-                JsonArray recipesArray = root.has("recipes")
-                        ? GsonHelper.getAsJsonArray(root, "recipes") : new JsonArray();
-                for (JsonElement element : recipesArray) {
-                    try {
-                        JsonObject json = GsonHelper.convertToJsonObject(element,
-                                "SCP-914 recipe");
-                        if (json.has("enabled")
-                                && !GsonHelper.getAsBoolean(json, "enabled")) {
-                            continue;
-                        }
-                        RecipeDefinition recipe = parseRecipe(json);
-                        List<ResourceLocation> missing = unavailableRegistryEntries(recipe);
-                        if (!missing.isEmpty()) {
-                            ScpAdditionsMod.LOGGER.warn(
-                                    "Skipping SCP-914 recipe {} from {} because these registry IDs are unavailable: {}",
-                                    recipe.id(), path, missing);
-                            continue;
-                        }
-                        parsed.add(recipe);
-                    } catch (Exception exception) {
-                        ScpAdditionsMod.LOGGER.error(
-                                "Failed to load one SCP-914 recipe entry from {}",
-                                path, exception);
-                    }
-                }
+                readConfiguredRecipeEntries(root, path.toString(), parsed,
+                        configuredIds);
             }
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error("Failed to load SCP-914 recipes from {}",
                     path, exception);
         }
+    }
+
+    private static void readConfiguredRecipeEntries(JsonObject root,
+            String source,
+            List<RecipeDefinition> parsed,
+            Set<ResourceLocation> configuredIds) {
+        JsonArray recipesArray = root.has("recipes")
+                ? GsonHelper.getAsJsonArray(root, "recipes") : new JsonArray();
+        for (JsonElement element : recipesArray) {
+            try {
+                JsonObject json = GsonHelper.convertToJsonObject(element,
+                        "SCP-914 recipe");
+                ResourceLocation id = new ResourceLocation(
+                        GsonHelper.getAsString(json, "id"));
+
+                // An entry in either user file is authoritative by ID even when
+                // disabled. This gives administrators an explicit tombstone for
+                // suppressing an integrated definition without deleting it from
+                // the mod's bundled defaults.
+                configuredIds.add(id);
+                if (json.has("enabled")
+                        && !GsonHelper.getAsBoolean(json, "enabled")) {
+                    continue;
+                }
+                addParsedRecipe(json, source, parsed);
+            } catch (Exception exception) {
+                ScpAdditionsMod.LOGGER.error(
+                        "Failed to load one SCP-914 recipe entry from {}",
+                        source, exception);
+            }
+        }
+    }
+
+    private static void readBundledIntegratedRecipes(
+            List<RecipeDefinition> parsed,
+            Set<ResourceLocation> configuredIds) {
+        try (InputStream stream = Scp914RecipeManager.class.getClassLoader()
+                .getResourceAsStream(BUNDLED_CONFIG)) {
+            if (stream == null) {
+                ScpAdditionsMod.LOGGER.warn(
+                        "Bundled SCP-914 recipe defaults were unavailable; no integrated recipes were loaded");
+                return;
+            }
+            try (Reader reader = new InputStreamReader(stream,
+                    StandardCharsets.UTF_8)) {
+                JsonObject root = JsonParser.parseReader(reader)
+                        .getAsJsonObject();
+                JsonArray recipesArray = root.has("recipes")
+                        ? GsonHelper.getAsJsonArray(root, "recipes")
+                        : new JsonArray();
+                for (JsonElement element : recipesArray) {
+                    try {
+                        JsonObject json = GsonHelper.convertToJsonObject(element,
+                                "integrated SCP-914 recipe");
+                        if (!referencesScpAdditionsContent(json)) continue;
+
+                        ResourceLocation id = new ResourceLocation(
+                                GsonHelper.getAsString(json, "id"));
+                        if (configuredIds.contains(id)) continue;
+                        if (json.has("enabled")
+                                && !GsonHelper.getAsBoolean(json, "enabled")) {
+                            continue;
+                        }
+                        addParsedRecipe(json, BUNDLED_CONFIG, parsed);
+                    } catch (Exception exception) {
+                        ScpAdditionsMod.LOGGER.error(
+                                "Failed to load one integrated SCP-914 recipe entry from {}",
+                                BUNDLED_CONFIG, exception);
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            ScpAdditionsMod.LOGGER.error(
+                    "Failed to load integrated SCP-914 recipes from {}",
+                    BUNDLED_CONFIG, exception);
+        }
+    }
+
+    private static boolean referencesScpAdditionsContent(JsonElement element) {
+        if (element == null || element.isJsonNull()) return false;
+        if (element.isJsonArray()) {
+            for (JsonElement child : element.getAsJsonArray()) {
+                if (referencesScpAdditionsContent(child)) return true;
+            }
+            return false;
+        }
+        if (!element.isJsonObject()) return false;
+
+        for (Map.Entry<String, JsonElement> entry
+                : element.getAsJsonObject().entrySet()) {
+            String key = entry.getKey();
+            JsonElement value = entry.getValue();
+            if (("item".equals(key) || "entity".equals(key))
+                    && value != null && value.isJsonPrimitive()) {
+                try {
+                    ResourceLocation id = new ResourceLocation(
+                            value.getAsString());
+                    if (ScpAdditionsMod.MODID.equals(id.getNamespace())) {
+                        return true;
+                    }
+                } catch (Exception ignored) {
+                    // The normal parser reports malformed registry IDs later.
+                }
+            }
+            if (referencesScpAdditionsContent(value)) return true;
+        }
+        return false;
+    }
+
+    private static void addParsedRecipe(JsonObject json, String source,
+            List<RecipeDefinition> parsed) {
+        RecipeDefinition recipe = parseRecipe(json);
+        List<ResourceLocation> missing = unavailableRegistryEntries(recipe);
+        if (!missing.isEmpty()) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Skipping SCP-914 recipe {} from {} because these registry IDs are unavailable: {}",
+                    recipe.id(), source, missing);
+            return;
+        }
+        parsed.add(recipe);
     }
 
     private static void prettyPrintConfigIfNeeded(Path path) throws IOException {
@@ -345,9 +458,21 @@ public final class Scp914RecipeManager {
      */
     public static Optional<RecipeMatch> findRecipe(Setting setting,
             List<ItemEntity> itemEntities, List<Entity> entities) {
+        Optional<RecipeMatch> configured = findBestRecipe(configuredRecipes,
+                setting, itemEntities, entities);
+        if (configured.isPresent()) return configured;
+        return findBestRecipe(integratedRecipes, setting, itemEntities,
+                entities);
+    }
+
+    private static Optional<RecipeMatch> findBestRecipe(
+            List<RecipeDefinition> candidates,
+            Setting setting,
+            List<ItemEntity> itemEntities,
+            List<Entity> entities) {
         int totalInputs = totalIntakeCount(itemEntities, entities);
         RecipeMatch selected = null;
-        for (RecipeDefinition recipe : recipes) {
+        for (RecipeDefinition recipe : candidates) {
             if (recipe.setting() != setting) continue;
             Optional<RecipeMatch> candidate = match(recipe, itemEntities, entities);
             if (candidate.isEmpty()) continue;

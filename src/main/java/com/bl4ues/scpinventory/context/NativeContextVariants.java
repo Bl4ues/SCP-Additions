@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,6 +39,28 @@ public final class NativeContextVariants {
             "scp_131_a", "scp_131_b", "roomba");
 
     private NativeContextVariants() {
+    }
+
+    /**
+     * Enumerates every target that receives a built-in item-specific rule.
+     * Configuration UI code uses this to surface native rules even when an
+     * older external config predates the target entirely.
+     */
+    public static List<NativeTarget> nativeTargets() {
+        List<NativeTarget> result = new ArrayList<>();
+        for (String path : READER_BLOCKS) {
+            result.add(new NativeTarget("block",
+                    new ResourceLocation(ScpAdditionsMod.MODID, path)));
+        }
+        for (String path : TOOL_BLOCKS.keySet()) {
+            result.add(new NativeTarget("block",
+                    new ResourceLocation(ScpAdditionsMod.MODID, path)));
+        }
+        for (String path : TOOL_ENTITIES) {
+            result.add(new NativeTarget("entity",
+                    new ResourceLocation(ScpAdditionsMod.MODID, path)));
+        }
+        return List.copyOf(result);
     }
 
     public static boolean isNativeTarget(String type, ResourceLocation id) {
@@ -112,5 +136,8 @@ public final class NativeContextVariants {
         } catch (Exception ignored) {
             return fallback;
         }
+    }
+
+    public record NativeTarget(String type, ResourceLocation id) {
     }
 }

@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.bl4ues.scpinventory.client.ScpFonts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -194,6 +195,19 @@ public final class ConfigCenterClient {
         return text.length() <= max ? text : text.substring(0, Math.max(0, max - 3)) + "...";
     }
 
+    private static String readableResourceId(String raw) {
+        if (raw == null || raw.isBlank()) return "Unknown";
+        String path = raw.contains(":") ? raw.substring(raw.indexOf(':') + 1) : raw;
+        StringBuilder out = new StringBuilder();
+        for (String part : path.split("[_/.-]+")) {
+            if (part.isBlank()) continue;
+            if (!out.isEmpty()) out.append(' ');
+            out.append(Character.toUpperCase(part.charAt(0)));
+            if (part.length() > 1) out.append(part.substring(1));
+        }
+        return out.isEmpty() ? raw : out.toString();
+    }
+
     private static String readable(Throwable throwable) {
         String message = throwable.getMessage();
         return message == null || message.isBlank() ? throwable.getClass().getSimpleName() : message;
@@ -310,7 +324,7 @@ public final class ConfigCenterClient {
             graphics.drawString(font, "Server-authoritative JSON editors with validation and automatic .bak backups.",
                     x + 14, y + 30, MUTED, false);
             if (!homeNotice.isBlank()) {
-                graphics.drawString(font, compact(homeNotice, 62), x + 14, y + h - 40, GOOD, false);
+                graphics.drawString(font, compact(homeNotice, 62), x + 14, y + h - 16, GOOD, false);
             }
             super.render(graphics, mouseX, mouseY, partialTick);
         }
@@ -1683,14 +1697,21 @@ public final class ConfigCenterClient {
       if (block != null) {
           Item item = block.asItem();
           if (item != null && item != Items.AIR) {
-              return new ItemStack(item).getHoverName().getString();
+              String resolved = new ItemStack(item).getHoverName().getString();
+              if (!resolved.startsWith("item.") && !resolved.startsWith("block.")) {
+                  return resolved;
+              }
           }
-          return block.getName().getString();
+          String resolved = block.getName().getString();
+          return resolved.startsWith("block.")
+                  ? readableResourceId(idText) : resolved;
       }
   } else if ("entity".equalsIgnoreCase(string(rule, "type", ""))) {
       var entityType = ForgeRegistries.ENTITY_TYPES.getValue(id);
       if (entityType != null) {
-          return entityType.getDescription().getString();
+          String resolved = entityType.getDescription().getString();
+          return resolved.startsWith("entity.")
+                  ? readableResourceId(idText) : resolved;
       }
   }
         } catch (Exception ignored) {
@@ -1808,7 +1829,7 @@ public final class ConfigCenterClient {
           0xFF1B3948);
   graphics.fill(typeX, typeY, typeX + 3, typeY + 18,
           contextSourceColor(row.view().source()));
-  graphics.drawCenteredString(rowFont, type,
+  graphics.drawCenteredString(rowFont, ScpFonts.roboto(type),
           typeX + 29, typeY + 5, enabled ? TEXT : 0xFF707680);
 
   ItemStack targetStack = contextTargetStack(row.rule());
@@ -1823,15 +1844,17 @@ public final class ConfigCenterClient {
   String main = contextTargetName(row.rule()) + "  —  " + actionText;
   int available = Math.max(20,
           getX() + getWidth() - textX - 8);
-  graphics.drawString(rowFont, rowFont.plainSubstrByWidth(
-                  main + (enabled ? "" : "  [DISABLED]"), available),
+  String mainVisible = rowFont.plainSubstrByWidth(
+          main + (enabled ? "" : "  [DISABLED]"), available);
+  graphics.drawString(rowFont, ScpFonts.roboto(mainVisible),
           textX, getY() + 5, enabled ? TEXT : 0xFF777E89, false);
 
   String source = contextSourceLabel(row.view().source());
   int sourceColor = contextSourceColor(row.view().source());
-  graphics.drawString(rowFont, source, textX, getY() + 18,
+  Component sourceLabel = ScpFonts.roboto(source);
+  graphics.drawString(rowFont, sourceLabel, textX, getY() + 18,
           sourceColor, false);
-  int metaX = textX + rowFont.width(source) + 7;
+  int metaX = textX + rowFont.width(sourceLabel) + 7;
   StringBuilder meta = new StringBuilder();
   if (row.view().variantCount() > 0) {
       meta.append("· +").append(row.view().variantCount())
@@ -1850,8 +1873,8 @@ public final class ConfigCenterClient {
   if (!meta.isEmpty()) {
       int metaAvailable = Math.max(10,
               getX() + getWidth() - metaX - 8);
-      graphics.drawString(rowFont,
-              rowFont.plainSubstrByWidth(meta.toString(), metaAvailable),
+      graphics.drawString(rowFont, ScpFonts.roboto(
+                      rowFont.plainSubstrByWidth(meta.toString(), metaAvailable)),
               metaX, getY() + 18, MUTED, false);
   }
         }

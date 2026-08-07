@@ -58,6 +58,7 @@
 ## Interface and presentation
 
 - Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including integrated and custom Roomba spawn floors, SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
+- Fixed Configuration Center presentation regressions from reversible entry toggles: Contextual Interaction previews and Roboto row styling are restored, Enable/Disable controls remain visibly separated from row summaries, SCP-294 rows describe their actual configured drink profile instead of the generic carrier cup, and save confirmation text no longer overlaps the home controls;
 - Added an optional SCP: Unity-inspired custom crosshair, enabled by default, with independent in-game visibility settings;
 - Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar, level indicator, experience-orb rendering, and XP pickup and level-up sounds;
 - Added a default-enabled custom oxygen meter that replaces vanilla air bubbles, appears beneath the crosshair, shifts from light blue toward red as air runs out, adds a progressively stronger suffocation vignette, and darkens the screen further with each drowning-damage pulse until air recovery;

@@ -5,18 +5,20 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.mcreator.scpadditions.config.ui.ConfigCenterService;
 
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Persists block rules edited by the K screen through the same authoritative
- * Forge config path, validation, backup, and reload flow used by the native
- * configuration center.
+ * validation, backup, synchronization and reload flow as Configuration Center.
  */
 public final class ContextConfigSaveService {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -25,22 +27,12 @@ public final class ContextConfigSaveService {
     }
 
     public static ConfigCenterService.SaveResult saveBlockRule(
-            ServerPlayer player,
-            BlockPos pos,
-            String idText,
-            String action,
-            String name,
-            boolean showName,
-            double range,
-            boolean allowE,
-            boolean allowRightClick,
-            boolean allowOffscreen,
-            String useItem,
-            String clickFace,
-            String rotateWith,
-            double anchorX,
-            double anchorY,
-            double anchorZ) {
+            ServerPlayer player, BlockPos pos, String idText, String action,
+            String name, boolean showName, double range, boolean allowE,
+            boolean allowRightClick, boolean allowOffscreen, String useItem,
+            String icon, String requiredItem, String variantsJson,
+            String clickFace, String rotateWith, double anchorX,
+            double anchorY, double anchorZ) {
         if (player == null || pos == null) {
             return failure("Missing player or selected block position.");
         }
@@ -61,39 +53,15 @@ public final class ContextConfigSaveService {
             JsonArray interactions = interactions(root);
             JsonObject rule = findBlockRule(interactions, id);
             if (rule == null) {
-                rule = createDefaultRule(id, player.level().getBlockState(pos));
+                rule = createDefaultRule(id,
+                        player.level().getBlockState(pos));
                 interactions.add(rule);
             }
 
-            rule.addProperty("type", "block");
-            rule.addProperty("id", id.toString());
-            rule.addProperty("range", Math.max(0.25D, finite(range, 2.25D)));
-            rule.addProperty("priority", 30);
-            rule.addProperty("useItem", cleanUseItem(useItem));
-
-            JsonObject text = object(rule, "text");
-            text.addProperty("action", emptyTo(action, "Use"));
-            text.addProperty("nameMode", name == null || name.isBlank() ? "auto" : "manual");
-            text.addProperty("name", name == null ? "" : name);
-            text.addProperty("showAction", true);
-            text.addProperty("showName", showName);
-
-            JsonObject input = object(rule, "input");
-            input.addProperty("allowE", allowE);
-            input.addProperty("allowRightClick", allowRightClick);
-
-            object(rule, "visual").addProperty("allowOffscreen",
-                    allowOffscreen);
-
-            object(rule, "click").addProperty("face", cleanClickFace(clickFace));
-
-            JsonObject anchor = object(rule, "anchor");
-            JsonArray position = new JsonArray();
-            position.add(round(finite(anchorX, 0.5D)));
-            position.add(round(finite(anchorY, 0.5D)));
-            position.add(round(finite(anchorZ, 0.5D)));
-            anchor.add("position", position);
-            anchor.addProperty("rotateWith", cleanRotateWith(rotateWith));
+            writeRule(rule, "block", id, action, name, showName, range,
+                    allowE, allowRightClick, allowOffscreen, useItem, icon,
+                    requiredItem, variantsJson, clickFace, rotateWith,
+                    anchorX, anchorY, anchorZ, 30);
 
             JsonObject changes = new JsonObject();
             changes.add(ConfigCenterService.CONTEXT, root);
@@ -106,14 +74,91 @@ public final class ContextConfigSaveService {
         }
     }
 
+    static void writeRule(JsonObject rule, String type, ResourceLocation id,
+            String action, String name, boolean showName, double range,
+            boolean allowE, boolean allowRightClick, boolean allowOffscreen,
+            String useItem, String icon, String requiredItem,
+            String variantsJson, String clickFace, String rotateWith,
+            double anchorX, double anchorY, double anchorZ, int priority) {
+        rule.addProperty("type", type);
+        rule.addProperty("id", id.toString());
+        rule.addProperty("range", Math.max(0.25D, finite(range, 2.25D)));
+        rule.addProperty("priority", priority);
+        rule.addProperty("useItem", cleanUseItem(useItem));
+
+        JsonObject text = object(rule, "text");
+        text.addProperty("action", emptyTo(action,
+                "entity".equals(type) ? "Interact" : "Use"));
+        text.addProperty("nameMode",
+                name == null || name.isBlank() ? "auto" : "manual");
+        text.addProperty("name", name == null ? "" : name);
+        text.addProperty("showAction", true);
+        text.addProperty("showName", showName);
+
+        JsonObject input = object(rule, "input");
+        input.addProperty("allowE", allowE);
+        input.addProperty("allowRightClick", allowRightClick);
+        setOrRemove(input, "requiredItem", requiredItem);
+
+        JsonObject visual = object(rule, "visual");
+        visual.addProperty("allowOffscreen", allowOffscreen);
+        setOrRemove(visual, "icon", icon);
+
+        object(rule, "click").addProperty("face",
+                cleanClickFace(clickFace));
+
+        JsonObject anchor = object(rule, "anchor");
+        JsonArray position = new JsonArray();
+        position.add(round(finite(anchorX, 0.5D)));
+        position.add(round(finite(anchorY, 0.5D)));
+        position.add(round(finite(anchorZ, 0.5D)));
+        anchor.add("position", position);
+        anchor.addProperty("rotateWith", cleanRotateWith(rotateWith));
+
+        JsonArray variants = sanitizeVariants(variantsJson);
+        if (variants.size() == 0) rule.remove("variants");
+        else rule.add("variants", variants);
+    }
+
+    static JsonArray sanitizeVariants(String variantsJson) {
+        JsonArray result = new JsonArray();
+        if (variantsJson == null || variantsJson.isBlank()) return result;
+        JsonElement parsed = JsonParser.parseString(variantsJson);
+        if (!parsed.isJsonArray()) {
+            throw new IllegalArgumentException("Interaction variants must be a JSON array.");
+        }
+
+        Set<String> keys = new HashSet<>();
+        int generated = 1;
+        for (JsonElement element : parsed.getAsJsonArray()) {
+            if (!element.isJsonObject()) continue;
+            JsonObject variant = element.getAsJsonObject().deepCopy();
+            String key = string(variant, "interactionId", "").trim();
+            if (key.isBlank()) {
+                do {
+                    key = "variant_" + generated++;
+                } while (keys.contains(key));
+                variant.addProperty("interactionId", key);
+            }
+            if (!keys.add(key)) {
+                throw new IllegalArgumentException(
+                        "Duplicate variant interactionId: " + key);
+            }
+            result.add(variant);
+        }
+        return result;
+    }
+
     private static JsonArray interactions(JsonObject root) {
-        if (!root.has("interactions") || !root.get("interactions").isJsonArray()) {
+        if (!root.has("interactions")
+                || !root.get("interactions").isJsonArray()) {
             root.add("interactions", new JsonArray());
         }
         return root.getAsJsonArray("interactions");
     }
 
-    private static JsonObject findBlockRule(JsonArray interactions, ResourceLocation id) {
+    private static JsonObject findBlockRule(JsonArray interactions,
+            ResourceLocation id) {
         for (JsonElement element : interactions) {
             if (!element.isJsonObject()) continue;
             JsonObject rule = element.getAsJsonObject();
@@ -125,43 +170,13 @@ public final class ContextConfigSaveService {
         return null;
     }
 
-    private static JsonObject createDefaultRule(ResourceLocation id, BlockState state) {
+    private static JsonObject createDefaultRule(ResourceLocation id,
+            BlockState state) {
         JsonObject rule = new JsonObject();
-        rule.addProperty("type", "block");
-        rule.addProperty("id", id.toString());
-        rule.addProperty("range", 2.25D);
-        rule.addProperty("priority", 30);
-        rule.addProperty("useItem", "hand");
-
-        JsonObject text = new JsonObject();
-        text.addProperty("action", "Use");
-        text.addProperty("nameMode", "manual");
-        text.addProperty("name", state.getBlock().getName().getString());
-        text.addProperty("showAction", true);
-        text.addProperty("showName", true);
-        rule.add("text", text);
-
-        JsonObject input = new JsonObject();
-        input.addProperty("allowE", true);
-        input.addProperty("allowRightClick", true);
-        rule.add("input", input);
-
-        JsonObject click = new JsonObject();
-        click.addProperty("face", "front");
-        rule.add("click", click);
-
-        JsonObject visual = new JsonObject();
-        visual.addProperty("allowOffscreen", false);
-        rule.add("visual", visual);
-
-        JsonObject anchor = new JsonObject();
-        JsonArray position = new JsonArray();
-        position.add(0.5D);
-        position.add(0.5D);
-        position.add(0.5D);
-        anchor.add("position", position);
-        anchor.addProperty("rotateWith", "none");
-        rule.add("anchor", anchor);
+        writeRule(rule, "block", id, "Use",
+                state.getBlock().getName().getString(), true, 2.25D,
+                true, true, false, "hand", "pickup", "", "[]",
+                "front", "none", 0.5D, 0.5D, 0.5D, 30);
         return rule;
     }
 
@@ -172,13 +187,21 @@ public final class ContextConfigSaveService {
         return parent.getAsJsonObject(key);
     }
 
-    private static String string(JsonObject object, String key, String fallback) {
+    private static String string(JsonObject object, String key,
+            String fallback) {
         try {
             return object.has(key) && !object.get(key).isJsonNull()
                     ? object.get(key).getAsString() : fallback;
         } catch (Exception ignored) {
             return fallback;
         }
+    }
+
+    private static void setOrRemove(JsonObject object, String key,
+            String value) {
+        String cleaned = value == null ? "" : value.trim();
+        if (cleaned.isEmpty()) object.remove(key);
+        else object.addProperty(key, cleaned);
     }
 
     private static String emptyTo(String value, String fallback) {
@@ -190,15 +213,18 @@ public final class ContextConfigSaveService {
     }
 
     private static String cleanClickFace(String value) {
-        String face = value == null ? "front" : value.toLowerCase(Locale.ROOT);
+        String face = value == null ? "front"
+                : value.toLowerCase(Locale.ROOT);
         return switch (face) {
-            case "back", "player", "north", "south", "east", "west", "up", "down" -> face;
+            case "back", "player", "north", "south", "east", "west",
+                    "up", "down" -> face;
             default -> "front";
         };
     }
 
     private static String cleanRotateWith(String value) {
-        String mode = value == null ? "none" : value.toLowerCase(Locale.ROOT);
+        String mode = value == null ? "none"
+                : value.toLowerCase(Locale.ROOT);
         return switch (mode) {
             case "auto", "facing", "horizontal_facing", "axis" -> mode;
             default -> "none";
@@ -214,6 +240,7 @@ public final class ContextConfigSaveService {
     }
 
     private static ConfigCenterService.SaveResult failure(String message) {
-        return new ConfigCenterService.SaveResult(false, message, new JsonObject(), java.util.List.of());
+        return new ConfigCenterService.SaveResult(false, message,
+                new JsonObject(), java.util.List.of());
     }
 }

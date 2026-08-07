@@ -353,7 +353,7 @@ public final class ContextInteractionRegistry {
 
         for (String path : List.of("tesla_terminal_block",
                 "tesla_terminal_off", "core_room_elevator_station",
-                "scp_sign", "facility_direction_sign", "door_sign")) {
+                "sign_support", "core_room_sign", "door_sign")) {
             String action = path.contains("sign") ? "Edit"
                     : path.contains("elevator") ? "Configure Display"
                     : "Configure";
@@ -731,7 +731,8 @@ public final class ContextInteractionRegistry {
         }
 
         public boolean isAvailable(Entity entity) {
-            if (entity instanceof CoreRoomElevatorCarriageEntity carriage) {
+            if (entity instanceof CoreRoomElevatorCarriageEntity carriage
+                    && interactionKey.startsWith("elevator_carriage_")) {
                 ElevatorFoundation.TravelDirection direction =
                         interactionKey.endsWith("up")
                                 ? ElevatorFoundation.TravelDirection.UP

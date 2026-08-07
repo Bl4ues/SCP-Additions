@@ -75,12 +75,14 @@ public final class ContextEntityConfigManager {
         ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
-    public static boolean saveClientRuleIfEntitySession(ServerPlayer player, BlockPos pos, String idText, String action, String name,
-                                                        boolean showName, double range, boolean allowE, boolean allowRightClick, boolean allowOffscreen, String useItem,
-                                                        String clickFace, String rotateWith, double anchorX, double anchorY, double anchorZ) {
-        if (player == null) {
-            return false;
-        }
+    public static boolean saveClientRuleIfEntitySession(
+            ServerPlayer player, BlockPos pos, String idText, String action,
+            String name, boolean showName, double range, boolean allowE,
+            boolean allowRightClick, boolean allowOffscreen, String useItem,
+            String icon, String requiredItem, String variantsJson,
+            String clickFace, String rotateWith, double anchorX,
+            double anchorY, double anchorZ) {
+        if (player == null) return false;
 
         EntitySession session = ENTITY_SESSIONS.get(player.getUUID());
         ResourceLocation id = parseId(idText);
@@ -95,40 +97,18 @@ public final class ContextEntityConfigManager {
             interactions(root).add(rule);
         }
 
-        rule.addProperty("type", "entity");
-        rule.addProperty("id", id.toString());
-        rule.addProperty("range", Math.max(0.25D, range));
-        rule.addProperty("priority", 25);
-        rule.addProperty("useItem", cleanUseItem(useItem));
-
-        JsonObject text = object(rule, "text");
-        text.addProperty("action", emptyTo(action, "Interact"));
-        text.addProperty("nameMode", name == null || name.isBlank() ? "auto" : "manual");
-        text.addProperty("name", name == null ? "" : name);
-        text.addProperty("showAction", true);
-        text.addProperty("showName", showName);
-
-        JsonObject input = object(rule, "input");
-        input.addProperty("allowE", allowE);
-        input.addProperty("allowRightClick", allowRightClick);
-
-        object(rule, "visual").addProperty("allowOffscreen", allowOffscreen);
-
-        JsonObject click = object(rule, "click");
-        click.addProperty("face", cleanClickFace(clickFace));
-
-        JsonObject anchor = object(rule, "anchor");
-        JsonArray position = new JsonArray();
-        position.add(round(anchorX));
-        position.add(round(anchorY));
-        position.add(round(anchorZ));
-        anchor.add("position", position);
-        anchor.addProperty("rotateWith", cleanRotateWith(rotateWith));
+        ContextConfigSaveService.writeRule(rule, "entity", id, action,
+                name, showName, range, allowE, allowRightClick,
+                allowOffscreen, useItem, icon, requiredItem, variantsJson,
+                clickFace, rotateWith, anchorX, anchorY, anchorZ, 25);
 
         saveRoot(root);
         ContextInteractionRegistry.reloadFromDisk();
-        player.sendSystemMessage(Component.literal("[SCP Inventory] Saved context interaction for entity ").withStyle(ChatFormatting.GREEN)
-                .append(Component.literal(id.toString()).withStyle(ChatFormatting.AQUA)));
+        player.sendSystemMessage(Component.literal(
+                        "[SCP Inventory] Saved context interaction for entity ")
+                .withStyle(ChatFormatting.GREEN)
+                .append(Component.literal(id.toString())
+                        .withStyle(ChatFormatting.AQUA)));
         return true;
     }
 
@@ -196,34 +176,48 @@ public final class ContextEntityConfigManager {
         return best;
     }
 
-    private static ContextConfigOpenPacket packetFromEntityRule(BlockPos pos, ResourceLocation id, String entityName, JsonObject rule, boolean existing) {
+    private static ContextConfigOpenPacket packetFromEntityRule(
+            BlockPos pos, ResourceLocation id, String entityName,
+            JsonObject rule, boolean existing) {
         JsonObject text = object(rule, "text");
         JsonObject input = object(rule, "input");
         JsonObject click = object(rule, "click");
         JsonObject anchor = object(rule, "anchor");
         JsonObject visual = object(rule, "visual");
         JsonArray position = positionArray(anchor);
-        String name = string(text, "name", string(rule, "name", entityName));
-        boolean showName = bool(text, "showName", bool(rule, "showName", !name.isBlank()));
+        String name = string(text, "name",
+                string(rule, "name", entityName));
+        boolean showName = bool(text, "showName",
+                bool(rule, "showName", !name.isBlank()));
+        String useItem = cleanUseItem(string(rule, "useItem", "hand"));
+        JsonArray variants = NativeContextVariants.mergedVariants(
+                "entity", id, rule);
         return new ContextConfigOpenPacket(
                 pos,
                 id.toString(),
                 existing,
-                string(text, "action", string(rule, "action", "Interact")),
+                string(text, "action",
+                        string(rule, "action", "Interact")),
                 name,
                 showName,
                 number(rule, "range", 2.25D),
                 bool(input, "allowE", bool(rule, "allowE", true)),
-                bool(input, "allowRightClick", bool(rule, "allowRightClick", true)),
-                bool(visual, "allowOffscreen", bool(rule, "allowOffscreen", false)),
+                bool(input, "allowRightClick",
+                        bool(rule, "allowRightClick", true)),
+                bool(visual, "allowOffscreen",
+                        bool(rule, "allowOffscreen", false)),
                 true,
-                cleanUseItem(string(rule, "useItem", "hand")),
-                cleanClickFace(string(click, "face", string(rule, "clickFace", "front"))),
+                useItem,
+                string(visual, "icon", string(rule, "icon", useItem)),
+                string(input, "requiredItem",
+                        string(rule, "requiredItem", "")),
+                GSON.toJson(variants),
+                cleanClickFace(string(click, "face",
+                        string(rule, "clickFace", "front"))),
                 cleanRotateWith(string(anchor, "rotateWith", "none")),
                 position.get(0).getAsDouble(),
                 position.get(1).getAsDouble(),
-                position.get(2).getAsDouble()
-        );
+                position.get(2).getAsDouble());
     }
 
     private static JsonObject createDefaultEntityRule(ResourceLocation id, String entityName) {

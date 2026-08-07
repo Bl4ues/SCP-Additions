@@ -1337,6 +1337,17 @@ public final class ConfigCenterClient {
                         }
                     }
                 }
+                try {
+                    String type = string(rule, "type", "");
+                    ResourceLocation target = new ResourceLocation(
+                            string(rule, "id", "minecraft:air"));
+                    if (com.bl4ues.scpinventory.context.NativeContextVariants
+                            .isNativeTarget(type, target)) {
+                        variantCount = Math.max(1, variantCount);
+                        itemVariantCount = Math.max(1, itemVariantCount);
+                    }
+                } catch (Exception ignored) {
+                }
                 String badge = variantCount == 0 ? ""
                         : "  [" + variantCount + " variant"
                         + (variantCount == 1 ? "" : "s")

@@ -30,9 +30,11 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /** Runtime registry for configurable and built-in contextual interactions. */
 public final class ContextInteractionRegistry {
@@ -111,32 +113,92 @@ public final class ContextInteractionRegistry {
         maxBlockRange = 0.0D;
         maxEntityRange = 0.0D;
 
+        int configuredCount = 0;
+        int integratedCount = 0;
+        Set<InteractionIdentity> configuredIdentities = new HashSet<>();
         try {
-            String snapshot = serverSnapshotJson;
-            JsonObject root;
-            if (snapshot != null && !snapshot.isBlank()) {
-                root = JsonParser.parseString(snapshot).getAsJsonObject();
-            } else {
-                File file = ContextConfigManager.ensureConfigFile();
-                root = JsonParser.parseReader(new FileReader(file))
-                        .getAsJsonObject();
-            }
-            JsonArray interactions = root.has("interactions")
-                    && root.get("interactions").isJsonArray()
-                    ? root.getAsJsonArray("interactions") : new JsonArray();
+            JsonObject configuredRoot = loadConfiguredRoot();
             int sequence = 0;
-            for (JsonElement element : interactions) {
+
+            JsonArray configuredInteractions = getInteractions(configuredRoot);
+            for (JsonElement element : configuredInteractions) {
                 if (!element.isJsonObject()) continue;
-                Rule rule = parseRule(element.getAsJsonObject(), sequence++);
-                if (rule != null) addRule(rule);
+                JsonObject object = element.getAsJsonObject();
+                InteractionIdentity identity = interactionIdentity(object);
+                if (identity != null) configuredIdentities.add(identity);
+                if (!getBoolean(object, "enabled", true)) continue;
+
+                Rule rule = parseRule(object, sequence++);
+                if (rule != null) {
+                    addRule(rule);
+                    configuredCount++;
+                }
+            }
+
+            JsonObject integratedRoot = JsonParser.parseString(
+                    DefaultContextInteractions.loadBundledConfig())
+                    .getAsJsonObject();
+            Set<InteractionIdentity> integratedIdentities = new HashSet<>();
+            for (JsonElement element : getInteractions(integratedRoot)) {
+                if (!element.isJsonObject()) continue;
+                JsonObject object = element.getAsJsonObject();
+                InteractionIdentity identity = interactionIdentity(object);
+                if (identity == null
+                        || configuredIdentities.contains(identity)
+                        || !integratedIdentities.add(identity)
+                        || !getBoolean(object, "enabled", true)) {
+                    continue;
+                }
+
+                Rule rule = parseRule(object, sequence++);
+                if (rule != null) {
+                    addRule(rule);
+                    integratedCount++;
+                }
             }
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error(
                     "Failed to load contextual interactions", exception);
         }
 
-        registerElevatorRules();
+        integratedCount += registerElevatorRules(configuredIdentities);
         loaded = true;
+        ScpAdditionsMod.LOGGER.info(
+                "Loaded {} configured and {} integrated contextual interactions",
+                configuredCount, integratedCount);
+    }
+
+    private static JsonObject loadConfiguredRoot() throws Exception {
+        String snapshot = serverSnapshotJson;
+        if (snapshot != null && !snapshot.isBlank()) {
+            return JsonParser.parseString(snapshot).getAsJsonObject();
+        }
+        File file = ContextConfigManager.ensureConfigFile();
+        try (FileReader reader = new FileReader(file)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
+        }
+    }
+
+    private static JsonArray getInteractions(JsonObject root) {
+        return root != null && root.has("interactions")
+                && root.get("interactions").isJsonArray()
+                ? root.getAsJsonArray("interactions") : new JsonArray();
+    }
+
+    private static InteractionIdentity interactionIdentity(JsonObject object) {
+        String type = getString(object, "type", "")
+                .trim().toLowerCase(Locale.ROOT);
+        String idText = getString(object, "id", "").trim();
+        if (type.isEmpty() || idText.isEmpty()) return null;
+
+        try {
+            ResourceLocation id = new ResourceLocation(idText);
+            String interactionKey = getString(object, "interactionId",
+                    getString(object, "interactionKey", "")).trim();
+            return new InteractionIdentity(type, id.toString(), interactionKey);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static void addRule(Rule rule) {
@@ -152,50 +214,73 @@ public final class ContextInteractionRegistry {
         }
     }
 
-    private static void registerElevatorRules() {
+    private static int registerElevatorRules(
+            Set<InteractionIdentity> configuredIdentities) {
+        int registered = 0;
         try {
             ResourceLocation stationId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_station");
             Block station = CoreRoomElevatorModule.STATION.get();
             double x = 0.5D;
             double z = 0.5D;
-            addRule(new Rule(Kind.BLOCK, stationId, station, null,
-                    "elevator_station_up", 2.8D, 120, "",
-                    "", false, false, false,
-                    x, 21.25D / 16.0D, z,
-                    0.0D, 0.0D, 0.0D,
-                    RotationMode.HORIZONTAL_FACING, true, true,
-                    "front", "hand", "hand", 0.38D, false));
-            addRule(new Rule(Kind.BLOCK, stationId, station, null,
-                    "elevator_station_down", 2.8D, 120, "",
-                    "", false, false, false,
-                    x, 19.25D / 16.0D, z,
-                    0.0D, 0.0D, 0.0D,
-                    RotationMode.HORIZONTAL_FACING, true, true,
-                    "front", "hand", "hand", 0.38D, false));
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", stationId.toString(),
+                            "elevator_station_up"),
+                    new Rule(Kind.BLOCK, stationId, station, null,
+                            "elevator_station_up", 2.8D, 120, "",
+                            "", false, false, false,
+                            x, 21.25D / 16.0D, z,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "front", "hand", "hand", 0.38D, false));
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", stationId.toString(),
+                            "elevator_station_down"),
+                    new Rule(Kind.BLOCK, stationId, station, null,
+                            "elevator_station_down", 2.8D, 120, "",
+                            "", false, false, false,
+                            x, 19.25D / 16.0D, z,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "front", "hand", "hand", 0.38D, false));
 
             ResourceLocation carriageId = new ResourceLocation(
                     ScpAdditionsMod.MODID, "core_room_elevator_carriage");
             EntityType<?> carriage = CoreRoomElevatorModule.CARRIAGE.get();
-            addRule(new Rule(Kind.ENTITY, carriageId, null, carriage,
-                    "elevator_carriage_up", 2.8D, 125, "",
-                    "", false, false, false,
-                    0.5D, 0.5D, 0.5D,
-                    0.0D, 0.0D, 0.0D,
-                    RotationMode.NONE, true, true,
-                    "front", "hand", "hand", 0.38D, false));
-            addRule(new Rule(Kind.ENTITY, carriageId, null, carriage,
-                    "elevator_carriage_down", 2.8D, 125, "",
-                    "", false, false, false,
-                    0.5D, 0.5D, 0.5D,
-                    0.0D, 0.0D, 0.0D,
-                    RotationMode.NONE, true, true,
-                    "front", "hand", "hand", 0.38D, false));
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("entity", carriageId.toString(),
+                            "elevator_carriage_up"),
+                    new Rule(Kind.ENTITY, carriageId, null, carriage,
+                            "elevator_carriage_up", 2.8D, 125, "",
+                            "", false, false, false,
+                            0.5D, 0.5D, 0.5D,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.NONE, true, true,
+                            "front", "hand", "hand", 0.38D, false));
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("entity", carriageId.toString(),
+                            "elevator_carriage_down"),
+                    new Rule(Kind.ENTITY, carriageId, null, carriage,
+                            "elevator_carriage_down", 2.8D, 125, "",
+                            "", false, false, false,
+                            0.5D, 0.5D, 0.5D,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.NONE, true, true,
+                            "front", "hand", "hand", 0.38D, false));
         } catch (Exception exception) {
             ScpAdditionsMod.LOGGER.error(
                     "Failed to register Core Room elevator interactions",
                     exception);
         }
+        return registered;
+    }
+
+    private static int addIntegratedRule(
+            Set<InteractionIdentity> configuredIdentities,
+            InteractionIdentity identity, Rule rule) {
+        if (configuredIdentities.contains(identity)) return 0;
+        addRule(rule);
+        return 1;
     }
 
     private static Rule parseRule(JsonObject object, int sequence) {
@@ -347,6 +432,10 @@ public final class ContextInteractionRegistry {
         return value;
     }
 
+    private record InteractionIdentity(String type, String id,
+            String interactionKey) {
+    }
+
     public enum Kind { BLOCK, ENTITY }
 
     public enum RotationMode {
@@ -446,9 +535,9 @@ public final class ContextInteractionRegistry {
         public double promptScale() { return promptScale; }
         public boolean allowOffscreen() { return allowOffscreen; }
         public boolean requiresPreciseAim() {
-        return interactionKey.startsWith("elevator_station_")
-                || interactionKey.startsWith("elevator_carriage_");
-    }
+            return interactionKey.startsWith("elevator_station_")
+                    || interactionKey.startsWith("elevator_carriage_");
+        }
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state) {
@@ -486,11 +575,11 @@ public final class ContextInteractionRegistry {
         }
 
         public Vec3 resolveBlockAnchor(BlockPos pos, BlockState state) {
-    if (block == CoreRoomElevatorModule.STATION.get()) {
-        return CoreRoomElevatorGeometry.stationButtonWorld(pos,
-                state.getValue(CoreRoomElevatorModule.FACING),
-                interactionKey.endsWith("up"));
-    }
+            if (block == CoreRoomElevatorModule.STATION.get()) {
+                return CoreRoomElevatorGeometry.stationButtonWorld(pos,
+                        state.getValue(CoreRoomElevatorModule.FACING),
+                        interactionKey.endsWith("up"));
+            }
             Vec3 centered = new Vec3(localX - 0.5D,
                     localY - 0.5D, localZ - 0.5D);
             Vec3 rotated = rotate(centered, state);

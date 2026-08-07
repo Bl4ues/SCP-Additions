@@ -1,4 +1,4 @@
-name: Apply disabled-entry backend support
+name: Document disabled configuration entries
 
 on:
   push:
@@ -10,115 +10,33 @@ permissions:
 
 jobs:
   patch:
-    if: contains(github.event.head_commit.message, 'Run disable entry backend patch')
+    if: contains(github.event.head_commit.message, 'Run disable entry changelog patch')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Patch backend list-entry state handling
+      - name: Update changelog
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
-          def replace_once(text, old, new, label):
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected one match, found {count}')
-              return text.replace(old, new, 1)
-
-          # SCP Inventory JSON list parsers: object entries may carry enabled=false.
-          path = Path('src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java')
+          path = Path('CHANGELOG.md')
           text = path.read_text(encoding='utf-8')
-          text = replace_once(text,
-              '''            JsonObject obj = entry.getAsJsonObject();\n            String id = firstString(obj, "id", "item");\n            String type = firstString(obj, "type", "slot");''',
-              '''            JsonObject obj = entry.getAsJsonObject();\n            if (!entryEnabled(obj)) {\n                continue;\n            }\n            String id = firstString(obj, "id", "item");\n            String type = firstString(obj, "type", "slot");''',
-              'item rules enabled')
-          text = replace_once(text,
-              '''            JsonObject obj = entry.getAsJsonObject();\n            String id = firstString(obj, "id", "item");\n            if (id.isBlank()) {\n                continue;\n            }\n            if (obj.has("effects")''',
-              '''            JsonObject obj = entry.getAsJsonObject();\n            if (!entryEnabled(obj)) {\n                continue;\n            }\n            String id = firstString(obj, "id", "item");\n            if (id.isBlank()) {\n                continue;\n            }\n            if (obj.has("effects")''',
-              'item effects enabled')
-          text = replace_once(text,
-              '''            JsonObject obj = entry.getAsJsonObject();\n            if (isDebugCodexDocument(obj)) {''',
-              '''            JsonObject obj = entry.getAsJsonObject();\n            if (!entryEnabled(obj)) {\n                continue;\n            }\n            if (isDebugCodexDocument(obj)) {''',
-              'codex enabled')
-          text = replace_once(text,
-              '''            } else if (entry.isJsonObject()) {\n                String id = firstString(entry.getAsJsonObject(), "id", "entity", "effect", "tag");\n                if (!id.isBlank()) {\n                    values.add(id);\n                }\n            }''',
-              '''            } else if (entry.isJsonObject()) {\n                JsonObject object = entry.getAsJsonObject();\n                if (!entryEnabled(object)) {\n                    continue;\n                }\n                String id = firstString(object, "id", "entity", "effect", "tag");\n                if (!id.isBlank()) {\n                    values.add(id);\n                }\n            }''',
-              'simple list enabled')
-          text = replace_once(text,
-              '''    private static void writeDefaultConfig() throws Exception {''',
-              '''    private static boolean entryEnabled(JsonObject object) {\n        if (object == null || !object.has("enabled")) {\n            return true;\n        }\n        try {\n            return object.get("enabled").getAsBoolean();\n        } catch (Exception ignored) {\n            return true;\n        }\n    }\n\n    private static void writeDefaultConfig() throws Exception {''',
-              'entryEnabled helper')
-          path.write_text(text, encoding='utf-8')
-
-          # Context runtime: a disabled unkeyed target is a tombstone for every
-          # integrated interaction on that target, including native variants.
-          path = Path('src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java')
-          text = path.read_text(encoding='utf-8')
-          text = replace_once(text,
-              '''            for (JsonElement element : configuredInteractions) {\n                if (!element.isJsonObject()) continue;\n                JsonObject source = element.getAsJsonObject();\n                for (JsonObject object : expandRuleVariants(source)) {''',
-              '''            for (JsonElement element : configuredInteractions) {\n                if (!element.isJsonObject()) continue;\n                JsonObject source = element.getAsJsonObject();\n                InteractionIdentity sourceIdentity = interactionIdentity(source);\n                if (sourceIdentity != null\n                        && sourceIdentity.interactionKey().isBlank()\n                        && !getBoolean(source, "enabled", true)) {\n                    configuredIdentities.add(new InteractionIdentity(\n                            sourceIdentity.type(), sourceIdentity.id(), "*"));\n                }\n                for (JsonObject object : expandRuleVariants(source)) {''',
-              'context wildcard tombstone')
-          text = text.replace('configuredIdentities.contains(identity)',
-                              'isConfiguredIdentity(configuredIdentities, identity)')
-          text = replace_once(text,
-              '''    private static int addIntegratedRule(\n            Set<InteractionIdentity> configuredIdentities,\n            InteractionIdentity identity, Rule rule) {\n        if (isConfiguredIdentity(configuredIdentities, identity)) return 0;''',
-              '''    private static boolean isConfiguredIdentity(\n            Set<InteractionIdentity> configuredIdentities,\n            InteractionIdentity identity) {\n        if (identity == null) return false;\n        return configuredIdentities.contains(identity)\n                || configuredIdentities.contains(new InteractionIdentity(\n                        identity.type(), identity.id(), "*"));\n    }\n\n    private static int addIntegratedRule(\n            Set<InteractionIdentity> configuredIdentities,\n            InteractionIdentity identity, Rule rule) {\n        if (isConfiguredIdentity(configuredIdentities, identity)) return 0;''',
-              'context suppression helper')
-          path.write_text(text, encoding='utf-8')
-
-          # Configuration Center validation accepts enabled flags in every
-          # compatible multi-entry list and validates Roomba floor entries.
-          path = Path('src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java')
-          text = path.read_text(encoding='utf-8')
-          text = replace_once(text,
-              '''        for (String key : List.of("item_rules", "item_effects", "hidden_status_effects", "codex_documents", "scp_173_targets")) {''',
-              '''        for (String key : List.of("item_rules", "item_effects", "hidden_status_effects",\n                "codex_documents", "scp_173_targets", "roomba_spawn_blocks")) {''',
-              'inventory list keys')
-          text = replace_once(text,
-              '''        validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);\n        validateSimpleIds(root, "scp_173_targets", errors, warnings, true);''',
-              '''        validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);\n        validateSimpleIds(root, "scp_173_targets", errors, warnings, true);\n        validateSimpleIds(root, "roomba_spawn_blocks", errors, warnings, false);''',
-              'roomba validation')
-          text = replace_once(text,
-              '''            JsonObject object = element.getAsJsonObject();\n            String type = string(object, "type");''',
-              '''            JsonObject object = element.getAsJsonObject();\n            validateEnabled(object, "interactions[" + index + "]", errors);\n            String type = string(object, "type");''',
-              'context enabled validation')
-          text = replace_once(text,
-              '''            JsonObject drink = element.getAsJsonObject();\n            validateId(string(drink, "id"), label + ".id", errors, warnings, false);''',
-              '''            JsonObject drink = element.getAsJsonObject();\n            validateEnabled(drink, label, errors);\n            validateId(string(drink, "id"), label + ".id", errors, warnings, false);''',
-              'drink enabled validation')
-          text = replace_once(text,
-              '''            JsonObject recipe = element.getAsJsonObject();\n            validateId(string(recipe, "id"), label + ".id", errors, warnings, false);''',
-              '''            JsonObject recipe = element.getAsJsonObject();\n            validateEnabled(recipe, label, errors);\n            validateId(string(recipe, "id"), label + ".id", errors, warnings, false);''',
-              'recipe enabled validation')
-          text = replace_once(text,
-              '''        for (JsonElement element : root.getAsJsonArray(arrayKey)) {\n            String id = element.isJsonObject() ? string(element.getAsJsonObject(), idKey) : element.isJsonPrimitive() ? element.getAsString().split("[|;]", 2)[0] : "";\n            validateId(id, arrayKey + "[" + index + "]." + idKey, errors, warnings, allowMissing);''',
-              '''        for (JsonElement element : root.getAsJsonArray(arrayKey)) {\n            if (element.isJsonObject()) {\n                validateEnabled(element.getAsJsonObject(),\n                        arrayKey + "[" + index + "]", errors);\n            }\n            String id = element.isJsonObject() ? string(element.getAsJsonObject(), idKey) : element.isJsonPrimitive() ? element.getAsString().split("[|;]", 2)[0] : "";\n            validateId(id, arrayKey + "[" + index + "]." + idKey, errors, warnings, allowMissing);''',
-              'object list enabled validation')
-          text = replace_once(text,
-              '''        for (JsonElement element : root.getAsJsonArray(arrayKey)) {\n            String id = element.isJsonPrimitive() ? element.getAsString() : element.isJsonObject() ? string(element.getAsJsonObject(), "id") : "";\n            if (allowTag && id.startsWith("#")) id = id.substring(1);''',
-              '''        for (JsonElement element : root.getAsJsonArray(arrayKey)) {\n            if (element.isJsonObject()) {\n                validateEnabled(element.getAsJsonObject(),\n                        arrayKey + "[" + index + "]", errors);\n            }\n            String id = element.isJsonPrimitive() ? element.getAsString() : element.isJsonObject() ? string(element.getAsJsonObject(), "id") : "";\n            if (allowTag && id.startsWith("#")) id = id.substring(1);''',
-              'simple list enabled validation')
-          text = replace_once(text,
-              '''    private static void validateId(String raw, String label, List<String> errors, List<String> warnings, boolean allowMissing) {''',
-              '''    private static void validateEnabled(JsonObject object, String label,\n            List<String> errors) {\n        if (object == null || !object.has("enabled")) return;\n        try {\n            object.get("enabled").getAsBoolean();\n        } catch (Exception exception) {\n            errors.add(label + ".enabled must be a boolean");\n        }\n    }\n\n    private static void validateId(String raw, String label, List<String> errors, List<String> warnings, boolean allowMissing) {''',
-              'validateEnabled helper')
-          text = replace_once(text,
-              '''        return JsonParser.parseString("{\\"item_rules\\":[],\\"item_effects\\":[],\\"hidden_status_effects\\":[],\\"codex_documents\\":[],\\"scp_173_targets\\":[]}").getAsJsonObject();''',
-              '''        return JsonParser.parseString("{\\"item_rules\\":[],\\"item_effects\\":[],\\"hidden_status_effects\\":[],\\"codex_documents\\":[],\\"scp_173_targets\\":[],\\"roomba_spawn_blocks\\":[]}").getAsJsonObject();''',
-              'default inventory roomba')
-          path.write_text(text, encoding='utf-8')
+          marker = '## Interface and presentation\n\n'
+          bullet = ('- Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including integrated and custom Roomba spawn floors, SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;\n')
+          if bullet not in text:
+              if marker not in text:
+                  raise SystemExit('Interface and presentation changelog section not found')
+              text = text.replace(marker, marker + bullet, 1)
+              path.write_text(text, encoding='utf-8')
           PY
           git diff --check
-      - name: Commit backend support
+      - name: Commit changelog
         shell: bash
         run: |
           git config user.name "Deyvid Campos"
           git config user.email "deyvid04campos@gmail.com"
-          git add src/main/java/com/bl4ues/scpinventory/config/ScpInventoryConfig.java \
-                  src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java \
-                  src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterService.java
-          git commit -m "Support disabled configuration list entries"
+          git add CHANGELOG.md
+          git commit -m "Document reversible configuration entry toggles"
           git push origin HEAD

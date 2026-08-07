@@ -1,0 +1,65 @@
+name: Polish contextual item variants
+
+on:
+  push:
+    branches:
+      - 'feature/context-item-variants'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, '[context-polish]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply final runtime polish
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              file = Path(path)
+              text = file.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Missing patch marker in {path}')
+              file.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          registry = 'src/main/java/com/bl4ues/scpinventory/context/ContextInteractionRegistry.java'
+          replace(registry,
+              'import net.mcreator.scpadditions.ScpAdditionsMod;\nimport net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;',
+              'import net.mcreator.scpadditions.ScpAdditionsMod;\nimport net.mcreator.scpadditions.facility.FacilityLargePropStructure;\nimport net.mcreator.scpadditions.facility.FacilityPropPartBlock;\nimport net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;')
+          replace(registry,
+              '"sign_support", "core_room_sign", "door_sign")) {',
+              '"sign_support", "core_room_sign", "door_sign",\n                "facility_prop_part")) {')
+          replace(registry,
+              '                return CoreRoomElevatorManager.hasStationInDirection(\n                        level, pos, direction);\n            }\n            return true;',
+              '                return CoreRoomElevatorManager.hasStationInDirection(\n                        level, pos, direction);\n            }\n            if (block instanceof FacilityPropPartBlock && state != null\n                    && state.hasProperty(FacilityPropPartBlock.PART)) {\n                return state.getValue(FacilityPropPartBlock.PART).kind()\n                        == FacilityLargePropStructure.Kind.SIGN_SUPPORT;\n            }\n            return true;')
+
+          native = 'src/main/java/com/bl4ues/scpinventory/context/NativeContextVariants.java'
+          replace(native,
+              '            "core_room_sign", "Edit",\n            "door_sign", "Edit");',
+              '            "core_room_sign", "Edit",\n            "door_sign", "Edit",\n            "facility_prop_part", "Edit");')
+
+          packet = 'src/main/java/com/bl4ues/scpinventory/network/ContextInteractPacket.java'
+          replace(packet,
+              '        if (key != null && !key.isBlank()) {\n            for (ContextInteractionRegistry.Rule rule : rules) {\n                if (key.equals(rule.interactionKey())) return rule;\n            }\n        }\n        return rules.get(0);',
+              '        if (key != null && !key.isBlank()) {\n            for (ContextInteractionRegistry.Rule rule : rules) {\n                if (key.equals(rule.interactionKey())) return rule;\n            }\n            return null;\n        }\n        return rules.get(0);')
+          replace(packet,
+              '        if (entity instanceof CoreRoomElevatorCarriageEntity carriage) {\n            if (carriage.handleContextInteraction(player,\n                    rule.interactionKey())) {',
+              '        if (entity instanceof CoreRoomElevatorCarriageEntity carriage\n                && rule.interactionKey().startsWith("elevator_carriage_")) {\n            if (carriage.handleContextInteraction(player,\n                    rule.interactionKey())) {')
+          PY
+      - name: Commit polish
+        shell: bash
+        run: |
+          rm -f .github/workflows/polish-context-item-variants.yml
+          rm -f .context-variant-build-trigger
+          git config user.name "Deyvid Campos"
+          git config user.email "deyvid04campos@gmail.com"
+          git add -A
+          git commit -m "Polish item-specific contextual interactions"
+          git push origin HEAD:feature/context-item-variants

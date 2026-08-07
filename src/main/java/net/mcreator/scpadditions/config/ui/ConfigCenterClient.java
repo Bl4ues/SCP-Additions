@@ -9,8 +9,10 @@ import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -1241,150 +1243,642 @@ public final class ConfigCenterClient {
     }
 
     private static final class ContextListScreen extends ConfigScreen {
+        private static final int ROW_HEIGHT = 36;
+
         private final JsonObject root;
         private final EditBox searchBox;
-        private List<JsonObject> filtered = List.of();
+        private List<ContextRow> filtered = List.of();
         private int scroll;
 
         private ContextListScreen(Screen parent) {
-            super(parent, "Contextual Interactions");
-            this.root = file(ConfigCenterService.CONTEXT, new JsonObject());
-            this.searchBox = new EditBox(Minecraft.getInstance().font, 0, 0, 100, 20, Component.literal("Search"));
+  super(parent, "Contextual Interactions");
+  this.root = file(ConfigCenterService.CONTEXT, new JsonObject());
+  this.searchBox = new EditBox(Minecraft.getInstance().font, 0, 0,
+          100, 20, Component.literal("Search"));
         }
 
         @Override
         protected void init() {
-            int w = Math.min(700, width - 16);
-            int x = left(width, w) + 12;
-            int y = Math.max(8, (height - Math.min(410, height - 16)) / 2) + 38;
-            searchBox.setX(x); searchBox.setY(y); searchBox.setWidth(w - 220);
-            searchBox.setHint(Component.literal("Search block/entity id or prompt text"));
-            searchBox.setMaxLength(256);
-            searchBox.setResponder(value -> { scroll = 0; rebuildRows(); });
-            addRenderableWidget(searchBox);
-            addRenderableWidget(Button.builder(Component.literal("+ Block"), b -> addRule("block"))
-                    .bounds(x + w - 208, y, 94, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("+ Entity"), b -> addRule("entity"))
-                    .bounds(x + w - 108, y, 96, 20).build());
-            rebuildRows();
+  int w = Math.min(760, width - 16);
+  int x = left(width, w) + 12;
+  int y = Math.max(8,
+          (height - Math.min(450, height - 16)) / 2) + 38;
+  searchBox.setX(x);
+  searchBox.setY(y);
+  searchBox.setWidth(w - 220);
+  searchBox.setHint(Component.literal(
+          "Search target, source, action or required item"));
+  searchBox.setMaxLength(256);
+  searchBox.setResponder(value -> {
+      scroll = 0;
+      rebuildRows();
+  });
+  addRenderableWidget(searchBox);
+  addRenderableWidget(Button.builder(Component.literal("+ Block"),
+          b -> addRule("block"))
+          .bounds(x + w - 208, y, 94, 20).build());
+  addRenderableWidget(Button.builder(Component.literal("+ Entity"),
+          b -> addRule("entity"))
+          .bounds(x + w - 108, y, 96, 20).build());
+  rebuildRows();
         }
 
         private void addRule(String type) {
-            JsonObject rule = new JsonObject();
-            rule.addProperty("type", type);
-            rule.addProperty("id", type.equals("block") ? "minecraft:stone" : "minecraft:pig");
-            rule.addProperty("range", 3.0D);
-            rule.addProperty("priority", 30);
-            rule.addProperty("useItem", "hand");
-            JsonObject text = new JsonObject();
-            text.addProperty("action", "Use");
-            text.addProperty("nameMode", "auto");
-            text.addProperty("name", "");
-            text.addProperty("showAction", true);
-            text.addProperty("showName", true);
-            rule.add("text", text);
-            JsonObject input = new JsonObject();
-            input.addProperty("allowE", true);
-            input.addProperty("allowRightClick", true);
-            rule.add("input", input);
-            JsonObject click = new JsonObject(); click.addProperty("face", "front"); rule.add("click", click);
-            JsonObject anchor = new JsonObject();
-            JsonArray position = new JsonArray(); position.add(0.5); position.add(0.5); position.add(0.5);
-            anchor.add("position", position); anchor.addProperty("rotateWith", "none"); rule.add("anchor", anchor);
-            array(root, "interactions").add(rule);
-            Minecraft.getInstance().setScreen(new ContextDetailScreen(this, rule));
+  JsonObject rule = new JsonObject();
+  rule.addProperty("type", type);
+  rule.addProperty("id", type.equals("block")
+          ? "minecraft:stone" : "minecraft:pig");
+  rule.addProperty("range", 3.0D);
+  rule.addProperty("priority", 30);
+  rule.addProperty("useItem", "hand");
+  JsonObject text = new JsonObject();
+  text.addProperty("action", "Use");
+  text.addProperty("nameMode", "auto");
+  text.addProperty("name", "");
+  text.addProperty("showAction", true);
+  text.addProperty("showName", true);
+  rule.add("text", text);
+  JsonObject input = new JsonObject();
+  input.addProperty("allowE", true);
+  input.addProperty("allowRightClick", true);
+  rule.add("input", input);
+  JsonObject click = new JsonObject();
+  click.addProperty("face", "front");
+  rule.add("click", click);
+  JsonObject anchor = new JsonObject();
+  JsonArray position = new JsonArray();
+  position.add(0.5);
+  position.add(0.5);
+  position.add(0.5);
+  anchor.add("position", position);
+  anchor.addProperty("rotateWith", "none");
+  rule.add("anchor", anchor);
+  array(root, "interactions").add(rule);
+  Minecraft.getInstance().setScreen(
+          new ContextDetailScreen(this, rule));
         }
 
         private void rebuildRows() {
-            String needle = searchBox.getValue().trim().toLowerCase(Locale.ROOT);
-            List<JsonObject> rows = new ArrayList<>();
-            for (JsonElement element : array(root, "interactions")) {
-                if (!element.isJsonObject()) continue;
-                JsonObject rule = element.getAsJsonObject();
-                JsonObject text = object(rule, "text");
-                String haystack = string(rule, "type", "") + " " + string(rule, "id", "") + " " + string(text, "action", "") + " " + string(text, "name", "");
-                if (needle.isEmpty() || haystack.toLowerCase(Locale.ROOT).contains(needle)) rows.add(rule);
-            }
-            rows.sort(Comparator.comparing(rule -> string(rule, "id", ""), String.CASE_INSENSITIVE_ORDER));
-            filtered = rows;
-            refreshRows();
+  String needle = searchBox.getValue().trim()
+          .toLowerCase(Locale.ROOT);
+  List<ContextRow> rows = new ArrayList<>();
+  Set<String> configuredIdentities = new HashSet<>();
+
+  for (JsonElement element : array(root, "interactions")) {
+      if (!element.isJsonObject()) continue;
+      JsonObject rule = element.getAsJsonObject();
+      configuredIdentities.add(
+              com.bl4ues.scpinventory.context.ContextInteractionCatalog
+                      .identity(rule));
+      ContextRow row = new ContextRow(rule, true,
+              com.bl4ues.scpinventory.context.ContextInteractionCatalog
+                      .inspect(rule, true));
+      if (matches(row, needle)) rows.add(row);
+  }
+
+  for (JsonObject integrated
+          : com.bl4ues.scpinventory.context.ContextInteractionCatalog
+                  .integratedBaseRules()) {
+      String identity =
+              com.bl4ues.scpinventory.context.ContextInteractionCatalog
+                      .identity(integrated);
+      if (configuredIdentities.contains(identity)) continue;
+      ContextRow row = new ContextRow(integrated, false,
+              com.bl4ues.scpinventory.context.ContextInteractionCatalog
+                      .inspect(integrated, false));
+      if (matches(row, needle)) rows.add(row);
+  }
+
+  rows.sort(Comparator
+          .comparing((ContextRow row) -> contextTargetName(row.rule()),
+                  String.CASE_INSENSITIVE_ORDER)
+          .thenComparing(row -> string(row.rule(), "id", ""),
+                  String.CASE_INSENSITIVE_ORDER));
+  filtered = rows;
+  refreshRows();
+        }
+
+        private boolean matches(ContextRow row, String needle) {
+  if (needle.isBlank()) return true;
+  StringBuilder haystack = new StringBuilder();
+  JsonObject rule = row.rule();
+  haystack.append(string(rule, "type", "")).append(' ')
+          .append(string(rule, "id", "")).append(' ')
+          .append(contextTargetName(rule)).append(' ')
+          .append(string(object(rule, "text"), "action", "Use"))
+          .append(' ').append(contextSourceLabel(row.view().source()));
+  for (var variant : row.view().variants()) {
+      haystack.append(' ').append(variant.interactionId())
+              .append(' ').append(variant.action())
+              .append(' ').append(variant.requiredItem())
+              .append(' ').append(contextItemName(
+                      variant.requiredItem()));
+  }
+  return haystack.toString().toLowerCase(Locale.ROOT)
+          .contains(needle);
         }
 
         private void refreshRows() {
-            clearWidgets();
-            int w = Math.min(700, width - 16);
-            int x = left(width, w) + 12;
-            int top = Math.max(8, (height - Math.min(410, height - 16)) / 2) + 38;
-            searchBox.setX(x); searchBox.setY(top); searchBox.setWidth(w - 220); addRenderableWidget(searchBox);
-            addRenderableWidget(Button.builder(Component.literal("+ Block"), b -> addRule("block")).bounds(x + w - 208, top, 94, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("+ Entity"), b -> addRule("entity")).bounds(x + w - 108, top, 96, 20).build());
-            int listY = top + 30;
-            int visible = Math.max(5, Math.min(11, (height - 132) / 24));
-            scroll = Math.min(scroll, Math.max(0, filtered.size() - visible));
-            for (int i = scroll; i < Math.min(filtered.size(), scroll + visible); i++) {
-                JsonObject rule = filtered.get(i);
-                int row = i - scroll;
-                int variantCount = rule.has("variants") && rule.get("variants").isJsonArray()
-                        ? rule.getAsJsonArray("variants").size() : 0;
-                int itemVariantCount = 0;
-                if (variantCount > 0) {
-                    for (JsonElement variantElement : rule.getAsJsonArray("variants")) {
-                        if (!variantElement.isJsonObject()) continue;
-                        JsonObject variantInput = object(
-                                variantElement.getAsJsonObject(), "input");
-                        if (!string(variantInput, "requiredItem", "").isBlank()) {
-                            itemVariantCount++;
-                        }
-                    }
-                }
-                try {
-                    String type = string(rule, "type", "");
-                    ResourceLocation target = new ResourceLocation(
-                            string(rule, "id", "minecraft:air"));
-                    if (com.bl4ues.scpinventory.context.NativeContextVariants
-                            .isNativeTarget(type, target)) {
-                        variantCount = Math.max(1, variantCount);
-                        itemVariantCount = Math.max(1, itemVariantCount);
-                    }
-                } catch (Exception ignored) {
-                }
-                String badge = variantCount == 0 ? ""
-                        : "  [" + variantCount + " variant"
-                        + (variantCount == 1 ? "" : "s")
-                        + (itemVariantCount > 0 ? ", " + itemVariantCount
-                        + " item-specific" : "") + "]";
-                String label = "[" + string(rule, "type", "?") + "] "
-                        + string(rule, "id", "unknown") + " — "
-                        + string(object(rule, "text"), "action", "Use") + badge;
-                addRenderableWidget(Button.builder(Component.literal(compact(label, 73)), b -> Minecraft.getInstance().setScreen(new ContextDetailScreen(this, rule)))
-                        .bounds(x, listY + row * 24, w - 82, 20).build());
-                addRenderableWidget(Button.builder(Component.literal("X"), b -> { removeIdentity(array(root, "interactions"), rule); rebuildRows(); })
-                        .bounds(x + w - 74, listY + row * 24, 62, 20).build());
-            }
-            int bottom = Math.min(height - 28, listY + visible * 24 + 5);
-            addRenderableWidget(Button.builder(Component.literal("Save & Reload"), b -> submit(Map.of(ConfigCenterService.CONTEXT, root)))
-                    .bounds(x, bottom, 118, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Back"), b -> goBack()).bounds(x + w - 92, bottom, 80, 20).build());
+  clearWidgets();
+  int w = Math.min(760, width - 16);
+  int x = left(width, w) + 12;
+  int top = Math.max(8,
+          (height - Math.min(450, height - 16)) / 2) + 38;
+  searchBox.setX(x);
+  searchBox.setY(top);
+  searchBox.setWidth(w - 220);
+  addRenderableWidget(searchBox);
+  addRenderableWidget(Button.builder(Component.literal("+ Block"),
+          b -> addRule("block"))
+          .bounds(x + w - 208, top, 94, 20).build());
+  addRenderableWidget(Button.builder(Component.literal("+ Entity"),
+          b -> addRule("entity"))
+          .bounds(x + w - 108, top, 96, 20).build());
+
+  int listY = top + 30;
+  int visible = Math.max(4,
+          Math.min(9, (height - 148) / ROW_HEIGHT));
+  scroll = Math.min(scroll,
+          Math.max(0, filtered.size() - visible));
+  for (int i = scroll;
+          i < Math.min(filtered.size(), scroll + visible); i++) {
+      ContextRow rowData = filtered.get(i);
+      int row = i - scroll;
+      int y = listY + row * ROW_HEIGHT;
+      int rightWidth = rowData.configured() ? 66 : 0;
+      int mainWidth = w - 24 - rightWidth
+              - (rightWidth > 0 ? 6 : 0);
+      addRenderableWidget(new ContextRowButton(x, y, mainWidth, 32,
+              rowData, () -> openRow(rowData)));
+      if (rowData.configured()) {
+          String label = rowData.view().hasIntegratedBase()
+                  ? "Reset" : "X";
+          addRenderableWidget(Button.builder(Component.literal(label),
+                  b -> removeConfigured(rowData))
+                  .bounds(x + mainWidth + 6, y, rightWidth, 32)
+                  .build());
+      }
+  }
+
+  int bottom = Math.min(height - 32,
+          listY + visible * ROW_HEIGHT + 5);
+  addRenderableWidget(Button.builder(Component.literal("Save & Reload"),
+          b -> submit(Map.of(ConfigCenterService.CONTEXT, root)))
+          .bounds(x, bottom, 118, 20).build());
+  addRenderableWidget(Button.builder(Component.literal("Back"),
+          b -> goBack()).bounds(x + w - 92, bottom, 80, 20).build());
+        }
+
+        private void openRow(ContextRow row) {
+  if (row.configured()) {
+      Minecraft.getInstance().setScreen(
+              new ContextDetailScreen(this, row.rule()));
+  } else {
+      Minecraft.getInstance().setScreen(
+              new IntegratedContextDetailScreen(this, row));
+  }
+        }
+
+        private void createOverride(ContextRow row) {
+  JsonObject copy = row.rule().deepCopy();
+  // Keep alternate integrated defaults inherited. Creating an override
+  // for the base target must not freeze future built-in variants.
+  copy.remove("variants");
+  array(root, "interactions").add(copy);
+  Minecraft.getInstance().setScreen(
+          new ContextDetailScreen(this, copy));
+        }
+
+        private void removeConfigured(ContextRow row) {
+  JsonArray interactions = array(root, "interactions");
+  for (int i = interactions.size() - 1; i >= 0; i--) {
+      JsonElement element = interactions.get(i);
+      if (!element.isJsonObject()) continue;
+      if (com.bl4ues.scpinventory.context.ContextInteractionCatalog
+              .sameIdentity(element.getAsJsonObject(), row.rule())) {
+          interactions.remove(i);
+      }
+  }
+  scroll = 0;
+  rebuildRows();
         }
 
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-            int visible = Math.max(5, Math.min(11, (height - 132) / 24));
-            int next = Math.max(0, Math.min(Math.max(0, filtered.size() - visible), scroll + (delta < 0 ? 1 : -1)));
-            if (next != scroll) { scroll = next; refreshRows(); return true; }
-            return super.mouseScrolled(mouseX, mouseY, delta);
+        public boolean mouseScrolled(double mouseX, double mouseY,
+      double delta) {
+  int visible = Math.max(4,
+          Math.min(9, (height - 148) / ROW_HEIGHT));
+  int next = Math.max(0,
+          Math.min(Math.max(0, filtered.size() - visible),
+                  scroll + (delta < 0 ? 1 : -1)));
+  if (next != scroll) {
+      scroll = next;
+      refreshRows();
+      return true;
+  }
+  return super.mouseScrolled(mouseX, mouseY, delta);
         }
 
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            renderBackground(graphics);
-            int w = Math.min(700, width - 16);
-            int h = Math.min(410, height - 16);
-            int x = left(width, w);
-            int y = Math.max(8, (height - h) / 2);
-            panel(graphics, x, y, w, h, screenTitle, font);
-            graphics.drawString(font, "The K key remains available for visual anchor placement directly in the world.", x + 12, y + h - 17, MUTED, false);
-            super.render(graphics, mouseX, mouseY, partialTick);
+        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+      float partialTick) {
+  renderBackground(graphics);
+  int w = Math.min(760, width - 16);
+  int h = Math.min(450, height - 16);
+  int x = left(width, w);
+  int y = Math.max(8, (height - h) / 2);
+  panel(graphics, x, y, w, h, screenTitle, font);
+  graphics.drawString(font,
+          "Integrated = shipped default  ·  Override = explicit replacement  ·  Custom = user-defined",
+          x + 12, y + h - 17, MUTED, false);
+  super.render(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    private record ContextRow(JsonObject rule, boolean configured,
+  com.bl4ues.scpinventory.context.ContextInteractionCatalog.EntryView view) {
+    }
+
+    private static String contextTargetName(JsonObject rule) {
+        String idText = string(rule, "id", "unknown");
+        try {
+  ResourceLocation id = new ResourceLocation(idText);
+  if ("block".equalsIgnoreCase(string(rule, "type", ""))) {
+      var block = ForgeRegistries.BLOCKS.getValue(id);
+      if (block != null) {
+          Item item = block.asItem();
+          if (item != null && item != Items.AIR) {
+              return new ItemStack(item).getHoverName().getString();
+          }
+          return block.getName().getString();
+      }
+  } else if ("entity".equalsIgnoreCase(string(rule, "type", ""))) {
+      var entityType = ForgeRegistries.ENTITY_TYPES.getValue(id);
+      if (entityType != null) {
+          return entityType.getDescription().getString();
+      }
+  }
+        } catch (Exception ignored) {
+        }
+        JsonObject text = object(rule, "text");
+        String manual = string(text, "name", "").trim();
+        return manual.isBlank() ? idText : manual;
+    }
+
+    private static ItemStack contextTargetStack(JsonObject rule) {
+        if (!"block".equalsIgnoreCase(string(rule, "type", ""))) {
+  return ItemStack.EMPTY;
+        }
+        try {
+  ResourceLocation id = new ResourceLocation(string(rule, "id", ""));
+  var block = ForgeRegistries.BLOCKS.getValue(id);
+  if (block == null || block.asItem() == Items.AIR) {
+      return ItemStack.EMPTY;
+  }
+  return new ItemStack(block.asItem());
+        } catch (Exception ignored) {
+  return ItemStack.EMPTY;
+        }
+    }
+
+    private static String contextItemName(String idText) {
+        if (idText == null || idText.isBlank()) return "";
+        try {
+  Item item = ForgeRegistries.ITEMS.getValue(
+          new ResourceLocation(idText));
+  if (item != null && item != Items.AIR) {
+      return new ItemStack(item).getHoverName().getString();
+  }
+        } catch (Exception ignored) {
+        }
+        return idText;
+    }
+
+    private static String contextSourceLabel(
+  com.bl4ues.scpinventory.context.ContextInteractionCatalog.Source source) {
+        return switch (source) {
+  case INTEGRATED -> "INTEGRATED";
+  case OVERRIDE -> "OVERRIDE";
+  case CUSTOM -> "CUSTOM";
+        };
+    }
+
+    private static int contextSourceColor(
+  com.bl4ues.scpinventory.context.ContextInteractionCatalog.Source source) {
+        return switch (source) {
+  case INTEGRATED -> ACCENT;
+  case OVERRIDE -> WARN;
+  case CUSTOM -> GOOD;
+        };
+    }
+
+    private static String contextItemSummary(
+  com.bl4ues.scpinventory.context.ContextInteractionCatalog.EntryView view) {
+        List<String> names = new ArrayList<>();
+        for (String id : view.requiredItems()) {
+  String name = contextItemName(id);
+  if (!names.contains(name)) names.add(name);
+        }
+        if (names.isEmpty()) return "";
+        return String.join(", ", names);
+    }
+
+    private static final class ContextRowButton extends AbstractButton {
+        private final ContextRow row;
+        private final Runnable action;
+
+        private ContextRowButton(int x, int y, int width, int height,
+      ContextRow row, Runnable action) {
+  super(x, y, width, height, Component.literal(
+          contextTargetName(row.rule())));
+  this.row = row;
+  this.action = action;
+        }
+
+        @Override
+        public void onPress() {
+  action.run();
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+  defaultButtonNarrationText(output);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX,
+      int mouseY, float partialTick) {
+  int background = isHoveredOrFocused() ? 0xFF202832 : 0xFF171B22;
+  int edge = isHoveredOrFocused() ? ACCENT : 0xFF3C424B;
+  graphics.fill(getX(), getY(), getX() + getWidth(),
+          getY() + getHeight(), background);
+  graphics.fill(getX(), getY(), getX() + getWidth(),
+          getY() + 1, edge);
+  graphics.fill(getX(), getY() + getHeight() - 1,
+          getX() + getWidth(), getY() + getHeight(), edge);
+  graphics.fill(getX(), getY(), getX() + 1,
+          getY() + getHeight(), edge);
+  graphics.fill(getX() + getWidth() - 1, getY(),
+          getX() + getWidth(), getY() + getHeight(), edge);
+
+  String type = string(row.rule(), "type", "?")
+          .toUpperCase(Locale.ROOT);
+  int typeX = getX() + 6;
+  int typeY = getY() + 7;
+  graphics.fill(typeX, typeY, typeX + 56, typeY + 18,
+          0xFF1B3948);
+  graphics.fill(typeX, typeY, typeX + 3, typeY + 18,
+          contextSourceColor(row.view().source()));
+  graphics.drawCenteredString(font, type,
+          typeX + 29, typeY + 5, TEXT);
+
+  ItemStack targetStack = contextTargetStack(row.rule());
+  int textX = typeX + 64;
+  if (!targetStack.isEmpty()) {
+      graphics.renderItem(targetStack, textX, getY() + 8);
+      textX += 20;
+  }
+
+  String actionText = string(object(row.rule(), "text"),
+          "action", "Use");
+  String main = contextTargetName(row.rule()) + "  —  " + actionText;
+  int available = Math.max(20,
+          getX() + getWidth() - textX - 8);
+  graphics.drawString(font, font.plainSubstrByWidth(main, available),
+          textX, getY() + 5, TEXT, false);
+
+  String source = contextSourceLabel(row.view().source());
+  int sourceColor = contextSourceColor(row.view().source());
+  graphics.drawString(font, source, textX, getY() + 18,
+          sourceColor, false);
+  int metaX = textX + font.width(source) + 7;
+  StringBuilder meta = new StringBuilder();
+  if (row.view().variantCount() > 0) {
+      meta.append("· +").append(row.view().variantCount())
+              .append(row.view().variantCount() == 1
+                      ? " alternate" : " alternates");
+  }
+  String items = contextItemSummary(row.view());
+  if (!items.isBlank()) {
+      if (!meta.isEmpty()) meta.append("  ");
+      meta.append("· Item: ").append(items);
+  }
+  if (!row.configured()) {
+      if (!meta.isEmpty()) meta.append("  ");
+      meta.append("· runtime default");
+  }
+  if (!meta.isEmpty()) {
+      int metaAvailable = Math.max(10,
+              getX() + getWidth() - metaX - 8);
+      graphics.drawString(font,
+              font.plainSubstrByWidth(meta.toString(), metaAvailable),
+              metaX, getY() + 18, MUTED, false);
+  }
+        }
+    }
+
+    private static final class IntegratedContextDetailScreen
+  extends ConfigScreen {
+        private final ContextListScreen list;
+        private final ContextRow row;
+
+        private IntegratedContextDetailScreen(ContextListScreen parent,
+      ContextRow row) {
+  super(parent, "Integrated Context Interaction");
+  this.list = parent;
+  this.row = row;
+        }
+
+        @Override
+        protected void init() {
+  int w = Math.min(620, width - 16);
+  int h = Math.min(300, height - 16);
+  int x = left(width, w) + 14;
+  int y = Math.max(8, (height - h) / 2);
+  int buttonY = y + h - 34;
+  int cursor = x;
+  if (row.view().variantCount() > 0) {
+      addRenderableWidget(Button.builder(Component.literal(
+              "View Alternates (" + row.view().variantCount() + ")"),
+              b -> Minecraft.getInstance().setScreen(
+                      new ContextVariantsScreen(this, row.rule(), false)))
+              .bounds(cursor, buttonY, 150, 20).build());
+      cursor += 156;
+  }
+  addRenderableWidget(Button.builder(Component.literal("Create Override"),
+          b -> list.createOverride(row))
+          .bounds(cursor, buttonY, 126, 20).build());
+  addRenderableWidget(Button.builder(Component.literal("Back"),
+          b -> goBack()).bounds(x + w - 108, buttonY, 94, 20)
+          .build());
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+      float partialTick) {
+  renderBackground(graphics);
+  int w = Math.min(620, width - 16);
+  int h = Math.min(300, height - 16);
+  int x = left(width, w);
+  int y = Math.max(8, (height - h) / 2);
+  panel(graphics, x, y, w, h, screenTitle, font);
+  JsonObject rule = row.rule();
+  int tx = x + 16;
+  int ty = y + 38;
+  graphics.drawString(font, contextTargetName(rule), tx, ty,
+          TEXT, false);
+  graphics.drawString(font, string(rule, "id", "unknown"),
+          tx, ty + 14, MUTED, false);
+  graphics.drawString(font, "INTEGRATED DEFAULT", tx, ty + 34,
+          ACCENT, false);
+  graphics.drawString(font,
+          "Action: " + string(object(rule, "text"), "action", "Use")
+                  + "    Range: " + decimal(rule, "range", 2.25D),
+          tx, ty + 52, TEXT, false);
+
+  String alternate = row.view().variantCount() == 0
+          ? "No alternate interactions."
+          : row.view().variantCount() + " alternate interaction"
+          + (row.view().variantCount() == 1 ? "" : "s")
+          + (contextItemSummary(row.view()).isBlank() ? ""
+          : " · Item: " + contextItemSummary(row.view()));
+  graphics.drawString(font, alternate, tx, ty + 72,
+          row.view().variantCount() > 0 ? WARN : MUTED, false);
+  graphics.drawString(font,
+          "This rule is supplied by the mod and is active even when it is absent from the external config.",
+          tx, ty + 100, MUTED, false);
+  graphics.drawString(font,
+          "Create Override copies only the base rule; integrated alternates remain update-safe.",
+          tx, ty + 114, MUTED, false);
+  super.render(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    private static final class ContextVariantsScreen extends ConfigScreen {
+        private static final int ROW_HEIGHT = 50;
+
+        private final JsonObject rule;
+        private final boolean configured;
+        private int scroll;
+
+        private ContextVariantsScreen(Screen parent, JsonObject rule,
+      boolean configured) {
+  super(parent, "Alternate Context Interactions");
+  this.rule = rule.deepCopy();
+  this.configured = configured;
+        }
+
+        @Override
+        protected void init() {
+  int w = Math.min(700, width - 16);
+  int h = Math.min(430, height - 16);
+  int x = left(width, w);
+  int y = Math.max(8, (height - h) / 2);
+  addRenderableWidget(Button.builder(Component.literal("Back"),
+          b -> goBack()).bounds(x + w - 96, y + h - 30, 80, 20)
+          .build());
+        }
+
+        @Override
+        public boolean mouseScrolled(double mouseX, double mouseY,
+      double delta) {
+  var view = com.bl4ues.scpinventory.context.ContextInteractionCatalog
+          .inspect(rule, configured);
+  int visible = Math.max(3,
+          Math.min(6, (height - 145) / ROW_HEIGHT));
+  int next = Math.max(0,
+          Math.min(Math.max(0, view.variants().size() - visible),
+                  scroll + (delta < 0 ? 1 : -1)));
+  if (next != scroll) {
+      scroll = next;
+      return true;
+  }
+  return super.mouseScrolled(mouseX, mouseY, delta);
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+      float partialTick) {
+  renderBackground(graphics);
+  int w = Math.min(700, width - 16);
+  int h = Math.min(430, height - 16);
+  int x = left(width, w);
+  int y = Math.max(8, (height - h) / 2);
+  panel(graphics, x, y, w, h, screenTitle, font);
+  var view = com.bl4ues.scpinventory.context.ContextInteractionCatalog
+          .inspect(rule, configured);
+  graphics.drawString(font, contextTargetName(rule), x + 14, y + 31,
+          TEXT, false);
+  graphics.drawString(font,
+          view.variants().size() + " alternate interaction"
+                  + (view.variants().size() == 1 ? "" : "s"),
+          x + 14, y + 44, MUTED, false);
+
+  int listY = y + 64;
+  int visible = Math.max(3,
+          Math.min(6, (height - 145) / ROW_HEIGHT));
+  scroll = Math.min(scroll,
+          Math.max(0, view.variants().size() - visible));
+  if (view.variants().isEmpty()) {
+      graphics.drawCenteredString(font,
+              "No alternate interactions are active for this target.",
+              x + w / 2, listY + 28, MUTED);
+  }
+  for (int i = scroll;
+          i < Math.min(view.variants().size(), scroll + visible); i++) {
+      var variant = view.variants().get(i);
+      int ry = listY + (i - scroll) * ROW_HEIGHT;
+      graphics.fill(x + 12, ry, x + w - 12, ry + 44,
+              0xFF171B22);
+      graphics.fill(x + 12, ry, x + w - 12, ry + 1,
+              contextSourceColor(variant.source()));
+
+      String requiredId = variant.requiredItem();
+      ItemStack requiredStack = ItemStack.EMPTY;
+      if (!requiredId.isBlank()) {
+          try {
+              Item item = ForgeRegistries.ITEMS.getValue(
+                      new ResourceLocation(requiredId));
+              if (item != null && item != Items.AIR) {
+                  requiredStack = new ItemStack(item);
+              }
+          } catch (Exception ignored) {
+          }
+      }
+      int tx = x + 20;
+      if (!requiredStack.isEmpty()) {
+          graphics.renderItem(requiredStack, tx, ry + 14);
+          tx += 22;
+      }
+
+      graphics.drawString(font,
+              contextSourceLabel(variant.source()), tx, ry + 6,
+              contextSourceColor(variant.source()), false);
+      int actionX = tx + font.width(
+              contextSourceLabel(variant.source())) + 8;
+      String action = variant.action()
+              + (variant.enabled() ? "" : "  [disabled]");
+      graphics.drawString(font, action, actionX, ry + 6,
+              variant.enabled() ? TEXT : BAD, false);
+
+      String requirement = requiredId.isBlank()
+              ? "Item: any held item"
+              : "Item: " + contextItemName(requiredId)
+                      + "  (" + requiredId + ")";
+      graphics.drawString(font,
+              font.plainSubstrByWidth(requirement, w - (tx - x) - 42),
+              tx, ry + 19, MUTED, false);
+      String technical = "ID: " + variant.interactionId()
+              + "  ·  Icon: " + variant.icon();
+      graphics.drawString(font,
+              font.plainSubstrByWidth(technical, w - (tx - x) - 42),
+              tx, ry + 31, 0xFF7E8791, false);
+  }
+
+  graphics.drawString(font,
+          "Integrated alternates are supplied by the mod. Use K on the target to create or edit explicit variants.",
+          x + 14, y + h - 17, MUTED, false);
+  super.render(graphics, mouseX, mouseY, partialTick);
         }
     }
 
@@ -1409,112 +1903,225 @@ public final class ConfigCenterClient {
         private boolean advanced;
 
         private ContextDetailScreen(Screen parent, JsonObject rule) {
-            super(parent, "Context Interaction");
-            this.original = rule;
-            this.edit = rule.deepCopy();
-            this.type = string(edit, "type", "block");
-            JsonObject input = object(edit, "input");
-            this.allowE = bool(input, "allowE", true);
-            this.allowRightClick = bool(input, "allowRightClick", true);
-            this.showName = bool(object(edit, "text"), "showName", true);
-            this.advanced = edit.has("anchor") || edit.has("click") || edit.has("priority") || edit.has("useItem");
+  super(parent, "Context Interaction");
+  this.original = rule;
+  this.edit = rule.deepCopy();
+  this.type = string(edit, "type", "block");
+  JsonObject input = object(edit, "input");
+  this.allowE = bool(input, "allowE", true);
+  this.allowRightClick = bool(input, "allowRightClick", true);
+  this.showName = bool(object(edit, "text"), "showName", true);
+  this.advanced = edit.has("anchor") || edit.has("click")
+          || edit.has("priority") || edit.has("useItem");
         }
 
         @Override
         protected void init() {
-            int w = Math.min(700, width - 16);
-            int x = left(width, w) + 14;
-            int y = Math.max(8, (height - Math.min(450, height - 16)) / 2) + 44;
-            int fieldW = w - 28;
-            addRenderableWidget(Button.builder(Component.literal("Target type: " + type.toUpperCase(Locale.ROOT)), b -> {
-                type = type.equals("block") ? "entity" : "block";
-                b.setMessage(Component.literal("Target type: " + type.toUpperCase(Locale.ROOT)));
-            }).bounds(x, y, 150, 20).build());
-            idBox = field(x + 156, y, fieldW - 156, "Target resource ID", string(edit, "id", "")); y += 30;
-            actionBox = field(x, y, (fieldW - 6) / 2, "Action text", string(object(edit, "text"), "action", "Use"));
-            nameBox = field(x + (fieldW - 6) / 2 + 6, y, (fieldW - 6) / 2, "Manual object name (optional)", string(object(edit, "text"), "name", "")); y += 30;
-            rangeBox = field(x, y, (fieldW - 6) / 2, "Interaction range", Double.toString(decimal(edit, "range", 3.0D)));
-            priorityBox = field(x + (fieldW - 6) / 2 + 6, y, (fieldW - 6) / 2, "Priority", Integer.toString(integer(edit, "priority", 30))); y += 30;
-            addRenderableWidget(Button.builder(Component.literal("E key: " + onOff(allowE)), b -> { allowE = !allowE; b.setMessage(Component.literal("E key: " + onOff(allowE))); })
-                    .bounds(x, y, (fieldW - 12) / 3, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Right-click: " + onOff(allowRightClick)), b -> { allowRightClick = !allowRightClick; b.setMessage(Component.literal("Right-click: " + onOff(allowRightClick))); })
-                    .bounds(x + (fieldW - 12) / 3 + 6, y, (fieldW - 12) / 3, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Show name: " + onOff(showName)), b -> { showName = !showName; b.setMessage(Component.literal("Show name: " + onOff(showName))); })
-                    .bounds(x + 2 * ((fieldW - 12) / 3 + 6), y, (fieldW - 12) / 3, 20).build()); y += 28;
-            addRenderableWidget(Button.builder(Component.literal((advanced ? "▼" : "▶") + " Anchor and simulated click details"), b -> { sync(); advanced = !advanced; rebuild(); })
-                    .bounds(x, y, fieldW, 20).build()); y += 26;
-            if (advanced) {
-                useItemBox = field(x, y, (fieldW - 12) / 3, "Use item: hand/held/none", string(edit, "useItem", "hand"));
-                clickFaceBox = field(x + (fieldW - 12) / 3 + 6, y, (fieldW - 12) / 3, "Click face", string(object(edit, "click"), "face", "front"));
-                rotateBox = field(x + 2 * ((fieldW - 12) / 3 + 6), y, (fieldW - 12) / 3, "Rotate with", string(object(edit, "anchor"), "rotateWith", "none")); y += 30;
-                JsonArray pos = anchorPosition(edit);
-                anchorXBox = field(x, y, (fieldW - 12) / 3, "Anchor X", pos.get(0).getAsString());
-                anchorYBox = field(x + (fieldW - 12) / 3 + 6, y, (fieldW - 12) / 3, "Anchor Y", pos.get(1).getAsString());
-                anchorZBox = field(x + 2 * ((fieldW - 12) / 3 + 6), y, (fieldW - 12) / 3, "Anchor Z", pos.get(2).getAsString()); y += 32;
-            }
-            int buttonY = Math.min(height - 30, y + 3);
-            addRenderableWidget(Button.builder(Component.literal("Apply"), b -> save()).bounds(x, buttonY, (fieldW - 6) / 2, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> goBack()).bounds(x + (fieldW - 6) / 2 + 6, buttonY, (fieldW - 6) / 2, 20).build());
+  int w = Math.min(700, width - 16);
+  int x = left(width, w) + 14;
+  int y = Math.max(8,
+          (height - Math.min(470, height - 16)) / 2) + 44;
+  int fieldW = w - 28;
+  addRenderableWidget(Button.builder(Component.literal(
+          "Target type: " + type.toUpperCase(Locale.ROOT)), b -> {
+      type = type.equals("block") ? "entity" : "block";
+      b.setMessage(Component.literal(
+              "Target type: " + type.toUpperCase(Locale.ROOT)));
+  }).bounds(x, y, 150, 20).build());
+  idBox = field(x + 156, y, fieldW - 156,
+          "Target resource ID", string(edit, "id", ""));
+  y += 30;
+  actionBox = field(x, y, (fieldW - 6) / 2,
+          "Action text", string(object(edit, "text"),
+                  "action", "Use"));
+  nameBox = field(x + (fieldW - 6) / 2 + 6, y,
+          (fieldW - 6) / 2, "Manual object name (optional)",
+          string(object(edit, "text"), "name", ""));
+  y += 30;
+  rangeBox = field(x, y, (fieldW - 6) / 2,
+          "Interaction range",
+          Double.toString(decimal(edit, "range", 3.0D)));
+  priorityBox = field(x + (fieldW - 6) / 2 + 6, y,
+          (fieldW - 6) / 2, "Priority",
+          Integer.toString(integer(edit, "priority", 30)));
+  y += 30;
+  addRenderableWidget(Button.builder(Component.literal(
+          "E key: " + onOff(allowE)), b -> {
+      allowE = !allowE;
+      b.setMessage(Component.literal("E key: " + onOff(allowE)));
+  }).bounds(x, y, (fieldW - 12) / 3, 20).build());
+  addRenderableWidget(Button.builder(Component.literal(
+          "Right-click: " + onOff(allowRightClick)), b -> {
+      allowRightClick = !allowRightClick;
+      b.setMessage(Component.literal(
+              "Right-click: " + onOff(allowRightClick)));
+  }).bounds(x + (fieldW - 12) / 3 + 6, y,
+          (fieldW - 12) / 3, 20).build());
+  addRenderableWidget(Button.builder(Component.literal(
+          "Show name: " + onOff(showName)), b -> {
+      showName = !showName;
+      b.setMessage(Component.literal(
+              "Show name: " + onOff(showName)));
+  }).bounds(x + 2 * ((fieldW - 12) / 3 + 6), y,
+          (fieldW - 12) / 3, 20).build());
+  y += 28;
+
+  var catalog = com.bl4ues.scpinventory.context.ContextInteractionCatalog
+          .inspect(edit, true);
+  String alternates = catalog.variantCount() == 0
+          ? "Alternate interactions: none"
+          : "Alternate interactions: " + catalog.variantCount()
+          + (contextItemSummary(catalog).isBlank() ? ""
+          : "  ·  Item: " + contextItemSummary(catalog));
+  Button alternateButton = Button.builder(Component.literal(alternates),
+          b -> {
+              sync();
+              Minecraft.getInstance().setScreen(
+                      new ContextVariantsScreen(this, edit, true));
+          }).bounds(x, y, fieldW, 20).build();
+  alternateButton.active = catalog.variantCount() > 0;
+  addRenderableWidget(alternateButton);
+  y += 26;
+
+  addRenderableWidget(Button.builder(Component.literal(
+          (advanced ? "▼" : "▶")
+                  + " Anchor and simulated click details"), b -> {
+      sync();
+      advanced = !advanced;
+      rebuild();
+  }).bounds(x, y, fieldW, 20).build());
+  y += 26;
+  if (advanced) {
+      useItemBox = field(x, y, (fieldW - 12) / 3,
+              "Use item: hand/held/none",
+              string(edit, "useItem", "hand"));
+      clickFaceBox = field(x + (fieldW - 12) / 3 + 6, y,
+              (fieldW - 12) / 3, "Click face",
+              string(object(edit, "click"), "face", "front"));
+      rotateBox = field(x + 2 * ((fieldW - 12) / 3 + 6), y,
+              (fieldW - 12) / 3, "Rotate with",
+              string(object(edit, "anchor"),
+                      "rotateWith", "none"));
+      y += 30;
+      JsonArray pos = anchorPosition(edit);
+      anchorXBox = field(x, y, (fieldW - 12) / 3,
+              "Anchor X", pos.get(0).getAsString());
+      anchorYBox = field(x + (fieldW - 12) / 3 + 6, y,
+              (fieldW - 12) / 3, "Anchor Y",
+              pos.get(1).getAsString());
+      anchorZBox = field(x + 2 * ((fieldW - 12) / 3 + 6), y,
+              (fieldW - 12) / 3, "Anchor Z",
+              pos.get(2).getAsString());
+      y += 32;
+  }
+  int buttonY = Math.min(height - 30, y + 3);
+  addRenderableWidget(Button.builder(Component.literal("Apply"),
+          b -> save()).bounds(x, buttonY,
+          (fieldW - 6) / 2, 20).build());
+  addRenderableWidget(Button.builder(Component.literal("Cancel"),
+          b -> goBack()).bounds(x + (fieldW - 6) / 2 + 6,
+          buttonY, (fieldW - 6) / 2, 20).build());
         }
 
-        private EditBox field(int x, int y, int width, String hint, String value) {
-            EditBox box = new EditBox(font, x, y, width, 20, Component.literal(hint));
-            box.setHint(Component.literal(hint)); box.setMaxLength(1024); box.setValue(value == null ? "" : value); addRenderableWidget(box); return box;
+        private EditBox field(int x, int y, int width, String hint,
+      String value) {
+  EditBox box = new EditBox(font, x, y, width, 20,
+          Component.literal(hint));
+  box.setHint(Component.literal(hint));
+  box.setMaxLength(1024);
+  box.setValue(value == null ? "" : value);
+  addRenderableWidget(box);
+  return box;
         }
 
         private JsonArray anchorPosition(JsonObject root) {
-            JsonObject anchor = object(root, "anchor");
-            if (!anchor.has("position") || !anchor.get("position").isJsonArray() || anchor.getAsJsonArray("position").size() != 3) {
-                JsonArray pos = new JsonArray(); pos.add(0.5D); pos.add(0.5D); pos.add(0.5D); anchor.add("position", pos);
-            }
-            return anchor.getAsJsonArray("position");
+  JsonObject anchor = object(root, "anchor");
+  if (!anchor.has("position")
+          || !anchor.get("position").isJsonArray()
+          || anchor.getAsJsonArray("position").size() != 3) {
+      JsonArray pos = new JsonArray();
+      pos.add(0.5D);
+      pos.add(0.5D);
+      pos.add(0.5D);
+      anchor.add("position", pos);
+  }
+  return anchor.getAsJsonArray("position");
         }
 
         private void sync() {
-            if (idBox == null) return;
-            edit.addProperty("type", type);
-            edit.addProperty("id", idBox.getValue().trim());
-            edit.addProperty("range", parseDouble(rangeBox.getValue(), 3.0D));
-            edit.addProperty("priority", parseInt(priorityBox.getValue(), 30));
-            JsonObject text = object(edit, "text");
-            text.addProperty("action", actionBox.getValue());
-            text.addProperty("name", nameBox.getValue());
-            text.addProperty("nameMode", nameBox.getValue().isBlank() ? "auto" : "manual");
-            text.addProperty("showAction", true);
-            text.addProperty("showName", showName);
-            JsonObject input = object(edit, "input"); input.addProperty("allowE", allowE); input.addProperty("allowRightClick", allowRightClick);
-            if (advanced && useItemBox != null) {
-                edit.addProperty("useItem", useItemBox.getValue().trim());
-                object(edit, "click").addProperty("face", clickFaceBox.getValue().trim());
-                JsonObject anchor = object(edit, "anchor");
-                anchor.addProperty("rotateWith", rotateBox.getValue().trim());
-                JsonArray pos = new JsonArray(); pos.add(parseDouble(anchorXBox.getValue(), 0.5)); pos.add(parseDouble(anchorYBox.getValue(), 0.5)); pos.add(parseDouble(anchorZBox.getValue(), 0.5));
-                anchor.add("position", pos);
-            }
+  if (idBox == null) return;
+  edit.addProperty("type", type);
+  edit.addProperty("id", idBox.getValue().trim());
+  edit.addProperty("range", parseDouble(rangeBox.getValue(), 3.0D));
+  edit.addProperty("priority", parseInt(priorityBox.getValue(), 30));
+  JsonObject text = object(edit, "text");
+  text.addProperty("action", actionBox.getValue());
+  text.addProperty("name", nameBox.getValue());
+  text.addProperty("nameMode",
+          nameBox.getValue().isBlank() ? "auto" : "manual");
+  text.addProperty("showAction", true);
+  text.addProperty("showName", showName);
+  JsonObject input = object(edit, "input");
+  input.addProperty("allowE", allowE);
+  input.addProperty("allowRightClick", allowRightClick);
+  if (advanced && useItemBox != null) {
+      edit.addProperty("useItem", useItemBox.getValue().trim());
+      object(edit, "click").addProperty("face",
+              clickFaceBox.getValue().trim());
+      JsonObject anchor = object(edit, "anchor");
+      anchor.addProperty("rotateWith", rotateBox.getValue().trim());
+      JsonArray pos = new JsonArray();
+      pos.add(parseDouble(anchorXBox.getValue(), 0.5));
+      pos.add(parseDouble(anchorYBox.getValue(), 0.5));
+      pos.add(parseDouble(anchorZBox.getValue(), 0.5));
+      anchor.add("position", pos);
+  }
         }
 
         private void save() {
-            sync();
-            String id = string(edit, "id", "");
-            try { new ResourceLocation(id); }
-            catch (Exception ignored) { idBox.setTextColor(BAD); return; }
-            for (String key : new ArrayList<>(original.keySet())) original.remove(key);
-            for (Map.Entry<String, JsonElement> entry : edit.entrySet()) original.add(entry.getKey(), entry.getValue().deepCopy());
-            goBack();
+  sync();
+  String id = string(edit, "id", "");
+  try {
+      new ResourceLocation(id);
+  } catch (Exception ignored) {
+      idBox.setTextColor(BAD);
+      return;
+  }
+  for (String key : new ArrayList<>(original.keySet())) {
+      original.remove(key);
+  }
+  for (Map.Entry<String, JsonElement> entry : edit.entrySet()) {
+      original.add(entry.getKey(), entry.getValue().deepCopy());
+  }
+  goBack();
         }
 
-        private void rebuild() { clearWidgets(); init(); }
+        private void rebuild() {
+  clearWidgets();
+  init();
+        }
 
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            renderBackground(graphics);
-            int w = Math.min(700, width - 16);
-            int h = Math.min(450, height - 16);
-            int x = left(width, w);
-            int y = Math.max(8, (height - h) / 2);
-            panel(graphics, x, y, w, h, screenTitle, font);
-            graphics.drawString(font, "Use K while looking at the object for live visual anchor positioning.", x + 14, y + 30, MUTED, false);
-            super.render(graphics, mouseX, mouseY, partialTick);
+        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+      float partialTick) {
+  renderBackground(graphics);
+  int w = Math.min(700, width - 16);
+  int h = Math.min(470, height - 16);
+  int x = left(width, w);
+  int y = Math.max(8, (height - h) / 2);
+  panel(graphics, x, y, w, h, screenTitle, font);
+  var catalog = com.bl4ues.scpinventory.context.ContextInteractionCatalog
+          .inspect(edit, true);
+  String source = "Source: " + contextSourceLabel(catalog.source());
+  String extras = catalog.variantCount() == 0 ? ""
+          : "  ·  +" + catalog.variantCount() + " alternate"
+          + (catalog.variantCount() == 1 ? "" : "s");
+  graphics.drawString(font, source + extras, x + 14, y + 30,
+          contextSourceColor(catalog.source()), false);
+  graphics.drawString(font,
+          "Use K while looking at the object for live variant, item and anchor editing.",
+          x + 14, y + h - 17, MUTED, false);
+  super.render(graphics, mouseX, mouseY, partialTick);
         }
     }
 

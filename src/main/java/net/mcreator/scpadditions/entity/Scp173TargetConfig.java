@@ -60,11 +60,15 @@ public final class Scp173TargetConfig {
                     && root.get("scp_173_targets").isJsonArray()) {
                 List<String> values = new ArrayList<>();
                 for (JsonElement entry : root.getAsJsonArray("scp_173_targets")) {
-                    String value = entry.isJsonPrimitive()
-                            ? entry.getAsString().trim() : "";
-                    if (!value.isBlank()) values.add(value);
+                    String value = targetValue(entry);
+                    if (!value.isBlank() && entryEnabled(entry)) {
+                        values.add(value);
+                    }
                 }
-                if (!values.isEmpty()) loaded = Collections.unmodifiableList(values);
+                // An explicitly present array is authoritative even when every
+                // entry is disabled. Falling back to defaults here would make
+                // the new disable buttons rather decorative.
+                loaded = Collections.unmodifiableList(values);
             } else {
                 JsonArray values = new JsonArray();
                 DEFAULT_TARGETS.forEach(values::add);
@@ -82,6 +86,31 @@ public final class Scp173TargetConfig {
                     CONFIG_PATH, exception);
         }
         targets = loaded;
+    }
+
+    private static String targetValue(JsonElement entry) {
+        if (entry == null || entry.isJsonNull()) return "";
+        if (entry.isJsonPrimitive()) return entry.getAsString().trim();
+        if (!entry.isJsonObject()) return "";
+        JsonObject object = entry.getAsJsonObject();
+        for (String key : List.of("id", "entity", "tag")) {
+            if (object.has(key) && object.get(key).isJsonPrimitive()) {
+                String value = object.get(key).getAsString().trim();
+                if (!value.isBlank()) return value;
+            }
+        }
+        return "";
+    }
+
+    private static boolean entryEnabled(JsonElement entry) {
+        if (entry == null || !entry.isJsonObject()) return true;
+        JsonObject object = entry.getAsJsonObject();
+        if (!object.has("enabled")) return true;
+        try {
+            return object.get("enabled").getAsBoolean();
+        } catch (Exception ignored) {
+            return true;
+        }
     }
 
     public static boolean isConfiguredTarget(LivingEntity entity) {

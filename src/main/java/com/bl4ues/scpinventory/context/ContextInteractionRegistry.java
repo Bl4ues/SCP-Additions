@@ -128,6 +128,13 @@ public final class ContextInteractionRegistry {
             for (JsonElement element : configuredInteractions) {
                 if (!element.isJsonObject()) continue;
                 JsonObject source = element.getAsJsonObject();
+                InteractionIdentity sourceIdentity = interactionIdentity(source);
+                if (sourceIdentity != null
+                        && sourceIdentity.interactionKey().isBlank()
+                        && !getBoolean(source, "enabled", true)) {
+                    configuredIdentities.add(new InteractionIdentity(
+                            sourceIdentity.type(), sourceIdentity.id(), "*"));
+                }
                 for (JsonObject object : expandRuleVariants(source)) {
                     InteractionIdentity identity = interactionIdentity(object);
                     if (identity != null) configuredIdentities.add(identity);
@@ -154,7 +161,7 @@ public final class ContextInteractionRegistry {
                 for (JsonObject object : expandRuleVariants(source)) {
                     InteractionIdentity identity = interactionIdentity(object);
                     if (identity == null
-                            || configuredIdentities.contains(identity)
+                            || isConfiguredIdentity(configuredIdentities, identity)
                             || !integratedIdentities.add(identity)
                             || !getBoolean(source, "enabled", true)
                             || !getBoolean(object, "enabled", true)) {
@@ -326,10 +333,19 @@ public final class ContextInteractionRegistry {
         return registered;
     }
 
+    private static boolean isConfiguredIdentity(
+            Set<InteractionIdentity> configuredIdentities,
+            InteractionIdentity identity) {
+        if (identity == null) return false;
+        return configuredIdentities.contains(identity)
+                || configuredIdentities.contains(new InteractionIdentity(
+                        identity.type(), identity.id(), "*"));
+    }
+
     private static int addIntegratedRule(
             Set<InteractionIdentity> configuredIdentities,
             InteractionIdentity identity, Rule rule) {
-        if (configuredIdentities.contains(identity)) return 0;
+        if (isConfiguredIdentity(configuredIdentities, identity)) return 0;
         addRule(rule);
         return 1;
     }
@@ -381,7 +397,7 @@ public final class ContextInteractionRegistry {
         String type = kind == Kind.BLOCK ? "block" : "entity";
         InteractionIdentity identity = new InteractionIdentity(type,
                 id.toString(), key);
-        if (configuredIdentities.contains(identity)) return 0;
+        if (isConfiguredIdentity(configuredIdentities, identity)) return 0;
 
         if (kind == Kind.BLOCK) {
             Block block = ForgeRegistries.BLOCKS.getValue(id);

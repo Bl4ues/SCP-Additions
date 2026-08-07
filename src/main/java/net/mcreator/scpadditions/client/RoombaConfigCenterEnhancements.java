@@ -115,7 +115,8 @@ public final class RoombaConfigCenterEnhancements {
         }
     }
 
-    private record FloorEntry(ResourceLocation id, boolean integrated) {
+    private record FloorEntry(ResourceLocation id, boolean integrated,
+            boolean enabled) {
     }
 
     private abstract static class RoombaScreen extends Screen {
@@ -297,11 +298,19 @@ public final class RoombaConfigCenterEnhancements {
             int end = Math.min(entries.size(), scroll + visibleRows());
             for (int index = scroll; index < end; index++) {
                 FloorEntry entry = entries.get(index);
-                if (entry.integrated()) continue;
                 int row = index - scroll;
-                button(x + listWidth - 50, listY + row * 40 + 6,
-                        50, 24, "X", false, true,
-                        () -> removeEntry(entry.id()));
+                int rowY = listY + row * 40 + 6;
+                int toggleWidth = entry.integrated() ? 82 : 70;
+                button(x + listWidth - (entry.integrated() ? toggleWidth : 126),
+                        rowY, toggleWidth, 24,
+                        entry.enabled() ? "Disable" : "Enable",
+                        !entry.enabled(), false,
+                        () -> toggleEntry(entry));
+                if (!entry.integrated()) {
+                    button(x + listWidth - 50, rowY,
+                            50, 24, "X", false, true,
+                            () -> removeEntry(entry.id()));
+                }
             }
         }
 
@@ -309,19 +318,23 @@ public final class RoombaConfigCenterEnhancements {
             String query = searchBox.getValue().trim().toLowerCase(Locale.ROOT);
             List<FloorEntry> entries = new ArrayList<>();
             for (ResourceLocation id : RoombaSpawnConfig.integratedBlocks()) {
-                entries.add(new FloorEntry(id, true));
+                JsonElement configured = findEntry(id);
+                entries.add(new FloorEntry(id, true,
+                        configured == null || entryEnabled(configured)));
             }
-            for (String value : customIds()) {
-                ResourceLocation id = ResourceLocation.tryParse(value);
-                if (id != null && !RoombaSpawnConfig.integratedBlocks().contains(id)) {
-                    entries.add(new FloorEntry(id, false));
+            for (JsonElement element : customArray()) {
+                ResourceLocation id = entryId(element);
+                if (id == null || RoombaSpawnConfig.integratedBlocks().contains(id)) {
+                    continue;
                 }
+                entries.add(new FloorEntry(id, false, entryEnabled(element)));
             }
             if (!query.isBlank()) {
                 entries.removeIf(entry -> !entry.id().toString()
                         .toLowerCase(Locale.ROOT).contains(query)
                         && !blockName(entry.id()).toLowerCase(Locale.ROOT)
-                        .contains(query));
+                        .contains(query)
+                        && !(entry.enabled() ? "enabled" : "disabled").contains(query));
             }
             return entries;
         }
@@ -334,10 +347,44 @@ public final class RoombaConfigCenterEnhancements {
             return root.getAsJsonArray(RoombaSpawnConfig.CONFIG_KEY);
         }
 
+        private ResourceLocation entryId(JsonElement element) {
+            if (element == null || element.isJsonNull()) return null;
+            String value = "";
+            if (element.isJsonPrimitive()) {
+                value = element.getAsString();
+            } else if (element.isJsonObject()) {
+                JsonObject object = element.getAsJsonObject();
+                if (object.has("id") && object.get("id").isJsonPrimitive()) {
+                    value = object.get("id").getAsString();
+                }
+            }
+            return ResourceLocation.tryParse(value.trim());
+        }
+
+        private boolean entryEnabled(JsonElement element) {
+            if (element == null || !element.isJsonObject()) return true;
+            JsonObject object = element.getAsJsonObject();
+            if (!object.has("enabled")) return true;
+            try {
+                return object.get("enabled").getAsBoolean();
+            } catch (Exception ignored) {
+                return true;
+            }
+        }
+
+        private JsonElement findEntry(ResourceLocation id) {
+            if (id == null) return null;
+            for (JsonElement element : customArray()) {
+                if (id.equals(entryId(element))) return element;
+            }
+            return null;
+        }
+
         private List<String> customIds() {
             List<String> ids = new ArrayList<>();
             for (JsonElement element : customArray()) {
-                if (element.isJsonPrimitive()) ids.add(element.getAsString());
+                ResourceLocation id = entryId(element);
+                if (id != null) ids.add(id.toString());
             }
             return ids;
         }
@@ -352,13 +399,33 @@ public final class RoombaConfigCenterEnhancements {
             return ids;
         }
 
+        private void toggleEntry(FloorEntry entry) {
+            JsonArray values = customArray();
+            JsonElement existing = findEntry(entry.id());
+            boolean next = !entry.enabled();
+
+            if (entry.integrated() && next) {
+                // Re-enabling an integrated floor removes the tombstone and
+                // resumes following the bundled default in future updates.
+                if (existing != null) values.remove(existing);
+            } else if (existing != null && existing.isJsonObject()) {
+                existing.getAsJsonObject().addProperty("enabled", next);
+            } else {
+                if (existing != null) values.remove(existing);
+                JsonObject state = new JsonObject();
+                state.addProperty("id", entry.id().toString());
+                state.addProperty("enabled", next);
+                values.add(state);
+            }
+            notice = (next ? "Enabled " : "Disabled ") + blockName(entry.id());
+            noticeGood = next;
+            rebuild(false);
+        }
+
         private void removeEntry(ResourceLocation id) {
             JsonArray entries = customArray();
             for (int i = entries.size() - 1; i >= 0; i--) {
-                if (entries.get(i).isJsonPrimitive()
-                        && id.toString().equals(entries.get(i).getAsString())) {
-                    entries.remove(i);
-                }
+                if (id.equals(entryId(entries.get(i)))) entries.remove(i);
             }
             notice = "Removed " + blockName(id);
             noticeGood = true;
@@ -409,23 +476,36 @@ public final class RoombaConfigCenterEnhancements {
                 FloorEntry entry = entries.get(index);
                 int row = index - scroll;
                 int rowY = listY + row * 40;
-                graphics.fill(x, rowY, x + listWidth, rowY + 36,
-                        row % 2 == 0 ? ROW : ROW_ALT);
-                graphics.fill(x, rowY, x + listWidth, rowY + 1, BORDER);
-                graphics.fill(x, rowY + 35, x + listWidth, rowY + 36, BORDER);
+                int rowColor = entry.enabled()
+                        ? (row % 2 == 0 ? ROW : ROW_ALT) : 0xFF11151D;
+                int rowBorder = entry.enabled() ? BORDER : 0xFF30343C;
+                int mainText = entry.enabled() ? TEXT : 0xFF777E89;
+                int secondaryText = entry.enabled() ? MUTED : 0xFF555B64;
+                graphics.fill(x, rowY, x + listWidth, rowY + 36, rowColor);
+                graphics.fill(x, rowY, x + listWidth, rowY + 1, rowBorder);
+                graphics.fill(x, rowY + 35, x + listWidth, rowY + 36, rowBorder);
                 graphics.fill(x, rowY, x + 4, rowY + 36,
-                        entry.integrated() ? GOOD : ACCENT);
+                        entry.enabled() ? (entry.integrated() ? GOOD : ACCENT)
+                                : 0xFF50555D);
                 drawBlockIcon(graphics, entry.id(), x + 10, rowY + 10);
-                graphics.drawString(font, ScpFonts.roboto(blockName(entry.id())),
-                        x + 34, rowY + 7, TEXT, false);
-                graphics.drawString(font, ScpFonts.roboto(entry.id().toString()),
-                        x + 34, rowY + 20, MUTED, false);
-                if (entry.integrated()) {
-                    String badge = "INTEGRATED";
-                    graphics.drawString(font, ScpFonts.roboto(badge),
-                            x + listWidth - 16 - font.width(badge),
-                            rowY + 14, GOOD, false);
+                if (!entry.enabled()) {
+                    graphics.fill(x + 9, rowY + 9, x + 27, rowY + 27,
+                            0x88000000);
                 }
+                graphics.drawString(font, ScpFonts.roboto(blockName(entry.id())),
+                        x + 34, rowY + 7, mainText, false);
+                graphics.drawString(font, ScpFonts.roboto(entry.id().toString()),
+                        x + 34, rowY + 20, secondaryText, false);
+                String badge = entry.enabled()
+                        ? (entry.integrated() ? "INTEGRATED" : "CUSTOM")
+                        : (entry.integrated() ? "INTEGRATED · DISABLED"
+                                : "CUSTOM · DISABLED");
+                int badgeColor = entry.enabled()
+                        ? (entry.integrated() ? GOOD : ACCENT) : 0xFF666B73;
+                int controlsReserve = entry.integrated() ? 92 : 136;
+                graphics.drawString(font, ScpFonts.roboto(badge),
+                        x + listWidth - controlsReserve - font.width(badge),
+                        rowY + 14, badgeColor, false);
             }
             if (entries.isEmpty()) {
                 graphics.drawCenteredString(font,

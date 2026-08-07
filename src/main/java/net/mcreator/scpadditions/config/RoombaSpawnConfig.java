@@ -23,7 +23,9 @@ import java.util.Set;
  *
  * <p>Built-in SCP Additions floors are deliberately kept outside the user
  * configuration. New integrated floors can therefore be added by future mod
- * versions without forcing existing installations to reset their JSON file.</p>
+ * versions without forcing existing installations to reset their JSON file.
+ * Explicit object entries may disable an integrated floor without deleting it
+ * from the Configuration Center.</p>
  */
 public final class RoombaSpawnConfig {
     public static final String CONFIG_KEY = "roomba_spawn_blocks";
@@ -36,6 +38,7 @@ public final class RoombaSpawnConfig {
             new ResourceLocation(ScpAdditionsMod.MODID, "sl_2_floor"));
 
     private static volatile Set<ResourceLocation> customBlocks = Set.of();
+    private static volatile Set<ResourceLocation> disabledIntegratedBlocks = Set.of();
     private static volatile long loadedModifiedTime = Long.MIN_VALUE;
 
     private RoombaSpawnConfig() {
@@ -52,6 +55,7 @@ public final class RoombaSpawnConfig {
         }
 
         LinkedHashSet<ResourceLocation> loaded = new LinkedHashSet<>();
+        LinkedHashSet<ResourceLocation> disabledIntegrated = new LinkedHashSet<>();
         if (Files.isRegularFile(CONFIG_PATH)) {
             try {
                 JsonElement parsed = JsonParser.parseString(
@@ -62,12 +66,35 @@ public final class RoombaSpawnConfig {
                             && root.get(CONFIG_KEY).isJsonArray()) {
                         JsonArray entries = root.getAsJsonArray(CONFIG_KEY);
                         for (JsonElement entry : entries) {
-                            if (!entry.isJsonPrimitive()) {
+                            String rawId = "";
+                            boolean enabled = true;
+                            if (entry.isJsonPrimitive()) {
+                                rawId = entry.getAsString();
+                            } else if (entry.isJsonObject()) {
+                                JsonObject object = entry.getAsJsonObject();
+                                if (object.has("id") && object.get("id").isJsonPrimitive()) {
+                                    rawId = object.get("id").getAsString();
+                                }
+                                if (object.has("enabled")) {
+                                    try {
+                                        enabled = object.get("enabled").getAsBoolean();
+                                    } catch (Exception ignored) {
+                                        enabled = true;
+                                    }
+                                }
+                            }
+
+                            ResourceLocation id = ResourceLocation.tryParse(rawId.trim());
+                            if (id == null) {
                                 continue;
                             }
-                            ResourceLocation id = ResourceLocation.tryParse(
-                                    entry.getAsString().trim());
-                            if (id == null || INTEGRATED_BLOCKS.contains(id)) {
+                            if (INTEGRATED_BLOCKS.contains(id)) {
+                                if (!enabled) {
+                                    disabledIntegrated.add(id);
+                                }
+                                continue;
+                            }
+                            if (!enabled) {
                                 continue;
                             }
                             if (ForgeRegistries.BLOCKS.containsKey(id)
@@ -86,6 +113,7 @@ public final class RoombaSpawnConfig {
         }
 
         customBlocks = Set.copyOf(loaded);
+        disabledIntegratedBlocks = Set.copyOf(disabledIntegrated);
         loadedModifiedTime = modified;
     }
 
@@ -93,8 +121,10 @@ public final class RoombaSpawnConfig {
         if (state == null || state.isAir()) {
             return false;
         }
+        reloadIfChanged();
         ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
-        return id != null && (INTEGRATED_BLOCKS.contains(id)
+        return id != null && ((INTEGRATED_BLOCKS.contains(id)
+                && !disabledIntegratedBlocks.contains(id))
                 || customBlocks.contains(id));
     }
 

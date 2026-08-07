@@ -218,6 +218,9 @@ public final class ScpInventoryConfig {
                 continue;
             }
             JsonObject obj = entry.getAsJsonObject();
+            if (!entryEnabled(obj)) {
+                continue;
+            }
             String id = firstString(obj, "id", "item");
             String type = firstString(obj, "type", "slot");
             if (!id.isBlank() && !type.isBlank()) {
@@ -241,6 +244,9 @@ public final class ScpInventoryConfig {
                 continue;
             }
             JsonObject obj = entry.getAsJsonObject();
+            if (!entryEnabled(obj)) {
+                continue;
+            }
             String id = firstString(obj, "id", "item");
             if (id.isBlank()) {
                 continue;
@@ -278,6 +284,9 @@ public final class ScpInventoryConfig {
                 continue;
             }
             JsonObject obj = entry.getAsJsonObject();
+            if (!entryEnabled(obj)) {
+                continue;
+            }
             if (isDebugCodexDocument(obj)) {
                 continue;
             }
@@ -330,13 +339,28 @@ public final class ScpInventoryConfig {
                     values.add(value);
                 }
             } else if (entry.isJsonObject()) {
-                String id = firstString(entry.getAsJsonObject(), "id", "entity", "effect", "tag");
+                JsonObject object = entry.getAsJsonObject();
+                if (!entryEnabled(object)) {
+                    continue;
+                }
+                String id = firstString(object, "id", "entity", "effect", "tag");
                 if (!id.isBlank()) {
                     values.add(id);
                 }
             }
         }
         return values;
+    }
+
+    private static boolean entryEnabled(JsonObject object) {
+        if (object == null || !object.has("enabled")) {
+            return true;
+        }
+        try {
+            return object.get("enabled").getAsBoolean();
+        } catch (Exception ignored) {
+            return true;
+        }
     }
 
     private static void writeDefaultConfig() throws Exception {

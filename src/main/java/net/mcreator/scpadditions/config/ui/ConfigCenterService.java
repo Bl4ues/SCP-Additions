@@ -260,7 +260,8 @@ public final class ConfigCenterService {
     }
 
     private static void validateInventory(JsonObject root, List<String> errors, List<String> warnings) {
-        for (String key : List.of("item_rules", "item_effects", "hidden_status_effects", "codex_documents", "scp_173_targets")) {
+        for (String key : List.of("item_rules", "item_effects", "hidden_status_effects",
+                "codex_documents", "scp_173_targets", "roomba_spawn_blocks")) {
             requireArray(root, key, errors);
         }
         validateObjectIds(root, "item_rules", "id", errors, warnings, true);
@@ -295,6 +296,7 @@ public final class ConfigCenterService {
         }
         validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);
         validateSimpleIds(root, "scp_173_targets", errors, warnings, true);
+        validateSimpleIds(root, "roomba_spawn_blocks", errors, warnings, false);
     }
 
     private static void validateContext(JsonObject root, List<String> errors, List<String> warnings) {
@@ -303,6 +305,7 @@ public final class ConfigCenterService {
         for (JsonElement element : root.getAsJsonArray("interactions")) {
             if (!element.isJsonObject()) { errors.add("interactions[" + index + "] must be an object"); index++; continue; }
             JsonObject object = element.getAsJsonObject();
+            validateEnabled(object, "interactions[" + index + "]", errors);
             String type = string(object, "type");
             if (!"block".equals(type) && !"entity".equals(type)) errors.add("interactions[" + index + "].type must be block or entity");
             validateId(string(object, "id"), "interactions[" + index + "].id", errors, warnings, false);
@@ -359,6 +362,7 @@ public final class ConfigCenterService {
             String label = "drinks[" + index + "]";
             if (!element.isJsonObject()) { errors.add(label + " must be an object"); index++; continue; }
             JsonObject drink = element.getAsJsonObject();
+            validateEnabled(drink, label, errors);
             validateId(string(drink, "id"), label + ".id", errors, warnings, false);
             if (drink.has("aliases") && !drink.get("aliases").isJsonArray()) errors.add(label + ".aliases must be an array");
             if (drink.has("result")) {
@@ -381,6 +385,7 @@ public final class ConfigCenterService {
             String label = "recipes[" + index + "]";
             if (!element.isJsonObject()) { errors.add(label + " must be an object"); index++; continue; }
             JsonObject recipe = element.getAsJsonObject();
+            validateEnabled(recipe, label, errors);
             validateId(string(recipe, "id"), label + ".id", errors, warnings, false);
             if (!SETTINGS.contains(string(recipe, "setting").toLowerCase(Locale.ROOT))) errors.add(label + ".setting is invalid");
             boolean hasInput = nonEmptyArray(recipe, "item_inputs") || nonEmptyArray(recipe, "entity_inputs") || recipe.has("input");
@@ -430,6 +435,10 @@ public final class ConfigCenterService {
         if (!root.has(arrayKey) || !root.get(arrayKey).isJsonArray()) return;
         int index = 0;
         for (JsonElement element : root.getAsJsonArray(arrayKey)) {
+            if (element.isJsonObject()) {
+                validateEnabled(element.getAsJsonObject(),
+                        arrayKey + "[" + index + "]", errors);
+            }
             String id = element.isJsonObject() ? string(element.getAsJsonObject(), idKey) : element.isJsonPrimitive() ? element.getAsString().split("[|;]", 2)[0] : "";
             validateId(id, arrayKey + "[" + index + "]." + idKey, errors, warnings, allowMissing);
             index++;
@@ -441,10 +450,24 @@ public final class ConfigCenterService {
         if (!root.has(arrayKey) || !root.get(arrayKey).isJsonArray()) return;
         int index = 0;
         for (JsonElement element : root.getAsJsonArray(arrayKey)) {
+            if (element.isJsonObject()) {
+                validateEnabled(element.getAsJsonObject(),
+                        arrayKey + "[" + index + "]", errors);
+            }
             String id = element.isJsonPrimitive() ? element.getAsString() : element.isJsonObject() ? string(element.getAsJsonObject(), "id") : "";
             if (allowTag && id.startsWith("#")) id = id.substring(1);
             validateId(id, arrayKey + "[" + index + "]", errors, warnings, true);
             index++;
+        }
+    }
+
+    private static void validateEnabled(JsonObject object, String label,
+            List<String> errors) {
+        if (object == null || !object.has("enabled")) return;
+        try {
+            object.get("enabled").getAsBoolean();
+        } catch (Exception exception) {
+            errors.add(label + ".enabled must be a boolean");
         }
     }
 
@@ -478,7 +501,7 @@ public final class ConfigCenterService {
     }
 
     private static JsonObject defaultInventory() {
-        return JsonParser.parseString("{\"item_rules\":[],\"item_effects\":[],\"hidden_status_effects\":[],\"codex_documents\":[],\"scp_173_targets\":[]}").getAsJsonObject();
+        return JsonParser.parseString("{\"item_rules\":[],\"item_effects\":[],\"hidden_status_effects\":[],\"codex_documents\":[],\"scp_173_targets\":[],\"roomba_spawn_blocks\":[]}").getAsJsonObject();
     }
 
     private static JsonObject defaultContext() {

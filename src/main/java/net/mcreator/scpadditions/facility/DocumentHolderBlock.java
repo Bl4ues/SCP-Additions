@@ -13,7 +13,6 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
@@ -48,10 +47,22 @@ public final class DocumentHolderBlock extends BaseEntityBlock
     public static final BooleanProperty WATERLOGGED =
             BlockStateProperties.WATERLOGGED;
 
-    private static final VoxelShape NORTH_SOUTH_SHAPE =
-            Block.box(4.0D, 1.75D, 7.0D, 12.0D, 14.25D, 9.0D);
-    private static final VoxelShape EAST_WEST_SHAPE =
-            Block.box(7.0D, 1.75D, 4.0D, 9.0D, 14.25D, 12.0D);
+    /*
+     * The Blockbench/GeckoLib model is centered around X/Z = 0 and authored
+     * at Z 7..8, which places it against the supporting wall once GeckoLib's
+     * block-space center offset is applied. Vanilla VoxelShapes, however, use
+     * an absolute 0..16 block space. Keep each shape on the same one-pixel
+     * wall edge as the rendered model instead of leaving collision near the
+     * middle of the block.
+     */
+    private static final VoxelShape NORTH_SHAPE =
+            Block.box(4.0D, 1.75D, 15.0D, 12.0D, 14.25D, 16.0D);
+    private static final VoxelShape SOUTH_SHAPE =
+            Block.box(4.0D, 1.75D, 0.0D, 12.0D, 14.25D, 1.0D);
+    private static final VoxelShape EAST_SHAPE =
+            Block.box(0.0D, 1.75D, 4.0D, 1.0D, 14.25D, 12.0D);
+    private static final VoxelShape WEST_SHAPE =
+            Block.box(15.0D, 1.75D, 4.0D, 16.0D, 14.25D, 12.0D);
 
     public DocumentHolderBlock() {
         super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
@@ -161,8 +172,13 @@ public final class DocumentHolderBlock extends BaseEntityBlock
     }
 
     private static VoxelShape shape(BlockState state) {
-        return state.getValue(FACING).getAxis() == Direction.Axis.X
-                ? EAST_WEST_SHAPE : NORTH_SOUTH_SHAPE;
+        return switch (state.getValue(FACING)) {
+            case NORTH -> NORTH_SHAPE;
+            case SOUTH -> SOUTH_SHAPE;
+            case EAST -> EAST_SHAPE;
+            case WEST -> WEST_SHAPE;
+            default -> NORTH_SHAPE;
+        };
     }
 
     @Override

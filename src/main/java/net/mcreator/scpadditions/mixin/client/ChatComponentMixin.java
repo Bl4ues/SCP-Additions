@@ -7,12 +7,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.mcreator.scpadditions.client.ClientModulePreferences;
 import net.mcreator.scpadditions.client.FacilityChatLayout;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -28,6 +30,9 @@ import java.util.List;
  */
 @Mixin(ChatComponent.class)
 public abstract class ChatComponentMixin {
+    @Unique private static final float SCP_ADDITIONS_MESSAGE_ENTER_TICKS = 7.0F;
+    @Unique private static final float SCP_ADDITIONS_MESSAGE_SLIDE = 10.0F;
+
     @Shadow @Final private Minecraft minecraft;
     @Shadow @Final private List<GuiMessage.Line> trimmedMessages;
     @Shadow private int chatScrollbarPos;
@@ -73,10 +78,14 @@ public abstract class ChatComponentMixin {
         int textOffset = (int) Math.round(-8.0D * (lineSpacing + 1.0D)
                 + 4.0D * lineSpacing);
         long queued = this.minecraft.getChatListener().queueSize();
+        float partialTick = this.minecraft.getFrameTime();
+        int openOffsetScreen = focused
+                ? FacilityChatLayout.openOffsetScreen(self) : 0;
 
         graphics.pose().pushPose();
         graphics.pose().scale(scale, scale, 1.0F);
-        graphics.pose().translate(4.0F, 0.0F, 0.0F);
+        graphics.pose().translate(4.0F,
+                (float) openOffsetScreen / scale, 0.0F);
 
         if (focused) {
             scpAdditions$drawFocusedFrame(graphics, width, top,
@@ -107,9 +116,20 @@ public abstract class ChatComponentMixin {
             double fade = focused ? 1.0D : getTimeFactor(age);
             int textAlpha = (int) (255.0D * fade * textOpacity);
             int backgroundAlpha = (int) (255.0D * fade * backgroundOpacity);
+
+            float enter = scpAdditions$messageEnterProgress(age, partialTick);
+            int lineSlide = Math.round(-SCP_ADDITIONS_MESSAGE_SLIDE
+                    * (1.0F - enter));
+            if (age < SCP_ADDITIONS_MESSAGE_ENTER_TICKS) {
+                float alphaEnter = 0.35F + 0.65F * enter;
+                textAlpha = Math.round(textAlpha * alphaEnter);
+                backgroundAlpha = Math.round(backgroundAlpha * alphaEnter);
+            }
+
+            int currentRow = row++;
             if (textAlpha <= 3) continue;
 
-            int rowTop = messageTop + row * lineHeight;
+            int rowTop = messageTop + currentRow * lineHeight + lineSlide;
             int rowBottom = rowTop + lineHeight;
             int textY = rowBottom + textOffset;
 
@@ -136,11 +156,11 @@ public abstract class ChatComponentMixin {
             }
 
             graphics.pose().translate(0.0F, 0.0F, 50.0F);
-            graphics.drawString(this.minecraft.font, line.content(), 0, textY,
+            graphics.drawString(this.minecraft.font,
+                    scpAdditions$roboto(line.content()), 0, textY,
                     0x00FFFFFF | (textAlpha << 24),
                     !ClientModulePreferences.disableTextDropShadows());
             graphics.pose().popPose();
-            ++row;
         }
 
         if (focused) {
@@ -149,6 +169,22 @@ public abstract class ChatComponentMixin {
         }
 
         graphics.pose().popPose();
+    }
+
+    @Unique
+    private static float scpAdditions$messageEnterProgress(int age,
+            float partialTick) {
+        float raw = Mth.clamp((age + partialTick)
+                / SCP_ADDITIONS_MESSAGE_ENTER_TICKS, 0.0F, 1.0F);
+        float inverse = 1.0F - raw;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    @Unique
+    private static FormattedCharSequence scpAdditions$roboto(
+            FormattedCharSequence content) {
+        return sink -> content.accept((index, style, codePoint) ->
+                sink.accept(index, style.withFont(ScpFonts.ROBOTO), codePoint));
     }
 
     private void scpAdditions$drawFocusedFrame(GuiGraphics graphics,
@@ -223,7 +259,10 @@ public abstract class ChatComponentMixin {
         int lineHeight = this.getLineHeight();
         int count = Math.min(this.getLinesPerPage(),
                 Math.max(0, this.trimmedMessages.size() - this.chatScrollbarPos));
-        double localY = screenY / scale
+        double animatedScreenY = screenY
+                - (this.isChatFocused()
+                ? FacilityChatLayout.openOffsetScreen(self) : 0);
+        double localY = animatedScreenY / scale
                 - FacilityChatLayout.messageTopScaled(self, this.isChatFocused());
         if (count <= 0 || localY < 0.0D
                 || localY >= (double) count * lineHeight) {
@@ -250,9 +289,12 @@ public abstract class ChatComponentMixin {
 
         ChatComponent self = (ChatComponent) (Object) this;
         double scale = Math.max(0.01D, this.getScale());
-        int top = Mth.floor(FacilityChatLayout.topScaled(self) * scale);
+        int animationOffset = FacilityChatLayout.openOffsetScreen(self);
+        int top = Mth.floor(FacilityChatLayout.topScaled(self) * scale)
+                + animationOffset;
         int bottom = Mth.ceil((FacilityChatLayout.topScaled(self)
-                + FacilityChatLayout.HEADER_HEIGHT) * scale);
+                + FacilityChatLayout.HEADER_HEIGHT) * scale)
+                + animationOffset;
         int right = FacilityChatLayout.panelScreenRight(self);
         int left = Math.max(0, right - 96);
         if (mouseX >= left && mouseX <= right

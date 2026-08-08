@@ -27,6 +27,8 @@ public final class PickupPromptClient {
 
     private static final int ICON_SOURCE_SIZE = 128;
     private static final int ICON_SIZE = 82;
+    private static final float PICKUP_HOTSPOT_X = 0.44F;
+    private static final float PICKUP_HOTSPOT_Y = 0.40F;
     private static final int TEXT_WHITE = 0xFFE8E8E8;
     private static final int TEXT_GRAY = 0xFFB2B3B3;
     private static final float PICKUP_TEXT_SCALE = 1.55F;
@@ -82,16 +84,19 @@ public final class PickupPromptClient {
             return;
         }
 
-        ScreenPoint point = projectToScreen(mc, target.getBoundingBox().getCenter().add(0.0D, -0.08D, 0.0D), screenWidth, screenHeight);
-        if (point == null) {
-            point = new ScreenPoint(screenWidth / 2, screenHeight / 2);
-        }
+        ScreenPoint point = projectToScreen(mc,
+                interpolatedEntityCenter(target, partialTick),
+                screenWidth, screenHeight);
+        if (point == null) return;
 
         int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
         int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
 
-        int iconX = screenX - (ICON_SIZE / 2) - 3;
-        int iconY = screenY - (ICON_SIZE / 2) + 8;
+        // The prompt's semantic anchor is the palm/finger contact point in the
+        // artwork, not the geometric center of the 128x128 texture. Keeping
+        // this explicit lets the entire icon + labels follow the item center.
+        int iconX = screenX - Math.round(ICON_SIZE * PICKUP_HOTSPOT_X);
+        int iconY = screenY - Math.round(ICON_SIZE * PICKUP_HOTSPOT_Y);
         int textX = iconX + ICON_SIZE + 4;
         int pickupY = iconY + 22;
         int itemY = pickupY + 32;
@@ -191,6 +196,17 @@ public final class PickupPromptClient {
         boolean directBoxHit = item.getBoundingBox().inflate(0.35D).clip(eye, eye.add(look.scale(reach))).isPresent();
         if (!directBoxHit && lineDistanceSqr > SOFT_AIM_RADIUS_SQR) return Double.MAX_VALUE;
         return lineDistanceSqr + (alongRay * 0.015D);
+    }
+
+    private static Vec3 interpolatedEntityCenter(ItemEntity item,
+            float partialTick) {
+        Vec3 center = item.getBoundingBox().getCenter();
+        double interpolatedX = Mth.lerp(partialTick, item.xOld, item.getX());
+        double interpolatedY = Mth.lerp(partialTick, item.yOld, item.getY());
+        double interpolatedZ = Mth.lerp(partialTick, item.zOld, item.getZ());
+        return center.add(interpolatedX - item.getX(),
+                interpolatedY - item.getY(),
+                interpolatedZ - item.getZ());
     }
 
     private static ScreenPoint projectToScreen(Minecraft mc, Vec3 worldPos, int screenWidth, int screenHeight) {

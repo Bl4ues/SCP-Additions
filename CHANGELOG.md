@@ -88,6 +88,7 @@
 ## Facility construction
 
 - Added Roombas;
+- Added a wall-mounted **Document Holder** that stores one dedicated Document item, preserves its full document data, and uses authored GeckoLib open, take, fill, and close animations;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;

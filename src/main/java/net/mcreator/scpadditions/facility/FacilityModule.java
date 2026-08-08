@@ -294,6 +294,7 @@ public final class FacilityModule {
         addExternalCreativeItem(functional, UnifiedReaderItems.KEYCARD_READER.get());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.DECON_OPEN.get().asItem());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
+        addExternalCreativeItem(functional, DocumentHolderModule.item());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079_AUXILIARY_POWER.get().asItem());
         addExternalCreativeItem(functional, ScpAdditionsModBlocks.SCP_079CONTROLOFF.get().asItem());
         addFacilityCreativeItem(functional, "default_door");

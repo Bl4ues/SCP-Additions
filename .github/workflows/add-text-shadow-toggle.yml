@@ -29,7 +29,7 @@ jobs:
       - name: Implement text shadow preference
         shell: bash
         run: |
-          python3 - <<'PY'
+          cat > /tmp/add_text_shadow.py <<'PY'
           from pathlib import Path
 
           def replace(path, old, new, count=1):
@@ -39,8 +39,6 @@ jobs:
                   raise SystemExit(f'Missing patch marker in {path}: {old[:80]!r}')
               file.write_text(text.replace(old, new, count), encoding='utf-8')
 
-          # MixinGradle is only needed at compile time. Forge already ships the
-          # Mixin runtime, so this does not add a runtime dependency to the mod.
           replace('settings.gradle',
               "        gradlePluginPortal()\n        maven {\n            name = 'MinecraftForge'",
               "        gradlePluginPortal()\n        maven {\n            name = 'SpongePowered'\n            url = 'https://repo.spongepowered.org/repository/maven-public/'\n        }\n        maven {\n            name = 'MinecraftForge'")
@@ -54,15 +52,8 @@ jobs:
           replace('build.gradle',
               "    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')\n",
               "    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')\n    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'\n")
-          mixin_block = """
-
-mixin {
-    add sourceSets.main, 'scp_additions.refmap.json'
-    config 'scp_additions.mixins.json'
-}
-"""
-          replace('build.gradle',
-              "\nrepositories {\n",
+          mixin_block = "\nmixin {\n    add sourceSets.main, 'scp_additions.refmap.json'\n    config 'scp_additions.mixins.json'\n}\n"
+          replace('build.gradle', "\nrepositories {\n",
               mixin_block + "\nrepositories {\n")
 
           prefs = 'src/main/java/net/mcreator/scpadditions/client/ClientModulePreferences.java'
@@ -96,79 +87,87 @@ mixin {
           modules_json.write_text(text.replace(old, new, 1), encoding='utf-8')
 
           ui = 'src/main/java/net/mcreator/scpadditions/config/ui/AdditionalGameplayModulesUi.java'
-          marker = '''            if (!labels.contains("Custom Oxygen Bar")) {
-                additions.add(constructor.newInstance(
-                        "hud", "custom_oxygen_bar", "Custom Oxygen Bar",
-                        "Replaces vanilla air bubbles with a centered survival-horror oxygen meter.",
-                        true));
-            }
-'''
-          addition = marker + '''            if (!labels.contains("Disable Text Drop Shadows")) {
-                additions.add(constructor.newInstance(
-                        "hud", "disable_text_drop_shadows",
-                        "Disable Text Drop Shadows",
-                        "Removes Minecraft's dark offset shadow from rendered text while preserving the text itself.",
-                        true));
-            }
-'''
+          marker = ('            if (!labels.contains("Custom Oxygen Bar")) {\n'
+                    '                additions.add(constructor.newInstance(\n'
+                    '                        "hud", "custom_oxygen_bar", "Custom Oxygen Bar",\n'
+                    '                        "Replaces vanilla air bubbles with a centered survival-horror oxygen meter.",\n'
+                    '                        true));\n'
+                    '            }\n')
+          addition = marker + ('            if (!labels.contains("Disable Text Drop Shadows")) {\n'
+                    '                additions.add(constructor.newInstance(\n'
+                    '                        "hud", "disable_text_drop_shadows",\n'
+                    '                        "Disable Text Drop Shadows",\n'
+                    '                        "Removes Minecraft\'s dark offset shadow from rendered text while preserving the text itself.",\n'
+                    '                        true));\n'
+                    '            }\n')
           replace(ui, marker, addition)
 
-          Path('src/main/java/net/mcreator/scpadditions/mixin/client').mkdir(parents=True, exist_ok=True)
-          Path('src/main/java/net/mcreator/scpadditions/mixin/client/FontMixin.java').write_text('''package net.mcreator.scpadditions.mixin.client;
+          mixin_dir = Path('src/main/java/net/mcreator/scpadditions/mixin/client')
+          mixin_dir.mkdir(parents=True, exist_ok=True)
+          font_mixin = """package net.mcreator.scpadditions.mixin.client;
 
-import net.minecraft.client.gui.Font;
-import net.mcreator.scpadditions.client.ClientModulePreferences;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+          import net.minecraft.client.gui.Font;
+          import net.mcreator.scpadditions.client.ClientModulePreferences;
+          import org.spongepowered.asm.mixin.Mixin;
+          import org.spongepowered.asm.mixin.injection.At;
+          import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-/** Removes the shadow pass from normal Minecraft text when the personal toggle is enabled. */
-@Mixin(Font.class)
-public abstract class FontMixin {
-    @ModifyVariable(
-            method = "drawInternal(Ljava/lang/String;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/gui/Font$DisplayMode;IIZ)I",
-            at = @At("HEAD"), argsOnly = true, ordinal = 0)
-    private boolean scpAdditions$disableStringShadow(boolean dropShadow) {
-        return ClientModulePreferences.disableTextDropShadows()
-                ? false : dropShadow;
-    }
+          /** Removes the shadow pass from normal Minecraft text when the personal toggle is enabled. */
+          @Mixin(Font.class)
+          public abstract class FontMixin {
+              @ModifyVariable(
+                      method = "drawInternal(Ljava/lang/String;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/gui/Font$DisplayMode;IIZ)I",
+                      at = @At("HEAD"), argsOnly = true, ordinal = 0)
+              private boolean scpAdditions$disableStringShadow(boolean dropShadow) {
+                  return ClientModulePreferences.disableTextDropShadows()
+                          ? false : dropShadow;
+              }
 
-    @ModifyVariable(
-            method = "drawInternal(Lnet/minecraft/util/FormattedCharSequence;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/gui/Font$DisplayMode;II)I",
-            at = @At("HEAD"), argsOnly = true, ordinal = 0)
-    private boolean scpAdditions$disableFormattedShadow(boolean dropShadow) {
-        return ClientModulePreferences.disableTextDropShadows()
-                ? false : dropShadow;
-    }
-}
-''', encoding='utf-8')
+              @ModifyVariable(
+                      method = "drawInternal(Lnet/minecraft/util/FormattedCharSequence;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/gui/Font$DisplayMode;II)I",
+                      at = @At("HEAD"), argsOnly = true, ordinal = 0)
+              private boolean scpAdditions$disableFormattedShadow(boolean dropShadow) {
+                  return ClientModulePreferences.disableTextDropShadows()
+                          ? false : dropShadow;
+              }
+          }
+          """
+          font_mixin = '\n'.join(line[10:] if line.startswith('          ') else line
+                                 for line in font_mixin.splitlines()) + '\n'
+          (mixin_dir / 'FontMixin.java').write_text(font_mixin, encoding='utf-8')
 
-          Path('src/main/resources/scp_additions.mixins.json').write_text('''{
-  "required": true,
-  "minVersion": "0.8",
-  "package": "net.mcreator.scpadditions.mixin",
-  "compatibilityLevel": "JAVA_17",
-  "refmap": "scp_additions.refmap.json",
-  "client": [
-    "client.FontMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
-}
-''', encoding='utf-8')
+          mixin_json = """{
+            "required": true,
+            "minVersion": "0.8",
+            "package": "net.mcreator.scpadditions.mixin",
+            "compatibilityLevel": "JAVA_17",
+            "refmap": "scp_additions.refmap.json",
+            "client": [
+              "client.FontMixin"
+            ],
+            "injectors": {
+              "defaultRequire": 1
+            }
+          }
+          """
+          mixin_json = '\n'.join(line[10:] if line.startswith('          ') else line
+                                 for line in mixin_json.splitlines()) + '\n'
+          Path('src/main/resources/scp_additions.mixins.json').write_text(
+              mixin_json, encoding='utf-8')
 
           changelog = Path('CHANGELOG.md')
           text = changelog.read_text(encoding='utf-8')
           marker = '## Interface and presentation\n\n'
-          entry = '- Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft\'s dark offset shadow pass from rendered text without changing font, color, or layout;\n'
+          entry = ('- Added a default-enabled client-side **Disable Text Drop Shadows** preference '
+                   'that removes Minecraft\'s dark offset shadow pass from rendered text without '
+                   'changing font, color, or layout;\n')
           if marker not in text:
               raise SystemExit('CHANGELOG interface marker not found')
           if entry not in text:
               text = text.replace(marker, marker + entry, 1)
           changelog.write_text(text, encoding='utf-8')
           PY
-
+          python3 /tmp/add_text_shadow.py
           rm -f .github/workflows/add-text-shadow-toggle.yml
 
       - name: Build final tree

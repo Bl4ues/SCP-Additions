@@ -19,6 +19,6 @@ public final class DocumentHolderBlockEntityRenderer
     public RenderType getRenderType(DocumentHolderBlockEntity animatable,
             ResourceLocation texture, MultiBufferSource bufferSource,
             float partialTick) {
-        return RenderType.entityCutoutNoCull(texture);
+        return RenderType.entityTranslucent(texture, true);
     }
 }

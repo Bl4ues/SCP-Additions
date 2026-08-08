@@ -88,12 +88,26 @@ jobs:
       - name: Build
         run: |
           chmod +x gradlew
-          ./gradlew clean build
+          set +e
+          output=$(./gradlew clean build 2>&1)
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            printf '%s\n' "$output" > scripts/_item_sounds_build_failure.txt
+            git config user.name "Deyvid Campos"
+            git config user.email "deyvid04campos@gmail.com"
+            git add scripts/_item_sounds_build_failure.txt
+            git commit -m "Record custom item sound build failure"
+            git push origin HEAD:master
+            exit "$status"
+          fi
+          printf '%s\n' "$output"
 
       - name: Commit implementation
         run: |
           rm -f scripts/_apply_custom_item_sounds.py
           rm -f scripts/_item_sounds_failure.txt
+          rm -f scripts/_item_sounds_build_failure.txt
           rm -f .github/workflows/apply-custom-item-sounds.yml
           git config user.name "Deyvid Campos"
           git config user.email "deyvid04campos@gmail.com"

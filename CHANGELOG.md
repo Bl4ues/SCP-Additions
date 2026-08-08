@@ -75,7 +75,6 @@
 - Added a dedicated Document item to the creative tab;
 - Added an in-world document editor with **SCP Document**, **Facility Document**, and **Blank Document** templates, editable titles and Codex categories, three header labels and values, a Markdown body, an optional photograph, and an optional caption;
 - Made new Config Center Codex definitions default to the dedicated Document item and unique-item matching while retaining support for selecting any registered item and for legacy full-page image documents.
-- Replaced the Document item paper placeholder with its authored thin 3D model; Blank Documents use `document.png`, while template-based and uploaded full-page documents display their document artwork specifically on the model front face.
 
 ## Survival
 
@@ -89,7 +88,7 @@
 ## Facility construction
 
 - Added Roombas;
-- Added a wall-mounted **Document Holder** that stores one dedicated Document item, preserves its full document data, and uses authored GeckoLib open, take, fill, and close animations;
+- Added a wall-mounted **Document Holder** that stores one Document item;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;

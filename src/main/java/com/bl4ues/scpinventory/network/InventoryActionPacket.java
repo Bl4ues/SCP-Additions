@@ -7,6 +7,7 @@ import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import com.bl4ues.scpinventory.item.ScpItemType;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
+import com.bl4ues.scpinventory.sound.InventoryInteractionSoundFeedback;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,8 +15,6 @@ import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.equipment.HazmatSuitAccess;
 import net.mcreator.scpadditions.equipment.HazmatSuitEvents;
 import net.mcreator.scpadditions.vitals.HungerSystemEvents;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
@@ -122,16 +121,7 @@ public class InventoryActionPacket {
         ScpPickupRouter.stripNoMergeMarker(usedStack);
 
         player.swing(InteractionHand.MAIN_HAND, true);
-        player.level().playSound(
-                null,
-                player.getX(),
-                player.getY(),
-                player.getZ(),
-                animation == UseAnim.DRINK ? SoundEvents.GENERIC_DRINK : SoundEvents.GENERIC_EAT,
-                SoundSource.PLAYERS,
-                0.8F,
-                0.9F + player.getRandom().nextFloat() * 0.2F
-        );
+        InventoryInteractionSoundFeedback.consumed(player, usedStack);
 
         HungerSystemEvents.healFromFood(player, usedStack);
         ItemStack result = usedStack.finishUsingItem(player.level(), player);
@@ -166,6 +156,7 @@ public class InventoryActionPacket {
 
         inventory.setEquipment(targetSlot, newEquipment);
         syncVanillaEquipmentSlot(player, targetSlot, newEquipment);
+        InventoryInteractionSoundFeedback.equipped(player);
 
         if (!previousEquipment.isEmpty()) inventory.setInventoryItem(slot, previousEquipment);
     }

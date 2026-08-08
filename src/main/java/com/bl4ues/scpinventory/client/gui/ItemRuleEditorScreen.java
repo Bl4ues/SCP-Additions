@@ -1,6 +1,7 @@
 package com.bl4ues.scpinventory.client.gui;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
+import com.bl4ues.scpinventory.item.ScpConsumableType;
 import com.bl4ues.scpinventory.item.ScpItemType;
 import com.bl4ues.scpinventory.network.ItemConfigDeletePacket;
 import com.bl4ues.scpinventory.network.ItemConfigOpenPacket;
@@ -25,7 +26,8 @@ import java.util.function.Function;
 
 public final class ItemRuleEditorScreen extends Screen {
     private static final int PANEL_W = 310;
-    private static final int PANEL_H = 228;
+    private static final int BASE_PANEL_H = 228;
+    private static final int CONSUMABLE_PANEL_H = 276;
     private static final int MARGIN = 10;
 
     private static final int NAVY = 0xF000071F;
@@ -49,10 +51,12 @@ public final class ItemRuleEditorScreen extends Screen {
     private final String itemId;
     private final boolean existing;
     private ScpItemType type;
+    private ScpConsumableType consumableType;
     private final EnumSet<EquipmentEffect> effects =
             EnumSet.noneOf(EquipmentEffect.class);
 
     private SingleDropdown<ScpItemType> categoryDropdown;
+    private SingleDropdown<ScpConsumableType> consumableTypeDropdown;
     private EffectMultiSelect effectDropdown;
     private ExpandableSelector openSelector;
     private EditorButton forgetButton;
@@ -63,6 +67,9 @@ public final class ItemRuleEditorScreen extends Screen {
         this.itemId = packet.itemId();
         this.existing = packet.existing();
         this.type = parseType(packet.type());
+        this.consumableType = ScpConsumableType
+                .fromConfigToken(packet.consumableType())
+                .orElse(ScpConsumableType.FOOD);
         if (packet.noStamina()) effects.add(EquipmentEffect.NO_STAMINA);
         if (packet.protectedEyes()) {
             effects.add(EquipmentEffect.PROTECTED_EYES);
@@ -82,12 +89,31 @@ public final class ItemRuleEditorScreen extends Screen {
                 x, top + 91, width, 22,
                 List.of(TYPES), type,
                 value -> ScpFonts.roboto(value.getDisplayName()),
-                value -> type = value));
+                value -> {
+                    boolean layoutChanged = (type == ScpItemType.CONSUMABLE)
+                            != (value == ScpItemType.CONSUMABLE);
+                    type = value;
+                    if (layoutChanged) {
+                        Minecraft.getInstance().execute(this::rebuildWidgets);
+                    }
+                }));
+
+        int effectY = top + 139;
+        if (type == ScpItemType.CONSUMABLE) {
+            consumableTypeDropdown = addRenderableWidget(new SingleDropdown<>(
+                    x, top + 139, width, 22,
+                    List.of(ScpConsumableType.values()), consumableType,
+                    value -> ScpFonts.roboto(value.displayName()),
+                    value -> consumableType = value));
+            effectY = top + 187;
+        } else {
+            consumableTypeDropdown = null;
+        }
 
         effectDropdown = addRenderableWidget(new EffectMultiSelect(
-                x, top + 139, width, 22));
+                x, effectY, width, 22));
 
-        int bottomY = top + PANEL_H - 34;
+        int bottomY = top + panelHeight() - 34;
         forgetButton = addRenderableWidget(new EditorButton(
                 x, bottomY, 76, 22, "Forget",
                 ButtonStyle.DANGER, this::forgetRule));
@@ -130,10 +156,11 @@ public final class ItemRuleEditorScreen extends Screen {
         int left = panelLeft();
         int top = panelTop();
 
-        graphics.fill(left, top, left + PANEL_W, top + PANEL_H, NAVY);
+        int panelHeight = panelHeight();
+        graphics.fill(left, top, left + PANEL_W, top + panelHeight, NAVY);
         graphics.fill(left, top, left + PANEL_W, top + 31, NAVY_LIGHT);
         graphics.fill(left, top + 30, left + PANEL_W, top + 31, ACCENT);
-        outline(graphics, left, top, PANEL_W, PANEL_H, BORDER);
+        outline(graphics, left, top, PANEL_W, panelHeight, BORDER);
 
         graphics.drawString(font,
                 ScpFonts.roboto("SCP ITEM CONFIGURATION"),
@@ -163,9 +190,18 @@ public final class ItemRuleEditorScreen extends Screen {
 
         graphics.drawString(font, ScpFonts.roboto("CATEGORY"),
                 left + 16, top + 78, SECTION, false);
-        graphics.drawString(font,
-                ScpFonts.roboto("EQUIPMENT EFFECTS"),
-                left + 16, top + 126, SECTION, false);
+        if (type == ScpItemType.CONSUMABLE) {
+            graphics.drawString(font,
+                    ScpFonts.roboto("CONSUMABLE TYPE"),
+                    left + 16, top + 126, SECTION, false);
+            graphics.drawString(font,
+                    ScpFonts.roboto("EQUIPMENT EFFECTS"),
+                    left + 16, top + 174, SECTION, false);
+        } else {
+            graphics.drawString(font,
+                    ScpFonts.roboto("EQUIPMENT EFFECTS"),
+                    left + 16, top + 126, SECTION, false);
+        }
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -177,7 +213,7 @@ public final class ItemRuleEditorScreen extends Screen {
 
     private void save() {
         ModNetwork.CHANNEL.sendToServer(new ItemConfigSavePacket(
-                itemId, type.name(),
+                itemId, type.name(), consumableType.name(),
                 effects.contains(EquipmentEffect.NO_STAMINA),
                 effects.contains(EquipmentEffect.PROTECTED_EYES)));
         Minecraft.getInstance().setScreen(null);
@@ -207,8 +243,13 @@ public final class ItemRuleEditorScreen extends Screen {
         return Math.max(MARGIN, width - PANEL_W - MARGIN);
     }
 
+    private int panelHeight() {
+        return type == ScpItemType.CONSUMABLE
+                ? CONSUMABLE_PANEL_H : BASE_PANEL_H;
+    }
+
     private int panelTop() {
-        return Math.max(MARGIN, (height - PANEL_H) / 2);
+        return Math.max(MARGIN, (height - panelHeight()) / 2);
     }
 
     private static ScpItemType parseType(String value) {

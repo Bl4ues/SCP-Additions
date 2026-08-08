@@ -91,6 +91,23 @@ public final class ScpItemClassifier {
         return getType(stack).getDisplayName();
     }
 
+    public static ScpConsumableType getConsumableType(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return ScpConsumableType.FOOD;
+        ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (stackId != null) {
+            for (String rawRule : ScpInventoryConfig.itemRules()) {
+                Optional<ConfiguredItemRule> rule = parseItemRule(rawRule);
+                if (rule.isPresent()
+                        && rule.get().itemId().equals(stackId)
+                        && rule.get().type() == ScpItemType.CONSUMABLE
+                        && rule.get().consumableType() != null) {
+                    return rule.get().consumableType();
+                }
+            }
+        }
+        return ScpConsumableType.infer(stack);
+    }
+
     public static boolean isCoin(ItemStack stack) {
         return stack != null && !stack.isEmpty()
                 && !ScpPickupRouter.isCoinMirror(stack)
@@ -275,12 +292,16 @@ public final class ScpItemClassifier {
 
     private static Optional<ConfiguredItemRule> parseItemRule(String rawRule) {
         if (rawRule == null || rawRule.isBlank()) return Optional.empty();
-        String[] parts = rawRule.split("\\|", 2);
-        if (parts.length != 2) return Optional.empty();
+        String[] parts = rawRule.split("\\|", 3);
+        if (parts.length < 2) return Optional.empty();
         ResourceLocation configuredId = ResourceLocation.tryParse(parts[0].trim());
         if (configuredId == null) return Optional.empty();
         Optional<ScpItemType> type = ScpItemType.fromConfigToken(parts[1]);
-        return type.map(scpItemType -> new ConfiguredItemRule(configuredId, scpItemType));
+        ScpConsumableType consumableType = parts.length > 2
+                ? ScpConsumableType.fromConfigToken(parts[2]).orElse(null)
+                : null;
+        return type.map(scpItemType -> new ConfiguredItemRule(
+                configuredId, scpItemType, consumableType));
     }
 
     private static ScpItemType fromVanillaEquipmentSlot(EquipmentSlot slot) {
@@ -298,6 +319,7 @@ public final class ScpItemClassifier {
                 new ResourceLocation("scp_additions", path));
     }
 
-    private record ConfiguredItemRule(ResourceLocation itemId, ScpItemType type) {
+    private record ConfiguredItemRule(ResourceLocation itemId,
+            ScpItemType type, ScpConsumableType consumableType) {
     }
 }

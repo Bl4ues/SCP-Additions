@@ -5,11 +5,10 @@ import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
 import com.bl4ues.scpinventory.item.ScpItemType;
 import com.bl4ues.scpinventory.item.ScpPickupRouter;
+import com.bl4ues.scpinventory.sound.InventoryInteractionSoundFeedback;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -151,15 +150,6 @@ public class PickupItemPacket {
 
     private static void playPickupFeedback(ServerPlayer player, ItemEntity itemEntity, int acceptedCount) {
         player.take(itemEntity, acceptedCount);
-        player.level().playSound(
-                null,
-                player.getX(),
-                player.getY(),
-                player.getZ(),
-                SoundEvents.ITEM_PICKUP,
-                SoundSource.PLAYERS,
-                0.2F,
-                ((player.getRandom().nextFloat() - player.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F
-        );
+        InventoryInteractionSoundFeedback.pickup(player);
     }
 }

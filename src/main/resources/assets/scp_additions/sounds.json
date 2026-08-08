@@ -1,4 +1,24 @@
 {
+  "inventory_pickup": {
+    "subtitle": "subtitles.scp_additions.inventory_pickup",
+    "sounds": [
+      {"name": "scp_additions:pickup_1", "stream": false, "volume": 1.0},
+      {"name": "scp_additions:pickup_2", "stream": false, "volume": 1.0},
+      {"name": "scp_additions:pickup_3", "stream": false, "volume": 1.0}
+    ]
+  },
+  "inventory_eat": {
+    "subtitle": "subtitles.scp_additions.inventory_eat",
+    "sounds": [
+      {"name": "scp_additions:eat", "stream": false, "volume": 1.0}
+    ]
+  },
+  "inventory_drink": {
+    "subtitle": "subtitles.scp_additions.inventory_drink",
+    "sounds": [
+      {"name": "scp_additions:drink", "stream": false, "volume": 1.0}
+    ]
+  },
   "teslaactivate": {
     "subtitle": "subtitles.teslaactivate",
     "sounds": [

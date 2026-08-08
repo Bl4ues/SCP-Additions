@@ -53,6 +53,7 @@ public final class ClientModulePreferences {
             "vitals.custom_health_enabled",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
+            "audio.custom_item_interaction_sounds",
             "audio.replace_player_hurt_sounds",
             "audio.use_voice_profile_b",
             "audio.mute_non_player_hit_sounds",
@@ -140,6 +141,9 @@ public final class ClientModulePreferences {
                 next.audio.enterSoundEnabled);
         next.audio.saveGameSoundEnabled = bool(audio,
                 "save_game_sound_enabled", next.audio.saveGameSoundEnabled);
+        next.audio.customItemInteractionSounds = bool(audio,
+                "custom_item_interaction_sounds",
+                next.audio.customItemInteractionSounds);
         next.audio.replacePlayerHurtSounds = bool(audio,
                 "replace_player_hurt_sounds",
                 next.audio.replacePlayerHurtSounds);
@@ -207,6 +211,8 @@ public final class ClientModulePreferences {
                 value.audio.enterSoundEnabled);
         audio.addProperty("save_game_sound_enabled",
                 value.audio.saveGameSoundEnabled);
+        audio.addProperty("custom_item_interaction_sounds",
+                value.audio.customItemInteractionSounds);
         audio.addProperty("replace_player_hurt_sounds",
                 value.audio.replacePlayerHurtSounds);
         audio.addProperty("use_voice_profile_b",
@@ -264,6 +270,10 @@ public final class ClientModulePreferences {
 
     public static boolean mainMenuMusicEnabled() {
         return current.audio.mainMenuMusicEnabled;
+    }
+
+    public static boolean customItemInteractionSoundsEnabled() {
+        return current.audio.customItemInteractionSounds;
     }
 
     public static boolean disableTextDropShadows() {
@@ -398,6 +408,7 @@ public final class ClientModulePreferences {
     private static final class Audio {
         private boolean enterSoundEnabled = true;
         private boolean saveGameSoundEnabled = true;
+        private boolean customItemInteractionSounds = true;
         private boolean replacePlayerHurtSounds = true;
         private boolean useVoiceProfileB;
         private boolean muteNonPlayerHitSounds;

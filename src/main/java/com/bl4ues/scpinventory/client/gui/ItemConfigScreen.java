@@ -36,6 +36,7 @@ public class ItemConfigScreen extends Screen {
     private final String itemId;
     private final boolean existing;
     private ScpItemType type;
+    private final String consumableType;
     private boolean noStamina;
     private boolean protectedEyes;
     private Button typeButton;
@@ -49,6 +50,7 @@ public class ItemConfigScreen extends Screen {
         this.itemId = packet.itemId();
         this.existing = packet.existing();
         this.type = parseType(packet.type());
+        this.consumableType = packet.consumableType();
         this.noStamina = packet.noStamina();
         this.protectedEyes = packet.protectedEyes();
     }
@@ -140,7 +142,8 @@ public class ItemConfigScreen extends Screen {
 
     private void save() {
         ModNetwork.CHANNEL.sendToServer(new ItemConfigSavePacket(
-                itemId, type.name(), noStamina, protectedEyes));
+                itemId, type.name(), consumableType,
+                noStamina, protectedEyes));
         Minecraft.getInstance().setScreen(null);
     }
 

@@ -1,5 +1,6 @@
 package com.bl4ues.scpinventory.config;
 
+import com.bl4ues.scpinventory.item.ScpConsumableType;
 import com.bl4ues.scpinventory.network.ItemConfigOpenPacket;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import com.google.gson.Gson;
@@ -8,10 +9,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
 
@@ -39,14 +42,17 @@ public final class ItemConfigManager {
         if (type == null) {
             type = "MISCELLANEOUS";
         }
+        String consumableType = findConsumableType(root, idText);
+        if (consumableType.isBlank()) consumableType = inferConsumableType(idText);
         boolean noStamina = hasItemEffect(root, idText, NO_STAMINA);
         boolean protectedEyes = hasItemEffect(root, idText, PROTECTED_EYES);
         ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new ItemConfigOpenPacket(idText, existing, type, noStamina, protectedEyes));
+                new ItemConfigOpenPacket(idText, existing, type, consumableType,
+                        noStamina, protectedEyes));
     }
 
     public static void saveRule(ServerPlayer player, String idText, String type,
-            boolean noStamina, boolean protectedEyes) {
+            String consumableType, boolean noStamina, boolean protectedEyes) {
         if (player == null || !isValidId(idText)) {
             return;
         }
@@ -57,7 +63,12 @@ public final class ItemConfigManager {
 
         JsonObject rule = new JsonObject();
         rule.addProperty("id", idText);
-        rule.addProperty("type", cleanType(type));
+        String normalizedType = cleanType(type);
+        rule.addProperty("type", normalizedType);
+        if ("CONSUMABLE".equals(normalizedType)) {
+            rule.addProperty("consumable_type",
+                    cleanConsumableType(consumableType));
+        }
         rules.add(rule);
 
         setItemEffect(root, idText, NO_STAMINA, noStamina);
@@ -184,7 +195,7 @@ public final class ItemConfigManager {
         }
         try {
             if (entry.isJsonPrimitive()) {
-                String[] parts = entry.getAsString().split("\\|", 2);
+                String[] parts = entry.getAsString().split("\\|", 3);
                 return parts.length > 1 ? parts[1].trim() : "MISCELLANEOUS";
             }
             if (entry.isJsonObject()) {
@@ -194,6 +205,45 @@ public final class ItemConfigManager {
         } catch (Exception ignored) {
         }
         return "MISCELLANEOUS";
+    }
+
+    private static String findConsumableType(JsonObject root, String idText) {
+        for (JsonElement entry : array(root, "item_rules")) {
+            if (idText.equals(itemRuleId(entry))) {
+                return itemRuleConsumableType(entry);
+            }
+        }
+        return "";
+    }
+
+    private static String itemRuleConsumableType(JsonElement entry) {
+        if (entry == null) return "";
+        try {
+            if (entry.isJsonPrimitive()) {
+                String[] parts = entry.getAsString().split("\\|", 3);
+                return parts.length > 2 ? parts[2].trim() : "";
+            }
+            if (entry.isJsonObject()) {
+                return firstString(entry.getAsJsonObject(),
+                        "consumable_type", "consume_type");
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
+    }
+
+    private static String inferConsumableType(String idText) {
+        ResourceLocation id = ResourceLocation.tryParse(idText);
+        if (id == null) return ScpConsumableType.FOOD.name();
+        return BuiltInRegistries.ITEM.getOptional(id)
+                .map(ItemStack::new)
+                .map(ScpConsumableType::infer)
+                .orElse(ScpConsumableType.FOOD).name();
+    }
+
+    private static String cleanConsumableType(String value) {
+        return ScpConsumableType.fromConfigToken(value)
+                .orElse(ScpConsumableType.FOOD).name();
     }
 
     private static boolean hasItemEffect(JsonObject root, String idText, String effect) {

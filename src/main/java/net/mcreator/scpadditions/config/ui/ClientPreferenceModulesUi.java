@@ -148,10 +148,12 @@ public final class ClientPreferenceModulesUi {
             for (Button button : buttons) {
                 Component label = labels.get(button);
                 if (label == null || !button.visible) continue;
-                Boolean personal = scopeForLabel(scopes,
-                        stripState(label.getString()));
+                String base = stripState(label.getString());
+
+                Boolean personal = scopeForLabel(scopes, base);
                 if (personal != null) {
-                    button.active = personal || canEdit;
+                    button.active = (personal || canEdit)
+                            && dependencyAvailable(screen, base);
                 }
             }
         } catch (ReflectiveOperationException exception) {
@@ -215,6 +217,21 @@ public final class ClientPreferenceModulesUi {
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
                     "Could not render module permission scopes", exception);
+        }
+    }
+
+    private static boolean dependencyAvailable(Screen screen,
+            String label) {
+        if (!"Custom Item Interaction Sounds".equals(label)) return true;
+        try {
+            JsonObject modules = working(screen);
+            if (!modules.has("inventory")
+                    || !modules.get("inventory").isJsonObject()) return true;
+            JsonObject inventory = modules.getAsJsonObject("inventory");
+            return !inventory.has("enabled")
+                    || inventory.get("enabled").getAsBoolean();
+        } catch (Exception ignored) {
+            return true;
         }
     }
 

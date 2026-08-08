@@ -197,6 +197,9 @@ public final class ScpAdditionsModulesConfig {
 		@SerializedName("save_game_sound_enabled")
 		public boolean saveGameSoundEnabled = true;
 
+		@SerializedName("custom_item_interaction_sounds")
+		public boolean customItemInteractionSounds = true;
+
 		@SerializedName("replace_player_hurt_sounds")
 		public boolean replacePlayerHurtSounds = true;
 

@@ -4,6 +4,7 @@ import com.bl4ues.scpinventory.capability.IScpInventory;
 import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpinventory.item.ScpItemClassifier;
+import com.bl4ues.scpinventory.sound.InventoryInteractionSoundFeedback;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -163,6 +164,7 @@ public class InventoryMovePacket {
 
         inventory.setEquipment(targetSlot, movingStack);
         InventoryActionPacket.syncVanillaEquipmentSlot(player, targetSlot, movingStack);
+        InventoryInteractionSoundFeedback.equipped(player);
 
         if (!previousEquipment.isEmpty()) {
             inventory.setInventoryItem(sourceIndex, previousEquipment);

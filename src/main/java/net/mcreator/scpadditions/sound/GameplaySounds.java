@@ -15,6 +15,12 @@ public final class GameplaySounds {
 
     public static final RegistryObject<SoundEvent> SAVE_GAME =
             register("save_game");
+    public static final RegistryObject<SoundEvent> ITEM_PICKUP =
+            register("inventory_pickup");
+    public static final RegistryObject<SoundEvent> ITEM_EAT =
+            register("inventory_eat");
+    public static final RegistryObject<SoundEvent> ITEM_DRINK =
+            register("inventory_drink");
 
     private GameplaySounds() {
     }

@@ -224,7 +224,16 @@ public final class ScpInventoryConfig {
             String id = firstString(obj, "id", "item");
             String type = firstString(obj, "type", "slot");
             if (!id.isBlank() && !type.isBlank()) {
-                values.add(id + "|" + type.toUpperCase(Locale.ROOT));
+                String normalizedType = type.toUpperCase(Locale.ROOT);
+                String encoded = id + "|" + normalizedType;
+                if ("CONSUMABLE".equals(normalizedType)) {
+                    String consumableType = firstString(obj,
+                            "consumable_type", "consume_type");
+                    if (!consumableType.isBlank()) {
+                        encoded += "|" + consumableType.toUpperCase(Locale.ROOT);
+                    }
+                }
+                values.add(encoded);
             }
         }
         return values;

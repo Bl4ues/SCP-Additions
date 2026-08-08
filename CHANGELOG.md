@@ -148,6 +148,7 @@
 
 ## Audio and presentation
 
+- Added a default-enabled client-side **Custom Item Interaction Sounds** preference, active only for SCP Inventory actions: custom prompt pickups and equipment use randomized pickup cues, while CONSUMABLE rules can select **Food** or **Drink** feedback in the item-category editor; vanilla interaction paths remain untouched and disabling the preference restores vanilla local pickup/eat/drink feedback;
 - Reintroduced and updated the world-entry sound and added a General & Modules option to disable it;
 - Added a default-enabled module that plays a sound whenever commands, beds, respawn anchors, or facility systems set a player's respawn point;
 - Added a default-enabled module that replaces vanilla player hurt sounds with human voices;

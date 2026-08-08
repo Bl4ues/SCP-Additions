@@ -237,6 +237,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "blink", "enabled", errors);
         checkBoolean(root, "audio", "enter_sound_enabled", errors);
         checkBoolean(root, "audio", "save_game_sound_enabled", errors);
+        checkBoolean(root, "audio", "custom_item_interaction_sounds", errors);
         checkBoolean(root, "audio", "replace_player_hurt_sounds", errors);
         checkBoolean(root, "audio", "mute_non_player_hit_sounds", errors);
         checkBoolean(root, "audio", "disable_vanilla_music", errors);
@@ -265,6 +266,7 @@ public final class ConfigCenterService {
             requireArray(root, key, errors);
         }
         validateObjectIds(root, "item_rules", "id", errors, warnings, true);
+        validateConsumableTypes(root, errors);
         validateObjectIds(root, "item_effects", "id", errors, warnings, true);
         validateObjectIds(root, "codex_documents", "id", errors, warnings, true);
         if (root.has("codex_documents") && root.get("codex_documents").isJsonArray()) {
@@ -297,6 +299,35 @@ public final class ConfigCenterService {
         validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);
         validateSimpleIds(root, "scp_173_targets", errors, warnings, true);
         validateSimpleIds(root, "roomba_spawn_blocks", errors, warnings, false);
+    }
+
+    private static void validateConsumableTypes(JsonObject root,
+            List<String> errors) {
+        if (!root.has("item_rules") || !root.get("item_rules").isJsonArray()) {
+            return;
+        }
+        int index = 0;
+        for (JsonElement element : root.getAsJsonArray("item_rules")) {
+            if (element.isJsonObject()) {
+                JsonObject rule = element.getAsJsonObject();
+                String key = rule.has("consumable_type")
+                        ? "consumable_type"
+                        : rule.has("consume_type") ? "consume_type" : "";
+                if (!key.isBlank()) {
+                    String value = string(rule, key).trim().toUpperCase(java.util.Locale.ROOT);
+                    if (!"FOOD".equals(value) && !"DRINK".equals(value)) {
+                        errors.add("item_rules[" + index + "]." + key
+                                + " must be Food or Drink");
+                    }
+                    String type = string(rule, "type").trim().toUpperCase(java.util.Locale.ROOT);
+                    if (!"CONSUMABLE".equals(type)) {
+                        errors.add("item_rules[" + index + "]." + key
+                                + " is only valid for CONSUMABLE items");
+                    }
+                }
+            }
+            index++;
+        }
     }
 
     private static void validateContext(JsonObject root, List<String> errors, List<String> warnings) {

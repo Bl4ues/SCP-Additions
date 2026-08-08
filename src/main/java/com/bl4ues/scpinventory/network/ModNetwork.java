@@ -12,7 +12,7 @@ import net.mcreator.scpadditions.config.ui.ConfigCenterNetwork;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "18";
+    private static final String PROTOCOL_VERSION = "19";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -38,6 +38,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, InventoryMovePacket.class, InventoryMovePacket::encode, InventoryMovePacket::decode, InventoryMovePacket::handle);
         CHANNEL.registerMessage(id++, StorageContainerTransferPacket.class, StorageContainerTransferPacket::encode, StorageContainerTransferPacket::decode, StorageContainerTransferPacket::handle);
         CHANNEL.registerMessage(id++, PickupItemPacket.class, PickupItemPacket::encode, PickupItemPacket::decode, PickupItemPacket::handle);
+        CHANNEL.registerMessage(id++, ItemInteractionSoundPacket.class, ItemInteractionSoundPacket::encode, ItemInteractionSoundPacket::decode, ItemInteractionSoundPacket::handle);
         CHANNEL.registerMessage(id++, UseHotbarItemPacket.class, UseHotbarItemPacket::encode, UseHotbarItemPacket::decode, UseHotbarItemPacket::handle);
         CHANNEL.registerMessage(id++, UsableSessionReturnPacket.class, UsableSessionReturnPacket::encode, UsableSessionReturnPacket::decode, UsableSessionReturnPacket::handle);
         CHANNEL.registerMessage(id++, UsableSessionDropPacket.class, UsableSessionDropPacket::encode, UsableSessionDropPacket::decode, UsableSessionDropPacket::handle);

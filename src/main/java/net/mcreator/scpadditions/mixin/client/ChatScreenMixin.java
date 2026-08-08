@@ -24,8 +24,21 @@ public abstract class ChatScreenMixin {
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
         Minecraft minecraft = Minecraft.getInstance();
         ChatComponent chat = minecraft.gui.getChat();
+        FacilityChatLayout.beginOpenAnimation();
         this.input.setX(FacilityChatLayout.inputX());
-        this.input.setY(FacilityChatLayout.inputY(chat));
+        this.input.setY(FacilityChatLayout.inputY(chat)
+                + FacilityChatLayout.openOffsetScreen(chat));
+        this.input.setWidth(FacilityChatLayout.inputWidth(chat));
+    }
+
+    @Inject(method = "render", at = @At("HEAD"))
+    private void scpAdditions$animateFacilityInput(GuiGraphics graphics,
+            int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
+        ChatComponent chat = Minecraft.getInstance().gui.getChat();
+        this.input.setX(FacilityChatLayout.inputX());
+        this.input.setY(FacilityChatLayout.inputY(chat)
+                + FacilityChatLayout.openOffsetScreen(chat));
         this.input.setWidth(FacilityChatLayout.inputWidth(chat));
     }
 

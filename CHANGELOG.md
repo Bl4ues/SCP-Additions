@@ -75,6 +75,7 @@
 - Added a dedicated Document item to the creative tab;
 - Added an in-world document editor with **SCP Document**, **Facility Document**, and **Blank Document** templates, editable titles and Codex categories, three header labels and values, a Markdown body, an optional photograph, and an optional caption;
 - Made new Config Center Codex definitions default to the dedicated Document item and unique-item matching while retaining support for selecting any registered item and for legacy full-page image documents.
+- Replaced the Document item paper placeholder with its authored thin 3D model; Blank Documents use `document.png`, while template-based and uploaded full-page documents display their document artwork specifically on the model front face.
 
 ## Survival
 

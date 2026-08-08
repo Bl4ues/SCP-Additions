@@ -221,8 +221,8 @@ public final class ContextPromptClient {
             boolean directHit = blockHit != null
                     && hitBelongsTo(blockHit.getBlockPos(), rulePos, player);
             for (ContextInteractionRegistry.Rule rule : rules) {
-                if (!rule.isAvailable(player.level(), rulePos, ruleState)
-                        || !rule.isHeldItemSatisfied(player)) continue;
+                if (!rule.isAvailable(player.level(), rulePos, ruleState,
+                        player) || !rule.isHeldItemSatisfied(player)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(rulePos, ruleState);
                 if (isElevatorStationButton(rule.interactionKey())
                         && !isStationButtonViewedFromFront(eye, anchor,

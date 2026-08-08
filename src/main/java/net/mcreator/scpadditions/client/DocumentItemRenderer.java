@@ -8,11 +8,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.document.DocumentData;
-import net.minecraft.resources.ResourceLocation;
 
 import java.util.Optional;
 
@@ -95,9 +95,12 @@ public final class DocumentItemRenderer extends BlockEntityWithoutLevelRenderer 
 
         CodexDocumentDefinition definition = configured.get();
         if (!definition.getWorldImageKey().isBlank()) {
-            return CodexAssetClient.getTexture(definition.getWorldImageKey())
-                    .orElse(null);
+            ResourceLocation worldTexture = CodexAssetClient
+                    .getTexture(definition.getWorldImageKey()).orElse(null);
+            if (worldTexture != null) return worldTexture;
         }
+        // Match the Codex viewer: a packaged texture remains a valid fallback
+        // while a world image is loading or when a legacy definition uses one.
         return definition.getImageLocation().orElse(null);
     }
 

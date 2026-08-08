@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.client.ClientItemInteractionSounds;
 import com.bl4ues.scpinventory.config.InventoryModuleRuntimeState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -33,12 +34,15 @@ public final class PlayerDamageAudioClient {
     private static final String PLAYER_HURT_PREFIX = "entity.player.hurt";
     private static final String PLAYER_DEATH_PREFIX = "entity.player.death";
     private static final String PLAYER_ATTACK_PREFIX = "entity.player.attack.";
+    private static final String GENERIC_HURT_SOUND = "entity.generic.hurt";
     private static final double LOCAL_PLAYER_SOUND_RADIUS_SQ = 9.0D;
+    private static final double TRACKED_MOB_SOUND_RADIUS_SQ = 9.0D;
     private static final long MOB_IMPACT_WINDOW_NANOS = 500_000_000L;
     private static final float HEALTH_EPSILON = 1.0E-3F;
     private static final float GASP_AIR_THRESHOLD = 0.30F;
 
     private static volatile long suppressMobImpactUntilNanos = Long.MIN_VALUE;
+    private static volatile int suppressMobImpactTargetId = -1;
     private static UUID trackedPlayerId;
     private static int previousHurtTime;
     private static float previousEffectiveHealth = Float.NaN;
@@ -71,6 +75,7 @@ public final class PlayerDamageAudioClient {
 
         suppressMobImpactUntilNanos = System.nanoTime()
                 + MOB_IMPACT_WINDOW_NANOS;
+        suppressMobImpactTargetId = hit.getEntity().getId();
     }
 
     /** Server/integrated-server fallback for attacks not exposed by input. */
@@ -86,6 +91,7 @@ public final class PlayerDamageAudioClient {
                 && !(event.getTarget() instanceof Player)) {
             suppressMobImpactUntilNanos = System.nanoTime()
                     + MOB_IMPACT_WINDOW_NANOS;
+            suppressMobImpactTargetId = event.getTarget().getId();
         }
     }
 
@@ -155,6 +161,12 @@ public final class PlayerDamageAudioClient {
     public static void onPlaySound(PlaySoundEvent event) {
         SoundInstance original = event.getOriginalSound();
         if (original == null) return;
+
+        if (ClientItemInteractionSounds.shouldSuppressVanilla(original)) {
+            event.setSound(null);
+            return;
+        }
+
         ResourceLocation location = original.getLocation();
         if (location == null) return;
 
@@ -176,13 +188,24 @@ public final class PlayerDamageAudioClient {
          * than at the attacker, so the local-player distance test is invalid
          * here. The remembered input window and current crosshair target cover
          * both successful attacks and attacks canceled before a packet is sent.
+         *
+         * Custom mobs that inherit LivingEntity's generic hurt fallback (such
+         * as SCP-106) also emit entity.generic.hurt in addition to the player's
+         * attack cue. Suppress that fallback only when it is spatially tied to
+         * the exact mob marked by the local attack window.
          */
         if (InventoryModuleRuntimeState.muteNonPlayerHitSoundsForClient()
-                && minecraftSound
-                && path.startsWith(PLAYER_ATTACK_PREFIX)
-                && (isNonPlayerMobImpact()
-                || isCurrentNonPlayerMobTarget())) {
-            event.setSound(null);
+                && minecraftSound) {
+            boolean mobImpact = isNonPlayerMobImpact()
+                    || isCurrentNonPlayerMobTarget();
+            if (path.startsWith(PLAYER_ATTACK_PREFIX) && mobImpact) {
+                event.setSound(null);
+                return;
+            }
+            if (GENERIC_HURT_SOUND.equals(path)
+                    && isTrackedMobImpactSound(original)) {
+                event.setSound(null);
+            }
         }
     }
 
@@ -302,6 +325,8 @@ public final class PlayerDamageAudioClient {
         wasUnderWater = false;
         recoveryGaspArmed = false;
         awaitingRecoveryGasp = false;
+        suppressMobImpactUntilNanos = Long.MIN_VALUE;
+        suppressMobImpactTargetId = -1;
     }
 
     private static boolean isLocalPlayerSound(SoundInstance sound) {
@@ -324,5 +349,24 @@ public final class PlayerDamageAudioClient {
         return minecraft.hitResult instanceof EntityHitResult hit
                 && hit.getEntity() instanceof LivingEntity
                 && !(hit.getEntity() instanceof Player);
+    }
+
+    private static boolean isTrackedMobImpactSound(SoundInstance sound) {
+        if (!isNonPlayerMobImpact() || sound.isRelative()) return false;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || suppressMobImpactTargetId < 0) {
+            return false;
+        }
+        var target = minecraft.level.getEntity(suppressMobImpactTargetId);
+        if (!(target instanceof LivingEntity) || target instanceof Player) {
+            return false;
+        }
+
+        double dx = sound.getX() - target.getX();
+        double dy = sound.getY()
+                - (target.getY() + target.getBbHeight() * 0.5D);
+        double dz = sound.getZ() - target.getZ();
+        return dx * dx + dy * dy + dz * dz
+                <= TRACKED_MOB_SOUND_RADIUS_SQ;
     }
 }

@@ -67,6 +67,7 @@
 
 ## Interface and presentation
 
+- Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the authored SCP Additions background, truthful world-generation progress, a themed gold progress line, and a dual-layer SCP logo spinner with opposing eased rotations;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;
 - Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;

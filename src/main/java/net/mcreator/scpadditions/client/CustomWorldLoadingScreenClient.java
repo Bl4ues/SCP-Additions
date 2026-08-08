@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.gui.screens.ReceivingLevelScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -63,7 +64,7 @@ public final class CustomWorldLoadingScreenClient {
     private static final long CARD_FADE_IN_MS = 1400L;
     private static final long CARD_FADE_OUT_MS = 1200L;
     private static final long CARD_LIFETIME_MS = 60_000L;
-    private static final float CARD_MAX_ZOOM = 1.055F;
+    private static final float CARD_MAX_ZOOM = 1.16F;
     private static final long SESSION_GAP_MS = 1500L;
     private static final long SESSION_CLEAR_DELAY_MS = 750L;
 
@@ -161,7 +162,7 @@ public final class CustomWorldLoadingScreenClient {
         int spinnerSize = Mth.clamp(height / 10, 30, 46);
         int spinnerGap = Math.max(12, spinnerSize / 3);
         int barX = (width - barWidth) / 2;
-        int barY = Math.round(height * 0.84F);
+        int barY = Math.round(height * 0.905F);
         int trackRight = barX + barWidth - spinnerSize - spinnerGap;
         int trackWidth = Math.max(80, trackRight - barX);
 
@@ -199,6 +200,13 @@ public final class CustomWorldLoadingScreenClient {
 
     private static LoadingPhase phase(Screen screen) {
         if (screen instanceof LevelLoadingScreen) return LoadingPhase.GENERATING;
+        // Minecraft#setLevel creates a ProgressScreen, assigns the actual
+        // "connect.joining" text to its progress header rather than its Screen
+        // title, and forces one render tick. Catch that exact vanilla bridge
+        // while an existing loading session is alive so it cannot flash through.
+        if (screen instanceof ProgressScreen && activeSession != null) {
+            return LoadingPhase.JOINING;
+        }
         if (screen instanceof ReceivingLevelScreen) {
             return LoadingPhase.LOADING_TERRAIN;
         }
@@ -244,8 +252,11 @@ public final class CustomWorldLoadingScreenClient {
                     (age - fadeOutStart) / (float) CARD_FADE_OUT_MS));
         }
         float alpha = Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
-        float zoomProgress = smootherStep(Math.min(1.0F,
-                age / (float) CARD_LIFETIME_MS));
+        // The artwork itself should feel like a very slow camera push. Linear
+        // motion keeps that movement perceptible from the first seconds instead
+        // of spending most of a short load inside smootherstep's flat opening.
+        float zoomProgress = Math.min(1.0F,
+                age / (float) CARD_LIFETIME_MS);
         float zoom = Mth.lerp(zoomProgress, 1.0F, CARD_MAX_ZOOM);
 
         drawZoomedOverlay(graphics, card.texture(), width, height, zoom, alpha);
@@ -276,10 +287,10 @@ public final class CustomWorldLoadingScreenClient {
         int gold = withAlpha(CARD_GOLD, alpha);
 
         float leftX = width * 0.037F;
-        float titleY = height * 0.045F;
-        float subtitleY = height * 0.126F;
-        float titleScale = 3.05F * referenceScale;
-        float subtitleScale = 1.72F * referenceScale;
+        float titleY = height * 0.047F;
+        float subtitleY = height * 0.131F;
+        float titleScale = 4.10F * referenceScale;
+        float subtitleScale = 2.25F * referenceScale;
 
         Component leftTitle = ScpFonts.montserrat(
                 card.leftTitle().toUpperCase(Locale.ROOT));
@@ -292,9 +303,9 @@ public final class CustomWorldLoadingScreenClient {
 
         float rightEdge = width * 0.963F;
         float rightLabelY = height * 0.047F;
-        float rightValueY = height * 0.086F;
-        float rightLabelScale = 1.18F * referenceScale;
-        float rightValueScale = 1.78F * referenceScale;
+        float rightValueY = height * 0.091F;
+        float rightLabelScale = 1.58F * referenceScale;
+        float rightValueScale = 2.38F * referenceScale;
         Component rightLabel = ScpFonts.titillium(
                 card.rightLabel().toUpperCase(Locale.ROOT));
         Component rightValue = ScpFonts.titillium(
@@ -305,18 +316,22 @@ public final class CustomWorldLoadingScreenClient {
                 rightValueY, rightValueScale, gold);
 
         Component description = ScpFonts.titillium(card.description());
-        float descriptionScale = 1.08F * referenceScale;
+        float descriptionScale = 1.70F * referenceScale;
         if (card.descriptionAnchor()
                 == LoadingScreenRegistry.DescriptionAnchor.LEFT) {
+            // This is a top-anchored left column like Unity's layouts: the
+            // authored anchor stays fixed and additional wrapped lines only grow
+            // downward. A deliberately narrower box keeps prose clear of the
+            // centered subject artwork.
             float x = width * 0.060F;
             float y = height * 0.295F;
-            float boxWidth = width * 0.315F;
+            float boxWidth = width * 0.255F;
             drawWrappedText(graphics, font, description, x, y, boxWidth,
                     descriptionScale, white, false);
         } else {
-            float x = width * 0.145F;
-            float y = height * 0.705F;
-            float boxWidth = width * 0.710F;
+            float x = width * 0.130F;
+            float y = height * 0.725F;
+            float boxWidth = width * 0.740F;
             drawWrappedText(graphics, font, description, x, y, boxWidth,
                     descriptionScale, white, true);
         }

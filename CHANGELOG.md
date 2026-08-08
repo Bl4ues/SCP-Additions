@@ -67,6 +67,7 @@
 
 ## Interface and presentation
 
+- Added an SCP Inventory-style interface for plain slot-only storage containers while the custom inventory is enabled, replacing supported chest, barrel, shulker, hopper, dispenser, and compatible modded storage screens with responsive Backpack/Keys/Codex and container lists, live slot counts, scrolling, double-click or Shift+Right Click transfer, and drag-and-drop while preserving native screens for crafting, processing, equipment, and other semantic menus;
 - Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including integrated and custom Roomba spawn floors, SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
 - Fixed Configuration Center presentation regressions from reversible entry toggles: Contextual Interaction previews and Roboto row styling are restored, Enable/Disable controls remain visibly separated from row summaries, SCP-294 rows describe their actual configured drink profile instead of the generic carrier cup, and save confirmation text no longer overlaps the home controls;
 - Added an optional SCP: Unity-inspired custom crosshair, enabled by default, with independent in-game visibility settings;

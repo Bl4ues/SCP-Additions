@@ -261,9 +261,43 @@ public final class ScpStorageContainerScreen extends Screen {
                 "://INVENTORY_", "BACKPACK");
         drawBackpackCount(graphics);
 
+        String containerPrefix = "://CONTAINER_";
+        int titleBudget = Math.max(48, panelWidth
+                - containerCountWidth() - 12);
+        String containerSuffix = trimSectionSuffix(containerPrefix,
+                stylizedContainerName(), titleBudget);
         drawSectionTitle(graphics, rightPanelX, titleY,
-                "://CONTAINER_", stylizedContainerName());
+                containerPrefix, containerSuffix);
         drawContainerCount(graphics);
+    }
+
+    private int containerCountWidth() {
+        int occupied = containerList == null
+                ? countNonEmpty(containerItems)
+                : containerList.nonEmptyCount();
+        String primary = Integer.toString(occupied);
+        String suffix = " of " + storageSlotIds.size() + " slots";
+        return minecraft.font.width(ScpFonts.roboto(primary))
+                + minecraft.font.width(ScpFonts.roboto(suffix));
+    }
+
+    private String trimSectionSuffix(String prefix, String suffix,
+                                     int totalBudget) {
+        int available = totalBudget
+                - minecraft.font.width(ScpFonts.roboto(prefix));
+        if (available <= 0) {
+            return "";
+        }
+        if (minecraft.font.width(ScpFonts.roboto(suffix)) <= available) {
+            return suffix;
+        }
+        String ellipsis = "...";
+        int ellipsisWidth = minecraft.font.width(ScpFonts.roboto(ellipsis));
+        if (available <= ellipsisWidth) {
+            return ellipsis;
+        }
+        return minecraft.font.plainSubstrByWidth(
+                suffix, available - ellipsisWidth).trim() + ellipsis;
     }
 
     private void drawSectionTitle(GuiGraphics graphics, int x, int y,
@@ -366,6 +400,13 @@ public final class ScpStorageContainerScreen extends Screen {
     private void renderFooter(GuiGraphics graphics) {
         String hint = "Double-click or Shift + Right Click to transfer"
                 + "   ·   Drag between panels";
+        int budget = Math.max(120, width - 24);
+        if (minecraft.font.width(ScpFonts.roboto(hint)) > budget) {
+            hint = "Double-click / Shift+RMB / Drag to transfer";
+        }
+        if (minecraft.font.width(ScpFonts.roboto(hint)) > budget) {
+            hint = "Transfer: double-click or drag";
+        }
         drawCentered(graphics, hint, width / 2, footerY, TEXT_GRAY);
     }
 

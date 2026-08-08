@@ -7,8 +7,12 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.GenericDirtMessageScreen;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.client.gui.screens.ReceivingLevelScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.progress.StoringChunkProgressListener;
 import net.minecraft.util.Mth;
@@ -21,12 +25,14 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * SCP Additions presentation for vanilla spawn-region loading. The underlying
- * LevelLoadingScreen remains in control of loading and progress; only its
- * render pass is replaced, so failures can always fall back to vanilla.
+ * SCP Additions presentation for the complete vanilla world-entry sequence.
+ * Vanilla screens remain responsible for all loading logic; this class only
+ * replaces presentation for recognized loading phases and always falls back to
+ * vanilla if a phase cannot be identified or rendered safely.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CustomWorldLoadingScreenClient {
@@ -54,7 +60,20 @@ public final class CustomWorldLoadingScreenClient {
     private static final long SPINNER_CYCLE_MS = 3200L;
     private static final long SPINNER_ROTATE_MS = 2520L;
 
-    private static final Map<LevelLoadingScreen, ProgressAnimation> ANIMATIONS =
+    private static final Set<String> READING_KEYS = Set.of(
+            "selectWorld.data_read");
+    private static final Set<String> PREPARING_KEYS = Set.of(
+            "createWorld.preparing",
+            "menu.preparingLevel",
+            "menu.generatingLevel");
+    private static final Set<String> JOINING_KEYS = Set.of(
+            "connect.joining");
+    private static final Set<String> TERRAIN_KEYS = Set.of(
+            "multiplayer.downloadingTerrain");
+
+    private static final Map<Screen, ProgressAnimation> ANIMATIONS =
+            new WeakHashMap<>();
+    private static final Map<Screen, Long> PHASE_STARTS =
             new WeakHashMap<>();
 
     private static volatile Field progressListenerField;
@@ -67,16 +86,27 @@ public final class CustomWorldLoadingScreenClient {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRender(ScreenEvent.Render.Pre event) {
-        if (!ClientModulePreferences.customLoadingScreenEnabled()
-                || !(event.getScreen() instanceof LevelLoadingScreen screen)) {
-            return;
-        }
+        if (!ClientModulePreferences.customLoadingScreenEnabled()) return;
 
-        StoringChunkProgressListener listener = progressListener(screen);
-        if (listener == null) return;
+        Screen screen = event.getScreen();
+        LoadingPhase phase = phase(screen);
+        if (phase == null) return;
 
         try {
-            render(event.getGuiGraphics(), screen, listener.getProgress());
+            int rawGenerationProgress = -1;
+            if (screen instanceof LevelLoadingScreen levelLoadingScreen) {
+                StoringChunkProgressListener listener =
+                        progressListener(levelLoadingScreen);
+                if (listener == null) return;
+                rawGenerationProgress = Mth.clamp(listener.getProgress(), 0,
+                        100);
+                phase = rawGenerationProgress >= 100
+                        ? LoadingPhase.FINALIZING
+                        : LoadingPhase.GENERATING;
+            }
+
+            render(event.getGuiGraphics(), screen, phase,
+                    rawGenerationProgress);
             event.setCanceled(true);
         } catch (RuntimeException exception) {
             if (!renderFailureLogged) {
@@ -88,12 +118,11 @@ public final class CustomWorldLoadingScreenClient {
         }
     }
 
-    private static void render(GuiGraphics graphics, LevelLoadingScreen screen,
-            int rawProgress) {
+    private static void render(GuiGraphics graphics, Screen screen,
+            LoadingPhase phase, int rawGenerationProgress) {
         Minecraft minecraft = Minecraft.getInstance();
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
-        int progress = Mth.clamp(rawProgress, 0, 100);
         long now = Util.getMillis();
 
         drawCoverBackground(graphics, width, height);
@@ -107,18 +136,71 @@ public final class CustomWorldLoadingScreenClient {
         int trackRight = barX + barWidth - spinnerSize - spinnerGap;
         int trackWidth = Math.max(80, trackRight - barX);
 
+        float target = phaseProgress(screen, phase, rawGenerationProgress,
+                now);
         ProgressAnimation animation = ANIMATIONS.computeIfAbsent(screen,
                 ignored -> new ProgressAnimation());
-        float displayed = animation.update(progress / 100.0F, now);
+        float displayed = animation.update(target, now);
         int filled = Mth.clamp(Math.round(trackWidth * displayed), 0,
                 trackWidth);
+        int percent = Mth.clamp(Math.round(displayed * 100.0F), 0, 100);
 
         drawProgressTrack(graphics, barX, barY, trackRight, filled);
         drawProgressText(graphics, minecraft.font, barX, barY, trackRight,
-                progress);
+                phase.label, percent);
 
         int spinnerCenterX = trackRight + spinnerGap + spinnerSize / 2;
         drawSpinner(graphics, spinnerCenterX, barY, spinnerSize, now);
+    }
+
+    private static float phaseProgress(Screen screen, LoadingPhase phase,
+            int rawGenerationProgress, long now) {
+        if (phase == LoadingPhase.GENERATING) {
+            float generation = Mth.clamp(rawGenerationProgress / 100.0F,
+                    0.0F, 1.0F);
+            return 0.14F + generation * 0.74F;
+        }
+        if (phase == LoadingPhase.FINALIZING) return 0.90F;
+
+        long started = PHASE_STARTS.computeIfAbsent(screen, ignored -> now);
+        float elapsed = Math.max(0.0F, (now - started) / 1000.0F);
+        float drift = 1.0F - (float) Math.exp(-1.35F * elapsed);
+        return Mth.lerp(drift, phase.start, phase.end);
+    }
+
+    private static LoadingPhase phase(Screen screen) {
+        if (screen instanceof LevelLoadingScreen) {
+            return LoadingPhase.GENERATING;
+        }
+        if (screen instanceof ReceivingLevelScreen) {
+            return LoadingPhase.LOADING_TERRAIN;
+        }
+        if (!(screen instanceof GenericDirtMessageScreen)) return null;
+
+        String key = translationKey(screen.getTitle());
+        if (READING_KEYS.contains(key)) return LoadingPhase.READING;
+        if (PREPARING_KEYS.contains(key)) return LoadingPhase.PREPARING;
+        if (JOINING_KEYS.contains(key)) return LoadingPhase.JOINING;
+        if (TERRAIN_KEYS.contains(key)) return LoadingPhase.LOADING_TERRAIN;
+
+        String text = screen.getTitle().getString().trim().toLowerCase();
+        if (text.contains("reading world data")) return LoadingPhase.READING;
+        if (text.contains("preparing") || text.contains("generating")) {
+            return LoadingPhase.PREPARING;
+        }
+        if (text.contains("joining world")) return LoadingPhase.JOINING;
+        if (text.contains("loading terrain")) {
+            return LoadingPhase.LOADING_TERRAIN;
+        }
+        return null;
+    }
+
+    private static String translationKey(Component component) {
+        if (component != null
+                && component.getContents() instanceof TranslatableContents t) {
+            return t.getKey();
+        }
+        return "";
     }
 
     private static void drawCoverBackground(GuiGraphics graphics, int width,
@@ -175,19 +257,13 @@ public final class CustomWorldLoadingScreenClient {
     }
 
     private static void drawProgressText(GuiGraphics graphics, Font font,
-            int left, int y, int right, int progress) {
-        Component stage = ScpFonts.roboto(stageText(progress));
-        Component percent = ScpFonts.roboto(progress + "%");
+            int left, int y, int right, String label, int percent) {
+        Component stage = ScpFonts.roboto(label);
+        Component percentText = ScpFonts.roboto(percent + "%");
         int textY = y - font.lineHeight - 7;
         graphics.drawString(font, stage, left, textY, TEXT_MUTED, false);
-        graphics.drawString(font, percent, right - font.width(percent), textY,
-                TEXT, false);
-    }
-
-    private static String stageText(int progress) {
-        if (progress <= 0) return "PREPARING SPAWN REGION";
-        if (progress >= 100) return "FINALIZING WORLD";
-        return "GENERATING SPAWN REGION";
+        graphics.drawString(font, percentText,
+                right - font.width(percentText), textY, TEXT, false);
     }
 
     private static void drawSpinner(GuiGraphics graphics, int centerX,
@@ -267,15 +343,34 @@ public final class CustomWorldLoadingScreenClient {
         }
     }
 
+    private enum LoadingPhase {
+        READING("READING WORLD DATA", 0.02F, 0.10F),
+        PREPARING("PREPARING WORLD", 0.10F, 0.14F),
+        GENERATING("GENERATING SPAWN REGION", 0.14F, 0.88F),
+        FINALIZING("FINALIZING WORLD", 0.88F, 0.90F),
+        JOINING("JOINING WORLD", 0.90F, 0.95F),
+        LOADING_TERRAIN("LOADING TERRAIN", 0.95F, 0.995F);
+
+        private final String label;
+        private final float start;
+        private final float end;
+
+        LoadingPhase(String label, float start, float end) {
+            this.label = label;
+            this.start = start;
+            this.end = end;
+        }
+    }
+
     private static final class ProgressAnimation {
-        private float displayed;
+        private float displayed = -1.0F;
         private long lastUpdate;
 
         private float update(float target, long now) {
             target = Mth.clamp(target, 0.0F, 1.0F);
             if (lastUpdate == 0L) {
                 lastUpdate = now;
-                displayed = Math.max(0.0F, target - 0.04F);
+                displayed = target;
                 return displayed;
             }
 

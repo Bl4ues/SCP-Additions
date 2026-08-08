@@ -84,34 +84,41 @@ jobs:
             exit "$status"
           fi
 
-          python3 - <<'PY'
+          set +e
+          output=$(python3 - <<'PY' 2>&1
           from pathlib import Path
           import json
+          import re
 
           client = Path('src/main/java/net/mcreator/scpadditions/config/ui/ClientPreferenceModulesUi.java')
           text = client.read_text(encoding='utf-8')
-          old = '''                Boolean personal = scopeForLabel(scopes,
-                          stripState(label.getString()));
-                  if (personal != null) {
-                      button.active = (personal || canEdit)
-                              && dependencyAvailable(screen, base);
-                  }
-          '''
-          new = '''                String base = stripState(label.getString());
-                  Boolean personal = scopeForLabel(scopes, base);
-                  if (personal != null) {
-                      button.active = (personal || canEdit)
-                              && dependencyAvailable(screen, base);
-                  }
-          '''
-          if old not in text:
+          pattern = re.compile(
+              r'(?P<indent>\s*)Boolean personal = scopeForLabel\(scopes,\s*\n'
+              r'\s*stripState\(label\.getString\(\)\)\);')
+          replacement = (
+              '\\g<indent>String base = stripState(label.getString());\n'
+              '\\g<indent>Boolean personal = scopeForLabel(scopes, base);')
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
               raise SystemExit('Client dependency gate marker not found')
-          client.write_text(text.replace(old, new, 1), encoding='utf-8')
+          client.write_text(text, encoding='utf-8')
 
           lang = Path('src/main/resources/assets/scp_additions/lang/en_us.json')
           data = json.loads(lang.read_text(encoding='utf-8'))
           lang.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
+          )
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            printf '%s\n' "$output" > scripts/_item_sounds_failure.txt
+            git config user.name "Deyvid Campos"
+            git config user.email "deyvid04campos@gmail.com"
+            git add scripts/_item_sounds_failure.txt
+            git commit -m "Record custom item sound post-processing failure"
+            git push origin HEAD:master
+            exit "$status"
+          fi
 
           git diff --check
 

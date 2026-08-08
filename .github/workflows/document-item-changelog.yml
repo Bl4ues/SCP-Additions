@@ -1,0 +1,42 @@
+name: Document item changelog
+
+on:
+  push:
+    branches:
+      - 'feature/document-holder'
+
+permissions:
+  contents: write
+
+jobs:
+  document:
+    if: contains(github.event.head_commit.message, '[document-item-docs]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update 3.1.0 changelog
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('CHANGELOG.md')
+          text = path.read_text(encoding='utf-8')
+          marker = '- Made new Config Center Codex definitions default to the dedicated Document item and unique-item matching while retaining support for selecting any registered item and for legacy full-page image documents.\n'
+          addition = marker + '- Replaced the Document item paper placeholder with its authored thin 3D model; Blank Documents use `document.png`, while template-based and uploaded full-page documents display their document artwork specifically on the model front face.\n'
+          if marker not in text:
+              raise SystemExit('Codex/document changelog marker not found')
+          if addition not in text:
+              text = text.replace(marker, addition, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit changelog and remove helper workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/document-item-changelog.yml
+          git config user.name "Deyvid Campos"
+          git config user.email "deyvid04campos@gmail.com"
+          git add -A
+          git commit -m "Document 3D Document item rendering"
+          git push origin HEAD:feature/document-holder

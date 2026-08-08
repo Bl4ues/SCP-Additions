@@ -3,6 +3,8 @@ package net.mcreator.scpadditions.client;
 import net.minecraft.resources.ResourceLocation;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.facility.DocumentHolderBlockEntity;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 
 /** GeckoLib resource binding for the placed Document Holder. */
@@ -32,5 +34,35 @@ public final class DocumentHolderGeoModel
     public ResourceLocation getAnimationResource(
             DocumentHolderBlockEntity animatable) {
         return ANIMATION;
+    }
+
+    @Override
+    public void setCustomAnimations(DocumentHolderBlockEntity animatable,
+            long instanceId,
+            AnimationState<DocumentHolderBlockEntity> animationState) {
+        super.setCustomAnimations(animatable, instanceId, animationState);
+        prepareOpaquePass();
+    }
+
+    /**
+     * The holder body and stored document are depth-writing geometry. The
+     * glass door must not share that same translucent draw ordering or the
+     * document can disappear when the camera angle changes.
+     */
+    public void prepareOpaquePass() {
+        setHidden("bone", false);
+        setHidden("document", false);
+        setHidden("door", true);
+    }
+
+    public void prepareGlassPass() {
+        setHidden("bone", true);
+        setHidden("document", true);
+        setHidden("door", false);
+    }
+
+    private void setHidden(String name, boolean hidden) {
+        CoreGeoBone bone = getAnimationProcessor().getBone(name);
+        if (bone != null) bone.setHidden(hidden);
     }
 }

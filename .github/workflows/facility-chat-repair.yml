@@ -35,8 +35,12 @@ jobs:
           start = next(i for i, line in enumerate(source) if "cat > /tmp/add_facility_chat.py <<'PY'" in line) + 1
           end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
           lines = []
-          for line in source[start:end]:
-              lines.append(line[10:] if line.startswith('          ') else line)
+          in_triple = False
+          for raw in source[start:end]:
+              line = raw if in_triple else (raw[10:] if raw.startswith('          ') else raw)
+              lines.append(line)
+              if line.count("'''") % 2 == 1:
+                  in_triple = not in_triple
           Path('/tmp/add_facility_chat.py').write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
           python3 -m py_compile /tmp/add_facility_chat.py

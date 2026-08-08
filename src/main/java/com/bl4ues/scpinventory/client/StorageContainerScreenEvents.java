@@ -16,7 +16,8 @@ import net.minecraftforge.fml.common.Mod;
 /**
  * Replaces only plain slot-based storage screens while the SCP Inventory module
  * is active. Processing, crafting, equipment and other semantic menus keep
- * their native screens.
+ * their native screens. Creative and Spectator retain their native container
+ * behavior because SCP capability routing is intentionally survival-only.
  */
 @Mod.EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
 public final class StorageContainerScreenEvents {

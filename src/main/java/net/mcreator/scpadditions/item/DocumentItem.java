@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.item;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -11,15 +12,32 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.fml.DistExecutor;
 import net.mcreator.scpadditions.client.DocumentClientHooks;
+import net.mcreator.scpadditions.client.DocumentItemRenderer;
 import net.mcreator.scpadditions.document.DocumentData;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public final class DocumentItem extends Item {
     public DocumentItem() {
         super(new Item.Properties().stacksTo(1).rarity(Rarity.COMMON));
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            private DocumentItemRenderer renderer;
+
+            @Override
+            public @NotNull BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) renderer = new DocumentItemRenderer();
+                return renderer;
+            }
+        });
     }
 
     @Override

@@ -34,8 +34,10 @@ public final class ScpStorageContainerScreen extends Screen {
     private static final int TEXT_SELECTED = 0xFF202020;
     private static final int TAB_ACTIVE = 0x55B2B3B3;
     private static final int TAB_INACTIVE = 0x336A6C6C;
-    private static final int PANEL_BACKGROUND = 0x8F545D5F;
-    private static final int PANEL_BORDER = 0x666A6C6C;
+    private static final int PANEL_BACKGROUND = 0xB3545D5F;
+    private static final int PANEL_BORDER = 0x806A6C6C;
+    private static final int HEADER_BACKGROUND = 0xC02B3133;
+    private static final int HEADER_BORDER = 0x996A6C6C;
     private static final int DRAG_ICON_BOX = 0x99303638;
     private static final int DRAG_ICON_CORNER = 0xCC6A6C6C;
 
@@ -257,7 +259,10 @@ public final class ScpStorageContainerScreen extends Screen {
     }
 
     private void renderHeaders(GuiGraphics graphics) {
-        drawSectionTitle(graphics, leftPanelX, titleY,
+        drawHeaderPlate(graphics, leftPanelX);
+        drawHeaderPlate(graphics, rightPanelX);
+
+        drawSectionTitle(graphics, leftPanelX + 7, titleY,
                 "://INVENTORY_", "BACKPACK");
         drawBackpackCount(graphics);
 
@@ -266,9 +271,20 @@ public final class ScpStorageContainerScreen extends Screen {
                 - containerCountWidth() - 12);
         String containerSuffix = trimSectionSuffix(containerPrefix,
                 stylizedContainerName(), titleBudget);
-        drawSectionTitle(graphics, rightPanelX, titleY,
+        drawSectionTitle(graphics, rightPanelX + 7, titleY,
                 containerPrefix, containerSuffix);
         drawContainerCount(graphics);
+    }
+
+    private void drawHeaderPlate(GuiGraphics graphics, int x) {
+        int top = titleY - 5;
+        int bottom = titleY + 14;
+        graphics.fill(x, top, x + panelWidth, bottom, HEADER_BACKGROUND);
+        graphics.fill(x, top, x + panelWidth, top + 1, HEADER_BORDER);
+        graphics.fill(x, bottom - 1, x + panelWidth, bottom, HEADER_BORDER);
+        graphics.fill(x, top, x + 1, bottom, HEADER_BORDER);
+        graphics.fill(x + panelWidth - 1, top, x + panelWidth, bottom,
+                HEADER_BORDER);
     }
 
     private int containerCountWidth() {
@@ -352,7 +368,7 @@ public final class ScpStorageContainerScreen extends Screen {
                                        String primary, String suffix) {
         int totalWidth = minecraft.font.width(ScpFonts.roboto(primary))
                 + minecraft.font.width(ScpFonts.roboto(suffix));
-        int x = panelX + panelWidth - totalWidth;
+        int x = panelX + panelWidth - 7 - totalWidth;
         graphics.drawString(minecraft.font, ScpFonts.roboto(primary),
                 x, titleY, TEXT_WHITE, false);
         graphics.drawString(minecraft.font, ScpFonts.roboto(suffix),
@@ -398,11 +414,11 @@ public final class ScpStorageContainerScreen extends Screen {
     }
 
     private void renderFooter(GuiGraphics graphics) {
-        String hint = "Double-click or Shift + Right Click to transfer"
+        String hint = "Double-click or Shift + Left Click to transfer"
                 + "   ·   Drag between panels";
         int budget = Math.max(120, width - 24);
         if (minecraft.font.width(ScpFonts.roboto(hint)) > budget) {
-            hint = "Double-click / Shift+RMB / Drag to transfer";
+            hint = "Double-click / Shift+LMB / Drag to transfer";
         }
         if (minecraft.font.width(ScpFonts.roboto(hint)) > budget) {
             hint = "Transfer: double-click or drag";
@@ -478,7 +494,7 @@ public final class ScpStorageContainerScreen extends Screen {
             return true;
         }
 
-        boolean quickTransfer = button == 1 && hasShiftDown();
+        boolean quickTransfer = button == 0 && hasShiftDown();
 
         if (backpackList != null) {
             int index = backpackList.getClickedIndex(mouseX, mouseY);

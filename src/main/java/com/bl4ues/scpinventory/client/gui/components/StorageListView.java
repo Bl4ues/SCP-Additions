@@ -89,8 +89,14 @@ public final class StorageListView {
         if (!stack.isEmpty()) {
             drawIconFrame(graphics, iconX, iconY);
             graphics.renderItem(stack, iconX + 4, iconY + 4);
-            graphics.renderItemDecorations(minecraft.font, stack,
+            ItemStack decorationStack = stack;
+            if (stack.getCount() != 1) {
+                decorationStack = stack.copy();
+                decorationStack.setCount(1);
+            }
+            graphics.renderItemDecorations(minecraft.font, decorationStack,
                     iconX + 4, iconY + 4);
+            renderStackCount(graphics, stack, iconX + 4, iconY + 4);
         }
 
         String secondary = secondaryText(stack);
@@ -104,6 +110,23 @@ public final class StorageListView {
 
         int lineY = rowY + ROW_HEIGHT - 1;
         graphics.fill(x + 2, lineY, x + width - 8, lineY + 1, LINE_GRAY);
+    }
+
+    private void renderStackCount(GuiGraphics graphics, ItemStack stack,
+                                  int itemX, int itemY) {
+        if (stack == null || stack.isEmpty() || stack.getCount() == 1) {
+            return;
+        }
+
+        Component count = ScpFonts.roboto(Integer.toString(stack.getCount()));
+        int countX = itemX + 19 - 2 - minecraft.font.width(count);
+        int countY = itemY + 9;
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, 200.0F);
+        graphics.drawString(minecraft.font, count, countX, countY,
+                0xFFFFFFFF, true);
+        graphics.pose().popPose();
     }
 
     private String secondaryText(ItemStack stack) {

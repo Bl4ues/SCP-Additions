@@ -26,8 +26,38 @@ public final class FacilityChatLayout {
     public static final int HEADER_HEIGHT = 18;
     public static final int INPUT_GAP = 4;
     private static final int INPUT_LEFT = 17;
+    private static final long OPEN_ANIMATION_NANOS = 220_000_000L;
+    private static volatile long openedAtNanos = Long.MIN_VALUE;
 
     private FacilityChatLayout() {
+    }
+
+    public static void beginOpenAnimation() {
+        openedAtNanos = System.nanoTime();
+    }
+
+    public static float openProgress() {
+        long started = openedAtNanos;
+        if (started == Long.MIN_VALUE) return 1.0F;
+        float raw = Mth.clamp((float) (System.nanoTime() - started)
+                / (float) OPEN_ANIMATION_NANOS, 0.0F, 1.0F);
+        if (raw >= 1.0F) return 1.0F;
+        float inverse = 1.0F - raw;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    /**
+     * Screen-space offset shared by the history panel, input and suggestions.
+     * At the beginning of the animation the complete console sits just above
+     * the viewport and eases down to its normal top-left anchor.
+     */
+    public static int openOffsetScreen(ChatComponent chat) {
+        float progress = openProgress();
+        if (progress >= 0.999F) return 0;
+        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        int travel = Math.min(screenHeight,
+                Math.max(32, inputY(chat) + 20));
+        return -Math.round(travel * (1.0F - progress));
     }
 
     public static int lineHeight() {

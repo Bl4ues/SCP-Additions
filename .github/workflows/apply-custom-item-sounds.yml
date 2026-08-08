@@ -83,6 +83,36 @@ jobs:
             git push origin HEAD:master
             exit "$status"
           fi
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          client = Path('src/main/java/net/mcreator/scpadditions/config/ui/ClientPreferenceModulesUi.java')
+          text = client.read_text(encoding='utf-8')
+          old = '''                Boolean personal = scopeForLabel(scopes,
+                          stripState(label.getString()));
+                  if (personal != null) {
+                      button.active = (personal || canEdit)
+                              && dependencyAvailable(screen, base);
+                  }
+          '''
+          new = '''                String base = stripState(label.getString());
+                  Boolean personal = scopeForLabel(scopes, base);
+                  if (personal != null) {
+                      button.active = (personal || canEdit)
+                              && dependencyAvailable(screen, base);
+                  }
+          '''
+          if old not in text:
+              raise SystemExit('Client dependency gate marker not found')
+          client.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          lang = Path('src/main/resources/assets/scp_additions/lang/en_us.json')
+          data = json.loads(lang.read_text(encoding='utf-8'))
+          lang.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
           git diff --check
 
       - name: Build

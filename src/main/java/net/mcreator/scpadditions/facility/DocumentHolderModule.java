@@ -4,7 +4,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegisterEvent;
@@ -41,14 +40,6 @@ public final class DocumentHolderModule {
                     DocumentHolderBlockEntity::new, block()).build(null);
             return blockEntityType;
         });
-    }
-
-    @SubscribeEvent
-    public static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey().equals(
-                FacilityModule.SCP_FACILITY_BLOCKS.getKey())) {
-            event.accept(item());
-        }
     }
 
     public static DocumentHolderBlock block() {

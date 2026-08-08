@@ -295,16 +295,16 @@ public final class CustomWorldLoadingScreenClient {
         float rightValueY = height * 0.086F;
         float rightLabelScale = 1.18F * referenceScale;
         float rightValueScale = 1.78F * referenceScale;
-        Component rightLabel = ScpFonts.roboto(
+        Component rightLabel = ScpFonts.titillium(
                 card.rightLabel().toUpperCase(Locale.ROOT));
-        Component rightValue = ScpFonts.roboto(
+        Component rightValue = ScpFonts.titillium(
                 card.rightValue().toUpperCase(Locale.ROOT));
         drawScaledTextRight(graphics, font, rightLabel, rightEdge,
                 rightLabelY, rightLabelScale, white);
         drawScaledTextRight(graphics, font, rightValue, rightEdge,
                 rightValueY, rightValueScale, gold);
 
-        Component description = ScpFonts.roboto(card.description());
+        Component description = ScpFonts.titillium(card.description());
         float descriptionScale = 1.08F * referenceScale;
         if (card.descriptionAnchor()
                 == LoadingScreenRegistry.DescriptionAnchor.LEFT) {

@@ -1,0 +1,44 @@
+name: Document chat and pickup polish
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  document:
+    if: contains(github.event.head_commit.message, '[document-chat-pickup-polish]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update changelog
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('CHANGELOG.md')
+          text = path.read_text(encoding='utf-8')
+          old = "- Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior and settings while moving the message flow to the upper-left, presenting history top-to-bottom in an SCP Unity / Configuration Center-inspired framed communications panel, relocating the input and command suggestions with it, and restoring the exact vanilla chat presentation when disabled;\n"
+          new = "- Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior and settings while moving the message flow to the upper-left, presenting history top-to-bottom in an SCP Unity / Configuration Center-inspired framed communications panel, rendering chat messages in Roboto, animating the console down from above with subtle message-entry motion, relocating the input and command suggestions with it, and restoring the exact vanilla chat presentation when disabled;\n- Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;\n"
+          if old not in text:
+              raise SystemExit('Facility Chat changelog entry not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          rm -f .github/workflows/document-chat-pickup-polish.yml
+          git diff --check
+
+      - name: Commit documentation
+        shell: bash
+        run: |
+          git config user.name "Deyvid Campos"
+          git config user.email "deyvid04campos@gmail.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Document chat and pickup presentation polish"
+          git push origin HEAD:master

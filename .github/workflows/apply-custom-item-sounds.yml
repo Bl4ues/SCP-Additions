@@ -32,7 +32,18 @@ jobs:
           from pathlib import Path
           path = Path('scripts/_apply_custom_item_sounds.py')
           text = path.read_text(encoding='utf-8')
-          old = '''lang_text = read(lang)
+          old_write = '''def write(path, text):
+              Path(path).write_text(text, encoding="utf-8")
+          '''
+          new_write = '''def write(path, text):
+              target = Path(path)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_text(text, encoding="utf-8")
+          '''
+          if old_write not in text:
+              raise SystemExit('write helper marker not found')
+          text = text.replace(old_write, new_write, 1)
+          old_lang = '''lang_text = read(lang)
           if '\"subtitles.scp_additions.inventory_pickup\"' not in lang_text:
               if not lang_text.startswith('{\\n'):
                   raise SystemExit("Unexpected en_us.json format")
@@ -42,7 +53,7 @@ jobs:
                   '  \"subtitles.scp_additions.inventory_drink\": \"Drinking\",\\n', 1)
               write(lang, lang_text)
           '''
-          new = '''lang_text = read(lang)
+          new_lang = '''lang_text = read(lang)
           if '\"subtitles.scp_additions.inventory_pickup\"' not in lang_text:
               if not lang_text.startswith('{'):
                   raise SystemExit("Unexpected en_us.json format")
@@ -52,9 +63,9 @@ jobs:
               lang_text = prefix + lang_text[1:]
               write(lang, lang_text)
           '''
-          if old not in text:
+          if old_lang not in text:
               raise SystemExit('Language helper marker not found')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          path.write_text(text.replace(old_lang, new_lang, 1), encoding='utf-8')
           PY
 
       - name: Apply implementation

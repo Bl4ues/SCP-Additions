@@ -1,28 +1,16 @@
 {
-  "format_version": "1.9.0",
   "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
   "textures": {
-    "0": "scp_additions:item/document",
     "particle": "scp_additions:item/document"
   },
-  "elements": [
-    {
-      "from": [5.75, 3.25, 8.25],
-      "to": [10.25, 10.75, 8.3],
-      "rotation": {"angle": 0, "axis": "y", "origin": [8, 3.25, 7.4]},
-      "faces": {
-        "north": {"uv": [0, 0, 4.5, 7.5], "texture": "#0"},
-        "east": {"uv": [0, 8, 0.5, 15.5], "texture": "#0"},
-        "south": {"uv": [5, 0, 9.5, 7.5], "texture": "#0"},
-        "west": {"uv": [1, 8, 1.5, 15.5], "texture": "#0"},
-        "up": {"uv": [6.5, 8.5, 2, 8], "texture": "#0"},
-        "down": {"uv": [11.5, 8, 7, 8.5], "texture": "#0"}
-      }
-    }
-  ],
   "display": {
-    "thirdperson_righthand": {"translation": [0, 0, -0.5]},
-    "thirdperson_lefthand": {"translation": [0, 0, -0.5]},
+    "thirdperson_righthand": {
+      "translation": [0, 0, -0.5]
+    },
+    "thirdperson_lefthand": {
+      "translation": [0, 0, -0.5]
+    },
     "firstperson_righthand": {
       "rotation": [0, 114, 0],
       "translation": [2, 3.5, 0],

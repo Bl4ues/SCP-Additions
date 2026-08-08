@@ -65,7 +65,6 @@ public final class CustomWorldLoadingScreenClient {
     private static final long CARD_FADE_OUT_MS = 1200L;
     private static final long CARD_LIFETIME_MS = 60_000L;
     private static final float CARD_MAX_ZOOM = 1.16F;
-    private static final long SESSION_GAP_MS = 1500L;
     private static final long SESSION_CLEAR_DELAY_MS = 750L;
 
     private static final Set<String> READING_KEYS = Set.of(
@@ -91,11 +90,14 @@ public final class CustomWorldLoadingScreenClient {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRender(ScreenEvent.Render.Pre event) {
-        if (!ClientModulePreferences.customLoadingScreenEnabled()) return;
+        if (!ClientModulePreferences.customLoadingScreenEnabled()) {
+            activeSession = null;
+            return;
+        }
 
         Screen screen = event.getScreen();
-        LoadingPhase phase = phase(screen);
-        if (phase == null) return;
+        LoadingPhase candidatePhase = phase(screen);
+        if (candidatePhase == null) return;
 
         try {
             int rawGenerationProgress = -1;
@@ -103,14 +105,17 @@ public final class CustomWorldLoadingScreenClient {
                 StoringChunkProgressListener listener = progressListener(levelLoadingScreen);
                 if (listener == null) return;
                 rawGenerationProgress = Mth.clamp(listener.getProgress(), 0, 100);
-                phase = rawGenerationProgress >= 100
+                candidatePhase = rawGenerationProgress >= 100
                         ? LoadingPhase.FINALIZING
                         : LoadingPhase.GENERATING;
             }
 
             long now = Util.getMillis();
-            LoadingSession session = session(phase, now);
-            render(event.getGuiGraphics(), session, phase,
+            LoadingSession session = session(now);
+            LoadingPhase effectivePhase = session.enterPhase(candidatePhase,
+                    Minecraft.getInstance().hasSingleplayerServer(), now);
+            session.rotateCardIfNeeded(now);
+            render(event.getGuiGraphics(), session, effectivePhase,
                     rawGenerationProgress, now);
             event.setCanceled(true);
         } catch (RuntimeException exception) {
@@ -136,15 +141,18 @@ public final class CustomWorldLoadingScreenClient {
         }
     }
 
-    private static LoadingSession session(LoadingPhase phase, long now) {
-        if (activeSession == null
-                || now - activeSession.lastSeenAt > SESSION_GAP_MS) {
+    /**
+     * A world load owns exactly one session. Gaps between vanilla screens are a
+     * normal part of Minecraft's integrated-server startup, not a signal that a
+     * new load began. Creating a replacement session here used to re-roll the
+     * informational card for one or two frames during those gaps.
+     */
+    private static LoadingSession session(long now) {
+        if (activeSession == null) {
             activeSession = new LoadingSession(now,
                     LoadingScreenRegistry.loadDefinitions());
         }
         activeSession.lastSeenAt = now;
-        activeSession.enterPhase(phase, now);
-        activeSession.rotateCardIfNeeded(now);
         return activeSession;
     }
 
@@ -182,7 +190,7 @@ public final class CustomWorldLoadingScreenClient {
     private static float phaseProgress(LoadingSession session,
             LoadingPhase phase, int rawGenerationProgress, long now) {
         float target;
-        if (phase == LoadingPhase.GENERATING) {
+        if (phase == LoadingPhase.GENERATING && rawGenerationProgress >= 0) {
             float generation = Mth.clamp(rawGenerationProgress / 100.0F,
                     0.0F, 1.0F);
             target = 0.14F + generation * 0.74F;
@@ -200,12 +208,19 @@ public final class CustomWorldLoadingScreenClient {
 
     private static LoadingPhase phase(Screen screen) {
         if (screen instanceof LevelLoadingScreen) return LoadingPhase.GENERATING;
-        // Minecraft#setLevel creates a ProgressScreen, assigns the actual
-        // "connect.joining" text to its progress header rather than its Screen
-        // title, and forces one render tick. Catch that exact vanilla bridge
-        // while an existing loading session is alive so it cannot flash through.
-        if (screen instanceof ProgressScreen && activeSession != null) {
-            return LoadingPhase.JOINING;
+
+        // Minecraft#setLevel uses a ProgressScreen with "connect.joining" stored
+        // in its internal progress header rather than Screen#getTitle(), then
+        // forces a render tick. During singleplayer startup this bridge can also
+        // appear before spawn generation, so the session resolves its semantic
+        // phase after seeing the rest of the load state.
+        if (screen instanceof ProgressScreen) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (activeSession != null
+                    || (minecraft.level == null
+                    && minecraft.hasSingleplayerServer())) {
+                return LoadingPhase.JOINING;
+            }
         }
         if (screen instanceof ReceivingLevelScreen) {
             return LoadingPhase.LOADING_TERRAIN;
@@ -252,9 +267,6 @@ public final class CustomWorldLoadingScreenClient {
                     (age - fadeOutStart) / (float) CARD_FADE_OUT_MS));
         }
         float alpha = Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
-        // The artwork itself should feel like a very slow camera push. Linear
-        // motion keeps that movement perceptible from the first seconds instead
-        // of spending most of a short load inside smootherstep's flat opening.
         float zoomProgress = Math.min(1.0F,
                 age / (float) CARD_LIFETIME_MS);
         float zoom = Mth.lerp(zoomProgress, 1.0F, CARD_MAX_ZOOM);
@@ -319,10 +331,6 @@ public final class CustomWorldLoadingScreenClient {
         float descriptionScale = 1.70F * referenceScale;
         if (card.descriptionAnchor()
                 == LoadingScreenRegistry.DescriptionAnchor.LEFT) {
-            // This is a top-anchored left column like Unity's layouts: the
-            // authored anchor stays fixed and additional wrapped lines only grow
-            // downward. A deliberately narrower box keeps prose clear of the
-            // centered subject artwork.
             float x = width * 0.060F;
             float y = height * 0.295F;
             float boxWidth = width * 0.255F;
@@ -545,6 +553,7 @@ public final class CustomWorldLoadingScreenClient {
         private long cardStartedAt;
         private long lastSeenAt;
         private float highestTarget;
+        private boolean generationSeen;
 
         private LoadingSession(long now,
                 List<LoadingScreenRegistry.Definition> definitions) {
@@ -554,11 +563,35 @@ public final class CustomWorldLoadingScreenClient {
             this.lastSeenAt = now;
         }
 
-        private void enterPhase(LoadingPhase nextPhase, long now) {
-            if (phase != nextPhase) {
-                phase = nextPhase;
+        /**
+         * Vanilla singleplayer calls Minecraft#setLevel and forces a temporary
+         * "Joining world" ProgressScreen before it shows LevelLoadingScreen.
+         * Presenting that literal internal ordering made the UI jump from 90%
+         * JOINING back to GENERATING. Treat the early bridge as PREPARING, then
+         * keep subsequent phases monotonic for the remainder of the session.
+         */
+        private LoadingPhase enterPhase(LoadingPhase candidate,
+                boolean singleplayer, long now) {
+            LoadingPhase resolved = candidate;
+            if (singleplayer && candidate == LoadingPhase.JOINING
+                    && !generationSeen) {
+                resolved = LoadingPhase.PREPARING;
+            }
+
+            if (candidate == LoadingPhase.GENERATING
+                    || candidate == LoadingPhase.FINALIZING) {
+                generationSeen = true;
+            }
+
+            if (phase != null && resolved.ordinal() < phase.ordinal()) {
+                return phase;
+            }
+
+            if (phase != resolved) {
+                phase = resolved;
                 phaseStartedAt = now;
             }
+            return phase;
         }
 
         private void rotateCardIfNeeded(long now) {

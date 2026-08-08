@@ -151,6 +151,7 @@ public final class FacilityBlockMiningEvents {
                 addRegistered(blocks, MirroredDoorButtons.BLOCKS);
                 addRegistered(blocks, LeftDoorButtons.BLOCKS);
                 addRegistered(blocks, CoreRoomElevatorModule.BLOCKS);
+                blocks.add(DocumentHolderModule.block());
                 addGeneratedFacilityBlocks(blocks);
                 addRegisteredBlock(blocks, "tesla_gate_collision");
                 addRegisteredBlock(blocks, "decontamination_collision");

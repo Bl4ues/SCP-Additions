@@ -26,6 +26,37 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Normalize patch helper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/_apply_custom_item_sounds.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''lang_text = read(lang)
+          if '\"subtitles.scp_additions.inventory_pickup\"' not in lang_text:
+              if not lang_text.startswith('{\\n'):
+                  raise SystemExit("Unexpected en_us.json format")
+              lang_text = lang_text.replace('{\\n',
+                  '{\\n  \"subtitles.scp_additions.inventory_pickup\": \"Item picked up\",\\n'
+                  '  \"subtitles.scp_additions.inventory_eat\": \"Eating\",\\n'
+                  '  \"subtitles.scp_additions.inventory_drink\": \"Drinking\",\\n', 1)
+              write(lang, lang_text)
+          '''
+          new = '''lang_text = read(lang)
+          if '\"subtitles.scp_additions.inventory_pickup\"' not in lang_text:
+              if not lang_text.startswith('{'):
+                  raise SystemExit("Unexpected en_us.json format")
+              prefix = ('{\"subtitles.scp_additions.inventory_pickup\":\"Item picked up\",'
+                        '\"subtitles.scp_additions.inventory_eat\":\"Eating\",'
+                        '\"subtitles.scp_additions.inventory_drink\":\"Drinking\",')
+              lang_text = prefix + lang_text[1:]
+              write(lang, lang_text)
+          '''
+          if old not in text:
+              raise SystemExit('Language helper marker not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Apply implementation
         run: |
           set +e

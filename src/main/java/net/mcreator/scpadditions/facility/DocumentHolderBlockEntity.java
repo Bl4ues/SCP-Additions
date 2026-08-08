@@ -7,7 +7,6 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -187,7 +186,7 @@ public final class DocumentHolderBlockEntity extends BlockEntity
         document = ItemStack.EMPTY;
 
         if (!taken.isEmpty() && level instanceof ServerLevel serverLevel) {
-            ServerPlayer player = pendingTaker == null
+            Player player = pendingTaker == null
                     ? null : serverLevel.getPlayerByUUID(pendingTaker);
             if (player != null) {
                 InteractionHand hand = pendingHand == null

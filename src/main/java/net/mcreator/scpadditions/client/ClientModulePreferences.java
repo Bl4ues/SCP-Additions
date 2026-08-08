@@ -48,6 +48,7 @@ public final class ClientModulePreferences {
             "hud.disable_experience_bar",
             "hud.custom_oxygen_bar",
             "hud.action_bars_roboto",
+            "hud.disable_text_drop_shadows",
             "vitals.custom_health_enabled",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
@@ -122,6 +123,9 @@ public final class ClientModulePreferences {
                 next.hud.customOxygenBar);
         next.hud.actionBarsRoboto = bool(hud, "action_bars_roboto",
                 next.hud.actionBarsRoboto);
+        next.hud.disableTextDropShadows = bool(hud,
+                "disable_text_drop_shadows",
+                next.hud.disableTextDropShadows);
 
         JsonObject vitals = object(modules, "vitals");
         next.vitals.customHealthEnabled = bool(vitals,
@@ -186,6 +190,8 @@ public final class ClientModulePreferences {
                 value.hud.disableExperienceBar);
         hud.addProperty("custom_oxygen_bar", value.hud.customOxygenBar);
         hud.addProperty("action_bars_roboto", value.hud.actionBarsRoboto);
+        hud.addProperty("disable_text_drop_shadows",
+                value.hud.disableTextDropShadows);
 
         object(modules, "vitals").addProperty("custom_health_enabled",
                 value.vitals.customHealthEnabled);
@@ -252,6 +258,10 @@ public final class ClientModulePreferences {
 
     public static boolean mainMenuMusicEnabled() {
         return current.audio.mainMenuMusicEnabled;
+    }
+
+    public static boolean disableTextDropShadows() {
+        return current.hud.disableTextDropShadows;
     }
 
     private static synchronized void write() throws IOException {
@@ -367,6 +377,7 @@ public final class ClientModulePreferences {
         private boolean disableExperienceBar = true;
         private boolean customOxygenBar = true;
         private boolean actionBarsRoboto = true;
+        private boolean disableTextDropShadows = true;
     }
 
     private static final class Vitals {

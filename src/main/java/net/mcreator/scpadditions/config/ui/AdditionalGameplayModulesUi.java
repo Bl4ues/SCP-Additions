@@ -107,6 +107,13 @@ public final class AdditionalGameplayModulesUi {
                         "Replaces vanilla air bubbles with a centered survival-horror oxygen meter.",
                         true));
             }
+            if (!labels.contains("Disable Text Drop Shadows")) {
+                additions.add(constructor.newInstance(
+                        "hud", "disable_text_drop_shadows",
+                        "Disable Text Drop Shadows",
+                        "Removes Minecraft's dark offset shadow from rendered text while preserving the text itself.",
+                        true));
+            }
             if (additions.isEmpty()) return;
 
             List<Object> updated = new ArrayList<>(currentRows);

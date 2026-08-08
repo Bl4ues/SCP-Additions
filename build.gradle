@@ -1,6 +1,7 @@
 plugins {
     id 'eclipse'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = '4.0.0'
@@ -49,7 +50,17 @@ minecraft {
     }
 }
 
+mixin {
+    add sourceSets.main, 'scp_additions.refmap.json'
+    config 'scp_additions.mixins.json'
+}
+
 repositories {
+    maven {
+        name = 'SpongePowered'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+    }
+
     maven {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
@@ -74,6 +85,7 @@ repositories {
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.4.10'
     implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // Optional client runtime used by runClient to validate shader compatibility
     // and custom player/entity rendering. These are not transitive requirements

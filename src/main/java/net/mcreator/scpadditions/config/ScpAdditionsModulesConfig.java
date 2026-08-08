@@ -151,6 +151,9 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("action_bars_roboto")
 		public boolean actionBarsRoboto = true;
+
+		@SerializedName("disable_text_drop_shadows")
+		public boolean disableTextDropShadows = true;
 	}
 
 	public static final class Interactions extends Toggle {

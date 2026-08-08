@@ -1,0 +1,11 @@
+{
+  "id": "scp_additions:scp012",
+  "texture": "scp_additions:textures/screens/menu/loading_images/scp012_loading.png",
+  "left_title": "SCP-012",
+  "left_subtitle": "EUCLID",
+  "right_label": "THREAT LEVEL",
+  "right_value": "HIGH",
+  "description": "The object, a piece of handwritten musical score entitled \"On Mount Golgotha\" and part of a larger set of sheet music, appears to be incomplete. The red and black ink, initially thought to be some form of berry or natural dye, was later found to be human blood from multiple subjects.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

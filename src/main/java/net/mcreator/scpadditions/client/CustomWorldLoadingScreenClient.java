@@ -7,7 +7,6 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.GenericDirtMessageScreen;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.ReceivingLevelScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -15,24 +14,25 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.progress.StoringChunkProgressListener;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Field;
-import java.util.Map;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 /**
  * SCP Additions presentation for the complete vanilla world-entry sequence.
- * Vanilla screens remain responsible for all loading logic; this class only
- * replaces presentation for recognized loading phases and always falls back to
- * vanilla if a phase cannot be identified or rendered safely.
+ * Vanilla screens remain responsible for loading; this class owns only their
+ * presentation and keeps one visual card alive across all intermediate screens.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CustomWorldLoadingScreenClient {
@@ -56,9 +56,16 @@ public final class CustomWorldLoadingScreenClient {
     private static final int TRACK_FAINT = 0x66323A47;
     private static final int TEXT = 0xFFF7F8FC;
     private static final int TEXT_MUTED = 0xFF9CA3AF;
+    private static final int CARD_GOLD = 0xFFC99B18;
 
     private static final long SPINNER_CYCLE_MS = 3200L;
     private static final long SPINNER_ROTATE_MS = 2520L;
+    private static final long CARD_FADE_IN_MS = 1400L;
+    private static final long CARD_FADE_OUT_MS = 1200L;
+    private static final long CARD_LIFETIME_MS = 60_000L;
+    private static final float CARD_MAX_ZOOM = 1.055F;
+    private static final long SESSION_GAP_MS = 1500L;
+    private static final long SESSION_CLEAR_DELAY_MS = 750L;
 
     private static final Set<String> READING_KEYS = Set.of(
             "selectWorld.data_read");
@@ -67,19 +74,16 @@ public final class CustomWorldLoadingScreenClient {
             "menu.preparingLevel",
             "menu.generatingLevel");
     private static final Set<String> JOINING_KEYS = Set.of(
-            "connect.joining");
+            "connect.joining",
+            "connect.connecting");
     private static final Set<String> TERRAIN_KEYS = Set.of(
             "multiplayer.downloadingTerrain");
-
-    private static final Map<Screen, ProgressAnimation> ANIMATIONS =
-            new WeakHashMap<>();
-    private static final Map<Screen, Long> PHASE_STARTS =
-            new WeakHashMap<>();
 
     private static volatile Field progressListenerField;
     private static volatile boolean progressFieldLookupAttempted;
     private static volatile boolean reflectionFailureLogged;
     private static volatile boolean renderFailureLogged;
+    private static LoadingSession activeSession;
 
     private CustomWorldLoadingScreenClient() {
     }
@@ -95,18 +99,18 @@ public final class CustomWorldLoadingScreenClient {
         try {
             int rawGenerationProgress = -1;
             if (screen instanceof LevelLoadingScreen levelLoadingScreen) {
-                StoringChunkProgressListener listener =
-                        progressListener(levelLoadingScreen);
+                StoringChunkProgressListener listener = progressListener(levelLoadingScreen);
                 if (listener == null) return;
-                rawGenerationProgress = Mth.clamp(listener.getProgress(), 0,
-                        100);
+                rawGenerationProgress = Mth.clamp(listener.getProgress(), 0, 100);
                 phase = rawGenerationProgress >= 100
                         ? LoadingPhase.FINALIZING
                         : LoadingPhase.GENERATING;
             }
 
-            render(event.getGuiGraphics(), screen, phase,
-                    rawGenerationProgress);
+            long now = Util.getMillis();
+            LoadingSession session = session(phase, now);
+            render(event.getGuiGraphics(), session, phase,
+                    rawGenerationProgress, now);
             event.setCanceled(true);
         } catch (RuntimeException exception) {
             if (!renderFailureLogged) {
@@ -118,14 +122,39 @@ public final class CustomWorldLoadingScreenClient {
         }
     }
 
-    private static void render(GuiGraphics graphics, Screen screen,
-            LoadingPhase phase, int rawGenerationProgress) {
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || activeSession == null) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null
+                || minecraft.screen != null) {
+            return;
+        }
+        if (Util.getMillis() - activeSession.lastSeenAt > SESSION_CLEAR_DELAY_MS) {
+            activeSession = null;
+        }
+    }
+
+    private static LoadingSession session(LoadingPhase phase, long now) {
+        if (activeSession == null
+                || now - activeSession.lastSeenAt > SESSION_GAP_MS) {
+            activeSession = new LoadingSession(now,
+                    LoadingScreenRegistry.loadDefinitions());
+        }
+        activeSession.lastSeenAt = now;
+        activeSession.enterPhase(phase, now);
+        activeSession.rotateCardIfNeeded(now);
+        return activeSession;
+    }
+
+    private static void render(GuiGraphics graphics, LoadingSession session,
+            LoadingPhase phase, int rawGenerationProgress, long now) {
         Minecraft minecraft = Minecraft.getInstance();
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
-        long now = Util.getMillis();
 
-        drawCoverBackground(graphics, width, height);
+        drawCoverTexture(graphics, BACKGROUND, width, height);
+        drawCard(graphics, minecraft.font, session, width, height, now);
 
         int barWidth = Math.min(width - 48,
                 Math.max(260, Math.round(width * 0.52F)));
@@ -136,13 +165,9 @@ public final class CustomWorldLoadingScreenClient {
         int trackRight = barX + barWidth - spinnerSize - spinnerGap;
         int trackWidth = Math.max(80, trackRight - barX);
 
-        float target = phaseProgress(screen, phase, rawGenerationProgress,
-                now);
-        ProgressAnimation animation = ANIMATIONS.computeIfAbsent(screen,
-                ignored -> new ProgressAnimation());
-        float displayed = animation.update(target, now);
-        int filled = Mth.clamp(Math.round(trackWidth * displayed), 0,
-                trackWidth);
+        float target = phaseProgress(session, phase, rawGenerationProgress, now);
+        float displayed = session.progressAnimation.update(target, now);
+        int filled = Mth.clamp(Math.round(trackWidth * displayed), 0, trackWidth);
         int percent = Mth.clamp(Math.round(displayed * 100.0F), 0, 100);
 
         drawProgressTrack(graphics, barX, barY, trackRight, filled);
@@ -153,29 +178,30 @@ public final class CustomWorldLoadingScreenClient {
         drawSpinner(graphics, spinnerCenterX, barY, spinnerSize, now);
     }
 
-    private static float phaseProgress(Screen screen, LoadingPhase phase,
-            int rawGenerationProgress, long now) {
+    private static float phaseProgress(LoadingSession session,
+            LoadingPhase phase, int rawGenerationProgress, long now) {
+        float target;
         if (phase == LoadingPhase.GENERATING) {
             float generation = Mth.clamp(rawGenerationProgress / 100.0F,
                     0.0F, 1.0F);
-            return 0.14F + generation * 0.74F;
+            target = 0.14F + generation * 0.74F;
+        } else if (phase == LoadingPhase.FINALIZING) {
+            target = 0.90F;
+        } else {
+            float elapsed = Math.max(0.0F,
+                    (now - session.phaseStartedAt) / 1000.0F);
+            float drift = 1.0F - (float) Math.exp(-1.35F * elapsed);
+            target = Mth.lerp(drift, phase.start, phase.end);
         }
-        if (phase == LoadingPhase.FINALIZING) return 0.90F;
-
-        long started = PHASE_STARTS.computeIfAbsent(screen, ignored -> now);
-        float elapsed = Math.max(0.0F, (now - started) / 1000.0F);
-        float drift = 1.0F - (float) Math.exp(-1.35F * elapsed);
-        return Mth.lerp(drift, phase.start, phase.end);
+        session.highestTarget = Math.max(session.highestTarget, target);
+        return session.highestTarget;
     }
 
     private static LoadingPhase phase(Screen screen) {
-        if (screen instanceof LevelLoadingScreen) {
-            return LoadingPhase.GENERATING;
-        }
+        if (screen instanceof LevelLoadingScreen) return LoadingPhase.GENERATING;
         if (screen instanceof ReceivingLevelScreen) {
             return LoadingPhase.LOADING_TERRAIN;
         }
-        if (!(screen instanceof GenericDirtMessageScreen)) return null;
 
         String key = translationKey(screen.getTitle());
         if (READING_KEYS.contains(key)) return LoadingPhase.READING;
@@ -183,15 +209,15 @@ public final class CustomWorldLoadingScreenClient {
         if (JOINING_KEYS.contains(key)) return LoadingPhase.JOINING;
         if (TERRAIN_KEYS.contains(key)) return LoadingPhase.LOADING_TERRAIN;
 
-        String text = screen.getTitle().getString().trim().toLowerCase();
+        String text = screen.getTitle().getString().trim().toLowerCase(Locale.ROOT);
         if (text.contains("reading world data")) return LoadingPhase.READING;
-        if (text.contains("preparing") || text.contains("generating")) {
+        if (text.contains("preparing world") || text.contains("generating world")) {
             return LoadingPhase.PREPARING;
         }
-        if (text.contains("joining world")) return LoadingPhase.JOINING;
-        if (text.contains("loading terrain")) {
-            return LoadingPhase.LOADING_TERRAIN;
+        if (text.contains("joining world") || text.contains("connecting")) {
+            return LoadingPhase.JOINING;
         }
+        if (text.contains("loading terrain")) return LoadingPhase.LOADING_TERRAIN;
         return null;
     }
 
@@ -203,13 +229,146 @@ public final class CustomWorldLoadingScreenClient {
         return "";
     }
 
-    private static void drawCoverBackground(GuiGraphics graphics, int width,
-            int height) {
+    private static void drawCard(GuiGraphics graphics, Font font,
+            LoadingSession session, int width, int height, long now) {
+        LoadingScreenRegistry.Definition card = session.card;
+        if (card == null) return;
+
+        long age = Math.max(0L, now - session.cardStartedAt);
+        float fadeIn = smootherStep(Math.min(1.0F,
+                age / (float) CARD_FADE_IN_MS));
+        float fadeOut = 1.0F;
+        long fadeOutStart = CARD_LIFETIME_MS - CARD_FADE_OUT_MS;
+        if (age > fadeOutStart) {
+            fadeOut = 1.0F - smootherStep(Math.min(1.0F,
+                    (age - fadeOutStart) / (float) CARD_FADE_OUT_MS));
+        }
+        float alpha = Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
+        float zoomProgress = smootherStep(Math.min(1.0F,
+                age / (float) CARD_LIFETIME_MS));
+        float zoom = Mth.lerp(zoomProgress, 1.0F, CARD_MAX_ZOOM);
+
+        drawZoomedOverlay(graphics, card.texture(), width, height, zoom, alpha);
+        drawCardText(graphics, font, card, width, height, alpha);
+    }
+
+    private static void drawZoomedOverlay(GuiGraphics graphics,
+            ResourceLocation texture, int width, int height, float zoom,
+            float alpha) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(width / 2.0F, height / 2.0F, 0.0F);
+        graphics.pose().scale(zoom, zoom, 1.0F);
+        graphics.pose().translate(-width / 2.0F, -height / 2.0F, 0.0F);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
+        drawCoverTexture(graphics, texture, width, height);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+        graphics.pose().popPose();
+    }
+
+    private static void drawCardText(GuiGraphics graphics, Font font,
+            LoadingScreenRegistry.Definition card, int width, int height,
+            float alpha) {
+        float referenceScale = height / 540.0F;
+        int white = withAlpha(TEXT, alpha);
+        int gold = withAlpha(CARD_GOLD, alpha);
+
+        float leftX = width * 0.037F;
+        float titleY = height * 0.045F;
+        float subtitleY = height * 0.126F;
+        float titleScale = 3.05F * referenceScale;
+        float subtitleScale = 1.72F * referenceScale;
+
+        Component leftTitle = ScpFonts.montserrat(
+                card.leftTitle().toUpperCase(Locale.ROOT));
+        Component leftSubtitle = ScpFonts.montserrat(
+                card.leftSubtitle().toUpperCase(Locale.ROOT));
+        drawScaledText(graphics, font, leftTitle, leftX, titleY,
+                titleScale, white);
+        drawScaledText(graphics, font, leftSubtitle, leftX, subtitleY,
+                subtitleScale, white);
+
+        float rightEdge = width * 0.963F;
+        float rightLabelY = height * 0.047F;
+        float rightValueY = height * 0.086F;
+        float rightLabelScale = 1.18F * referenceScale;
+        float rightValueScale = 1.78F * referenceScale;
+        Component rightLabel = ScpFonts.roboto(
+                card.rightLabel().toUpperCase(Locale.ROOT));
+        Component rightValue = ScpFonts.roboto(
+                card.rightValue().toUpperCase(Locale.ROOT));
+        drawScaledTextRight(graphics, font, rightLabel, rightEdge,
+                rightLabelY, rightLabelScale, white);
+        drawScaledTextRight(graphics, font, rightValue, rightEdge,
+                rightValueY, rightValueScale, gold);
+
+        Component description = ScpFonts.roboto(card.description());
+        float descriptionScale = 1.08F * referenceScale;
+        if (card.descriptionAnchor()
+                == LoadingScreenRegistry.DescriptionAnchor.LEFT) {
+            float x = width * 0.060F;
+            float y = height * 0.295F;
+            float boxWidth = width * 0.315F;
+            drawWrappedText(graphics, font, description, x, y, boxWidth,
+                    descriptionScale, white, false);
+        } else {
+            float x = width * 0.145F;
+            float y = height * 0.705F;
+            float boxWidth = width * 0.710F;
+            drawWrappedText(graphics, font, description, x, y, boxWidth,
+                    descriptionScale, white, true);
+        }
+    }
+
+    private static void drawScaledText(GuiGraphics graphics, Font font,
+            Component text, float x, float y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    private static void drawScaledTextRight(GuiGraphics graphics, Font font,
+            Component text, float right, float y, float scale, int color) {
+        float width = font.width(text) * scale;
+        drawScaledText(graphics, font, text, right - width, y, scale, color);
+    }
+
+    private static void drawWrappedText(GuiGraphics graphics, Font font,
+            Component text, float x, float y, float width, float scale,
+            int color, boolean centered) {
+        int unscaledWidth = Math.max(20, Math.round(width / scale));
+        List<FormattedCharSequence> lines = font.split(text, unscaledWidth);
+        float lineAdvance = (font.lineHeight + 3) * scale;
+        for (int index = 0; index < lines.size(); index++) {
+            FormattedCharSequence line = lines.get(index);
+            float drawX = x;
+            if (centered) {
+                float lineWidth = font.width(line) * scale;
+                drawX += (width - lineWidth) / 2.0F;
+            }
+            graphics.pose().pushPose();
+            graphics.pose().translate(drawX, y + index * lineAdvance, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.drawString(font, line, 0, 0, color, false);
+            graphics.pose().popPose();
+        }
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int a = Mth.clamp(Math.round(alpha * 255.0F), 0, 255);
+        return (a << 24) | (color & 0x00FFFFFF);
+    }
+
+    private static void drawCoverTexture(GuiGraphics graphics,
+            ResourceLocation texture, int width, int height) {
         if (width <= 0 || height <= 0) return;
 
         double destinationAspect = (double) width / (double) height;
-        double sourceAspect = (double) BACKGROUND_WIDTH
-                / (double) BACKGROUND_HEIGHT;
+        double sourceAspect = (double) BACKGROUND_WIDTH / BACKGROUND_HEIGHT;
         float sourceX = 0.0F;
         float sourceY = 0.0F;
         int sourceWidth = BACKGROUND_WIDTH;
@@ -225,7 +384,7 @@ public final class CustomWorldLoadingScreenClient {
             sourceX = (BACKGROUND_WIDTH - sourceWidth) / 2.0F;
         }
 
-        graphics.blit(BACKGROUND, 0, 0, width, height, sourceX, sourceY,
+        graphics.blit(texture, 0, 0, width, height, sourceX, sourceY,
                 sourceWidth, sourceHeight, BACKGROUND_WIDTH,
                 BACKGROUND_HEIGHT);
     }
@@ -359,6 +518,39 @@ public final class CustomWorldLoadingScreenClient {
             this.label = label;
             this.start = start;
             this.end = end;
+        }
+    }
+
+    private static final class LoadingSession {
+        private final List<LoadingScreenRegistry.Definition> definitions;
+        private final ProgressAnimation progressAnimation = new ProgressAnimation();
+        private LoadingScreenRegistry.Definition card;
+        private LoadingPhase phase;
+        private long phaseStartedAt;
+        private long cardStartedAt;
+        private long lastSeenAt;
+        private float highestTarget;
+
+        private LoadingSession(long now,
+                List<LoadingScreenRegistry.Definition> definitions) {
+            this.definitions = definitions;
+            this.card = LoadingScreenRegistry.choose(definitions, null);
+            this.cardStartedAt = now;
+            this.lastSeenAt = now;
+        }
+
+        private void enterPhase(LoadingPhase nextPhase, long now) {
+            if (phase != nextPhase) {
+                phase = nextPhase;
+                phaseStartedAt = now;
+            }
+        }
+
+        private void rotateCardIfNeeded(long now) {
+            if (now - cardStartedAt < CARD_LIFETIME_MS) return;
+            ResourceLocation previous = card == null ? null : card.id();
+            card = LoadingScreenRegistry.choose(definitions, previous);
+            cardStartedAt = now;
         }
     }
 

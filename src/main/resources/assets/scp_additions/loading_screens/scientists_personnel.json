@@ -1,0 +1,11 @@
+{
+  "id": "scp_additions:scientists_personnel",
+  "texture": "scp_additions:textures/screens/menu/loading_images/scientist_loading.png",
+  "left_title": "SCIENTISTS",
+  "left_subtitle": "PERSONNEL",
+  "right_label": "ASSIGNMENT",
+  "right_value": "RESEARCH AND DEVELOPMENT",
+  "description": "Researchers are the largest body of staff at Site-48 and come from various different fields of science, medicine, and technology. They are tasked with studying the various anomalies contained within the Foundation so that we may better understand them.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

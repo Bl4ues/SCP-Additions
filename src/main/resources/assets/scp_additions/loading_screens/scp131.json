@@ -1,0 +1,11 @@
+{
+  "id": "scp_additions:scp131",
+  "texture": "scp_additions:textures/screens/menu/loading_images/scp131_loading.png",
+  "left_title": "SCP-131",
+  "left_subtitle": "SAFE",
+  "right_label": "THREAT LEVEL",
+  "right_value": "NONE",
+  "description": "SCP-131-A and SCP-131-B (affectionately nicknamed the \"Eye Pods\" by personnel) are a pair of teardrop-shaped creatures roughly 30 cm (1 ft) in height, with a single blue eye in the middle of their bodies.",
+  "description_anchor": "center",
+  "weight": 1.0
+}

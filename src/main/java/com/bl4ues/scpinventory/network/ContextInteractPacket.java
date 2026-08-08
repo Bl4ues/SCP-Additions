@@ -168,7 +168,7 @@ public class ContextInteractPacket {
                 ContextInteractionRegistry.getBlockRules(state.getBlock());
         ContextInteractionRegistry.Rule rule = selectedRule(rules,
                 interactionKey);
-        if (rule == null || !rule.isAvailable(level, pos, state)) return;
+        if (rule == null || !rule.isAvailable(level, pos, state, player)) return;
         InteractionHand hand = rule.matchingHand(player);
         if (hand == null) return;
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);

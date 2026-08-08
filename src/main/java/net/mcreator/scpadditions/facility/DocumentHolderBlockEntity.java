@@ -77,6 +77,12 @@ public final class DocumentHolderBlockEntity extends BlockEntity
         return !document.isEmpty();
     }
 
+    /** True only while a contextual prompt can perform a real holder action. */
+    public boolean canContextInteract(Player player) {
+        return player != null && !isTransitioning()
+                && wouldHandle(player, InteractionHand.MAIN_HAND);
+    }
+
     public boolean wouldHandle(Player player, InteractionHand hand) {
         if (player == null) return false;
         if (isTransitioning()) return true;

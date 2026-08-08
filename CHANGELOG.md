@@ -1,6 +1,6 @@
 # Changelog
 
-# SCP Additions 3.1.0 — In Development
+# SCP Additions 4.0.0 — In Development
 
 ## Highlights
 - SCP-106
@@ -156,6 +156,7 @@
 ## Contextual interactions
 
 - Added item-specific contextual interactions and inherited alternate variants, allowing one block or entity to expose different actions according to the item held without duplicating its complete configuration;
+- Added a state-aware integrated Document Holder prompt that shows only the hand icon, with no text, and appears only while the holder can currently accept, return, or close a document;
 - Rebuilt the in-world **K** interaction editor with responsive **Prompt** and **Anchor** pages, default and variant navigation, duplication and removal controls, held-item selection, independent icons, item requirements, and per-variant anchors;
 - Added the `config.png` contextual icon and native Screwdriver prompts for keycard readers, Tesla Gate Terminals, Core Room elevator floor stations, editable facility signs, SCP-131-A/B, and Roombas;
 - Added Configuration Center badges that identify interactions with alternate variants and item-specific actions;

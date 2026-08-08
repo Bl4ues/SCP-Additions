@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.facility.DocumentHolderBlockEntity;
 import net.mcreator.scpadditions.facility.FacilityLargePropStructure;
 import net.mcreator.scpadditions.facility.FacilityPropPartBlock;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorCarriageEntity;
@@ -733,6 +734,19 @@ public final class ContextInteractionRegistry {
         public boolean requiresPreciseAim() {
             return interactionKey.startsWith("elevator_station_")
                     || interactionKey.startsWith("elevator_carriage_");
+        }
+
+        public boolean isAvailable(Level level, BlockPos pos,
+                BlockState state, Player player) {
+            if (block != null && "document_holder".equals(id.getPath())
+                    && ScpAdditionsMod.MODID.equals(id.getNamespace())) {
+                if (!(level.getBlockEntity(pos)
+                        instanceof DocumentHolderBlockEntity holder)) {
+                    return false;
+                }
+                return holder.canContextInteract(player);
+            }
+            return isAvailable(level, pos, state);
         }
 
         public boolean isAvailable(Level level, BlockPos pos,

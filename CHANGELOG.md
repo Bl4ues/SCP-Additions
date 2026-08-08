@@ -2,6 +2,16 @@
 
 # SCP Additions 3.1.0 — In Development
 
+## Highlights
+- SCP-106
+- Completely reworked SCP-079 facility control
+- Core Room Elevator
+- Reworked survival systems
+- Custom hotbar, oxygen HUD and crosshair
+- Documents and expanded Codex
+- Rebuilt contextual interaction framework
+- Expanded Configuration Center
+
 ## SCP-106
 
 - Added SCP-106 as a new roaming threat;

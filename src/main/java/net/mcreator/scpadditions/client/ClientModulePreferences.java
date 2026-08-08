@@ -51,6 +51,7 @@ public final class ClientModulePreferences {
             "hud.disable_text_drop_shadows",
             "hud.facility_chat_interface",
             "vitals.custom_health_enabled",
+            "ui.custom_loading_screen",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
             "audio.custom_item_interaction_sounds",
@@ -136,6 +137,10 @@ public final class ClientModulePreferences {
         next.vitals.customHealthEnabled = bool(vitals,
                 "custom_health_enabled", next.vitals.customHealthEnabled);
 
+        JsonObject ui = object(modules, "ui");
+        next.ui.customLoadingScreen = bool(ui, "custom_loading_screen",
+                next.ui.customLoadingScreen);
+
         JsonObject audio = object(modules, "audio");
         next.audio.enterSoundEnabled = bool(audio, "enter_sound_enabled",
                 next.audio.enterSoundEnabled);
@@ -206,6 +211,9 @@ public final class ClientModulePreferences {
         object(modules, "vitals").addProperty("custom_health_enabled",
                 value.vitals.customHealthEnabled);
 
+        object(modules, "ui").addProperty("custom_loading_screen",
+                value.ui.customLoadingScreen);
+
         JsonObject audio = object(modules, "audio");
         audio.addProperty("enter_sound_enabled",
                 value.audio.enterSoundEnabled);
@@ -270,6 +278,10 @@ public final class ClientModulePreferences {
 
     public static boolean mainMenuMusicEnabled() {
         return current.audio.mainMenuMusicEnabled;
+    }
+
+    public static boolean customLoadingScreenEnabled() {
+        return current.ui.customLoadingScreen;
     }
 
     public static boolean customItemInteractionSoundsEnabled() {
@@ -350,6 +362,7 @@ public final class ClientModulePreferences {
         private Inventory inventory = new Inventory();
         private Hud hud = new Hud();
         private Vitals vitals = new Vitals();
+        private Ui ui = new Ui();
         private Audio audio = new Audio();
         private Accessibility accessibility = new Accessibility();
 
@@ -358,6 +371,7 @@ public final class ClientModulePreferences {
             if (inventory == null) inventory = new Inventory();
             if (hud == null) hud = new Hud();
             if (vitals == null) vitals = new Vitals();
+            if (ui == null) ui = new Ui();
             if (audio == null) audio = new Audio();
             if (accessibility == null) accessibility = new Accessibility();
             crosshair.red = clamp(crosshair.red);
@@ -403,6 +417,10 @@ public final class ClientModulePreferences {
 
     private static final class Vitals {
         private boolean customHealthEnabled = true;
+    }
+
+    private static final class Ui {
+        private boolean customLoadingScreen = true;
     }
 
     private static final class Audio {

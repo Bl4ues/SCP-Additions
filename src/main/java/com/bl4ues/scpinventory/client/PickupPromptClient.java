@@ -85,7 +85,7 @@ public final class PickupPromptClient {
         }
 
         ScreenPoint point = projectToScreen(mc,
-                interpolatedEntityCenter(target, partialTick),
+                renderedItemCenter(target, partialTick),
                 screenWidth, screenHeight);
         if (point == null) return;
 
@@ -198,14 +198,33 @@ public final class PickupPromptClient {
         return lineDistanceSqr + (alongRay * 0.015D);
     }
 
-    private static Vec3 interpolatedEntityCenter(ItemEntity item,
+    /**
+     * Mirrors the visual center used by vanilla's ItemEntityRenderer rather
+     * than only following the entity physics box. ItemEntity rendering adds a
+     * sinusoidal vertical bob without moving the entity itself, which is why
+     * a pure bounding-box anchor visibly lagged behind the floating model.
+     *
+     * Entity translation remains interpolated so mods that physically move
+     * the ItemEntity continue to be followed, while the vanilla bob phase is
+     * reconstructed from getSpin() instead of reaching into private fields.
+     */
+    private static Vec3 renderedItemCenter(ItemEntity item,
             float partialTick) {
         Vec3 center = item.getBoundingBox().getCenter();
         double interpolatedX = Mth.lerp(partialTick, item.xOld, item.getX());
         double interpolatedY = Mth.lerp(partialTick, item.yOld, item.getY());
         double interpolatedZ = Mth.lerp(partialTick, item.zOld, item.getZ());
+
+        // ItemEntity#getSpin(0) = age / 20 + bob phase offset. Deriving the
+        // phase this way keeps us on the public API and matches the renderer's
+        // sin((age + partialTick) / 10 + bobOffset) vertical movement.
+        float bobPhaseOffset = item.getSpin(0.0F)
+                - ((float) item.getAge() / 20.0F);
+        float visualBob = Mth.sin(((float) item.getAge() + partialTick)
+                / 10.0F + bobPhaseOffset) * 0.1F + 0.1F;
+
         return center.add(interpolatedX - item.getX(),
-                interpolatedY - item.getY(),
+                interpolatedY - item.getY() + visualBob,
                 interpolatedZ - item.getZ());
     }
 

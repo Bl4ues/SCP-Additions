@@ -24,7 +24,8 @@
     "disable_experience_bar": true,
     "custom_oxygen_bar": true,
     "action_bars_roboto": true,
-    "disable_text_drop_shadows": true
+    "disable_text_drop_shadows": true,
+    "facility_chat_interface": true
   },
   "vitals": {
     "custom_health_enabled": true,

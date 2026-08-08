@@ -114,6 +114,13 @@ public final class AdditionalGameplayModulesUi {
                         "Removes Minecraft's dark offset shadow from rendered text while preserving the text itself.",
                         true));
             }
+            if (!labels.contains("Facility Chat Interface")) {
+                additions.add(constructor.newInstance(
+                        "hud", "facility_chat_interface",
+                        "Facility Chat Interface",
+                        "Reanchors vanilla chat to the upper-left and presents it as a top-down SCP Additions communications console.",
+                        true));
+            }
             if (additions.isEmpty()) return;
 
             List<Object> updated = new ArrayList<>(currentRows);

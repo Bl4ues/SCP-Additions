@@ -49,6 +49,7 @@ public final class ClientModulePreferences {
             "hud.custom_oxygen_bar",
             "hud.action_bars_roboto",
             "hud.disable_text_drop_shadows",
+            "hud.facility_chat_interface",
             "vitals.custom_health_enabled",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
@@ -126,6 +127,9 @@ public final class ClientModulePreferences {
         next.hud.disableTextDropShadows = bool(hud,
                 "disable_text_drop_shadows",
                 next.hud.disableTextDropShadows);
+        next.hud.facilityChatInterface = bool(hud,
+                "facility_chat_interface",
+                next.hud.facilityChatInterface);
 
         JsonObject vitals = object(modules, "vitals");
         next.vitals.customHealthEnabled = bool(vitals,
@@ -192,6 +196,8 @@ public final class ClientModulePreferences {
         hud.addProperty("action_bars_roboto", value.hud.actionBarsRoboto);
         hud.addProperty("disable_text_drop_shadows",
                 value.hud.disableTextDropShadows);
+        hud.addProperty("facility_chat_interface",
+                value.hud.facilityChatInterface);
 
         object(modules, "vitals").addProperty("custom_health_enabled",
                 value.vitals.customHealthEnabled);
@@ -262,6 +268,10 @@ public final class ClientModulePreferences {
 
     public static boolean disableTextDropShadows() {
         return current.hud.disableTextDropShadows;
+    }
+
+    public static boolean facilityChatInterfaceEnabled() {
+        return current.hud.facilityChatInterface;
     }
 
     private static synchronized void write() throws IOException {
@@ -378,6 +388,7 @@ public final class ClientModulePreferences {
         private boolean customOxygenBar = true;
         private boolean actionBarsRoboto = true;
         private boolean disableTextDropShadows = true;
+        private boolean facilityChatInterface = true;
     }
 
     private static final class Vitals {

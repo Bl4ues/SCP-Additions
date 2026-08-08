@@ -154,6 +154,9 @@ public final class ScpAdditionsModulesConfig {
 
 		@SerializedName("disable_text_drop_shadows")
 		public boolean disableTextDropShadows = true;
+
+		@SerializedName("facility_chat_interface")
+		public boolean facilityChatInterface = true;
 	}
 
 	public static final class Interactions extends Toggle {

@@ -1,0 +1,30 @@
+name: Integrate Document Holder metadata
+
+on:
+  push:
+    branches:
+      - 'feature/document-holder'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, 'Trigger Document Holder integration')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply Document Holder integration
+        run: python3 .github/scripts/integrate_document_holder.py
+      - name: Commit integration
+        run: |
+          git config user.name 'Deyvid Campos'
+          git config user.email 'deyvid04campos@gmail.com'
+          git add src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java \
+                  src/main/resources/assets/scp_additions/lang/en_us.json \
+                  CHANGELOG.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Integrate Document Holder into facility content'
+          git push

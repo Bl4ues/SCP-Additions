@@ -1,10 +1,139 @@
-name: Archivist Table UV Repair (retired)
+name: Archivist Table Double-Sided Face Repair
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/_apply-diagnostic-table.yml'
+
+permissions:
+  contents: write
 
 jobs:
-  retired:
+  repair:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Temporary Archivist's Table UV repair workflow retired."
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect and repair transparent reverse faces
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check --quiet pillow
+          python3 <<'PY'
+          from pathlib import Path
+          import copy
+          import json
+          from PIL import Image
+
+          model_path = Path('src/main/resources/assets/scp_additions/models/block/archivists_table.json')
+          texture_path = Path('src/main/resources/assets/scp_additions/textures/block/archivists_table.png')
+
+          model = json.loads(model_path.read_text(encoding='utf-8'))
+          image = Image.open(texture_path).convert('RGBA')
+          width, height = image.size
+
+          if model.get('texture_size') != [128, 128]:
+              raise RuntimeError(f'Unexpected model texture_size: {model.get("texture_size")}')
+          if len(model.get('elements', [])) != 35:
+              raise RuntimeError(f'Expected 35 Archivist table elements, got {len(model.get("elements", []))}')
+
+          # For a zero-thickness cuboid, only the two faces perpendicular to
+          # its collapsed axis form the visible sheet.
+          opposite_faces = {
+              0: ('east', 'west'),
+              1: ('up', 'down'),
+              2: ('north', 'south'),
+          }
+
+          def alpha_stats(face):
+              uv = face.get('uv')
+              if not isinstance(uv, list) or len(uv) != 4:
+                  return None
+              u1, v1, u2, v2 = map(float, uv)
+              if abs(u2 - u1) < 1e-9 or abs(v2 - v1) < 1e-9:
+                  return None
+
+              x0 = max(0, min(width, int(min(u1, u2) * width / 16.0)))
+              x1 = max(0, min(width, int(max(u1, u2) * width / 16.0 + 0.999999)))
+              y0 = max(0, min(height, int(min(v1, v2) * height / 16.0)))
+              y1 = max(0, min(height, int(max(v1, v2) * height / 16.0 + 0.999999)))
+              if x1 <= x0 or y1 <= y0:
+                  return None
+
+              alphas = [image.getpixel((x, y))[3]
+                        for y in range(y0, y1)
+                        for x in range(x0, x1)]
+              if not alphas:
+                  return None
+              coverage = sum(a > 8 for a in alphas) / len(alphas)
+              mean_alpha = sum(alphas) / (255.0 * len(alphas))
+              return coverage, mean_alpha, max(alphas)
+
+          changed = []
+          diagnostics = []
+
+          for index, element in enumerate(model['elements']):
+              frm = element.get('from')
+              to = element.get('to')
+              if not (isinstance(frm, list) and isinstance(to, list)
+                      and len(frm) == 3 and len(to) == 3):
+                  continue
+
+              collapsed = [axis for axis in range(3)
+                           if abs(float(frm[axis]) - float(to[axis])) < 1e-9]
+              if len(collapsed) != 1:
+                  continue
+
+              face_a_name, face_b_name = opposite_faces[collapsed[0]]
+              faces = element.get('faces', {})
+              if face_a_name not in faces or face_b_name not in faces:
+                  continue
+
+              stats_a = alpha_stats(faces[face_a_name])
+              stats_b = alpha_stats(faces[face_b_name])
+              if stats_a is None or stats_b is None:
+                  continue
+
+              diagnostics.append((index, face_a_name, stats_a, face_b_name, stats_b))
+
+              # Only act on a strong transparent-vs-painted asymmetry. This
+              # avoids touching intentionally distinct opaque front/back art.
+              a_transparent = stats_a[0] <= 0.01 and stats_a[2] <= 8
+              b_transparent = stats_b[0] <= 0.01 and stats_b[2] <= 8
+              a_painted = stats_a[0] >= 0.05 and stats_a[2] > 8
+              b_painted = stats_b[0] >= 0.05 and stats_b[2] > 8
+
+              if a_transparent and b_painted:
+                  faces[face_a_name] = copy.deepcopy(faces[face_b_name])
+                  changed.append((index, face_a_name, face_b_name))
+              elif b_transparent and a_painted:
+                  faces[face_b_name] = copy.deepcopy(faces[face_a_name])
+                  changed.append((index, face_b_name, face_a_name))
+
+          for entry in diagnostics:
+              print('THIN FACE', entry)
+          print('REPAIRED', changed)
+
+          if not changed:
+              raise RuntimeError('No transparent reverse faces were detected; refusing a blind model edit')
+
+          # Geometry, rotations, display transforms and all unrelated UVs are
+          # preserved byte-for-structure except JSON pretty-printing.
+          model_path.write_text(json.dumps(model, indent=2) + '\n', encoding='utf-8')
+          json.loads(model_path.read_text(encoding='utf-8'))
+          PY
+
+      - name: Commit repaired model
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/resources/assets/scp_additions/models/block/archivists_table.json
+          if git diff --cached --quiet; then
+            echo "No model changes needed."
+            exit 0
+          fi
+          git commit -m "Render Archivist's Table thin painted faces from both sides"
+          git push origin HEAD:master

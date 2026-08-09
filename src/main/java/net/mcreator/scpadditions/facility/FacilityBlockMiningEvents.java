@@ -69,8 +69,6 @@ public final class FacilityBlockMiningEvents {
         float registeredHardness = state.getDestroySpeed(player.level(),
                 position);
         if (registeredHardness < 0.0F) {
-            // Invisible controller/structure parts that are intentionally
-            // unbreakable remain unbreakable rather than exposing internals.
             return;
         }
 
@@ -87,9 +85,6 @@ public final class FacilityBlockMiningEvents {
                 Math.max(1.0F, tool.getDestroySpeed(
                         Blocks.STONE.defaultBlockState())), efficiency);
 
-        // BreakSpeed already contains haste, fatigue, water, airborne and any
-        // compatible modifier from other mods. Divide out only the state/tool
-        // component, then apply the same environment to the pickaxe reference.
         float environmentMultiplier = stateToolSpeed > 0.0F
                 ? event.getOriginalSpeed() / stateToolSpeed : 1.0F;
         float normalizedSpeed = referencePickaxeSpeed * environmentMultiplier
@@ -148,6 +143,7 @@ public final class FacilityBlockMiningEvents {
                         new IdentityHashMap<>());
                 addRegistered(blocks, FacilityModule.BLOCKS);
                 addRegistered(blocks, UBlocksModule.BLOCKS);
+                addRegistered(blocks, TeslaGateTerminalTableModule.BLOCKS);
                 addRegistered(blocks, MirroredDoorButtons.BLOCKS);
                 addRegistered(blocks, LeftDoorButtons.BLOCKS);
                 addRegistered(blocks, CoreRoomElevatorModule.BLOCKS);

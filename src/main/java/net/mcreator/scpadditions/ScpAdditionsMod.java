@@ -28,6 +28,7 @@ import net.mcreator.scpadditions.entity.Scp173Sounds;
 import net.mcreator.scpadditions.entity.Scp173TargetConfig;
 import net.mcreator.scpadditions.facility.AreaUnderConstructionSignModule;
 import net.mcreator.scpadditions.facility.FacilityModule;
+import net.mcreator.scpadditions.facility.TeslaGateTerminalTableModule;
 import net.mcreator.scpadditions.facility.elevator.CoreRoomElevatorModule;
 import net.mcreator.scpadditions.facility.UBlocksModule;
 import net.mcreator.scpadditions.facility.HeavyDoorPowerRelay;
@@ -92,6 +93,7 @@ public class ScpAdditionsMod {
         ScpAdditionsModTabs.REGISTRY.register(bus);
         UBlocksModule.register(bus);
         FacilityModule.register(bus);
+        TeslaGateTerminalTableModule.register(bus);
         AreaUnderConstructionSignModule.register(bus);
         CoreRoomElevatorModule.register(bus);
         MirroredDoorButtons.register(bus);

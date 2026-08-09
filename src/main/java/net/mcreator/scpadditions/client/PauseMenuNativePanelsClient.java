@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.client;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -52,6 +53,8 @@ public final class PauseMenuNativePanelsClient {
     private static final int MUTED = 0xFF9DA5AF;
     private static final int BORDER = 0x70414A56;
     private static final int TRACK = 0x563D4652;
+    private static final ResourceLocation SCP_ADDITIONS_LOGO = new ResourceLocation(
+            ScpAdditionsMod.MODID, "textures/screens/logo.png");
 
     private static final int ACHIEVEMENT_ROW_HEIGHT = 42;
     private static final int STAT_ROW_HEIGHT = 28;
@@ -315,9 +318,12 @@ public final class PauseMenuNativePanelsClient {
                         humanize(idOf(root)));
                 ItemStack icon = rootDisplay == null ? ItemStack.EMPTY
                         : itemStack(invokeNoArg(rootDisplay, "getIcon"));
+                boolean useModLogo = (ScpAdditionsMod.MODID + ":scp_additions_ach")
+                        .equals(idOf(root));
                 int completed = (int) rows.stream().filter(row -> row.done).count();
                 state.achievementCategories.add(new AdvancementCategory(
-                        title, icon, completed, rows.size(), List.copyOf(rows)));
+                        title, icon, useModLogo, completed, rows.size(),
+                        List.copyOf(rows)));
             }
             state.achievementCategories.sort(Comparator.comparing(category ->
                     category.title.getString().toLowerCase(Locale.ROOT)));
@@ -359,8 +365,11 @@ public final class PauseMenuNativePanelsClient {
                     applyAlpha(selected || hovered ? ROW_HOVER : ROW, alpha));
             if (selected) graphics.fill(layout.sidebarX, y,
                     layout.sidebarX + 3, y + 28, applyAlpha(ACCENT, alpha));
-            if (!category.icon.isEmpty()) graphics.renderItem(category.icon,
-                    layout.sidebarX + 7, y + 6);
+            if (category.useModLogo) {
+                renderScpAdditionsLogo(graphics, layout.sidebarX + 7, y + 6, alpha);
+            } else if (!category.icon.isEmpty()) {
+                graphics.renderItem(category.icon, layout.sidebarX + 7, y + 6);
+            }
             String title = compactToWidth(font, category.title.getString(),
                     layout.sidebarWidth - 50);
             graphics.drawString(font, ScpFonts.roboto(title),
@@ -1019,6 +1028,25 @@ public final class PauseMenuNativePanelsClient {
         return result.append(suffix).toString();
     }
 
+    private static void renderScpAdditionsLogo(GuiGraphics graphics,
+            int x, int y, float alpha) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getResourceManager().getResource(SCP_ADDITIONS_LOGO).isEmpty()) {
+            return;
+        }
+        int width = 16;
+        int height = 14;
+        int drawY = y + 1;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F,
+                Mth.clamp(alpha, 0.0F, 1.0F));
+        graphics.blit(SCP_ADDITIONS_LOGO, x, drawY, width, height,
+                0.0F, 0.0F, 960, 832, 960, 832);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+    }
+
     private static int applyAlpha(int color, float alpha) {
         int sourceAlpha = color >>> 24;
         int finalAlpha = Mth.clamp(Math.round(sourceAlpha
@@ -1061,7 +1089,8 @@ public final class PauseMenuNativePanelsClient {
     }
 
     private record AdvancementCategory(Component title, ItemStack icon,
-            int completed, int total, List<AdvancementRow> rows) {
+            boolean useModLogo, int completed, int total,
+            List<AdvancementRow> rows) {
     }
 
     private record AdvancementRow(Component title, Component description,

@@ -8,6 +8,7 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
@@ -62,7 +63,7 @@ public final class MainMenuWhatsNewPanelClient {
         drawScaledText(graphics, font, ScpFonts.montserrat("WHAT'S NEW"),
                 panel.x + 15, panel.y + 13, 1.04F, TEXT);
         drawScaledText(graphics, font,
-                ScpFonts.titillium("VERSION 4.0"),
+                ScpFonts.titillium("VERSION " + majorVersion()),
                 panel.x + 15, panel.y + 29, 0.96F, ACCENT_BRIGHT);
 
         int visibleRows = visibleRows(panel);
@@ -153,6 +154,14 @@ public final class MainMenuWhatsNewPanelClient {
         int y = screen.height - height
                 - Math.max(26, Math.round(screen.height * 0.055F));
         return new Panel(x, y, width, height);
+    }
+
+    private static String majorVersion() {
+        String version = ModList.get().getModContainerById(ScpAdditionsMod.MODID)
+                .map(container -> container.getModInfo().getVersion().toString())
+                .orElse("4.0.0");
+        String[] parts = version.split("\\.");
+        return parts.length >= 2 ? parts[0] + "." + parts[1] : version;
     }
 
     private static String compactToWidth(Font font, String text, int maxWidth) {

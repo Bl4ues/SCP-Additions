@@ -23,7 +23,7 @@ public abstract class AbstractWidgetSoundMixin {
         if (!(widget instanceof AbstractButton)) return;
 
         soundManager.play(SimpleSoundInstance.forUI(
-                ScpAdditionsModSounds.SELECT.get(), 1.0F));
+                ScpAdditionsModSounds.SELECT.get(), 1.0F, 0.35F));
         callback.cancel();
     }
 }

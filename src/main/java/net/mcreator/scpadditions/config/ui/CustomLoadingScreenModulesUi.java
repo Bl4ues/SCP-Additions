@@ -21,6 +21,7 @@ public final class CustomLoadingScreenModulesUi {
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$ExtendedToggleScreen";
     private static final String GENERAL_TITLE = "General & Modules";
     private static final String MAIN_MENU_LABEL = "Custom Main Menu";
+    private static final String PAUSE_MENU_LABEL = "Custom Pause Menu";
     private static final String LOADING_LABEL = "Custom Loading Screen";
 
     private CustomLoadingScreenModulesUi() {
@@ -42,8 +43,9 @@ public final class CustomLoadingScreenModulesUi {
             if (!(value instanceof List<?> rows) || rows.isEmpty()) return;
 
             boolean needsMainMenu = !containsLabel(rows, MAIN_MENU_LABEL);
+            boolean needsPauseMenu = !containsLabel(rows, PAUSE_MENU_LABEL);
             boolean needsLoading = !containsLabel(rows, LOADING_LABEL);
-            if (!needsMainMenu && !needsLoading) return;
+            if (!needsMainMenu && !needsPauseMenu && !needsLoading) return;
 
             Class<?> rowType = rows.get(0).getClass();
             Constructor<?> constructor = rowType.getDeclaredConstructor(
@@ -51,7 +53,7 @@ public final class CustomLoadingScreenModulesUi {
                     boolean.class);
             constructor.setAccessible(true);
 
-            List<Object> expanded = new ArrayList<>(rows.size() + 2);
+            List<Object> expanded = new ArrayList<>(rows.size() + 3);
             expanded.addAll(rows);
             int insertion = indexAfterLabel(rows, "Remember UI State");
 
@@ -59,6 +61,12 @@ public final class CustomLoadingScreenModulesUi {
                 expanded.add(insertion++, constructor.newInstance(
                         "ui", "custom_main_menu", MAIN_MENU_LABEL,
                         "Replaces Minecraft's title screen with the SCP Additions menu presentation.",
+                        true));
+            }
+            if (needsPauseMenu) {
+                expanded.add(insertion++, constructor.newInstance(
+                        "ui", "custom_pause_menu", PAUSE_MENU_LABEL,
+                        "Replaces Minecraft's in-world pause screen with the animated SCP Additions presentation.",
                         true));
             }
             if (needsLoading) {

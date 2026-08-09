@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * SCP Additions title presentation. The class intentionally remains a
  * TitleScreen so Forge and other mods can inject their normal title-menu
- * buttons; those buttons are collected into Extras instead of being discarded.
+ * buttons; unknown buttons are collected into Extras instead of discarded.
  */
 public final class CustomMainMenuScreen extends TitleScreen {
     private static final ResourceLocation MENU_OVERLAY = new ResourceLocation(
@@ -73,19 +73,27 @@ public final class CustomMainMenuScreen extends TitleScreen {
     private static final long SCREEN_TRANSITION_MS = 260L;
     private static final long OPEN_FADE_MS = 520L;
 
+    private static final String MODS_KEY = "fml.menu.mods";
+    private static final String REALMS_KEY = "menu.online";
     private static final Set<String> PRIMARY_KEYS = Set.of(
             "menu.singleplayer",
             "menu.multiplayer",
+            MODS_KEY,
             "menu.options",
             "menu.quit");
-    private static final String REALMS_KEY = "menu.online";
 
     private static final List<String> CHANGELOG_HIGHLIGHTS = List.of(
             "SCP-106",
             "Reworked SCP-079 facility control",
             "Core Room Elevator",
             "Reworked survival systems",
-            "Custom HUD, inventory and presentation"
+            "Custom hotbar and oxygen HUD",
+            "Expanded SCP Inventory interfaces",
+            "Custom crosshair",
+            "Documents and expanded Codex",
+            "Rebuilt contextual interactions",
+            "Expanded Configuration Center",
+            "Reworked main menu and loading screens"
     );
 
     private final Map<String, AbstractButton> sourceButtons = new HashMap<>();
@@ -151,9 +159,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
             float partialTick) {
-        if (!ClientModulePreferences.customMainMenuEnabled()) {
-            return;
-        }
+        if (!ClientModulePreferences.customMainMenuEnabled()) return;
 
         ensureExtrasBuilt();
         hideSourceWidgets();
@@ -181,8 +187,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private void captureVanillaSources() {
-        for (GuiEventListener listener :
-                new ArrayList<>(this.children())) {
+        for (GuiEventListener listener : new ArrayList<>(this.children())) {
             if (!(listener instanceof AbstractButton button)) continue;
             String key = translationKey(button.getMessage());
             if (PRIMARY_KEYS.contains(key) || REALMS_KEY.equals(key)) {
@@ -195,13 +200,14 @@ public final class CustomMainMenuScreen extends TitleScreen {
     private void ensureExtrasBuilt() {
         if (extrasBuilt) return;
 
-        AbstractButton realms = sourceButtons.get(REALMS_KEY);
-        if (realms != null) {
-            addExtraSource(realms);
-        }
+        addExtraCustom(ScpFonts.roboto("Configuration Center"),
+                () -> beginScreenTransition(this::openConfigurationCenter),
+                CONFIG_LOGO);
 
-        for (GuiEventListener listener :
-                new ArrayList<>(this.children())) {
+        AbstractButton realms = sourceButtons.get(REALMS_KEY);
+        if (realms != null) addExtraSource(realms);
+
+        for (GuiEventListener listener : new ArrayList<>(this.children())) {
             if (!(listener instanceof AbstractButton button)
                     || button instanceof MenuTextButton
                     || capturedSources.contains(button)) {
@@ -221,9 +227,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
                 addExtraSource(button);
                 continue;
             }
-            if (text.isBlank() || isCopyrightButton(text)) {
-                continue;
-            }
+            if (text.isBlank() || isCopyrightButton(text)) continue;
             addExtraSource(button);
         }
 
@@ -238,8 +242,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private void addExtraSource(AbstractButton source) {
-        if (extraButtons.stream().anyMatch(
-                button -> button.source == source)) {
+        if (extraButtons.stream().anyMatch(button -> button.source == source)) {
             return;
         }
         capturedSources.add(source);
@@ -248,14 +251,21 @@ public final class CustomMainMenuScreen extends TitleScreen {
                 0, 0, 190, 24,
                 ScpFonts.roboto(source.getMessage()),
                 () -> beginScreenTransition(source::onPress),
-                null, source);
+                null, source, 1.10F);
+        button.visible = false;
+        extraButtons.add(this.addRenderableWidget(button));
+    }
+
+    private void addExtraCustom(Component label, Runnable action,
+            ResourceLocation icon) {
+        MenuTextButton button = new MenuTextButton(
+                0, 0, 190, 24, label, action, icon, null, 1.10F);
         button.visible = false;
         extraButtons.add(this.addRenderableWidget(button));
     }
 
     private void hideSourceWidgets() {
-        for (GuiEventListener listener :
-                new ArrayList<>(this.children())) {
+        for (GuiEventListener listener : new ArrayList<>(this.children())) {
             if (listener instanceof AbstractWidget widget
                     && !(widget instanceof MenuTextButton)) {
                 widget.visible = false;
@@ -264,29 +274,27 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private void buildPrimaryButtons() {
-        int left = Math.max(34, Math.round(this.width * 0.055F));
-        int buttonWidth = Mth.clamp(Math.round(this.width * 0.235F),
-                184, 274);
-        int buttonHeight = Mth.clamp(Math.round(this.height * 0.052F),
-                24, 31);
-        int gap = Math.max(5, Math.round(this.height * 0.012F));
-        int y = Math.round(this.height * 0.315F);
+        int left = Math.max(42, Math.round(this.width * 0.073F));
+        int buttonWidth = Mth.clamp(Math.round(this.width * 0.265F),
+                220, 330);
+        int buttonHeight = Mth.clamp(Math.round(this.height * 0.061F),
+                30, 39);
+        int gap = Math.max(7, Math.round(this.height * 0.013F));
+        int y = Math.round(this.height * 0.385F);
 
         y = addPrimarySource(left, y, buttonWidth, buttonHeight,
                 "menu.singleplayer", "Singleplayer", gap);
         y = addPrimarySource(left, y, buttonWidth, buttonHeight,
                 "menu.multiplayer", "Multiplayer", gap);
-        y = addPrimary(left, y, buttonWidth, buttonHeight,
-                ScpFonts.roboto("Configuration Center"),
-                () -> beginScreenTransition(this::openConfigurationCenter),
-                CONFIG_LOGO, null, gap);
+        y = addPrimarySource(left, y, buttonWidth, buttonHeight,
+                MODS_KEY, "Mods", gap);
         y = addPrimarySource(left, y, buttonWidth, buttonHeight,
                 "menu.options", "Options", gap);
         y = addPrimary(left, y, buttonWidth, buttonHeight,
                 ScpFonts.roboto("Extras"), this::toggleExtras,
                 null, null, gap + 5);
         addPrimarySource(left, y, buttonWidth, buttonHeight,
-                "menu.quit", "Quit", gap);
+                "menu.quit", "Quit Game", gap);
     }
 
     private int addPrimarySource(int x, int y, int width, int height,
@@ -294,7 +302,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
         AbstractButton source = sourceButtons.get(key);
         MenuTextButton button = new MenuTextButton(
                 x, y, width, height, labelFor(key, fallback),
-                sourceAction(key), null, source);
+                sourceAction(key), null, source, 1.27F);
         button.active = source != null && source.active;
         primaryButtons.add(this.addRenderableWidget(button));
         return y + height + gap;
@@ -304,7 +312,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
             Component label, Runnable action, ResourceLocation icon,
             AbstractButton source, int gap) {
         MenuTextButton button = new MenuTextButton(
-                x, y, width, height, label, action, icon, source);
+                x, y, width, height, label, action, icon, source, 1.27F);
         primaryButtons.add(this.addRenderableWidget(button));
         return y + height + gap;
     }
@@ -342,9 +350,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private void setMenuActive(boolean active) {
-        for (MenuTextButton button : primaryButtons) {
-            button.active = active;
-        }
+        for (MenuTextButton button : primaryButtons) button.active = active;
         for (MenuTextButton button : extraButtons) {
             button.active = active && extrasOpen;
         }
@@ -353,14 +359,11 @@ public final class CustomMainMenuScreen extends TitleScreen {
     private void refreshAvailableBackgrounds() {
         Minecraft minecraft = Minecraft.getInstance();
         for (ResourceLocation candidate : BACKGROUND_CANDIDATES) {
-            if (minecraft.getResourceManager()
-                    .getResource(candidate).isPresent()) {
+            if (minecraft.getResourceManager().getResource(candidate).isPresent()) {
                 backgrounds.add(candidate);
             }
         }
-        if (backgrounds.isEmpty()) {
-            backgrounds.add(FALLBACK_BACKGROUND);
-        }
+        if (backgrounds.isEmpty()) backgrounds.add(FALLBACK_BACKGROUND);
         backgroundOffset = backgrounds.size() <= 1 ? 0
                 : ThreadLocalRandom.current().nextInt(backgrounds.size());
     }
@@ -384,7 +387,8 @@ public final class CustomMainMenuScreen extends TitleScreen {
             }
         }
 
-        float hoverTarget = hovered || Math.abs(extrasTarget - extrasProgress) > 0.01F
+        float hoverTarget = hovered
+                || Math.abs(extrasTarget - extrasProgress) > 0.01F
                 ? 1.0F : 0.0F;
         hoverBoost = approach(hoverBoost, hoverTarget,
                 deltaSeconds * 5.5F);
@@ -403,9 +407,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
             Runnable action = pendingTransition;
             pendingTransition = null;
             transitionStartedAt = -1L;
-            if (action != null) {
-                action.run();
-            }
+            if (action != null) action.run();
         }
     }
 
@@ -420,16 +422,16 @@ public final class CustomMainMenuScreen extends TitleScreen {
             return;
         }
 
-        long cycle = BACKGROUND_HOLD_MS;
         long elapsed = Math.max(0L, now - backgroundStartedAt);
-        long slot = elapsed / cycle;
-        long within = elapsed % cycle;
+        long slot = elapsed / BACKGROUND_HOLD_MS;
+        long within = elapsed % BACKGROUND_HOLD_MS;
         int current = (int) ((backgroundOffset + slot) % backgrounds.size());
         int next = (current + 1) % backgrounds.size();
 
         drawCoverTexture(graphics, backgrounds.get(current), 1.0F);
-        if (within > cycle - BACKGROUND_FADE_MS) {
-            float progress = (within - (cycle - BACKGROUND_FADE_MS))
+        if (within > BACKGROUND_HOLD_MS - BACKGROUND_FADE_MS) {
+            float progress = (within
+                    - (BACKGROUND_HOLD_MS - BACKGROUND_FADE_MS))
                     / (float) BACKGROUND_FADE_MS;
             drawCoverTexture(graphics, backgrounds.get(next),
                     smootherStep(progress));
@@ -448,7 +450,6 @@ public final class CustomMainMenuScreen extends TitleScreen {
             return;
         }
 
-        // Temporary fallback while the authored translucent overlay is absent.
         int opaqueEnd = Math.round(this.width * 0.52F);
         int fadeEnd = Math.round(this.width * 0.68F);
         graphics.fill(0, 0, opaqueEnd, this.height, 0xE80A0D12);
@@ -465,23 +466,21 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private void drawSpinner(GuiGraphics graphics) {
-        int size = Mth.clamp(Math.round(this.height * 0.61F), 210, 390);
-        int centerX = 0;
-        int centerY = Math.round(this.height * 0.59F);
+        int size = Mth.clamp(Math.round(this.height * 0.86F), 300, 650);
+        int centerX = Math.round(this.width * 0.035F);
+        int centerY = Math.round(this.height * 0.585F);
 
         drawRotatedTexture(graphics, SPINNER_OUTER, centerX, centerY,
-                size, spinnerOuterAngle, 0.17F);
+                size, spinnerOuterAngle, 0.18F);
         drawRotatedTexture(graphics, SPINNER_INNER, centerX, centerY,
-                size, spinnerInnerAngle, 0.13F);
+                size, spinnerInnerAngle, 0.14F);
     }
 
     private void drawRotatedTexture(GuiGraphics graphics,
             ResourceLocation texture, int centerX, int centerY, int size,
             float angle, float alpha) {
         if (!Minecraft.getInstance().getResourceManager()
-                .getResource(texture).isPresent()) {
-            return;
-        }
+                .getResource(texture).isPresent()) return;
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -500,9 +499,9 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     private void drawBranding(GuiGraphics graphics) {
         Font font = Minecraft.getInstance().font;
-        int left = Math.max(34, Math.round(this.width * 0.055F));
-        int top = Math.max(28, Math.round(this.height * 0.072F));
-        int logoHeight = Mth.clamp(Math.round(this.height * 0.105F), 43, 66);
+        int left = Math.max(42, Math.round(this.width * 0.055F));
+        int top = Math.max(26, Math.round(this.height * 0.055F));
+        int logoHeight = Mth.clamp(Math.round(this.height * 0.145F), 58, 98);
         int logoWidth = Math.round(logoHeight * (960.0F / 832.0F));
 
         int titleX = left;
@@ -512,52 +511,59 @@ public final class CustomMainMenuScreen extends TitleScreen {
             graphics.blit(CONFIG_LOGO, left, top, logoWidth, logoHeight,
                     0.0F, 0.0F, 960, 832, 960, 832);
             RenderSystem.disableBlend();
-            titleX += logoWidth + 12;
+            titleX += logoWidth + 18;
         }
 
-        float titleScale = this.height < 420 ? 1.22F : 1.48F;
+        float titleScale = this.height < 420 ? 1.75F : 2.28F;
         drawScaledText(graphics, font,
                 ScpFonts.montserrat("SCP ADDITIONS"),
-                titleX, top + 2, titleScale, TEXT);
+                titleX, top + 4, titleScale, TEXT);
 
         String version = modVersion();
+        float versionScale = this.height < 420 ? 1.00F : 1.28F;
         drawScaledText(graphics, font,
                 ScpFonts.titillium("VERSION " + version),
-                titleX, top + Math.round(17 * titleScale),
-                0.90F, ACCENT_BRIGHT);
+                titleX, top + Math.round(18 * titleScale),
+                versionScale, ACCENT_BRIGHT);
     }
 
     private void drawWhatsNew(GuiGraphics graphics) {
         if (this.width < 720 || this.height < 380) return;
 
         Font font = Minecraft.getInstance().font;
-        int panelWidth = Mth.clamp(Math.round(this.width * 0.30F), 248, 390);
-        int panelHeight = Mth.clamp(Math.round(this.height * 0.285F), 132, 176);
+        int panelWidth = Mth.clamp(Math.round(this.width * 0.31F), 270, 420);
+        int panelHeight = Mth.clamp(Math.round(this.height * 0.39F), 235, 330);
         int x = this.width - panelWidth
                 - Math.max(24, Math.round(this.width * 0.034F));
         int y = this.height - panelHeight
-                - Math.max(26, Math.round(this.height * 0.055F));
+                - Math.max(24, Math.round(this.height * 0.045F));
 
         graphics.fill(x, y, x + panelWidth, y + panelHeight, PANEL);
-        graphics.fill(x, y, x + panelWidth, y + 2, ACCENT);
+        graphics.fill(x, y, x + panelWidth, y + 3, ACCENT);
 
-        graphics.drawString(font, ScpFonts.montserrat("WHAT'S NEW"),
-                x + 15, y + 13, TEXT, false);
+        drawScaledText(graphics, font, ScpFonts.montserrat("WHAT'S NEW"),
+                x + 16, y + 15, 1.12F, TEXT);
         String version = majorVersion(modVersion());
-        graphics.drawString(font, ScpFonts.titillium("VERSION " + version),
-                x + 15, y + 29, ACCENT_BRIGHT, false);
+        drawScaledText(graphics, font,
+                ScpFonts.titillium("VERSION " + version),
+                x + 16, y + 35, 1.02F, ACCENT_BRIGHT);
 
-        int lineY = y + 51;
-        int availableWidth = panelWidth - 34;
+        int lineY = y + 60;
+        int availableWidth = panelWidth - 46;
         for (String highlight : CHANGELOG_HIGHLIGHTS) {
-            if (lineY + font.lineHeight > y + panelHeight - 10) break;
-            graphics.fill(x + 15, lineY + 4, x + 18, lineY + 7, ACCENT);
-            Component text = ScpFonts.roboto(highlight);
-            String compact = compactToWidth(font, text.getString(),
-                    availableWidth);
-            graphics.drawString(font, ScpFonts.roboto(compact),
-                    x + 25, lineY, TEXT, false);
-            lineY += 19;
+            if (lineY + 14 > y + panelHeight - 10) break;
+
+            int bulletHeight = 7;
+            int bulletY = lineY + Math.max(0,
+                    (font.lineHeight - bulletHeight) / 2);
+            graphics.fill(x + 16, bulletY,
+                    x + 20, bulletY + bulletHeight, ACCENT);
+
+            String compact = compactToWidth(font, highlight,
+                    Math.round(availableWidth / 1.06F));
+            drawScaledText(graphics, font, ScpFonts.roboto(compact),
+                    x + 28, lineY, 1.06F, TEXT);
+            lineY += 20;
         }
     }
 
@@ -566,21 +572,21 @@ public final class CustomMainMenuScreen extends TitleScreen {
         if (extraButtons.isEmpty()) return;
 
         int primaryRight = 0;
-        int primaryTop = Math.round(this.height * 0.315F);
+        int primaryTop = Math.round(this.height * 0.385F);
         for (MenuTextButton button : primaryButtons) {
             primaryRight = Math.max(primaryRight,
                     button.getX() + button.getWidth());
         }
 
-        int extraX = primaryRight + 14;
+        int extraX = primaryRight + 16;
         int extraY = primaryTop;
-        int extraWidth = Mth.clamp(Math.round(this.width * 0.195F),
-                150, 218);
-        int extraHeight = Mth.clamp(Math.round(this.height * 0.045F),
-                22, 27);
-        int gap = 5;
+        int extraWidth = Mth.clamp(Math.round(this.width * 0.205F),
+                168, 235);
+        int extraHeight = Mth.clamp(Math.round(this.height * 0.052F),
+                26, 32);
+        int gap = 6;
 
-        int slide = Math.round((1.0F - smootherStep(extrasProgress)) * 28.0F);
+        int slide = Math.round((1.0F - smootherStep(extrasProgress)) * 32.0F);
         int alpha = Math.round(255.0F * extrasProgress);
 
         for (MenuTextButton button : extraButtons) {
@@ -626,7 +632,6 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
         float screenAspect = this.width / (float) Math.max(1, this.height);
         float textureAspect = REFERENCE_WIDTH / (float) REFERENCE_HEIGHT;
-
         float u = 0.0F;
         float v = 0.0F;
         float regionWidth = REFERENCE_WIDTH;
@@ -676,8 +681,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     private static String modVersion() {
         return ModList.get().getModContainerById(ScpAdditionsMod.MODID)
-                .map(container -> container.getModInfo()
-                        .getVersion().toString())
+                .map(container -> container.getModInfo().getVersion().toString())
                 .orElse("4.0.0");
     }
 
@@ -700,8 +704,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
         return t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F);
     }
 
-    private static float approach(float current, float target,
-            float amount) {
+    private static float approach(float current, float target, float amount) {
         if (current < target) return Math.min(target, current + amount);
         if (current > target) return Math.max(target, current - amount);
         return current;
@@ -716,24 +719,24 @@ public final class CustomMainMenuScreen extends TitleScreen {
         private final Runnable action;
         private final ResourceLocation icon;
         private final AbstractButton source;
+        private final float textScale;
         private float hoverProgress;
         private long hoverUpdatedAt = Util.getMillis();
         private float renderAlpha = 1.0F;
 
         private MenuTextButton(int x, int y, int width, int height,
                 Component message, Runnable action, ResourceLocation icon,
-                AbstractButton source) {
+                AbstractButton source, float textScale) {
             super(x, y, width, height, message);
             this.action = action;
             this.icon = icon;
             this.source = source;
+            this.textScale = textScale;
         }
 
         @Override
         public void onPress() {
-            if (this.active && this.action != null) {
-                this.action.run();
-            }
+            if (this.active && this.action != null) this.action.run();
         }
 
         @Override
@@ -761,7 +764,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
                     this.getY() + this.getHeight(),
                     (backgroundAlpha << 24) | backgroundRgb);
 
-            int accentWidth = Math.max(2, Math.round(2.0F + eased * 2.0F));
+            int accentWidth = Math.max(3, Math.round(3.0F + eased * 2.0F));
             int accentAlpha = Math.round(255.0F * stateAlpha);
             graphics.fill(this.getX(), this.getY(),
                     this.getX() + accentWidth,
@@ -770,30 +773,29 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
             int textColor = withAlpha(
                     eased > 0.45F ? ACCENT_BRIGHT : TEXT, stateAlpha);
-            int iconX = this.getX() + 10 + Math.round(eased * 4.0F);
+            int iconX = this.getX() + 13 + Math.round(eased * 5.0F);
             int textX = iconX;
 
             if (icon != null
                     && Minecraft.getInstance().getResourceManager()
                     .getResource(icon).isPresent()) {
-                int iconHeight = Math.max(14, this.getHeight() - 10);
+                int iconHeight = Math.max(16, this.getHeight() - 10);
                 int iconWidth = Math.round(iconHeight * (960.0F / 832.0F));
-                int iconY = this.getY()
-                        + (this.getHeight() - iconHeight) / 2;
+                int iconY = this.getY() + (this.getHeight() - iconHeight) / 2;
                 RenderSystem.enableBlend();
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, stateAlpha);
                 graphics.blit(icon, iconX, iconY, iconWidth, iconHeight,
                         0.0F, 0.0F, 960, 832, 960, 832);
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
                 RenderSystem.disableBlend();
-                textX += iconWidth + 7;
+                textX += iconWidth + 9;
             }
 
             Font font = Minecraft.getInstance().font;
-            int textY = this.getY()
-                    + (this.getHeight() - font.lineHeight) / 2;
-            graphics.drawString(font, this.getMessage(),
-                    textX, textY, textColor, false);
+            float scaledHeight = font.lineHeight * textScale;
+            float textY = this.getY() + (this.getHeight() - scaledHeight) * 0.5F;
+            drawScaledText(graphics, font, this.getMessage(),
+                    textX, textY, textScale, textColor);
         }
 
         @Override

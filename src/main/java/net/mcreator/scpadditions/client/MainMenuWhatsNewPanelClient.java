@@ -85,11 +85,11 @@ public final class MainMenuWhatsNewPanelClient {
             if (index >= HIGHLIGHTS.size()) break;
 
             int lineY = listTop + row * ROW_HEIGHT;
-            int bulletHeight = 7;
+            int bulletSize = 5;
             int bulletY = lineY + Math.max(0,
-                    (font.lineHeight - bulletHeight) / 2);
+                    (font.lineHeight - bulletSize) / 2);
             graphics.fill(panel.x + 15, bulletY,
-                    panel.x + 19, bulletY + bulletHeight, ACCENT);
+                    panel.x + 15 + bulletSize, bulletY + bulletSize, ACCENT);
 
             String text = compactToWidth(font, HIGHLIGHTS.get(index), textWidth);
             graphics.drawString(font, ScpFonts.roboto(text),

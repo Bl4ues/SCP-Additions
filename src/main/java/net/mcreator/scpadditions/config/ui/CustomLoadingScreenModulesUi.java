@@ -14,13 +14,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Adds the client-only loading-screen preference to General & Modules. */
+/** Adds the client-only presentation preferences to General & Modules. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CustomLoadingScreenModulesUi {
     private static final String EXTENDED_SCREEN =
             "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$ExtendedToggleScreen";
     private static final String GENERAL_TITLE = "General & Modules";
-    private static final String LABEL = "Custom Loading Screen";
+    private static final String MAIN_MENU_LABEL = "Custom Main Menu";
+    private static final String LOADING_LABEL = "Custom Loading Screen";
 
     private CustomLoadingScreenModulesUi() {
     }
@@ -38,29 +39,38 @@ public final class CustomLoadingScreenModulesUi {
             Field rowsField = screen.getClass().getDeclaredField("rows");
             rowsField.setAccessible(true);
             Object value = rowsField.get(screen);
-            if (!(value instanceof List<?> rows) || rows.isEmpty()
-                    || containsLabel(rows, LABEL)) {
-                return;
-            }
+            if (!(value instanceof List<?> rows) || rows.isEmpty()) return;
+
+            boolean needsMainMenu = !containsLabel(rows, MAIN_MENU_LABEL);
+            boolean needsLoading = !containsLabel(rows, LOADING_LABEL);
+            if (!needsMainMenu && !needsLoading) return;
 
             Class<?> rowType = rows.get(0).getClass();
             Constructor<?> constructor = rowType.getDeclaredConstructor(
                     String.class, String.class, String.class, String.class,
                     boolean.class);
             constructor.setAccessible(true);
-            Object loadingRow = constructor.newInstance(
-                    "ui", "custom_loading_screen", LABEL,
-                    "Replaces Minecraft's spawn-region loading display with the SCP Additions presentation.",
-                    true);
 
-            List<Object> expanded = new ArrayList<>(rows.size() + 1);
+            List<Object> expanded = new ArrayList<>(rows.size() + 2);
             expanded.addAll(rows);
             int insertion = indexAfterLabel(rows, "Remember UI State");
-            expanded.add(insertion, loadingRow);
+
+            if (needsMainMenu) {
+                expanded.add(insertion++, constructor.newInstance(
+                        "ui", "custom_main_menu", MAIN_MENU_LABEL,
+                        "Replaces Minecraft's title screen with the SCP Additions menu presentation.",
+                        true));
+            }
+            if (needsLoading) {
+                expanded.add(insertion, constructor.newInstance(
+                        "ui", "custom_loading_screen", LOADING_LABEL,
+                        "Replaces Minecraft's spawn-region loading display with the SCP Additions presentation.",
+                        true));
+            }
             rowsField.set(screen, List.copyOf(expanded));
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not add the Custom Loading Screen preference row",
+                    "Could not add the client presentation preference rows",
                     exception);
         }
     }

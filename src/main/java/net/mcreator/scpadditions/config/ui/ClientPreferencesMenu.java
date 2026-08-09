@@ -47,7 +47,7 @@ public final class ClientPreferencesMenu {
         });
     }
 
-    private static Screen open(Minecraft minecraft, Screen parent) {
+    public static Screen open(Minecraft minecraft, Screen parent) {
         if (minecraft.player != null && minecraft.getConnection() != null) {
             ConfigCenterClient.requestOpen(parent);
             return minecraft.screen;

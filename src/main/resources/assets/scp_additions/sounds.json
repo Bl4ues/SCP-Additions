@@ -90,10 +90,18 @@
     ]
   },
   "select": {
-    "subtitle": "subtitles.select",
     "sounds": [
       {
         "name": "scp_additions:select",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "hover": {
+    "sounds": [
+      {
+        "name": "scp_additions:hover",
         "stream": false,
         "volume": 1
       }

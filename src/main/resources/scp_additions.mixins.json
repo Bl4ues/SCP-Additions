@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "scp_additions.refmap.json",
   "client": [
+    "client.AbstractWidgetSoundMixin",
     "client.FontMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",

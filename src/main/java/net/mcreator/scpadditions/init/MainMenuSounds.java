@@ -17,6 +17,11 @@ public final class MainMenuSounds {
                     SoundEvent.createVariableRangeEvent(
                             new ResourceLocation(ScpAdditionsMod.MODID,
                                     "main_menu")));
+    public static final RegistryObject<SoundEvent> HOVER =
+            REGISTRY.register("hover", () ->
+                    SoundEvent.createVariableRangeEvent(
+                            new ResourceLocation(ScpAdditionsMod.MODID,
+                                    "hover")));
 
     private MainMenuSounds() {
     }

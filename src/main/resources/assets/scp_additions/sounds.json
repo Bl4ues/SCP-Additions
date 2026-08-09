@@ -94,7 +94,7 @@
       {
         "name": "scp_additions:select",
         "stream": false,
-        "volume": 1
+        "volume": 1.5
       }
     ]
   },
@@ -103,7 +103,7 @@
       {
         "name": "scp_additions:hover",
         "stream": false,
-        "volume": 1
+        "volume": 0.75
       }
     ]
   },

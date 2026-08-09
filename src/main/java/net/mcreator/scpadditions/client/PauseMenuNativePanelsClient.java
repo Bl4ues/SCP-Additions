@@ -43,6 +43,9 @@ public final class PauseMenuNativePanelsClient {
     private static final int PANEL_SOFT = 0xB812161C;
     private static final int ROW = 0x6F0B0E12;
     private static final int ROW_HOVER = 0xA91A2028;
+    private static final int LAN_ROW = 0xA2181D24;
+    private static final int LAN_ROW_HOVER = 0xC6242B35;
+    private static final int LAN_FIELD = 0xD110141A;
     private static final int ACCENT = 0xFFC99B18;
     private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int TEXT = 0xFFF5F6F7;
@@ -51,7 +54,10 @@ public final class PauseMenuNativePanelsClient {
     private static final int TRACK = 0x563D4652;
 
     private static final int ACHIEVEMENT_ROW_HEIGHT = 42;
-    private static final int STAT_ROW_HEIGHT = 25;
+    private static final int STAT_ROW_HEIGHT = 28;
+    private static final float STAT_VALUE_SCALE = 1.18F;
+    private static final float LAN_OPTION_TEXT_SCALE = 1.08F;
+    private static final float LAN_START_TEXT_SCALE = 1.16F;
     private static final long STATS_REFRESH_MS = 500L;
 
     private static final Map<CustomPauseMenuScreen, State> STATES =
@@ -558,10 +564,11 @@ public final class PauseMenuNativePanelsClient {
                     layout.right - layout.left - 105);
             graphics.drawString(font, ScpFonts.roboto(label),
                     layout.left + 12, y + 8, applyAlpha(TEXT, alpha), false);
-            Component value = ScpFonts.titillium(entry.value);
-            graphics.drawString(font, value,
-                    layout.right - 12 - font.width(value), y + 8,
-                    applyAlpha(ACCENT_BRIGHT, alpha), false);
+            Component value = ScpFonts.roboto(entry.value);
+            float valueWidth = font.width(value) * STAT_VALUE_SCALE;
+            drawScaledString(graphics, font, value,
+                    layout.right - 12 - valueWidth, y + 7,
+                    STAT_VALUE_SCALE, applyAlpha(ACCENT_BRIGHT, alpha));
         }
         if (max > 0) drawScrollbar(graphics, layout.right - 3,
                 layout.listY, layout.listBottom, state.statsScroll,
@@ -670,6 +677,8 @@ public final class PauseMenuNativePanelsClient {
             state.lanPort.setMaxLength(5);
             state.lanPort.setFilter(value -> value.isEmpty()
                     || value.chars().allMatch(Character::isDigit));
+            state.lanPort.setFormatter((value, cursor) ->
+                    ScpFonts.roboto(value).getVisualOrderText());
             state.lanPort.setValue(Integer.toString(availablePort()));
         }
         state.lanStatus = "";
@@ -688,33 +697,38 @@ public final class PauseMenuNativePanelsClient {
                 layout.width, "ALLOW CHEATS", state.lanCheats ? "ON" : "OFF",
                 layout.cheatsContains(mouseX, mouseY), alpha);
 
+        boolean portHover = layout.portContains(mouseX, mouseY);
         graphics.fill(layout.left, layout.portY,
                 layout.left + layout.width, layout.portY + 32,
-                applyAlpha(ROW, alpha));
+                applyAlpha(portHover ? LAN_ROW_HOVER : LAN_ROW, alpha));
         graphics.fill(layout.left, layout.portY, layout.left + 3,
                 layout.portY + 32, applyAlpha(ACCENT, alpha));
-        graphics.drawString(font, ScpFonts.roboto("PORT"),
-                layout.left + 12, layout.portY + 11,
-                applyAlpha(TEXT, alpha), false);
-        int fieldWidth = 88;
+        drawScaledString(graphics, font, ScpFonts.roboto("PORT"),
+                layout.left + 12, layout.portY + 10,
+                LAN_OPTION_TEXT_SCALE, applyAlpha(TEXT, alpha));
+        int fieldWidth = 108;
         int fieldX = layout.left + layout.width - fieldWidth - 10;
-        graphics.fill(fieldX, layout.portY + 6, fieldX + fieldWidth,
-                layout.portY + 26, applyAlpha(PANEL_SOFT, alpha));
+        graphics.fill(fieldX, layout.portY + 5, fieldX + fieldWidth,
+                layout.portY + 27, applyAlpha(LAN_FIELD, alpha));
         if (state.lanPort != null) {
-            state.lanPort.setX(fieldX + 6);
-            state.lanPort.setY(layout.portY + 7);
-            state.lanPort.setWidth(fieldWidth - 12);
+            int textWidth = font.width(ScpFonts.roboto(state.lanPort.getValue()));
+            int editWidth = Mth.clamp(textWidth + 12, 30, fieldWidth - 12);
+            state.lanPort.setX(fieldX + (fieldWidth - editWidth) / 2);
+            state.lanPort.setY(layout.portY + 6);
+            state.lanPort.setWidth(editWidth);
             state.lanPort.render(graphics, mouseX, mouseY, partialTick);
         }
 
         boolean startHover = layout.startContains(mouseX, mouseY);
         graphics.fill(layout.left, layout.startY,
                 layout.left + layout.width, layout.startY + 34,
-                applyAlpha(startHover ? ROW_HOVER : ROW, alpha));
+                applyAlpha(startHover ? LAN_ROW_HOVER : LAN_ROW, alpha));
         graphics.fill(layout.left, layout.startY, layout.left + 4,
                 layout.startY + 34, applyAlpha(ACCENT, alpha));
-        graphics.drawCenteredString(font, ScpFonts.roboto("START LAN WORLD"),
-                layout.left + layout.width / 2, layout.startY + 12,
+        drawScaledCenteredString(graphics, font,
+                ScpFonts.roboto("START LAN WORLD"),
+                layout.left + layout.width / 2.0F, layout.startY + 11,
+                LAN_START_TEXT_SCALE,
                 applyAlpha(startHover ? ACCENT_BRIGHT : TEXT, alpha));
         if (!state.lanStatus.isBlank()) {
             graphics.drawCenteredString(font, ScpFonts.titillium(state.lanStatus),
@@ -728,14 +742,17 @@ public final class PauseMenuNativePanelsClient {
             float alpha) {
         Font font = Minecraft.getInstance().font;
         graphics.fill(x, y, x + width, y + 32,
-                applyAlpha(hovered ? ROW_HOVER : ROW, alpha));
+                applyAlpha(hovered ? LAN_ROW_HOVER : LAN_ROW, alpha));
         graphics.fill(x, y, x + 3, y + 32, applyAlpha(ACCENT, alpha));
-        graphics.drawString(font, ScpFonts.roboto(label), x + 12, y + 11,
-                applyAlpha(TEXT, alpha), false);
-        Component valueText = ScpFonts.titillium(value);
-        graphics.drawString(font, valueText,
-                x + width - 12 - font.width(valueText), y + 11,
-                applyAlpha(hovered ? ACCENT_BRIGHT : TEXT, alpha), false);
+        Component labelText = ScpFonts.roboto(label);
+        drawScaledString(graphics, font, labelText, x + 12, y + 10,
+                LAN_OPTION_TEXT_SCALE, applyAlpha(TEXT, alpha));
+        Component valueText = ScpFonts.roboto(value);
+        float valueWidth = font.width(valueText) * LAN_OPTION_TEXT_SCALE;
+        drawScaledString(graphics, font, valueText,
+                x + width - 12 - valueWidth, y + 10,
+                LAN_OPTION_TEXT_SCALE,
+                applyAlpha(hovered ? ACCENT_BRIGHT : TEXT, alpha));
     }
 
     private static void handleLanClick(State state,
@@ -749,7 +766,13 @@ public final class PauseMenuNativePanelsClient {
             state.lanCheats = !state.lanCheats;
             return;
         }
-        if (state.lanPort != null) state.lanPort.mouseClicked(mouseX, mouseY, 0);
+        if (state.lanPort != null) {
+            boolean editClicked = state.lanPort.mouseClicked(mouseX, mouseY, 0);
+            if (!editClicked && layout.portContains(mouseX, mouseY)) {
+                state.lanPort.setFocused(true);
+                return;
+            }
+        }
         if (layout.startContains(mouseX, mouseY)) publishLan(state);
     }
 
@@ -832,6 +855,22 @@ public final class PauseMenuNativePanelsClient {
                 area.x + area.width / 2,
                 area.y + Math.max(0, (area.height - font.lineHeight) / 2),
                 applyAlpha(MUTED, alpha));
+    }
+
+    private static void drawScaledString(GuiGraphics graphics, Font font,
+            Component text, float x, float y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    private static void drawScaledCenteredString(GuiGraphics graphics, Font font,
+            Component text, float centerX, float y, float scale, int color) {
+        float width = font.width(text) * scale;
+        drawScaledString(graphics, font, text, centerX - width / 2.0F,
+                y, scale, color);
     }
 
     private static void drawScrollbar(GuiGraphics graphics, int x,
@@ -1057,6 +1096,10 @@ public final class PauseMenuNativePanelsClient {
 
         private boolean cheatsContains(double x, double y) {
             return contains(left, cheatsY, width, 32, x, y);
+        }
+
+        private boolean portContains(double x, double y) {
+            return contains(left, portY, width, 32, x, y);
         }
 
         private boolean startContains(double x, double y) {

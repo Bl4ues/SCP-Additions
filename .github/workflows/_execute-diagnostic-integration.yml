@@ -1,0 +1,49 @@
+name: Execute Diagnostic Integration
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Execute corrected integration script
+        shell: python
+        run: |
+          from pathlib import Path
+          workflow = Path('.github/workflows/_apply-diagnostic-table.yml').read_text(encoding='utf-8')
+          lines = workflow.splitlines()
+          marker = next(i for i, line in enumerate(lines) if line.strip() == '- name: Integrate Diagnostic Table')
+          start = next(i for i in range(marker + 1, len(lines)) if lines[i].strip() == 'run: |') + 1
+          end = next(i for i in range(start, len(lines)) if lines[i].strip() == '- name: Compile Java')
+          code_lines = []
+          for line in lines[start:end]:
+              code_lines.append(line[10:] if line.startswith('          ') else line)
+          code = '\n'.join(code_lines)
+          code = code.replace('\\\\n', '\\n')
+          exec(compile(code, '<diagnostic-integration>', 'exec'), {})
+      - name: Compile Java
+        run: ./gradlew compileJava --no-daemon
+      - name: Commit integrated source changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md \
+            src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java \
+            src/main/java/net/mcreator/scpadditions/facility/TeslaGateTerminalTableModule.java \
+            src/main/resources/assets/scp_additions/blockstates/diagnostic_table.json \
+            src/main/resources/assets/scp_additions/geo/block/system_terminal.geo.json \
+            src/main/resources/assets/scp_additions/lang/en_us.json \
+            src/main/resources/assets/scp_additions/models/block/diagnostic_table.json \
+            src/main/resources/assets/scp_additions/models/item/diagnostic_table.json
+          git commit -m "Add Diagnostic Table and update diagnostic terminal model"
+          git push

@@ -7,6 +7,7 @@
   "client": [
     "client.AbstractWidgetSoundMixin",
     "client.StyleFontMixin",
+    "client.CustomMainMenuWhatsNewMixin",
     "client.FontMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",

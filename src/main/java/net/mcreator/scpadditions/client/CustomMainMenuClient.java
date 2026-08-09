@@ -7,7 +7,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Replaces only the vanilla title presentation; underlying menu actions stay intact. */
+/** Keeps the authored title presentation in control of title-menu navigation. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class CustomMainMenuClient {
     private CustomMainMenuClient() {
@@ -16,6 +16,13 @@ public final class CustomMainMenuClient {
     @SubscribeEvent
     public static void onScreenOpening(ScreenEvent.Opening event) {
         if (!ClientModulePreferences.customMainMenuEnabled()) return;
+
+        if (MainMenuSettingsPanelClient.shouldReplaceOptionsReturn(
+                event.getScreen())) {
+            event.setNewScreen(new CustomMainMenuScreen());
+            return;
+        }
+
         if (event.getScreen() instanceof TitleScreen
                 && !(event.getScreen() instanceof CustomMainMenuScreen)) {
             event.setNewScreen(new CustomMainMenuScreen());

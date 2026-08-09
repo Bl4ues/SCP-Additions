@@ -9,9 +9,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Replaces the oversized prototype What's New block with the compact scrollable panel. */
-@Mixin(CustomMainMenuScreen.class)
+@Mixin(value = CustomMainMenuScreen.class, remap = false)
 public abstract class CustomMainMenuWhatsNewMixin {
-    @Inject(method = "drawWhatsNew", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "drawWhatsNew", at = @At("HEAD"), cancellable = true,
+            remap = false)
     private void scpAdditions$drawCompactWhatsNew(
             GuiGraphics graphics, CallbackInfo callback) {
         MainMenuWhatsNewPanelClient.render(

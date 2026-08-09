@@ -85,9 +85,8 @@ public final class MainMenuWhatsNewPanelClient {
             if (index >= HIGHLIGHTS.size()) break;
 
             int lineY = listTop + row * ROW_HEIGHT;
-            int bulletSize = 5;
-            int bulletY = lineY + Math.max(0,
-                    (font.lineHeight - bulletSize) / 2);
+            int bulletSize = 4;
+            int bulletY = lineY + 1;
             graphics.fill(panel.x + 15, bulletY,
                     panel.x + 15 + bulletSize, bulletY + bulletSize, ACCENT);
 

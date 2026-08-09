@@ -4,12 +4,14 @@
 
 ## Highlights
 - SCP-106
-- Completely reworked SCP-079 facility control
+- Reworked SCP-079 facility control
 - Core Room Elevator
 - Reworked survival systems
-- Custom hotbar, oxygen HUD and crosshair
+- Custom hotbar and oxygen HUD
+- Expanded SCP Inventory interfaces
+- Custom crosshair
 - Documents and expanded Codex
-- Rebuilt contextual interaction framework
+- Rebuilt contextual interactions
 - Expanded Configuration Center
 - Reworked main menu and loading screens
 

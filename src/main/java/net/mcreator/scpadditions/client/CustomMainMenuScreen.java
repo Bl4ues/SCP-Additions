@@ -204,13 +204,10 @@ public final class CustomMainMenuScreen extends TitleScreen {
                 () -> beginScreenTransition(this::openConfigurationCenter),
                 CONFIG_LOGO);
 
-        AbstractButton realms = sourceButtons.get(REALMS_KEY);
-        if (realms != null) addExtraSource(realms);
-
+        List<AbstractButton> discoveredExtras = new ArrayList<>();
         for (GuiEventListener listener : new ArrayList<>(this.children())) {
             if (!(listener instanceof AbstractButton button)
-                    || button instanceof MenuTextButton
-                    || capturedSources.contains(button)) {
+                    || button instanceof MenuTextButton) {
                 continue;
             }
 
@@ -224,12 +221,23 @@ public final class CustomMainMenuScreen extends TitleScreen {
             if (REALMS_KEY.equals(key)) {
                 sourceButtons.putIfAbsent(key, button);
                 capturedSources.add(button);
-                addExtraSource(button);
                 continue;
             }
-            if (text.isBlank() || isCopyrightButton(text)) continue;
+            if (capturedSources.contains(button)
+                    || text.isBlank() || isCopyrightButton(text)) {
+                continue;
+            }
+            discoveredExtras.add(button);
+        }
+
+        discoveredExtras.sort((left, right) -> Integer.compare(
+                extraOrder(left), extraOrder(right)));
+        for (AbstractButton button : discoveredExtras) {
             addExtraSource(button);
         }
+
+        AbstractButton realms = sourceButtons.get(REALMS_KEY);
+        if (realms != null) addExtraSource(realms);
 
         extrasBuilt = true;
         hideSourceWidgets();
@@ -239,6 +247,25 @@ public final class CustomMainMenuScreen extends TitleScreen {
         String normalized = text.toLowerCase(Locale.ROOT);
         return normalized.contains("copyright")
                 && normalized.contains("mojang");
+    }
+
+    private static int extraOrder(AbstractButton source) {
+        String key = translationKey(source.getMessage());
+        String text = source.getMessage().getString();
+        String normalized = (key + " " + text).toLowerCase(Locale.ROOT);
+        if (normalized.contains("language")) return 200;
+        if (normalized.contains("accessib")) return 300;
+        if (REALMS_KEY.equals(key) || normalized.contains("realms")) return 400;
+        return 100;
+    }
+
+    private static boolean sourceLooksIconic(AbstractButton source) {
+        if (source == null) return false;
+        String className = source.getClass().getName().toLowerCase(Locale.ROOT);
+        return (source.getWidth() <= 32 && source.getHeight() <= 32)
+                || className.contains("imagebutton")
+                || className.contains("iconbutton")
+                || className.contains("icon_button");
     }
 
     private void addExtraSource(AbstractButton source) {
@@ -715,6 +742,43 @@ public final class CustomMainMenuScreen extends TitleScreen {
         return wrapped < 0.0F ? wrapped + 360.0F : wrapped;
     }
 
+    private static void renderSourceIcon(GuiGraphics graphics,
+            AbstractButton source, int x, int y, int maxSize, float alpha) {
+        if (source == null) return;
+
+        int oldX = source.getX();
+        int oldY = source.getY();
+        boolean oldVisible = source.visible;
+        int sourceWidth = Math.max(1, source.getWidth());
+        int sourceHeight = Math.max(1, source.getHeight());
+        float scale = Math.min(maxSize / (float) sourceWidth,
+                maxSize / (float) sourceHeight);
+        int renderedWidth = Math.max(1, Math.round(sourceWidth * scale));
+        int renderedHeight = Math.max(1, Math.round(sourceHeight * scale));
+        float drawX = x + (maxSize - renderedWidth) * 0.5F;
+        float drawY = y + (maxSize - renderedHeight) * 0.5F;
+
+        try {
+            source.setX(0);
+            source.setY(0);
+            source.visible = true;
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
+            graphics.pose().pushPose();
+            graphics.pose().translate(drawX, drawY, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            source.render(graphics, Integer.MIN_VALUE, Integer.MIN_VALUE, 0.0F);
+            graphics.pose().popPose();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.disableBlend();
+        } finally {
+            source.setX(oldX);
+            source.setY(oldY);
+            source.visible = oldVisible;
+        }
+    }
+
     private final class MenuTextButton extends AbstractButton {
         private final Runnable action;
         private final ResourceLocation icon;
@@ -789,6 +853,12 @@ public final class CustomMainMenuScreen extends TitleScreen {
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
                 RenderSystem.disableBlend();
                 textX += iconWidth + 9;
+            } else if (sourceLooksIconic(source)) {
+                int iconSize = Math.max(16, this.getHeight() - 10);
+                int iconY = this.getY() + (this.getHeight() - iconSize) / 2;
+                renderSourceIcon(graphics, source, iconX, iconY,
+                        iconSize, stateAlpha);
+                textX += iconSize + 9;
             }
 
             Font font = Minecraft.getInstance().font;

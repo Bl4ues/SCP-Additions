@@ -31,14 +31,6 @@ jobs:
           import json
           import subprocess
 
-          root = Path('.')
-
-          # -----------------------------------------------------------------
-          # Archivist's Table: preserve the current UV correction, restore the
-          # original Blockbench geometry dimensions, and apply ONLY a uniform
-          # 0.16-model-unit forward offset so the thin rear face cannot become
-          # coplanar with a wall behind the table.
-          # -----------------------------------------------------------------
           model_path = Path('src/main/resources/assets/scp_additions/models/block/diagnostic_table.json')
           current = json.loads(model_path.read_text(encoding='utf-8'))
           original_text = subprocess.check_output([
@@ -66,10 +58,7 @@ jobs:
                   return vector
               return [vector[0], vector[1], shifted_z(vector[2])]
 
-          for index, (old_element, new_element) in enumerate(
-                  zip(original_elements, current_elements)):
-              # Geometry comes from the pre-adjustment model. Faces/UVs remain
-              # from the current file, so the texture repair is not regressed.
+          for old_element, new_element in zip(original_elements, current_elements):
               if 'from' in old_element:
                   new_element['from'] = shifted_vector(old_element['from'])
               if 'to' in old_element:
@@ -90,8 +79,6 @@ jobs:
 
           model_path.write_text(json.dumps(current, indent=2) + '\n', encoding='utf-8')
 
-          # Rename every tracked asset whose filename still carries the old
-          # provisional registry name, including texture/PBR variants if any.
           tracked = subprocess.check_output(['git', 'ls-files'], text=True).splitlines()
           old_named = [p for p in tracked if 'diagnostic_table' in p]
           for old in sorted(old_named, key=len, reverse=True):
@@ -99,7 +86,6 @@ jobs:
               Path(new).parent.mkdir(parents=True, exist_ok=True)
               subprocess.run(['git', 'mv', old, new], check=True)
 
-          # Rename registry/resource references and Java symbols consistently.
           replacements = (
               ('diagnostic_table', 'archivists_table'),
               ('DIAGNOSTIC_TABLE', 'ARCHIVISTS_TABLE'),
@@ -119,12 +105,8 @@ jobs:
               if updated != text:
                   path.write_text(updated, encoding='utf-8')
 
-          # -----------------------------------------------------------------
-          # Document Holder sounds.
-          # -----------------------------------------------------------------
           module_path = Path('src/main/java/net/mcreator/scpadditions/facility/DocumentHolderModule.java')
           module = module_path.read_text(encoding='utf-8')
-
           marker = 'import net.minecraft.resources.ResourceLocation;\n'
           if 'import net.minecraft.sounds.SoundEvent;' not in module:
               if marker not in module:
@@ -183,30 +165,18 @@ jobs:
               if helper_marker not in holder:
                   raise RuntimeError('Document Holder sound helper marker missing')
               holder = holder.replace(helper_marker, helper_replacement, 1)
-
           holder_path.write_text(holder, encoding='utf-8')
 
           sounds_path = Path('src/main/resources/assets/scp_additions/sounds.json')
           sounds = json.loads(sounds_path.read_text(encoding='utf-8'))
           sound_definitions = {
-              'document_take': {
-                  'sounds': [{'name': 'scp_additions:document_take',
-                              'stream': False, 'volume': 1.0}]
-              },
-              'fill_close': {
-                  'sounds': [{'name': 'scp_additions:fill_close',
-                              'stream': False, 'volume': 1.0}]
-              },
-              'empty_close': {
-                  'sounds': [{'name': 'scp_additions:empty_close',
-                              'stream': False, 'volume': 1.0}]
-              },
+              'document_take': {'sounds': [{'name': 'scp_additions:document_take', 'stream': False, 'volume': 1.0}]},
+              'fill_close': {'sounds': [{'name': 'scp_additions:fill_close', 'stream': False, 'volume': 1.0}]},
+              'empty_close': {'sounds': [{'name': 'scp_additions:empty_close', 'stream': False, 'volume': 1.0}]},
           }
-          for key, value in sound_definitions.items():
-              sounds[key] = value
+          sounds.update(sound_definitions)
           sounds_path.write_text(json.dumps(sounds, indent=2) + '\n', encoding='utf-8')
 
-          # Sanity checks before compiling.
           required_oggs = [
               Path('src/main/resources/assets/scp_additions/sounds/document_take.ogg'),
               Path('src/main/resources/assets/scp_additions/sounds/fill_close.ogg'),
@@ -230,7 +200,6 @@ jobs:
           if old_paths:
               raise RuntimeError('Old diagnostic_table paths remain: ' + ', '.join(old_paths))
 
-          # JSON validity after all string/path edits.
           for path in Path('src/main/resources/assets/scp_additions').rglob('*.json'):
               json.loads(path.read_text(encoding='utf-8'))
           PY
@@ -246,6 +215,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git restore --source=HEAD --staged --worktree .github/workflows/_apply-diagnostic-table.yml
           git add -A
           if git diff --cached --quiet; then
             echo "No integration changes to commit."

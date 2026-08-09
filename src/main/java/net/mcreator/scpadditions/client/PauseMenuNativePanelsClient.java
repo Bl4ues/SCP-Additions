@@ -376,7 +376,8 @@ public final class PauseMenuNativePanelsClient {
         AdvancementCategory selected = selectedCategory(state);
         List<AdvancementRow> rows = selectedAchievementRows(state);
         if (selected != null) {
-            graphics.drawString(font, ScpFonts.montserrat(selected.title),
+            graphics.drawString(font,
+                    ScpFonts.montserrat(selected.title.getString()),
                     layout.contentX, layout.contentY - 22,
                     applyAlpha(TEXT, alpha), false);
             Component progress = ScpFonts.titillium(selected.completed + " / "
@@ -600,9 +601,10 @@ public final class PauseMenuNativePanelsClient {
 
     private static StatGroup statGroup(Object type) {
         if (type == Stats.CUSTOM) return StatGroup.GENERAL;
-        if (type == Stats.MINED || type == Stats.CRAFTED || type == Stats.USED
-                || type == Stats.BROKEN || type == Stats.PICKED_UP
-                || type == Stats.DROPPED) return StatGroup.ITEMS;
+        if (type == Stats.BLOCK_MINED || type == Stats.ITEM_CRAFTED
+                || type == Stats.ITEM_USED || type == Stats.ITEM_BROKEN
+                || type == Stats.ITEM_PICKED_UP || type == Stats.ITEM_DROPPED)
+            return StatGroup.ITEMS;
         if (type == Stats.ENTITY_KILLED || type == Stats.ENTITY_KILLED_BY)
             return StatGroup.MOBS;
         return StatGroup.OTHER;
@@ -616,12 +618,12 @@ public final class PauseMenuNativePanelsClient {
                     : Component.literal(humanize(id.toString()));
         }
         Component valueName = displayName(value);
-        if (type == Stats.MINED) return prefixed("Mined", valueName);
-        if (type == Stats.CRAFTED) return prefixed("Crafted", valueName);
-        if (type == Stats.USED) return prefixed("Used", valueName);
-        if (type == Stats.BROKEN) return prefixed("Broken", valueName);
-        if (type == Stats.PICKED_UP) return prefixed("Picked Up", valueName);
-        if (type == Stats.DROPPED) return prefixed("Dropped", valueName);
+        if (type == Stats.BLOCK_MINED) return prefixed("Mined", valueName);
+        if (type == Stats.ITEM_CRAFTED) return prefixed("Crafted", valueName);
+        if (type == Stats.ITEM_USED) return prefixed("Used", valueName);
+        if (type == Stats.ITEM_BROKEN) return prefixed("Broken", valueName);
+        if (type == Stats.ITEM_PICKED_UP) return prefixed("Picked Up", valueName);
+        if (type == Stats.ITEM_DROPPED) return prefixed("Dropped", valueName);
         if (type == Stats.ENTITY_KILLED) return prefixed("Killed", valueName);
         if (type == Stats.ENTITY_KILLED_BY) return prefixed("Killed by", valueName);
         return Component.literal("Statistic: ").append(valueName.copy());

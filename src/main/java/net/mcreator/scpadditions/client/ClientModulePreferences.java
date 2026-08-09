@@ -52,6 +52,7 @@ public final class ClientModulePreferences {
             "hud.facility_chat_interface",
             "vitals.custom_health_enabled",
             "ui.custom_main_menu",
+            "ui.custom_pause_menu",
             "ui.custom_loading_screen",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
@@ -141,6 +142,8 @@ public final class ClientModulePreferences {
         JsonObject ui = object(modules, "ui");
         next.ui.customMainMenu = bool(ui, "custom_main_menu",
                 next.ui.customMainMenu);
+        next.ui.customPauseMenu = bool(ui, "custom_pause_menu",
+                next.ui.customPauseMenu);
         next.ui.customLoadingScreen = bool(ui, "custom_loading_screen",
                 next.ui.customLoadingScreen);
 
@@ -216,6 +219,7 @@ public final class ClientModulePreferences {
 
         JsonObject ui = object(modules, "ui");
         ui.addProperty("custom_main_menu", value.ui.customMainMenu);
+        ui.addProperty("custom_pause_menu", value.ui.customPauseMenu);
         ui.addProperty("custom_loading_screen", value.ui.customLoadingScreen);
 
         JsonObject audio = object(modules, "audio");
@@ -286,6 +290,10 @@ public final class ClientModulePreferences {
 
     public static boolean customMainMenuEnabled() {
         return current.ui.customMainMenu;
+    }
+
+    public static boolean customPauseMenuEnabled() {
+        return current.ui.customPauseMenu;
     }
 
     public static boolean customLoadingScreenEnabled() {
@@ -429,6 +437,7 @@ public final class ClientModulePreferences {
 
     private static final class Ui {
         private boolean customMainMenu = true;
+        private boolean customPauseMenu = true;
         private boolean customLoadingScreen = true;
     }
 

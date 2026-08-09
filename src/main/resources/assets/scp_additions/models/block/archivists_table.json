@@ -6,8 +6,8 @@
     128
   ],
   "textures": {
-    "0": "scp_additions:block/diagnostic_table",
-    "particle": "scp_additions:block/diagnostic_table"
+    "0": "scp_additions:block/archivists_table",
+    "particle": "scp_additions:block/archivists_table"
   },
   "elements": [
     {
@@ -1481,7 +1481,7 @@
       ],
       "to": [
         21.75,
-        22.01,
+        22,
         11.34
       ],
       "rotation": {
@@ -1557,7 +1557,7 @@
         9.84
       ],
       "to": [
-        19.51,
+        19.5,
         24,
         13.84
       ],
@@ -2096,7 +2096,7 @@
         13.84
       ],
       "to": [
-        -7.49,
+        -7.5,
         18.5,
         15.84
       ],
@@ -2175,7 +2175,7 @@
       "to": [
         -4,
         18.5,
-        15.85
+        15.84
       ],
       "rotation": {
         "angle": 0,
@@ -2250,7 +2250,7 @@
         13.84
       ],
       "to": [
-        -3.99,
+        -4,
         18.5,
         15.84
       ],
@@ -2559,7 +2559,7 @@
       ],
       "to": [
         -4,
-        17.01,
+        17,
         14.09
       ],
       "rotation": {
@@ -2636,7 +2636,7 @@
       ],
       "to": [
         -4,
-        18.01,
+        18,
         14.09
       ],
       "rotation": {

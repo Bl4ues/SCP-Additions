@@ -76,7 +76,7 @@
   "item.scp_additions.pieces_of_paper": "Pieces of Paper",
   "block.scp_additions.lv_5_right_reader_accept": "Level 5 Keycard Reader (Right) Accepted",
   "block.scp_additions.tesla_terminal_block": "Tesla Gate Terminal",
-  "block.scp_additions.diagnostic_table": "Archivist's Table",
+  "block.scp_additions.archivists_table": "Archivist's Table",
   "subtitles.teslarecharge": "Tesla Gate recharging",
   "block.scp_additions.scp_914_output_door": "SCP-914 Output Door",
   "death.attack.scp914rough": "%s was \"refined\" by SCP-914 on the \"Rough\" setting.",

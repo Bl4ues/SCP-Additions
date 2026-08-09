@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.facility;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,6 +18,12 @@ public final class DocumentHolderModule {
             ScpAdditionsMod.MODID, "document_holder");
     public static final ResourceLocation ITEM_ID = BLOCK_ID;
     public static final ResourceLocation BLOCK_ENTITY_ID = BLOCK_ID;
+    public static final ResourceLocation DOCUMENT_TAKE_SOUND_ID = new ResourceLocation(
+            ScpAdditionsMod.MODID, "document_take");
+    public static final ResourceLocation FILL_CLOSE_SOUND_ID = new ResourceLocation(
+            ScpAdditionsMod.MODID, "fill_close");
+    public static final ResourceLocation EMPTY_CLOSE_SOUND_ID = new ResourceLocation(
+            ScpAdditionsMod.MODID, "empty_close");
 
     private static DocumentHolderBlock block;
     private static DocumentHolderBlockItem item;
@@ -40,6 +47,12 @@ public final class DocumentHolderModule {
                     DocumentHolderBlockEntity::new, block()).build(null);
             return blockEntityType;
         });
+        event.register(Registries.SOUND_EVENT, DOCUMENT_TAKE_SOUND_ID,
+                () -> SoundEvent.createVariableRangeEvent(DOCUMENT_TAKE_SOUND_ID));
+        event.register(Registries.SOUND_EVENT, FILL_CLOSE_SOUND_ID,
+                () -> SoundEvent.createVariableRangeEvent(FILL_CLOSE_SOUND_ID));
+        event.register(Registries.SOUND_EVENT, EMPTY_CLOSE_SOUND_ID,
+                () -> SoundEvent.createVariableRangeEvent(EMPTY_CLOSE_SOUND_ID));
     }
 
     public static DocumentHolderBlock block() {

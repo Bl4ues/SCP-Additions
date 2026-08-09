@@ -140,8 +140,8 @@ public final class FacilityModule {
     public static final RegistryObject<Block> DOOR_SIGN = registerSign(
             "door_sign", FacilitySignBlock.SignType.DOOR);
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
-    public static final RegistryObject<Block> DIAGNOSTIC_TABLE = registerBlock(
-            "diagnostic_table", DiagnosticTableBlock::new, true);
+    public static final RegistryObject<Block> ARCHIVISTS_TABLE = registerBlock(
+            "archivists_table", ArchivistsTableBlock::new, true);
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
     public static final RegistryObject<Block> WET_FLOOR = registerWetFloor();
     public static final RegistryObject<Block> WATER_FAUCET = registerBlock(
@@ -325,7 +325,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "scp_914_usage_notice");
         addFacilityCreativeItem(props, "tv");
         addExternalCreativeItem(props, TeslaGateTerminalTableModule.ITEM.get());
-        addFacilityCreativeItem(props, "diagnostic_table");
+        addFacilityCreativeItem(props, "archivists_table");
         addUBlockCreativeItem(props, "vent_open");
         sections.add(section("proptab", props));
 
@@ -509,7 +509,7 @@ public final class FacilityModule {
                 || "water_faucet".equals(path)
                 || "scp_914_usage_notice".equals(path)
                 || "trashbin".equals(path)
-                || "diagnostic_table".equals(path);
+                || "archivists_table".equals(path);
     }
 
     private static final class DecorativePropBlockItem extends BlockItem {
@@ -1166,7 +1166,7 @@ public final class FacilityModule {
     }
 
 
-    private static final class DiagnosticTableBlock extends HorizontalDirectionalBlock {
+    private static final class ArchivistsTableBlock extends HorizontalDirectionalBlock {
         public static final EnumProperty<Part> PART = EnumProperty.create(
                 "part", Part.class);
 
@@ -1192,7 +1192,7 @@ public final class FacilityModule {
                 box(0.25D, 16.0D, 8.09D, 6.0D, 24.0D, 14.34D))
                 .optimize();
 
-        private DiagnosticTableBlock() {
+        private ArchivistsTableBlock() {
             super(BlockBehaviour.Properties.of()
                     .sound(SoundType.METAL)
                     .strength(1.0F, 10.0F)
@@ -1347,19 +1347,19 @@ public final class FacilityModule {
         public List<ItemStack> getDrops(BlockState state,
                 LootParams.Builder builder) {
             return Collections.singletonList(
-                    new ItemStack(DIAGNOSTIC_TABLE.get()));
+                    new ItemStack(ARCHIVISTS_TABLE.get()));
         }
 
         @Override
         public ItemStack getCloneItemStack(BlockState state, HitResult target,
                 BlockGetter level, BlockPos pos, Player player) {
-            return new ItemStack(DIAGNOSTIC_TABLE.get());
+            return new ItemStack(ARCHIVISTS_TABLE.get());
         }
 
         private static boolean isExpectedPart(LevelAccessor level,
                 BlockPos pos, Direction facing, Part part) {
             BlockState state = level.getBlockState(pos);
-            return state.getBlock() == DIAGNOSTIC_TABLE.get()
+            return state.getBlock() == ARCHIVISTS_TABLE.get()
                     && state.getValue(FACING) == facing
                     && state.getValue(PART) == part;
         }

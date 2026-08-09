@@ -6,6 +6,8 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
@@ -134,6 +136,7 @@ public final class DocumentHolderBlockEntity extends BlockEntity
         transitionTicks = 0;
         pendingTaker = null;
         pendingHand = InteractionHand.MAIN_HAND;
+        playInteractionSound(DocumentHolderModule.FILL_CLOSE_SOUND_ID);
         markUpdated();
         return true;
     }
@@ -148,6 +151,7 @@ public final class DocumentHolderBlockEntity extends BlockEntity
         transitionTicks = 0;
         pendingTaker = player.getUUID();
         pendingHand = hand;
+        playInteractionSound(DocumentHolderModule.DOCUMENT_TAKE_SOUND_ID);
         markUpdated();
         return true;
     }
@@ -156,6 +160,7 @@ public final class DocumentHolderBlockEntity extends BlockEntity
         state = State.CLOSING_EMPTY;
         transitionTicks = 0;
         pendingTaker = null;
+        playInteractionSound(DocumentHolderModule.EMPTY_CLOSE_SOUND_ID);
         markUpdated();
     }
 
@@ -163,6 +168,15 @@ public final class DocumentHolderBlockEntity extends BlockEntity
         return state == State.CLOSING_FILL
                 || state == State.CLOSING_EMPTY
                 || state == State.TAKING;
+    }
+
+    private void playInteractionSound(ResourceLocation soundId) {
+        if (level == null || level.isClientSide || soundId == null) return;
+        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(soundId);
+        if (sound != null) {
+            level.playSound(null, worldPosition, sound, SoundSource.BLOCKS,
+                    1.0F, 1.0F);
+        }
     }
 
     public static void serverTick(Level level, BlockPos pos,

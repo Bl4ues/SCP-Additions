@@ -2,21 +2,41 @@
   "inventory_pickup": {
     "subtitle": "subtitles.scp_additions.inventory_pickup",
     "sounds": [
-      {"name": "scp_additions:pickup_1", "stream": false, "volume": 1.0},
-      {"name": "scp_additions:pickup_2", "stream": false, "volume": 1.0},
-      {"name": "scp_additions:pickup_3", "stream": false, "volume": 1.0}
+      {
+        "name": "scp_additions:pickup_1",
+        "stream": false,
+        "volume": 1.0
+      },
+      {
+        "name": "scp_additions:pickup_2",
+        "stream": false,
+        "volume": 1.0
+      },
+      {
+        "name": "scp_additions:pickup_3",
+        "stream": false,
+        "volume": 1.0
+      }
     ]
   },
   "inventory_eat": {
     "subtitle": "subtitles.scp_additions.inventory_eat",
     "sounds": [
-      {"name": "scp_additions:eat", "stream": false, "volume": 1.0}
+      {
+        "name": "scp_additions:eat",
+        "stream": false,
+        "volume": 1.0
+      }
     ]
   },
   "inventory_drink": {
     "subtitle": "subtitles.scp_additions.inventory_drink",
     "sounds": [
-      {"name": "scp_additions:drink", "stream": false, "volume": 1.0}
+      {
+        "name": "scp_additions:drink",
+        "stream": false,
+        "volume": 1.0
+      }
     ]
   },
   "teslaactivate": {
@@ -1207,6 +1227,33 @@
       {
         "name": "scp_additions:main_menu",
         "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "document_take": {
+    "sounds": [
+      {
+        "name": "scp_additions:document_take",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "fill_close": {
+    "sounds": [
+      {
+        "name": "scp_additions:fill_close",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "empty_close": {
+    "sounds": [
+      {
+        "name": "scp_additions:empty_close",
+        "stream": false,
         "volume": 1.0
       }
     ]

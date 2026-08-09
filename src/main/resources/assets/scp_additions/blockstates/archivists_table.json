@@ -6,7 +6,7 @@
         "facing": "north"
       },
       "apply": {
-        "model": "scp_additions:block/diagnostic_table"
+        "model": "scp_additions:block/archivists_table"
       }
     },
     {
@@ -15,7 +15,7 @@
         "facing": "east"
       },
       "apply": {
-        "model": "scp_additions:block/diagnostic_table",
+        "model": "scp_additions:block/archivists_table",
         "y": 90
       }
     },
@@ -25,7 +25,7 @@
         "facing": "south"
       },
       "apply": {
-        "model": "scp_additions:block/diagnostic_table",
+        "model": "scp_additions:block/archivists_table",
         "y": 180
       }
     },
@@ -35,7 +35,7 @@
         "facing": "west"
       },
       "apply": {
-        "model": "scp_additions:block/diagnostic_table",
+        "model": "scp_additions:block/archivists_table",
         "y": 270
       }
     },

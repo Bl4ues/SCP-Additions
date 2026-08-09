@@ -65,12 +65,18 @@ public final class AreaUnderConstructionSignModule {
         List<FacilityModule.CreativeSection> result = new ArrayList<>();
         for (FacilityModule.CreativeSection section :
                 FacilityModule.creativeSections()) {
-            List<ItemStack> items = section.items().stream()
-                    .filter(stack -> !stack.is(ITEM.get()))
-                    .filter(stack -> !stack.is(
-                            FacilityModule.SCP_914_USAGE_NOTICE.get().asItem()))
-                    .map(ItemStack::copy)
-                    .toList();
+            List<ItemStack> items = new ArrayList<>();
+            for (ItemStack stack : section.items()) {
+                if (stack.is(ITEM.get()) || stack.is(
+                        FacilityModule.SCP_914_USAGE_NOTICE.get().asItem())) {
+                    continue;
+                }
+                items.add(stack.copy());
+                if (stack.is(FacilityModule.TV.get().asItem())) {
+                    items.add(new ItemStack(
+                            TeslaGateTerminalTableModule.ITEM.get()));
+                }
+            }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     items));
         }

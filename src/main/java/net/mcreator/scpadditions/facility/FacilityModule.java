@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.PathComputationType;
@@ -138,6 +140,8 @@ public final class FacilityModule {
     public static final RegistryObject<Block> DOOR_SIGN = registerSign(
             "door_sign", FacilitySignBlock.SignType.DOOR);
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
+    public static final RegistryObject<Block> DIAGNOSTIC_TABLE = registerBlock(
+            "diagnostic_table", DiagnosticTableBlock::new, true);
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
     public static final RegistryObject<Block> WET_FLOOR = registerWetFloor();
     public static final RegistryObject<Block> WATER_FAUCET = registerBlock(
@@ -320,6 +324,8 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "trashbin");
         addFacilityCreativeItem(props, "scp_914_usage_notice");
         addFacilityCreativeItem(props, "tv");
+        addExternalCreativeItem(props, TeslaGateTerminalTableModule.ITEM.get());
+        addFacilityCreativeItem(props, "diagnostic_table");
         addUBlockCreativeItem(props, "vent_open");
         sections.add(section("proptab", props));
 
@@ -502,7 +508,8 @@ public final class FacilityModule {
                 || "fire_extinguisher".equals(path)
                 || "water_faucet".equals(path)
                 || "scp_914_usage_notice".equals(path)
-                || "trashbin".equals(path);
+                || "trashbin".equals(path)
+                || "diagnostic_table".equals(path);
     }
 
     private static final class DecorativePropBlockItem extends BlockItem {
@@ -1155,6 +1162,241 @@ public final class FacilityModule {
         @Override
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
             return Collections.singletonList(new ItemStack(this));
+        }
+    }
+
+
+    private static final class DiagnosticTableBlock extends HorizontalDirectionalBlock {
+        public static final EnumProperty<Part> PART = EnumProperty.create(
+                "part", Part.class);
+
+        private static final VoxelShape CENTER_NORTH = Shapes.or(
+                box(0.0D, 13.5D, 0.5D, 16.0D, 15.25D, 16.0D),
+                box(0.0D, 15.25D, 0.0D, 16.0D, 16.0D, 16.0D))
+                .optimize();
+        private static final VoxelShape LEFT_NORTH = Shapes.or(
+                box(8.0D, 0.0D, 0.5D, 16.0D, 15.25D, 16.0D),
+                box(8.0D, 15.25D, 0.0D, 16.0D, 16.0D, 16.0D),
+                box(8.75D, 1.5D, -0.25D, 15.25D, 5.75D, 0.5D),
+                box(8.75D, 6.0D, -0.25D, 15.25D, 10.25D, 0.5D),
+                box(8.75D, 10.5D, -0.25D, 15.25D, 14.75D, 0.5D),
+                box(8.5D, 16.0D, 14.0D, 12.0D, 18.5D, 16.0D))
+                .optimize();
+        private static final VoxelShape RIGHT_NORTH = Shapes.or(
+                box(0.0D, 0.0D, 0.5D, 8.0D, 15.25D, 16.0D),
+                box(0.0D, 15.25D, 0.0D, 8.0D, 16.0D, 16.0D),
+                box(0.75D, 1.5D, -0.25D, 7.25D, 5.75D, 0.5D),
+                box(0.75D, 6.0D, -0.25D, 7.25D, 10.25D, 0.5D),
+                box(0.75D, 10.5D, -0.25D, 7.25D, 14.75D, 0.5D),
+                box(2.0D, 16.0D, 1.0D, 6.5D, 17.5D, 8.0D),
+                box(0.25D, 16.0D, 8.25D, 6.0D, 24.0D, 14.5D))
+                .optimize();
+
+        private DiagnosticTableBlock() {
+            super(BlockBehaviour.Properties.of()
+                    .sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F)
+                    .noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false));
+            registerDefaultState(stateDefinition.any()
+                    .setValue(FACING, Direction.NORTH)
+                    .setValue(PART, Part.CENTER));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING, PART);
+        }
+
+        @Nullable
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            Direction facing = context.getHorizontalDirection().getOpposite();
+            BlockPos center = context.getClickedPos();
+            BlockPos left = partPos(center, facing, Part.LEFT);
+            BlockPos right = partPos(center, facing, Part.RIGHT);
+            if (!context.getLevel().getWorldBorder().isWithinBounds(left)
+                    || !context.getLevel().getWorldBorder().isWithinBounds(right)
+                    || !context.getLevel().getBlockState(left).canBeReplaced(context)
+                    || !context.getLevel().getBlockState(right).canBeReplaced(context)) {
+                return null;
+            }
+            return defaultBlockState()
+                    .setValue(FACING, facing)
+                    .setValue(PART, Part.CENTER);
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
+            super.onPlace(state, level, pos, oldState, moving);
+            if (level.isClientSide || oldState.getBlock() == this
+                    || state.getValue(PART) != Part.CENTER) {
+                return;
+            }
+
+            Direction facing = state.getValue(FACING);
+            BlockPos left = partPos(pos, facing, Part.LEFT);
+            BlockPos right = partPos(pos, facing, Part.RIGHT);
+            if (!level.getBlockState(left).canBeReplaced()
+                    || !level.getBlockState(right).canBeReplaced()) {
+                level.destroyBlock(pos, true);
+                return;
+            }
+
+            level.setBlock(left, defaultBlockState()
+                            .setValue(FACING, facing)
+                            .setValue(PART, Part.LEFT),
+                    Block.UPDATE_ALL);
+            level.setBlock(right, defaultBlockState()
+                            .setValue(FACING, facing)
+                            .setValue(PART, Part.RIGHT),
+                    Block.UPDATE_ALL);
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean moving) {
+            if (state.getBlock() != newState.getBlock() && !level.isClientSide) {
+                Direction facing = state.getValue(FACING);
+                BlockPos center = centerPos(pos, facing, state.getValue(PART));
+                for (Part part : Part.values()) {
+                    BlockPos otherPos = partPos(center, facing, part);
+                    if (otherPos.equals(pos)) continue;
+                    BlockState other = level.getBlockState(otherPos);
+                    if (other.getBlock() == this
+                            && other.getValue(FACING) == facing
+                            && other.getValue(PART) == part) {
+                        level.destroyBlock(otherPos, false);
+                    }
+                }
+            }
+            super.onRemove(state, level, pos, newState, moving);
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction,
+                BlockState neighborState, LevelAccessor level, BlockPos pos,
+                BlockPos neighborPos) {
+            Direction facing = state.getValue(FACING);
+            Part part = state.getValue(PART);
+            BlockPos center = centerPos(pos, facing, part);
+
+            if (part == Part.CENTER) {
+                BlockPos left = partPos(center, facing, Part.LEFT);
+                BlockPos right = partPos(center, facing, Part.RIGHT);
+                if (neighborPos.equals(left)
+                        && !isExpectedPart(level, left, facing, Part.LEFT)) {
+                    return Blocks.AIR.defaultBlockState();
+                }
+                if (neighborPos.equals(right)
+                        && !isExpectedPart(level, right, facing, Part.RIGHT)) {
+                    return Blocks.AIR.defaultBlockState();
+                }
+            } else if (neighborPos.equals(center)
+                    && !isExpectedPart(level, center, facing, Part.CENTER)) {
+                return Blocks.AIR.defaultBlockState();
+            }
+
+            return super.updateShape(state, direction, neighborState,
+                    level, pos, neighborPos);
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            VoxelShape north = switch (state.getValue(PART)) {
+                case CENTER -> CENTER_NORTH;
+                case LEFT -> LEFT_NORTH;
+                case RIGHT -> RIGHT_NORTH;
+            };
+            return horizontalShape(state.getValue(FACING), north);
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state,
+                BlockGetter level, BlockPos pos, CollisionContext context) {
+            return getShape(state, level, pos, context);
+        }
+
+        @Override
+        public VoxelShape getVisualShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return Shapes.empty();
+        }
+
+        @Override
+        public boolean isPathfindable(BlockState state, BlockGetter level,
+                BlockPos pos, PathComputationType type) {
+            return false;
+        }
+
+        @Override
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING,
+                    rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        }
+
+        @Override
+        public List<ItemStack> getDrops(BlockState state,
+                LootParams.Builder builder) {
+            return Collections.singletonList(
+                    new ItemStack(DIAGNOSTIC_TABLE.get()));
+        }
+
+        @Override
+        public ItemStack getCloneItemStack(BlockState state, HitResult target,
+                BlockGetter level, BlockPos pos, Player player) {
+            return new ItemStack(DIAGNOSTIC_TABLE.get());
+        }
+
+        private static boolean isExpectedPart(LevelAccessor level,
+                BlockPos pos, Direction facing, Part part) {
+            BlockState state = level.getBlockState(pos);
+            return state.getBlock() == DIAGNOSTIC_TABLE.get()
+                    && state.getValue(FACING) == facing
+                    && state.getValue(PART) == part;
+        }
+
+        private static BlockPos centerPos(BlockPos pos, Direction facing,
+                Part part) {
+            return switch (part) {
+                case CENTER -> pos;
+                case LEFT -> pos.relative(facing.getClockWise());
+                case RIGHT -> pos.relative(facing.getCounterClockWise());
+            };
+        }
+
+        private static BlockPos partPos(BlockPos center, Direction facing,
+                Part part) {
+            return switch (part) {
+                case CENTER -> center;
+                case LEFT -> center.relative(facing.getCounterClockWise());
+                case RIGHT -> center.relative(facing.getClockWise());
+            };
+        }
+
+        public enum Part implements StringRepresentable {
+            CENTER("center"),
+            LEFT("left"),
+            RIGHT("right");
+
+            private final String serializedName;
+
+            Part(String serializedName) {
+                this.serializedName = serializedName;
+            }
+
+            @Override
+            public String getSerializedName() {
+                return serializedName;
+            }
         }
     }
 

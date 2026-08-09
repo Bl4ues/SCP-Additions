@@ -67,14 +67,6 @@ public final class TeslaGateTerminalTableModule {
         ITEMS.register(bus);
     }
 
-    @SubscribeEvent
-    public static void addToFacilityTab(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey().location().equals(new ResourceLocation(
-                ScpAdditionsMod.MODID, "scp_unity_blocks"))) {
-            event.accept(ITEM.get());
-        }
-    }
-
     public static final class TerminalTableBlock extends HorizontalDirectionalBlock {
         public static final EnumProperty<Part> PART = EnumProperty.create(
                 "part", Part.class);

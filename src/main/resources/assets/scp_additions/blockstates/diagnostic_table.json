@@ -1,0 +1,59 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "part": "center",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "scp_additions:block/diagnostic_table"
+      }
+    },
+    {
+      "when": {
+        "part": "center",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "scp_additions:block/diagnostic_table",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "center",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "scp_additions:block/diagnostic_table",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "center",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "scp_additions:block/diagnostic_table",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "left"
+      },
+      "apply": {
+        "model": "minecraft:block/air"
+      }
+    },
+    {
+      "when": {
+        "part": "right"
+      },
+      "apply": {
+        "model": "minecraft:block/air"
+      }
+    }
+  ]
+}

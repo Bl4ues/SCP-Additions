@@ -63,7 +63,7 @@ public final class CustomWorldLoadingScreenClient {
     private static final long SPINNER_ROTATE_MS = 2520L;
     private static final long CARD_FADE_IN_MS = 1400L;
     private static final long CARD_FADE_OUT_MS = 1200L;
-    private static final long CARD_LIFETIME_MS = 60_000L;
+    private static final long CARD_LIFETIME_MS = 25_000L;
     private static final float CARD_MAX_ZOOM = 1.16F;
     private static final long SESSION_CLEAR_DELAY_MS = 750L;
 

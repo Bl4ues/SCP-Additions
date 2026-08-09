@@ -373,7 +373,7 @@ public final class PauseMenuNativePanelsClient {
             String title = compactToWidth(font, category.title.getString(),
                     layout.sidebarWidth - 50);
             graphics.drawString(font, ScpFonts.roboto(title),
-                    layout.sidebarX + 29, y + 7,
+                    layout.sidebarX + 29, y + 9,
                     applyAlpha(selected ? ACCENT_BRIGHT : TEXT, alpha), false);
             String count = category.completed + "/" + category.total;
             Component countText = ScpFonts.titillium(count);
@@ -424,16 +424,16 @@ public final class PauseMenuNativePanelsClient {
             int textX = layout.contentX + 34;
             String title = compactToWidth(font, entry.title.getString(),
                     layout.contentRight - textX - 78);
-            graphics.drawString(font, ScpFonts.roboto(title), textX, y + 7,
+            graphics.drawString(font, ScpFonts.roboto(title), textX, y + 9,
                     applyAlpha(entry.done ? ACCENT_BRIGHT : TEXT, alpha), false);
             String description = compactToWidth(font,
                     entry.description.getString(),
                     layout.contentRight - textX - 12);
             graphics.drawString(font, ScpFonts.roboto(description),
-                    textX, y + 23, applyAlpha(MUTED, alpha), false);
+                    textX, y + 24, applyAlpha(MUTED, alpha), false);
             Component status = ScpFonts.titillium(entry.done ? "DONE" : "OPEN");
             graphics.drawString(font, status,
-                    layout.contentRight - 10 - font.width(status), y + 7,
+                    layout.contentRight - 10 - font.width(status), y + 9,
                     applyAlpha(entry.done ? ACCENT_BRIGHT : MUTED, alpha), false);
         }
         if (rowMax > 0) drawScrollbar(graphics, layout.contentRight - 3,

@@ -1171,25 +1171,25 @@ public final class FacilityModule {
                 "part", Part.class);
 
         private static final VoxelShape CENTER_NORTH = Shapes.or(
-                box(0.0D, 13.5D, 0.5D, 16.0D, 15.25D, 16.0D),
-                box(0.0D, 15.25D, 0.0D, 16.0D, 16.0D, 16.0D))
+                box(0.0D, 13.5D, 0.34D, 16.0D, 15.25D, 15.84D),
+                box(0.0D, 15.25D, -0.16D, 16.0D, 16.0D, 15.84D))
                 .optimize();
         private static final VoxelShape LEFT_NORTH = Shapes.or(
-                box(8.0D, 0.0D, 0.5D, 16.0D, 15.25D, 16.0D),
-                box(8.0D, 15.25D, 0.0D, 16.0D, 16.0D, 16.0D),
-                box(8.75D, 1.5D, -0.25D, 15.25D, 5.75D, 0.5D),
-                box(8.75D, 6.0D, -0.25D, 15.25D, 10.25D, 0.5D),
-                box(8.75D, 10.5D, -0.25D, 15.25D, 14.75D, 0.5D),
-                box(8.5D, 16.0D, 14.0D, 12.0D, 18.5D, 16.0D))
+                box(8.0D, 0.0D, 0.34D, 16.0D, 15.25D, 15.84D),
+                box(8.0D, 15.25D, -0.16D, 16.0D, 16.0D, 15.84D),
+                box(8.75D, 1.5D, -0.41D, 15.25D, 5.75D, 0.34D),
+                box(8.75D, 6.0D, -0.41D, 15.25D, 10.25D, 0.34D),
+                box(8.75D, 10.5D, -0.41D, 15.25D, 14.75D, 0.34D),
+                box(8.5D, 16.0D, 13.84D, 12.0D, 18.5D, 15.84D))
                 .optimize();
         private static final VoxelShape RIGHT_NORTH = Shapes.or(
-                box(0.0D, 0.0D, 0.5D, 8.0D, 15.25D, 16.0D),
-                box(0.0D, 15.25D, 0.0D, 8.0D, 16.0D, 16.0D),
-                box(0.75D, 1.5D, -0.25D, 7.25D, 5.75D, 0.5D),
-                box(0.75D, 6.0D, -0.25D, 7.25D, 10.25D, 0.5D),
-                box(0.75D, 10.5D, -0.25D, 7.25D, 14.75D, 0.5D),
-                box(2.0D, 16.0D, 1.0D, 6.5D, 17.5D, 8.0D),
-                box(0.25D, 16.0D, 8.25D, 6.0D, 24.0D, 14.5D))
+                box(0.0D, 0.0D, 0.34D, 8.0D, 15.25D, 15.84D),
+                box(0.0D, 15.25D, -0.16D, 8.0D, 16.0D, 15.84D),
+                box(0.75D, 1.5D, -0.41D, 7.25D, 5.75D, 0.34D),
+                box(0.75D, 6.0D, -0.41D, 7.25D, 10.25D, 0.34D),
+                box(0.75D, 10.5D, -0.41D, 7.25D, 14.75D, 0.34D),
+                box(2.0D, 16.0D, 0.84D, 6.5D, 17.5D, 7.84D),
+                box(0.25D, 16.0D, 8.09D, 6.0D, 24.0D, 14.34D))
                 .optimize();
 
         private DiagnosticTableBlock() {

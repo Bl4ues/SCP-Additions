@@ -11,6 +11,7 @@
 - Documents and expanded Codex
 - Rebuilt contextual interaction framework
 - Expanded Configuration Center
+- Reworked main menu and loading screens
 
 ## SCP-106
 

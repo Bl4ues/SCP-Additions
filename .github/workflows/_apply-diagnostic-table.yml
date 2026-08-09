@@ -1,10 +1,255 @@
-name: Diagnostic Table Integration (retired)
+name: Archivist Table and Document Holder Integration
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/_apply-diagnostic-table.yml'
+
+permissions:
+  contents: write
 
 jobs:
-  retired:
+  integrate:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Temporary integration workflow retired after the Diagnostic Table merge."
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Apply integration
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+          import subprocess
+
+          root = Path('.')
+
+          # -----------------------------------------------------------------
+          # Archivist's Table: preserve the current UV correction, restore the
+          # original Blockbench geometry dimensions, and apply ONLY a uniform
+          # 0.16-model-unit forward offset so the thin rear face cannot become
+          # coplanar with a wall behind the table.
+          # -----------------------------------------------------------------
+          model_path = Path('src/main/resources/assets/scp_additions/models/block/diagnostic_table.json')
+          current = json.loads(model_path.read_text(encoding='utf-8'))
+          original_text = subprocess.check_output([
+              'git', 'show',
+              'e6ab02d541842313c7e17151ff8c98f0229b63cb:' + str(model_path)
+          ], text=True)
+          original = json.loads(original_text)
+
+          current_elements = current.get('elements', [])
+          original_elements = original.get('elements', [])
+          if len(current_elements) != len(original_elements):
+              raise RuntimeError(
+                  f'Archivist table element count changed unexpectedly: '
+                  f'{len(original_elements)} -> {len(current_elements)}')
+
+          def shifted_z(value):
+              shifted = float(value) - 0.16
+              rounded = round(shifted, 5)
+              if abs(rounded - round(rounded)) < 1e-9:
+                  return int(round(rounded))
+              return rounded
+
+          def shifted_vector(vector):
+              if not isinstance(vector, list) or len(vector) != 3:
+                  return vector
+              return [vector[0], vector[1], shifted_z(vector[2])]
+
+          for index, (old_element, new_element) in enumerate(
+                  zip(original_elements, current_elements)):
+              # Geometry comes from the pre-adjustment model. Faces/UVs remain
+              # from the current file, so the texture repair is not regressed.
+              if 'from' in old_element:
+                  new_element['from'] = shifted_vector(old_element['from'])
+              if 'to' in old_element:
+                  new_element['to'] = shifted_vector(old_element['to'])
+              if 'rotation' in old_element and isinstance(old_element['rotation'], dict):
+                  old_rotation = old_element['rotation']
+                  if 'rotation' not in new_element or not isinstance(new_element['rotation'], dict):
+                      new_element['rotation'] = dict(old_rotation)
+                  for key in ('angle', 'axis', 'rescale'):
+                      if key in old_rotation:
+                          new_element['rotation'][key] = old_rotation[key]
+                      else:
+                          new_element['rotation'].pop(key, None)
+                  if 'origin' in old_rotation:
+                      new_element['rotation']['origin'] = shifted_vector(old_rotation['origin'])
+                  else:
+                      new_element['rotation'].pop('origin', None)
+
+          model_path.write_text(json.dumps(current, indent=2) + '\n', encoding='utf-8')
+
+          # Rename every tracked asset whose filename still carries the old
+          # provisional registry name, including texture/PBR variants if any.
+          tracked = subprocess.check_output(['git', 'ls-files'], text=True).splitlines()
+          old_named = [p for p in tracked if 'diagnostic_table' in p]
+          for old in sorted(old_named, key=len, reverse=True):
+              new = old.replace('diagnostic_table', 'archivists_table')
+              Path(new).parent.mkdir(parents=True, exist_ok=True)
+              subprocess.run(['git', 'mv', old, new], check=True)
+
+          # Rename registry/resource references and Java symbols consistently.
+          replacements = (
+              ('diagnostic_table', 'archivists_table'),
+              ('DIAGNOSTIC_TABLE', 'ARCHIVISTS_TABLE'),
+              ('DiagnosticTableBlock', 'ArchivistsTableBlock'),
+          )
+          for path_string in subprocess.check_output(['git', 'ls-files'], text=True).splitlines():
+              path = Path(path_string)
+              if not path.is_file():
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              updated = text
+              for old, new in replacements:
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+
+          # -----------------------------------------------------------------
+          # Document Holder sounds.
+          # -----------------------------------------------------------------
+          module_path = Path('src/main/java/net/mcreator/scpadditions/facility/DocumentHolderModule.java')
+          module = module_path.read_text(encoding='utf-8')
+
+          marker = 'import net.minecraft.resources.ResourceLocation;\n'
+          if 'import net.minecraft.sounds.SoundEvent;' not in module:
+              if marker not in module:
+                  raise RuntimeError('DocumentHolderModule ResourceLocation import marker missing')
+              module = module.replace(marker, marker + 'import net.minecraft.sounds.SoundEvent;\n', 1)
+
+          id_marker = '    public static final ResourceLocation BLOCK_ENTITY_ID = BLOCK_ID;\n'
+          sound_ids = '''    public static final ResourceLocation DOCUMENT_TAKE_SOUND_ID = new ResourceLocation(\n            ScpAdditionsMod.MODID, "document_take");\n    public static final ResourceLocation FILL_CLOSE_SOUND_ID = new ResourceLocation(\n            ScpAdditionsMod.MODID, "fill_close");\n    public static final ResourceLocation EMPTY_CLOSE_SOUND_ID = new ResourceLocation(\n            ScpAdditionsMod.MODID, "empty_close");\n'''
+          if 'DOCUMENT_TAKE_SOUND_ID' not in module:
+              if id_marker not in module:
+                  raise RuntimeError('DocumentHolderModule ID marker missing')
+              module = module.replace(id_marker, id_marker + sound_ids, 1)
+
+          registration_marker = '''        event.register(Registries.BLOCK_ENTITY_TYPE, BLOCK_ENTITY_ID, () -> {\n            blockEntityType = BlockEntityType.Builder.of(\n                    DocumentHolderBlockEntity::new, block()).build(null);\n            return blockEntityType;\n        });\n'''
+          sound_registration = '''        event.register(Registries.SOUND_EVENT, DOCUMENT_TAKE_SOUND_ID,\n                () -> SoundEvent.createVariableRangeEvent(DOCUMENT_TAKE_SOUND_ID));\n        event.register(Registries.SOUND_EVENT, FILL_CLOSE_SOUND_ID,\n                () -> SoundEvent.createVariableRangeEvent(FILL_CLOSE_SOUND_ID));\n        event.register(Registries.SOUND_EVENT, EMPTY_CLOSE_SOUND_ID,\n                () -> SoundEvent.createVariableRangeEvent(EMPTY_CLOSE_SOUND_ID));\n'''
+          if 'Registries.SOUND_EVENT, DOCUMENT_TAKE_SOUND_ID' not in module:
+              if registration_marker not in module:
+                  raise RuntimeError('DocumentHolderModule registration marker missing')
+              module = module.replace(registration_marker,
+                                      registration_marker + sound_registration, 1)
+          module_path.write_text(module, encoding='utf-8')
+
+          holder_path = Path('src/main/java/net/mcreator/scpadditions/facility/DocumentHolderBlockEntity.java')
+          holder = holder_path.read_text(encoding='utf-8')
+          resource_import = 'import net.minecraft.resources.ResourceLocation;\n'
+          sound_imports = 'import net.minecraft.sounds.SoundEvent;\nimport net.minecraft.sounds.SoundSource;\n'
+          if 'import net.minecraft.sounds.SoundSource;' not in holder:
+              if resource_import not in holder:
+                  raise RuntimeError('DocumentHolderBlockEntity ResourceLocation import marker missing')
+              holder = holder.replace(resource_import, resource_import + sound_imports, 1)
+
+          insert_marker = '''        pendingTaker = null;\n        pendingHand = InteractionHand.MAIN_HAND;\n        markUpdated();\n        return true;\n    }\n\n    private boolean beginTake'''
+          insert_replacement = '''        pendingTaker = null;\n        pendingHand = InteractionHand.MAIN_HAND;\n        playInteractionSound(DocumentHolderModule.FILL_CLOSE_SOUND_ID);\n        markUpdated();\n        return true;\n    }\n\n    private boolean beginTake'''
+          if 'playInteractionSound(DocumentHolderModule.FILL_CLOSE_SOUND_ID);' not in holder:
+              if insert_marker not in holder:
+                  raise RuntimeError('Document Holder fill-close transition marker missing')
+              holder = holder.replace(insert_marker, insert_replacement, 1)
+
+          take_marker = '''        pendingTaker = player.getUUID();\n        pendingHand = hand;\n        markUpdated();\n        return true;\n    }\n\n    private void beginCloseEmpty'''
+          take_replacement = '''        pendingTaker = player.getUUID();\n        pendingHand = hand;\n        playInteractionSound(DocumentHolderModule.DOCUMENT_TAKE_SOUND_ID);\n        markUpdated();\n        return true;\n    }\n\n    private void beginCloseEmpty'''
+          if 'playInteractionSound(DocumentHolderModule.DOCUMENT_TAKE_SOUND_ID);' not in holder:
+              if take_marker not in holder:
+                  raise RuntimeError('Document Holder take transition marker missing')
+              holder = holder.replace(take_marker, take_replacement, 1)
+
+          empty_marker = '''        state = State.CLOSING_EMPTY;\n        transitionTicks = 0;\n        pendingTaker = null;\n        markUpdated();\n    }\n\n    private boolean isTransitioning'''
+          empty_replacement = '''        state = State.CLOSING_EMPTY;\n        transitionTicks = 0;\n        pendingTaker = null;\n        playInteractionSound(DocumentHolderModule.EMPTY_CLOSE_SOUND_ID);\n        markUpdated();\n    }\n\n    private boolean isTransitioning'''
+          if 'playInteractionSound(DocumentHolderModule.EMPTY_CLOSE_SOUND_ID);' not in holder:
+              if empty_marker not in holder:
+                  raise RuntimeError('Document Holder empty-close transition marker missing')
+              holder = holder.replace(empty_marker, empty_replacement, 1)
+
+          helper_marker = '''    private boolean isTransitioning() {\n        return state == State.CLOSING_FILL\n                || state == State.CLOSING_EMPTY\n                || state == State.TAKING;\n    }\n\n    public static void serverTick'''
+          helper_replacement = '''    private boolean isTransitioning() {\n        return state == State.CLOSING_FILL\n                || state == State.CLOSING_EMPTY\n                || state == State.TAKING;\n    }\n\n    private void playInteractionSound(ResourceLocation soundId) {\n        if (level == null || level.isClientSide || soundId == null) return;\n        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(soundId);\n        if (sound != null) {\n            level.playSound(null, worldPosition, sound, SoundSource.BLOCKS,\n                    1.0F, 1.0F);\n        }\n    }\n\n    public static void serverTick'''
+          if 'private void playInteractionSound(ResourceLocation soundId)' not in holder:
+              if helper_marker not in holder:
+                  raise RuntimeError('Document Holder sound helper marker missing')
+              holder = holder.replace(helper_marker, helper_replacement, 1)
+
+          holder_path.write_text(holder, encoding='utf-8')
+
+          sounds_path = Path('src/main/resources/assets/scp_additions/sounds.json')
+          sounds = json.loads(sounds_path.read_text(encoding='utf-8'))
+          sound_definitions = {
+              'document_take': {
+                  'sounds': [{'name': 'scp_additions:document_take',
+                              'stream': False, 'volume': 1.0}]
+              },
+              'fill_close': {
+                  'sounds': [{'name': 'scp_additions:fill_close',
+                              'stream': False, 'volume': 1.0}]
+              },
+              'empty_close': {
+                  'sounds': [{'name': 'scp_additions:empty_close',
+                              'stream': False, 'volume': 1.0}]
+              },
+          }
+          for key, value in sound_definitions.items():
+              sounds[key] = value
+          sounds_path.write_text(json.dumps(sounds, indent=2) + '\n', encoding='utf-8')
+
+          # Sanity checks before compiling.
+          required_oggs = [
+              Path('src/main/resources/assets/scp_additions/sounds/document_take.ogg'),
+              Path('src/main/resources/assets/scp_additions/sounds/fill_close.ogg'),
+              Path('src/main/resources/assets/scp_additions/sounds/empty_close.ogg'),
+          ]
+          missing = [str(path) for path in required_oggs if not path.exists()]
+          if missing:
+              raise RuntimeError('Missing Document Holder sound files: ' + ', '.join(missing))
+
+          new_registry_files = [
+              Path('src/main/resources/assets/scp_additions/blockstates/archivists_table.json'),
+              Path('src/main/resources/assets/scp_additions/models/block/archivists_table.json'),
+              Path('src/main/resources/assets/scp_additions/models/item/archivists_table.json'),
+          ]
+          missing = [str(path) for path in new_registry_files if not path.exists()]
+          if missing:
+              raise RuntimeError('Missing renamed Archivist table assets: ' + ', '.join(missing))
+
+          old_paths = [p for p in subprocess.check_output(['git', 'ls-files'], text=True).splitlines()
+                       if 'diagnostic_table' in p]
+          if old_paths:
+              raise RuntimeError('Old diagnostic_table paths remain: ' + ', '.join(old_paths))
+
+          # JSON validity after all string/path edits.
+          for path in Path('src/main/resources/assets/scp_additions').rglob('*.json'):
+              json.loads(path.read_text(encoding='utf-8'))
+          PY
+
+      - name: Compile Java
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava --no-daemon
+
+      - name: Commit integration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No integration changes to commit."
+            exit 0
+          fi
+          git commit -m "Add Document Holder sounds and finalize Archivist's Table"
+          git push origin HEAD:master

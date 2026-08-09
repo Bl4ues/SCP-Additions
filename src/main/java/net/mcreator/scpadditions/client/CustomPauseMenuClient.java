@@ -16,6 +16,13 @@ public final class CustomPauseMenuClient {
     @SubscribeEvent
     public static void onScreenOpening(ScreenEvent.Opening event) {
         if (!ClientModulePreferences.customPauseMenuEnabled()) return;
+
+        if (PauseMenuSettingsPanelClient.shouldReplaceOptionsReturn(
+                event.getScreen())) {
+            event.setNewScreen(new CustomPauseMenuScreen());
+            return;
+        }
+
         if (event.getScreen() instanceof PauseScreen
                 && !(event.getScreen() instanceof CustomPauseMenuScreen)) {
             event.setNewScreen(new CustomPauseMenuScreen());

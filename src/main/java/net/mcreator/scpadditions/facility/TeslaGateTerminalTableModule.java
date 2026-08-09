@@ -228,11 +228,6 @@ public final class TeslaGateTerminalTableModule {
             return new ItemStack(ITEM.get());
         }
 
-        @Override
-        public Component getName() {
-            return Component.literal("Tesla Gate Terminal Table");
-        }
-
         private static BlockPos extensionPos(BlockPos controller,
                 Direction facing) {
             return controller.relative(facing.getCounterClockWise());
@@ -244,9 +239,6 @@ public final class TeslaGateTerminalTableModule {
         }
 
         private static EnumMap<Direction, VoxelShape> buildShapes() {
-            // One local half of the authored 32-pixel-wide model. The open
-            // front cavity remains genuinely open while the rear cabinet,
-            // plinth, middle brace and full-height worktop provide collision.
             VoxelShape north = Shapes.or(
                     box(0.0D, 0.0D, 9.0D, 16.0D, 16.0D, 16.0D),
                     box(0.0D, 13.0D, 0.0D, 16.0D, 16.0D, 9.0D),

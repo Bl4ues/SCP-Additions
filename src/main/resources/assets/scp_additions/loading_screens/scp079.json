@@ -1,0 +1,11 @@
+{
+  "id": "scp_additions:scp079",
+  "texture": "scp_additions:textures/screens/menu/loading_images/scp079_loading.png",
+  "left_title": "SCP-079",
+  "left_subtitle": "EUCLID",
+  "right_label": "THREAT LEVEL",
+  "right_value": "LOW",
+  "description": "SCP-079 is an Exidy Sorcerer microcomputer built in 1978. It is not known when SCP-079 gained sentience, but it is known that the software has evolved to a point that its hardware should not be able to handle it. SCP-079 is currently connected via RF cable to a 13\" black-and-white television. It has passed the Turing test, and is quite conversational, though very rude and hateful in tone.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

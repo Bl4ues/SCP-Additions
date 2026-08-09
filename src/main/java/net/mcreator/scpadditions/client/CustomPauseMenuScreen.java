@@ -42,12 +42,12 @@ public final class CustomPauseMenuScreen extends PauseScreen {
     private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int BUTTON_BASE = 0x780B0E12;
     private static final int BUTTON_HOVER = 0xB5161B22;
-    private static final int PAUSE_DIM = 0xA8000000;
+    private static final int PAUSE_DIM_ALPHA = 0xA8;
 
-    private static final long ENTER_MS = 620L;
+    private static final long ENTER_MS = 650L;
     private static final long BUTTON_STAGGER_MS = 46L;
     private static final long BUTTON_ENTER_MS = 410L;
-    private static final long EXIT_MS = 280L;
+    private static final long EXIT_MS = 360L;
 
     private static final String RESUME_KEY = "menu.returnToGame";
     private static final String ADVANCEMENTS_KEY = "gui.advancements";
@@ -91,8 +91,8 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         leavingAt = -1L;
         pendingAction = null;
         hoverBoost = 0.0F;
-        logoOuterAngle = -420.0F;
-        logoInnerAngle = 360.0F;
+        logoOuterAngle = 0.0F;
+        logoInnerAngle = 0.0F;
 
         openedAt = Util.getMillis();
         lastFrameAt = openedAt;
@@ -100,11 +100,13 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         captureKnownSources();
         hideSourceWidgets();
         buildKnownButtons();
+        PauseMenuSettingsPanelClient.restoreIfRequested(this);
     }
 
     @Override
     public void tick() {
         super.tick();
+        PauseMenuEmbeddedPanelsClient.tick(this);
         if (!ClientModulePreferences.customPauseMenuEnabled()) {
             Minecraft.getInstance().setScreen(new PauseScreen(true));
         }
@@ -121,22 +123,30 @@ public final class CustomPauseMenuScreen extends PauseScreen {
                 Math.max(0.0F, (now - lastFrameAt) / 1000.0F));
         lastFrameAt = now;
 
-        updateAnimation(mouseX, mouseY, delta, now);
+        updateAnimation(mouseX, mouseY, delta);
 
-        graphics.fill(0, 0, this.width, this.height, PAUSE_DIM);
-        drawLogo(graphics, now);
-        layoutAndRenderButtons(graphics, mouseX, mouseY, partialTick, now);
-
-        if (leavingAt >= 0L) {
-            float leave = Mth.clamp((now - leavingAt) / (float) EXIT_MS,
-                    0.0F, 1.0F);
-            graphics.fill(0, 0, this.width, this.height,
-                    Math.round(72.0F * smootherStep(leave)) << 24);
+        float enter = smootherStep(Mth.clamp((now - openedAt)
+                / (float) ENTER_MS, 0.0F, 1.0F));
+        float leave = leaveProgress(now);
+        float dimAlpha = enter * (1.0F - leave);
+        int overlayAlpha = Mth.clamp(Math.round(PAUSE_DIM_ALPHA * dimAlpha),
+                0, 255);
+        if (overlayAlpha > 0) {
+            graphics.fill(0, 0, this.width, this.height, overlayAlpha << 24);
         }
+
+        drawLogo(graphics, now, leave);
+        layoutAndRenderButtons(graphics, mouseX, mouseY, partialTick, now,
+                leave);
+        finishExitAfterRender(now);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (PauseMenuEmbeddedPanelsClient.keyPressed(this,
+                keyCode, scanCode, modifiers)) {
+            return true;
+        }
         if (keyCode == 256 && leavingAt < 0L) {
             AbstractButton resume = sourceButtons.get(RESUME_KEY);
             beginExit(resume != null ? resume::onPress
@@ -144,6 +154,61 @@ public final class CustomPauseMenuScreen extends PauseScreen {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (PauseMenuEmbeddedPanelsClient.keyReleased(this,
+                keyCode, scanCode, modifiers)) {
+            return true;
+        }
+        return super.keyReleased(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (PauseMenuEmbeddedPanelsClient.charTyped(this,
+                codePoint, modifiers)) {
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (PauseMenuEmbeddedPanelsClient.mouseClicked(this,
+                mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (PauseMenuEmbeddedPanelsClient.mouseReleased(this,
+                mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button,
+            double dragX, double dragY) {
+        if (PauseMenuEmbeddedPanelsClient.mouseDragged(this,
+                mouseX, mouseY, button, dragX, dragY)) {
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (PauseMenuEmbeddedPanelsClient.mouseScrolled(this,
+                mouseX, mouseY, delta)) {
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     private void captureKnownSources() {
@@ -205,15 +270,19 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         menuButtons.clear();
 
         addSourceButton(RESUME_KEY, "Resume");
-        addSourceButton(ADVANCEMENTS_KEY, "Achievements");
-        addSourceButton(STATISTICS_KEY, "Statistics");
-        addSourceButton(LAN_KEY, "Open to LAN");
+        addInlineButton(ADVANCEMENTS_KEY, "Achievements",
+                PauseMenuEmbeddedPanelsClient.Mode.ACHIEVEMENTS);
+        addInlineButton(STATISTICS_KEY, "Statistics",
+                PauseMenuEmbeddedPanelsClient.Mode.STATISTICS);
+        addInlineButton(LAN_KEY, "Open to LAN",
+                PauseMenuEmbeddedPanelsClient.Mode.OPEN_TO_LAN);
 
         AbstractButton options = sourceButtons.get(OPTIONS_KEY);
         if (options != null) {
-            addButton(new PauseMenuButton(ScpFonts.roboto("Settings"),
-                    () -> PauseMenuSettingsPanelClient.toggle(this),
-                    options));
+            addButton(new PauseMenuButton(ScpFonts.roboto("Settings"), () -> {
+                PauseMenuEmbeddedPanelsClient.close(this);
+                PauseMenuSettingsPanelClient.toggle(this);
+            }, options));
         }
 
         addSourceButton(MODS_KEY, "Mods");
@@ -224,6 +293,18 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         }
 
         addSourceButton(DISCONNECT_KEY, "Main Menu");
+    }
+
+    private void addInlineButton(String key, String label,
+            PauseMenuEmbeddedPanelsClient.Mode mode) {
+        AbstractButton source = sourceButtons.get(key);
+        if (source == null) return;
+        addButton(new PauseMenuButton(ScpFonts.roboto(label), () -> {
+            PauseMenuSettingsPanelClient.close(this);
+            if (!PauseMenuEmbeddedPanelsClient.toggle(this, mode)) {
+                beginExit(source::onPress);
+            }
+        }, source));
     }
 
     private void addSourceButton(String key, String label) {
@@ -246,8 +327,7 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         }
     }
 
-    private void updateAnimation(int mouseX, int mouseY,
-            float delta, long now) {
+    private void updateAnimation(int mouseX, int mouseY, float delta) {
         boolean hovered = false;
         for (PauseMenuButton button : menuButtons) {
             hovered |= button.active && button.visible
@@ -257,27 +337,16 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         hoverBoost = approach(hoverBoost, hoverTarget, delta * 5.8F);
 
         float leaveBoost = leavingAt >= 0L ? 1.0F : 0.0F;
-        float speed = 5.0F + 26.0F * hoverBoost + 120.0F * leaveBoost;
+        float speed = 4.5F + 22.0F * hoverBoost + 58.0F * leaveBoost;
         logoOuterAngle = wrapAngle(logoOuterAngle + speed * delta);
         logoInnerAngle = wrapAngle(logoInnerAngle - speed * 0.88F * delta);
-
-        if (leavingAt >= 0L && now - leavingAt >= EXIT_MS) {
-            Runnable action = pendingAction;
-            pendingAction = null;
-            leavingAt = -1L;
-            if (action != null) action.run();
-        }
     }
 
-    private void drawLogo(GuiGraphics graphics, long now) {
+    private void drawLogo(GuiGraphics graphics, long now, float leave) {
         int size = Mth.clamp(Math.round(this.height * 0.82F), 290, 640);
         float enter = Mth.clamp((now - openedAt) / (float) ENTER_MS,
                 0.0F, 1.0F);
         float eased = easeOutBack(enter);
-
-        float leave = leavingAt < 0L ? 0.0F
-                : smootherStep(Mth.clamp((now - leavingAt)
-                / (float) EXIT_MS, 0.0F, 1.0F));
 
         int finalCenterX = Math.round(this.width * 0.055F);
         int startCenterX = -size / 2;
@@ -286,15 +355,21 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         centerX -= Math.round(leave * (finalCenterX + size / 2 + 40));
         int centerY = Math.round(this.height * 0.53F);
 
-        float entrySpin = (1.0F - smootherStep(enter)) * -520.0F;
+        // Roughly two thirds of one revolution, rather than the former burst
+        // of multiple overlapping spins. It still arrives energetically but
+        // the eye can actually follow the mark.
+        float entrySpin = (1.0F - smootherStep(enter)) * -225.0F;
+        float visible = 1.0F - leave;
         drawRotatedTexture(graphics, LOGO_OUTER, centerX, centerY,
-                size, logoOuterAngle + entrySpin, 0.23F);
+                size, logoOuterAngle + entrySpin, 0.23F * visible);
         drawRotatedTexture(graphics, LOGO_INNER, centerX, centerY,
-                size, logoInnerAngle - entrySpin * 0.82F, 0.17F);
+                size, logoInnerAngle - entrySpin * 0.82F,
+                0.17F * visible);
     }
 
     private void layoutAndRenderButtons(GuiGraphics graphics,
-            int mouseX, int mouseY, float partialTick, long now) {
+            int mouseX, int mouseY, float partialTick, long now,
+            float leave) {
         int count = menuButtons.size();
         if (count == 0) return;
 
@@ -304,10 +379,6 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         int total = count * height + Math.max(0, count - 1) * gap;
         int finalX = Math.max(46, Math.round(this.width * 0.105F));
         int startY = Math.max(48, (this.height - total) / 2);
-
-        float leave = leavingAt < 0L ? 0.0F
-                : smootherStep(Mth.clamp((now - leavingAt)
-                / (float) EXIT_MS, 0.0F, 1.0F));
 
         for (int index = 0; index < count; index++) {
             PauseMenuButton button = menuButtons.get(index);
@@ -325,7 +396,7 @@ public final class CustomPauseMenuScreen extends PauseScreen {
             button.setY(y);
             button.setWidth(width);
             button.setHeight(height);
-            button.visible = progress > 0.02F;
+            button.visible = progress > 0.02F && leave < 0.995F;
             button.active = leavingAt < 0L && progress > 0.88F
                     && (button.source == null || button.source.active);
             button.renderAlpha = Mth.clamp(progress * 1.35F, 0.0F, 1.0F)
@@ -335,22 +406,48 @@ public final class CustomPauseMenuScreen extends PauseScreen {
             }
         }
 
+        int panelX = finalX + width + 16;
         PauseMenuSettingsPanelClient.render(this, graphics,
-                mouseX, mouseY, partialTick, now, finalX + width + 16,
+                mouseX, mouseY, partialTick, now, panelX,
+                startY, width, height, gap);
+        PauseMenuEmbeddedPanelsClient.render(this, graphics,
+                mouseX, mouseY, partialTick, now, panelX,
                 startY, width, height, gap);
     }
 
     private void beginExit(Runnable action) {
         if (action == null || leavingAt >= 0L) return;
         PauseMenuSettingsPanelClient.close(this);
+        PauseMenuEmbeddedPanelsClient.close(this);
         leavingAt = Util.getMillis();
         pendingAction = action;
         for (PauseMenuButton button : menuButtons) button.active = false;
     }
 
+    private float leaveProgress(long now) {
+        return leavingAt < 0L ? 0.0F
+                : smootherStep(Mth.clamp((now - leavingAt)
+                / (float) EXIT_MS, 0.0F, 1.0F));
+    }
+
+    private void finishExitAfterRender(long now) {
+        if (leavingAt < 0L || now - leavingAt < EXIT_MS
+                || pendingAction == null) {
+            return;
+        }
+        Runnable action = pendingAction;
+        pendingAction = null;
+        action.run();
+        if (Minecraft.getInstance().screen == this) {
+            leavingAt = -1L;
+            openedAt = now;
+        }
+    }
+
     private void drawRotatedTexture(GuiGraphics graphics,
             ResourceLocation texture, int centerX, int centerY,
             int size, float angle, float alpha) {
+        if (alpha <= 0.001F) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getResourceManager().getResource(texture).isEmpty()) {
             return;

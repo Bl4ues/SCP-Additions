@@ -12,11 +12,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
-import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.advancements.Advancement;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
@@ -31,14 +28,6 @@ public class Scp079onPProcedure {
 			for (Entity entityiterator : _entfound) {
 				if (entityiterator.level().clip(new ClipContext(entityiterator.getEyePosition(1f), entityiterator.getEyePosition(1f).add(entityiterator.getViewVector(1f).scale(5)), ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, entityiterator))
 						.getType() == HitResult.Type.BLOCK) {
-					if (entityiterator instanceof ServerPlayer _player) {
-						Advancement _adv = _player.server.getAdvancements().getAdvancement(new ResourceLocation("scp_additions:scp_079"));
-						AdvancementProgress _ap = _player.getAdvancements().getOrStartProgress(_adv);
-						if (!_ap.isDone()) {
-							for (String criteria : _ap.getRemainingCriteria())
-								_player.getAdvancements().award(_adv, criteria);
-						}
-					}
 					{
 						BlockPos _bp = BlockPos.containing(x, y, z);
 						BlockState _bs = ScpAdditionsModBlocks.SCP_079ON.get().defaultBlockState();

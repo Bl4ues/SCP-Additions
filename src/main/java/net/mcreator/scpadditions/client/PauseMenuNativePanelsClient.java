@@ -712,9 +712,9 @@ public final class PauseMenuNativePanelsClient {
                 layout.portY + 27, applyAlpha(LAN_FIELD, alpha));
         if (state.lanPort != null) {
             int textWidth = font.width(ScpFonts.roboto(state.lanPort.getValue()));
-            int editWidth = Mth.clamp(textWidth + 12, 30, fieldWidth - 12);
-            state.lanPort.setX(fieldX + (fieldWidth - editWidth) / 2);
-            state.lanPort.setY(layout.portY + 6);
+            int editWidth = Mth.clamp(textWidth + 4, 4, fieldWidth - 12);
+            state.lanPort.setX(fieldX + (fieldWidth - textWidth) / 2);
+            state.lanPort.setY(layout.portY + 12);
             state.lanPort.setWidth(editWidth);
             state.lanPort.render(graphics, mouseX, mouseY, partialTick);
         }

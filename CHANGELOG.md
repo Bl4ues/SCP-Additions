@@ -69,7 +69,6 @@
 ## Interface and presentation
 
 - Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with rotating SCP Additions backgrounds, a translucent authored menu layer, animated logo elements, direct Configuration Center access, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
-- While **Custom Main Menu** is enabled, standard GUI buttons across Minecraft and compatible mod screens use the authored `hover.ogg` and `select.ogg` feedback, with hover audio when the pointer enters a button and the select sound replacing vanilla button-click audio;
 - Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the authored SCP Additions background, truthful world-generation progress, a themed gold progress line, and a dual-layer SCP logo spinner with opposing eased rotations;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;

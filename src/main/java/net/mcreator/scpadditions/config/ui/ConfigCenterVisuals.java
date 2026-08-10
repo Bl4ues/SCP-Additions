@@ -298,7 +298,8 @@ public final class ConfigCenterVisuals {
         int inset = 16 + Math.round(eased * 5.0F);
 
         if (stateLength > 0 && button.getWidth() >= 155) {
-            String prefix = plain.substring(0, plain.length() - stateLength);
+            String prefix = plain.substring(0, plain.length() - stateLength).trim();
+            if (prefix.endsWith(":")) prefix = prefix.substring(0, prefix.length() - 1).trim();
             String state = plain.substring(plain.length() - stateLength);
             int stateWidth = font.width(ScpFonts.roboto(state));
             int maxPrefix = Math.max(20,

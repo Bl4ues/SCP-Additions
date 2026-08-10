@@ -438,10 +438,8 @@ public final class PauseMenuSettingsPanelClient {
             graphics.drawString(font, value, valueX,
                     y + (height - font.lineHeight) / 2,
                     applyAlpha(hovered ? ACCENT_BRIGHT : MUTED, alpha), false);
-            if (Minecraft.getInstance().getResourceManager()
-                    .getResource(current.icon).isPresent()) {
-                drawDifficultyIcon(graphics, current.icon, iconX, iconY, iconSize, alpha);
-            }
+            drawDifficultyIconOrFallback(graphics, current.icon,
+                    current.title, iconX, iconY, iconSize, alpha);
         }
     }
 
@@ -476,10 +474,8 @@ public final class PauseMenuSettingsPanelClient {
             int iconSize = Math.min(34, flyout.optionHeight - 10);
             int iconX = flyout.x + 15;
             int iconY = optionY + (flyout.optionHeight - iconSize) / 2;
-            if (Minecraft.getInstance().getResourceManager()
-                    .getResource(choice.icon).isPresent()) {
-                drawDifficultyIcon(graphics, choice.icon, iconX, iconY, iconSize, alpha);
-            }
+            drawDifficultyIconOrFallback(graphics, choice.icon,
+                    choice.title, iconX, iconY, iconSize, alpha);
 
             int textX = iconX + iconSize + 10;
             graphics.drawString(font, ScpFonts.roboto(choice.title),
@@ -490,6 +486,30 @@ public final class PauseMenuSettingsPanelClient {
                     textX, optionY + 23, applyAlpha(MUTED, alpha), false);
 
         }
+    }
+
+    private static void drawDifficultyIconOrFallback(GuiGraphics graphics,
+            ResourceLocation texture, String title, int x, int y, int size,
+            float alpha) {
+        if (Minecraft.getInstance().getResourceManager().getResource(texture).isPresent()) {
+            drawDifficultyIcon(graphics, texture, x, y, size, alpha);
+            return;
+        }
+        int border = applyAlpha(ACCENT, alpha);
+        int surface = applyAlpha(0x780B0E12, alpha);
+        graphics.fill(x, y, x + size, y + size, surface);
+        graphics.fill(x, y, x + size, y + 1, border);
+        graphics.fill(x, y + size - 1, x + size, y + size, border);
+        graphics.fill(x, y, x + 1, y + size, border);
+        graphics.fill(x + size - 1, y, x + size, y + size, border);
+        String initial = title == null || title.isBlank() ? "?"
+                : title.substring(0, 1).toUpperCase(Locale.ROOT);
+        Component glyph = ScpFonts.montserrat(initial);
+        Font font = Minecraft.getInstance().font;
+        graphics.drawString(font, glyph,
+                x + (size - font.width(glyph)) / 2,
+                y + (size - font.lineHeight) / 2,
+                applyAlpha(ACCENT_BRIGHT, alpha), false);
     }
 
     private static void drawDifficultyIcon(GuiGraphics graphics,

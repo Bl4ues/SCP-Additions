@@ -112,6 +112,7 @@ public final class ClientPreferenceModulesUi {
         boolean canEdit = canEditServer();
         setActive(screen, "General & Modules", true);
         setActive(screen, "Accessibility", true);
+        setActive(screen, "Crosshair", true);
         setActive(screen, "Inventory, Equipment & Codex", canEdit);
         setActive(screen, "Contextual Interactions", canEdit);
         setActive(screen, "SCP-294 Drinks", canEdit);
@@ -192,14 +193,14 @@ public final class ClientPreferenceModulesUi {
                 Boolean personal = scopeForLabel(scopes, base);
                 if (personal == null) continue;
 
-                String text = personal ? "Client-side" : "Server-side";
+                String text = personal ? "CLIENT" : "SERVER";
                 Component badge = ScpFonts.roboto(text);
                 int color = personal ? CLIENT_SCOPE
                         : canEdit ? SERVER_SCOPE : SERVER_LOCKED_SCOPE;
                 int scaledWidth = Math.round(font.width(badge) * BADGE_SCALE);
                 int scaledHeight = Math.max(6,
                         Math.round(font.lineHeight * BADGE_SCALE));
-                int right = button.getX() + button.getWidth() - 7;
+                int right = button.getX() + button.getWidth() - 58;
                 int x = right - scaledWidth;
                 int y = button.getY()
                         + Math.max(1, (button.getHeight() - scaledHeight) / 2);

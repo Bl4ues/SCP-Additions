@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -21,6 +22,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Final widget pass for the Configuration Center.
@@ -42,6 +45,7 @@ public final class ConfigCenterModernWidgetEvents {
     private static final int MUTED = 0xFF9FA6AD;
     private static final int ACCENT = 0xFFC99B18;
     private static final int ACCENT_BRIGHT = 0xFFE3C865;
+    private static final Map<AbstractWidget, Integer> SUPPRESSED_X = new WeakHashMap<>();
 
     private ConfigCenterModernWidgetEvents() {
     }
@@ -59,6 +63,12 @@ public final class ConfigCenterModernWidgetEvents {
         Screen screen = event.getScreen();
         if (!isConfigurationScreen(screen)) return;
         for (GuiEventListener listener : screen.children()) {
+            if (listener instanceof AbstractSliderButton slider) {
+                suppressNative(slider);
+            } else if (listener instanceof AbstractButton button
+                    && shouldSuppressNativeButton(button)) {
+                suppressNative(button);
+            }
             prepare(listener);
         }
     }
@@ -67,6 +77,8 @@ public final class ConfigCenterModernWidgetEvents {
     public static void onRenderPost(ScreenEvent.Render.Post event) {
         Screen screen = event.getScreen();
         if (!isConfigurationScreen(screen)) return;
+
+        restoreSuppressed(screen);
 
         GuiGraphics graphics = event.getGuiGraphics();
         Font font = Minecraft.getInstance().font;
@@ -98,7 +110,9 @@ public final class ConfigCenterModernWidgetEvents {
 
     private static void prepare(GuiEventListener listener) {
         if (listener instanceof EditBox editBox) {
-            editBox.setBordered(false);
+            editBox.setBordered(true);
+            editBox.setFormatter((value, cursor) ->
+                    ScpFonts.roboto(value).getVisualOrderText());
             return;
         }
         if (listener instanceof AbstractButton button
@@ -291,7 +305,7 @@ public final class ConfigCenterModernWidgetEvents {
         switch (name) {
             case "DrinkListScreen" -> {
                 int w = Math.min(700, screen.width - 16);
-                left = (screen.width - w) / 2 + 12;
+                left = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
                 int top = Math.max(8, (screen.height
                         - Math.min(410, screen.height - 16)) / 2) + 38;
                 listY = top + 30;
@@ -300,7 +314,7 @@ public final class ConfigCenterModernWidgetEvents {
             }
             case "ItemRulesScreen" -> {
                 int w = Math.min(650, screen.width - 16);
-                left = (screen.width - w) / 2 + 12;
+                left = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
                 int top = Math.max(8, (screen.height
                         - Math.min(400, screen.height - 16)) / 2) + 38;
                 listY = top + 30;
@@ -309,7 +323,7 @@ public final class ConfigCenterModernWidgetEvents {
             }
             case "RecipeListScreen" -> {
                 int w = Math.min(760, screen.width - 12);
-                left = (screen.width - w) / 2 + 12;
+                left = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
                 int top = Math.max(6, (screen.height
                         - Math.min(440, screen.height - 12)) / 2) + 38;
                 listY = top + 30;
@@ -318,7 +332,7 @@ public final class ConfigCenterModernWidgetEvents {
             }
             case "IdListScreen" -> {
                 int w = Math.min(650, screen.width - 18);
-                left = (screen.width - w) / 2 + 12;
+                left = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
                 int top = Math.max(8, (screen.height
                         - Math.min(390, screen.height - 16)) / 2) + 38;
                 listY = top + 56;
@@ -332,7 +346,7 @@ public final class ConfigCenterModernWidgetEvents {
                     size = drink.getAsJsonArray("effects").size();
                 }
                 int w = Math.min(680, screen.width - 16);
-                left = (screen.width - w) / 2 + 12;
+                left = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
                 int top = Math.max(8, (screen.height
                         - Math.min(410, screen.height - 16)) / 2) + 42;
                 listY = top + 30;
@@ -355,6 +369,24 @@ public final class ConfigCenterModernWidgetEvents {
             graphics.fill(left, bottom - 1, rowRight, bottom, seam);
             graphics.fill(left, top, left + (hovered ? 4 : 3), bottom,
                     hovered ? ACCENT_BRIGHT : ACCENT);
+        }
+    }
+
+    private static boolean shouldSuppressNativeButton(AbstractButton button) {
+        return isSelfRenderedButton(button) || !(button instanceof Button);
+    }
+
+    private static void suppressNative(AbstractWidget button) {
+        if (button.getX() <= -9000) return;
+        SUPPRESSED_X.put(button, button.getX());
+        button.setX(-10000);
+    }
+
+    private static void restoreSuppressed(Screen screen) {
+        for (GuiEventListener listener : screen.children()) {
+            if (!(listener instanceof AbstractWidget button)) continue;
+            Integer x = SUPPRESSED_X.get(button);
+            if (x != null && button.getX() <= -9000) button.setX(x);
         }
     }
 
@@ -444,7 +476,9 @@ public final class ConfigCenterModernWidgetEvents {
         String name = screen.getClass().getName();
         if (name.startsWith("net.mcreator.scpadditions.config.ui.ConfigCenterClient$")
                 || name.startsWith(
-                "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$")) {
+                "net.mcreator.scpadditions.config.ui.Scp079ModulesScreenExtension$")
+                || name.startsWith(
+                "net.mcreator.scpadditions.client.RoombaConfigCenterEnhancements$")) {
             return true;
         }
         String simple = screen.getClass().getSimpleName();

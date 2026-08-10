@@ -69,13 +69,6 @@ public final class ConfigurationHomePolish {
 
         private static void arrange(Screen screen) {
             Layout l = layout(screen);
-            Button crosshair = find(screen, "Crosshair");
-            if (crosshair != null) {
-                crosshair.visible = false;
-                crosshair.active = false;
-                crosshair.setX(-10000);
-            }
-
             Button general = find(screen, "General & Modules");
             Button inventory = first(screen, "Items, Entities & Codex",
                     "Inventory, Equipment & Codex");
@@ -92,10 +85,15 @@ public final class ConfigurationHomePolish {
             }
 
             int toolY = l.startY + 178;
+            Button crosshair = find(screen, "Crosshair");
             Button accessibility = find(screen, "Accessibility");
             Button debug = find(screen, "Debug Tools");
             Button reload = find(screen, "Reload Snapshot");
             Button done = find(screen, "Done");
+            if (crosshair != null) {
+                place(crosshair, l.infoX, toolY, l.infoWidth, l.rowHeight);
+                toolY += l.rowHeight + l.rowGap;
+            }
             if (accessibility != null) {
                 place(accessibility, l.infoX, toolY, l.infoWidth, l.rowHeight);
                 toolY += l.rowHeight + l.rowGap;
@@ -188,6 +186,8 @@ public final class ConfigurationHomePolish {
                         "Manage drink definitions, effects, colors and custom dispensing behavior.");
                 case "SCP-914 Recipes" -> new Info("SCP-914 Recipes",
                         "Review and edit refinement recipes across SCP-914 settings and recipe files.");
+                case "Crosshair" -> new Info("Crosshair",
+                        "Configure the custom crosshair, visibility, colour channels and opacity.");
                 case "Accessibility" -> new Info("Accessibility",
                         "Client-side presentation options intended to improve comfort and readability.");
                 case "Debug Tools" -> new Info("Debug Tools",

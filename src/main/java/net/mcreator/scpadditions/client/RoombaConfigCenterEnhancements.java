@@ -28,6 +28,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.RoombaSpawnConfig;
+import net.mcreator.scpadditions.config.ui.ConfigCenterVisuals;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -144,7 +145,7 @@ public final class RoombaConfigCenterEnhancements {
         }
 
         protected int panelX() {
-            return Math.max(14, (width - panelWidth()) / 2);
+            return ConfigCenterVisuals.contentLeft(width, panelWidth());
         }
 
         protected int panelY() {
@@ -158,12 +159,12 @@ public final class RoombaConfigCenterEnhancements {
         protected void drawPanel(GuiGraphics graphics, String title, String subtitle) {
             int x = panelX();
             int y = panelY();
-            graphics.fill(x, y, x + panelWidth(), y + panelHeight(), PANEL);
-            graphics.fill(x, y, x + panelWidth(), y + 34, HEADER);
-            graphics.drawString(font, ScpFonts.montserrat(title),
-                    x + 14, y + 10, TEXT, false);
+            ConfigCenterVisuals.drawPanel(graphics, font, x, y,
+                    panelWidth(), panelHeight(), title);
+            int slide = ConfigCenterVisuals.contentOffsetX();
             graphics.drawString(font, ScpFonts.roboto(subtitle),
-                    x + 16, y + 39, MUTED, false);
+                    x + slide + 16, y + 39,
+                    ConfigCenterVisuals.fadeColor(MUTED), false);
         }
 
         protected void drawBlockIcon(GuiGraphics graphics, ResourceLocation id,
@@ -464,7 +465,7 @@ public final class RoombaConfigCenterEnhancements {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                 float partialTick) {
-            renderBackground(graphics);
+            ConfigCenterVisuals.renderBackdrop(this, graphics, mouseX, mouseY);
             drawPanel(graphics, "Roomba Spawning",
                     "Choose which floor blocks allow natural Roomba encounters.");
             int x = panelX() + 16;
@@ -481,9 +482,8 @@ public final class RoombaConfigCenterEnhancements {
                 int rowBorder = entry.enabled() ? BORDER : 0xFF30343C;
                 int mainText = entry.enabled() ? TEXT : 0xFF777E89;
                 int secondaryText = entry.enabled() ? MUTED : 0xFF555B64;
-                graphics.fill(x, rowY, x + listWidth, rowY + 36, rowColor);
-                graphics.fill(x, rowY, x + listWidth, rowY + 1, rowBorder);
-                graphics.fill(x, rowY + 35, x + listWidth, rowY + 36, rowBorder);
+                graphics.fill(x, rowY, x + listWidth, rowY + 36,
+                        entry.enabled() ? 0xD20B0E12 : 0xB811151D);
                 graphics.fill(x, rowY, x + 4, rowY + 36,
                         entry.enabled() ? (entry.integrated() ? GOOD : ACCENT)
                                 : 0xFF50555D);
@@ -641,7 +641,7 @@ public final class RoombaConfigCenterEnhancements {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                 float partialTick) {
-            renderBackground(graphics);
+            ConfigCenterVisuals.renderBackdrop(this, graphics, mouseX, mouseY);
             drawPanel(graphics, "Add Roomba Spawn Floor",
                     "Search the block registry and add a floor to the whitelist.");
             int x = panelX() + 16;
@@ -654,9 +654,7 @@ public final class RoombaConfigCenterEnhancements {
                 int row = index - scroll;
                 int rowY = listY + row * 40;
                 graphics.fill(x, rowY, x + listWidth, rowY + 36,
-                        row % 2 == 0 ? ROW : ROW_ALT);
-                graphics.fill(x, rowY, x + listWidth, rowY + 1, BORDER);
-                graphics.fill(x, rowY + 35, x + listWidth, rowY + 36, BORDER);
+                        0xD20B0E12);
                 graphics.fill(x, rowY, x + 4, rowY + 36, ACCENT);
                 drawBlockIcon(graphics, id, x + 10, rowY + 10);
                 graphics.drawString(font, ScpFonts.roboto(blockName(id)),

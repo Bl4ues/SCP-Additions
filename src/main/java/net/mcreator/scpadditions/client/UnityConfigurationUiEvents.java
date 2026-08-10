@@ -194,6 +194,7 @@ public final class UnityConfigurationUiEvents {
     }
 
     private static void styleEditBox(EditBox editBox) {
+        editBox.setBordered(true);
         editBox.setFormatter((value, cursor) -> ScpFonts.roboto(value).getVisualOrderText());
         editBox.setTextColor(WHITE);
         editBox.setTextColorUneditable(MUTED);
@@ -609,7 +610,7 @@ public final class UnityConfigurationUiEvents {
             }
             default -> { return null; }
         }
-        return new PanelSpec(Math.max(8, (screen.width - w) / 2), y, w, h);
+        return new PanelSpec(ConfigCenterVisuals.contentLeft(screen.width, w), y, w, h);
     }
 
     private static void renderDrinkRows(GuiGraphics graphics, Screen screen,
@@ -617,7 +618,7 @@ public final class UnityConfigurationUiEvents {
         List<JsonObject> filtered = readJsonObjectList(screen, "filtered");
         int scroll = integerField(screen, "scroll", 0);
         int w = Math.min(700, screen.width - 16);
-        int x = (screen.width - w) / 2 + 12;
+        int x = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
         int top = Math.max(8, (screen.height - Math.min(410, screen.height - 16)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(5, Math.min(11, (screen.height - 132) / 24));
@@ -668,7 +669,7 @@ public final class UnityConfigurationUiEvents {
         List<JsonObject> filtered = readJsonObjectList(screen, "filtered");
         int scroll = integerField(screen, "scroll", 0);
         int w = Math.min(650, screen.width - 16);
-        int x = (screen.width - w) / 2 + 12;
+        int x = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
         int top = Math.max(8, (screen.height - Math.min(400, screen.height - 16)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(4, Math.min(10, (screen.height - 128) / 24));
@@ -702,7 +703,7 @@ public final class UnityConfigurationUiEvents {
         List<?> filtered = readList(screen, "filtered");
         int scroll = integerField(screen, "scroll", 0);
         int w = Math.min(760, screen.width - 12);
-        int x = (screen.width - w) / 2 + 12;
+        int x = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
         int top = Math.max(6, (screen.height - Math.min(440, screen.height - 12)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(5, Math.min(12, (screen.height - 130) / 24));
@@ -747,7 +748,7 @@ public final class UnityConfigurationUiEvents {
         List<JsonObject> filtered = readJsonObjectList(screen, "filtered");
         int scroll = integerField(screen, "scroll", 0);
         int w = Math.min(700, screen.width - 16);
-        int x = (screen.width - w) / 2 + 12;
+        int x = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
         int top = Math.max(8, (screen.height - Math.min(410, screen.height - 16)) / 2) + 38;
         int listY = top + 30;
         int visible = Math.max(5, Math.min(11, (screen.height - 132) / 24));
@@ -787,7 +788,7 @@ public final class UnityConfigurationUiEvents {
         int scroll = integerField(screen, "scroll", 0);
         String key = readField(screen, "key", String.class);
         int w = Math.min(650, screen.width - 18);
-        int x = (screen.width - w) / 2 + 12;
+        int x = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
         int top = Math.max(8, (screen.height - Math.min(390, screen.height - 16)) / 2) + 38;
         int listY = top + 56;
         int visible = Math.max(4, Math.min(9, (screen.height - 146) / 24));
@@ -831,7 +832,7 @@ public final class UnityConfigurationUiEvents {
         JsonArray effects = array(drink, "effects");
         int scroll = integerField(screen, "scroll", 0);
         int w = Math.min(680, screen.width - 16);
-        int x = (screen.width - w) / 2 + 12;
+        int x = ConfigCenterVisuals.contentLeft(screen.width, w) + 12;
         int top = Math.max(8, (screen.height - Math.min(410, screen.height - 16)) / 2) + 42;
         int listY = top + 30;
         int visible = Math.max(4, Math.min(10, (screen.height - 130) / 24));
@@ -885,8 +886,6 @@ public final class UnityConfigurationUiEvents {
 
     private static void drawFooter(GuiGraphics graphics, Font font, PanelSpec spec,
                                    String text, int color) {
-        coverTextLine(graphics, spec.x() + 8, spec.y() + spec.height() - 23,
-                spec.width() - 16);
         graphics.drawString(font, ScpFonts.roboto(text), spec.x() + 12,
                 spec.y() + spec.height() - 17, color, false);
     }

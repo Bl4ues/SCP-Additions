@@ -45,7 +45,6 @@ public final class CrosshairModulesPlacement {
     public static void onScreenInitPre(ScreenEvent.Init.Pre event) {
         Screen screen = event.getScreen();
         if (isGeneralModulesScreen(screen)) {
-            injectCrosshairRow(screen);
             injectActionBarRow(screen);
         } else if (isCrosshairScreen(screen)) {
             ensureCrosshairDefaultsPresent(screen);
@@ -57,11 +56,7 @@ public final class CrosshairModulesPlacement {
         Screen screen = event.getScreen();
         if (screen == null) return;
 
-        if (isHomeScreen(screen)) {
-            compactHomeLayout(screen);
-        } else if (isGeneralModulesScreen(screen)) {
-            wireCrosshairNavigation(screen);
-        } else if (isCrosshairScreen(screen)) {
+        if (isCrosshairScreen(screen)) {
             wireEnabledDefaultsButton(screen);
         }
     }
@@ -69,11 +64,7 @@ public final class CrosshairModulesPlacement {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
         Screen screen = event.getScreen();
-        if (isHomeScreen(screen)) {
-            compactHomeLayout(screen);
-        } else if (isGeneralModulesScreen(screen)) {
-            wireCrosshairNavigation(screen);
-        } else if (isCrosshairScreen(screen)) {
+        if (isCrosshairScreen(screen)) {
             wireEnabledDefaultsButton(screen);
         }
     }

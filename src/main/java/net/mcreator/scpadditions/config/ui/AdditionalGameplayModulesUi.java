@@ -39,26 +39,6 @@ public final class AdditionalGameplayModulesUi {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
-        Screen screen = event.getScreen();
-        if (screen == null
-                || !CROSSHAIR_SCREEN.equals(screen.getClass().getName())) {
-            return;
-        }
-
-        // The preview size is an implementation detail, not a player-facing
-        // setting. Remove the old explanatory line without disturbing the
-        // preview or the controls around it.
-        GuiGraphics graphics = event.getGuiGraphics();
-        int panelWidth = Math.min(650, screen.width - 20);
-        int panelX = Math.max(8, (screen.width - panelWidth) / 2);
-        int panelY = Math.max(8,
-                (screen.height - Math.min(360, screen.height - 16)) / 2);
-        int coverRight = Math.min(panelX + panelWidth - 8, panelX + 242);
-        graphics.fill(panelX + 16, panelY + 232,
-                coverRight, panelY + 250, PANEL);
-    }
 
     private static boolean isGeneralModulesScreen(Screen screen) {
         return screen != null

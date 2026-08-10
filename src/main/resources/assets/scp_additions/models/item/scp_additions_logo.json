@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "scp_additions:screens/logo"
+    "layer0": "scp_additions:item/scp_additions_logo"
   }
 }

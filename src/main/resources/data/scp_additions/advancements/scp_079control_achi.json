@@ -9,7 +9,7 @@
     "description": {
       "translate": "advancements.scp_079control_achi.descr"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": true

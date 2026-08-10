@@ -33,12 +33,13 @@ import java.util.List;
  *
  * GeckoLib/Blockbench geometry is authored around a horizontal model origin,
  * while Block.box uses the block's north-west corner as zero. The collision is
- * therefore shifted by eight model units on X/Z before it is rotated with the
+ * therefore uses independent X/Z offsets before it is rotated with the
  * block state. Four practical volumes follow the base, pedestal, seat and
  * backrest without turning every wheel and spoke into its own collision box.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
-    private static final double MODEL_ORIGIN = 8.0D;
+    private static final double MODEL_ORIGIN_X = 10.0D;
+    private static final double MODEL_ORIGIN_Z = 8.0D;
 
     private static final VoxelShape NORTH = Shapes.or(
             // Five-star base footprint.
@@ -143,8 +144,8 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
 
     private static VoxelShape modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
-        return box(minX + MODEL_ORIGIN, minY, minZ + MODEL_ORIGIN,
-                maxX + MODEL_ORIGIN, maxY, maxZ + MODEL_ORIGIN);
+        return box(minX + MODEL_ORIGIN_X, minY, minZ + MODEL_ORIGIN_Z,
+                maxX + MODEL_ORIGIN_X, maxY, maxZ + MODEL_ORIGIN_Z);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

@@ -3,6 +3,7 @@ package net.mcreator.scpadditions.client;
 import com.bl4ues.scpinventory.client.ScpFonts;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.Util;
+import net.minecraft.advancements.FrameType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -53,6 +54,9 @@ public final class PauseMenuNativePanelsClient {
     private static final int MUTED = 0xFF9DA5AF;
     private static final int BORDER = 0x70414A56;
     private static final int TRACK = 0x563D4652;
+    private static final int TASK = 0xFF79D58B;
+    private static final int GOAL = 0xFFC99B18;
+    private static final int CHALLENGE = 0xFFFF7373;
     private static final ResourceLocation SCP_ADDITIONS_LOGO = new ResourceLocation(
             ScpAdditionsMod.MODID, "textures/screens/logo.png");
 
@@ -297,13 +301,17 @@ public final class PauseMenuNativePanelsClient {
                         ? null : progress.get(advancement));
                 boolean hidden = booleanValue(invokeNoArg(display, "isHidden"));
                 if (hidden && !done) continue;
+                String advancementId = idOf(advancement);
                 Component title = component(invokeNoArg(display, "getTitle"),
-                        humanize(idOf(advancement)));
+                        humanize(advancementId));
                 Component description = component(
                         invokeNoArg(display, "getDescription"), "");
                 ItemStack icon = itemStack(invokeNoArg(display, "getIcon"));
+                FrameType frame = frameType(invokeNoArg(display, "getFrame"));
+                boolean useModLogo = (ScpAdditionsMod.MODID
+                        + ":scp_additions_ach").equals(advancementId);
                 byRoot.get(root).add(new AdvancementRow(title, description,
-                        icon, done));
+                        icon, done, frame, useModLogo));
             }
 
             for (Object root : rootOrder) {
@@ -419,28 +427,63 @@ public final class PauseMenuNativePanelsClient {
             graphics.fill(layout.contentX, y, layout.contentX + 3,
                     y + ACHIEVEMENT_ROW_HEIGHT,
                     applyAlpha(entry.done ? ACCENT : BORDER, alpha));
-            if (!entry.icon.isEmpty()) graphics.renderItem(entry.icon,
-                    layout.contentX + 9, y + 13);
+            if (entry.useModLogo) {
+                renderScpAdditionsLogo(graphics, layout.contentX + 9,
+                        y + 13, alpha);
+            } else if (!entry.icon.isEmpty()) {
+                graphics.renderItem(entry.icon, layout.contentX + 9, y + 13);
+            }
             int textX = layout.contentX + 34;
             String title = compactToWidth(font, entry.title.getString(),
-                    layout.contentRight - textX - 78);
+                    layout.contentRight - textX - 86);
             graphics.drawString(font, ScpFonts.roboto(title), textX, y + 9,
                     applyAlpha(entry.done ? ACCENT_BRIGHT : TEXT, alpha), false);
             String description = compactToWidth(font,
                     entry.description.getString(),
-                    layout.contentRight - textX - 12);
+                    layout.contentRight - textX - 86);
             graphics.drawString(font, ScpFonts.roboto(description),
                     textX, y + 24, applyAlpha(MUTED, alpha), false);
             Component status = ScpFonts.titillium(entry.done ? "DONE" : "OPEN");
             graphics.drawString(font, status,
                     layout.contentRight - 10 - font.width(status), y + 9,
                     applyAlpha(entry.done ? ACCENT_BRIGHT : MUTED, alpha), false);
+            drawAchievementRarity(graphics, entry.frame,
+                    layout.contentRight - 10, y + 26, alpha);
         }
         if (rowMax > 0) drawScrollbar(graphics, layout.contentRight - 3,
                 layout.contentY, layout.contentBottom, state.achievementScroll,
                 rowMax, layout.visibleRows, alpha);
         if (state.achievementCategories.isEmpty()) drawCenteredMessage(graphics,
                 panel, "No achievements are available yet.", alpha);
+    }
+
+    private static void drawAchievementRarity(GuiGraphics graphics,
+            FrameType frame, int right, int y, float alpha) {
+        int filled;
+        int color;
+        if (frame == FrameType.CHALLENGE) {
+            filled = 5;
+            color = CHALLENGE;
+        } else if (frame == FrameType.GOAL) {
+            filled = 3;
+            color = GOAL;
+        } else {
+            filled = 1;
+            color = TASK;
+        }
+
+        int blockWidth = 4;
+        int blockHeight = 2;
+        int gap = 1;
+        int total = blockWidth * 5 + gap * 4;
+        int left = right - total;
+        for (int index = 0; index < 5; index++) {
+            int x = left + index * (blockWidth + gap);
+            graphics.fill(x, y, x + blockWidth, y + blockHeight,
+                    index < filled
+                            ? applyAlpha(color, alpha * 0.78F)
+                            : applyAlpha(TRACK, alpha * 0.52F));
+        }
     }
 
     private static void handleAchievementClick(State state,
@@ -992,6 +1035,10 @@ public final class PauseMenuNativePanelsClient {
         return value instanceof ItemStack stack ? stack : ItemStack.EMPTY;
     }
 
+    private static FrameType frameType(Object value) {
+        return value instanceof FrameType frame ? frame : FrameType.TASK;
+    }
+
     private static String humanize(String value) {
         if (value == null || value.isBlank()) return "Unknown";
         String raw = value;
@@ -1094,7 +1141,8 @@ public final class PauseMenuNativePanelsClient {
     }
 
     private record AdvancementRow(Component title, Component description,
-            ItemStack icon, boolean done) {
+            ItemStack icon, boolean done, FrameType frame,
+            boolean useModLogo) {
     }
 
     private record StatRow(StatGroup group, Component label, String value) {

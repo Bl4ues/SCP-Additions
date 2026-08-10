@@ -114,8 +114,8 @@ public final class FacilityChatLayout {
         int left = 2;
         int right = Math.min(panelScreenRight(chat),
                 Minecraft.getInstance().getWindow().getGuiScaledWidth() - 2);
-        int top = input.getY() - 2;
-        int bottom = input.getY() + input.getHeight() + 2;
+        int top = input.getY() - 4;
+        int bottom = input.getY() + input.getHeight();
 
         graphics.fill(left, top, right, bottom, 0xE6081022);
         graphics.fill(left, top, left + 2, bottom, ACCENT);

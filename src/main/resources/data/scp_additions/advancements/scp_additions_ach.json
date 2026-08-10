@@ -9,7 +9,7 @@
       "translate": "advancements.scp_additions_ach.title"
     },
     "description": {
-      "text": "Unravel the secrets of the Foundation."
+      "translate": "advancements.scp_additions_ach.descr"
     },
     "frame": "task",
     "show_toast": false,

@@ -101,6 +101,10 @@ public final class CustomAdvancementToastClient {
         int iconTop = top + 13;
         renderIcon(graphics, display.getIcon(), iconLeft, iconTop, alpha);
 
+        // Font.adjustColor treats near-zero alpha as opaque. Avoid the
+        // resulting text flash at the very beginning/end of the toast.
+        if (alpha < 0.025F) return;
+
         int textLeft = left + 50;
         int textRight = right - 9;
         Component eyebrow = ScpFonts.roboto("ADVANCEMENT  //  UNLOCKED");

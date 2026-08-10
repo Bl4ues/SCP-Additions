@@ -4,12 +4,12 @@
       "item": "scp_additions:tesla_gate"
     },
     "title": {
-      "text": "Fatal Discharge"
+      "translate": "advancements.tesla.title"
     },
     "description": {
-      "text": "Be killed by a Tesla Gate discharge."
+      "translate": "advancements.tesla.descr"
     },
-    "frame": "task",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

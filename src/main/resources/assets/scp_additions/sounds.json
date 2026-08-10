@@ -1,4 +1,13 @@
 {
+  "achievement": {
+    "sounds": [
+      {
+        "name": "scp_additions:achievement",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
   "inventory_pickup": {
     "subtitle": "subtitles.scp_additions.inventory_pickup",
     "sounds": [

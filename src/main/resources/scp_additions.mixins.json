@@ -12,7 +12,9 @@
     "client.FontMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",
-    "client.CommandSuggestionsMixin"
+    "client.CommandSuggestionsMixin",
+    "client.AdvancementToastMixin",
+    "client.ToastVisibilityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

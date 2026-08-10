@@ -54,6 +54,7 @@ public final class ClientModulePreferences {
             "ui.custom_main_menu",
             "ui.custom_pause_menu",
             "ui.custom_loading_screen",
+            "ui.custom_advancement_toasts",
             "audio.enter_sound_enabled",
             "audio.save_game_sound_enabled",
             "audio.custom_item_interaction_sounds",
@@ -146,6 +147,8 @@ public final class ClientModulePreferences {
                 next.ui.customPauseMenu);
         next.ui.customLoadingScreen = bool(ui, "custom_loading_screen",
                 next.ui.customLoadingScreen);
+        next.ui.customAdvancementToasts = bool(ui, "custom_advancement_toasts",
+                next.ui.customAdvancementToasts);
 
         JsonObject audio = object(modules, "audio");
         next.audio.enterSoundEnabled = bool(audio, "enter_sound_enabled",
@@ -221,6 +224,8 @@ public final class ClientModulePreferences {
         ui.addProperty("custom_main_menu", value.ui.customMainMenu);
         ui.addProperty("custom_pause_menu", value.ui.customPauseMenu);
         ui.addProperty("custom_loading_screen", value.ui.customLoadingScreen);
+        ui.addProperty("custom_advancement_toasts",
+                value.ui.customAdvancementToasts);
 
         JsonObject audio = object(modules, "audio");
         audio.addProperty("enter_sound_enabled",
@@ -298,6 +303,10 @@ public final class ClientModulePreferences {
 
     public static boolean customLoadingScreenEnabled() {
         return current.ui.customLoadingScreen;
+    }
+
+    public static boolean customAdvancementToastsEnabled() {
+        return current.ui.customAdvancementToasts;
     }
 
     public static boolean customItemInteractionSoundsEnabled() {
@@ -439,6 +448,7 @@ public final class ClientModulePreferences {
         private boolean customMainMenu = true;
         private boolean customPauseMenu = true;
         private boolean customLoadingScreen = true;
+        private boolean customAdvancementToasts = true;
     }
 
     private static final class Audio {

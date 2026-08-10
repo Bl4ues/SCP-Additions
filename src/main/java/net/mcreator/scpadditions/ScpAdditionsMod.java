@@ -37,6 +37,7 @@ import net.mcreator.scpadditions.facility.MirroredDoorButtons;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import net.mcreator.scpadditions.scp012.Scp012Module;
 import net.mcreator.scpadditions.sound.GameplaySounds;
+import net.mcreator.scpadditions.sound.AchievementSounds;
 import net.mcreator.scpadditions.vitals.StaminaItemEffectConfig;
 import net.mcreator.scpadditions.world.features.StructureFeature;
 import net.mcreator.scpadditions.init.MainMenuSounds;
@@ -80,6 +81,7 @@ public class ScpAdditionsMod {
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
         GameplaySounds.REGISTRY.register(bus);
+        AchievementSounds.REGISTRY.register(bus);
         ScpAdditionsModBlocks.REGISTRY.register(bus);
         ScpAdditionsModBlockEntities.REGISTRY.register(bus);
         ScpAdditionsModItems.REGISTRY.register(bus);

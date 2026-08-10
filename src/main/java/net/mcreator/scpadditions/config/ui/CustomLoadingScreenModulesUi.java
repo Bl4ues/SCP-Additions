@@ -23,7 +23,7 @@ public final class CustomLoadingScreenModulesUi {
     private static final String MAIN_MENU_LABEL = "Custom Main Menu";
     private static final String PAUSE_MENU_LABEL = "Custom Pause Menu";
     private static final String LOADING_LABEL = "Custom Loading Screen";
-    private static final String ADVANCEMENT_LABEL = "Custom Advancement Toasts";
+    private static final String ACHIEVEMENT_LABEL = "Custom Achievement Toasts";
 
     private CustomLoadingScreenModulesUi() {
     }
@@ -46,7 +46,7 @@ public final class CustomLoadingScreenModulesUi {
             boolean needsMainMenu = !containsLabel(rows, MAIN_MENU_LABEL);
             boolean needsPauseMenu = !containsLabel(rows, PAUSE_MENU_LABEL);
             boolean needsLoading = !containsLabel(rows, LOADING_LABEL);
-            boolean needsAdvancement = !containsLabel(rows, ADVANCEMENT_LABEL);
+            boolean needsAdvancement = !containsLabel(rows, ACHIEVEMENT_LABEL);
             if (!needsMainMenu && !needsPauseMenu && !needsLoading
                     && !needsAdvancement) return;
 
@@ -80,8 +80,8 @@ public final class CustomLoadingScreenModulesUi {
             }
             if (needsAdvancement) {
                 expanded.add(insertion, constructor.newInstance(
-                        "ui", "custom_advancement_toasts", ADVANCEMENT_LABEL,
-                        "Replaces advancement popups and their vanilla sounds with the animated SCP Additions presentation.",
+                        "ui", "custom_advancement_toasts", ACHIEVEMENT_LABEL,
+                        "Replaces achievement popups and their vanilla sounds with the animated SCP Additions presentation.",
                         true));
             }
             rowsField.set(screen, List.copyOf(expanded));

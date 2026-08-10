@@ -107,7 +107,7 @@ public final class CustomAdvancementToastClient {
 
         int textLeft = left + 50;
         int textRight = right - 9;
-        Component eyebrow = ScpFonts.roboto("ADVANCEMENT  //  UNLOCKED");
+        Component eyebrow = ScpFonts.roboto("ACHIEVEMENT  //  UNLOCKED");
         drawScaledComponent(graphics, font, eyebrow, textLeft, top + 7,
                 EYEBROW_SCALE, withAlpha(MUTED, alpha));
 

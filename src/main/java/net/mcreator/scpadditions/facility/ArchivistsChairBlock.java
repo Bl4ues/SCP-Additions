@@ -131,11 +131,14 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
     }
 
     private static VoxelShape shapeFor(Direction facing) {
+        // GeckoLib's authored chair forward axis is one quarter-turn clockwise
+        // from the vanilla horizontal FACING convention used by this block.
         return switch (facing) {
-            case EAST -> EAST;
-            case SOUTH -> SOUTH;
-            case WEST -> WEST;
-            default -> NORTH;
+            case NORTH -> EAST;
+            case EAST -> SOUTH;
+            case SOUTH -> WEST;
+            case WEST -> NORTH;
+            default -> EAST;
         };
     }
 

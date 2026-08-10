@@ -183,7 +183,10 @@ public final class CustomMainMenuScreen extends TitleScreen {
         }
         renderExtraButtons(graphics, mouseX, mouseY, partialTick);
 
-        int modsPanelX = Math.max(24, Math.round(this.width * 0.026F));
+        int primaryLeft = Math.max(42, Math.round(this.width * 0.073F));
+        int primaryWidth = Mth.clamp(Math.round(this.width * 0.265F),
+                220, 330);
+        int modsPanelX = primaryLeft + primaryWidth + 16;
         PauseMenuModsPanelClient.render(this, graphics,
                 mouseX, mouseY, partialTick, now, modsPanelX,
                 0, 0, 0, 0);
@@ -205,9 +208,9 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (PauseMenuModsPanelClient.isOpen(this)) {
-            PauseMenuModsPanelClient.mouseClicked(this,
-                    mouseX, mouseY, button);
+        if (PauseMenuModsPanelClient.isOpen(this)
+                && PauseMenuModsPanelClient.mouseClicked(this,
+                        mouseX, mouseY, button)) {
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -215,9 +218,9 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (PauseMenuModsPanelClient.isOpen(this)) {
-            PauseMenuModsPanelClient.mouseScrolled(this,
-                    mouseX, mouseY, delta);
+        if (PauseMenuModsPanelClient.isOpen(this)
+                && PauseMenuModsPanelClient.mouseScrolled(this,
+                        mouseX, mouseY, delta)) {
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
@@ -394,13 +397,15 @@ public final class CustomMainMenuScreen extends TitleScreen {
                 if (source == null || !source.active
                         || transitionStartedAt >= 0L) return;
                 extrasOpen = false;
+                MainMenuPlayPanelsClient.close(this);
+                MainMenuSettingsPanelClient.close(this);
                 PauseMenuModsPanelClient.toggle(this);
-                setMenuActive(false);
             };
         }
         return () -> {
             AbstractButton source = sourceButtons.get(key);
             if (source != null && source.active) {
+                PauseMenuModsPanelClient.close(this);
                 beginScreenTransition(source::onPress);
             }
         };
@@ -413,6 +418,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     private void toggleExtras() {
         if (transitionStartedAt >= 0L) return;
+        PauseMenuModsPanelClient.close(this);
         extrasOpen = !extrasOpen;
     }
 
@@ -448,19 +454,15 @@ public final class CustomMainMenuScreen extends TitleScreen {
         extrasProgress = approach(extrasProgress, extrasTarget,
                 deltaSeconds * 6.6F);
 
-        boolean modsPanelOpen = PauseMenuModsPanelClient.isOpen(this);
         boolean hovered = false;
         for (MenuTextButton button : primaryButtons) {
-            if (button.source != null && transitionStartedAt < 0L
-                    && !modsPanelOpen) {
+            if (button.source != null && transitionStartedAt < 0L) {
                 button.active = button.source.active;
             }
-            if (!modsPanelOpen) {
-                hovered |= button.active && button.isMouseOver(mouseX, mouseY);
-            }
+            hovered |= button.active && button.isMouseOver(mouseX, mouseY);
         }
         for (MenuTextButton button : extraButtons) {
-            if (!modsPanelOpen && extrasProgress > 0.05F) {
+            if (extrasProgress > 0.05F) {
                 hovered |= button.isMouseOver(mouseX, mouseY);
             }
         }

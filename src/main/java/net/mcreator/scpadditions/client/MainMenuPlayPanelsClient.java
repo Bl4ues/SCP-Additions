@@ -834,6 +834,7 @@ public final class MainMenuPlayPanelsClient {
     private static void closeOtherPanels(CustomMainMenuScreen screen) {
         closeExtras(screen);
         closeSettings(screen);
+        PauseMenuModsPanelClient.close(screen);
     }
 
     private static void closeExtras(CustomMainMenuScreen screen) {

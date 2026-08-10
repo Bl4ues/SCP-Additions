@@ -71,6 +71,14 @@ public final class MainMenuSettingsPanelClient {
         }
     }
 
+    public static void close(CustomMainMenuScreen screen) {
+        State state = STATES.get(screen);
+        if (state != null) {
+            state.open = false;
+            state.draggingFov = false;
+        }
+    }
+
     public static void render(CustomMainMenuScreen screen,
             GuiGraphics graphics, int mouseX, int mouseY) {
         State state = STATES.computeIfAbsent(screen, ignored -> new State());
@@ -154,6 +162,8 @@ public final class MainMenuSettingsPanelClient {
         AbstractButton settingsButton = findNamedButton(screen, "Settings");
         if (settingsButton != null
                 && settingsButton.isMouseOver(event.getMouseX(), event.getMouseY())) {
+            PauseMenuModsPanelClient.close(screen);
+            MainMenuPlayPanelsClient.close(screen);
             state.open = !state.open;
             if (state.open) {
                 ensureEntries(screen, state);

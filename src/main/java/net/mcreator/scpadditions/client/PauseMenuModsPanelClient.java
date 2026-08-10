@@ -377,11 +377,7 @@ public final class PauseMenuModsPanelClient {
                     LIST_ICON_SIZE, LIST_ICON_SIZE, alpha);
 
             int textX = layout.listX + 45;
-            Component configMarker = entry.hasConfig
-                    ? ScpFonts.titillium("CFG") : null;
-            int markerWidth = configMarker == null
-                    ? 0 : font.width(configMarker) + 14;
-            int textWidth = layout.listRight - textX - 8 - markerWidth;
+            int textWidth = layout.listRight - textX - 18;
             String name = compactToWidth(font, entry.name, textWidth);
             graphics.drawString(font, ScpFonts.roboto(name),
                     textX, y + 9,
@@ -389,10 +385,11 @@ public final class PauseMenuModsPanelClient {
             String version = compactToWidth(font, entry.version, textWidth);
             graphics.drawString(font, ScpFonts.titillium(version),
                     textX, y + 25, applyAlpha(MUTED, alpha), false);
-            if (configMarker != null) {
-                graphics.drawString(font, configMarker,
-                        layout.listRight - 9 - font.width(configMarker),
-                        y + 17, applyAlpha(ACCENT_BRIGHT, alpha), false);
+            if (entry.hasConfig) {
+                int markerX = layout.listRight - 7;
+                int markerY = y + (MOD_ROW_HEIGHT - 12) / 2;
+                graphics.fill(markerX, markerY, markerX + 2, markerY + 12,
+                        applyAlpha(ACCENT_BRIGHT, alpha * 0.78F));
             }
         }
         graphics.disableScissor();
@@ -622,10 +619,19 @@ public final class PauseMenuModsPanelClient {
     }
 
     private static Layout layout(Screen screen, int baseX) {
+        boolean titleMenu = screen instanceof CustomMainMenuScreen;
         int availableWidth = Math.max(330, screen.width - baseX - 28);
-        int panelWidth = Math.min(820, availableWidth);
-        int panelHeight = Mth.clamp(screen.height - 64, 300, 620);
-        int panelY = Math.max(24, (screen.height - panelHeight) / 2);
+        int panelWidth = titleMenu
+                ? Math.min(availableWidth, Mth.clamp(
+                        Math.round(screen.width * 0.46F), 520, 720))
+                : Math.min(820, availableWidth);
+        int panelHeight = titleMenu
+                ? Mth.clamp(Math.round(screen.height * 0.62F), 340, 540)
+                : Mth.clamp(screen.height - 64, 300, 620);
+        int panelY = titleMenu
+                ? Mth.clamp(Math.round(screen.height * 0.18F), 48,
+                        Math.max(48, screen.height - panelHeight - 24))
+                : Math.max(24, (screen.height - panelHeight) / 2);
         int panelX = baseX;
         int panelRight = Math.min(screen.width - 12, panelX + panelWidth);
         panelWidth = panelRight - panelX;

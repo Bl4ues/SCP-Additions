@@ -1,0 +1,114 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    64,
+    64
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [
+        1.5,
+        -0.25,
+        0
+      ],
+      "scale": [
+        0.24,
+        0.24,
+        0.24
+      ]
+    },
+    "thirdperson_lefthand": {
+      "translation": [
+        1.5,
+        -0.25,
+        0
+      ],
+      "scale": [
+        0.24,
+        0.24,
+        0.24
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        9,
+        -17,
+        0
+      ],
+      "translation": [
+        5.25,
+        0,
+        0
+      ],
+      "scale": [
+        0.43,
+        0.43,
+        0.43
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        9,
+        -17,
+        0
+      ],
+      "translation": [
+        5.25,
+        0,
+        0
+      ],
+      "scale": [
+        0.43,
+        0.43,
+        0.43
+      ]
+    },
+    "ground": {
+      "translation": [
+        2,
+        0,
+        0
+      ],
+      "scale": [
+        0.46,
+        0.46,
+        0.46
+      ]
+    },
+    "gui": {
+      "rotation": [
+        16,
+        0,
+        0
+      ],
+      "translation": [
+        4.75,
+        -7.25,
+        0
+      ],
+      "scale": [
+        0.66,
+        0.66,
+        0.66
+      ]
+    },
+    "head": {
+      "translation": [
+        6.75,
+        6.25,
+        0
+      ]
+    },
+    "fixed": {
+      "translation": [
+        6.75,
+        -9.75,
+        0
+      ]
+    }
+  },
+  "textures": {
+    "particle": "scp_additions:block/archivists_chair"
+  }
+}

@@ -142,6 +142,16 @@ public final class FacilityModule {
     public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
     public static final RegistryObject<Block> ARCHIVISTS_TABLE = registerBlock(
             "archivists_table", ArchivistsTableBlock::new, true);
+    public static final RegistryObject<Block> ARCHIVISTS_CHAIR =
+            BLOCKS.register("archivists_chair", ArchivistsChairBlock::new);
+    public static final RegistryObject<Item> ARCHIVISTS_CHAIR_ITEM =
+            ITEMS.register("archivists_chair", () -> new ArchivistsChairBlockItem(
+                    ARCHIVISTS_CHAIR.get(), new Item.Properties()));
+    static {
+        BLOCKS_BY_PATH.put("archivists_chair", ARCHIVISTS_CHAIR);
+        ITEMS_BY_PATH.put("archivists_chair", ARCHIVISTS_CHAIR_ITEM);
+        CREATIVE_ITEMS.add(ARCHIVISTS_CHAIR_ITEM);
+    }
     public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);
     public static final RegistryObject<Block> WET_FLOOR = registerWetFloor();
     public static final RegistryObject<Block> WATER_FAUCET = registerBlock(
@@ -149,6 +159,11 @@ public final class FacilityModule {
     public static final RegistryObject<Block> FACILITY_PROP_PART =
             BLOCKS.register("facility_prop_part",
                     FacilityPropPartBlock::new);
+    public static final RegistryObject<BlockEntityType<ArchivistsChairBlockEntity>>
+            ARCHIVISTS_CHAIR_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
+                    "archivists_chair", () -> BlockEntityType.Builder.of(
+                            ArchivistsChairBlockEntity::new,
+                            ARCHIVISTS_CHAIR.get()).build(null));
     public static final RegistryObject<BlockEntityType<WetFloorBlockEntity>>
             WET_FLOOR_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
                     "wet_floor", () -> BlockEntityType.Builder.of(
@@ -326,6 +341,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "tv");
         addExternalCreativeItem(props, TeslaGateTerminalTableModule.ITEM.get());
         addFacilityCreativeItem(props, "archivists_table");
+        addFacilityCreativeItem(props, "archivists_chair");
         addUBlockCreativeItem(props, "vent_open");
         sections.add(section("proptab", props));
 

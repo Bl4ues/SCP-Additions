@@ -160,9 +160,23 @@ public final class ConfigCenterClient {
     }
 
     private static void submitCodex(JsonObject inventoryRoot, PendingCodexGive give) {
+        if (!codexEditingAvailable()) {
+            returnToCodexAfterSave = false;
+            pendingCodexGive = null;
+            Minecraft.getInstance().setScreen(new MessageScreen(
+                    rootParent, "Codex Documents",
+                    "Codex editing is available only while a world is open.", false));
+            return;
+        }
         returnToCodexAfterSave = true;
         pendingCodexGive = give;
         submit(Map.of(ConfigCenterService.INVENTORY, inventoryRoot));
+    }
+
+    private static boolean codexEditingAvailable() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.player != null && minecraft.getConnection() != null
+                && !(rootParent instanceof net.mcreator.scpadditions.client.CustomMainMenuScreen);
     }
 
     private record PendingCodexGive(String itemId, String codexId, String displayName) {
@@ -437,8 +451,9 @@ public final class ConfigCenterClient {
             int w = Math.min(ConfigCenterVisuals.navigationWidth(width), width - 24);
             int x = left(width, w);
             if (!homeNotice.isBlank()) {
+                int noticeY = Math.max(58, Math.round(height * 0.165F));
                 graphics.drawString(font, ScpFonts.roboto(compact(homeNotice, 72)),
-                        x + 8, height - 20, GOOD, false);
+                        x + 8, noticeY, GOOD, false);
             }
             super.render(graphics, mouseX, mouseY, partialTick);
         }
@@ -534,7 +549,6 @@ public final class ConfigCenterClient {
             for (int i = scroll; i < Math.min(SPECS.size(), scroll + visible); i++) {
                 graphics.drawString(font, compact(SPECS.get(i).description(), 76), x + 18, startY + (i - scroll) * 34, MUTED, false);
             }
-            graphics.drawString(font, "Mouse wheel: scroll options", x + w - 160, y + 31, MUTED, false);
             super.render(graphics, mouseX, mouseY, partialTick);
         }
     }
@@ -569,9 +583,13 @@ public final class ConfigCenterClient {
                     b -> Minecraft.getInstance().setScreen(new IdListScreen(this, working, "scp_173_targets", "SCP-173 Entity Targets", true)))
                     .bounds(x, y, bw, 24).build());
             y += 32;
-            addRenderableWidget(Button.builder(Component.literal("Codex Documents"),
+            Button codexButton = addRenderableWidget(Button.builder(
+                            Component.literal(codexEditingAvailable()
+                                    ? "Codex Documents"
+                                    : "Codex Documents (In-World Only)"),
                     b -> Minecraft.getInstance().setScreen(new CodexListScreen(this, working)))
                     .bounds(x, y, bw, 24).build());
+            codexButton.active = codexEditingAvailable();
             y += 45;
             addRenderableWidget(Button.builder(Component.literal("Save All"), b -> submit(Map.of(ConfigCenterService.INVENTORY, working)))
                     .bounds(x, y, (bw - 6) / 2, 20).build());

@@ -471,7 +471,7 @@ public final class PauseMenuSettingsPanelClient {
                     optionY + flyout.optionHeight,
                     applyAlpha(selected ? ACCENT_BRIGHT : ACCENT, alpha));
 
-            int iconSize = Math.min(34, flyout.optionHeight - 10);
+            int iconSize = Math.min(30, flyout.optionHeight - 10);
             int iconX = flyout.x + 15;
             int iconY = optionY + (flyout.optionHeight - iconSize) / 2;
             drawDifficultyIconOrFallback(graphics, choice.icon,
@@ -479,11 +479,11 @@ public final class PauseMenuSettingsPanelClient {
 
             int textX = iconX + iconSize + 10;
             graphics.drawString(font, ScpFonts.roboto(choice.title),
-                    textX, optionY + 9,
+                    textX, optionY + 7,
                     applyAlpha(selected || hovered ? ACCENT_BRIGHT : TEXT, alpha),
                     false);
             graphics.drawString(font, ScpFonts.titillium(choice.subtitle),
-                    textX, optionY + 23, applyAlpha(MUTED, alpha), false);
+                    textX, optionY + 20, applyAlpha(MUTED, alpha), false);
 
         }
     }
@@ -530,10 +530,10 @@ public final class PauseMenuSettingsPanelClient {
 
     private static DifficultyFlyout difficultyFlyout(
             CustomPauseMenuScreen screen, Layout layout, int x, int rowY) {
-        int width = Mth.clamp(Math.round(screen.width * 0.19F), 172, 224);
-        int optionHeight = Mth.clamp(layout.rowHeight + 12, 44, 52);
-        int gap = 4;
-        int padding = 6;
+        int width = Mth.clamp(Math.round(screen.width * 0.165F), 158, 196);
+        int optionHeight = Mth.clamp(layout.rowHeight + 8, 40, 46);
+        int gap = 3;
+        int padding = 5;
         int height = padding * 2 + optionHeight * DifficultyChoice.values().length
                 + gap * (DifficultyChoice.values().length - 1);
         int preferredX = x + layout.width + 8;

@@ -13,13 +13,18 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.client.UnityConfigurationUiEvents;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -276,7 +281,10 @@ public final class ConfigCenterModernWidgetEvents {
         JsonObject text = rule.has("text") && rule.get("text").isJsonObject()
                 ? rule.getAsJsonObject("text") : null;
         String action = jsonString(text, "action", "Use");
-        int textX = tagX + tagWidth;
+        int iconX = tagX + tagWidth;
+        int iconY = top + 8;
+        boolean hasTargetIcon = renderContextTargetIcon(graphics, rule, iconX, iconY);
+        int textX = iconX + (hasTargetIcon ? 20 : 0);
         int available = Math.max(20, right - textX - 12);
         String main = target + "  ·  " + action
                 + (enabled ? "" : "  [DISABLED]");
@@ -290,6 +298,31 @@ public final class ConfigCenterModernWidgetEvents {
         graphics.drawString(font, ScpFonts.titillium(
                         fit(font, meta, available)),
                 textX, top + 18, enabled ? MUTED : 0xFF707680, false);
+    }
+
+    private static boolean renderContextTargetIcon(GuiGraphics graphics,
+            JsonObject rule, int x, int y) {
+        String idText = jsonString(rule, "id", "");
+        if (idText.isBlank()) return false;
+        try {
+            ResourceLocation id = new ResourceLocation(idText);
+            String type = jsonString(rule, "type", "");
+            if ("block".equalsIgnoreCase(type)) {
+                var block = ForgeRegistries.BLOCKS.getValue(id);
+                if (block == null || block.asItem() == Items.AIR) return false;
+                graphics.renderItem(new ItemStack(block.asItem()), x, y);
+                return true;
+            }
+            if ("entity".equalsIgnoreCase(type)) {
+                if (UnityConfigurationUiEvents.renderEntityPreview(graphics, id, x, y)) {
+                    return true;
+                }
+                graphics.renderItem(new ItemStack(Items.SPAWNER), x, y);
+                return true;
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     private static void polishLegacySummaryRows(GuiGraphics graphics,

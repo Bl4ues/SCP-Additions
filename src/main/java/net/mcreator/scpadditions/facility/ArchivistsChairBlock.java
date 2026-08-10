@@ -152,8 +152,8 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
         // The Blockbench geometry is centred on the chair root pivot X=6, Z=0.
         // GeckoLib mirrors Bedrock X, so first translate X around that authored
         // pivot and only then mirror it around Minecraft's 8px block centre.
-        return box(2.0D + minX, minY, 8.0D + minZ,
-                2.0D + maxX, maxY, 8.0D + maxZ);
+        return box(3.5D + minX, minY, 8.0D + minZ,
+                3.5D + maxX, maxY, 8.0D + maxZ);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

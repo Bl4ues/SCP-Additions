@@ -356,6 +356,11 @@ public final class UnityConfigurationUiEvents {
     }
 
     private static void renderKnownBodyText(GuiGraphics graphics, Screen screen) {
+        // ConfigCenterClient screens already own their body copy and footnotes.
+        // Rendering the legacy reflective pass as well produced duplicate text,
+        // cover rectangles outside the modern panel and overlapping summaries.
+        if (screen.getClass().getName().startsWith(
+                "net.mcreator.scpadditions.config.ui.ConfigCenterClient$")) return;
         PanelSpec spec = panelSpec(screen);
         if (spec == null) return;
         Font font = Minecraft.getInstance().font;
@@ -949,7 +954,7 @@ public final class UnityConfigurationUiEvents {
         }
     }
 
-    private static boolean renderEntityPreview(GuiGraphics graphics, ResourceLocation id,
+    public static boolean renderEntityPreview(GuiGraphics graphics, ResourceLocation id,
                                                int x, int y) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;

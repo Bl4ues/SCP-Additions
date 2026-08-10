@@ -107,7 +107,10 @@ public final class ConfigurationHomePolish {
                 place(reload, l.infoX, toolY, l.infoWidth, footerHeight);
                 toolY += footerHeight + l.rowGap;
             }
-            if (done != null) place(done, l.infoX, toolY, l.infoWidth, footerHeight);
+            if (done != null) {
+                place(done, l.infoX + l.infoWidth - 118,
+                        l.headerY + 4, 118, 30);
+            }
         }
 
         private static void renderComposition(GuiGraphics graphics, Screen screen,

@@ -1,0 +1,481 @@
+name: Apply Custom Advancement Toast v4
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/_apply-custom-advancement-toast-v4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Write custom advancement toast sources
+        shell: bash
+        run: |
+          mkdir -p src/main/java/net/mcreator/scpadditions/client
+          mkdir -p src/main/java/net/mcreator/scpadditions/mixin/client
+          mkdir -p src/main/java/net/mcreator/scpadditions/sound
+
+          cat > src/main/java/net/mcreator/scpadditions/client/CustomAdvancementToastClient.java <<'EOF'
+          package net.mcreator.scpadditions.client;
+
+          import com.bl4ues.scpinventory.client.ScpFonts;
+          import com.mojang.blaze3d.systems.RenderSystem;
+          import com.mojang.math.Axis;
+          import net.minecraft.advancements.DisplayInfo;
+          import net.minecraft.advancements.FrameType;
+          import net.minecraft.client.Minecraft;
+          import net.minecraft.client.gui.Font;
+          import net.minecraft.client.gui.GuiGraphics;
+          import net.minecraft.client.gui.components.toasts.Toast;
+          import net.minecraft.client.gui.components.toasts.ToastComponent;
+          import net.minecraft.network.chat.Component;
+          import net.minecraft.resources.ResourceLocation;
+          import net.minecraft.util.FormattedCharSequence;
+          import net.minecraft.util.Mth;
+          import net.minecraft.world.item.ItemStack;
+          import net.mcreator.scpadditions.ScpAdditionsMod;
+
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.concurrent.atomic.AtomicBoolean;
+
+          /** SCP Additions advancement toast presentation. */
+          public final class CustomAdvancementToastClient {
+              public static final int WIDTH = 232;
+              public static final int HEIGHT = 68;
+
+              private static final int PANEL = 0xE80B0E12;
+              private static final int PANEL_INNER = 0xD412161C;
+              private static final int ICON_PANEL = 0xF00A0D12;
+              private static final int ACCENT = 0xFFC99B18;
+              private static final int ACCENT_BRIGHT = 0xFFE3C865;
+              private static final int TEXT = 0xFFF5F6F7;
+              private static final int MUTED = 0xFF9DA5AF;
+              private static final int BORDER = 0x70414A56;
+              private static final int TRACK = 0x663D4652;
+              private static final int TASK = 0xFF79D58B;
+              private static final int GOAL = 0xFFC99B18;
+              private static final int CHALLENGE = 0xFFFF7373;
+
+              private static final long ENTER_MS = 620L;
+              private static final long EXIT_START_MS = 5300L;
+              private static final long LIFETIME_MS = 6050L;
+              private static final int LOGO_TEXTURE_SIZE = 512;
+              private static final ResourceLocation LOGO_OUTER = new ResourceLocation(
+                      ScpAdditionsMod.MODID, "textures/screens/menu/loading_1.png");
+              private static final ResourceLocation LOGO_INNER = new ResourceLocation(
+                      ScpAdditionsMod.MODID, "textures/screens/menu/loading_2.png");
+              private static final AtomicBoolean SUPPRESS_NEXT_VANILLA_TRANSITION =
+                      new AtomicBoolean(false);
+
+              private CustomAdvancementToastClient() {
+              }
+
+              public static Toast.Visibility render(GuiGraphics graphics,
+                      ToastComponent toastComponent, DisplayInfo display, long age) {
+                  float enter = smootherStep(age / (float) ENTER_MS);
+                  float exit = age <= EXIT_START_MS ? 0.0F : smootherStep(
+                          (age - EXIT_START_MS) / (float) (LIFETIME_MS - EXIT_START_MS));
+                  float alpha = Mth.clamp(enter * (1.0F - exit), 0.0F, 1.0F);
+                  float slide = (1.0F - enter) * 46.0F + exit * 22.0F;
+
+                  graphics.pose().pushPose();
+                  graphics.pose().translate(slide, 0.0F, 0.0F);
+                  drawLogoPair(graphics, age, alpha);
+                  drawCard(graphics, toastComponent.getMinecraft().font,
+                          display, alpha);
+                  graphics.pose().popPose();
+
+                  return age >= LIFETIME_MS
+                          ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
+              }
+
+              public static void armVanillaTransitionSoundSuppression() {
+                  SUPPRESS_NEXT_VANILLA_TRANSITION.set(true);
+              }
+
+              public static boolean consumeVanillaTransitionSoundSuppression() {
+                  return SUPPRESS_NEXT_VANILLA_TRANSITION.getAndSet(false);
+              }
+
+              private static void drawCard(GuiGraphics graphics, Font font,
+                      DisplayInfo display, float alpha) {
+                  int left = 8;
+                  int top = 8;
+                  int right = WIDTH - 5;
+                  int bottom = HEIGHT - 6;
+                  int panel = withAlpha(PANEL, alpha);
+                  int inner = withAlpha(PANEL_INNER, alpha);
+                  int accent = withAlpha(ACCENT, alpha);
+                  int accentBright = withAlpha(ACCENT_BRIGHT, alpha);
+                  int border = withAlpha(BORDER, alpha);
+
+                  graphics.fill(left, top, right, bottom, panel);
+                  graphics.fill(left + 2, top + 2, right - 2, bottom - 2, inner);
+                  graphics.fill(left, top, right, top + 2, accent);
+                  graphics.fill(left, top, left + 2, bottom, accent);
+                  graphics.fill(left + 2, bottom - 1, right, bottom, border);
+                  graphics.fill(right - 1, top + 2, right, bottom, border);
+                  graphics.fill(left + 2, top + 2, left + 8, top + 3, accentBright);
+
+                  int iconLeft = left + 8;
+                  int iconTop = top + 9;
+                  int iconSize = 40;
+                  graphics.fill(iconLeft, iconTop, iconLeft + iconSize,
+                          iconTop + iconSize, withAlpha(ICON_PANEL, alpha));
+                  graphics.fill(iconLeft, iconTop, iconLeft + iconSize,
+                          iconTop + 1, border);
+                  graphics.fill(iconLeft, iconTop, iconLeft + 1,
+                          iconTop + iconSize, border);
+                  graphics.fill(iconLeft + iconSize - 1, iconTop,
+                          iconLeft + iconSize, iconTop + iconSize, border);
+                  graphics.fill(iconLeft, iconTop + iconSize - 1,
+                          iconLeft + iconSize, iconTop + iconSize, border);
+
+                  renderIcon(graphics, display.getIcon(), iconLeft + 8,
+                          iconTop + 8, alpha);
+
+                  int textLeft = iconLeft + iconSize + 10;
+                  int textRight = right - 9;
+                  Component eyebrow = ScpFonts.roboto("ADVANCEMENT  //  UNLOCKED");
+                  graphics.drawString(font, eyebrow, textLeft, top + 8,
+                          withAlpha(MUTED, alpha), false);
+
+                  List<FormattedCharSequence> title = font.split(
+                          ScpFonts.roboto(display.getTitle().getString()),
+                          Math.max(45, textRight - textLeft));
+                  int titleY = top + 20;
+                  for (int index = 0; index < Math.min(2, title.size()); index++) {
+                      graphics.drawString(font, title.get(index), textLeft,
+                              titleY + index * (font.lineHeight + 1),
+                              withAlpha(TEXT, alpha), false);
+                  }
+
+                  drawRarity(graphics, font, display.getFrame(), textLeft,
+                          bottom - 11, textRight, alpha);
+              }
+
+              private static void renderIcon(GuiGraphics graphics, ItemStack stack,
+                      int x, int y, float alpha) {
+                  if (stack == null || stack.isEmpty()) return;
+                  graphics.pose().pushPose();
+                  graphics.pose().translate(x, y, 40.0F);
+                  graphics.pose().scale(1.5F, 1.5F, 1.0F);
+                  RenderSystem.enableBlend();
+                  RenderSystem.defaultBlendFunc();
+                  RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
+                  graphics.renderItem(stack, 0, 0);
+                  RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+                  RenderSystem.disableBlend();
+                  graphics.pose().popPose();
+              }
+
+              private static void drawRarity(GuiGraphics graphics, Font font,
+                      FrameType frame, int left, int y, int right, float alpha) {
+                  int filled;
+                  int color;
+                  String label;
+                  if (frame == FrameType.CHALLENGE) {
+                      filled = 5;
+                      color = CHALLENGE;
+                      label = "CHALLENGE";
+                  } else if (frame == FrameType.GOAL) {
+                      filled = 3;
+                      color = GOAL;
+                      label = "GOAL";
+                  } else {
+                      filled = 1;
+                      color = TASK;
+                      label = "TASK";
+                  }
+
+                  Component type = ScpFonts.roboto(label);
+                  int muted = withAlpha(MUTED, alpha * 0.86F);
+                  graphics.drawString(font, type, left, y - 1, muted, false);
+
+                  int barWidth = 9;
+                  int barHeight = 3;
+                  int gap = 2;
+                  int total = barWidth * 5 + gap * 4;
+                  int barLeft = right - total;
+                  for (int index = 0; index < 5; index++) {
+                      int x = barLeft + index * (barWidth + gap);
+                      graphics.fill(x, y + 2, x + barWidth, y + 2 + barHeight,
+                              index < filled ? withAlpha(color, alpha)
+                                      : withAlpha(TRACK, alpha * 0.72F));
+                  }
+              }
+
+              private static void drawLogoPair(GuiGraphics graphics, long age,
+                      float cardAlpha) {
+                  float arrival = smootherStep(age / (float) ENTER_MS);
+                  float cx = Mth.lerp(arrival, WIDTH + 94.0F, WIDTH + 28.0F);
+                  float cy = Mth.lerp(arrival, -78.0F, -20.0F);
+                  float size = Mth.lerp(arrival, 122.0F, 106.0F);
+                  float seconds = Math.max(0.0F, age / 1000.0F);
+                  float fastBurst = 780.0F * (1.0F - (float) Math.exp(-2.10F * seconds));
+                  float slowSpin = 42.0F * seconds;
+                  float outerAngle = fastBurst + slowSpin;
+                  float innerAngle = -(fastBurst + slowSpin) * 1.08F;
+                  float logoAlpha = cardAlpha * Mth.lerp(arrival, 0.32F, 0.19F);
+
+                  RenderSystem.enableBlend();
+                  RenderSystem.defaultBlendFunc();
+                  RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, logoAlpha);
+                  drawRotatedTexture(graphics, LOGO_OUTER, cx, cy,
+                          Math.round(size), outerAngle);
+                  drawRotatedTexture(graphics, LOGO_INNER, cx, cy,
+                          Math.round(size), innerAngle);
+                  RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+                  RenderSystem.disableBlend();
+              }
+
+              private static void drawRotatedTexture(GuiGraphics graphics,
+                      ResourceLocation texture, float centerX, float centerY,
+                      int size, float angleDegrees) {
+                  graphics.pose().pushPose();
+                  graphics.pose().translate(centerX, centerY, 0.0F);
+                  graphics.pose().mulPose(Axis.ZP.rotationDegrees(angleDegrees));
+                  int half = size / 2;
+                  graphics.blit(texture, -half, -half, size, size,
+                          0.0F, 0.0F, LOGO_TEXTURE_SIZE, LOGO_TEXTURE_SIZE,
+                          LOGO_TEXTURE_SIZE, LOGO_TEXTURE_SIZE);
+                  graphics.pose().popPose();
+              }
+
+              private static float smootherStep(float value) {
+                  float t = Mth.clamp(value, 0.0F, 1.0F);
+                  return t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F);
+              }
+
+              private static int withAlpha(int color, float alpha) {
+                  int a = Mth.clamp(Math.round(alpha * 255.0F), 0, 255);
+                  return (a << 24) | (color & 0x00FFFFFF);
+              }
+          }
+          EOF
+
+          cat > src/main/java/net/mcreator/scpadditions/mixin/client/AdvancementToastMixin.java <<'EOF'
+          package net.mcreator.scpadditions.mixin.client;
+
+          import net.minecraft.advancements.Advancement;
+          import net.minecraft.advancements.DisplayInfo;
+          import net.minecraft.client.gui.GuiGraphics;
+          import net.minecraft.client.gui.components.toasts.AdvancementToast;
+          import net.minecraft.client.gui.components.toasts.Toast;
+          import net.minecraft.client.gui.components.toasts.ToastComponent;
+          import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+          import net.mcreator.scpadditions.client.ClientModulePreferences;
+          import net.mcreator.scpadditions.client.CustomAdvancementToastClient;
+          import net.mcreator.scpadditions.sound.AchievementSounds;
+          import org.spongepowered.asm.mixin.Final;
+          import org.spongepowered.asm.mixin.Mixin;
+          import org.spongepowered.asm.mixin.Shadow;
+          import org.spongepowered.asm.mixin.Unique;
+          import org.spongepowered.asm.mixin.injection.At;
+          import org.spongepowered.asm.mixin.injection.Inject;
+          import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+          @Mixin(AdvancementToast.class)
+          public abstract class AdvancementToastMixin {
+              @Shadow @Final private Advancement advancement;
+
+              @Unique private boolean scpAdditions$customSoundPlayed;
+              @Unique private boolean scpAdditions$showSoundSuppressed;
+              @Unique private boolean scpAdditions$hideSoundSuppressed;
+
+              @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+              private void scpAdditions$renderCustomAdvancementToast(
+                      GuiGraphics graphics, ToastComponent toastComponent,
+                      long age, CallbackInfoReturnable<Toast.Visibility> cir) {
+                  if (!ClientModulePreferences.customAdvancementToastsEnabled()) return;
+                  DisplayInfo display = advancement.getDisplay();
+                  if (display == null) return;
+
+                  if (!scpAdditions$customSoundPlayed) {
+                      scpAdditions$customSoundPlayed = true;
+                      toastComponent.getMinecraft().getSoundManager().play(
+                              SimpleSoundInstance.forUI(
+                                      AchievementSounds.ACHIEVEMENT.get(), 1.0F));
+                  }
+
+                  Toast.Visibility visibility = CustomAdvancementToastClient.render(
+                          graphics, toastComponent, display, age);
+                  if (!scpAdditions$showSoundSuppressed) {
+                      scpAdditions$showSoundSuppressed = true;
+                      CustomAdvancementToastClient
+                              .armVanillaTransitionSoundSuppression();
+                  } else if (visibility == Toast.Visibility.HIDE
+                          && !scpAdditions$hideSoundSuppressed) {
+                      scpAdditions$hideSoundSuppressed = true;
+                      CustomAdvancementToastClient
+                              .armVanillaTransitionSoundSuppression();
+                  }
+                  cir.setReturnValue(visibility);
+              }
+
+              public int width() {
+                  return ClientModulePreferences.customAdvancementToastsEnabled()
+                          ? CustomAdvancementToastClient.WIDTH : 160;
+              }
+
+              public int height() {
+                  return ClientModulePreferences.customAdvancementToastsEnabled()
+                          ? CustomAdvancementToastClient.HEIGHT : 32;
+              }
+          }
+          EOF
+
+          cat > src/main/java/net/mcreator/scpadditions/mixin/client/ToastVisibilityMixin.java <<'EOF'
+          package net.mcreator.scpadditions.mixin.client;
+
+          import net.minecraft.client.gui.components.toasts.Toast;
+          import net.minecraft.client.sounds.SoundManager;
+          import net.mcreator.scpadditions.client.CustomAdvancementToastClient;
+          import org.spongepowered.asm.mixin.Mixin;
+          import org.spongepowered.asm.mixin.injection.At;
+          import org.spongepowered.asm.mixin.injection.Inject;
+          import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+          @Mixin(Toast.Visibility.class)
+          public abstract class ToastVisibilityMixin {
+              @Inject(method = "playSound", at = @At("HEAD"), cancellable = true)
+              private void scpAdditions$suppressCustomAdvancementTransitionSound(
+                      SoundManager soundManager, CallbackInfo ci) {
+                  if (CustomAdvancementToastClient
+                          .consumeVanillaTransitionSoundSuppression()) {
+                      ci.cancel();
+                  }
+              }
+          }
+          EOF
+
+          cat > src/main/java/net/mcreator/scpadditions/sound/AchievementSounds.java <<'EOF'
+          package net.mcreator.scpadditions.sound;
+
+          import net.minecraft.resources.ResourceLocation;
+          import net.minecraft.sounds.SoundEvent;
+          import net.minecraftforge.registries.DeferredRegister;
+          import net.minecraftforge.registries.ForgeRegistries;
+          import net.minecraftforge.registries.RegistryObject;
+          import net.mcreator.scpadditions.ScpAdditionsMod;
+
+          public final class AchievementSounds {
+              public static final DeferredRegister<SoundEvent> REGISTRY =
+                      DeferredRegister.create(ForgeRegistries.SOUND_EVENTS,
+                              ScpAdditionsMod.MODID);
+              public static final RegistryObject<SoundEvent> ACHIEVEMENT =
+                      REGISTRY.register("achievement", () -> {
+                          ResourceLocation id = new ResourceLocation(
+                                  ScpAdditionsMod.MODID, "achievement");
+                          return SoundEvent.createVariableRangeEvent(id);
+                      });
+
+              private AchievementSounds() {
+              }
+          }
+          EOF
+
+      - name: Patch preferences and resources
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+
+          def one(path, old, new):
+              target = Path(path)
+              text = target.read_text(encoding='utf-8')
+              if old not in text:
+                  raise RuntimeError(f'Anchor missing in {path}: {old[:80]}')
+              target.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          p = 'src/main/java/net/mcreator/scpadditions/client/ClientModulePreferences.java'
+          one(p, '            "ui.custom_loading_screen",\n',
+              '            "ui.custom_loading_screen",\n            "ui.custom_advancement_toasts",\n')
+          one(p, '        next.ui.customLoadingScreen = bool(ui, "custom_loading_screen",\n                next.ui.customLoadingScreen);\n',
+              '        next.ui.customLoadingScreen = bool(ui, "custom_loading_screen",\n                next.ui.customLoadingScreen);\n        next.ui.customAdvancementToasts = bool(ui, "custom_advancement_toasts",\n                next.ui.customAdvancementToasts);\n')
+          one(p, '        ui.addProperty("custom_loading_screen", value.ui.customLoadingScreen);\n',
+              '        ui.addProperty("custom_loading_screen", value.ui.customLoadingScreen);\n        ui.addProperty("custom_advancement_toasts",\n                value.ui.customAdvancementToasts);\n')
+          one(p, '    public static boolean customLoadingScreenEnabled() {\n        return current.ui.customLoadingScreen;\n    }\n',
+              '    public static boolean customLoadingScreenEnabled() {\n        return current.ui.customLoadingScreen;\n    }\n\n    public static boolean customAdvancementToastsEnabled() {\n        return current.ui.customAdvancementToasts;\n    }\n')
+          one(p, '        private boolean customLoadingScreen = true;\n',
+              '        private boolean customLoadingScreen = true;\n        private boolean customAdvancementToasts = true;\n')
+
+          p = 'src/main/java/net/mcreator/scpadditions/config/ui/CustomLoadingScreenModulesUi.java'
+          one(p, '    private static final String LOADING_LABEL = "Custom Loading Screen";\n',
+              '    private static final String LOADING_LABEL = "Custom Loading Screen";\n    private static final String ADVANCEMENT_LABEL = "Custom Advancement Toasts";\n')
+          one(p, '            boolean needsLoading = !containsLabel(rows, LOADING_LABEL);\n            if (!needsMainMenu && !needsPauseMenu && !needsLoading) return;\n',
+              '            boolean needsLoading = !containsLabel(rows, LOADING_LABEL);\n            boolean needsAdvancement = !containsLabel(rows, ADVANCEMENT_LABEL);\n            if (!needsMainMenu && !needsPauseMenu && !needsLoading\n                    && !needsAdvancement) return;\n')
+          one(p, '            List<Object> expanded = new ArrayList<>(rows.size() + 3);\n',
+              '            List<Object> expanded = new ArrayList<>(rows.size() + 4);\n')
+          one(p, '            if (needsLoading) {\n                expanded.add(insertion, constructor.newInstance(\n                        "ui", "custom_loading_screen", LOADING_LABEL,\n                        "Replaces Minecraft\'s spawn-region loading display with the SCP Additions presentation.",\n                        true));\n            }\n',
+              '            if (needsLoading) {\n                expanded.add(insertion++, constructor.newInstance(\n                        "ui", "custom_loading_screen", LOADING_LABEL,\n                        "Replaces Minecraft\'s spawn-region loading display with the SCP Additions presentation.",\n                        true));\n            }\n            if (needsAdvancement) {\n                expanded.add(insertion, constructor.newInstance(\n                        "ui", "custom_advancement_toasts", ADVANCEMENT_LABEL,\n                        "Replaces advancement popups and their vanilla sounds with the animated SCP Additions presentation.",\n                        true));\n            }\n')
+
+          p = 'src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java'
+          one(p, 'import net.mcreator.scpadditions.sound.GameplaySounds;\n',
+              'import net.mcreator.scpadditions.sound.GameplaySounds;\nimport net.mcreator.scpadditions.sound.AchievementSounds;\n')
+          one(p, '        GameplaySounds.REGISTRY.register(bus);\n',
+              '        GameplaySounds.REGISTRY.register(bus);\n        AchievementSounds.REGISTRY.register(bus);\n')
+
+          p = Path('src/main/resources/scp_additions.mixins.json')
+          mixins = json.loads(p.read_text(encoding='utf-8'))
+          for entry in ('client.AdvancementToastMixin', 'client.ToastVisibilityMixin'):
+              if entry not in mixins['client']:
+                  mixins['client'].append(entry)
+          p.write_text(json.dumps(mixins, indent=2) + '\n', encoding='utf-8')
+
+          p = Path('src/main/resources/assets/scp_additions/sounds.json')
+          sounds = json.loads(p.read_text(encoding='utf-8'))
+          if 'achievement' not in sounds:
+              sounds = {'achievement': {'sounds': [{
+                  'name': 'scp_additions:achievement',
+                  'stream': False,
+                  'volume': 1.0
+              }]}, **sounds}
+          p.write_text(json.dumps(sounds, indent=2) + '\n', encoding='utf-8')
+
+          p = Path('CHANGELOG.md')
+          changelog = p.read_text(encoding='utf-8')
+          bullet = '- Added a default-enabled **Custom Advancement Toasts** client preference that replaces vanilla advancement popups with animated SCP Additions cards, advancement icons, frame-based rarity indicators, the paired loading-logo animation, and the dedicated `achievement.ogg` cue while preserving vanilla toasts when disabled;\n'
+          if bullet not in changelog:
+              anchor = '- Added a default-enabled client-side **Disable Text Drop Shadows** preference'
+              if anchor not in changelog:
+                  raise RuntimeError('CHANGELOG presentation anchor missing')
+              changelog = changelog.replace(anchor, bullet + anchor, 1)
+          p.write_text(changelog, encoding='utf-8')
+          PY
+
+      - name: Compile
+        run: ./gradlew compileJava processResources --no-daemon
+
+      - name: Commit source changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git restore --source=HEAD --staged --worktree .github/workflows/_apply-custom-advancement-toast-v4.yml
+          git add src/main/java/net/mcreator/scpadditions/client/ClientModulePreferences.java
+          git add src/main/java/net/mcreator/scpadditions/client/CustomAdvancementToastClient.java
+          git add src/main/java/net/mcreator/scpadditions/config/ui/CustomLoadingScreenModulesUi.java
+          git add src/main/java/net/mcreator/scpadditions/mixin/client/AdvancementToastMixin.java
+          git add src/main/java/net/mcreator/scpadditions/mixin/client/ToastVisibilityMixin.java
+          git add src/main/java/net/mcreator/scpadditions/sound/AchievementSounds.java
+          git add src/main/java/net/mcreator/scpadditions/ScpAdditionsMod.java
+          git add src/main/resources/scp_additions.mixins.json
+          git add src/main/resources/assets/scp_additions/sounds.json
+          git add CHANGELOG.md
+          git commit -m "Add custom advancement toast presentation"
+          git push origin HEAD:master

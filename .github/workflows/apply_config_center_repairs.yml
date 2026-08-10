@@ -24,55 +24,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Apply repairs
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('tools/apply_config_center_repairs.py')
-          s = p.read_text(encoding='utf-8')
-          old = 's = replace_exact(s, old_post, new_post, "Crosshair init-post ownership", 1)\ns = replace_exact(s, old_post, new_post, "Crosshair render-post ownership", 1)'
-          new = 's = replace_exact(s, old_post, new_post, "Crosshair screen ownership", 2)'
-          if old not in s:
-              raise SystemExit('repair-script crosshair assertion patch not found')
-          p.write_text(s.replace(old, new), encoding='utf-8')
-          PY
+          python3 tools/prepare_config_center_repair.py
           python3 tools/apply_config_center_repairs.py
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterModernWidgetEvents.java')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('import net.minecraft.client.gui.components.EditBox;\n', 'import net.minecraft.client.gui.components.EditBox;\nimport net.minecraft.client.gui.components.AbstractWidget;\n')
-          s = s.replace('private static final Map<AbstractButton, Integer> SUPPRESSED_X', 'private static final Map<AbstractWidget, Integer> SUPPRESSED_X')
-          s = s.replace('''            if (listener instanceof AbstractButton button
-                    && shouldSuppressNative(button)) {
-                suppressNative(button);
-            }
-            prepare(listener);''', '''            if (listener instanceof AbstractSliderButton slider) {
-                suppressNative(slider);
-            } else if (listener instanceof AbstractButton button
-                    && shouldSuppressNativeButton(button)) {
-                suppressNative(button);
-            }
-            prepare(listener);''')
-          s = s.replace('''    private static boolean shouldSuppressNative(AbstractButton button) {
-        return button instanceof AbstractSliderButton
-                || isSelfRenderedButton(button)
-                || !(button instanceof Button);
-    }
-
-    private static void suppressNative(AbstractButton button) {''', '''    private static boolean shouldSuppressNativeButton(AbstractButton button) {
-        return isSelfRenderedButton(button) || !(button instanceof Button);
-    }
-
-    private static void suppressNative(AbstractWidget button) {''')
-          s = s.replace('''            if (!(listener instanceof AbstractButton button)) continue;
-            Integer x = SUPPRESSED_X.get(button);''', '''            if (!(listener instanceof AbstractWidget button)) continue;
-            Integer x = SUPPRESSED_X.get(button);''')
-          p.write_text(s, encoding='utf-8')
-          PY
+          python3 tools/fix_generated_widget_suppression.py
       - name: Build
         run: ./gradlew clean build --stacktrace
       - name: Commit repairs
         run: |
-          rm -f .github/workflows/apply_config_center_repairs.yml tools/apply_config_center_repairs.py
+          rm -f .github/workflows/apply_config_center_repairs.yml
+          rm -f tools/apply_config_center_repairs.py
+          rm -f tools/prepare_config_center_repair.py
+          rm -f tools/fix_generated_widget_suppression.py
           git config user.name "Deyvid Campos"
           git config user.email "deyvid04campos@gmail.com"
           git add -A

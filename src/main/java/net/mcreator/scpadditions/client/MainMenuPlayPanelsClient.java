@@ -912,12 +912,12 @@ public final class MainMenuPlayPanelsClient {
 
     private static void playHover() {
         Minecraft.getInstance().getSoundManager().play(
-                SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.25F, 0.28F));
+                SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.25F, 0.28F));
     }
 
     private static void playSelect() {
         Minecraft.getInstance().getSoundManager().play(
-                SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F, 0.55F));
+                SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.0F, 0.55F));
     }
 
     private enum Mode {

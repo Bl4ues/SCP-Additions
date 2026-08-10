@@ -32,10 +32,10 @@ import java.util.List;
  * Decorative Archivist's Chair.
  *
  * GeckoLib/Blockbench geometry is authored around a horizontal model origin,
- * while Block.box uses the block's north-west corner as zero. The collision is
- * therefore uses independent X/Z offsets before it is rotated with the
- * block state. Four practical volumes follow the base, pedestal, seat and
- * backrest without turning every wheel and spoke into its own collision box.
+ * while Block.box uses the block's north-west corner as zero. The collision
+ * therefore uses independent X/Z offsets before it is rotated with the block
+ * state. Four practical volumes follow the base, pedestal, seat and backrest
+ * without turning every wheel and spoke into its own collision box.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
     private static final double MODEL_ORIGIN_X = 10.0D;

@@ -43,16 +43,16 @@ public final class Scp079ModulesScreenExtension {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting()
             .disableHtmlEscaping().create();
 
-    private static final int PANEL = 0xEE111317;
-    private static final int HEADER = 0xEE24282E;
-    private static final int NAVY = 0xFF081022;
-    private static final int NAVY_HOVER = 0xFF131E36;
-    private static final int NAVY_DISABLED = 0xFF1B1E26;
-    private static final int BORDER = 0xFF46536C;
-    private static final int BORDER_HOVER = 0xFF73809A;
-    private static final int ACCENT = 0xFFC59A2A;
+    private static final int PANEL = 0xF00B0E12;
+    private static final int HEADER = 0xF012161C;
+    private static final int NAVY = 0xFF0D1116;
+    private static final int NAVY_HOVER = 0xFF1A2028;
+    private static final int NAVY_DISABLED = 0xFF171A20;
+    private static final int BORDER = 0xFF3A424D;
+    private static final int BORDER_HOVER = 0xFFC99B18;
+    private static final int ACCENT = 0xFFC99B18;
     private static final int ACCENT_SOFT = 0xFF8D711F;
-    private static final int PALE_GOLD = 0xFFE5D49A;
+    private static final int PALE_GOLD = 0xFFE3C865;
     private static final int WHITE = 0xFFF7F8FC;
     private static final int MUTED = 0xFF9CA3AF;
     private static final int MODULE_ON = 0xFF79D58B;
@@ -416,7 +416,7 @@ public final class Scp079ModulesScreenExtension {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                            float partialTick) {
-            renderBackground(graphics);
+            renderFacilityBackground(graphics, width, height);
             int panelWidth = Math.min(560, width - 20);
             int panelHeight = panelHeight();
             int panelX = Math.max(8, (width - panelWidth) / 2);
@@ -426,7 +426,15 @@ public final class Scp079ModulesScreenExtension {
                     panelY + panelHeight, PANEL);
             graphics.fill(panelX, panelY, panelX + panelWidth,
                     panelY + 26, HEADER);
-            graphics.drawString(font, ScpFonts.roboto(title), panelX + 10,
+            graphics.fill(panelX, panelY, panelX + panelWidth,
+                    panelY + 2, ACCENT);
+            graphics.fill(panelX, panelY, panelX + 2,
+                    panelY + panelHeight, ACCENT);
+            graphics.fill(panelX + panelWidth - 1, panelY + 2,
+                    panelX + panelWidth, panelY + panelHeight, BORDER);
+            graphics.fill(panelX + 2, panelY + panelHeight - 1,
+                    panelX + panelWidth, panelY + panelHeight, BORDER);
+            graphics.drawString(font, ScpFonts.montserrat(title.getString()), panelX + 12,
                     panelY + 9, WHITE, false);
 
             if (sectionTitle != null) {
@@ -591,7 +599,7 @@ public final class Scp079ModulesScreenExtension {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                            float partialTick) {
-            renderBackground(graphics);
+            renderFacilityBackground(graphics, width, height);
             int panelWidth = Math.min(650, width - 20);
             int panelHeight = Math.min(360, height - 16);
             int panelX = Math.max(8, (width - panelWidth) / 2);
@@ -602,7 +610,15 @@ public final class Scp079ModulesScreenExtension {
                     panelY + panelHeight, PANEL);
             graphics.fill(panelX, panelY, panelX + panelWidth,
                     panelY + 26, HEADER);
-            graphics.drawString(font, ScpFonts.roboto(title), panelX + 10,
+            graphics.fill(panelX, panelY, panelX + panelWidth,
+                    panelY + 2, ACCENT);
+            graphics.fill(panelX, panelY, panelX + 2,
+                    panelY + panelHeight, ACCENT);
+            graphics.fill(panelX + panelWidth - 1, panelY + 2,
+                    panelX + panelWidth, panelY + panelHeight, BORDER);
+            graphics.fill(panelX + 2, panelY + panelHeight - 1,
+                    panelX + panelWidth, panelY + panelHeight, BORDER);
+            graphics.drawString(font, ScpFonts.montserrat(title.getString()), panelX + 12,
                     panelY + 9, WHITE, false);
 
             graphics.drawString(font, ScpFonts.roboto(
@@ -718,6 +734,22 @@ public final class Scp079ModulesScreenExtension {
         }
     }
 
+    private static void renderFacilityBackground(GuiGraphics graphics,
+            int width, int height) {
+        int background = Minecraft.getInstance().level == null
+                ? 0xFF080B10 : 0xE6080B10;
+        graphics.fill(0, 0, width, height, background);
+        int band = Math.max(52, width / 10);
+        for (int x = 0, index = 0; x < width; x += band, index++) {
+            if ((index & 1) == 0) {
+                graphics.fill(x, 0, Math.min(width, x + band), height,
+                        0x08000000);
+            }
+        }
+        graphics.fill(0, 0, width, 2, 0xA8C99B18);
+        graphics.fill(0, height - 1, width, height, 0x80343B46);
+    }
+
     private static void drawRegisteredButtons(GuiGraphics graphics, Font font,
             List<Button> buttons, Map<Button, Component> labels,
             int mouseX, int mouseY) {
@@ -752,8 +784,7 @@ public final class Scp079ModulesScreenExtension {
         int background = !button.active ? NAVY_DISABLED
                 : hovered ? NAVY_HOVER : NAVY;
         int border = hovered ? BORDER_HOVER : BORDER;
-        int stripe = primary ? ACCENT
-                : hovered ? ACCENT_SOFT : BORDER;
+        int stripe = primary || hovered ? ACCENT : ACCENT_SOFT;
         int textColor = !button.active ? MUTED
                 : primary ? PALE_GOLD : WHITE;
 

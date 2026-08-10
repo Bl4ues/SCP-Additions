@@ -34,7 +34,9 @@ public final class ConfigurationHomePolish {
                 "net.mcreator.scpadditions.config.ui.ConfigCenterClient$HomeScreen";
         private static final ResourceLocation CONFIG_LOGO = new ResourceLocation(
                 ScpAdditionsMod.MODID, "textures/screens/logo.png");
-        private static final int HEADER = 0xFF24282E;
+        private static final int HEADER = 0xF012161C;
+        private static final int ACCENT = 0xFFC99B18;
+        private static final int BORDER = 0x80343B46;
         private static final int WHITE = 0xFFF7F8FC;
         private static final int MUTED = 0xFF9CA3AF;
 
@@ -111,6 +113,12 @@ public final class ConfigurationHomePolish {
             graphics.pose().translate(0.0F, 0.0F, 1200.0F);
             graphics.fill(panelX, panelY,
                     panelX + panelWidth, panelY + 44, HEADER);
+            graphics.fill(panelX, panelY,
+                    panelX + panelWidth, panelY + 2, ACCENT);
+            graphics.fill(panelX, panelY, panelX + 2,
+                    panelY + panelHeight, ACCENT);
+            graphics.fill(panelX + 2, panelY + 43,
+                    panelX + panelWidth, panelY + 44, BORDER);
 
             int titleX = panelX + 14;
             if (Minecraft.getInstance().getResourceManager()

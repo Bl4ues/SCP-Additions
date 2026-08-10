@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - master
-      - integration/scp-additions-3.0
       - 'feature/**'
       - 'fix/**'
   pull_request:
     branches:
       - master
-      - integration/scp-additions-3.0
 
 permissions:
   contents: read

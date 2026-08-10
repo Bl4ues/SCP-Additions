@@ -17,5 +17,31 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Smoke test
-        run: echo "repair workflow ready"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Apply repairs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tools/apply_config_center_repairs.py')
+          s = p.read_text(encoding='utf-8')
+          old = 's = replace_exact(s, old_post, new_post, "Crosshair init-post ownership", 1)\ns = replace_exact(s, old_post, new_post, "Crosshair render-post ownership", 1)'
+          new = 's = replace_exact(s, old_post, new_post, "Crosshair screen ownership", 2)'
+          if old not in s:
+              raise SystemExit('repair-script crosshair assertion patch not found')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+          PY
+          python3 tools/apply_config_center_repairs.py
+      - name: Build
+        run: ./gradlew clean build --stacktrace
+      - name: Commit repairs
+        run: |
+          rm -f .github/workflows/apply_config_center_repairs.yml tools/apply_config_center_repairs.py
+          git config user.name "Deyvid Campos"
+          git config user.email "deyvid04campos@gmail.com"
+          git add -A
+          git commit -m "Fix Configuration Center layout regressions"
+          git push origin HEAD:master

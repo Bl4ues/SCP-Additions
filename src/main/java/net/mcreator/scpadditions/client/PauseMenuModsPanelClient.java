@@ -328,20 +328,20 @@ public final class PauseMenuModsPanelClient {
         String[] labels = {"Off", "A-Z", "Z-A", "Hide Internal"};
         for (int index = 0; index < labels.length; index++) {
             int x = layout.sortX(index);
+            int controlWidth = layout.sortButtonWidth(index);
             boolean hovered = layout.sortContains(index, mouseX, mouseY);
             boolean selected = index == 3
                     ? state.hideInternal : state.sortMode.ordinal() == index;
-            graphics.fill(x, layout.sortY, x + layout.sortWidth,
+            graphics.fill(x, layout.sortY, x + controlWidth,
                     layout.sortY + SORT_HEIGHT,
                     applyAlpha(hovered || selected ? ROW_HOVER : ROW, alpha));
-            graphics.fill(x, layout.sortY, x + layout.sortWidth,
+            graphics.fill(x, layout.sortY, x + controlWidth,
                     layout.sortY + 2,
                     applyAlpha(selected ? ACCENT : BORDER, alpha));
             Component text = ScpFonts.roboto(labels[index]);
             Font font = Minecraft.getInstance().font;
-            graphics.drawCenteredString(font, text,
-                    x + layout.sortWidth / 2,
-                    layout.sortY + (SORT_HEIGHT - font.lineHeight) / 2,
+            drawFittedCenteredText(graphics, font, text, x, layout.sortY,
+                    controlWidth, SORT_HEIGHT,
                     applyAlpha(selected ? ACCENT_BRIGHT : TEXT, alpha));
         }
     }
@@ -620,24 +620,31 @@ public final class PauseMenuModsPanelClient {
 
     private static Layout layout(Screen screen, int baseX) {
         boolean titleMenu = screen instanceof CustomMainMenuScreen;
-        int availableWidth = Math.max(330, screen.width - baseX - 28);
+        int rightMargin = titleMenu ? 12 : 28;
+        int availableWidth = Math.max(330, screen.width - baseX - rightMargin);
         int panelWidth = titleMenu
                 ? Math.min(availableWidth, Mth.clamp(
-                        Math.round(screen.width * 0.46F), 520, 720))
+                        Math.round(screen.width * 0.60F), 560, 900))
                 : Math.min(820, availableWidth);
-        int panelHeight = titleMenu
-                ? Mth.clamp(Math.round(screen.height * 0.62F), 340, 540)
-                : Mth.clamp(screen.height - 64, 300, 620);
-        int panelY = titleMenu
-                ? Mth.clamp(Math.round(screen.height * 0.18F), 48,
-                        Math.max(48, screen.height - panelHeight - 24))
-                : Math.max(24, (screen.height - panelHeight) / 2);
+        int panelHeight;
+        int panelY;
+        if (titleMenu) {
+            int maxHeight = Math.max(260, screen.height - 30);
+            panelHeight = Math.min(maxHeight, Mth.clamp(
+                    Math.round(screen.height * 0.76F), 370, 620));
+            panelY = Math.max(15, (screen.height - panelHeight) / 2);
+        } else {
+            panelHeight = Mth.clamp(screen.height - 64, 300, 620);
+            panelY = Math.max(24, (screen.height - panelHeight) / 2);
+        }
         int panelX = baseX;
         int panelRight = Math.min(screen.width - 12, panelX + panelWidth);
         panelWidth = panelRight - panelX;
 
         int listX = panelX + 14;
-        int listWidth = Mth.clamp(Math.round(panelWidth * 0.36F), 190, 280);
+        int listWidth = titleMenu
+                ? Mth.clamp(Math.round(panelWidth * 0.43F), 220, 340)
+                : Mth.clamp(Math.round(panelWidth * 0.36F), 190, 280);
         int listRight = Math.min(panelRight - 210, listX + listWidth);
         listWidth = Math.max(150, listRight - listX);
         listRight = listX + listWidth;
@@ -645,7 +652,9 @@ public final class PauseMenuModsPanelClient {
         int sortY = panelY + 38;
         int sortGap = 4;
         int sortWidth = Math.max(38,
-                (listWidth - sortGap * (CONTROL_COUNT - 1)) / CONTROL_COUNT);
+                Math.round((listWidth - sortGap * (CONTROL_COUNT - 1)) * 0.20F));
+        int sortWideWidth = Math.max(46, listWidth
+                - sortWidth * 3 - sortGap * (CONTROL_COUNT - 1));
         int listY = sortY + SORT_HEIGHT + 10;
         int folderY = panelY + panelHeight - FOOTER_HEIGHT - 12;
         int listBottom = folderY - 10;
@@ -659,7 +668,7 @@ public final class PauseMenuModsPanelClient {
         int detailBottom = panelY + panelHeight - 12;
         return new Layout(panelX, panelY, panelRight,
                 panelY + panelHeight, listX, listRight, listWidth,
-                sortY, sortWidth, sortGap, listY, listBottom,
+                sortY, sortWidth, sortWideWidth, sortGap, listY, listBottom,
                 folderY, visibleRows, detailX, detailRight,
                 detailY, detailBottom);
     }
@@ -747,6 +756,19 @@ public final class PauseMenuModsPanelClient {
                         ScpAdditionsModSounds.SELECT.get(), 1.0F, 0.35F));
     }
 
+    private static void drawFittedCenteredText(GuiGraphics graphics,
+            Font font, Component text, int x, int y, int width, int height,
+            int color) {
+        int rawWidth = Math.max(1, font.width(text));
+        float scale = Math.min(1.0F, Math.max(0.72F,
+                (width - 8.0F) / rawWidth));
+        float renderedWidth = rawWidth * scale;
+        float renderedHeight = font.lineHeight * scale;
+        drawScaledText(graphics, font, text,
+                x + (width - renderedWidth) * 0.5F,
+                y + (height - renderedHeight) * 0.5F, scale, color);
+    }
+
     private static void drawScaledText(GuiGraphics graphics, Font font,
             Component text, float x, float y, float scale, int color) {
         graphics.pose().pushPose();
@@ -811,7 +833,7 @@ public final class PauseMenuModsPanelClient {
 
     private record Layout(int panelX, int panelY, int panelRight,
             int panelBottom, int listX, int listRight, int listWidth,
-            int sortY, int sortWidth, int sortGap, int listY,
+            int sortY, int sortWidth, int sortWideWidth, int sortGap, int listY,
             int listBottom, int folderY, int visibleRows,
             int detailX, int detailRight, int detailY, int detailBottom) {
         private int detailWidth() {
@@ -823,7 +845,11 @@ public final class PauseMenuModsPanelClient {
         }
 
         private int sortX(int index) {
-            return listX + index * (sortWidth + sortGap);
+            return listX + Math.min(index, 3) * (sortWidth + sortGap);
+        }
+
+        private int sortButtonWidth(int index) {
+            return index == 3 ? sortWideWidth : sortWidth;
         }
 
         private boolean contains(double x, double y) {
@@ -833,7 +859,7 @@ public final class PauseMenuModsPanelClient {
 
         private boolean sortContains(int index, double x, double y) {
             int left = sortX(index);
-            return x >= left && x < left + sortWidth
+            return x >= left && x < left + sortButtonWidth(index)
                     && y >= sortY && y < sortY + SORT_HEIGHT;
         }
 
@@ -870,7 +896,7 @@ public final class PauseMenuModsPanelClient {
             return new Layout(panelX + delta, panelY,
                     panelRight + delta, panelBottom,
                     listX + delta, listRight + delta, listWidth,
-                    sortY, sortWidth, sortGap, listY, listBottom,
+                    sortY, sortWidth, sortWideWidth, sortGap, listY, listBottom,
                     folderY, visibleRows, detailX + delta,
                     detailRight + delta, detailY, detailBottom);
         }

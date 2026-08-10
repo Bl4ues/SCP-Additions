@@ -11,7 +11,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.network.protocol.game.ServerboundChangeDifficultyPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -34,6 +37,7 @@ import java.util.WeakHashMap;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class PauseMenuSettingsPanelClient {
     private static final int TEXT = 0xFFF5F6F7;
+    private static final int MUTED = 0xFF9FA6AD;
     private static final int ACCENT = 0xFFC99B18;
     private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int BUTTON_BASE = 0x780B0E12;
@@ -61,7 +65,10 @@ public final class PauseMenuSettingsPanelClient {
 
     public static void close(CustomPauseMenuScreen screen) {
         State state = STATES.get(screen);
-        if (state != null) state.open = false;
+        if (state != null) {
+            state.open = false;
+            state.difficultyOpen = false;
+        }
     }
 
     public static boolean shouldReplaceOptionsReturn(Screen incoming) {
@@ -116,15 +123,22 @@ public final class PauseMenuSettingsPanelClient {
         int maxOffset = Math.max(0, state.entries.size() - layout.visibleRows);
         state.scrollOffset = Mth.clamp(state.scrollOffset, 0, maxOffset);
 
+        int difficultyRowY = Integer.MIN_VALUE;
         for (int row = 0; row < layout.visibleRows; row++) {
             int index = state.scrollOffset + row;
             if (index >= state.entries.size()) break;
             int y = layout.listY + row * (layout.rowHeight + layout.gap);
             boolean rowHover = layout.rowContains(mouseX, mouseY, x, y);
             if (rowHover) hovered = index;
-            drawRow(graphics, state.entries.get(index),
-                    x, y, layout.width, layout.rowHeight,
+            Entry entry = state.entries.get(index);
+            drawRow(graphics, entry, x, y, layout.width, layout.rowHeight,
                     alpha, rowHover);
+            if (entry.kind == EntryKind.DIFFICULTY) difficultyRowY = y;
+        }
+
+        if (state.difficultyOpen && difficultyRowY != Integer.MIN_VALUE) {
+            drawDifficultyFlyout(graphics, screen, layout, x, difficultyRowY,
+                    alpha, mouseX, mouseY);
         }
 
         if (maxOffset > 0) {
@@ -151,6 +165,23 @@ public final class PauseMenuSettingsPanelClient {
         Layout layout = currentLayout(screen, state);
         if (layout == null) return;
 
+        int difficultyY = difficultyRowY(state, layout);
+        if (state.difficultyOpen && difficultyY != Integer.MIN_VALUE) {
+            DifficultyFlyout flyout = difficultyFlyout(screen, layout,
+                    layout.x, difficultyY);
+            int option = flyout.optionAt(event.getMouseX(), event.getMouseY());
+            if (option >= 0 && option < DifficultyChoice.values().length) {
+                setDifficulty(DifficultyChoice.values()[option].difficulty);
+                state.difficultyOpen = false;
+                playSelect();
+                event.setCanceled(true);
+                return;
+            }
+            if (!flyout.contains(event.getMouseX(), event.getMouseY())) {
+                state.difficultyOpen = false;
+            }
+        }
+
         if (layout.fovContains(event.getMouseX(), event.getMouseY(), layout.x)) {
             updateFov(layout, layout.x, event.getMouseX());
             state.draggingFov = true;
@@ -164,6 +195,13 @@ public final class PauseMenuSettingsPanelClient {
         int index = state.scrollOffset + row;
         if (index < 0 || index >= state.entries.size()) return;
         Entry entry = state.entries.get(index);
+        if (entry.kind == EntryKind.DIFFICULTY) {
+            state.difficultyOpen = !state.difficultyOpen;
+            playSelect();
+            event.setCanceled(true);
+            return;
+        }
+        state.difficultyOpen = false;
         if (entry.source == null || !entry.source.active) return;
 
         playSelect();
@@ -198,6 +236,15 @@ public final class PauseMenuSettingsPanelClient {
         State state = STATES.get(screen);
         if (state == null || !state.open || state.progress < 0.78F) return;
         Layout layout = currentLayout(screen, state);
+        int difficultyY = layout == null ? Integer.MIN_VALUE
+                : difficultyRowY(state, layout);
+        if (layout != null && state.difficultyOpen
+                && difficultyY != Integer.MIN_VALUE
+                && difficultyFlyout(screen, layout, layout.x, difficultyY)
+                .contains(event.getMouseX(), event.getMouseY())) {
+            event.setCanceled(true);
+            return;
+        }
         if (layout == null
                 || !layout.panelContains(event.getMouseX(),
                 event.getMouseY(), layout.x)) return;
@@ -219,13 +266,24 @@ public final class PauseMenuSettingsPanelClient {
             if (probe == null) return;
             List<Entry> entries = new ArrayList<>();
             int sequence = 0;
+            boolean difficultyAdded = false;
             for (GuiEventListener listener : probe.children()) {
                 if (!(listener instanceof AbstractButton button)) continue;
                 String raw = button.getMessage().getString().trim();
                 String key = translationKey(button.getMessage());
                 if (raw.isBlank() || isDone(key, raw)) continue;
+                if (isDifficultyLock(key, raw)) continue;
+                if (isDifficultyOption(key, raw)) {
+                    if (!difficultyAdded) {
+                        entries.add(new Entry("Difficulty", 95, null,
+                                EntryKind.DIFFICULTY));
+                        difficultyAdded = true;
+                    }
+                    continue;
+                }
                 Classification c = classify(key, raw, sequence++);
-                entries.add(new Entry(c.label, c.order, button));
+                entries.add(new Entry(c.label, c.order, button,
+                        EntryKind.NAVIGATION));
             }
             entries.sort(Comparator.comparingInt(Entry::order));
             state.entries.addAll(entries);
@@ -299,6 +357,17 @@ public final class PauseMenuSettingsPanelClient {
         return false;
     }
 
+    private static boolean isDifficultyLock(String key, String raw) {
+        String normalized = (key + " " + raw).toLowerCase(Locale.ROOT);
+        return normalized.contains("difficulty")
+                && normalized.contains("lock");
+    }
+
+    private static boolean isDifficultyOption(String key, String raw) {
+        String normalized = (key + " " + raw).toLowerCase(Locale.ROOT);
+        return normalized.contains("difficulty");
+    }
+
     private static boolean isDone(String key, String raw) {
         return "gui.done".equals(key) || raw.equalsIgnoreCase("Done");
     }
@@ -357,6 +426,108 @@ public final class PauseMenuSettingsPanelClient {
         graphics.drawString(font, ScpFonts.roboto(entry.label),
                 x + 13, y + (height - font.lineHeight) / 2,
                 applyAlpha(hovered ? ACCENT_BRIGHT : TEXT, alpha), false);
+        if (entry.kind == EntryKind.DIFFICULTY) {
+            Component arrow = ScpFonts.roboto(">");
+            int arrowWidth = font.width(arrow);
+            graphics.drawString(font, arrow, x + width - 13 - arrowWidth,
+                    y + (height - font.lineHeight) / 2,
+                    applyAlpha(hovered ? ACCENT_BRIGHT : MUTED, alpha), false);
+        }
+    }
+
+    private static void drawDifficultyFlyout(GuiGraphics graphics,
+            CustomPauseMenuScreen screen, Layout layout, int x, int rowY,
+            float alpha, int mouseX, int mouseY) {
+        DifficultyFlyout flyout = difficultyFlyout(screen, layout, x, rowY);
+        Difficulty current = currentDifficulty();
+        Font font = Minecraft.getInstance().font;
+
+        graphics.fill(flyout.x, flyout.y, flyout.right(), flyout.bottom(),
+                applyAlpha(0xE20B0E12, alpha));
+        graphics.fill(flyout.x, flyout.y, flyout.x + 2, flyout.bottom(),
+                applyAlpha(ACCENT, alpha));
+        graphics.fill(flyout.x, flyout.y, flyout.right(), flyout.y + 2,
+                applyAlpha(ACCENT, alpha));
+
+        DifficultyChoice[] values = DifficultyChoice.values();
+        for (int index = 0; index < values.length; index++) {
+            DifficultyChoice choice = values[index];
+            int optionY = flyout.optionY(index);
+            boolean hovered = flyout.optionAt(mouseX, mouseY) == index;
+            boolean selected = current == choice.difficulty;
+            graphics.fill(flyout.x + 6, optionY, flyout.right() - 6,
+                    optionY + flyout.optionHeight,
+                    applyAlpha(selected ? 0xC31A2028
+                            : hovered ? BUTTON_HOVER : BUTTON_BASE, alpha));
+            graphics.fill(flyout.x + 6, optionY, flyout.x + 9,
+                    optionY + flyout.optionHeight,
+                    applyAlpha(selected ? ACCENT_BRIGHT : ACCENT, alpha));
+
+            int iconSize = Math.min(34, flyout.optionHeight - 10);
+            int iconX = flyout.x + 15;
+            int iconY = optionY + (flyout.optionHeight - iconSize) / 2;
+            if (Minecraft.getInstance().getResourceManager()
+                    .getResource(choice.icon).isPresent()) {
+                graphics.blit(choice.icon, iconX, iconY, iconSize, iconSize,
+                        0.0F, 0.0F, 128, 128, 128, 128);
+            }
+
+            int textX = iconX + iconSize + 10;
+            graphics.drawString(font, ScpFonts.roboto(choice.title),
+                    textX, optionY + 9,
+                    applyAlpha(selected || hovered ? ACCENT_BRIGHT : TEXT, alpha),
+                    false);
+            graphics.drawString(font, ScpFonts.titillium(choice.subtitle),
+                    textX, optionY + 23, applyAlpha(MUTED, alpha), false);
+
+            if (selected) {
+                Component active = ScpFonts.titillium("ACTIVE");
+                int activeWidth = font.width(active);
+                graphics.drawString(font, active,
+                        flyout.right() - 14 - activeWidth, optionY + 9,
+                        applyAlpha(ACCENT_BRIGHT, alpha), false);
+            }
+        }
+    }
+
+    private static DifficultyFlyout difficultyFlyout(
+            CustomPauseMenuScreen screen, Layout layout, int x, int rowY) {
+        int width = Mth.clamp(Math.round(screen.width * 0.19F), 172, 224);
+        int optionHeight = Mth.clamp(layout.rowHeight + 12, 44, 52);
+        int gap = 4;
+        int padding = 6;
+        int height = padding * 2 + optionHeight * DifficultyChoice.values().length
+                + gap * (DifficultyChoice.values().length - 1);
+        int preferredX = x + layout.width + 8;
+        int flyoutX = Math.min(preferredX, screen.width - width - 10);
+        flyoutX = Math.max(x + layout.width + 4, flyoutX);
+        int flyoutY = Mth.clamp(rowY, 10, Math.max(10, screen.height - height - 10));
+        return new DifficultyFlyout(flyoutX, flyoutY, width, height,
+                optionHeight, gap, padding);
+    }
+
+    private static int difficultyRowY(State state, Layout layout) {
+        for (int row = 0; row < layout.visibleRows; row++) {
+            int index = state.scrollOffset + row;
+            if (index >= state.entries.size()) break;
+            if (state.entries.get(index).kind == EntryKind.DIFFICULTY) {
+                return layout.listY + row * (layout.rowHeight + layout.gap);
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    private static Difficulty currentDifficulty() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.level == null ? Difficulty.NORMAL
+                : minecraft.level.getDifficulty();
+    }
+
+    private static void setDifficulty(Difficulty difficulty) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (difficulty == null || minecraft.getConnection() == null) return;
+        minecraft.getConnection().send(
+                new ServerboundChangeDifficultyPacket(difficulty));
     }
 
     private static void drawScrollbar(GuiGraphics graphics, Layout layout,
@@ -461,10 +632,69 @@ public final class PauseMenuSettingsPanelClient {
         return current;
     }
 
-    private record Entry(String label, int order, AbstractButton source) {
+    private enum EntryKind {
+        NAVIGATION,
+        DIFFICULTY
+    }
+
+    private enum DifficultyChoice {
+        SAFE("Safe", "Easy", Difficulty.EASY, "safe.png"),
+        EUCLID("Euclid", "Normal", Difficulty.NORMAL, "euclid.png"),
+        KETER("Keter", "Hard", Difficulty.HARD, "keter.png"),
+        THAUMIEL("Thaumiel", "Peaceful", Difficulty.PEACEFUL, "thaumiel.png");
+
+        private final String title;
+        private final String subtitle;
+        private final Difficulty difficulty;
+        private final ResourceLocation icon;
+
+        DifficultyChoice(String title, String subtitle, Difficulty difficulty,
+                String icon) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.difficulty = difficulty;
+            this.icon = new ResourceLocation(ScpAdditionsMod.MODID,
+                    "textures/gui/" + icon);
+        }
+    }
+
+    private record Entry(String label, int order, AbstractButton source,
+            EntryKind kind) {
     }
 
     private record Classification(int order, String label) {
+    }
+
+    private record DifficultyFlyout(int x, int y, int width, int height,
+            int optionHeight, int gap, int padding) {
+        private int right() {
+            return x + width;
+        }
+
+        private int bottom() {
+            return y + height;
+        }
+
+        private int optionY(int index) {
+            return y + padding + index * (optionHeight + gap);
+        }
+
+        private int optionAt(double mouseX, double mouseY) {
+            if (!contains(mouseX, mouseY)) return -1;
+            for (int index = 0; index < DifficultyChoice.values().length; index++) {
+                int top = optionY(index);
+                if (mouseX >= x + 6 && mouseX < right() - 6
+                        && mouseY >= top && mouseY < top + optionHeight) {
+                    return index;
+                }
+            }
+            return -1;
+        }
+
+        private boolean contains(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX < right()
+                    && mouseY >= y && mouseY < bottom();
+        }
     }
 
     private record Layout(int x, int y, int width, int rowHeight, int gap,
@@ -500,6 +730,7 @@ public final class PauseMenuSettingsPanelClient {
         private boolean entriesBuilt;
         private boolean open;
         private boolean draggingFov;
+        private boolean difficultyOpen;
         private float progress;
         private long lastFrameAt;
         private int scrollOffset;

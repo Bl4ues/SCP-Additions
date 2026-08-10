@@ -162,6 +162,7 @@ public final class MainMenuSettingsPanelClient {
         AbstractButton settingsButton = findNamedButton(screen, "Settings");
         if (settingsButton != null
                 && settingsButton.isMouseOver(event.getMouseX(), event.getMouseY())) {
+            screen.setFocused(settingsButton);
             PauseMenuModsPanelClient.close(screen);
             MainMenuPlayPanelsClient.close(screen);
             state.open = !state.open;

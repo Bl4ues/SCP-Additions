@@ -31,10 +31,11 @@ import java.util.List;
 /**
  * Decorative Archivist's Chair.
  *
- * GeckoLib/Blockbench geometry is authored around a horizontal model origin,
- * while Block.box uses the block's north-west corner as zero. The collision
- * therefore uses independent X/Z offsets before it is rotated with the block
- * state. Four practical volumes follow the base, pedestal, seat and backrest
+ * GeckoLib/Blockbench geometry is authored around the chair root pivot at
+ * X=6, Z=0, while Block.box uses the block's north-west corner as zero. The
+ * collision therefore translates from that authored pivot before mirroring X
+ * and then follows the same FACING rotation as the renderer. Four practical
+ * volumes follow the base, pedestal, seat and backrest
  * without turning every wheel and spoke into its own collision box.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
@@ -131,22 +132,25 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
     }
 
     private static VoxelShape shapeFor(Direction facing) {
-        // GeckoLib's authored chair forward axis is one quarter-turn clockwise
-        // from the vanilla horizontal FACING convention used by this block.
+        // GeoBlockRenderer already follows the block state's horizontal FACING.
+        // Rotate the collision by that same amount instead of adding a second
+        // quarter-turn that the rendered model never receives.
         return switch (facing) {
-            case NORTH -> EAST;
-            case EAST -> SOUTH;
-            case SOUTH -> WEST;
-            case WEST -> NORTH;
-            default -> EAST;
+            case NORTH -> NORTH;
+            case EAST -> EAST;
+            case SOUTH -> SOUTH;
+            case WEST -> WEST;
+            default -> NORTH;
         };
     }
 
     private static VoxelShape modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
-        // GeckoLib mirrors Bedrock X around the block centre while preserving Z.
-        return box(8.0D - maxX, minY, 8.0D + minZ,
-                8.0D - minX, maxY, 8.0D + maxZ);
+        // The Blockbench geometry is centred on the chair root pivot X=6, Z=0.
+        // GeckoLib mirrors Bedrock X, so first translate X around that authored
+        // pivot and only then mirror it around Minecraft's 8px block centre.
+        return box(14.0D - maxX, minY, 8.0D + minZ,
+                14.0D - minX, maxY, 8.0D + maxZ);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

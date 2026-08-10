@@ -106,6 +106,7 @@ public final class MainMenuWhatsNewPanelClient {
     public static void onMouseScrolled(ScreenEvent.MouseScrolled.Pre event) {
         if (!(event.getScreen() instanceof CustomMainMenuScreen screen)) return;
         if (!ClientModulePreferences.customMainMenuEnabled()) return;
+        if (PauseMenuModsPanelClient.isOpen(screen)) return;
 
         Panel panel = panel(screen);
         if (!panel.contains(event.getMouseX(), event.getMouseY())) return;

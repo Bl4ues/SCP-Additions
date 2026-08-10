@@ -28,7 +28,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Apply requested changes
-        run: python3 .github/_temp_apply_custom_mods_pause.py
+        run: |
+          python3 .github/_temp_apply_custom_mods_pause.py
+          python3 .github/_temp_fix_mods_panel.py
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -40,6 +42,7 @@ jobs:
         run: |
           rm .github/workflows/_apply_custom_mods_pause.yml
           rm .github/_temp_apply_custom_mods_pause.py
+          rm .github/_temp_fix_mods_panel.py
           git config user.name 'Deyvid Campos'
           git config user.email 'deyvid04campos@gmail.com'
           git add -A

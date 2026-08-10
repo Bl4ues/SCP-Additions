@@ -15,6 +15,15 @@
 - Expanded Configuration Center
 - Reworked main menu and loading screens
 
+## Achievements
+
+- Added **From the Trenches** for surviving an SCP-106 hunt;
+- Added **Concrete and Rebar** for surviving an activated SCP-173 roamer encounter;
+- Added the hidden **Eyes on me** achievement for witnessing SCP-131 stop to observe SCP-173;
+- Added the hidden **What?** achievement for having SCP-714 prevent SCP-012 from taking hold;
+- Reworked the custom Achievements panel to list the server's complete advancement catalog instead of inheriting vanilla visibility filtering, keeping every advancement category present even before its first completion;
+- Unfinished advancements are now visually subdued, while unfinished hidden advancements are sorted to the end and shown only as **Hidden Achievement** placeholders with their rarity visible.
+
 ## SCP-106
 
 - Added SCP-106 as a new roaming threat;

@@ -61,6 +61,7 @@ public final class Scp173AccessDespawnController {
             long since = NO_ACCESS_SINCE.computeIfAbsent(id,
                     ignored -> gameTime);
             if (gameTime - since >= NO_ACCESS_DESPAWN_TICKS) {
+                scp173.completeRoutineEncounter();
                 scp173.discard();
                 NO_ACCESS_SINCE.remove(id);
                 NEXT_ACCESS_CHECK.remove(id);

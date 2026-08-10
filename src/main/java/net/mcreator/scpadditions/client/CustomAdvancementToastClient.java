@@ -148,11 +148,11 @@ public final class CustomAdvancementToastClient {
         int color;
         String label;
         if (frame == FrameType.CHALLENGE) {
-            filled = 5;
+            filled = 3;
             color = CHALLENGE;
             label = "CHALLENGE";
         } else if (frame == FrameType.GOAL) {
-            filled = 3;
+            filled = 2;
             color = GOAL;
             label = "GOAL";
         } else {
@@ -168,9 +168,9 @@ public final class CustomAdvancementToastClient {
         int barWidth = 9;
         int barHeight = 3;
         int gap = 2;
-        int total = barWidth * 5 + gap * 4;
+        int total = barWidth * 3 + gap * 2;
         int barLeft = right - total;
-        for (int index = 0; index < 5; index++) {
+        for (int index = 0; index < 3; index++) {
             int x = barLeft + index * (barWidth + gap);
             graphics.fill(x, y + 2, x + barWidth, y + 2 + barHeight,
                     index < filled ? withAlpha(color, alpha)

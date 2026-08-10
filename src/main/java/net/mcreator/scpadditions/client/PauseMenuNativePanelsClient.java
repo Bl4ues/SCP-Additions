@@ -20,6 +20,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.network.AdvancementCatalogPacket;
+import net.mcreator.scpadditions.network.AdvancementCatalogRequestPacket;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,6 +31,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -105,6 +108,7 @@ public final class PauseMenuNativePanelsClient {
         state.layout = null;
         if (mode == Mode.ACHIEVEMENTS) {
             rebuildAchievements(state);
+            requestAdvancementCatalog();
         } else if (mode == Mode.STATISTICS) {
             requestStatistics(state);
             rebuildStatistics(state);
@@ -275,6 +279,23 @@ public final class PauseMenuNativePanelsClient {
                 || state.mode == null || state.layout == null ? null : state;
     }
 
+    private static void requestAdvancementCatalog() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                new AdvancementCatalogRequestPacket());
+    }
+
+    public static void replaceAdvancementCatalog(
+            List<AdvancementCatalogPacket.Entry> entries) {
+        if (entries == null) return;
+        for (State state : STATES.values()) {
+            if (state != null && state.mode == Mode.ACHIEVEMENTS) {
+                rebuildAchievementsFromCatalog(state, entries);
+            }
+        }
+    }
+
     private static void rebuildAchievements(State state) {
         state.achievementCategories.clear();
         state.achievementScroll = 0;
@@ -300,7 +321,6 @@ public final class PauseMenuNativePanelsClient {
                 boolean done = progressDone(progress == null
                         ? null : progress.get(advancement));
                 boolean hidden = booleanValue(invokeNoArg(display, "isHidden"));
-                if (hidden && !done) continue;
                 String advancementId = idOf(advancement);
                 Component title = component(invokeNoArg(display, "getTitle"),
                         humanize(advancementId));
@@ -310,15 +330,15 @@ public final class PauseMenuNativePanelsClient {
                 FrameType frame = frameType(invokeNoArg(display, "getFrame"));
                 boolean useModLogo = (ScpAdditionsMod.MODID
                         + ":scp_additions_ach").equals(advancementId);
-                byRoot.get(root).add(new AdvancementRow(title, description,
-                        icon, done, frame, useModLogo));
+                byRoot.get(root).add(new AdvancementRow(advancementId,
+                        title, description, icon, done, frame,
+                        useModLogo, hidden));
             }
 
             for (Object root : rootOrder) {
                 List<AdvancementRow> rows = byRoot.get(root);
                 if (rows == null || rows.isEmpty()) continue;
-                rows.sort(Comparator.comparing(row ->
-                        row.title.getString().toLowerCase(Locale.ROOT)));
+                rows.sort(achievementRowComparator());
                 Object rootDisplay = displayOf(root);
                 Component title = rootDisplay == null
                         ? Component.literal(humanize(idOf(root)))
@@ -330,8 +350,8 @@ public final class PauseMenuNativePanelsClient {
                         .equals(idOf(root));
                 int completed = (int) rows.stream().filter(row -> row.done).count();
                 state.achievementCategories.add(new AdvancementCategory(
-                        title, icon, useModLogo, completed, rows.size(),
-                        List.copyOf(rows)));
+                        idOf(root), title, icon, useModLogo, completed,
+                        rows.size(), List.copyOf(rows)));
             }
             state.achievementCategories.sort(Comparator.comparing(category ->
                     category.title.getString().toLowerCase(Locale.ROOT)));
@@ -343,6 +363,67 @@ public final class PauseMenuNativePanelsClient {
             ScpAdditionsMod.LOGGER.warn(
                     "Could not build custom Achievements panel", throwable);
         }
+    }
+
+    private static void rebuildAchievementsFromCatalog(State state,
+            List<AdvancementCatalogPacket.Entry> entries) {
+        AdvancementCategory previous = selectedCategory(state);
+        String selectedRoot = previous == null ? null : previous.id;
+        state.achievementCategories.clear();
+        state.achievementScroll = 0;
+        state.achievementCategoryScroll = 0;
+
+        Map<String, List<AdvancementRow>> byRoot = new LinkedHashMap<>();
+        Map<String, AdvancementCatalogPacket.Entry> rootEntries =
+                new LinkedHashMap<>();
+        for (AdvancementCatalogPacket.Entry entry : entries) {
+            if (entry == null || entry.id().isBlank()
+                    || entry.rootId().isBlank()) continue;
+            byRoot.computeIfAbsent(entry.rootId(), ignored -> new ArrayList<>());
+            if (entry.id().equals(entry.rootId())) {
+                rootEntries.put(entry.rootId(), entry);
+            }
+            boolean useModLogo = (ScpAdditionsMod.MODID
+                    + ":scp_additions_ach").equals(entry.id());
+            byRoot.get(entry.rootId()).add(new AdvancementRow(entry.id(),
+                    entry.title(), entry.description(), entry.icon(), entry.done(),
+                    entry.frame(), useModLogo, entry.hidden()));
+        }
+
+        for (Map.Entry<String, List<AdvancementRow>> group : byRoot.entrySet()) {
+            List<AdvancementRow> rows = group.getValue();
+            if (rows.isEmpty()) continue;
+            rows.sort(achievementRowComparator());
+            String rootId = group.getKey();
+            AdvancementCatalogPacket.Entry root = rootEntries.get(rootId);
+            Component title = root == null
+                    ? Component.literal(humanize(rootId)) : root.title();
+            ItemStack icon = root == null ? ItemStack.EMPTY : root.icon();
+            boolean useModLogo = (ScpAdditionsMod.MODID
+                    + ":scp_additions_ach").equals(rootId);
+            int completed = (int) rows.stream().filter(row -> row.done).count();
+            state.achievementCategories.add(new AdvancementCategory(rootId,
+                    title, icon, useModLogo, completed, rows.size(),
+                    List.copyOf(rows)));
+        }
+        state.achievementCategories.sort(Comparator.comparing(category ->
+                category.title.getString().toLowerCase(Locale.ROOT)));
+
+        state.selectedAchievementCategory = 0;
+        if (selectedRoot != null) {
+            for (int index = 0; index < state.achievementCategories.size(); index++) {
+                if (selectedRoot.equals(state.achievementCategories.get(index).id)) {
+                    state.selectedAchievementCategory = index;
+                    break;
+                }
+            }
+        }
+    }
+
+    private static Comparator<AdvancementRow> achievementRowComparator() {
+        return Comparator.comparing((AdvancementRow row) -> row.hidden)
+                .thenComparing(row -> row.title.getString()
+                        .toLowerCase(Locale.ROOT));
     }
 
     private static void renderAchievements(GuiGraphics graphics, State state,
@@ -421,34 +502,52 @@ public final class PauseMenuNativePanelsClient {
             boolean hovered = mouseX >= layout.contentX
                     && mouseX < layout.contentRight
                     && mouseY >= y && mouseY < y + ACHIEVEMENT_ROW_HEIGHT;
+            boolean concealed = entry.hidden && !entry.done;
+            float rowAlpha = entry.done ? alpha
+                    : alpha * (hovered ? 0.72F : 0.56F);
             graphics.fill(layout.contentX, y, layout.contentRight,
                     y + ACHIEVEMENT_ROW_HEIGHT,
-                    applyAlpha(hovered ? ROW_HOVER : ROW, alpha));
+                    applyAlpha(hovered ? ROW_HOVER : ROW, rowAlpha));
             graphics.fill(layout.contentX, y, layout.contentX + 3,
                     y + ACHIEVEMENT_ROW_HEIGHT,
-                    applyAlpha(entry.done ? ACCENT : BORDER, alpha));
-            if (entry.useModLogo) {
-                renderScpAdditionsLogo(graphics, layout.contentX + 9,
-                        y + 13, alpha);
+                    applyAlpha(entry.done ? ACCENT : BORDER, rowAlpha));
+            int iconX = layout.contentX + 9;
+            int iconY = y + 13;
+            if (concealed) {
+                drawHiddenAchievementIcon(graphics, iconX, iconY, alpha);
+            } else if (entry.useModLogo) {
+                renderScpAdditionsLogo(graphics, iconX, iconY, rowAlpha);
             } else if (!entry.icon.isEmpty()) {
-                graphics.renderItem(entry.icon, layout.contentX + 9, y + 13);
+                graphics.renderItem(entry.icon, iconX, iconY);
+                if (!entry.done) {
+                    graphics.fill(iconX, iconY, iconX + 16, iconY + 16,
+                            applyAlpha(0xB00B0E12, alpha));
+                }
             }
             int textX = layout.contentX + 34;
-            String title = compactToWidth(font, entry.title.getString(),
+            String rawTitle = concealed ? "Hidden Achievement"
+                    : entry.title.getString();
+            String title = compactToWidth(font, rawTitle,
                     layout.contentRight - textX - 86);
             graphics.drawString(font, ScpFonts.roboto(title), textX, y + 9,
-                    applyAlpha(entry.done ? ACCENT_BRIGHT : TEXT, alpha), false);
-            String description = compactToWidth(font,
-                    entry.description.getString(),
-                    layout.contentRight - textX - 86);
-            graphics.drawString(font, ScpFonts.roboto(description),
-                    textX, y + 24, applyAlpha(MUTED, alpha), false);
+                    applyAlpha(entry.done ? ACCENT_BRIGHT : MUTED,
+                            entry.done ? alpha : alpha * 0.82F), false);
+            if (!concealed) {
+                String description = compactToWidth(font,
+                        entry.description.getString(),
+                        layout.contentRight - textX - 86);
+                graphics.drawString(font, ScpFonts.roboto(description),
+                        textX, y + 24,
+                        applyAlpha(MUTED, entry.done ? alpha : alpha * 0.52F),
+                        false);
+            }
             Component status = ScpFonts.titillium(entry.done ? "DONE" : "OPEN");
             graphics.drawString(font, status,
                     layout.contentRight - 10 - font.width(status), y + 9,
                     applyAlpha(entry.done ? ACCENT_BRIGHT : MUTED, alpha), false);
             drawAchievementRarity(graphics, entry.frame,
-                    layout.contentRight - 10, y + 26, alpha);
+                    layout.contentRight - 10, y + 26,
+                    entry.done ? alpha : alpha * 0.82F);
         }
         if (rowMax > 0) drawScrollbar(graphics, layout.contentRight - 3,
                 layout.contentY, layout.contentBottom, state.achievementScroll,
@@ -462,10 +561,10 @@ public final class PauseMenuNativePanelsClient {
         int filled;
         int color;
         if (frame == FrameType.CHALLENGE) {
-            filled = 5;
+            filled = 3;
             color = CHALLENGE;
         } else if (frame == FrameType.GOAL) {
-            filled = 3;
+            filled = 2;
             color = GOAL;
         } else {
             filled = 1;
@@ -475,15 +574,29 @@ public final class PauseMenuNativePanelsClient {
         int blockWidth = 4;
         int blockHeight = 2;
         int gap = 1;
-        int total = blockWidth * 5 + gap * 4;
+        int total = blockWidth * 3 + gap * 2;
         int left = right - total;
-        for (int index = 0; index < 5; index++) {
+        for (int index = 0; index < 3; index++) {
             int x = left + index * (blockWidth + gap);
             graphics.fill(x, y, x + blockWidth, y + blockHeight,
                     index < filled
                             ? applyAlpha(color, alpha * 0.78F)
                             : applyAlpha(TRACK, alpha * 0.52F));
         }
+    }
+
+    private static void drawHiddenAchievementIcon(GuiGraphics graphics,
+            int x, int y, float alpha) {
+        Font font = Minecraft.getInstance().font;
+        graphics.fill(x, y, x + 16, y + 16,
+                applyAlpha(PANEL_SOFT, alpha * 0.78F));
+        graphics.fill(x, y, x + 16, y + 1, applyAlpha(BORDER, alpha));
+        graphics.fill(x, y + 15, x + 16, y + 16, applyAlpha(BORDER, alpha));
+        graphics.fill(x, y, x + 1, y + 16, applyAlpha(BORDER, alpha));
+        graphics.fill(x + 15, y, x + 16, y + 16, applyAlpha(BORDER, alpha));
+        Component question = ScpFonts.roboto("?");
+        graphics.drawCenteredString(font, question, x + 8, y + 4,
+                applyAlpha(MUTED, alpha));
     }
 
     private static void handleAchievementClick(State state,
@@ -1135,14 +1248,14 @@ public final class PauseMenuNativePanelsClient {
         private String lanStatus = "";
     }
 
-    private record AdvancementCategory(Component title, ItemStack icon,
-            boolean useModLogo, int completed, int total,
+    private record AdvancementCategory(String id, Component title,
+            ItemStack icon, boolean useModLogo, int completed, int total,
             List<AdvancementRow> rows) {
     }
 
-    private record AdvancementRow(Component title, Component description,
-            ItemStack icon, boolean done, FrameType frame,
-            boolean useModLogo) {
+    private record AdvancementRow(String id, Component title,
+            Component description, ItemStack icon, boolean done,
+            FrameType frame, boolean useModLogo, boolean hidden) {
     }
 
     private record StatRow(StatGroup group, Component label, String value) {

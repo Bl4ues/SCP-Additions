@@ -229,7 +229,7 @@ public final class Scp173SpawnEvents {
         float yaw = (float) (Mth.atan2(toPlayer.z, toPlayer.x)
                 * Mth.RAD_TO_DEG) - 90.0F;
         scp173.moveTo(x, y, z, yaw, 0.0F);
-        scp173.markRoutineSpawn();
+        scp173.markRoutineSpawn(player);
         if (!level.addFreshEntity(scp173)) return null;
         return scp173;
     }

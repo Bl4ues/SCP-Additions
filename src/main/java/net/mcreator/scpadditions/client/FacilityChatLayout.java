@@ -26,6 +26,7 @@ public final class FacilityChatLayout {
     public static final int HEADER_HEIGHT = 18;
     public static final int INPUT_GAP = 4;
     private static final int INPUT_LEFT = 17;
+    public static final int INPUT_TEXT_OFFSET = 3;
     private static final long OPEN_ANIMATION_NANOS = 220_000_000L;
     private static volatile long openedAtNanos = Long.MIN_VALUE;
 
@@ -104,7 +105,8 @@ public final class FacilityChatLayout {
     }
 
     public static int suggestionTop(EditBox input, int screenHeight, int lineLimit) {
-        int desired = input.getY() + input.getHeight() + 4;
+        int frameY = input.getY() - INPUT_TEXT_OFFSET;
+        int desired = frameY + input.getHeight() + 4;
         int reserve = Math.max(12, lineLimit * 12) + 4;
         return Math.max(4, Math.min(desired, screenHeight - reserve));
     }
@@ -114,8 +116,9 @@ public final class FacilityChatLayout {
         int left = 2;
         int right = Math.min(panelScreenRight(chat),
                 Minecraft.getInstance().getWindow().getGuiScaledWidth() - 2);
-        int top = input.getY() - 4;
-        int bottom = input.getY() + input.getHeight();
+        int frameY = input.getY() - INPUT_TEXT_OFFSET;
+        int top = frameY - 2;
+        int bottom = frameY + input.getHeight() + 2;
 
         graphics.fill(left, top, right, bottom, 0xE6081022);
         graphics.fill(left, top, left + 2, bottom, ACCENT);
@@ -125,7 +128,7 @@ public final class FacilityChatLayout {
 
         Component prompt = ScpFonts.roboto(">");
         graphics.drawString(Minecraft.getInstance().font, prompt,
-                7, input.getY() + 2, PALE_GOLD, false);
+                7, frameY + 2, PALE_GOLD, false);
     }
 
     public static int withAlpha(int color, int alpha) {

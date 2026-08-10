@@ -33,6 +33,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.mcreator.scpadditions.advancement.ScpAdvancementAwards;
 import net.mcreator.scpadditions.facility.FacilityModule;
 import net.mcreator.scpadditions.init.ScpAdditionsModParticleTypes;
 import net.mcreator.scpadditions.init.Scp106Sounds;
@@ -599,6 +600,7 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
 
     private void beginVanish(boolean despawnAfterward) {
         if (getEncounterState() == VANISHING) return;
+        if (despawnAfterward) awardManagedEncounterSurvival();
         vanishForDespawn = despawnAfterward;
         relocationHiddenTicks = 0;
         setInvisible(false);
@@ -611,6 +613,19 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         freezeTransitionMovement();
         noPhysics = true;
         setNoGravity(true);
+    }
+
+    private void awardManagedEncounterSurvival() {
+        if (!managedEncounter || huntedPlayerId == null
+                || !(level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        ServerPlayer player = serverLevel.getServer().getPlayerList()
+                .getPlayer(huntedPlayerId);
+        if (player != null && isValidHuntTarget(player)) {
+            ScpAdvancementAwards.award(player,
+                    ScpAdvancementAwards.FROM_THE_TRENCHES);
+        }
     }
 
     private void tickVanish() {

@@ -19,6 +19,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.advancement.ScpAdvancementAwards;
 import net.mcreator.scpadditions.effect.Scp714ProtectionAccess;
 import net.mcreator.scpadditions.facility.Scp079DecisionLog;
 import net.mcreator.scpadditions.facility.Scp079ProcessingManager;
@@ -104,11 +105,13 @@ public final class Scp012InfluenceEvents {
             return;
         }
 
-        if (Scp714ProtectionAccess.isProtected(player)) {
+        if (!Scp012Module.isOpen(level.getBlockState(nearby))) {
             clearInfluence(player);
             return;
         }
-        if (!Scp012Module.isOpen(level.getBlockState(nearby))) {
+        if (Scp714ProtectionAccess.isProtected(player)) {
+            ScpAdvancementAwards.award(player,
+                    ScpAdvancementAwards.WHAT);
             clearInfluence(player);
             return;
         }

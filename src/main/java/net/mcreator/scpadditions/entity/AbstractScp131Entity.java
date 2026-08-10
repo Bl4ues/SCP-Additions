@@ -27,6 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.mcreator.scpadditions.advancement.ScpAdvancementAwards;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -87,6 +88,8 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private UUID followOwner;
     private boolean wasWatchingScp173;
+    private UUID scp173WatchWitness;
+    private boolean scp173WatchAwarded;
     private int nextOwnerRoamTick;
     private int nextAmbientNoiseTick;
 
@@ -138,8 +141,10 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
         Scp173Entity scp173 = findNearestScp173();
         if (scp173 != null) {
-            if (!wasWatchingScp173 && isFollowing()) {
-                dismissFollowersForScp173();
+            if (!wasWatchingScp173) {
+                scp173WatchWitness = followOwner;
+                scp173WatchAwarded = false;
+                if (isFollowing()) dismissFollowersForScp173();
             }
             wasWatchingScp173 = true;
             runToAndWatch(scp173);
@@ -148,6 +153,8 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
 
         if (wasWatchingScp173) {
             wasWatchingScp173 = false;
+            scp173WatchWitness = null;
+            scp173WatchAwarded = false;
         }
 
         if (isFollowing()) {
@@ -344,8 +351,37 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
         } else {
             getNavigation().stop();
             setDeltaMovement(Vec3.ZERO);
+            awardScp173WatchWitness();
         }
         lookHardAt(scp173);
+    }
+
+    private void awardScp173WatchWitness() {
+        if (scp173WatchAwarded
+                || !(level() instanceof ServerLevel serverLevel)) return;
+        ServerPlayer witness = scp173WatchWitness == null ? null
+                : serverLevel.getServer().getPlayerList()
+                .getPlayer(scp173WatchWitness);
+        if (witness == null || !witness.isAlive()
+                || witness.isCreative() || witness.isSpectator()
+                || witness.serverLevel() != serverLevel) {
+            double bestDistance = 24.0D * 24.0D;
+            witness = null;
+            for (ServerPlayer candidate : serverLevel.players()) {
+                if (!candidate.isAlive() || candidate.isCreative()
+                        || candidate.isSpectator()) continue;
+                double distance = distanceToSqr(candidate);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    witness = candidate;
+                }
+            }
+        }
+        if (witness != null) {
+            ScpAdvancementAwards.award(witness,
+                    ScpAdvancementAwards.EYES_ON_ME);
+        }
+        scp173WatchAwarded = true;
     }
 
     private Vec3 watchSpotNear(Scp173Entity scp173) {

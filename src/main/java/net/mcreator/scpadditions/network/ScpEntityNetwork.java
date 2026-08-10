@@ -160,6 +160,21 @@ public final class ScpEntityNetwork {
                 FacilityDiagnosticsResetPacket::encode,
                 FacilityDiagnosticsResetPacket::decode,
                 FacilityDiagnosticsResetPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(AdvancementCatalogRequestPacket.class,
+                AdvancementCatalogRequestPacket::encode,
+                AdvancementCatalogRequestPacket::decode,
+                AdvancementCatalogRequestPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(AdvancementCatalogPacket.class,
+                AdvancementCatalogPacket::encode,
+                AdvancementCatalogPacket::decode,
+                AdvancementCatalogPacket::handle);
+    }
+
+    public static void sendAdvancementCatalog(ServerPlayer player) {
+        if (player == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                AdvancementCatalogPacket.fromPlayer(player));
     }
 
     public static void showScp131Notice(ServerPlayer player,

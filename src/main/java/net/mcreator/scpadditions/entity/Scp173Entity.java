@@ -38,6 +38,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.advancement.ScpAdvancementAwards;
 import net.mcreator.scpadditions.client.BlinkClient;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.facility.FacilityModule;
@@ -119,6 +120,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private int observationGraceUntilTick = Integer.MIN_VALUE;
     private int nextAttackTick;
     private double frozenFallSpeed;
+    private UUID routineEncounterPlayerId;
 
     public Scp173Entity(EntityType<? extends Scp173Entity> type, Level level) {
         super(type, level);
@@ -162,6 +164,12 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     public void markRoutineSpawn() {
+        markRoutineSpawn(null);
+    }
+
+    public void markRoutineSpawn(ServerPlayer player) {
+        routineEncounterPlayerId = player == null
+                ? null : player.getUUID();
         entityData.set(ROUTINE_SPAWN, true);
         setActivated(false);
         setNoAi(true);
@@ -308,6 +316,10 @@ public class Scp173Entity extends BlinkWatcherEntity {
         tag.putBoolean("ActivationConfirmed", isActivated());
         tag.putBoolean("RoutineSpawn", isRoutineSpawn());
         tag.putInt("LastSeenOrCloseTick", lastSeenOrCloseTick);
+        if (routineEncounterPlayerId != null) {
+            tag.putUUID("RoutineEncounterPlayer",
+                    routineEncounterPlayerId);
+        }
     }
 
     @Override
@@ -321,6 +333,8 @@ public class Scp173Entity extends BlinkWatcherEntity {
         setActivated(activationConfirmed && tag.getBoolean("Activated"));
         entityData.set(ROUTINE_SPAWN, tag.getBoolean("RoutineSpawn"));
         lastSeenOrCloseTick = tag.getInt("LastSeenOrCloseTick");
+        routineEncounterPlayerId = tag.hasUUID("RoutineEncounterPlayer")
+                ? tag.getUUID("RoutineEncounterPlayer") : null;
         clearStrategicRoute();
         if (!isActivated()) {
             setNoAi(true);
@@ -493,7 +507,27 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private void handleRoutineDespawn() {
         if (!isRoutineSpawn() || level().isClientSide) return;
         if (findObservingPlayer() != null || hasClientObservationLock() || hasClosePlayer()) return;
-        if (tickCount - lastSeenOrCloseTick >= ROUTINE_DESPAWN_UNSEEN_TICKS) discard();
+        if (tickCount - lastSeenOrCloseTick >= ROUTINE_DESPAWN_UNSEEN_TICKS) {
+            completeRoutineEncounter();
+            discard();
+        }
+    }
+
+    public void completeRoutineEncounter() {
+        if (!isRoutineSpawn() || !isActivated()
+                || routineEncounterPlayerId == null
+                || level().isClientSide) {
+            return;
+        }
+        ServerPlayer player = getServer() == null ? null
+                : getServer().getPlayerList()
+                .getPlayer(routineEncounterPlayerId);
+        if (player != null && player.isAlive()
+                && !player.isCreative() && !player.isSpectator()) {
+            ScpAdvancementAwards.award(player,
+                    ScpAdvancementAwards.CONCRETE_AND_REBAR);
+        }
+        routineEncounterPlayerId = null;
     }
 
     private boolean isClientObservedByLocalPlayer() {

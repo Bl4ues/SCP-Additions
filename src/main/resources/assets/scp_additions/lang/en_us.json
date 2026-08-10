@@ -309,5 +309,13 @@
   "tooltip.scp_additions.sl1_metal_floor_connection": "Connects automatically with Blue Floor",
   "block.scp_additions.scp_079_auxiliary_power": "Auxiliary Power Unit",
   "advancements.scp_079control_achi.descr": "A facility system acted without your authorization",
-  "block.scp_additions.document_holder": "Document Holder"
+  "block.scp_additions.document_holder": "Document Holder",
+  "advancements.from_the_trenches.title": "From the Trenches",
+  "advancements.from_the_trenches.descr": "Survive a hunt by SCP-106",
+  "advancements.eyes_on_me.title": "Eyes on me",
+  "advancements.eyes_on_me.descr": "Witness SCP-131 stop to observe SCP-173",
+  "advancements.what.title": "What?",
+  "advancements.what.descr": "Resist SCP-012's influence with SCP-714",
+  "advancements.concrete_and_rebar.title": "Concrete and Rebar",
+  "advancements.concrete_and_rebar.descr": "Survive an encounter with SCP-173"
 }

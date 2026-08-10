@@ -134,11 +134,16 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
     }
 
     private static VoxelShape shapeFor(Direction facing) {
+        // GeckoLib renders this authored model with the opposite
+        // horizontal forward convention from the vanilla block-facing
+        // collision transform. Mirror the facing by 180 degrees so the
+        // collision sits on the visible chair instead of across the
+        // placement origin.
         return switch (facing) {
-            case EAST -> EAST;
-            case SOUTH -> SOUTH;
-            case WEST -> WEST;
-            default -> NORTH;
+            case EAST -> WEST;
+            case SOUTH -> NORTH;
+            case WEST -> EAST;
+            default -> SOUTH;
         };
     }
 

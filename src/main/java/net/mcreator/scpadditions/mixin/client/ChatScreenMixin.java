@@ -27,7 +27,8 @@ public abstract class ChatScreenMixin {
         FacilityChatLayout.beginOpenAnimation();
         this.input.setX(FacilityChatLayout.inputX());
         this.input.setY(FacilityChatLayout.inputY(chat)
-                + FacilityChatLayout.openOffsetScreen(chat));
+                + FacilityChatLayout.openOffsetScreen(chat)
+                + FacilityChatLayout.INPUT_TEXT_OFFSET);
         this.input.setWidth(FacilityChatLayout.inputWidth(chat));
     }
 
@@ -38,7 +39,8 @@ public abstract class ChatScreenMixin {
         ChatComponent chat = Minecraft.getInstance().gui.getChat();
         this.input.setX(FacilityChatLayout.inputX());
         this.input.setY(FacilityChatLayout.inputY(chat)
-                + FacilityChatLayout.openOffsetScreen(chat));
+                + FacilityChatLayout.openOffsetScreen(chat)
+                + FacilityChatLayout.INPUT_TEXT_OFFSET);
         this.input.setWidth(FacilityChatLayout.inputWidth(chat));
     }
 

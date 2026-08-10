@@ -1,0 +1,112 @@
+name: Apply follow-up Configuration Center cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-config-followup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Apply targeted fixes
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Expected block not found in {path}: {old[:120]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Obsolete overlay using the old centred panel coordinates. It is the
+          # large grey rectangle visible outside the modern Modules panel.
+          obsolete = Path('src/main/java/net/mcreator/scpadditions/config/ui/ModulesHeaderCleanup.java')
+          if obsolete.exists():
+              obsolete.unlink()
+
+          modules = 'src/main/java/net/mcreator/scpadditions/config/ui/Scp079ModulesScreenExtension.java'
+          replace_once(modules,
+          '''            int visible = visibleRows();
+            if (rows.size() > visible) {
+                graphics.drawString(font,
+                        ScpFonts.roboto("Mouse wheel: scroll options"),
+                        panelX + panelWidth - 160, panelY + 31, MUTED, false);
+            }
+            int contentY = panelY + (sectionTitle == null ? 44 : 57);
+''',
+          '''            int visible = visibleRows();
+            int contentY = panelY + (sectionTitle == null ? 44 : 57);
+''')
+
+          config = 'src/main/java/net/mcreator/scpadditions/config/ui/ConfigCenterClient.java'
+          replace_once(config,
+          '''            homeNotice = result.message();
+''',
+          '''            // Saving already returns to the Configuration Center; an extra
+            // transient success line only competes with the header composition.
+            homeNotice = "";
+''')
+
+          chair = 'src/main/java/net/mcreator/scpadditions/facility/ArchivistsChairBlock.java'
+          replace_once(chair,
+          ''' * GeckoLib/Blockbench geometry is authored around the chair root pivot at
+ * X=6, Z=0, while Block.box uses the block's north-west corner as zero. The
+ * collision therefore translates from that authored pivot before mirroring X
+ * and then follows the same FACING rotation as the renderer. Four practical
+''',
+          ''' * GeckoLib/Blockbench geometry is authored relative to the Bedrock model
+ * origin, which GeoBlockRenderer places at the horizontal centre of the block.
+ * Block.box instead uses the block's north-west corner as zero, so collision
+ * coordinates need the same +8px translation on both X and Z. Four practical
+''')
+          replace_once(chair,
+          '''        // The Blockbench geometry is centred on the chair root pivot X=6, Z=0.
+        // GeckoLib mirrors Bedrock X, so first translate X around that authored
+        // pivot and only then mirror it around Minecraft's 8px block centre.
+        return box(3.5D + minX, minY, 8.0D + minZ,
+                3.5D + maxX, maxY, 8.0D + maxZ);
+''',
+          '''        // GeoBlockRenderer places the Bedrock horizontal origin at the
+        // centre of the Minecraft block. The chair itself is authored off-centre
+        // toward +X, so X must use the same +8px translation already used by Z.
+        return box(8.0D + minX, minY, 8.0D + minZ,
+                8.0D + maxX, maxY, 8.0D + maxZ);
+''')
+          PY
+
+      - name: Build
+        run: chmod +x gradlew && ./gradlew clean build --stacktrace
+
+      - name: Commit fixes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'Deyvid Campos'
+          git config user.email 'deyvid04campos@gmail.com'
+          git add -A
+          git commit -m 'Fix remaining Configuration Center layout artifacts'
+          git push origin HEAD:master

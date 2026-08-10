@@ -17,6 +17,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.config.ui.ClientPreferencesMenu;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,6 +49,7 @@ public final class CustomPauseMenuScreen extends PauseScreen {
     private static final long BUTTON_STAGGER_MS = 46L;
     private static final long BUTTON_ENTER_MS = 410L;
     private static final long EXIT_MS = 360L;
+    private static final long CONFIG_TRANSITION_MS = 480L;
 
     private static final String RESUME_KEY = "menu.returnToGame";
     private static final String ADVANCEMENTS_KEY = "gui.advancements";
@@ -75,6 +77,8 @@ public final class CustomPauseMenuScreen extends PauseScreen {
     private float logoInnerAngle;
     private float hoverBoost;
     private boolean injectedCollected;
+    private boolean configurationTransition;
+    private boolean returningFromConfiguration;
 
     public CustomPauseMenuScreen() {
         super(true);
@@ -82,6 +86,9 @@ public final class CustomPauseMenuScreen extends PauseScreen {
 
     @Override
     protected void init() {
+        boolean resumeConfiguration = returningFromConfiguration;
+        returningFromConfiguration = false;
+
         super.init();
         sourceButtons.clear();
         capturedSources.clear();
@@ -91,11 +98,15 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         leavingAt = -1L;
         pendingAction = null;
         hoverBoost = 0.0F;
-        logoOuterAngle = 0.0F;
-        logoInnerAngle = 0.0F;
+        configurationTransition = false;
+        if (!resumeConfiguration) {
+            logoOuterAngle = 0.0F;
+            logoInnerAngle = 0.0F;
+        }
 
-        openedAt = Util.getMillis();
-        lastFrameAt = openedAt;
+        long now = Util.getMillis();
+        openedAt = resumeConfiguration ? now - ENTER_MS : now;
+        lastFrameAt = now;
 
         captureKnownSources();
         hideSourceWidgets();
@@ -128,7 +139,7 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         float enter = smootherStep(Mth.clamp((now - openedAt)
                 / (float) ENTER_MS, 0.0F, 1.0F));
         float leave = leaveProgress(now);
-        float dimAlpha = enter * (1.0F - leave);
+        float dimAlpha = enter * (configurationTransition ? 1.0F : (1.0F - leave));
         int overlayAlpha = Mth.clamp(Math.round(PAUSE_DIM_ALPHA * dimAlpha),
                 0, 255);
         if (overlayAlpha > 0) {
@@ -221,6 +232,34 @@ public final class CustomPauseMenuScreen extends PauseScreen {
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    /**
+     * Opens the SCP Additions configuration as a continuation of the pause
+     * scene instead of replacing the pause logo with a fresh spinner.
+     */
+    public void openConfigurationCenterAnimated() {
+        if (leavingAt >= 0L) return;
+        configurationTransition = true;
+        beginExit(() -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            minecraft.setScreen(ClientPreferencesMenu.open(minecraft, this));
+        });
+    }
+
+    public float configurationSpinnerOuterAngle() {
+        return logoOuterAngle;
+    }
+
+    public float configurationSpinnerInnerAngle() {
+        return logoInnerAngle;
+    }
+
+    /** Continue the same rotating mark when Configuration Center returns. */
+    public void resumeFromConfiguration(float outerAngle, float innerAngle) {
+        this.logoOuterAngle = outerAngle;
+        this.logoInnerAngle = innerAngle;
+        this.returningFromConfiguration = true;
     }
 
     private void captureKnownSources() {
@@ -358,34 +397,52 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         hoverBoost = approach(hoverBoost, hoverTarget, delta * 5.8F);
 
         float leaveBoost = leavingAt >= 0L ? 1.0F : 0.0F;
-        float speed = 4.5F + 22.0F * hoverBoost + 58.0F * leaveBoost;
+        float exitSpeed = configurationTransition ? 122.0F : 58.0F;
+        float speed = 4.5F + 22.0F * hoverBoost + exitSpeed * leaveBoost;
         logoOuterAngle = wrapAngle(logoOuterAngle + speed * delta);
         logoInnerAngle = wrapAngle(logoInnerAngle - speed * 0.88F * delta);
     }
 
     private void drawLogo(GuiGraphics graphics, long now, float leave) {
-        int size = Mth.clamp(Math.round(this.height * 0.82F), 290, 640);
+        int baseSize = Mth.clamp(Math.round(this.height * 0.82F), 290, 640);
         float enter = Mth.clamp((now - openedAt) / (float) ENTER_MS,
                 0.0F, 1.0F);
         float eased = easeOutBack(enter);
 
-        int finalCenterX = Math.round(this.width * 0.055F);
-        int startCenterX = -size / 2;
+        int pauseCenterX = Math.round(this.width * 0.055F);
+        int pauseCenterY = Math.round(this.height * 0.53F);
+        int startCenterX = -baseSize / 2;
         int centerX = Math.round(Mth.lerp(eased,
-                startCenterX, finalCenterX));
-        centerX -= Math.round(leave * (finalCenterX + size / 2 + 40));
-        int centerY = Math.round(this.height * 0.53F);
+                startCenterX, pauseCenterX));
+        int centerY = pauseCenterY;
+        int size = baseSize;
 
-        // Roughly two thirds of one revolution, rather than the former burst
-        // of multiple overlapping spins. It still arrives energetically but
-        // the eye can actually follow the mark.
         float entrySpin = (1.0F - smootherStep(enter)) * -225.0F;
-        float visible = 1.0F - leave;
+        float outerAlpha = 0.23F;
+        float innerAlpha = 0.17F;
+        float visible = 1.0F;
+
+        if (configurationTransition && leavingAt >= 0L) {
+            float transform = leave;
+            int configSize = Mth.clamp(Math.round(this.height * 1.22F), 430, 980);
+            int configX = Math.round(this.width * 0.105F);
+            int configY = Math.round(this.height * 0.54F);
+            size = Math.round(Mth.lerp(transform, baseSize, configSize));
+            centerX = Math.round(Mth.lerp(transform, pauseCenterX, configX));
+            centerY = Math.round(Mth.lerp(transform, pauseCenterY, configY));
+            outerAlpha = Mth.lerp(transform, 0.23F, 0.22F);
+            innerAlpha = Mth.lerp(transform, 0.17F, 0.16F);
+            entrySpin *= 1.0F - transform;
+        } else {
+            centerX -= Math.round(leave * (pauseCenterX + baseSize / 2 + 40));
+            visible = 1.0F - leave;
+        }
+
         drawRotatedTexture(graphics, LOGO_OUTER, centerX, centerY,
-                size, logoOuterAngle + entrySpin, 0.23F * visible);
+                size, logoOuterAngle + entrySpin, outerAlpha * visible);
         drawRotatedTexture(graphics, LOGO_INNER, centerX, centerY,
                 size, logoInnerAngle - entrySpin * 0.82F,
-                0.17F * visible);
+                innerAlpha * visible);
     }
 
     private void layoutAndRenderButtons(GuiGraphics graphics,
@@ -449,14 +506,18 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         for (PauseMenuButton button : menuButtons) button.active = false;
     }
 
+    private long exitDuration() {
+        return configurationTransition ? CONFIG_TRANSITION_MS : EXIT_MS;
+    }
+
     private float leaveProgress(long now) {
         return leavingAt < 0L ? 0.0F
                 : smootherStep(Mth.clamp((now - leavingAt)
-                / (float) EXIT_MS, 0.0F, 1.0F));
+                / (float) exitDuration(), 0.0F, 1.0F));
     }
 
     private void finishExitAfterRender(long now) {
-        if (leavingAt < 0L || now - leavingAt < EXIT_MS
+        if (leavingAt < 0L || now - leavingAt < exitDuration()
                 || pendingAction == null) {
             return;
         }
@@ -465,6 +526,7 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         action.run();
         if (Minecraft.getInstance().screen == this) {
             leavingAt = -1L;
+            configurationTransition = false;
             openedAt = now;
         }
     }

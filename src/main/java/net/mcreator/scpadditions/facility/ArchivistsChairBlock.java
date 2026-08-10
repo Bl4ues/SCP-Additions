@@ -142,12 +142,11 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
 
     private static VoxelShape modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
-        // Empirically, +2.0 was already close and increasing the offset moved
-        // the collision farther left. Move 1.5 model pixels in the opposite
-        // direction from that known-good baseline instead of extrapolating the
-        // renderer origin incorrectly again.
-        return box(0.5D + minX, minY, 8.0D + minZ,
-                0.5D + maxX, maxY, 8.0D + maxZ);
+        // +0.5 was nearly aligned in-game. Decreasing the local X offset moves
+        // the tested facing to the right, so this final fine adjustment keeps
+        // the proven shape and rotation while correcting only its position.
+        return box(-0.5D + minX, minY, 8.0D + minZ,
+                -0.5D + maxX, maxY, 8.0D + maxZ);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

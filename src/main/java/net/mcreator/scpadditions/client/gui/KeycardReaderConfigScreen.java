@@ -42,8 +42,7 @@ public final class KeycardReaderConfigScreen extends Screen {
     }
 
     private static ResourceLocation texture(String file) {
-        // These assets intentionally live directly in assets/scp_additions/gui.
-        return new ResourceLocation("scp_additions", "gui/" + file);
+        return new ResourceLocation("scp_additions", "textures/gui/" + file);
     }
 
     @Override

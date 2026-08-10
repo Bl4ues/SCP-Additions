@@ -135,12 +135,15 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
         // GeoBlockRenderer already follows the block state's horizontal FACING.
         // Rotate the collision by that same amount instead of adding a second
         // quarter-turn that the rendered model never receives.
+        // GeoBlockRenderer's authored forward axis is opposite the collision
+        // shape's NORTH reference. Keep the shape itself intact and rotate it
+        // half a turn so the seat/backrest volumes face the rendered chair.
         return switch (facing) {
-            case NORTH -> NORTH;
-            case EAST -> EAST;
-            case SOUTH -> SOUTH;
-            case WEST -> WEST;
-            default -> NORTH;
+            case NORTH -> SOUTH;
+            case EAST -> WEST;
+            case SOUTH -> NORTH;
+            case WEST -> EAST;
+            default -> SOUTH;
         };
     }
 

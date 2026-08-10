@@ -427,11 +427,21 @@ public final class PauseMenuSettingsPanelClient {
                 x + 13, y + (height - font.lineHeight) / 2,
                 applyAlpha(hovered ? ACCENT_BRIGHT : TEXT, alpha), false);
         if (entry.kind == EntryKind.DIFFICULTY) {
-            Component arrow = ScpFonts.roboto(">");
-            int arrowWidth = font.width(arrow);
-            graphics.drawString(font, arrow, x + width - 13 - arrowWidth,
+            DifficultyChoice current = choiceFor(currentDifficulty());
+            int iconSize = Math.min(22, Math.max(16, height - 10));
+            int iconX = x + width - 12 - iconSize;
+            int iconY = y + (height - iconSize) / 2;
+            Component value = ScpFonts.roboto(current.title);
+            int valueWidth = font.width(value);
+            int valueX = iconX - 8 - valueWidth;
+            graphics.drawString(font, value, valueX,
                     y + (height - font.lineHeight) / 2,
                     applyAlpha(hovered ? ACCENT_BRIGHT : MUTED, alpha), false);
+            if (Minecraft.getInstance().getResourceManager()
+                    .getResource(current.icon).isPresent()) {
+                graphics.blit(current.icon, iconX, iconY, iconSize, iconSize,
+                        0.0F, 0.0F, 128, 128, 128, 128);
+            }
         }
     }
 
@@ -480,13 +490,6 @@ public final class PauseMenuSettingsPanelClient {
             graphics.drawString(font, ScpFonts.titillium(choice.subtitle),
                     textX, optionY + 23, applyAlpha(MUTED, alpha), false);
 
-            if (selected) {
-                Component active = ScpFonts.titillium("ACTIVE");
-                int activeWidth = font.width(active);
-                graphics.drawString(font, active,
-                        flyout.right() - 14 - activeWidth, optionY + 9,
-                        applyAlpha(ACCENT_BRIGHT, alpha), false);
-            }
         }
     }
 
@@ -521,6 +524,13 @@ public final class PauseMenuSettingsPanelClient {
         Minecraft minecraft = Minecraft.getInstance();
         return minecraft.level == null ? Difficulty.NORMAL
                 : minecraft.level.getDifficulty();
+    }
+
+    private static DifficultyChoice choiceFor(Difficulty difficulty) {
+        for (DifficultyChoice choice : DifficultyChoice.values()) {
+            if (choice.difficulty == difficulty) return choice;
+        }
+        return DifficultyChoice.EUCLID;
     }
 
     private static void setDifficulty(Difficulty difficulty) {

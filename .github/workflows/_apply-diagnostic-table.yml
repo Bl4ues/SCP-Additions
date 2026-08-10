@@ -1,87 +1,10 @@
-name: Archivist Chair Integration
+name: Archivist Chair Integration (retired)
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - '.github/workflows/_apply-diagnostic-table.yml'
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  integrate:
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Add Archivist Chair
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-          import base64, json, zlib
-          files = json.loads(zlib.decompress(base64.b64decode('eNrtXXtz2siy/yoq/3PxHjzoLZFXHcd2EtfNq2zvnt2zTrmEGIw2QuJKwkl2K9/99szoCTNYGBBg7ErZIM30dP+6p18ayD8HceR2Ro4XdP5y7pxOgJPOyI2wk4RRJ3bHTr/vJV4YxJ2B43q+l/zoHEfu0Lvz4iQ+GTpe9NoP3a+ITD54Jh2MHferc4sloIMyOqhMB2V0nl8H14E3GodRwkZ7AXYjZ5AgN4wwomQ/h/HzeYNOvQi7hKxo1Lcw8vsIBwksiMa+8wNH6DP9M3+Gl+AROodflwkIVGOsGwYJ/p6kbPuOi0/YlflzfXyHfTbpLU6S+9hiw3sUcTqp/vAzisGCk96Fkfc3yOH4OdKOvyCND14UhQvIdYGDPo4uh84YLzApTJz77aA84zKcBP2rH4sskpoRlZ/BWX9uDPylRv0aD507L5xED5p9SV4uOpNOOsUDL/DqojR2kiGM75MNAy9PwtF4wjCuC1oMWx9cAfLDMEHv4ddnJ3JG8fyp4+GPGL3zkgscT/ykxtiYGEqMTkLf92Lgrta2K8+klhbXH/9b+B37mXnms4j/+46cIEgNEX2c+L7T80tIkSFokng+ZZbtpph3+z34Vkq788sv14H0i3SKwdsB2Tss5c73f2KJul9ERtBRV0MsURPp4cAdSqOwj33JiyUPAAnY1vV/SOFgEONEGkThSEpgBjUTCfb5rRcgQoPScjM4pR72w2+EjCP1nK+4LznjcRR+90ZUTCBHqThuMnF8KSLSw5gY/H6bEuqB+4xwnLQlJxpJYw+7OG5LY9yHa47flgZEqHgcfsWwQtCXBhiYA1mHOALCTgDLusA9jnCf0rvFAY48V3KJ7FIv/E7l71wH40nPh+tgssCH6ztxLPEClQS2AQ4mlsSuTQKF+HgEq8ZSyWtK/8BK8DOOvDsQUiI7K1+wMArp46eLq3fSS4nZFQqjFpuX/QDPLQ1plnralhQZyYYML45MZFjkhY1M1SZ3FKSr9I6Gurp6etiepSIjS9crVNhYOls1zAoZBWmKziVzJKdrF3TYYLiiZrcyOmIyM9zkRGaYEYs0A0wm0QwuDDCBPLZmMCJql0w6AjEoNRVZKiWvIVmlLCFZtvhUFKRoFsPAUlIqtqFSKikWBtJ1QgVElw0RFV3rsrEKfQE6UgydUlEoWcVCtmlRKrqsiahYuszGGmaqad2gMiJbISyoIKttUyqKrPCpqEhm1tFFXTulYhlURmQohJoKsspUViAn8+EFtdIhBbo6MruErg6C6GV0KYamgIosmxV0ddTt6pSKYapldCmGtsjmZL2CrgFMmZSKaipldAmGMIRPRZfVCroGMqhoYH1Gt4wuxVARUFFkuYKugboys2GTolygqyJN1wQbQDfkCrpmas0WNdUyuhpSLVtARdHtCrpWas0mNdUyuhoybL6mwd7pkAJdK7Vmk5pqGV0N2bYqoGLoRgVdK7Vmk5pqGV0dKbYuoKLqWgVdO7VmA9kU5QJdHek2fzsaSDMy2814USlAIIhFudQzh6kDOb6mgX/FqFAhlq+kVzS1Qoaomi8S8XGZs0vpAFZy5nftbpkOjFWEzoGJUJCRkck2OthQhYpCpeTvR6binIiSCkmM1yzT0KmIAtuley+noacCmpT5Eg2TisenYanMr1lWColKFWOnf4EflblyVSAKKEO36MjU3kA2Q6M6Zn9N1FWYiOQ9304Uqk/Ye0qKqJ0avp3BpJhML7bAq1iZrYFOu4wG2zxdQMdkwchOSQgsxEZdlblnhcoOJDQ5tRhbYzR0urlk2BWKyMr0rpUuk8qimAYzMl0200iU4qF0RUS63dQM5ZRIaloqMukmhrBga2nUF7k2mWGXAQJbg64PaDMvmwJCxDREYcNiji1DBHygwnysbdolQMiuMGWRuzfsMiDgdRQWkQ3LKuEBDCqmKNlRZauMh440k9FQWfRK4SBCKrLISbPtn+IBfNk6hUO11BIcIFJXoBbUZZpM0VBSVcO+o9czMGAnKMIUsoIFQKCwv7Zhl6CAoKwaAgqGbJSQUKnbpJTsMhDgTgXBCsJkdaOATmmWZiFTk8t2wZwUj4aZSp7bBfHeGnUbitkt24VK/Qd/w8qaWbYLk0YjQoMFltwudGGOZaVBKbcLYExhNLosm8zsAhAVbDYIaF2lhAfIZDM4GNIZHACTbgjQ0Cp2ATLbLIXoWmUwdLqb+BSYn8uwIIHZomLo1IVmUJiQ2isiCqpSQkJP/TYk8pZdAgIAsmCvH1YpoHCceCPvb9w6fF6v7Do7vryCqotVoH+0aBUGq9SdfvnpV1q1Tc1X687/zxlvee2Q1vGUAKtPeTVp6zCrLclPPBnjqFXtFKHPUQhXE48UlIPWFFgUsJj0s1p5Vwt9OLs6fs8dmEQ4uE2GJAV/wyqtN7xxQfjJdf0JaQJwF/TiC9yPkzAgnc7+xE2g0m3RdlNbog0gKPPD+FA6eiUNHD/GhxmU5CfCt4ABjk7xwJn4Ce1PsclFlwo5wY/WIYpx8pvjT3DrzfHJ+ce3bSmv1xFFOaf7M4P635/ucBR5fZypLkxgAu5Ld6HXl2hTGhe9tGLB1tR79Hri+X0cvaCD21Ix55XUY7cqmkuvIaffT5mdZS1rC/E5ZTZSrCPdYobNmzCiTWXSlWjN9JiltPtc4SbCySQKpD5DuKDJgXRWu1k7G9bnNEqABNz4NAb9eoTgEmKyBosU4G+lt62s+U8sqIw73X6YJyYQ4O6tlCClwybfZy2MuVIXmiih9LZVh53SeHT28er86o/X7z+d/O/N8cfzD8dXZ6f1mCj5F2II3NVTeNjTg3TjVfVZBXO6UTrPdmjHE0yP7Uyi87LZHB4+RIp8/cchzm9ePHH85mVJu4t4NAbrrsl5Lwx97ASSF39Om/tkiy7NNufxgJTALx7bNBLU47bEFouqHEazxz5sBLzgqp1qeyaMZFNQSl1gFIcLczuiD7w43LInYel9MacpP2wYYSiTckkWyWOFF/kzzVfEek8hrYg5nBZPa7IYyA14Kdulxxko9oJbH0NWQFZrzQYW4qdzHlpv0mfBH8L+xMfo+OLk3flv55dXlzcn747PL27Or84+EHlbtYXMaVNf40N2Uqw2K2f+oElKnAgm8Oy8sg+mTZ8+SpbYg2VRWHqQuNPSTuWfJSeUe7U8PEvkEXtwy7Wwb17iDqUWZwQN+06cZtKQtZG/zzn3WaoMA+gL3giaDMMA8nfqfpqOkLs0eyvd/llf5izNLsMAabILKvWCRPq/iROBzq5A4rgiY2m8O4kgD04gZ2czS4wMYJO2CB0K2UtJfs5evagQZhf/9a8ZEEuLjCNM8vcYiKTrPReN/fNL/vTspfRP1b3/nJqVkUXA6bHvvwYicQscRvB7G7xL8Af9/V/47Xz/nf7+g/7+L0nGZ7ckNQ+29J/yl8qTq+JyO7tKajs+jewH6opT6YguWGLn93a9WRnjjOXfDytlA7WwXHEFd7PlYmpIU+ZfVQLch38HbWk1Z2BYqtn8SZi1HVSocdSAPhg/Pn79uixDHA6Sbw5w3sNR4JGA5X4Nfa8HBR15bEySDvQWh1z2hHMpFCUCXgCcBi540fzaeXrpxHGHeDGSJA8oCH1wAtBcVIMEfV7/lrx77/V+hTcUh5rPotPaJ3siXb5WegRdRWr6KTRbQ4ABeGPy+6VU5hCxArgysJUMvbhWr2LxAo31M+4Lfaw8YqUSC4FtaeGijdb3WWuBJNERyUyiuDWjWlTcvaDjIyei6XY6oyJBpyNdshDULw5ijCF1QrW4EikHpBTcavFCt5tadZ0VYUMWVetr0hOCaA9hoiUsnWFGi27pz6SmJ5k07LCBTxJR4pnpk/L09+F63CdJk1bqPIF0AnkRAJyA9MJzhL4H2wxFFCowjJKV/8dLhuEkeU+840V6X0QG3gF8X5ELiyJSDUHmGSQ1Dg7msq/uQCJz55Tt1RwnhDTjFmdIUXcVUx244WgEjvP8hN4h3J3lN58vGg6qGDyCOFBGkmvCKaBTm4HgMGttC50vSw+QzVwfTALWOAXvF09GlH7taEX4qsYqeqUaqeilDYcowgMLUOxwG5Rpefecum32khOk0uGlMQvEHdo0dnxIQtl2aGUgv+Duj1ck3ND7FUayi8hxXTxOWrSA5M1vzdQdGd5z7EmKCsOqTp4SLKc506rlOUVaa0/iJMwXmuWO/HgDqZVxIL18KQVgw4dScYXXxS2z35quBUpRrCRZ+W6pBvi58SzivHISMwil3OnE25pKUDCc8RjQfRfCgCvwAK2iyRKT3+2i3y9Ru+A2DWn7KY+Mr6QkDP3EG7fF4e6KjXjjO7cSpCLVdkU6nT5syaki0EAQ+wyH1vVBNgjc7k3hd4ss7oZs9esD3uOtb2Dnl8kPIFPNI9Dbi+M/KkUp9R1oGqMUmbRtlAtL5XhwAsUiBjd9+kCO+y6QPzFS4uwpwqwvEqOL9NX70OWdsedSv3THx9kb4KzOlCyhQ+Kyo0YgpqeeSTpB8VgkvtEJeYDLKLwQc/Nq7ongadSkD59Oz95LL6umRhze9MjWFHgIZp5D7n19cIvDjpPzc0PPQIPoIforDgMw4+eL8HN19vvVrxdny3FEHk9MwFQ6NHTOMjcObhfliz0iO//0cTnOCtc6y1WR6xXAzX8YOMUj+FtqHdmN1pzyvshVea6YWkXdR5KzXFwx/JfnI7WGh3NynGG6PC+5BazYT5Kw9bjdZM0a6kFOMkevno8kw5885JOHnOcNaLW4cf9Yg4uGvGMNTtblG+n6WZ21Qv843V6ju2D2+US2MlTqd4Bn1FzCmHOW9dkvyiVyzdwxm1Ooq+QjKyNq5ZPi3kZeCc/BDs07PsIaHaLTUnTLVp4+ryzwrs621hYWy6Yw1YWrGyDnGkJ5QI2YybWCajuklmbzwL16xbLG1OrcBWs0O2MP9WGNkRN9BW2cVrqZcxrTd+R3dU/EZ3fiNjybTaf1JjFd9nLSi93I6+H75w1GftYAr5m6LZPtVZ+fUQD/TaI55fP1JM4Zj1qQ3XnkEAE/8JePq5JzCXwiCN6RCW3pjhw1gnFEC+jk/fnZx6vDOruBmcZ0AsgdVNhxEVmriqjsiDQ5qrTpcn23ePpHF9PDJKr1yv5h5pMR5PhXzrGHBzzVnCUyz88/ewYbes6uzcuPDqgAJ3Gn0unqzE2HyY6l8l8fDGh76wayGdJbvoY71wcKUlQkXx+02ZDc+p/B/BFOoh9k2J+MsxzG64M+JnobJymdEsDXBxCdANGBB/6RLpFRQtM8pqtm89Ic+uab10+GZKqpc+8PsXc7TDgDgLQHCdVNjzwKjQs66rxRBTUVGfMGso/Ul+BgP3JF1+STNtULxZsv2cuf7QLIXhjgeIpopad+fRA4I8yQnEWN3B97d+EsX5JkTlmhguypK3L57ZcpstnJSQ5leYrOEfnU51zapf58u4agBBV1VlCHHOtZCRQKkrvrAkO9D4wp2u6kN2MCM+iwoewLHDhjmX51w+B4HkVGms65Tj7RrRvT17+0Z5eNvb+xYNHuLJCMF4O3JPgatVtnRZEiecoUKZTJWGe1OdplAMoc0txrdVab3E25zNIOgDxhKLhbTP2Tf8ZOtQWH7zSVd/1LW7TGzRx9M50bgpVA7dylZi/+bPPkx06cPFR8WSS9vFrpFXVt4kOUf7j6hfJru6L9b/jh2lf0hox/jeqfjFete7kx1atLyt4PvwUP1r2yKFdrQOBoEQimL01dmIZo4UxARuZCmQD5mpBlMwGeDXJzgI0Gya5AffqKDUW0I/WNxUfhLlFXLLqyHtmXCo66aNvq+i7ofZnIqKkiva84Mh6tSfGrD4u62YzSFXlzMVHAktGQ6Ef1ZV93METaUyzk24i2005xmWCoNuUUtzIY6nsbDOXdzoEeHgqtDee9GwyForaYYexjKNxAh1jld4hl3pLdmg3idcVETVvMgNfRS9lYVBQLr+6G8EuFRbH0+m5Iv1SVKBTe3A3hHx4ahblgYzu+u8HmqTgTlhtsnna3p3cqjpGCJ4zri5Ey//LGY2S3oUdtYoORN/igUSy+uiviL1c+CouoXRF/mUCpL1bZbaH0q++nNpcgdbfxMaOq7WakXPaElr3OE1r3HFZ7ALtzuRXIs56jdas68aUjVeGW1ryWB/mvMbpL5inkf5HgLmjxYiIZvZ21vL3a7aoJt6u6fbW8quyG8Oup5VV9N6RfSy2vWrsh/MMzFKHoclOSaxvMUITS26tOUMTyH2lbU8obSJENflziVvIysrvLVvLCUChoglsbreSFKe2qD42qa9otSx2IEh4ZNXZD+KUipGLtuPTLREhV3nHhHx4hhc/+5WYkVzdXvwtFV5sR/UjdmsDI73GbyNb5gXH5FrfCj4DCwLjZFreqNeQglLUlkksdjzJ3XvylgqPa3Xn513JkeHfEXyJAisKEajYlvLLBGlIovrbyIlKZ82Ga7elya9vTN17kU8jmhj6FbCDd1Go3pcl/+qwunVnIls59eg7lPO8gNrJny9uVfAgZ2UvU+Pd8CPlIUXfiQ8iNfQx3607PifsJKxZ9C8/OCZ+Km7ug9bU023dD60u02o2mkkTR+e2N5UjCIyBKM5IfbU+HXbX5oVfm8U4a8sryjQSdW58oSNNVY5kcY21ddquhnpuylV/MIUwJdkf8NZ2X2xn5l+q1azuv/iWaCULda/vQTBD2EXVlP5sJ+k42ExRdfWomPDUTGk+chCVGU4n25poJwg68+eh7CXJDj2m3sJfQ1JmMbesl2A1Z+/a1EoQqb8ran3oJO9VLED6Z3o9egvDJ9L70EoQHNq196CUIxd+HXkJjkWI7zyUIv7NoPzsJxk52Ep5OJTw1EjaQNenqLj+eXiphspv5QNQu9RH0x95HEDaP7Ed+JMFu5psptq+NIP6+Qe2pjfDURphVo96UvWxlG0F8IkPbizaCKu+8/Eu1EbSdP5GxxNfdaTuv+6X6COJvhtjPRoK5m59veDqT8NRK2EgrQW+moN6hVoL9+D/eoDf0TVJbeCbBbkj0bWsmKE11UbbwUILd1H+T8NRNeBSHEsy97iaIz2TsRzdBfChjv7sJmv74uwniI7p70U0QRsp9PZZgPb5v2X0q+J8Kfu6N/a34VXN/S/49+BiCUO2P/fxAt6nTtVtX8qsN/f+ATxX/o6j4xQex96LiFwYHcz8+hSASv7sP9b7S2MHCbfxCA72h/yJyx74dUTEfV72fvUyv0ffwGv4etKWDOHI7I8cLOhEGRxK5OO44cYyTuBO74xun3/dI3QcXA2/kpC8jd+jdeXES39D/GQjl99BfcRgADgdUIdcHgzCCGzd3OIrT4vH6AApRJKeNg+uDgizV48+F+RqFfezHHS/Bo1nGpthxIwzTGBsfnD6WvnnJUHrth+7XHg7cYc5VpdEx8fwE+IALXvIjH5Lg78kkwtOqNzOrMqkH+ZKO7nvx2Hd+lGwVKAy9qD8GaMLgBtKYYTJ0gn7FmmFM5ASxzyu9qzZ1JKNKdpHXs4XRQqBwHX/aTGFeeR9w3k6bT5vHv48Hu8b+wIvi5B74BW2Pcm1xVDmAyGVcjIIxJfbDIKh0rTlva0Eg0OAjR+A2CicLWK26AlbN9ty3YlYnXj3dKOYiXIqF1ZFV2aPWg/eoWRVy5q1Q5iF26ivHrPJritid3QXf8YNXOepW38u8aPuzGjPiShiAWJN4rp823ivB7VmPhKaZsHZ9QIkuHCoptRhsBsf3hso7J/KcIKmyOnBcL7h9WZSbcI3G3/q83xTillXACOd13IrpFhXSignntceSdB+mzzT1uYf+tGbXYYQ//x+W1DjV')).decode('utf-8'))
-          for path, content in files.items():
-              target = Path(path)
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_text(content, encoding='utf-8')
-
-          facility_path = Path('src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java')
-          facility = facility_path.read_text(encoding='utf-8')
-          for old, new in [
-              ('    public static final RegistryObject<Block> ARCHIVISTS_TABLE = registerBlock(\n            "archivists_table", ArchivistsTableBlock::new, true);\n    public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);', '    public static final RegistryObject<Block> ARCHIVISTS_TABLE = registerBlock(\n            "archivists_table", ArchivistsTableBlock::new, true);\n    public static final RegistryObject<Block> ARCHIVISTS_CHAIR =\n            BLOCKS.register("archivists_chair", ArchivistsChairBlock::new);\n    public static final RegistryObject<Item> ARCHIVISTS_CHAIR_ITEM =\n            ITEMS.register("archivists_chair", () -> new ArchivistsChairBlockItem(\n                    ARCHIVISTS_CHAIR.get(), new Item.Properties()));\n    static {\n        BLOCKS_BY_PATH.put("archivists_chair", ARCHIVISTS_CHAIR);\n        ITEMS_BY_PATH.put("archivists_chair", ARCHIVISTS_CHAIR_ITEM);\n        CREATIVE_ITEMS.add(ARCHIVISTS_CHAIR_ITEM);\n    }\n    public static final RegistryObject<Block> TRASHBIN = registerBlock("trashbin", TrashbinBlock::new, true);'),
-              ('    public static final RegistryObject<BlockEntityType<WetFloorBlockEntity>>\n            WET_FLOOR_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(\n                    "wet_floor", () -> BlockEntityType.Builder.of(\n                            WetFloorBlockEntity::new, WET_FLOOR.get()).build(null));', '    public static final RegistryObject<BlockEntityType<ArchivistsChairBlockEntity>>\n            ARCHIVISTS_CHAIR_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(\n                    "archivists_chair", () -> BlockEntityType.Builder.of(\n                            ArchivistsChairBlockEntity::new,\n                            ARCHIVISTS_CHAIR.get()).build(null));\n    public static final RegistryObject<BlockEntityType<WetFloorBlockEntity>>\n            WET_FLOOR_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(\n                    "wet_floor", () -> BlockEntityType.Builder.of(\n                            WetFloorBlockEntity::new, WET_FLOOR.get()).build(null));'),
-              ('        addFacilityCreativeItem(props, "archivists_table");\n        addUBlockCreativeItem(props, "vent_open");', '        addFacilityCreativeItem(props, "archivists_table");\n        addFacilityCreativeItem(props, "archivists_chair");\n        addUBlockCreativeItem(props, "vent_open");'),
-          ]:
-              if old not in facility:
-                  raise RuntimeError('FacilityModule anchor not found: ' + old[:80])
-              facility = facility.replace(old, new, 1)
-          facility_path.write_text(facility, encoding='utf-8')
-
-          lang_path = Path('src/main/resources/assets/scp_additions/lang/en_us.json')
-          lang = lang_path.read_text(encoding='utf-8')
-          old = '  "block.scp_additions.archivists_table": "Archivist\'s Table",'
-          new = old + '\n  "block.scp_additions.archivists_chair": "Archivist\'s Chair",'
-          if old not in lang:
-              raise RuntimeError('Archivist table lang anchor not found')
-          lang_path.write_text(lang.replace(old, new, 1), encoding='utf-8')
-
-          geo = json.loads(Path('src/main/resources/assets/scp_additions/geo/archivists_chair.geo.json').read_text())
-          desc = geo['minecraft:geometry'][0]['description']
-          assert desc['identifier'] == 'geometry.archivists_chair'
-          assert desc['texture_width'] == 64 and desc['texture_height'] == 64
-          assert Path('src/main/resources/assets/scp_additions/textures/block/archivists_chair.png').exists()
-          assert facility.index('addFacilityCreativeItem(props, "archivists_table")') < facility.index('addFacilityCreativeItem(props, "archivists_chair")') < facility.index('addUBlockCreativeItem(props, "vent_open")')
-          print('Prepared Archivist Chair integration with authored offset and 49-piece collision approximation.')
-
-          PY
-      - name: Compile
-        run: ./gradlew compileJava processResources --no-daemon
-      - name: Commit integration
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/main/java/net/mcreator/scpadditions/facility/FacilityModule.java
-          git add src/main/java/net/mcreator/scpadditions/facility/ArchivistsChairBlock.java
-          git add src/main/java/net/mcreator/scpadditions/facility/ArchivistsChairBlockEntity.java
-          git add src/main/java/net/mcreator/scpadditions/facility/ArchivistsChairBlockItem.java
-          git add src/main/java/net/mcreator/scpadditions/client/ArchivistsChairBlockModel.java
-          git add src/main/java/net/mcreator/scpadditions/client/ArchivistsChairItemModel.java
-          git add src/main/java/net/mcreator/scpadditions/client/ArchivistsChairBlockRenderer.java
-          git add src/main/java/net/mcreator/scpadditions/client/ArchivistsChairItemRenderer.java
-          git add src/main/java/net/mcreator/scpadditions/client/ArchivistsChairClient.java
-          git add src/main/resources/assets/scp_additions/geo/archivists_chair.geo.json
-          git add src/main/resources/assets/scp_additions/animations/archivists_chair.animation.json
-          git add src/main/resources/assets/scp_additions/models/item/archivists_chair.json
-          git add src/main/resources/assets/scp_additions/blockstates/archivists_chair.json
-          git add src/main/resources/assets/scp_additions/models/block/archivists_chair_particle.json
-          git add src/main/resources/assets/scp_additions/lang/en_us.json
-          git commit -m "Add decorative Archivist's Chair"
-          git push origin HEAD:master
+      - run: echo "Temporary Archivist Chair integration workflow retired."

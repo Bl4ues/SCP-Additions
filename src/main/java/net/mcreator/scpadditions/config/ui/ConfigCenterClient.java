@@ -86,6 +86,7 @@ public final class ConfigCenterClient {
     }
 
     private static Screen openFromMods(Minecraft minecraft, Screen parent) {
+        prepareVisual(parent);
         rootParent = parent;
         if (minecraft.player == null || minecraft.getConnection() == null) {
             return new MessageScreen(parent, "SCP Additions Configuration",
@@ -96,6 +97,7 @@ public final class ConfigCenterClient {
     }
 
     public static void requestOpen(Screen parent) {
+        prepareVisual(parent);
         rootParent = parent;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.getConnection() == null) {
@@ -105,6 +107,10 @@ public final class ConfigCenterClient {
         }
         minecraft.setScreen(new MessageScreen(parent, "SCP Additions Configuration", "Loading configuration from the server...", true));
         ModNetwork.CHANNEL.sendToServer(new ConfigCenterNetwork.OpenRequest());
+    }
+
+    public static void prepareVisual(Screen parent) {
+        ConfigCenterVisuals.prepare(parent);
     }
 
     public static void openSnapshot(String payload) {
@@ -221,17 +227,11 @@ public final class ConfigCenterClient {
     }
 
     private static int left(int width, int panelWidth) {
-        return Math.max(8, (width - panelWidth) / 2);
+        return ConfigCenterVisuals.contentLeft(width, panelWidth);
     }
 
     private static void panel(GuiGraphics graphics, int x, int y, int width, int height, String title, Font font) {
-        graphics.fill(x, y, x + width, y + height, PANEL);
-        graphics.fill(x, y, x + width, y + 26, HEADER);
-        graphics.fill(x, y, x + width, y + 2, ACCENT);
-        graphics.fill(x, y, x + 2, y + height, ACCENT);
-        graphics.fill(x, y + height - 1, x + width, y + height, BORDER_FAINT);
-        graphics.fill(x + width - 1, y + 2, x + width, y + height, BORDER_FAINT);
-        graphics.drawString(font, ScpFonts.montserrat(title), x + 12, y + 9, TEXT, false);
+        ConfigCenterVisuals.drawPanel(graphics, font, x, y, width, height, title);
     }
 
     private abstract static class ConfigScreen extends Screen {
@@ -246,50 +246,34 @@ public final class ConfigCenterClient {
             this.screenTitle = title;
         }
 
+        private int themeMouseX;
+        private int themeMouseY;
+
         @Override
         public void renderBackground(GuiGraphics graphics) {
-            int background = Minecraft.getInstance().level == null
-                    ? 0xFF080B10 : 0xE6080B10;
-            graphics.fill(0, 0, width, height, background);
-
-            // Extremely subtle vertical structure keeps the background from
-            // reading as a flat black rectangle without competing with editors.
-            int band = Math.max(52, width / 10);
-            for (int x = 0, index = 0; x < width; x += band, index++) {
-                if ((index & 1) == 0) {
-                    graphics.fill(x, 0, Math.min(width, x + band), height,
-                            0x08000000);
-                }
-            }
-            graphics.fill(0, 0, width, 2, 0xA8C99B18);
-            graphics.fill(0, height - 1, width, height, 0x80343B46);
+            ConfigCenterVisuals.renderBackdrop(this, graphics,
+                    themeMouseX, themeMouseY);
         }
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                 float partialTick) {
+            themeMouseX = mouseX;
+            themeMouseY = mouseY;
+            for (var listener : children()) {
+                if (listener instanceof Button button) button.setAlpha(0.0F);
+            }
             super.render(graphics, mouseX, mouseY, partialTick);
             renderThemedControls(graphics, mouseX, mouseY);
         }
 
         private void renderThemedControls(GuiGraphics graphics,
                 int mouseX, int mouseY) {
-            long now = Util.getMillis();
-            float delta = Math.min(0.10F, Math.max(0.0F,
-                    (now - lastThemeFrameAt) / 1000.0F));
-            lastThemeFrameAt = now;
-
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, 420.0F);
             for (var listener : children()) {
                 if (listener instanceof Button button && button.visible) {
-                    float current = hoverProgress.getOrDefault(button, 0.0F);
-                    float target = button.active
-                            && (button.isMouseOver(mouseX, mouseY)
-                            || button.isFocused()) ? 1.0F : 0.0F;
-                    current = approach(current, target, delta * 8.0F);
-                    hoverProgress.put(button, current);
-                    drawThemedButton(graphics, button, smootherStep(current));
+                    drawThemedButton(graphics, button, mouseX, mouseY);
                 } else if (listener instanceof EditBox edit && edit.visible) {
                     drawEditBorder(graphics, edit);
                 }
@@ -298,34 +282,9 @@ public final class ConfigCenterClient {
         }
 
         private void drawThemedButton(GuiGraphics graphics, Button button,
-                float hover) {
-            int left = button.getX();
-            int top = button.getY();
-            int right = left + button.getWidth();
-            int bottom = top + button.getHeight();
-            int background = !button.active ? 0xE914171C
-                    : hover > 0.02F ? BUTTON_HOVER : BUTTON_BASE;
-            int border = hover > 0.02F ? ACCENT : BORDER;
-            int stripeWidth = Math.max(3, Math.round(3.0F + hover * 2.0F));
-
-            graphics.fill(left, top, right, bottom, background);
-            graphics.fill(left, top, right, top + 1, border);
-            graphics.fill(left, bottom - 1, right, bottom, border);
-            graphics.fill(left, top, left + stripeWidth, bottom,
-                    button.active ? ACCENT : BORDER);
-            graphics.fill(right - 1, top, right, bottom, border);
-
-            Component label = fittedLabel(button.getMessage(),
-                    Math.max(1, button.getWidth() - 18));
-            int textWidth = font.width(label);
-            int textX = left + Math.max(7,
-                    (button.getWidth() - textWidth) / 2)
-                    + Math.round(hover * 2.0F);
-            int textY = top + Math.max(1,
-                    (button.getHeight() - font.lineHeight) / 2);
-            int color = !button.active ? MUTED
-                    : hover > 0.45F ? ACCENT_BRIGHT : TEXT;
-            graphics.drawString(font, label, textX, textY, color, false);
+                int mouseX, int mouseY) {
+            ConfigCenterVisuals.drawButton(graphics, font, button,
+                    button.getMessage(), mouseX, mouseY);
         }
 
         private Component fittedLabel(Component message, int maxWidth) {
@@ -422,9 +381,9 @@ public final class ConfigCenterClient {
 
         @Override
         protected void init() {
-            int w = Math.min(420, width - 20);
+            int w = Math.min(ConfigCenterVisuals.navigationWidth(width), width - 24);
             int x = left(width, w) + 14;
-            int y = Math.max(10, (height - 300) / 2) + 44;
+            int y = Math.max(64, Math.round(height * 0.20F));
             int bw = w - 28;
             addRenderableWidget(Button.builder(Component.literal("General & Modules"), button -> Minecraft.getInstance().setScreen(new ModulesScreen(this)))
                     .bounds(x, y, bw, 24).build());
@@ -450,15 +409,11 @@ public final class ConfigCenterClient {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             renderBackground(graphics);
-            int w = Math.min(420, width - 20);
-            int h = Math.min(310, height - 20);
+            int w = Math.min(ConfigCenterVisuals.navigationWidth(width), width - 24);
             int x = left(width, w);
-            int y = Math.max(10, (height - h) / 2);
-            panel(graphics, x, y, w, h, screenTitle, font);
-            graphics.drawString(font, "Server-authoritative JSON editors with validation and automatic .bak backups.",
-                    x + 14, y + 30, MUTED, false);
             if (!homeNotice.isBlank()) {
-                graphics.drawString(font, compact(homeNotice, 62), x + 14, y + h - 16, GOOD, false);
+                graphics.drawString(font, ScpFonts.roboto(compact(homeNotice, 72)),
+                        x + 8, height - 20, GOOD, false);
             }
             super.render(graphics, mouseX, mouseY, partialTick);
         }

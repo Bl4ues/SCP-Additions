@@ -48,6 +48,7 @@ public final class ClientPreferencesMenu {
     }
 
     public static Screen open(Minecraft minecraft, Screen parent) {
+        ConfigCenterClient.prepareVisual(parent);
         if (minecraft.player != null && minecraft.getConnection() != null) {
             ConfigCenterClient.requestOpen(parent);
             return minecraft.screen;

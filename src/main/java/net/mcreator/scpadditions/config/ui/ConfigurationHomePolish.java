@@ -7,7 +7,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -17,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Runs after the other UI extensions so the home screen keeps one stable layout. */
+/** Final responsive layout pass for the Configuration Center home screen. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ConfigurationHomePolish {
@@ -32,13 +31,6 @@ public final class ConfigurationHomePolish {
     private static final class Handler {
         private static final String HOME_SCREEN =
                 "net.mcreator.scpadditions.config.ui.ConfigCenterClient$HomeScreen";
-        private static final ResourceLocation CONFIG_LOGO = new ResourceLocation(
-                ScpAdditionsMod.MODID, "textures/screens/logo.png");
-        private static final int HEADER = 0xF012161C;
-        private static final int ACCENT = 0xFFC99B18;
-        private static final int BORDER = 0x80343B46;
-        private static final int WHITE = 0xFFF7F8FC;
-        private static final int MUTED = 0xFF9CA3AF;
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public void onInitPost(ScreenEvent.Init.Post event) {
@@ -58,33 +50,73 @@ public final class ConfigurationHomePolish {
         }
 
         private static void arrange(Screen screen) {
-            Button general = find(screen, "General & Modules");
-            if (general == null) return;
+            int navWidth = Math.min(ConfigCenterVisuals.navigationWidth(screen.width),
+                    screen.width - 24);
+            int navX = ConfigCenterVisuals.contentLeft(screen.width, navWidth);
+            int rowHeight = MthCompat.clamp(Math.round(screen.height * 0.058F),
+                    30, 42);
+            int gap = MthCompat.clamp(Math.round(screen.height * 0.012F),
+                    6, 10);
+            int startY = Math.max(90, Math.round(screen.height * 0.205F));
+            int usableBottom = screen.height - 54;
 
             Button crosshair = find(screen, "Crosshair");
-            if (crosshair != null) {
-                crosshair.visible = false;
-                crosshair.active = false;
-                crosshair.setX(-10_000);
+            Button general = find(screen, "General & Modules");
+            Button inventory = first(screen, "Items, Entities & Codex",
+                    "Inventory, Equipment & Codex");
+            Button interactions = find(screen, "Contextual Interactions");
+            Button drinks = find(screen, "SCP-294 Drinks");
+            Button recipes = find(screen, "SCP-914 Recipes");
+            Button accessibility = find(screen, "Accessibility");
+            Button debug = find(screen, "Debug Tools");
+            Button reload = find(screen, "Reload Snapshot");
+            Button done = find(screen, "Done");
+
+            Button[] primary = {crosshair, general, inventory, interactions, drinks, recipes};
+            int rows = 0;
+            for (Button button : primary) if (button != null) rows++;
+            int required = rows * rowHeight + Math.max(0, rows - 1) * gap
+                    + rowHeight + gap + 44;
+            if (startY + required > usableBottom) {
+                startY = Math.max(70, usableBottom - required);
+                rowHeight = Math.max(28, rowHeight - 2);
+                gap = Math.max(5, gap - 1);
             }
 
-            int panelHeight = Math.min(310, screen.height - 20);
-            int panelY = Math.max(10, (screen.height - panelHeight) / 2);
-            int startY = panelY + 60;
-            int step = 31;
+            int y = startY;
+            for (Button button : primary) {
+                if (button == null) continue;
+                place(button, navX, y, navWidth, rowHeight);
+                y += rowHeight + gap;
+            }
 
-            general.setY(startY);
-            // Keep compatibility with both the original label and the renamed
-            // mixed-content hub. Only one of these buttons exists at runtime.
-            setY(screen, "Inventory, Equipment & Codex", startY + step);
-            setY(screen, "Items, Entities & Codex", startY + step);
-            setY(screen, "Contextual Interactions", startY + step * 2);
-            setY(screen, "SCP-294 Drinks", startY + step * 3);
-            setY(screen, "SCP-914 Recipes", startY + step * 4);
-            setY(screen, "Accessibility", startY + step * 5);
-            setY(screen, "Debug Tools", startY + step * 5);
-            setY(screen, "Reload Snapshot", startY + step * 6 + 6);
-            setY(screen, "Done", startY + step * 6 + 6);
+            if (accessibility != null || debug != null) {
+                int splitGap = 8;
+                int half = (navWidth - splitGap) / 2;
+                if (accessibility != null)
+                    place(accessibility, navX, y, half, rowHeight);
+                if (debug != null)
+                    place(debug, navX + half + splitGap, y,
+                            navWidth - half - splitGap, rowHeight);
+                y += rowHeight + gap + 8;
+            }
+
+            int footerHeight = Math.max(26, rowHeight - 6);
+            int footerGap = 8;
+            int half = (navWidth - footerGap) / 2;
+            if (reload != null)
+                place(reload, navX, y, half, footerHeight);
+            if (done != null)
+                place(done, navX + half + footerGap, y,
+                        navWidth - half - footerGap, footerHeight);
+        }
+
+        private static Button first(Screen screen, String... labels) {
+            for (String label : labels) {
+                Button button = find(screen, label);
+                if (button != null) return button;
+            }
+            return null;
         }
 
         private static Button find(Screen screen, String label) {
@@ -97,49 +129,46 @@ public final class ConfigurationHomePolish {
             return null;
         }
 
-        private static void setY(Screen screen, String label, int y) {
-            Button button = find(screen, label);
-            if (button != null) button.setY(y);
+        private static void place(Button button, int x, int y,
+                int width, int height) {
+            button.visible = true;
+            button.setX(x);
+            button.setY(y);
+            button.setWidth(width);
+            button.setHeight(height);
         }
 
         private static void renderHeader(GuiGraphics graphics, Screen screen) {
-            int panelWidth = Math.min(420, screen.width - 20);
-            int panelHeight = Math.min(310, screen.height - 20);
-            int panelX = Math.max(8, (screen.width - panelWidth) / 2);
-            int panelY = Math.max(10, (screen.height - panelHeight) / 2);
+            int navWidth = Math.min(ConfigCenterVisuals.navigationWidth(screen.width),
+                    screen.width - 24);
+            int navX = ConfigCenterVisuals.contentLeft(screen.width, navWidth);
             Font font = Minecraft.getInstance().font;
 
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, 1200.0F);
-            graphics.fill(panelX, panelY,
-                    panelX + panelWidth, panelY + 44, HEADER);
-            graphics.fill(panelX, panelY,
-                    panelX + panelWidth, panelY + 2, ACCENT);
-            graphics.fill(panelX, panelY, panelX + 2,
-                    panelY + panelHeight, ACCENT);
-            graphics.fill(panelX + 2, panelY + 43,
-                    panelX + panelWidth, panelY + 44, BORDER);
-
-            int titleX = panelX + 14;
-            if (Minecraft.getInstance().getResourceManager()
-                    .getResource(CONFIG_LOGO).isPresent()) {
-                graphics.blit(CONFIG_LOGO, panelX + 10, panelY + 7,
-                        30, 26, 0.0F, 0.0F,
-                        960, 832, 960, 832);
-                titleX = panelX + 48;
-            }
-
-            graphics.pose().pushPose();
-            graphics.pose().translate(titleX, panelY + 8, 0.0F);
-            graphics.pose().scale(1.08F, 1.08F, 1.0F);
-            graphics.drawString(font,
-                    ScpFonts.montserrat("SCP Additions Configuration"),
-                    0, 0, WHITE, false);
-            graphics.pose().popPose();
+            ConfigCenterVisuals.drawScaledText(graphics, font,
+                    ScpFonts.montserrat("CONFIGURATION CENTER"),
+                    navX, Math.max(28, screen.height * 0.075F),
+                    screen.height < 480 ? 1.35F : 1.62F,
+                    ConfigCenterVisuals.TEXT);
+            ConfigCenterVisuals.drawScaledText(graphics, font,
+                    ScpFonts.titillium("SCP ADDITIONS / SYSTEM CONFIGURATION"),
+                    navX, Math.max(50, screen.height * 0.075F + 25),
+                    0.92F, ConfigCenterVisuals.ACCENT_BRIGHT);
+            int lineY = Math.max(69, Math.round(screen.height * 0.075F) + 47);
+            graphics.fill(navX, lineY, navX + navWidth, lineY + 2,
+                    ConfigCenterVisuals.ACCENT);
             graphics.drawString(font, ScpFonts.roboto(
-                            "Gameplay, interface, and content settings."),
-                    titleX, panelY + 27, MUTED, false);
+                            "Gameplay, interface, content, and developer controls."),
+                    navX, lineY + 10, ConfigCenterVisuals.MUTED, false);
             graphics.pose().popPose();
+        }
+    }
+
+    /** Tiny local clamp helper to keep this layout independent of mappings. */
+    private static final class MthCompat {
+        private static int clamp(int value, int min, int max) {
+            return Math.max(min, Math.min(max, value));
         }
     }
 }

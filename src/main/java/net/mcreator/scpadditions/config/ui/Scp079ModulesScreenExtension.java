@@ -299,9 +299,9 @@ public final class Scp079ModulesScreenExtension {
             buttons.clear();
             labels.clear();
 
-            int panelWidth = Math.min(560, width - 20);
+            int panelWidth = Math.min(620, width - 20);
             int panelHeight = panelHeight();
-            int panelX = Math.max(8, (width - panelWidth) / 2);
+            int panelX = ConfigCenterVisuals.contentLeft(width, panelWidth);
             int panelY = Math.max(8, (height - panelHeight) / 2);
             int contentX = panelX + 16;
             int contentY = panelY + (sectionTitle == null ? 44 : 57);
@@ -416,26 +416,14 @@ public final class Scp079ModulesScreenExtension {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                            float partialTick) {
-            renderFacilityBackground(graphics, width, height);
-            int panelWidth = Math.min(560, width - 20);
+            ConfigCenterVisuals.renderBackdrop(this, graphics, mouseX, mouseY);
+            int panelWidth = Math.min(620, width - 20);
             int panelHeight = panelHeight();
-            int panelX = Math.max(8, (width - panelWidth) / 2);
+            int panelX = ConfigCenterVisuals.contentLeft(width, panelWidth);
             int panelY = Math.max(8, (height - panelHeight) / 2);
 
-            graphics.fill(panelX, panelY, panelX + panelWidth,
-                    panelY + panelHeight, PANEL);
-            graphics.fill(panelX, panelY, panelX + panelWidth,
-                    panelY + 26, HEADER);
-            graphics.fill(panelX, panelY, panelX + panelWidth,
-                    panelY + 2, ACCENT);
-            graphics.fill(panelX, panelY, panelX + 2,
-                    panelY + panelHeight, ACCENT);
-            graphics.fill(panelX + panelWidth - 1, panelY + 2,
-                    panelX + panelWidth, panelY + panelHeight, BORDER);
-            graphics.fill(panelX + 2, panelY + panelHeight - 1,
-                    panelX + panelWidth, panelY + panelHeight, BORDER);
-            graphics.drawString(font, ScpFonts.montserrat(title.getString()), panelX + 12,
-                    panelY + 9, WHITE, false);
+            ConfigCenterVisuals.drawPanel(graphics, font, panelX, panelY,
+                    panelWidth, panelHeight, title.getString());
 
             if (sectionTitle != null) {
                 graphics.drawString(font, ScpFonts.roboto(sectionTitle),
@@ -504,9 +492,9 @@ public final class Scp079ModulesScreenExtension {
             labels.clear();
 
             JsonObject settings = object(working, "crosshair");
-            int panelWidth = Math.min(650, width - 20);
+            int panelWidth = Math.min(700, width - 20);
             int panelHeight = Math.min(360, height - 16);
-            int panelX = Math.max(8, (width - panelWidth) / 2);
+            int panelX = ConfigCenterVisuals.contentLeft(width, panelWidth);
             int panelY = Math.max(8, (height - panelHeight) / 2);
             int contentX = panelX + 18;
             int contentWidth = panelWidth - 36;
@@ -599,27 +587,15 @@ public final class Scp079ModulesScreenExtension {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                            float partialTick) {
-            renderFacilityBackground(graphics, width, height);
-            int panelWidth = Math.min(650, width - 20);
+            ConfigCenterVisuals.renderBackdrop(this, graphics, mouseX, mouseY);
+            int panelWidth = Math.min(700, width - 20);
             int panelHeight = Math.min(360, height - 16);
-            int panelX = Math.max(8, (width - panelWidth) / 2);
+            int panelX = ConfigCenterVisuals.contentLeft(width, panelWidth);
             int panelY = Math.max(8, (height - panelHeight) / 2);
             JsonObject settings = object(working, "crosshair");
 
-            graphics.fill(panelX, panelY, panelX + panelWidth,
-                    panelY + panelHeight, PANEL);
-            graphics.fill(panelX, panelY, panelX + panelWidth,
-                    panelY + 26, HEADER);
-            graphics.fill(panelX, panelY, panelX + panelWidth,
-                    panelY + 2, ACCENT);
-            graphics.fill(panelX, panelY, panelX + 2,
-                    panelY + panelHeight, ACCENT);
-            graphics.fill(panelX + panelWidth - 1, panelY + 2,
-                    panelX + panelWidth, panelY + panelHeight, BORDER);
-            graphics.fill(panelX + 2, panelY + panelHeight - 1,
-                    panelX + panelWidth, panelY + panelHeight, BORDER);
-            graphics.drawString(font, ScpFonts.montserrat(title.getString()), panelX + 12,
-                    panelY + 9, WHITE, false);
+            ConfigCenterVisuals.drawPanel(graphics, font, panelX, panelY,
+                    panelWidth, panelHeight, title.getString());
 
             graphics.drawString(font, ScpFonts.roboto(
                             "Replaces Minecraft's crosshair with the SCP Additions texture."),
@@ -757,7 +733,7 @@ public final class Scp079ModulesScreenExtension {
         graphics.pose().translate(0.0F, 0.0F, 440.0F);
         for (Button button : buttons) {
             if (button.visible) {
-                drawButton(graphics, font, button,
+                ConfigCenterVisuals.drawButton(graphics, font, button,
                         labels.getOrDefault(button, Component.empty()),
                         mouseX, mouseY);
             }

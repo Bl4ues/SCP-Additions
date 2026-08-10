@@ -116,6 +116,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     private long transitionStartedAt = -1L;
     private Runnable pendingTransition;
+    private boolean configurationTransition;
 
     public CustomMainMenuScreen() {
         super();
@@ -141,6 +142,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
         backgroundStartedAt = now;
         transitionStartedAt = -1L;
         pendingTransition = null;
+        configurationTransition = false;
         PauseMenuModsPanelClient.close(this);
 
         refreshAvailableBackgrounds();
@@ -241,8 +243,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
         if (extrasBuilt) return;
 
         addExtraCustom(ScpFonts.roboto("Configuration Center"),
-                () -> beginScreenTransition(this::openConfigurationCenter),
-                CONFIG_LOGO);
+                this::openConfigurationCenterAnimated, CONFIG_LOGO);
 
         List<AbstractButton> discoveredExtras = new ArrayList<>();
         for (GuiEventListener listener : new ArrayList<>(this.children())) {
@@ -416,6 +417,38 @@ public final class CustomMainMenuScreen extends TitleScreen {
         minecraft.setScreen(ClientPreferencesMenu.open(minecraft, this));
     }
 
+    /** Opens the Configuration Center as a continuation of this title scene. */
+    public void openConfigurationCenterAnimated() {
+        if (transitionStartedAt >= 0L) return;
+        extrasOpen = false;
+        PauseMenuModsPanelClient.close(this);
+        MainMenuPlayPanelsClient.close(this);
+        MainMenuSettingsPanelClient.close(this);
+        configurationTransition = true;
+        beginScreenTransition(this::openConfigurationCenter);
+    }
+
+    /** Snapshot of the title backdrop currently visible behind the menu. */
+    public ResourceLocation configurationBackdropTexture() {
+        if (backgrounds.isEmpty()) return FALLBACK_BACKGROUND;
+        if (backgrounds.size() == 1) return backgrounds.get(0);
+        long elapsed = Math.max(0L, Util.getMillis() - backgroundStartedAt);
+        long slot = elapsed / BACKGROUND_HOLD_MS;
+        long within = elapsed % BACKGROUND_HOLD_MS;
+        int current = (int) ((backgroundOffset + slot) % backgrounds.size());
+        int next = (current + 1) % backgrounds.size();
+        return within > BACKGROUND_HOLD_MS - BACKGROUND_FADE_MS / 2L
+                ? backgrounds.get(next) : backgrounds.get(current);
+    }
+
+    public float configurationSpinnerOuterAngle() {
+        return spinnerOuterAngle;
+    }
+
+    public float configurationSpinnerInnerAngle() {
+        return spinnerInnerAngle;
+    }
+
     private void toggleExtras() {
         if (transitionStartedAt >= 0L) return;
         PauseMenuModsPanelClient.close(this);
@@ -474,9 +507,10 @@ public final class CustomMainMenuScreen extends TitleScreen {
                 deltaSeconds * 5.5F);
 
         float transitionBoost = transitionStartedAt >= 0L ? 1.0F : 0.0F;
+        float transitionSpeed = configurationTransition ? 122.0F : 42.0F;
         float degreesPerSecond = 4.5F
                 + 24.0F * hoverBoost
-                + 42.0F * transitionBoost;
+                + transitionSpeed * transitionBoost;
         spinnerOuterAngle = wrapAngle(
                 spinnerOuterAngle + degreesPerSecond * deltaSeconds);
         spinnerInnerAngle = wrapAngle(
@@ -546,14 +580,26 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private void drawSpinner(GuiGraphics graphics) {
-        int size = Mth.clamp(Math.round(this.height * 0.86F), 300, 650);
-        int centerX = Math.round(this.width * 0.035F);
-        int centerY = Math.round(this.height * 0.585F);
+        int baseSize = Mth.clamp(Math.round(this.height * 0.86F), 300, 650);
+        int baseX = Math.round(this.width * 0.035F);
+        int baseY = Math.round(this.height * 0.585F);
+        float transform = 0.0F;
+        if (configurationTransition && transitionStartedAt >= 0L) {
+            float raw = Mth.clamp((Util.getMillis() - transitionStartedAt)
+                    / (float) SCREEN_TRANSITION_MS, 0.0F, 1.0F);
+            transform = smootherStep(raw);
+        }
+        int targetSize = Mth.clamp(Math.round(this.height * 1.22F), 430, 980);
+        int targetX = Math.round(this.width * 0.105F);
+        int targetY = Math.round(this.height * 0.54F);
+        int size = Math.round(Mth.lerp(transform, baseSize, targetSize));
+        int centerX = Math.round(Mth.lerp(transform, baseX, targetX));
+        int centerY = Math.round(Mth.lerp(transform, baseY, targetY));
 
         drawRotatedTexture(graphics, SPINNER_OUTER, centerX, centerY,
-                size, spinnerOuterAngle, 0.18F);
+                size, spinnerOuterAngle, Mth.lerp(transform, 0.18F, 0.20F));
         drawRotatedTexture(graphics, SPINNER_INNER, centerX, centerY,
-                size, spinnerInnerAngle, 0.14F);
+                size, spinnerInnerAngle, Mth.lerp(transform, 0.14F, 0.15F));
     }
 
     private void drawRotatedTexture(GuiGraphics graphics,
@@ -690,7 +736,8 @@ public final class CustomMainMenuScreen extends TitleScreen {
         if (transitionStartedAt < 0L) return;
         float progress = Mth.clamp((now - transitionStartedAt)
                 / (float) SCREEN_TRANSITION_MS, 0.0F, 1.0F);
-        int alpha = Math.round(190.0F * smootherStep(progress));
+        float maxAlpha = configurationTransition ? 146.0F : 190.0F;
+        int alpha = Math.round(maxAlpha * smootherStep(progress));
         graphics.fill(0, 0, this.width, this.height, alpha << 24);
     }
 

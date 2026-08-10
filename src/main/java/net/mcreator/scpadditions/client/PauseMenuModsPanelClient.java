@@ -596,6 +596,11 @@ public final class PauseMenuModsPanelClient {
     private static void openSettings(Screen screen,
             ModEntry entry) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (ScpAdditionsMod.MODID.equals(entry.info.getModId())
+                && screen instanceof CustomMainMenuScreen titleScreen) {
+            titleScreen.openConfigurationCenterAnimated();
+            return;
+        }
         try {
             ConfigScreenHandler.getScreenFactoryFor(entry.info)
                     .map(factory -> factory.apply(minecraft, screen))

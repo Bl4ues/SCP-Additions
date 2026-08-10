@@ -9,6 +9,8 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 /** Small server-side helper for SCP Additions advancement triggers. */
 public final class ScpAdvancementAwards {
     public static final ResourceLocation FROM_THE_TRENCHES = id("from_the_trenches");
+    public static final ResourceLocation TESLA = id("tesla");
+    public static final ResourceLocation SWEET_TOOTH = id("scp_330_achievement");
     public static final ResourceLocation EYES_ON_ME = id("eyes_on_me");
     public static final ResourceLocation WHAT = id("what");
     public static final ResourceLocation CONCRETE_AND_REBAR = id("concrete_and_rebar");

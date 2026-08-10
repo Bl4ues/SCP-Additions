@@ -1,12 +1,9 @@
 package net.mcreator.scpadditions.scp330;
 
 import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -21,6 +18,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.advancement.ScpAdvancementAwards;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.init.ScpAdditionsModMobEffects;
 import net.mcreator.scpadditions.init.ScpAdditionsModSounds;
@@ -58,7 +56,12 @@ public final class Scp330Hands {
                 default -> ScpAdditionsModItems.SCP_330_YELLOW_CANDY.get();
             };
             ItemHandlerHelper.giveItemToPlayer(player, new ItemStack(candy));
-            player.getPersistentData().putInt(COUNT_TAG, taken + 1);
+            int nextTaken = taken + 1;
+            player.getPersistentData().putInt(COUNT_TAG, nextTaken);
+            if (nextTaken == 2 && player instanceof ServerPlayer serverPlayer) {
+                ScpAdvancementAwards.award(serverPlayer,
+                        ScpAdvancementAwards.SWEET_TOOTH);
+            }
             return true;
         }
 
@@ -98,7 +101,6 @@ public final class Scp330Hands {
                 DEATH_DELAY_TICKS, 1, false, false));
         player.closeContainer();
         removeCandies(player);
-        awardAdvancement(player);
         play(level, pos, ScpAdditionsModSounds.SCP330DEATH.get());
         player.hurt(damageSource(player), 10.0F);
 
@@ -120,19 +122,6 @@ public final class Scp330Hands {
         player.getInventory().clearOrCountMatchingItems(
                 stack -> candies.contains(stack.getItem()), -1,
                 player.inventoryMenu.getCraftSlots());
-    }
-
-    private static void awardAdvancement(Player player) {
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
-        Advancement advancement = serverPlayer.server.getAdvancements()
-                .getAdvancement(new ResourceLocation(ScpAdditionsMod.MODID,
-                        "scp_330_achievement"));
-        if (advancement == null) return;
-        AdvancementProgress progress = serverPlayer.getAdvancements()
-                .getOrStartProgress(advancement);
-        for (String criterion : progress.getRemainingCriteria()) {
-            serverPlayer.getAdvancements().award(advancement, criterion);
-        }
     }
 
     private static DamageSource damageSource(LivingEntity entity) {

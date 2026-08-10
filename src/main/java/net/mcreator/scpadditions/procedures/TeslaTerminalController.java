@@ -2,10 +2,12 @@ package net.mcreator.scpadditions.procedures;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 
 import net.mcreator.scpadditions.init.ScpAdditionsModGameRules;
+import net.mcreator.scpadditions.advancement.ScpAdvancementAwards;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
 import net.mcreator.scpadditions.integration.PlayerItemAccess;
 import net.mcreator.scpadditions.facility.Scp079FacilityAccessManager;
@@ -22,16 +24,14 @@ public final class TeslaTerminalController {
 	public static void enableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {
 		if (!requireAuxiliaryPower(world, player)) return;
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
-		Scp079FacilityAccessManager.recordActivity(world,
-				Scp079FacilityAccessManager.Activity.TESLA_CONFIGURATION);
+		recordConfiguration(world, player);
 	}
 
 	public static void disableTeslaGates(LevelAccessor world, double x, double y, double z, Player player) {
 		if (!requireAuxiliaryPower(world, player)) return;
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(false, server(world));
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(false, server(world));
-		Scp079FacilityAccessManager.recordActivity(world,
-				Scp079FacilityAccessManager.Activity.TESLA_CONFIGURATION);
+		recordConfiguration(world, player);
 	}
 
 	public static void setManualOverride(LevelAccessor world, double x, double y, double z, Player player, boolean enabled) {
@@ -40,8 +40,7 @@ public final class TeslaTerminalController {
 			world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEON).set(true, server(world));
 		}
 		world.getLevelData().getGameRules().getRule(ScpAdditionsModGameRules.TESLAGATEMANUALOVERRIDE).set(enabled, server(world));
-		Scp079FacilityAccessManager.recordActivity(world,
-				Scp079FacilityAccessManager.Activity.TESLA_CONFIGURATION);
+		recordConfiguration(world, player);
 	}
 
 	public static void toggleManualOverride(LevelAccessor world, double x, double y, double z, Player player) {
@@ -52,6 +51,14 @@ public final class TeslaTerminalController {
 	public static void logout(Player player) {
 		if (player != null) {
 			player.closeContainer();
+		}
+	}
+
+	private static void recordConfiguration(LevelAccessor world, Player player) {
+		Scp079FacilityAccessManager.recordActivity(world,
+				Scp079FacilityAccessManager.Activity.TESLA_CONFIGURATION);
+		if (player instanceof ServerPlayer serverPlayer) {
+			ScpAdvancementAwards.award(serverPlayer, ScpAdvancementAwards.TESLA);
 		}
 	}
 

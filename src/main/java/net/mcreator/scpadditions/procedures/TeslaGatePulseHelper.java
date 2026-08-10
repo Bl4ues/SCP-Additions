@@ -1,14 +1,10 @@
 package net.mcreator.scpadditions.procedures;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
@@ -91,19 +87,6 @@ public final class TeslaGatePulseHelper {
                 }
             }, LETHAL_DAMAGE);
 
-            if (living instanceof ServerPlayer player) {
-                Advancement advancement = player.server.getAdvancements()
-                        .getAdvancement(new ResourceLocation("scp_additions:tesla"));
-                if (advancement != null) {
-                    AdvancementProgress progress = player.getAdvancements()
-                            .getOrStartProgress(advancement);
-                    if (!progress.isDone()) {
-                        for (String criteria : progress.getRemainingCriteria()) {
-                            player.getAdvancements().award(advancement, criteria);
-                        }
-                    }
-                }
-            }
         }
 
         ScpAdditionsMod.queueServerWork(manualOverride ? 1 : 3,

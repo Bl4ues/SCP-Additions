@@ -21,6 +21,7 @@
 - Added **Concrete and Rebar** for surviving an activated SCP-173 roamer encounter;
 - Added the hidden **Eyes on me** achievement for witnessing SCP-131 stop to observe SCP-173;
 - Added the hidden **What?** achievement for having SCP-714 prevent SCP-012 from taking hold;
+- Reworked the Tesla Gate and SCP-330 achievements into non-lethal interaction goals, keeping the full achievement set obtainable in Hardcore runs;
 - Reworked the custom Achievements panel to list the server's complete advancement catalog instead of inheriting vanilla visibility filtering, keeping every advancement category present even before its first completion;
 - Unfinished advancements are now visually subdued, while unfinished hidden advancements are sorted to the end and shown only as **Hidden Achievement** placeholders with their rarity visible.
 
@@ -81,7 +82,7 @@
 
 - Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with rotating SCP Additions backgrounds, a translucent authored menu layer, animated logo elements, direct Configuration Center access, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
 - Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the authored SCP Additions background, truthful world-generation progress, a themed gold progress line, and a dual-layer SCP logo spinner with opposing eased rotations;
-- Added a default-enabled **Custom Advancement Toasts** client preference that replaces vanilla advancement popups with animated SCP Additions cards;
+- Added a default-enabled **Custom Achievement Toasts** client preference that replaces vanilla advancement popups with animated SCP Additions cards;
 - Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable icon-backed mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;

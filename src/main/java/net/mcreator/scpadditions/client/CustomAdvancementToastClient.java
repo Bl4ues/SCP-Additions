@@ -18,19 +18,16 @@ import net.minecraft.world.item.ItemStack;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** SCP Additions advancement toast presentation. */
 public final class CustomAdvancementToastClient {
-    public static final int WIDTH = 232;
-    public static final int HEIGHT = 68;
+    public static final int WIDTH = 244;
+    public static final int HEIGHT = 72;
 
-    private static final int PANEL = 0xE80B0E12;
-    private static final int PANEL_INNER = 0xD412161C;
-    private static final int ICON_PANEL = 0xF00A0D12;
+    private static final int PANEL = 0xD00B0E12;
+    private static final int PANEL_INNER = 0xB812161C;
     private static final int ACCENT = 0xFFC99B18;
-    private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int TEXT = 0xFFF5F6F7;
     private static final int MUTED = 0xFF9DA5AF;
     private static final int BORDER = 0x70414A56;
@@ -39,6 +36,8 @@ public final class CustomAdvancementToastClient {
     private static final int GOAL = 0xFFC99B18;
     private static final int CHALLENGE = 0xFFFF7373;
 
+    private static final float EYEBROW_SCALE = 1.08F;
+    private static final float TITLE_SCALE = 1.16F;
     private static final long ENTER_MS = 620L;
     private static final long EXIT_START_MS = 5300L;
     private static final long LIFETIME_MS = 6050L;
@@ -89,7 +88,6 @@ public final class CustomAdvancementToastClient {
         int panel = withAlpha(PANEL, alpha);
         int inner = withAlpha(PANEL_INNER, alpha);
         int accent = withAlpha(ACCENT, alpha);
-        int accentBright = withAlpha(ACCENT_BRIGHT, alpha);
         int border = withAlpha(BORDER, alpha);
 
         graphics.fill(left, top, right, bottom, panel);
@@ -98,39 +96,27 @@ public final class CustomAdvancementToastClient {
         graphics.fill(left, top, left + 2, bottom, accent);
         graphics.fill(left + 2, bottom - 1, right, bottom, border);
         graphics.fill(right - 1, top + 2, right, bottom, border);
-        graphics.fill(left + 2, top + 2, left + 8, top + 3, accentBright);
 
         int iconLeft = left + 8;
-        int iconTop = top + 9;
-        int iconSize = 40;
-        graphics.fill(iconLeft, iconTop, iconLeft + iconSize,
-                iconTop + iconSize, withAlpha(ICON_PANEL, alpha));
-        graphics.fill(iconLeft, iconTop, iconLeft + iconSize,
-                iconTop + 1, border);
-        graphics.fill(iconLeft, iconTop, iconLeft + 1,
-                iconTop + iconSize, border);
-        graphics.fill(iconLeft + iconSize - 1, iconTop,
-                iconLeft + iconSize, iconTop + iconSize, border);
-        graphics.fill(iconLeft, iconTop + iconSize - 1,
-                iconLeft + iconSize, iconTop + iconSize, border);
+        int iconTop = top + 13;
+        renderIcon(graphics, display.getIcon(), iconLeft, iconTop, alpha);
 
-        renderIcon(graphics, display.getIcon(), iconLeft + 8,
-                iconTop + 8, alpha);
-
-        int textLeft = iconLeft + iconSize + 10;
+        int textLeft = left + 50;
         int textRight = right - 9;
         Component eyebrow = ScpFonts.roboto("ADVANCEMENT  //  UNLOCKED");
-        graphics.drawString(font, eyebrow, textLeft, top + 8,
-                withAlpha(MUTED, alpha), false);
+        drawScaledComponent(graphics, font, eyebrow, textLeft, top + 7,
+                EYEBROW_SCALE, withAlpha(MUTED, alpha));
 
+        int splitWidth = Math.max(45,
+                Math.round((textRight - textLeft) / TITLE_SCALE));
         List<FormattedCharSequence> title = font.split(
-                ScpFonts.roboto(display.getTitle().getString()),
-                Math.max(45, textRight - textLeft));
-        int titleY = top + 20;
+                ScpFonts.roboto(display.getTitle().getString()), splitWidth);
+        int titleY = top + 21;
+        float lineStep = (font.lineHeight + 1) * TITLE_SCALE;
         for (int index = 0; index < Math.min(2, title.size()); index++) {
-            graphics.drawString(font, title.get(index), textLeft,
-                    titleY + index * (font.lineHeight + 1),
-                    withAlpha(TEXT, alpha), false);
+            drawScaledSequence(graphics, font, title.get(index), textLeft,
+                    titleY + index * lineStep, TITLE_SCALE,
+                    withAlpha(TEXT, alpha));
         }
 
         drawRarity(graphics, font, display.getFrame(), textLeft,
@@ -142,7 +128,7 @@ public final class CustomAdvancementToastClient {
         if (stack == null || stack.isEmpty()) return;
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 40.0F);
-        graphics.pose().scale(1.5F, 1.5F, 1.0F);
+        graphics.pose().scale(2.0F, 2.0F, 1.0F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
@@ -191,15 +177,15 @@ public final class CustomAdvancementToastClient {
     private static void drawLogoPair(GuiGraphics graphics, long age,
             float cardAlpha) {
         float arrival = smootherStep(age / (float) ENTER_MS);
-        float cx = Mth.lerp(arrival, WIDTH + 94.0F, WIDTH + 28.0F);
-        float cy = Mth.lerp(arrival, -78.0F, -20.0F);
-        float size = Mth.lerp(arrival, 122.0F, 106.0F);
+        float cx = Mth.lerp(arrival, WIDTH + 100.0F, WIDTH);
+        float cy = Mth.lerp(arrival, -62.0F, 26.0F);
+        float size = Mth.lerp(arrival, 158.0F, 142.0F);
         float seconds = Math.max(0.0F, age / 1000.0F);
         float fastBurst = 780.0F * (1.0F - (float) Math.exp(-2.10F * seconds));
         float slowSpin = 42.0F * seconds;
         float outerAngle = fastBurst + slowSpin;
         float innerAngle = -(fastBurst + slowSpin) * 1.08F;
-        float logoAlpha = cardAlpha * Mth.lerp(arrival, 0.32F, 0.19F);
+        float logoAlpha = cardAlpha * Mth.lerp(arrival, 0.36F, 0.25F);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -225,13 +211,34 @@ public final class CustomAdvancementToastClient {
         graphics.pose().popPose();
     }
 
+    private static void drawScaledComponent(GuiGraphics graphics, Font font,
+            Component text, float x, float y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    private static void drawScaledSequence(GuiGraphics graphics, Font font,
+            FormattedCharSequence text, float x, float y,
+            float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
     private static float smootherStep(float value) {
         float t = Mth.clamp(value, 0.0F, 1.0F);
         return t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F);
     }
 
     private static int withAlpha(int color, float alpha) {
-        int a = Mth.clamp(Math.round(alpha * 255.0F), 0, 255);
+        int sourceAlpha = (color >>> 24) & 0xFF;
+        int a = Mth.clamp(Math.round(sourceAlpha
+                * Mth.clamp(alpha, 0.0F, 1.0F)), 0, 255);
         return (a << 24) | (color & 0x00FFFFFF);
     }
 }

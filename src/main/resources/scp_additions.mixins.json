@@ -10,6 +10,8 @@
     "client.CustomMainMenuWhatsNewMixin",
     "client.CustomMainMenuSettingsMixin",
     "client.CustomMainMenuPlayPanelsMixin",
+    "client.MainMenuPlayPanelsPolishMixin",
+    "client.MainMenuSettingsPlayPanelMixin",
     "client.FontMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",

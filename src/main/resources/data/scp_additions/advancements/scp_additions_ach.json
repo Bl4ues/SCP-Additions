@@ -2,13 +2,14 @@
   "display": {
     "background": "minecraft:textures/block/stone.png",
     "icon": {
-      "item": "scp_additions:tesla_gate"
+      "item": "scp_additions:tesla_gate",
+      "nbt": "{CustomModelData:580001}"
     },
     "title": {
       "translate": "advancements.scp_additions_ach.title"
     },
     "description": {
-      "translate": "advancements.scp_additions_ach.descr"
+      "text": "Unravel the secrets of the Foundation."
     },
     "frame": "task",
     "show_toast": false,

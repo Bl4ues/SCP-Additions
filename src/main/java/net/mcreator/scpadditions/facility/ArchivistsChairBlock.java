@@ -31,21 +31,24 @@ import java.util.List;
 /**
  * Decorative Archivist's Chair.
  *
- * Collision intentionally follows only the four large functional volumes of
- * the authored model. These bounds come from the model-space approximation that
- * was already aligned with the rendered chair: star base, pedestal, seat and
- * backrest. Individual wheels, spokes, arms and cushions are not reproduced.
+ * GeckoLib/Blockbench geometry is authored around a horizontal model origin,
+ * while Block.box uses the block's north-west corner as zero. The collision is
+ * therefore shifted by eight model units on X/Z before it is rotated with the
+ * block state. Four practical volumes follow the base, pedestal, seat and
+ * backrest without turning every wheel and spoke into its own collision box.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
+    private static final double MODEL_ORIGIN = 8.0D;
+
     private static final VoxelShape NORTH = Shapes.or(
-            // Five-star feet/base footprint.
-            box(0.20D, 0.00D, -6.50D, 12.65D, 3.65D, 6.50D),
-            // Thin central pedestal up to the underside of the seat.
-            box(4.80D, 3.45D, -1.20D, 7.20D, 10.25D, 1.20D),
-            // Seat and its immediate frame.
-            box(-0.60D, 9.95D, -6.65D, 12.65D, 12.30D, 6.65D),
-            // Broad, thin backrest. The authored chair is offset/angled here.
-            box(-2.10D, 10.20D, -8.10D, 7.10D, 22.80D, 1.10D))
+            // Five-star base footprint.
+            modelBox(0.20D, 0.00D, -6.50D, 12.65D, 3.65D, 6.50D),
+            // Central pedestal.
+            modelBox(4.80D, 3.45D, -1.20D, 7.20D, 10.25D, 1.20D),
+            // Seat and immediate frame.
+            modelBox(-0.60D, 9.95D, -6.65D, 12.65D, 12.30D, 6.65D),
+            // Broad backrest envelope.
+            modelBox(-2.10D, 10.20D, -8.10D, 7.10D, 22.80D, 1.10D))
             .optimize();
     private static final VoxelShape EAST = rotateY(NORTH, 1);
     private static final VoxelShape SOUTH = rotateY(NORTH, 2);
@@ -136,6 +139,12 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
             case WEST -> WEST;
             default -> NORTH;
         };
+    }
+
+    private static VoxelShape modelBox(double minX, double minY, double minZ,
+            double maxX, double maxY, double maxZ) {
+        return box(minX + MODEL_ORIGIN, minY, minZ + MODEL_ORIGIN,
+                maxX + MODEL_ORIGIN, maxY, maxZ + MODEL_ORIGIN);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

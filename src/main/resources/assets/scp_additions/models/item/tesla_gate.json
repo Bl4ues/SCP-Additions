@@ -3,5 +3,13 @@
   "textures": {
     "layer0": "scp_additions:block/tesla"
   },
-  "render_type": "translucent"
+  "render_type": "translucent",
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 580001
+      },
+      "model": "scp_additions:item/scp_additions_logo"
+    }
+  ]
 }

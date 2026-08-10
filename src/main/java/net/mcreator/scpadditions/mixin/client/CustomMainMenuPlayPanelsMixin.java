@@ -29,6 +29,21 @@ public abstract class CustomMainMenuPlayPanelsMixin {
         }
     }
 
+    @Inject(method = "sourceAction", at = @At("RETURN"), cancellable = true)
+    private void scpAdditions$closePlayPanelsForOtherActions(String key,
+            CallbackInfoReturnable<Runnable> callback) {
+        if ("menu.singleplayer".equals(key) || "menu.multiplayer".equals(key)) {
+            return;
+        }
+        Runnable action = callback.getReturnValue();
+        if (action == null) return;
+        CustomMainMenuScreen screen = (CustomMainMenuScreen) (Object) this;
+        callback.setReturnValue(() -> {
+            MainMenuPlayPanelsClient.close(screen);
+            action.run();
+        });
+    }
+
     @Inject(method = "toggleExtras", at = @At("HEAD"))
     private void scpAdditions$closePlayPanelsForExtras(CallbackInfo callback) {
         MainMenuPlayPanelsClient.close((CustomMainMenuScreen) (Object) this);

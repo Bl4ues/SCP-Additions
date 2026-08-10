@@ -431,11 +431,6 @@ public final class Scp079ModulesScreenExtension {
             }
 
             int visible = visibleRows();
-            if (rows.size() > visible) {
-                graphics.drawString(font,
-                        ScpFonts.roboto("Mouse wheel: scroll options"),
-                        panelX + panelWidth - 160, panelY + 31, MUTED, false);
-            }
             int contentY = panelY + (sectionTitle == null ? 44 : 57);
             int end = Math.min(rows.size(), scroll + visible);
             for (int i = scroll; i < end; i++) {

@@ -135,7 +135,9 @@ public final class ConfigCenterClient {
                 files = parsed.isJsonObject() ? parsed.getAsJsonObject() : files;
             } catch (Exception ignored) {
             }
-            homeNotice = result.message();
+            // The save already returns to the Configuration Center. A second
+            // transient success line only competes with the header composition.
+            homeNotice = "";
             if (give != null) {
                 CodexAssetClient.giveDocument(give.itemId(), give.codexId(), give.displayName());
             }

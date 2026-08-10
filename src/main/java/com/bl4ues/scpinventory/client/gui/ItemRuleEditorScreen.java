@@ -88,7 +88,7 @@ public final class ItemRuleEditorScreen extends Screen {
         categoryDropdown = addRenderableWidget(new SingleDropdown<>(
                 x, top + 91, width, 22,
                 List.of(TYPES), type,
-                value -> ScpFonts.roboto(value.getDisplayName()),
+                value -> ScpFonts.roboto(value.getEditorDisplayName()),
                 value -> {
                     boolean layoutChanged = (type == ScpItemType.CONSUMABLE)
                             != (value == ScpItemType.CONSUMABLE);

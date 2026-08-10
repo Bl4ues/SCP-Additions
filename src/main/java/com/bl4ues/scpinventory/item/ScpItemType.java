@@ -15,7 +15,7 @@ public enum ScpItemType {
     AMMO("Ammo"),
     HEAD("Head"),
     ACCESSORY("Accessory"),
-    ACCESSORY_HAND("Accessory (Offhand)"),
+    ACCESSORY_HAND("Accessory"),
     CHEST("Chest"),
     LEGS("Legs"),
     FEET("Feet"),
@@ -29,6 +29,11 @@ public enum ScpItemType {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public String getEditorDisplayName() {
+        return this == ACCESSORY_HAND
+                ? "Accessory (Offhand)" : displayName;
     }
 
     public boolean isEquipment() {

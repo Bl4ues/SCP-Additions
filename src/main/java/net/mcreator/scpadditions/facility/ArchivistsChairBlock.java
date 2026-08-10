@@ -38,27 +38,15 @@ import java.util.List;
  * without turning every wheel and spoke into its own collision box.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
-    // GeckoLib mirrors Bedrock's model X axis when baking cubes. The chair's
-    // authored base is also rotated -17.5 degrees, while its swivelling upper
-    // assembly adds another -27.5 degrees around the same horizontal pivot.
-    private static final double MODEL_PIVOT_X = 6.0D;
-    private static final double MODEL_PIVOT_Z = 0.0D;
-    private static final double BASE_YAW = -17.5D;
-    private static final double UPPER_YAW = -45.0D;
-
+    // Deliberately simple collision. The Blockbench chair is authored at an
+    // angle, but turning that diagonal into dozens of axis-aligned slices only
+    // makes the collision noisy and less useful. Four broad volumes follow the
+    // base, pedestal, seat and backrest closely enough for normal play.
     private static final VoxelShape NORTH = Shapes.or(
-            // Five-star base footprint, following the root bone.
-            rotatedModelBox(0.20D, 0.00D, -6.50D,
-                    12.65D, 3.65D, 6.50D, BASE_YAW, 7),
-            // Central pedestal.
-            rotatedModelBox(4.80D, 3.45D, -1.20D,
-                    7.20D, 10.25D, 1.20D, BASE_YAW, 2),
-            // Seat and immediate frame, following the swivelling upper bone.
-            rotatedModelBox(-0.60D, 9.95D, -6.65D,
-                    12.65D, 12.30D, 6.65D, UPPER_YAW, 8),
-            // Broad backrest envelope.
-            rotatedModelBox(-2.10D, 10.20D, -8.10D,
-                    7.10D, 22.80D, 1.10D, UPPER_YAW, 6))
+            modelBox(0.20D, 0.00D, -6.50D, 12.65D, 3.65D, 6.50D),
+            modelBox(4.80D, 3.45D, -1.20D, 7.20D, 10.25D, 1.20D),
+            modelBox(-0.60D, 9.95D, -6.65D, 12.65D, 12.30D, 6.65D),
+            modelBox(-2.10D, 10.20D, -8.10D, 7.10D, 22.80D, 1.10D))
             .optimize();
     private static final VoxelShape EAST = rotateY(NORTH, 1);
     private static final VoxelShape SOUTH = rotateY(NORTH, 2);
@@ -143,8 +131,6 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
     }
 
     private static VoxelShape shapeFor(Direction facing) {
-        // GeoBlockRenderer uses the same quarter-turn convention: EAST is
-        // -90 degrees, SOUTH is 180, and WEST is +90 from NORTH.
         return switch (facing) {
             case EAST -> EAST;
             case SOUTH -> SOUTH;
@@ -153,60 +139,9 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
         };
     }
 
-    /**
-     * Builds a stepped approximation of an arbitrarily rotated model-space
-     * rectangle. VoxelShapes remain axis-aligned, so thin strips keep the
-     * collision close to the visible diagonal chair instead of inflating one
-     * enormous bounding box around it.
-     */
-    private static VoxelShape rotatedModelBox(double minX, double minY,
-            double minZ, double maxX, double maxY, double maxZ,
-            double degrees, int slices) {
-        int count = Math.max(1, slices);
-        double step = (maxX - minX) / count;
-        VoxelShape result = Shapes.empty();
-        for (int index = 0; index < count; index++) {
-            double sliceMinX = minX + step * index;
-            double sliceMaxX = index == count - 1
-                    ? maxX : minX + step * (index + 1);
-            double[] bounds = rotatedBounds(sliceMinX, minZ,
-                    sliceMaxX, maxZ, degrees);
-            result = Shapes.or(result, modelBox(bounds[0], minY, bounds[1],
-                    bounds[2], maxY, bounds[3]));
-        }
-        return result.optimize();
-    }
-
-    private static double[] rotatedBounds(double minX, double minZ,
-            double maxX, double maxZ, double degrees) {
-        double radians = Math.toRadians(degrees);
-        double cosine = Math.cos(radians);
-        double sine = Math.sin(radians);
-        double[] xs = {minX, minX, maxX, maxX};
-        double[] zs = {minZ, maxZ, minZ, maxZ};
-        double outMinX = Double.POSITIVE_INFINITY;
-        double outMinZ = Double.POSITIVE_INFINITY;
-        double outMaxX = Double.NEGATIVE_INFINITY;
-        double outMaxZ = Double.NEGATIVE_INFINITY;
-        for (int index = 0; index < 4; index++) {
-            double dx = xs[index] - MODEL_PIVOT_X;
-            double dz = zs[index] - MODEL_PIVOT_Z;
-            double x = MODEL_PIVOT_X + dx * cosine - dz * sine;
-            double z = MODEL_PIVOT_Z + dx * sine + dz * cosine;
-            outMinX = Math.min(outMinX, x);
-            outMinZ = Math.min(outMinZ, z);
-            outMaxX = Math.max(outMaxX, x);
-            outMaxZ = Math.max(outMaxZ, z);
-        }
-        return new double[] {outMinX, outMinZ, outMaxX, outMaxZ};
-    }
-
     private static VoxelShape modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
-        // GeckoLib's BakedModelFactory maps Bedrock X as -(origin + size)
-        // and GeoBlockRenderer then translates the model to the block centre.
-        // In Block.box's 0..16 coordinate space this is exactly X = 8 - modelX,
-        // while Z remains Z = 8 + modelZ.
+        // GeckoLib mirrors Bedrock X around the block centre while preserving Z.
         return box(8.0D - maxX, minY, 8.0D + minZ,
                 8.0D - minX, maxY, 8.0D + maxZ);
     }

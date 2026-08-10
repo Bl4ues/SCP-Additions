@@ -141,6 +141,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
         backgroundStartedAt = now;
         transitionStartedAt = -1L;
         pendingTransition = null;
+        PauseMenuModsPanelClient.close(this);
 
         refreshAvailableBackgrounds();
         captureVanillaSources();
@@ -182,8 +183,44 @@ public final class CustomMainMenuScreen extends TitleScreen {
         }
         renderExtraButtons(graphics, mouseX, mouseY, partialTick);
 
+        int modsPanelX = Math.max(24, Math.round(this.width * 0.026F));
+        PauseMenuModsPanelClient.render(this, graphics,
+                mouseX, mouseY, partialTick, now, modsPanelX,
+                0, 0, 0, 0);
+
         drawTransition(graphics, now);
         drawOpeningFade(graphics, now);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (PauseMenuModsPanelClient.keyPressed(this,
+                keyCode, scanCode, modifiers)) {
+            setMenuActive(true);
+            return true;
+        }
+        if (PauseMenuModsPanelClient.isOpen(this)) return true;
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (PauseMenuModsPanelClient.isOpen(this)) {
+            PauseMenuModsPanelClient.mouseClicked(this,
+                    mouseX, mouseY, button);
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (PauseMenuModsPanelClient.isOpen(this)) {
+            PauseMenuModsPanelClient.mouseScrolled(this,
+                    mouseX, mouseY, delta);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     private void captureVanillaSources() {
@@ -351,6 +388,16 @@ public final class CustomMainMenuScreen extends TitleScreen {
     }
 
     private Runnable sourceAction(String key) {
+        if (MODS_KEY.equals(key)) {
+            return () -> {
+                AbstractButton source = sourceButtons.get(key);
+                if (source == null || !source.active
+                        || transitionStartedAt >= 0L) return;
+                extrasOpen = false;
+                PauseMenuModsPanelClient.toggle(this);
+                setMenuActive(false);
+            };
+        }
         return () -> {
             AbstractButton source = sourceButtons.get(key);
             if (source != null && source.active) {
@@ -401,15 +448,19 @@ public final class CustomMainMenuScreen extends TitleScreen {
         extrasProgress = approach(extrasProgress, extrasTarget,
                 deltaSeconds * 6.6F);
 
+        boolean modsPanelOpen = PauseMenuModsPanelClient.isOpen(this);
         boolean hovered = false;
         for (MenuTextButton button : primaryButtons) {
-            if (button.source != null && transitionStartedAt < 0L) {
+            if (button.source != null && transitionStartedAt < 0L
+                    && !modsPanelOpen) {
                 button.active = button.source.active;
             }
-            hovered |= button.active && button.isMouseOver(mouseX, mouseY);
+            if (!modsPanelOpen) {
+                hovered |= button.active && button.isMouseOver(mouseX, mouseY);
+            }
         }
         for (MenuTextButton button : extraButtons) {
-            if (extrasProgress > 0.05F) {
+            if (!modsPanelOpen && extrasProgress > 0.05F) {
                 hovered |= button.isMouseOver(mouseX, mouseY);
             }
         }

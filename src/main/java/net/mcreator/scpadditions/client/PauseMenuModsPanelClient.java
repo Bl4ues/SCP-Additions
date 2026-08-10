@@ -7,6 +7,7 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
@@ -34,9 +35,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
-/** Native Forge mod browser embedded in the custom pause presentation. */
+/** Native Forge mod browser shared by the custom title and pause menus. */
 public final class PauseMenuModsPanelClient {
     private static final int PANEL = 0xE20B0E12;
     private static final int PANEL_SOFT = 0xB812161C;
@@ -57,8 +59,13 @@ public final class PauseMenuModsPanelClient {
     private static final int LIST_ICON_SIZE = 28;
     private static final int DETAIL_LOGO_SIZE = 72;
     private static final int DETAIL_SCROLL_STEP = 26;
+    private static final int CONTROL_COUNT = 4;
+    private static final Set<String> INTERNAL_MOD_IDS = Set.of(
+            "minecraft", "forge", "fml", "fmlcore", "fmlloader",
+            "javafmllanguage", "lowcodelanguage", "mclanguage",
+            "mixinextras");
 
-    private static final Map<CustomPauseMenuScreen, State> STATES =
+    private static final Map<Screen, State> STATES =
             new WeakHashMap<>();
 
     private PauseMenuModsPanelClient() {
@@ -70,23 +77,23 @@ public final class PauseMenuModsPanelClient {
         Z_TO_A
     }
 
-    public static void toggle(CustomPauseMenuScreen screen) {
+    public static void toggle(Screen screen) {
         State state = STATES.computeIfAbsent(screen, ignored -> new State());
         state.open = !state.open;
         if (state.open) ensureMods(state);
     }
 
-    public static void close(CustomPauseMenuScreen screen) {
+    public static void close(Screen screen) {
         State state = STATES.get(screen);
         if (state != null) state.open = false;
     }
 
-    public static boolean isOpen(CustomPauseMenuScreen screen) {
+    public static boolean isOpen(Screen screen) {
         State state = STATES.get(screen);
         return state != null && (state.open || state.progress > 0.02F);
     }
 
-    public static void render(CustomPauseMenuScreen screen,
+    public static void render(Screen screen,
             GuiGraphics graphics, int mouseX, int mouseY, float partialTick,
             long now, int baseX, int baseY, int menuWidth, int rowHeight,
             int gap) {
@@ -120,7 +127,7 @@ public final class PauseMenuModsPanelClient {
         updateHoverSound(state, layout, mouseX, mouseY);
     }
 
-    public static boolean mouseClicked(CustomPauseMenuScreen screen,
+    public static boolean mouseClicked(Screen screen,
             double mouseX, double mouseY, int button) {
         State state = activeState(screen);
         if (state == null) return false;
@@ -128,17 +135,23 @@ public final class PauseMenuModsPanelClient {
         if (!layout.contains(mouseX, mouseY)) return false;
         if (button != 0) return true;
 
-        for (int index = 0; index < 3; index++) {
-            if (layout.sortContains(index, mouseX, mouseY)) {
-                SortMode mode = SortMode.values()[index];
-                if (state.sortMode != mode) {
-                    state.sortMode = mode;
-                    state.listScroll = 0;
-                    sortMods(state);
-                    playSelect();
-                }
+        for (int index = 0; index < CONTROL_COUNT; index++) {
+            if (!layout.sortContains(index, mouseX, mouseY)) continue;
+            if (index == 3) {
+                state.hideInternal = !state.hideInternal;
+                state.listScroll = 0;
+                sortMods(state);
+                playSelect();
                 return true;
             }
+            SortMode mode = SortMode.values()[index];
+            if (state.sortMode != mode) {
+                state.sortMode = mode;
+                state.listScroll = 0;
+                sortMods(state);
+                playSelect();
+            }
+            return true;
         }
 
         if (layout.folderContains(mouseX, mouseY)) {
@@ -168,7 +181,7 @@ public final class PauseMenuModsPanelClient {
         return true;
     }
 
-    public static boolean mouseScrolled(CustomPauseMenuScreen screen,
+    public static boolean mouseScrolled(Screen screen,
             double mouseX, double mouseY, double delta) {
         State state = activeState(screen);
         if (state == null || delta == 0.0D) return false;
@@ -190,7 +203,7 @@ public final class PauseMenuModsPanelClient {
         return true;
     }
 
-    public static boolean keyPressed(CustomPauseMenuScreen screen,
+    public static boolean keyPressed(Screen screen,
             int keyCode, int scanCode, int modifiers) {
         State state = activeState(screen);
         if (state == null) return false;
@@ -201,7 +214,7 @@ public final class PauseMenuModsPanelClient {
         return false;
     }
 
-    private static State activeState(CustomPauseMenuScreen screen) {
+    private static State activeState(Screen screen) {
         State state = STATES.get(screen);
         return state == null || !state.open || state.progress < 0.78F
                 || state.layout == null ? null : state;
@@ -216,7 +229,7 @@ public final class PauseMenuModsPanelClient {
                         info.getVersion());
                 state.originalMods.add(new ModEntry(info,
                         StringUtil.stripColor(info.getDisplayName()), version,
-                        loadLogo(info)));
+                        loadLogo(info), isInternal(info), hasConfig(info)));
             }
             sortMods(state);
         } catch (Throwable throwable) {
@@ -227,13 +240,35 @@ public final class PauseMenuModsPanelClient {
 
     private static void sortMods(State state) {
         state.mods.clear();
-        state.mods.addAll(state.originalMods);
+        for (ModEntry entry : state.originalMods) {
+            if (!state.hideInternal || !entry.internal) state.mods.add(entry);
+        }
         Comparator<ModEntry> comparator = Comparator.comparing(entry ->
                 entry.name.toLowerCase(Locale.ROOT));
         if (state.sortMode == SortMode.A_TO_Z) {
             state.mods.sort(comparator);
         } else if (state.sortMode == SortMode.Z_TO_A) {
             state.mods.sort(comparator.reversed());
+        }
+        if (state.selectedId != null && state.mods.stream().noneMatch(entry ->
+                state.selectedId.equals(entry.info.getModId()))) {
+            state.selectedId = state.mods.isEmpty()
+                    ? null : state.mods.get(0).info.getModId();
+            state.detailScroll = 0;
+        }
+    }
+
+    private static boolean isInternal(IModInfo info) {
+        if (info == null) return false;
+        String id = info.getModId().toLowerCase(Locale.ROOT);
+        return INTERNAL_MOD_IDS.contains(id);
+    }
+
+    private static boolean hasConfig(IModInfo info) {
+        try {
+            return ConfigScreenHandler.getScreenFactoryFor(info).isPresent();
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 
@@ -290,11 +325,12 @@ public final class PauseMenuModsPanelClient {
 
     private static void drawSortControls(GuiGraphics graphics, State state,
             Layout layout, int mouseX, int mouseY, float alpha) {
-        String[] labels = {"Off", "A-Z", "Z-A"};
+        String[] labels = {"Off", "A-Z", "Z-A", "Hide Internal"};
         for (int index = 0; index < labels.length; index++) {
             int x = layout.sortX(index);
             boolean hovered = layout.sortContains(index, mouseX, mouseY);
-            boolean selected = state.sortMode.ordinal() == index;
+            boolean selected = index == 3
+                    ? state.hideInternal : state.sortMode.ordinal() == index;
             graphics.fill(x, layout.sortY, x + layout.sortWidth,
                     layout.sortY + SORT_HEIGHT,
                     applyAlpha(hovered || selected ? ROW_HOVER : ROW, alpha));
@@ -341,7 +377,11 @@ public final class PauseMenuModsPanelClient {
                     LIST_ICON_SIZE, LIST_ICON_SIZE, alpha);
 
             int textX = layout.listX + 45;
-            int textWidth = layout.listRight - textX - 8;
+            Component configMarker = entry.hasConfig
+                    ? ScpFonts.titillium("CFG") : null;
+            int markerWidth = configMarker == null
+                    ? 0 : font.width(configMarker) + 14;
+            int textWidth = layout.listRight - textX - 8 - markerWidth;
             String name = compactToWidth(font, entry.name, textWidth);
             graphics.drawString(font, ScpFonts.roboto(name),
                     textX, y + 9,
@@ -349,6 +389,11 @@ public final class PauseMenuModsPanelClient {
             String version = compactToWidth(font, entry.version, textWidth);
             graphics.drawString(font, ScpFonts.titillium(version),
                     textX, y + 25, applyAlpha(MUTED, alpha), false);
+            if (configMarker != null) {
+                graphics.drawString(font, configMarker,
+                        layout.listRight - 9 - font.width(configMarker),
+                        y + 17, applyAlpha(ACCENT_BRIGHT, alpha), false);
+            }
         }
         graphics.disableScissor();
 
@@ -410,22 +455,21 @@ public final class PauseMenuModsPanelClient {
                         headerWidth)),
                 headerTextX, layout.detailY + 13,
                 applyAlpha(TEXT, alpha), false);
-        graphics.drawString(font,
-                ScpFonts.titillium("Version " + selected.version),
-                headerTextX, layout.detailY + 30,
-                applyAlpha(ACCENT_BRIGHT, alpha), false);
-        graphics.drawString(font,
-                ScpFonts.titillium("Mod ID: " + selected.info.getModId()),
-                headerTextX, layout.detailY + 44,
-                applyAlpha(MUTED, alpha), false);
+        drawScaledText(graphics, font,
+                ScpFonts.roboto("Version " + selected.version),
+                headerTextX, layout.detailY + 30, 1.18F,
+                applyAlpha(ACCENT_BRIGHT, alpha));
+        drawScaledText(graphics, font,
+                ScpFonts.roboto("Mod ID: " + selected.info.getModId()),
+                headerTextX, layout.detailY + 47, 1.14F,
+                applyAlpha(MUTED, alpha));
 
         int headerBottom = layout.detailY + DETAIL_LOGO_SIZE + 16;
         graphics.fill(layout.detailX + 8, headerBottom,
                 layout.detailRight - 8, headerBottom + 1,
                 applyAlpha(BORDER, alpha));
 
-        state.hasConfig = ConfigScreenHandler
-                .getScreenFactoryFor(selected.info).isPresent();
+        state.hasConfig = selected.hasConfig;
         int settingsHeight = state.hasConfig ? FOOTER_HEIGHT + 10 : 0;
         int scrollTop = headerBottom + 10;
         int scrollBottom = layout.detailBottom - 8 - settingsHeight;
@@ -552,7 +596,7 @@ public final class PauseMenuModsPanelClient {
                 ? file.getLicense() : "";
     }
 
-    private static void openSettings(CustomPauseMenuScreen screen,
+    private static void openSettings(Screen screen,
             ModEntry entry) {
         Minecraft minecraft = Minecraft.getInstance();
         try {
@@ -577,7 +621,7 @@ public final class PauseMenuModsPanelClient {
         return null;
     }
 
-    private static Layout layout(CustomPauseMenuScreen screen, int baseX) {
+    private static Layout layout(Screen screen, int baseX) {
         int availableWidth = Math.max(330, screen.width - baseX - 28);
         int panelWidth = Math.min(820, availableWidth);
         int panelHeight = Mth.clamp(screen.height - 64, 300, 620);
@@ -595,7 +639,7 @@ public final class PauseMenuModsPanelClient {
         int sortY = panelY + 38;
         int sortGap = 4;
         int sortWidth = Math.max(38,
-                (listWidth - sortGap * 2) / 3);
+                (listWidth - sortGap * (CONTROL_COUNT - 1)) / CONTROL_COUNT);
         int listY = sortY + SORT_HEIGHT + 10;
         int folderY = panelY + panelHeight - FOOTER_HEIGHT - 12;
         int listBottom = folderY - 10;
@@ -674,7 +718,7 @@ public final class PauseMenuModsPanelClient {
 
     private static String hoverKey(State state, Layout layout,
             int mouseX, int mouseY) {
-        for (int index = 0; index < 3; index++) {
+        for (int index = 0; index < CONTROL_COUNT; index++) {
             if (layout.sortContains(index, mouseX, mouseY))
                 return "sort:" + index;
         }
@@ -695,6 +739,15 @@ public final class PauseMenuModsPanelClient {
         Minecraft.getInstance().getSoundManager().play(
                 SimpleSoundInstance.forUI(
                         ScpAdditionsModSounds.SELECT.get(), 1.0F, 0.35F));
+    }
+
+    private static void drawScaledText(GuiGraphics graphics, Font font,
+            Component text, float x, float y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
     }
 
     private static String compactToWidth(Font font, String text,
@@ -732,7 +785,8 @@ public final class PauseMenuModsPanelClient {
     }
 
     private record ModEntry(IModInfo info, String name,
-            String version, LogoData logo) {
+            String version, LogoData logo, boolean internal,
+            boolean hasConfig) {
     }
 
     private record LogoData(ResourceLocation texture, int width, int height) {
@@ -824,6 +878,7 @@ public final class PauseMenuModsPanelClient {
         private float progress;
         private long lastFrameAt;
         private SortMode sortMode = SortMode.OFF;
+        private boolean hideInternal = true;
         private int listScroll;
         private int detailScroll;
         private int detailMaxScroll;

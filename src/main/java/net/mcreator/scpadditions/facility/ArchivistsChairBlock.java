@@ -31,12 +31,11 @@ import java.util.List;
 /**
  * Decorative Archivist's Chair.
  *
- * GeckoLib/Blockbench geometry is authored relative to the Bedrock model
- * origin, which GeoBlockRenderer places at the horizontal centre of the block.
- * Block.box instead uses the block's north-west corner as zero, so collision
- * coordinates need the same +8px translation on both X and Z. Four practical
- * volumes follow the base, pedestal, seat and backrest
- * without turning every wheel and spoke into its own collision box.
+ * The collision volumes are authored in the same local orientation as the
+ * Blockbench chair and then rotated with the block's horizontal facing. The X
+ * translation is intentionally small: because the facing transform reverses
+ * the apparent movement on screen for the tested orientation, increasing this
+ * offset moves the collision left instead of right.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
     // Deliberately simple collision. The Blockbench chair is authored at an
@@ -132,12 +131,6 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
     }
 
     private static VoxelShape shapeFor(Direction facing) {
-        // GeoBlockRenderer already follows the block state's horizontal FACING.
-        // Rotate the collision by that same amount instead of adding a second
-        // quarter-turn that the rendered model never receives.
-        // GeoBlockRenderer's authored forward axis is opposite the collision
-        // shape's NORTH reference. Keep the shape itself intact and rotate it
-        // half a turn so the seat/backrest volumes face the rendered chair.
         return switch (facing) {
             case NORTH -> NORTH;
             case EAST -> EAST;
@@ -149,11 +142,12 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
 
     private static VoxelShape modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
-        // GeoBlockRenderer places the Bedrock horizontal origin at the
-        // centre of the Minecraft block. The chair itself is authored off-centre
-        // toward +X, so X must use the same +8px translation already used by Z.
-        return box(8.0D + minX, minY, 8.0D + minZ,
-                8.0D + maxX, maxY, 8.0D + maxZ);
+        // Empirically, +2.0 was already close and increasing the offset moved
+        // the collision farther left. Move 1.5 model pixels in the opposite
+        // direction from that known-good baseline instead of extrapolating the
+        // renderer origin incorrectly again.
+        return box(0.5D + minX, minY, 8.0D + minZ,
+                0.5D + maxX, maxY, 8.0D + maxZ);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

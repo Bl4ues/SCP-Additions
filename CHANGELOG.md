@@ -12,7 +12,7 @@
 - Custom crosshair
 - Documents and expanded Codex
 - Rebuilt contextual interactions
-- Expanded Configuration Center
+- Rebuilt Configuration Center
 - Reworked main menu and loading screens
 
 ## Achievements
@@ -85,6 +85,7 @@
 - Added a default-enabled **Custom Achievement Toasts** client preference that replaces vanilla advancement popups with animated SCP Additions cards;
 - Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable icon-backed mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
 - Added an SCP-themed Difficulty drop-right to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
+- Rebuilt the Configuration Center as a continuation of the modern main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth spinner-backed entry and exit transitions while retaining the existing configuration editors and validation logic;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;
 - Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;

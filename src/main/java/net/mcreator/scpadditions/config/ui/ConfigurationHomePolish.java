@@ -16,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Final responsive layout pass for the Configuration Center home screen. */
+/** Modern navigation composition for the Configuration Center home screen. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ConfigurationHomePolish {
@@ -42,78 +42,162 @@ public final class ConfigurationHomePolish {
             Screen screen = event.getScreen();
             if (!isHome(screen)) return;
             arrange(screen);
-            renderHeader(event.getGuiGraphics(), screen);
+            renderComposition(event.getGuiGraphics(), screen,
+                    event.getMouseX(), event.getMouseY());
         }
 
         private static boolean isHome(Screen screen) {
             return screen != null && HOME_SCREEN.equals(screen.getClass().getName());
         }
 
-        private static void arrange(Screen screen) {
-            int navWidth = Math.min(ConfigCenterVisuals.navigationWidth(screen.width),
-                    screen.width - 24);
-            int navX = ConfigCenterVisuals.contentLeft(screen.width, navWidth);
-            int rowHeight = MthCompat.clamp(Math.round(screen.height * 0.058F),
-                    30, 42);
-            int gap = MthCompat.clamp(Math.round(screen.height * 0.012F),
-                    6, 10);
-            int startY = Math.max(90, Math.round(screen.height * 0.205F));
-            int usableBottom = screen.height - 54;
+        private static Layout layout(Screen screen) {
+            int navWidth = clamp(Math.round(screen.width * 0.245F), 320, 410);
+            int infoWidth = clamp(Math.round(screen.width * 0.245F), 300, 430);
+            int columnGap = clamp(Math.round(screen.width * 0.014F), 16, 24);
+            int total = navWidth + columnGap + infoWidth;
+            int preferred = Math.round(screen.width * 0.365F);
+            int navX = clamp(Math.max(preferred, screen.width - total - 54),
+                    20, Math.max(20, screen.width - total - 20));
+            int infoX = navX + navWidth + columnGap;
+            int headerY = Math.max(35, Math.round(screen.height * 0.070F));
+            int startY = Math.max(132, Math.round(screen.height * 0.225F));
+            int rowHeight = clamp(Math.round(screen.height * 0.060F), 34, 46);
+            int rowGap = clamp(Math.round(screen.height * 0.012F), 7, 10);
+            return new Layout(navX, infoX, navWidth, infoWidth, headerY,
+                    startY, rowHeight, rowGap);
+        }
 
+        private static void arrange(Screen screen) {
+            Layout l = layout(screen);
             Button crosshair = find(screen, "Crosshair");
             if (crosshair != null) {
                 crosshair.visible = false;
                 crosshair.active = false;
                 crosshair.setX(-10000);
             }
+
             Button general = find(screen, "General & Modules");
             Button inventory = first(screen, "Items, Entities & Codex",
                     "Inventory, Equipment & Codex");
             Button interactions = find(screen, "Contextual Interactions");
             Button drinks = find(screen, "SCP-294 Drinks");
             Button recipes = find(screen, "SCP-914 Recipes");
+            Button[] primary = {general, inventory, interactions, drinks, recipes};
+
+            int y = l.startY;
+            for (Button button : primary) {
+                if (button == null) continue;
+                place(button, l.navX, y, l.navWidth, l.rowHeight);
+                y += l.rowHeight + l.rowGap;
+            }
+
+            int toolY = l.startY + 178;
             Button accessibility = find(screen, "Accessibility");
             Button debug = find(screen, "Debug Tools");
             Button reload = find(screen, "Reload Snapshot");
             Button done = find(screen, "Done");
+            if (accessibility != null) {
+                place(accessibility, l.infoX, toolY, l.infoWidth, l.rowHeight);
+                toolY += l.rowHeight + l.rowGap;
+            }
+            if (debug != null) {
+                place(debug, l.infoX, toolY, l.infoWidth, l.rowHeight);
+                toolY += l.rowHeight + l.rowGap + 7;
+            }
+            int footerHeight = Math.max(30, l.rowHeight - 6);
+            if (reload != null) {
+                place(reload, l.infoX, toolY, l.infoWidth, footerHeight);
+                toolY += footerHeight + l.rowGap;
+            }
+            if (done != null) place(done, l.infoX, toolY, l.infoWidth, footerHeight);
+        }
 
-            Button[] primary = {general, inventory, interactions, drinks, recipes};
-            int rows = 0;
-            for (Button button : primary) if (button != null) rows++;
-            int required = rows * rowHeight + Math.max(0, rows - 1) * gap
-                    + rowHeight + gap + 44;
-            if (startY + required > usableBottom) {
-                startY = Math.max(70, usableBottom - required);
-                rowHeight = Math.max(28, rowHeight - 2);
-                gap = Math.max(5, gap - 1);
+        private static void renderComposition(GuiGraphics graphics, Screen screen,
+                int mouseX, int mouseY) {
+            Layout l = layout(screen);
+            Font font = Minecraft.getInstance().font;
+            float alpha = ConfigCenterVisuals.contentAlpha();
+            int slide = ConfigCenterVisuals.contentOffsetX();
+            int navX = l.navX + slide;
+            int infoX = l.infoX + slide;
+
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, 1200.0F);
+
+            ConfigCenterVisuals.drawScaledText(graphics, font,
+                    ScpFonts.montserrat("CONFIGURATION CENTER"),
+                    navX, l.headerY,
+                    screen.height < 480 ? 1.34F : 1.58F,
+                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.TEXT));
+            ConfigCenterVisuals.drawScaledText(graphics, font,
+                    ScpFonts.titillium("SCP ADDITIONS / SYSTEM CONFIGURATION"),
+                    navX, l.headerY + 27,
+                    0.92F, ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT));
+            int lineY = l.headerY + 50;
+            graphics.fill(navX, lineY, infoX + l.infoWidth, lineY + 2,
+                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT));
+
+            graphics.drawString(font, ScpFonts.titillium("SYSTEMS"),
+                    navX, l.startY - 18,
+                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT), false);
+
+            Button hovered = hoveredNavigation(screen, mouseX, mouseY);
+            Info info = infoFor(hovered == null ? "General & Modules"
+                    : hovered.getMessage().getString());
+            int cardY = l.startY;
+            int cardH = 146;
+            graphics.fill(infoX, cardY, infoX + l.infoWidth, cardY + cardH,
+                    fade(0x8A0B0E12, alpha));
+            graphics.fill(infoX, cardY, infoX + 4, cardY + cardH,
+                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT));
+            graphics.drawString(font, ScpFonts.titillium("SECTION"),
+                    infoX + 16, cardY + 16,
+                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT), false);
+            ConfigCenterVisuals.drawScaledText(graphics, font,
+                    ScpFonts.montserrat(info.title), infoX + 16, cardY + 37,
+                    1.12F, ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.TEXT));
+            int bodyY = cardY + 67;
+            for (var line : font.split(ScpFonts.roboto(info.description), l.infoWidth - 32)) {
+                graphics.drawString(font, line, infoX + 16, bodyY,
+                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
+                bodyY += font.lineHeight + 3;
             }
 
-            int y = startY;
-            for (Button button : primary) {
-                if (button == null) continue;
-                place(button, navX, y, navWidth, rowHeight);
-                y += rowHeight + gap;
-            }
+            graphics.drawString(font, ScpFonts.titillium("TOOLS & SESSION"),
+                    infoX, l.startY + 160,
+                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT), false);
+            graphics.pose().popPose();
+        }
 
-            if (accessibility != null || debug != null) {
-                int splitGap = 8;
-                int half = (navWidth - splitGap) / 2;
-                if (accessibility != null)
-                    place(accessibility, navX, y, half, rowHeight);
-                if (debug != null)
-                    place(debug, navX + half + splitGap, y,
-                            navWidth - half - splitGap, rowHeight);
-                y += rowHeight + gap + 8;
+        private static Button hoveredNavigation(Screen screen, int mouseX, int mouseY) {
+            for (GuiEventListener listener : screen.children()) {
+                if (listener instanceof Button button && button.visible
+                        && button.isMouseOver(mouseX, mouseY)) return button;
             }
+            return null;
+        }
 
-            int footerHeight = Math.max(26, rowHeight - 6);
-            int footerGap = 8;
-            int half = (navWidth - footerGap) / 2;
-            if (reload != null)
-                place(reload, navX, y, half, footerHeight);
-            if (done != null)
-                place(done, navX + half + footerGap, y,
-                        navWidth - half - footerGap, footerHeight);
+        private static Info infoFor(String label) {
+            return switch (label) {
+                case "Items, Entities & Codex", "Inventory, Equipment & Codex" ->
+                        new Info("Items, Entities & Codex",
+                                "Edit inventory rules, equipment behavior, entity data and Codex content.");
+                case "Contextual Interactions" -> new Info("Contextual Interactions",
+                        "Control contextual prompts, targets and interaction behavior used throughout facilities.");
+                case "SCP-294 Drinks" -> new Info("SCP-294 Drinks",
+                        "Manage drink definitions, effects, colors and custom dispensing behavior.");
+                case "SCP-914 Recipes" -> new Info("SCP-914 Recipes",
+                        "Review and edit refinement recipes across SCP-914 settings and recipe files.");
+                case "Accessibility" -> new Info("Accessibility",
+                        "Client-side presentation options intended to improve comfort and readability.");
+                case "Debug Tools" -> new Info("Debug Tools",
+                        "Diagnostics and maintenance controls intended for development and troubleshooting.");
+                case "Reload Snapshot" -> new Info("Reload Snapshot",
+                        "Discard the current snapshot and request a fresh configuration state.");
+                case "Done" -> new Info("Done", "Return to the previous screen.");
+                default -> new Info("General & Modules",
+                        "Configure the main gameplay systems, survival mechanics and feature modules used by SCP Additions.");
+            };
         }
 
         private static Button first(Screen screen, String... labels) {
@@ -127,15 +211,12 @@ public final class ConfigurationHomePolish {
         private static Button find(Screen screen, String label) {
             for (GuiEventListener listener : screen.children()) {
                 if (listener instanceof Button button
-                        && label.equals(button.getMessage().getString())) {
-                    return button;
-                }
+                        && label.equals(button.getMessage().getString())) return button;
             }
             return null;
         }
 
-        private static void place(Button button, int x, int y,
-                int width, int height) {
+        private static void place(Button button, int x, int y, int width, int height) {
             button.visible = true;
             button.setX(x);
             button.setY(y);
@@ -143,37 +224,21 @@ public final class ConfigurationHomePolish {
             button.setHeight(height);
         }
 
-        private static void renderHeader(GuiGraphics graphics, Screen screen) {
-            int navWidth = Math.min(ConfigCenterVisuals.navigationWidth(screen.width),
-                    screen.width - 24);
-            int navX = ConfigCenterVisuals.contentLeft(screen.width, navWidth);
-            Font font = Minecraft.getInstance().font;
-
-            graphics.pose().pushPose();
-            graphics.pose().translate(0.0F, 0.0F, 1200.0F);
-            ConfigCenterVisuals.drawScaledText(graphics, font,
-                    ScpFonts.montserrat("CONFIGURATION CENTER"),
-                    navX, Math.max(28, screen.height * 0.075F),
-                    screen.height < 480 ? 1.35F : 1.62F,
-                    ConfigCenterVisuals.TEXT);
-            ConfigCenterVisuals.drawScaledText(graphics, font,
-                    ScpFonts.titillium("SCP ADDITIONS / SYSTEM CONFIGURATION"),
-                    navX, Math.max(50, screen.height * 0.075F + 25),
-                    0.92F, ConfigCenterVisuals.ACCENT_BRIGHT);
-            int lineY = Math.max(69, Math.round(screen.height * 0.075F) + 47);
-            graphics.fill(navX, lineY, navX + navWidth, lineY + 2,
-                    ConfigCenterVisuals.ACCENT);
-            graphics.drawString(font, ScpFonts.roboto(
-                            "Gameplay, interface, content, and developer controls."),
-                    navX, lineY + 10, ConfigCenterVisuals.MUTED, false);
-            graphics.pose().popPose();
+        private static int fade(int color, float alpha) {
+            int sourceAlpha = color >>> 24;
+            int finalAlpha = clamp(Math.round(sourceAlpha * alpha), 0, 255);
+            return finalAlpha << 24 | color & 0x00FFFFFF;
         }
-    }
 
-    /** Tiny local clamp helper to keep this layout independent of mappings. */
-    private static final class MthCompat {
         private static int clamp(int value, int min, int max) {
             return Math.max(min, Math.min(max, value));
+        }
+
+        private record Layout(int navX, int infoX, int navWidth, int infoWidth,
+                              int headerY, int startY, int rowHeight, int rowGap) {
+        }
+
+        private record Info(String title, String description) {
         }
     }
 }

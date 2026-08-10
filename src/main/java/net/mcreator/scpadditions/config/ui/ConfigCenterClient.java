@@ -248,6 +248,8 @@ public final class ConfigCenterClient {
 
         private int themeMouseX;
         private int themeMouseY;
+        private boolean closing;
+        private Screen closingTarget;
 
         @Override
         public void renderBackground(GuiGraphics graphics) {
@@ -260,11 +262,9 @@ public final class ConfigCenterClient {
                 float partialTick) {
             themeMouseX = mouseX;
             themeMouseY = mouseY;
-            for (var listener : children()) {
-                if (listener instanceof Button button) button.setAlpha(0.0F);
-            }
             super.render(graphics, mouseX, mouseY, partialTick);
             renderThemedControls(graphics, mouseX, mouseY);
+            if (closing && ConfigCenterVisuals.exitComplete()) finishExit();
         }
 
         private void renderThemedControls(GuiGraphics graphics,
@@ -272,9 +272,7 @@ public final class ConfigCenterClient {
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, 420.0F);
             for (var listener : children()) {
-                if (listener instanceof Button button && button.visible) {
-                    drawThemedButton(graphics, button, mouseX, mouseY);
-                } else if (listener instanceof EditBox edit && edit.visible) {
+                if (listener instanceof EditBox edit && edit.visible) {
                     drawEditBorder(graphics, edit);
                 }
             }
@@ -327,7 +325,34 @@ public final class ConfigCenterClient {
         }
 
         protected void goBack() {
-            Minecraft.getInstance().setScreen(parent == null ? new HomeScreen() : parent);
+            Screen target = parent == null ? new HomeScreen() : parent;
+            if (target instanceof ConfigScreen) {
+                Minecraft.getInstance().setScreen(target);
+                return;
+            }
+            if (closing) return;
+            closing = true;
+            closingTarget = target;
+            ConfigCenterVisuals.beginExit();
+        }
+
+        private void finishExit() {
+            Screen target = closingTarget;
+            closing = false;
+            closingTarget = null;
+            if (target instanceof net.mcreator.scpadditions.client.CustomMainMenuScreen menu) {
+                menu.resumeFromConfiguration(
+                        ConfigCenterVisuals.outerAngle(),
+                        ConfigCenterVisuals.innerAngle(),
+                        ConfigCenterVisuals.capturedBackground());
+            }
+            Minecraft.getInstance().setScreen(target);
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (closing) return true;
+            return super.mouseClicked(mouseX, mouseY, button);
         }
 
         @Override
@@ -402,7 +427,7 @@ public final class ConfigCenterClient {
             y += 43;
             addRenderableWidget(Button.builder(Component.literal("Reload Snapshot"), button -> requestOpen(rootParent))
                     .bounds(x, y, (bw - 6) / 2, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Done"), button -> Minecraft.getInstance().setScreen(rootParent))
+            addRenderableWidget(Button.builder(Component.literal("Done"), button -> goBack())
                     .bounds(x + (bw - 6) / 2 + 6, y, (bw - 6) / 2, 20).build());
         }
 

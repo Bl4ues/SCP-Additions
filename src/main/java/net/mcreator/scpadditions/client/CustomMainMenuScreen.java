@@ -71,6 +71,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
     private static final long BACKGROUND_HOLD_MS = 18_000L;
     private static final long BACKGROUND_FADE_MS = 2_400L;
     private static final long SCREEN_TRANSITION_MS = 260L;
+    private static final long CONFIG_TRANSITION_MS = 480L;
     private static final long OPEN_FADE_MS = 520L;
 
     private static final String MODS_KEY = "fml.menu.mods";
@@ -117,6 +118,8 @@ public final class CustomMainMenuScreen extends TitleScreen {
     private long transitionStartedAt = -1L;
     private Runnable pendingTransition;
     private boolean configurationTransition;
+    private ResourceLocation configurationReturnBackground;
+    private boolean returningFromConfiguration;
 
     public CustomMainMenuScreen() {
         super();
@@ -146,6 +149,13 @@ public final class CustomMainMenuScreen extends TitleScreen {
         PauseMenuModsPanelClient.close(this);
 
         refreshAvailableBackgrounds();
+        if (returningFromConfiguration && configurationReturnBackground != null) {
+            int restored = backgrounds.indexOf(configurationReturnBackground);
+            if (restored >= 0) backgroundOffset = restored;
+            openedAt = now - OPEN_FADE_MS;
+        }
+        returningFromConfiguration = false;
+        configurationReturnBackground = null;
         captureVanillaSources();
         hideSourceWidgets();
         buildPrimaryButtons();
@@ -449,6 +459,14 @@ public final class CustomMainMenuScreen extends TitleScreen {
         return spinnerInnerAngle;
     }
 
+    public void resumeFromConfiguration(float outerAngle, float innerAngle,
+            ResourceLocation background) {
+        this.spinnerOuterAngle = outerAngle;
+        this.spinnerInnerAngle = innerAngle;
+        this.configurationReturnBackground = background;
+        this.returningFromConfiguration = true;
+    }
+
     private void toggleExtras() {
         if (transitionStartedAt >= 0L) return;
         PauseMenuModsPanelClient.close(this);
@@ -516,8 +534,10 @@ public final class CustomMainMenuScreen extends TitleScreen {
         spinnerInnerAngle = wrapAngle(
                 spinnerInnerAngle - degreesPerSecond * 0.86F * deltaSeconds);
 
+        long transitionDuration = configurationTransition
+                ? CONFIG_TRANSITION_MS : SCREEN_TRANSITION_MS;
         if (transitionStartedAt >= 0L
-                && now - transitionStartedAt >= SCREEN_TRANSITION_MS) {
+                && now - transitionStartedAt >= transitionDuration) {
             Runnable action = pendingTransition;
             pendingTransition = null;
             transitionStartedAt = -1L;
@@ -586,7 +606,7 @@ public final class CustomMainMenuScreen extends TitleScreen {
         float transform = 0.0F;
         if (configurationTransition && transitionStartedAt >= 0L) {
             float raw = Mth.clamp((Util.getMillis() - transitionStartedAt)
-                    / (float) SCREEN_TRANSITION_MS, 0.0F, 1.0F);
+                    / (float) CONFIG_TRANSITION_MS, 0.0F, 1.0F);
             transform = smootherStep(raw);
         }
         int targetSize = Mth.clamp(Math.round(this.height * 1.22F), 430, 980);
@@ -734,8 +754,10 @@ public final class CustomMainMenuScreen extends TitleScreen {
 
     private void drawTransition(GuiGraphics graphics, long now) {
         if (transitionStartedAt < 0L) return;
+        long duration = configurationTransition
+                ? CONFIG_TRANSITION_MS : SCREEN_TRANSITION_MS;
         float progress = Mth.clamp((now - transitionStartedAt)
-                / (float) SCREEN_TRANSITION_MS, 0.0F, 1.0F);
+                / (float) duration, 0.0F, 1.0F);
         float maxAlpha = configurationTransition ? 146.0F : 190.0F;
         int alpha = Math.round(maxAlpha * smootherStep(progress));
         graphics.fill(0, 0, this.width, this.height, alpha << 24);

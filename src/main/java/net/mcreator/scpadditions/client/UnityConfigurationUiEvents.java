@@ -36,6 +36,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.scpadditions.init.ScpAdditionsModItems;
+import net.mcreator.scpadditions.config.ui.ConfigCenterVisuals;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -202,6 +203,11 @@ public final class UnityConfigurationUiEvents {
 
     private static void drawButton(GuiGraphics graphics, Font font, AbstractButton button,
                                    Component label, int mouseX, int mouseY) {
+        if (button instanceof Button modernButton) {
+            ConfigCenterVisuals.drawButton(graphics, font, modernButton,
+                    label, mouseX, mouseY);
+            return;
+        }
         boolean hovered = contains(button, mouseX, mouseY);
         String plain = label.getString();
         boolean danger = isDanger(plain);
@@ -311,6 +317,8 @@ public final class UnityConfigurationUiEvents {
     }
 
     private static void renderKnownHeader(GuiGraphics graphics, Screen screen) {
+        if (screen.getClass().getName().startsWith(
+                "net.mcreator.scpadditions.config.ui.ConfigCenterClient$")) return;
         PanelSpec spec = panelSpec(screen);
         if (spec == null) return;
         Font font = Minecraft.getInstance().font;

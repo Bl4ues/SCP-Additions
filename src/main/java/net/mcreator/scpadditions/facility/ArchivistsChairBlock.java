@@ -139,11 +139,11 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
         // shape's NORTH reference. Keep the shape itself intact and rotate it
         // half a turn so the seat/backrest volumes face the rendered chair.
         return switch (facing) {
-            case NORTH -> SOUTH;
-            case EAST -> WEST;
-            case SOUTH -> NORTH;
-            case WEST -> EAST;
-            default -> SOUTH;
+            case NORTH -> NORTH;
+            case EAST -> EAST;
+            case SOUTH -> SOUTH;
+            case WEST -> WEST;
+            default -> NORTH;
         };
     }
 

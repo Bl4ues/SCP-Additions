@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.client;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -439,8 +440,7 @@ public final class PauseMenuSettingsPanelClient {
                     applyAlpha(hovered ? ACCENT_BRIGHT : MUTED, alpha), false);
             if (Minecraft.getInstance().getResourceManager()
                     .getResource(current.icon).isPresent()) {
-                graphics.blit(current.icon, iconX, iconY, iconSize, iconSize,
-                        0.0F, 0.0F, 128, 128, 128, 128);
+                drawDifficultyIcon(graphics, current.icon, iconX, iconY, iconSize, alpha);
             }
         }
     }
@@ -478,8 +478,7 @@ public final class PauseMenuSettingsPanelClient {
             int iconY = optionY + (flyout.optionHeight - iconSize) / 2;
             if (Minecraft.getInstance().getResourceManager()
                     .getResource(choice.icon).isPresent()) {
-                graphics.blit(choice.icon, iconX, iconY, iconSize, iconSize,
-                        0.0F, 0.0F, 128, 128, 128, 128);
+                drawDifficultyIcon(graphics, choice.icon, iconX, iconY, iconSize, alpha);
             }
 
             int textX = iconX + iconSize + 10;
@@ -491,6 +490,22 @@ public final class PauseMenuSettingsPanelClient {
                     textX, optionY + 23, applyAlpha(MUTED, alpha), false);
 
         }
+    }
+
+    private static void drawDifficultyIcon(GuiGraphics graphics,
+            ResourceLocation texture, int x, int y, int size, float alpha) {
+        if (Minecraft.getInstance().getResourceManager().getResource(texture).isEmpty()) return;
+        float scale = size / 128.0F;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, Mth.clamp(alpha, 0.0F, 1.0F));
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.blit(texture, 0, 0, 0.0F, 0.0F, 128, 128, 128, 128);
+        graphics.pose().popPose();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
     }
 
     private static DifficultyFlyout difficultyFlyout(

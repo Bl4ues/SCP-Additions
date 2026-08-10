@@ -61,6 +61,11 @@ public final class ConfigurationHomePolish {
             int usableBottom = screen.height - 54;
 
             Button crosshair = find(screen, "Crosshair");
+            if (crosshair != null) {
+                crosshair.visible = false;
+                crosshair.active = false;
+                crosshair.setX(-10000);
+            }
             Button general = find(screen, "General & Modules");
             Button inventory = first(screen, "Items, Entities & Codex",
                     "Inventory, Equipment & Codex");
@@ -72,7 +77,7 @@ public final class ConfigurationHomePolish {
             Button reload = find(screen, "Reload Snapshot");
             Button done = find(screen, "Done");
 
-            Button[] primary = {crosshair, general, inventory, interactions, drinks, recipes};
+            Button[] primary = {general, inventory, interactions, drinks, recipes};
             int rows = 0;
             for (Button button : primary) if (button != null) rows++;
             int required = rows * rowHeight + Math.max(0, rows - 1) * gap

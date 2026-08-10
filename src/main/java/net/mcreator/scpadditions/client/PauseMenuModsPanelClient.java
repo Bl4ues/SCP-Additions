@@ -383,8 +383,8 @@ public final class PauseMenuModsPanelClient {
             Font font = Minecraft.getInstance().font;
             Component message = ScpFonts.roboto("Select a mod to view details.");
             graphics.drawCenteredString(font, message,
-                    layout.detailX + layout.detailWidth / 2,
-                    layout.detailY + layout.detailHeight / 2,
+                    layout.detailX + layout.detailWidth() / 2,
+                    layout.detailY + layout.detailHeight() / 2,
                     applyAlpha(MUTED, alpha));
             state.hasConfig = false;
             state.detailMaxScroll = 0;
@@ -430,7 +430,7 @@ public final class PauseMenuModsPanelClient {
         int scrollTop = headerBottom + 10;
         int scrollBottom = layout.detailBottom - 8 - settingsHeight;
         int contentWidth = Math.max(60,
-                layout.detailWidth - 28);
+                layout.detailWidth() - 28);
         DetailContent content = buildDetailContent(font, selected,
                 contentWidth);
         int viewport = Math.max(1, scrollBottom - scrollTop);
@@ -465,7 +465,7 @@ public final class PauseMenuModsPanelClient {
                     applyAlpha(ACCENT, alpha));
             graphics.drawCenteredString(font,
                     ScpFonts.roboto("Open Settings"),
-                    layout.detailX + layout.detailWidth / 2,
+                    layout.detailX + layout.detailWidth() / 2,
                     y + (FOOTER_HEIGHT - font.lineHeight) / 2,
                     applyAlpha(hovered ? ACCENT_BRIGHT : TEXT, alpha));
         }
@@ -496,7 +496,7 @@ public final class PauseMenuModsPanelClient {
             y = addMetadata(lines, font, width, y, "LICENSE", license);
 
         y += 5;
-        lines.add(new DetailLine(ScpFonts.titillium("DESCRIPTION"),
+        lines.add(new DetailLine(ScpFonts.titillium("DESCRIPTION").getVisualOrderText(),
                 ACCENT_BRIGHT, y));
         y += font.lineHeight + 4;
         List<FormattedCharSequence> description = font.split(
@@ -514,7 +514,8 @@ public final class PauseMenuModsPanelClient {
 
     private static int addMetadata(List<DetailLine> lines, Font font,
             int width, int y, String label, String value) {
-        lines.add(new DetailLine(ScpFonts.titillium(label), ACCENT_BRIGHT, y));
+        lines.add(new DetailLine(ScpFonts.titillium(label).getVisualOrderText(),
+                ACCENT_BRIGHT, y));
         y += font.lineHeight + 2;
         List<FormattedCharSequence> wrapped = font.split(
                 ScpFonts.roboto(value), width);

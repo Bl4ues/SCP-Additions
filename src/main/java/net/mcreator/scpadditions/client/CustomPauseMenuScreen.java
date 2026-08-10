@@ -143,6 +143,10 @@ public final class CustomPauseMenuScreen extends PauseScreen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (PauseMenuModsPanelClient.keyPressed(this,
+                keyCode, scanCode, modifiers)) {
+            return true;
+        }
         if (PauseMenuEmbeddedPanelsClient.keyPressed(this,
                 keyCode, scanCode, modifiers)) {
             return true;
@@ -176,6 +180,10 @@ public final class CustomPauseMenuScreen extends PauseScreen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (PauseMenuModsPanelClient.mouseClicked(this,
+                mouseX, mouseY, button)) {
+            return true;
+        }
         if (PauseMenuEmbeddedPanelsClient.mouseClicked(this,
                 mouseX, mouseY, button)) {
             return true;
@@ -204,6 +212,10 @@ public final class CustomPauseMenuScreen extends PauseScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (PauseMenuModsPanelClient.mouseScrolled(this,
+                mouseX, mouseY, delta)) {
+            return true;
+        }
         if (PauseMenuEmbeddedPanelsClient.mouseScrolled(this,
                 mouseX, mouseY, delta)) {
             return true;
@@ -281,11 +293,19 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         if (options != null) {
             addButton(new PauseMenuButton(ScpFonts.roboto("Settings"), () -> {
                 PauseMenuEmbeddedPanelsClient.close(this);
+                PauseMenuModsPanelClient.close(this);
                 PauseMenuSettingsPanelClient.toggle(this);
             }, options));
         }
 
-        addSourceButton(MODS_KEY, "Mods");
+        AbstractButton mods = sourceButtons.get(MODS_KEY);
+        if (mods != null) {
+            addButton(new PauseMenuButton(ScpFonts.roboto("Mods"), () -> {
+                PauseMenuSettingsPanelClient.close(this);
+                PauseMenuEmbeddedPanelsClient.close(this);
+                PauseMenuModsPanelClient.toggle(this);
+            }, mods));
+        }
 
         for (AbstractButton source : injectedSources) {
             addButton(new PauseMenuButton(ScpFonts.roboto(source.getMessage()),
@@ -301,6 +321,7 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         if (source == null) return;
         addButton(new PauseMenuButton(ScpFonts.roboto(label), () -> {
             PauseMenuSettingsPanelClient.close(this);
+            PauseMenuModsPanelClient.close(this);
             if (!PauseMenuEmbeddedPanelsClient.toggle(this, mode)) {
                 beginExit(source::onPress);
             }
@@ -413,12 +434,16 @@ public final class CustomPauseMenuScreen extends PauseScreen {
         PauseMenuEmbeddedPanelsClient.render(this, graphics,
                 mouseX, mouseY, partialTick, now, panelX,
                 startY, width, height, gap);
+        PauseMenuModsPanelClient.render(this, graphics,
+                mouseX, mouseY, partialTick, now, panelX,
+                startY, width, height, gap);
     }
 
     private void beginExit(Runnable action) {
         if (action == null || leavingAt >= 0L) return;
         PauseMenuSettingsPanelClient.close(this);
         PauseMenuEmbeddedPanelsClient.close(this);
+        PauseMenuModsPanelClient.close(this);
         leavingAt = Util.getMillis();
         pendingAction = action;
         for (PauseMenuButton button : menuButtons) button.active = false;

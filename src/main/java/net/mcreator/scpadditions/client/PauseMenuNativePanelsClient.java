@@ -512,7 +512,7 @@ public final class PauseMenuNativePanelsClient {
                     y + ACHIEVEMENT_ROW_HEIGHT,
                     applyAlpha(entry.done ? ACCENT : BORDER, rowAlpha));
             int iconX = layout.contentX + 9;
-            int iconY = y + 13;
+            int iconY = y + (concealed ? 13 : 12);
             if (concealed) {
                 drawHiddenAchievementIcon(graphics, iconX, iconY, alpha);
             } else if (entry.useModLogo) {
@@ -529,7 +529,8 @@ public final class PauseMenuNativePanelsClient {
                     : entry.title.getString();
             String title = compactToWidth(font, rawTitle,
                     layout.contentRight - textX - 86);
-            graphics.drawString(font, ScpFonts.roboto(title), textX, y + 9,
+            graphics.drawString(font, ScpFonts.roboto(title), textX,
+                    concealed ? y + 17 : y + 9,
                     applyAlpha(entry.done ? ACCENT_BRIGHT : MUTED,
                             entry.done ? alpha : alpha * 0.82F), false);
             if (!concealed) {
@@ -595,7 +596,7 @@ public final class PauseMenuNativePanelsClient {
         graphics.fill(x, y, x + 1, y + 16, applyAlpha(BORDER, alpha));
         graphics.fill(x + 15, y, x + 16, y + 16, applyAlpha(BORDER, alpha));
         Component question = ScpFonts.roboto("?");
-        graphics.drawCenteredString(font, question, x + 8, y + 4,
+        graphics.drawCenteredString(font, question, x + 8, y + 5,
                 applyAlpha(MUTED, alpha));
     }
 

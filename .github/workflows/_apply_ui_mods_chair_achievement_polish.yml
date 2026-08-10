@@ -1,0 +1,61 @@
+name: Apply UI mods chair achievement polish
+
+on:
+  push:
+    paths:
+      - '.github/workflows/_apply_ui_mods_chair_achievement_polish.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install audio tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Apply requested changes
+        shell: bash
+        run: |
+          python3 .github/_temp_ui_mods_chair_achievement_polish.py
+          audio='src/main/resources/assets/scp_additions/sounds/achievement.ogg'
+          temp_audio="${audio}.tmp.ogg"
+          ffmpeg -hide_banner -loglevel error -y -i "$audio" \
+            -af 'volume=2.0,alimiter=limit=0.98' -c:a libvorbis -q:a 8 "$temp_audio"
+          mv "$temp_audio" "$audio"
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build modified source
+        run: ./gradlew clean build --stacktrace
+
+      - name: Commit to master
+        shell: bash
+        run: |
+          rm -f .github/_temp_ui_mods_chair_achievement_polish.py
+          rm -f .github/workflows/_apply_ui_mods_chair_achievement_polish.yml
+          git config user.name 'Deyvid Campos'
+          git config user.email 'deyvid04campos@gmail.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Polish Mods flyout, chair collision and achievement feedback'
+          git push origin HEAD:master

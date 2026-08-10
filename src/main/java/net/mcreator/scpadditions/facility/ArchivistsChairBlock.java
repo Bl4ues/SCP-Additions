@@ -31,21 +31,17 @@ import java.util.List;
 /**
  * Decorative Archivist's Chair.
  *
- * The Blockbench model is intentionally offset from the block origin. Collision
- * is deliberately coarse: four volumes cover the five-star base, pedestal,
- * seat and offset backrest without reproducing every rotated cube in the model.
+ * The Blockbench model is intentionally offset from the block origin. Its
+ * horizontal model coordinates are centered on the block, while VoxelShape
+ * coordinates use the block corner as zero, so the model envelope is shifted
+ * by eight model units on X/Z before becoming collision. The chair deliberately
+ * uses one coarse volume rather than reproducing its individual parts.
  */
 public final class ArchivistsChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
-    private static final VoxelShape NORTH = Shapes.or(
-            // Five-star base, approximated as one low footprint.
-            box(0.0D, 0.0D, -6.5D, 12.5D, 3.25D, 6.5D),
-            // Central pedestal.
-            box(4.0D, 2.0D, -2.0D, 8.0D, 10.25D, 2.0D),
-            // Seat cushion and immediate frame.
-            box(-0.75D, 9.75D, -6.75D, 12.75D, 12.25D, 6.75D),
-            // The authored backrest sits to the positive-X side of the block.
-            box(4.75D, 10.0D, -8.25D, 14.25D, 22.75D, 1.25D))
-            .optimize();
+    // Overall authored chair envelope, including its intentional offset.
+    private static final VoxelShape NORTH = box(
+            5.95D, 0.0D, -0.05D,
+            20.65D, 22.75D, 14.65D);
     private static final VoxelShape EAST = rotateY(NORTH, 1);
     private static final VoxelShape SOUTH = rotateY(NORTH, 2);
     private static final VoxelShape WEST = rotateY(NORTH, 3);

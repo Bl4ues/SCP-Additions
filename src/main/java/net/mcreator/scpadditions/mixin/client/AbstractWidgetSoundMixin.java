@@ -22,6 +22,12 @@ public abstract class AbstractWidgetSoundMixin {
         AbstractWidget widget = (AbstractWidget) (Object) this;
         if (!(widget instanceof AbstractButton)) return;
 
+        // Loading/error screens may exist after mod construction failed, before
+        // deferred registries finished binding. In that state, keep vanilla's
+        // click instead of dereferencing an absent RegistryObject and masking
+        // the original loading error with a second crash.
+        if (!ScpAdditionsModSounds.SELECT.isPresent()) return;
+
         soundManager.play(SimpleSoundInstance.forUI(
                 ScpAdditionsModSounds.SELECT.get(), 1.0F, 0.35F));
         callback.cancel();

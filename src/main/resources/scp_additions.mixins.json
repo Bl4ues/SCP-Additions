@@ -12,6 +12,7 @@
     "client.CustomMainMenuPlayPanelsMixin",
     "client.MainMenuPlayPanelsPolishMixin",
     "client.MainMenuSettingsPlayPanelMixin",
+    "client.EditGameRulesScreenMixin",
     "client.FontMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",

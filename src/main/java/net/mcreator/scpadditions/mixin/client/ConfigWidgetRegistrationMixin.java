@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.mixin.client;
 
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.mcreator.scpadditions.config.ui.ClientPreferenceModulesUi;
 import net.mcreator.scpadditions.config.ui.CrosshairModulesPlacement;
@@ -10,18 +11,25 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Registers replacement config widgets through a remapped Screen invoker. */
+import java.util.List;
+
+/** Registers replacement config widgets without mapped-name reflection. */
 @Mixin(value = {
         ClientPreferenceModulesUi.class,
         CrosshairModulesPlacement.class,
         VoiceProfileModulesUi.class
 }, remap = false)
 public abstract class ConfigWidgetRegistrationMixin {
+    @SuppressWarnings("unchecked")
     @Inject(method = "addRenderableWidget", at = @At("HEAD"), cancellable = true)
     private static void scpAdditions$registerReplacementWidget(
             Screen screen, Button button, CallbackInfo callback) {
-        ((ScreenInvoker) (Object) screen)
-                .scpAdditions$invokeAddRenderableWidget(button);
+        // These screens already render their replacement buttons from their own
+        // button list. The missing production step is registering the button as
+        // a GUI event listener so Screen can dispatch mouse/keyboard input to it.
+        List<GuiEventListener> children =
+                (List<GuiEventListener>) (List<?>) screen.children();
+        if (!children.contains(button)) children.add(button);
         callback.cancel();
     }
 }

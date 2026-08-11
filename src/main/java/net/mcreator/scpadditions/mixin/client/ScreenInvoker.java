@@ -1,7 +1,6 @@
 package net.mcreator.scpadditions.mixin.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -11,8 +10,4 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface ScreenInvoker {
     @Invoker("init")
     void scpAdditions$invokeInit(Minecraft minecraft, int width, int height);
-
-    @Invoker("addRenderableWidget")
-    GuiEventListener scpAdditions$invokeAddRenderableWidget(
-            GuiEventListener listener);
 }

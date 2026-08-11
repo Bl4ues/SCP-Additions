@@ -17,11 +17,32 @@ public abstract class CustomMainMenuSettingsMixin {
                 (CustomMainMenuScreen) (Object) this);
     }
 
+    /*
+     * CustomMainMenuScreen#render overrides a Minecraft method. Forge reobfuscates
+     * that override to its SRG name in production jars, while development runs
+     * retain the mapped name. Because this mixin intentionally does not remap
+     * our custom class/methods, support both runtime names explicitly.
+     */
     @Inject(method = "render", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"))
-    private void scpAdditions$renderSettings(GuiGraphics graphics,
+            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            require = 0)
+    private void scpAdditions$renderSettingsMapped(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick,
             CallbackInfo callback) {
+        scpAdditions$renderSettings(graphics, mouseX, mouseY);
+    }
+
+    @Inject(method = "m_88315_", at = @At(value = "INVOKE",
+            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            require = 0)
+    private void scpAdditions$renderSettingsSrg(GuiGraphics graphics,
+            int mouseX, int mouseY, float partialTick,
+            CallbackInfo callback) {
+        scpAdditions$renderSettings(graphics, mouseX, mouseY);
+    }
+
+    private void scpAdditions$renderSettings(GuiGraphics graphics,
+            int mouseX, int mouseY) {
         MainMenuSettingsPanelClient.render(
                 (CustomMainMenuScreen) (Object) this,
                 graphics, mouseX, mouseY);

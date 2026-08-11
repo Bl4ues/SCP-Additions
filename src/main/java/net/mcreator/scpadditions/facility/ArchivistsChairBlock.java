@@ -142,10 +142,10 @@ public final class ArchivistsChairBlock extends HorizontalDirectionalBlock imple
 
     private static VoxelShape modelBox(double minX, double minY, double minZ,
             double maxX, double maxY, double maxZ) {
-        // Continue the proven in-game correction by one model pixel in the
-        // same direction, without changing the shape, Z origin or rotation.
-        return box(-2.5D + minX, minY, 8.0D + minZ,
-                -2.5D + maxX, maxY, 8.0D + maxZ);
+        // Continue the proven in-game correction by one final model pixel in
+        // the same direction, without changing shape, Z origin or rotation.
+        return box(-3.5D + minX, minY, 8.0D + minZ,
+                -3.5D + maxX, maxY, 8.0D + maxZ);
     }
 
     private static VoxelShape rotateY(VoxelShape source, int quarterTurns) {

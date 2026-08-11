@@ -317,5 +317,14 @@
   "advancements.what.title": "What?",
   "advancements.what.descr": "Resist SCP-012's influence with SCP-714",
   "advancements.concrete_and_rebar.title": "Concrete and Rebar",
-  "advancements.concrete_and_rebar.descr": "Survive an encounter with SCP-173"
+  "advancements.concrete_and_rebar.descr": "Survive an encounter with SCP-173",
+  "gamerule.deconCheckpoint": "Decontamination Checkpoints set spawn",
+  "gamerule.teslaGateManualOverride": "Tesla Gate manual override",
+  "gamerule.teslaGateManualOverride.description": "Whether the Tesla Gate network is forced into manual override mode.",
+  "gamerule.173spawn": "SCP-173 natural spawning",
+  "gamerule.173spawn.description": "Whether SCP-173 may spawn naturally through the SCP Additions roaming system.",
+  "gamerule.106spawn": "SCP-106 natural spawning",
+  "gamerule.106spawn.description": "Whether SCP-106 may spawn naturally through the SCP Additions roaming system.",
+  "gamerule.roombaSpawn": "Roomba natural spawning",
+  "gamerule.roombaSpawn.description": "Whether Roombas may spawn naturally through the SCP Additions spawning system."
 }

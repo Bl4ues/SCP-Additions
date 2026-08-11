@@ -49,11 +49,27 @@ public abstract class CustomMainMenuPlayPanelsMixin {
         MainMenuPlayPanelsClient.close((CustomMainMenuScreen) (Object) this);
     }
 
+    /* See CustomMainMenuSettingsMixin for why both mapped and SRG names are used. */
     @Inject(method = "render", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"))
-    private void scpAdditions$renderPlayPanels(GuiGraphics graphics,
+            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            require = 0)
+    private void scpAdditions$renderPlayPanelsMapped(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick,
             CallbackInfo callback) {
+        scpAdditions$renderPlayPanels(graphics, mouseX, mouseY);
+    }
+
+    @Inject(method = "m_88315_", at = @At(value = "INVOKE",
+            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            require = 0)
+    private void scpAdditions$renderPlayPanelsSrg(GuiGraphics graphics,
+            int mouseX, int mouseY, float partialTick,
+            CallbackInfo callback) {
+        scpAdditions$renderPlayPanels(graphics, mouseX, mouseY);
+    }
+
+    private void scpAdditions$renderPlayPanels(GuiGraphics graphics,
+            int mouseX, int mouseY) {
         MainMenuPlayPanelsClient.render(
                 (CustomMainMenuScreen) (Object) this,
                 graphics, mouseX, mouseY);

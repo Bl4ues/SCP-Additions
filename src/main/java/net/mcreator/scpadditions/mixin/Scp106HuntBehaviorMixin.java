@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp106Entity;
+import net.mcreator.scpadditions.event.Scp106TargetingEvents;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -43,6 +44,14 @@ public abstract class Scp106HuntBehaviorMixin {
             CallbackInfoReturnable<Player> callback) {
         Scp106Entity self = (Scp106Entity) (Object) this;
         if (!(self.level() instanceof ServerLevel level)) return;
+
+        Player retaliation = Scp106TargetingEvents.preferredTarget(self);
+        if (retaliation != null) {
+            huntedPlayerId = retaliation.getUUID();
+            if (self.getTarget() != retaliation) self.setTarget(retaliation);
+            callback.setReturnValue(retaliation);
+            return;
+        }
 
         Player locked = huntedPlayerId == null ? null
                 : level.getPlayerByUUID(huntedPlayerId);

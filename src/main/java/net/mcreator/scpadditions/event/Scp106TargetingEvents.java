@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.event;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -20,7 +20,7 @@ public final class Scp106TargetingEvents {
     }
 
     @SubscribeEvent
-    public static void onHurt(LivingHurtEvent event) {
+    public static void onAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof Scp106Entity scp106)) return;
         Entity source = event.getSource().getEntity();
         if (!(source instanceof Player player)

@@ -43,8 +43,8 @@ public final class CraftingWorldDropClientEvents {
             Object panel = field(screen, "craftingPanel");
             if (panel == null) return;
             Object dragKind = field(panel, "dragKind");
-            Object dragSource = field(panel, "dragSource");
-            if (!(dragSource instanceof Integer source) || source < 0
+            Object dragIndex = field(panel, "dragIndex");
+            if (!(dragIndex instanceof Integer source) || source < 0
                     || dragKind == null) {
                 return;
             }

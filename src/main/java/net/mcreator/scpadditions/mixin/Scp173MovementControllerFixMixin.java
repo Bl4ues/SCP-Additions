@@ -2,8 +2,10 @@ package net.mcreator.scpadditions.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp173Entity;
@@ -20,11 +22,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Method;
 
-/** Keeps observed gravity and collision-route repair coherent for SCP-173. */
+/** Keeps observed gravity, snap attacks and collision-route repair coherent for SCP-173. */
 @Mixin(value = Scp173MovementController.class, remap = false)
 public abstract class Scp173MovementControllerFixMixin {
     @Unique private static final Method scpAdditions$observationLocked =
             scpAdditions$method("isObservationLocked");
+    @Unique private static final Method scpAdditions$trySnapAttack =
+            scpAdditions$method("trySnapAttack", LivingEntity.class);
 
     @Inject(method = "validateAndRepair", at = @At("HEAD"), cancellable = true)
     private static void scpAdditions$preserveObservedFall(ServerLevel level,
@@ -42,6 +46,22 @@ public abstract class Scp173MovementControllerFixMixin {
                 statue.getY(), statue.getZ(), 0.0D);
         statue.setDeltaMovement(0.0D, 0.0D, 0.0D);
         callback.cancel();
+    }
+
+    @Inject(method = "applyStep", at = @At("TAIL"))
+    private static void scpAdditions$attackAfterRepairStep(ServerLevel level,
+            Scp173Entity statue, LivingEntity target, Vec3 step,
+            CallbackInfo callback) {
+        if (statue == null || target == null || scpAdditions$trySnapAttack == null) {
+            return;
+        }
+        try {
+            scpAdditions$trySnapAttack.invoke(statue, target);
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.warn(
+                    "Could not perform SCP-173 snap attack after route repair",
+                    exception);
+        }
     }
 
     @Inject(method = "isSoftObstacle", at = @At("HEAD"), cancellable = true)
@@ -73,9 +93,10 @@ public abstract class Scp173MovementControllerFixMixin {
     }
 
     @Unique
-    private static Method scpAdditions$method(String name) {
+    private static Method scpAdditions$method(String name,
+            Class<?>... parameters) {
         try {
-            Method method = Scp173Entity.class.getDeclaredMethod(name);
+            Method method = Scp173Entity.class.getDeclaredMethod(name, parameters);
             method.setAccessible(true);
             return method;
         } catch (ReflectiveOperationException ignored) {

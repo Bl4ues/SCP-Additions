@@ -9,15 +9,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Prevents contact shoving and gives SCP-173 a small collision-safe snap reach. */
+/** Gives SCP-173 a small collision-safe snap reach at true contact distance. */
 @Mixin(value = Scp173Entity.class, remap = false)
 public abstract class Scp173ContactFixMixin {
     @Unique private static final double scpAdditions$snapGap = 0.28D;
-
-    /** SCP-173 is effectively a concrete statue, not a multiplayer beach ball. */
-    public boolean isPushable() {
-        return false;
-    }
 
     @Inject(method = "isInSnapRange", at = @At("HEAD"), cancellable = true)
     private void scpAdditions$allowCollisionSafeSnap(LivingEntity target,

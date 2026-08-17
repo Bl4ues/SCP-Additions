@@ -9,6 +9,7 @@
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",
     "Scp173MovementControllerFixMixin",
+    "Scp173PushabilityMixin",
     "CoreRoomElevatorManagerFixMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",

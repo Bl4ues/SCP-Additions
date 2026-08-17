@@ -33,14 +33,12 @@ public abstract class Scp173MovementControllerFixMixin {
     @Inject(method = "validateAndRepair", at = @At("HEAD"), cancellable = true)
     private static void scpAdditions$preserveObservedFall(ServerLevel level,
             Scp173Entity statue, CallbackInfo callback) {
-        if (statue == null || statue.onGround()
-                || !scpAdditions$isObserved(statue)) {
-            return;
-        }
+        if (statue == null || !scpAdditions$isObserved(statue)) return;
 
-        // Scp173Entity already froze X/Z and applied its heavy vertical physics
-        // during its own tick. Restoring the tick-start snapshot here used to
-        // undo that Y movement and leave an observed statue suspended in air.
+        // Scp173Entity already freezes horizontal movement and applies its own
+        // heavy vertical motion while observed. The external repair controller
+        // must never restore the tick-start snapshot here: doing so undoes a
+        // mid-air fall, including the tick on which the statue reaches ground.
         statue.getNavigation().stop();
         statue.getMoveControl().setWantedPosition(statue.getX(),
                 statue.getY(), statue.getZ(), 0.0D);

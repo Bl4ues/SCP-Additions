@@ -51,9 +51,14 @@ public final class GameplayItemTooltipEvents {
             case "default_door", "yellow_closed", "black_closed" -> addPair(tooltip,
                     "tooltip.scp_additions.heavy_door_primary",
                     "tooltip.scp_additions.heavy_door_secondary");
-            case "tesla_terminal_block" -> addPair(tooltip,
-                    "tooltip.scp_additions.tesla_terminal_primary",
-                    "tooltip.scp_additions.tesla_terminal_secondary");
+            case "tesla_terminal_block" -> {
+                tooltip.add(Component.literal(
+                                "Controls the connected Tesla Gate network")
+                        .withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.literal(
+                                "Use a Screwdriver to cycle the terminal on or off")
+                        .withStyle(ChatFormatting.AQUA));
+            }
             case "tesla_terminal_off" -> tooltip.add(
                     Component.translatable("tooltip.scp_additions.decorative_prop")
                             .withStyle(ChatFormatting.GRAY));

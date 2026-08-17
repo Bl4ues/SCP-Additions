@@ -85,6 +85,8 @@
 - Added a default-enabled **Custom Achievement Toasts** client preference that replaces vanilla advancement popups with animated SCP Additions cards;
 - Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable icon-backed mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
 - Added an SCP-themed Difficulty drop-right to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
+- Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP Additions presentation;
+- SCP Inventory can now be closed with its configured open key, matching vanilla inventory-toggle behavior, and Crafting items can be dragged outside the interface to drop them into the world;
 - Rebuilt the Configuration Center as a continuation of the modern main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth spinner-backed entry and exit transitions while retaining the existing configuration editors and validation logic;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;
@@ -125,6 +127,7 @@
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
+- Core Room elevator columns now wait for a valid Pulley before generating connecting beams, remove generated beams when the Pulley becomes invalid or is removed, and show green/red vertical construction guides while positioning Floor Stations or Pulleys;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;

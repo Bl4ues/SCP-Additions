@@ -86,7 +86,7 @@ public final class CoreRoomElevatorClientEvents {
             facing = minecraft.player.getDirection().getOpposite();
             candidate = CoreRoomElevatorManager.findStationSnap(
                     level, candidate, facing);
-            anchor = nearestStation(level, candidate, facing);
+            anchor = nearestStation(level, candidate);
             if (anchor == null) return;
             if (hasBeamBetween(level, anchor, candidate.getY())) return;
             valid = CoreRoomElevatorManager.isValidStationPlacement(
@@ -120,17 +120,14 @@ public final class CoreRoomElevatorClientEvents {
 
     @Nullable
     private static BlockPos nearestStation(ClientLevel level,
-            BlockPos candidate, Direction facing) {
+            BlockPos candidate) {
         BlockPos best = null;
         int bestDistance = Integer.MAX_VALUE;
         for (int y = level.getMinBuildHeight(); y < level.getMaxBuildHeight(); y++) {
             if (y == candidate.getY()) continue;
             BlockPos pos = new BlockPos(candidate.getX(), y, candidate.getZ());
             BlockState state = level.getBlockState(pos);
-            if (!state.is(CoreRoomElevatorModule.STATION.get())
-                    || state.getValue(CoreRoomElevatorModule.FACING) != facing) {
-                continue;
-            }
+            if (!state.is(CoreRoomElevatorModule.STATION.get())) continue;
             int distance = Math.abs(y - candidate.getY());
             if (distance < bestDistance) {
                 best = pos;

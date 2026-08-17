@@ -15,6 +15,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.init.ScpAdditionsModBlocks;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -60,27 +61,30 @@ public final class AreaUnderConstructionSignModule {
         BLOCK_ENTITIES.register(bus);
     }
 
-    /** Curated sections with both retired standalone sign items removed. */
+    /** Curated sections with retired/duplicate entries removed. */
     public static List<FacilityModule.CreativeSection> creativeSections() {
         List<FacilityModule.CreativeSection> result = new ArrayList<>();
         for (FacilityModule.CreativeSection section :
                 FacilityModule.creativeSections()) {
             List<ItemStack> items = new ArrayList<>();
             for (ItemStack stack : section.items()) {
-                if (stack.is(ITEM.get()) || stack.is(
-                        FacilityModule.SCP_914_USAGE_NOTICE.get().asItem())) {
+                if (stack.is(ITEM.get())
+                        || stack.is(FacilityModule.SCP_914_USAGE_NOTICE.get().asItem())
+                        || stack.is(ScpAdditionsModBlocks.TESLA_TERMINAL_OFF.get().asItem())) {
                     continue;
                 }
-                items.add(stack.copy());
-                if (stack.is(FacilityModule.TV.get().asItem())) {
-                    items.add(new ItemStack(
-                            TeslaGateTerminalTableModule.ITEM.get()));
-                }
+                addUnique(items, stack);
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     items));
         }
         return List.copyOf(result);
+    }
+
+    private static void addUnique(List<ItemStack> items, ItemStack stack) {
+        boolean duplicate = items.stream().anyMatch(existing ->
+                ItemStack.isSameItemSameTags(existing, stack));
+        if (!duplicate) items.add(stack.copy());
     }
 
     public static List<ItemStack> creativeTabDisplayStacks() {

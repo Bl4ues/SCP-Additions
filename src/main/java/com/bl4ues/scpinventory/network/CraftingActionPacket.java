@@ -16,6 +16,7 @@ public final class CraftingActionPacket {
     public static final int AUTO_FILL = 3;
     public static final int CRAFT = 4;
     public static final int TOGGLE_PIN = 5;
+    public static final int MOVE_GRID_TO_WORLD = 6;
 
     private final int action;
     private final int source;

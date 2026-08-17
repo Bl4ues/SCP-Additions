@@ -42,6 +42,10 @@ Optional client integrations:
 - Broad vanilla and modded integration through registry-based configuration, automatic item classification, and SCP-914 recipe inference.
 - Multiplayer synchronization for host-controlled gameplay configuration and custom inventory behavior.
 
+## Beta testers
+
+Special thanks to **Aronga** and **Evansky** for multiplayer testing, bug reproduction, and pre-release feedback during the 4.0 development cycle.
+
 ## Installation
 
 1. Install Minecraft **1.20.1** with Forge **47.4.10 or newer**.

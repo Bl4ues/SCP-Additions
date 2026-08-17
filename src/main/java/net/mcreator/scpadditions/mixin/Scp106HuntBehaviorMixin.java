@@ -1,8 +1,10 @@
 package net.mcreator.scpadditions.mixin;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp106Entity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,6 +27,10 @@ public abstract class Scp106HuntBehaviorMixin {
 
     @Unique private static final double scpAdditions$targetRange = 128.0D;
     @Unique private static final double scpAdditions$switchMargin = 1.5D;
+    @Unique private static final double scpAdditions$verticalPhaseThreshold = 1.35D;
+    @Unique private static final double scpAdditions$verticalPhaseSpeed = 0.10D;
+    @Unique private static final int scpAdditions$huntingState = 0;
+    @Unique private static final int scpAdditions$phaseTravelState = 3;
     @Unique private static final int scpAdditions$vanishingState = 4;
     @Unique private static final int scpAdditions$ambushRetryTicks = 8;
     @Unique private static final Method scpAdditions$beginPhaseTravel =
@@ -108,12 +114,46 @@ public abstract class Scp106HuntBehaviorMixin {
         // canopy, cliff, or other unsuitable surface should not freeze the hunt
         // for repeated retries; phase travel is the terrain-independent fallback.
         self.setInvisible(false);
+        scpAdditions$beginPhaseTravel(self);
+    }
+
+    @Inject(method = "tickPhaseTravel", at = @At("TAIL"))
+    private void scpAdditions$followVerticalTargetDuringPhase(CallbackInfo callback) {
+        Scp106Entity self = (Scp106Entity) (Object) this;
+        LivingEntity rawTarget = self.getTarget();
+        if (!(rawTarget instanceof Player player)
+                || !scpAdditions$isValid(self, player)) {
+            return;
+        }
+
+        double deltaY = player.getY() - self.getY();
+        if (Math.abs(deltaY) <= scpAdditions$verticalPhaseThreshold) return;
+
+        // Vanilla phase travel can decide it has safely exited merely because it
+        // is on solid ground with line of sight. If the target is still on a
+        // different vertical level, re-enter phase travel so the next tick keeps
+        // traversing the structure instead of returning to ordinary pathfinding.
+        if (self.getEncounterState() == scpAdditions$huntingState) {
+            scpAdditions$beginPhaseTravel(self);
+            return;
+        }
+        if (self.getEncounterState() != scpAdditions$phaseTravelState) return;
+
+        Vec3 movement = self.getDeltaMovement();
+        self.setDeltaMovement(movement.x,
+                Mth.clamp(deltaY, -scpAdditions$verticalPhaseSpeed,
+                        scpAdditions$verticalPhaseSpeed),
+                movement.z);
+    }
+
+    @Unique
+    private static void scpAdditions$beginPhaseTravel(Scp106Entity self) {
+        if (scpAdditions$beginPhaseTravel == null) return;
         try {
             scpAdditions$beginPhaseTravel.invoke(self);
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not recover SCP-106 from a failed relocation",
-                    exception);
+                    "Could not recover SCP-106 through phase travel", exception);
         }
     }
 

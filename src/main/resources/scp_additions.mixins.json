@@ -9,6 +9,7 @@
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",
     "Scp173MovementControllerFixMixin",
+    "CoreRoomElevatorManagerFixMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",
     "client.StorageContainerSupportCompatMixin"
@@ -26,6 +27,8 @@
     "client.ConfigWidgetRegistrationMixin",
     "client.ContextConfigClientEventsCompatMixin",
     "client.PauseMenuNativePanelsCompatMixin",
+    "client.PauseMenuLanCompatibilityMixin",
+    "client.IntegratedServerLanPortMixin",
     "client.MainMenuPlayPanelsPolishMixin",
     "client.MainMenuSettingsPlayPanelMixin",
     "client.EditGameRulesScreenMixin",

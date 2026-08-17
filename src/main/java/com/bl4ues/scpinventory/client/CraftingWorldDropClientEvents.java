@@ -12,10 +12,21 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.lang.reflect.Field;
 
-/** Allows crafting-screen drags to discard items outside the inventory frame. */
+/** Inventory-screen input conveniences that need to run before panel handlers. */
 @Mod.EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
 public final class CraftingWorldDropClientEvents {
     private CraftingWorldDropClientEvents() {
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
+        if (!(event.getScreen() instanceof ScpInventoryScreen screen)
+                || !Keybinds.OPEN_SCP_INVENTORY.matches(
+                        event.getKeyCode(), event.getScanCode())) {
+            return;
+        }
+        screen.onClose();
+        event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

@@ -15,11 +15,13 @@ import net.mcreator.scpadditions.init.Scp106Sounds;
 import net.mcreator.scpadditions.network.ScpEntityNetwork;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-/** Coordinates positional SCP-106 sounds and per-target chase music. */
+/** Coordinates positional SCP-106 sounds and regional chase music. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp106AudioEvents {
@@ -32,7 +34,11 @@ public final class Scp106AudioEvents {
     private static final double FOOTSTEP_INTERVAL_SECONDS = 0.90D;
     // Additional 30% reduction from the previous 0.63 volume.
     private static final float FOOTSTEP_VOLUME = 0.441F;
+    private static final double CHASE_MUSIC_RADIUS = 64.0D;
+    private static final double CHASE_MUSIC_RADIUS_SQR =
+            CHASE_MUSIC_RADIUS * CHASE_MUSIC_RADIUS;
     private static final Map<UUID, Tracked> TRACKED = new HashMap<>();
+    private static final Set<UUID> CHASE_LISTENERS = new HashSet<>();
 
     private Scp106AudioEvents() {
     }
@@ -51,20 +57,19 @@ public final class Scp106AudioEvents {
                 || !(event.getEntity() instanceof Scp106Entity scp106)) {
             return;
         }
-        Tracked tracked = TRACKED.remove(scp106.getUUID());
-        if (tracked != null) stopChase(event.getLevel().getServer(), tracked);
+        TRACKED.remove(scp106.getUUID());
     }
 
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         MinecraftServer server = event.getServer();
+        Set<UUID> desiredListeners = new HashSet<>();
         Iterator<Tracked> iterator = TRACKED.values().iterator();
         while (iterator.hasNext()) {
             Tracked tracked = iterator.next();
             Scp106Entity scp106 = tracked.entity;
             if (scp106.isRemoved() || !scp106.isAlive()) {
-                stopChase(server, tracked);
                 iterator.remove();
                 continue;
             }
@@ -85,14 +90,55 @@ public final class Scp106AudioEvents {
             }
             tracked.rangedPreviously = ranged;
 
+            if (tracked.musicSuppressed) {
+                tracked.musicSuppressed = false;
+                continue;
+            }
             ServerPlayer target = validTarget(scp106);
-            UUID targetId = target == null ? null : target.getUUID();
-            if (!java.util.Objects.equals(targetId, tracked.audioTarget)) {
-                stopChase(server, tracked);
-                if (target != null) {
-                    ScpEntityNetwork.setScp106Chase(target, true);
-                    tracked.audioTarget = targetId;
-                }
+            if (target != null && scp106.isHuntingPlayer(target)) {
+                collectChaseListeners(scp106, target, desiredListeners);
+            }
+        }
+        synchronizeChaseMusic(server, desiredListeners);
+    }
+
+    private static void collectChaseListeners(Scp106Entity scp106,
+            ServerPlayer target, Set<UUID> listeners) {
+        if (!(scp106.level() instanceof ServerLevel level)) return;
+        for (ServerPlayer player : level.players()) {
+            if (!isEligibleListener(player)) continue;
+            if (player == target
+                    || player.distanceToSqr(scp106) <= CHASE_MUSIC_RADIUS_SQR
+                    || player.distanceToSqr(target) <= CHASE_MUSIC_RADIUS_SQR) {
+                listeners.add(player.getUUID());
+            }
+        }
+    }
+
+    private static boolean isEligibleListener(ServerPlayer player) {
+        return player != null && player.isAlive() && !player.isRemoved()
+                && !player.isCreative() && !player.isSpectator();
+    }
+
+    private static void synchronizeChaseMusic(MinecraftServer server,
+            Set<UUID> desiredListeners) {
+        if (server == null) {
+            CHASE_LISTENERS.clear();
+            return;
+        }
+
+        for (UUID playerId : new HashSet<>(CHASE_LISTENERS)) {
+            if (desiredListeners.contains(playerId)) continue;
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) ScpEntityNetwork.setScp106Chase(player, false);
+            CHASE_LISTENERS.remove(playerId);
+        }
+        for (UUID playerId : desiredListeners) {
+            if (CHASE_LISTENERS.contains(playerId)) continue;
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) {
+                ScpEntityNetwork.setScp106Chase(player, true);
+                CHASE_LISTENERS.add(playerId);
             }
         }
     }
@@ -133,8 +179,7 @@ public final class Scp106AudioEvents {
     public static void stopChaseFor(Scp106Entity scp106) {
         if (scp106 == null || scp106.level().isClientSide) return;
         Tracked tracked = TRACKED.get(scp106.getUUID());
-        MinecraftServer server = scp106.getServer();
-        if (tracked != null) stopChase(server, tracked);
+        if (tracked != null) tracked.musicSuppressed = true;
     }
 
     private static ServerPlayer validTarget(Scp106Entity scp106) {
@@ -144,19 +189,6 @@ public final class Scp106AudioEvents {
             return null;
         }
         return player;
-    }
-
-    private static void stopChase(MinecraftServer server, Tracked tracked) {
-        if (tracked.audioTarget == null || server == null) {
-            tracked.audioTarget = null;
-            return;
-        }
-        ServerPlayer oldTarget = server.getPlayerList()
-                .getPlayer(tracked.audioTarget);
-        if (oldTarget != null) {
-            ScpEntityNetwork.setScp106Chase(oldTarget, false);
-        }
-        tracked.audioTarget = null;
     }
 
     public static void playPhase(Scp106Entity scp106, float volume) {
@@ -172,9 +204,9 @@ public final class Scp106AudioEvents {
         private byte previousState = -1;
         private boolean rangedPreviously;
         private boolean walkingPreviously;
+        private boolean musicSuppressed;
         private double walkAnimationSeconds;
         private double nextFootstepSeconds = FIRST_FOOTSTEP_SECONDS;
-        private UUID audioTarget;
 
         private Tracked(Scp106Entity entity) {
             this.entity = entity;

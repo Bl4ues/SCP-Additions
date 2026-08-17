@@ -6,6 +6,9 @@
   "refmap": "scp_additions.refmap.json",
   "mixins": [
     "CraftingGridDropMixin",
+    "Scp106HuntBehaviorMixin",
+    "Scp173ContactFixMixin",
+    "Scp173MovementControllerFixMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",
     "client.StorageContainerSupportCompatMixin"
@@ -23,7 +26,6 @@
     "client.ConfigWidgetRegistrationMixin",
     "client.ContextConfigClientEventsCompatMixin",
     "client.PauseMenuNativePanelsCompatMixin",
-    "client.ScpInventoryToggleKeyMixin",
     "client.MainMenuPlayPanelsPolishMixin",
     "client.MainMenuSettingsPlayPanelMixin",
     "client.EditGameRulesScreenMixin",

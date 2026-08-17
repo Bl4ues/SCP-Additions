@@ -5,9 +5,10 @@ import net.mcreator.scpadditions.entity.Scp173Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Mapping-safe override that prevents living-entity collision from shoving SCP-173. */
+/** Mapping-safe collision hooks that keep SCP-173 physically anchored. */
 @Mixin(LivingEntity.class)
 public abstract class Scp173PushabilityMixin {
     @Inject(method = "isPushable", at = @At("HEAD"), cancellable = true)
@@ -15,6 +16,14 @@ public abstract class Scp173PushabilityMixin {
             CallbackInfoReturnable<Boolean> callback) {
         if ((Object) this instanceof Scp173Entity) {
             callback.setReturnValue(false);
+        }
+    }
+
+    @Inject(method = "pushEntities", at = @At("HEAD"), cancellable = true)
+    private void scpAdditions$preventScp173FromShovingOthers(
+            CallbackInfo callback) {
+        if ((Object) this instanceof Scp173Entity) {
+            callback.cancel();
         }
     }
 }

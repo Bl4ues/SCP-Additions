@@ -31,7 +31,6 @@ public abstract class Scp106HuntBehaviorMixin {
             scpAdditions$method("beginPhaseTravel");
 
     @Unique private int scpAdditions$vanishTicksAtHead;
-    @Unique private int scpAdditions$failedRelocations;
 
     @Inject(method = "resolveHuntedPlayer", at = @At("HEAD"), cancellable = true)
     private void scpAdditions$chooseReachablePlayer(
@@ -97,8 +96,7 @@ public abstract class Scp106HuntBehaviorMixin {
     private void scpAdditions$recoverFailedRelocation(CallbackInfo callback) {
         Scp106Entity self = (Scp106Entity) (Object) this;
         if (self.getEncounterState() != scpAdditions$vanishingState
-                || vanishForDespawn) {
-            scpAdditions$failedRelocations = 0;
+                || vanishForDespawn || scpAdditions$beginPhaseTravel == null) {
             return;
         }
 
@@ -106,13 +104,9 @@ public abstract class Scp106HuntBehaviorMixin {
                 && scpAdditions$vanishTicksAtHead <= 1;
         if (!retryScheduled) return;
 
-        scpAdditions$failedRelocations++;
-        if (scpAdditions$failedRelocations < 3
-                || scpAdditions$beginPhaseTravel == null) {
-            return;
-        }
-
-        scpAdditions$failedRelocations = 0;
+        // Both emergence searches already failed for this target position. A
+        // canopy, cliff, or other unsuitable surface should not freeze the hunt
+        // for repeated retries; phase travel is the terrain-independent fallback.
         self.setInvisible(false);
         try {
             scpAdditions$beginPhaseTravel.invoke(self);

@@ -12,7 +12,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Routes the custom LAN panel through modded ShareToLanScreen controls. */
 @Mixin(value = CustomPauseMenuScreen.class, remap = false)
 public abstract class PauseMenuLanCompatibilityMixin {
-    @Inject(method = "render", at = @At("TAIL"))
+    // CustomPauseMenuScreen is ours, but these overrides inherit Minecraft
+    // methods and therefore receive SRG names in the production JAR. Each hook
+    // accepts both the development/Mojmap name and the 1.20.1 SRG runtime name.
+    @Inject(method = {"render", "m_88315_"}, at = @At("TAIL"), require = 1)
     private void scpAdditions$renderLanModOptions(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
         PauseMenuLanCompatibilityClient.render(
@@ -20,7 +23,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
                 graphics, mouseX, mouseY, partialTick);
     }
 
-    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"mouseClicked", "m_6375_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanMouseClicked(double mouseX, double mouseY,
             int button, CallbackInfoReturnable<Boolean> callback) {
         if (PauseMenuLanCompatibilityClient.mouseClicked(
@@ -30,7 +34,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
         }
     }
 
-    @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"mouseReleased", "m_6348_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanMouseReleased(double mouseX, double mouseY,
             int button, CallbackInfoReturnable<Boolean> callback) {
         if (PauseMenuLanCompatibilityClient.mouseReleased(
@@ -40,7 +45,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
         }
     }
 
-    @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"mouseDragged", "m_7979_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanMouseDragged(double mouseX, double mouseY,
             int button, double dragX, double dragY,
             CallbackInfoReturnable<Boolean> callback) {
@@ -51,7 +57,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
         }
     }
 
-    @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"mouseScrolled", "m_6050_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanMouseScrolled(double mouseX, double mouseY,
             double delta, CallbackInfoReturnable<Boolean> callback) {
         if (PauseMenuLanCompatibilityClient.mouseScrolled(
@@ -61,7 +68,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
         }
     }
 
-    @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"keyPressed", "m_7933_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanKeyPressed(int keyCode, int scanCode,
             int modifiers, CallbackInfoReturnable<Boolean> callback) {
         if (PauseMenuLanCompatibilityClient.keyPressed(
@@ -71,7 +79,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
         }
     }
 
-    @Inject(method = "keyReleased", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"keyReleased", "m_7920_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanKeyReleased(int keyCode, int scanCode,
             int modifiers, CallbackInfoReturnable<Boolean> callback) {
         if (PauseMenuLanCompatibilityClient.keyReleased(
@@ -81,7 +90,8 @@ public abstract class PauseMenuLanCompatibilityMixin {
         }
     }
 
-    @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
+    @Inject(method = {"charTyped", "m_5534_"}, at = @At("HEAD"),
+            cancellable = true, require = 1)
     private void scpAdditions$lanCharTyped(char codePoint, int modifiers,
             CallbackInfoReturnable<Boolean> callback) {
         if (PauseMenuLanCompatibilityClient.charTyped(

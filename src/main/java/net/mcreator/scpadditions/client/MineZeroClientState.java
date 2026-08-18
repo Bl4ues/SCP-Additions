@@ -74,6 +74,9 @@ public final class MineZeroClientState {
     }
 
     public static float spectateLayoutProgress() {
+        if (spectating && !MineZeroSpectateClient.active()) {
+            onSpectateFeedEnded();
+        }
         long elapsed = Math.max(0L, Util.getMillis() - spectateChangedAt);
         float t = net.minecraft.util.Mth.clamp(elapsed / 520.0F,
                 0.0F, 1.0F);
@@ -95,7 +98,7 @@ public final class MineZeroClientState {
         MineZeroSpectateClient.stop();
     }
 
-    /** Called by the shared feed after its connection-loss presentation ends. */
+    /** Called after the shared feed's connection-loss presentation ends. */
     public static void onSpectateFeedEnded() {
         if (!spectating) return;
         spectating = false;

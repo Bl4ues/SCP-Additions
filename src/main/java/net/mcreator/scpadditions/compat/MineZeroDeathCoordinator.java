@@ -21,12 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Converts MineZero's immediate Subaru rewind into a cooperative SCP-style
- * logical death. Dead players wait on the custom death screen/spectator view;
- * the checkpoint is restored only after every living player is gone and the
- * dead players unanimously vote to rewind.
- */
+/** Cooperative logical-death and rollback voting for MineZero compatibility. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class MineZeroDeathCoordinator {
@@ -36,6 +31,10 @@ public final class MineZeroDeathCoordinator {
     private static boolean restorePending;
 
     private MineZeroDeathCoordinator() {
+    }
+
+    public static boolean sessionActive() {
+        return restorePending || !DEAD.isEmpty();
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -57,9 +56,6 @@ public final class MineZeroDeathCoordinator {
                 ? player.getName().getString() + " died." : cause);
         VOTES.remove(id);
 
-        // MineZero restores the checkpoint snapshot into the same ServerPlayer
-        // objects. Keeping the player logically alive avoids vanilla cloning and
-        // lets its restore routine safely recover position, inventory and mode.
         player.setHealth(1.0F);
         player.setDeltaMovement(0.0D, 0.0D, 0.0D);
         player.setInvulnerable(true);
@@ -105,10 +101,6 @@ public final class MineZeroDeathCoordinator {
                         new MineZeroRestoreTransitionPacket(true));
             }
         }
-
-        // Give the death card a short zoom/fade beat before the world state is
-        // rewritten underneath it. Twelve ticks is perceptible without becoming
-        // another loading screen in disguise.
         ScpAdditionsMod.queueServerWork(12, () -> restore(server));
     }
 

@@ -12,6 +12,7 @@ import net.mcreator.scpadditions.client.CustomAdvancementToastClient;
 import net.mcreator.scpadditions.sound.AchievementSounds;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -56,11 +57,25 @@ public abstract class AdvancementToastMixin {
         cir.setReturnValue(visibility);
     }
 
+    /**
+     * @author SCP Additions
+     * @reason The authored advancement card is wider than vanilla and the toast
+     * manager must reserve the same width in both development and reobfuscated
+     * production jars.
+     */
+    @Overwrite
     public int width() {
         return ClientModulePreferences.customAdvancementToastsEnabled()
                 ? CustomAdvancementToastClient.WIDTH : 160;
     }
 
+    /**
+     * @author SCP Additions
+     * @reason The authored advancement card occupies multiple vanilla toast
+     * slots; production jars must retain the remapped height override so other
+     * toasts cannot overlap it.
+     */
+    @Overwrite
     public int height() {
         return ClientModulePreferences.customAdvancementToastsEnabled()
                 ? CustomAdvancementToastClient.HEIGHT : 32;

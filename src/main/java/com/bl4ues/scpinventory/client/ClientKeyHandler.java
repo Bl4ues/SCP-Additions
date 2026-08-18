@@ -14,6 +14,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.network.QuickSavePacket;
 
 @Mod.EventBusSubscriber(modid = "scp_additions", value = Dist.CLIENT)
 public class ClientKeyHandler {
@@ -29,6 +31,20 @@ public class ClientKeyHandler {
         while (Keybinds.STOW_HELD_ITEM.consumeClick()) {
             stowHeldItem();
         }
+
+        while (Keybinds.QUICK_SAVE.consumeClick()) {
+            quickSave();
+        }
+    }
+
+    private static void quickSave() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null || minecraft.screen != null
+                || !player.isAlive() || player.isSpectator()) {
+            return;
+        }
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(new QuickSavePacket());
     }
 
     private static void stowHeldItem() {

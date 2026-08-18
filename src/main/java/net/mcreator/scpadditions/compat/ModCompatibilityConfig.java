@@ -2,6 +2,9 @@ package net.mcreator.scpadditions.compat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ConfigFilePersistence;
@@ -13,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /** Host-owned opt-in compatibility settings for optional external mods. */
+@Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ModCompatibilityConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path PATH = FMLPaths.CONFIGDIR.get()
@@ -21,6 +26,11 @@ public final class ModCompatibilityConfig {
     private static volatile Data current = new Data();
 
     private ModCompatibilityConfig() {
+    }
+
+    @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(ModCompatibilityConfig::load);
     }
 
     public static synchronized void load() {

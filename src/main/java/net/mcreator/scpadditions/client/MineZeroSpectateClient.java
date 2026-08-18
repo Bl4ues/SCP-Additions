@@ -8,6 +8,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -124,11 +125,11 @@ public final class MineZeroSpectateClient {
             UUID id = info.getProfile().getId();
             if (self.equals(id) || info.getGameMode() == GameType.SPECTATOR) continue;
 
-            // If the other player is already tracked locally, use actual entity
-            // liveness. Otherwise the multiplayer roster is the authoritative
-            // indication that a potentially spectatable survivor exists.
+            // ClientLevel#getPlayerByUUID intentionally exposes the common Player
+            // type. We only need liveness/spectator state here, so keep that type
+            // instead of assuming every returned implementation is client-specific.
             if (minecraft.level != null) {
-                AbstractClientPlayer local = minecraft.level.getPlayerByUUID(id);
+                Player local = minecraft.level.getPlayerByUUID(id);
                 if (local != null) {
                     if (local.isAlive() && !local.isSpectator()) return true;
                     continue;

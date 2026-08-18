@@ -29,6 +29,7 @@ public abstract class Scp173MovementControllerFixMixin {
             scpAdditions$method("isObservationLocked");
     @Unique private static final Method scpAdditions$trySnapAttack =
             scpAdditions$method("trySnapAttack", LivingEntity.class);
+    @Unique private static final double scpAdditions$narrowNodeTolerance = 0.08D;
 
     @Inject(method = "validateAndRepair", at = @At("HEAD"), cancellable = true)
     private static void scpAdditions$preserveObservedFall(ServerLevel level,
@@ -75,6 +76,20 @@ public abstract class Scp173MovementControllerFixMixin {
             constant = @Constant(intValue = 2600), require = 0)
     private static int scpAdditions$expandCornerSearch(int original) {
         return 7200;
+    }
+
+    @ModifyConstant(method = "findLocalCollisionRoute",
+            constant = @Constant(doubleValue = 0.38D * 0.38D), require = 1)
+    private static double scpAdditions$centerLocalRouteStart(double original) {
+        return scpAdditions$narrowNodeTolerance
+                * scpAdditions$narrowNodeTolerance;
+    }
+
+    @ModifyConstant(method = "firstVanillaPathStep",
+            constant = @Constant(doubleValue = 0.38D * 0.38D), require = 1)
+    private static double scpAdditions$centerVanillaFallbackNode(double original) {
+        return scpAdditions$narrowNodeTolerance
+                * scpAdditions$narrowNodeTolerance;
     }
 
     @Unique

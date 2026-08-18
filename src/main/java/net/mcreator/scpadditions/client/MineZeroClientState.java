@@ -31,7 +31,7 @@ public final class MineZeroClientState {
 
         // Do not close the live feed immediately on a team wipe. The shared
         // spectate coordinator first presents CONNECTION LOST/static, then the
-        // inactive camera state lets the death card slide back cleanly.
+        // client retracts the feed after that sting has finished.
 
         if (openScreen) {
             Minecraft.getInstance().setScreen(
@@ -78,7 +78,7 @@ public final class MineZeroClientState {
         float t = net.minecraft.util.Mth.clamp(elapsed / 520.0F,
                 0.0F, 1.0F);
         t = t * t * (3.0F - 2.0F * t);
-        return spectating() ? t : 1.0F - t;
+        return spectating ? t : 1.0F - t;
     }
 
     public static void startSpectating() {
@@ -93,6 +93,13 @@ public final class MineZeroClientState {
         spectating = false;
         spectateChangedAt = Util.getMillis();
         MineZeroSpectateClient.stop();
+    }
+
+    /** Called by the shared feed after its connection-loss presentation ends. */
+    public static void onSpectateFeedEnded() {
+        if (!spectating) return;
+        spectating = false;
+        spectateChangedAt = Util.getMillis();
     }
 
     public static void cycleSpectatedPlayer(int direction) {

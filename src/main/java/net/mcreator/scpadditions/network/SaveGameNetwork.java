@@ -5,7 +5,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Appends save-game packets after the core SCP network registrations. */
+/** Appends save/death compatibility packets after the core SCP registrations. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class SaveGameNetwork {
@@ -24,5 +24,25 @@ public final class SaveGameNetwork {
         ScpAdditionsMod.addNetworkMessage(SaveStatePacket.class,
                 SaveStatePacket::encode, SaveStatePacket::decode,
                 SaveStatePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(MineZeroDeathStatePacket.class,
+                MineZeroDeathStatePacket::encode,
+                MineZeroDeathStatePacket::decode,
+                MineZeroDeathStatePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(MineZeroLoadVotePacket.class,
+                MineZeroLoadVotePacket::encode,
+                MineZeroLoadVotePacket::decode,
+                MineZeroLoadVotePacket::handle);
+        ScpAdditionsMod.addNetworkMessage(MineZeroRestoreTransitionPacket.class,
+                MineZeroRestoreTransitionPacket::encode,
+                MineZeroRestoreTransitionPacket::decode,
+                MineZeroRestoreTransitionPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(MineZeroCompatibilityStatusPacket.class,
+                MineZeroCompatibilityStatusPacket::encode,
+                MineZeroCompatibilityStatusPacket::decode,
+                MineZeroCompatibilityStatusPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(MineZeroCompatibilityRequestPacket.class,
+                MineZeroCompatibilityRequestPacket::encode,
+                MineZeroCompatibilityRequestPacket::decode,
+                MineZeroCompatibilityRequestPacket::handle);
     }
 }

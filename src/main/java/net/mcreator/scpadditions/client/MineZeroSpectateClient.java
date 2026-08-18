@@ -3,9 +3,9 @@ package net.mcreator.scpadditions.client;
 import net.minecraft.Util;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
@@ -16,84 +16,76 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.death.DeathSpectateCoordinator;
+import net.mcreator.scpadditions.network.DeathSpectateRequestPacket;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 
-/** Local orbit camera shared by the normal and MineZero death-screen live feeds. */
+/**
+ * Client orbit camera shared by the normal and MineZero death-screen live feeds.
+ * Target selection and world/chunk streaming are server-authoritative so feeds
+ * continue to work at arbitrary distance and across dimensions.
+ */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MineZeroSpectateClient {
     private static final long SWITCH_INTERFERENCE_MS = 520L;
+    private static final UUID NIL = new UUID(0L, 0L);
 
     private static UUID targetId;
+    private static String targetDisplayName = "No living personnel";
     private static ArmorStand cameraRig;
-    private static Entity previousCamera;
+    private static ClientLevel cameraRigLevel;
     private static CameraType previousCameraType;
     private static boolean active;
+    private static boolean requestPending;
+    private static boolean serverStateKnown;
+    private static int availableTargets;
     private static float orbitYaw;
     private static float orbitPitch = 10.0F;
     private static long switchedAt = -1L;
+    private static long returnTransferUntil = -1L;
 
     private MineZeroSpectateClient() {
     }
 
     public static boolean active() { return active; }
 
+    public static void queryAvailability() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_QUERY));
+    }
+
     public static void start() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) return;
-        List<AbstractClientPlayer> targets = targets();
-        if (targets.isEmpty()) return;
-        if (!active) {
-            previousCamera = minecraft.getCameraEntity();
-            previousCameraType = minecraft.options.getCameraType();
-            orbitYaw = 0.0F;
-            orbitPitch = 10.0F;
-        }
-        active = true;
-        targetId = targets.get(0).getUUID();
-        kickInterference();
-        ensureRig();
-        updateCamera();
+        if (minecraft.getConnection() == null || minecraft.player == null) return;
+        requestPending = true;
+        returnTransferUntil = -1L;
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_START));
     }
 
     public static void stop() {
-        if (!active && cameraRig == null) return;
         Minecraft minecraft = Minecraft.getInstance();
-        active = false;
-        targetId = null;
-        cameraRig = null;
-        switchedAt = -1L;
-        if (minecraft.player != null) {
-            minecraft.setCameraEntity(previousCamera != null
-                    ? previousCamera : minecraft.player);
+        boolean hadTransfer = active || requestPending;
+        if (minecraft.getConnection() != null && hadTransfer) {
+            ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                    new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_STOP));
         }
-        if (previousCameraType != null) minecraft.options.setCameraType(previousCameraType);
-        previousCamera = null;
-        previousCameraType = null;
+        requestPending = false;
+        if (hadTransfer) returnTransferUntil = Util.getMillis() + 3000L;
+        stopLocalCamera();
     }
 
     public static void cycle(int direction) {
-        List<AbstractClientPlayer> targets = targets();
-        if (targets.isEmpty()) {
-            stop();
-            return;
-        }
-        int current = -1;
-        for (int i = 0; i < targets.size(); i++) {
-            if (targets.get(i).getUUID().equals(targetId)) {
-                current = i;
-                break;
-            }
-        }
-        int next = Math.floorMod((current < 0 ? 0 : current) + direction,
-                targets.size());
-        targetId = targets.get(next).getUUID();
-        orbitYaw = 0.0F;
-        orbitPitch = 10.0F;
+        if (!active || Minecraft.getInstance().getConnection() == null) return;
+        int action = direction < 0
+                ? DeathSpectateCoordinator.ACTION_CYCLE_PREVIOUS
+                : DeathSpectateCoordinator.ACTION_CYCLE_NEXT;
         kickInterference();
-        updateCamera();
+        ScpAdditionsMod.PACKET_HANDLER.sendToServer(
+                new DeathSpectateRequestPacket(action));
     }
 
     public static void orbit(double deltaX, double deltaY) {
@@ -105,39 +97,63 @@ public final class MineZeroSpectateClient {
     }
 
     public static String targetName() {
-        AbstractClientPlayer target = target();
-        return target == null ? "No living personnel" : target.getName().getString();
+        return targetDisplayName == null || targetDisplayName.isBlank()
+                ? "Acquiring personnel feed..." : targetDisplayName;
     }
 
-    /**
-     * Button availability is based on the server-synchronized player roster, not
-     * only on entities currently returned by ClientLevel.players(). A player can
-     * be connected and alive before the client-side entity list happens to expose
-     * them during the death-screen initialization frame.
-     */
+    /** Authoritative survivor count supplied by the server. */
     public static boolean hasTargets() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null) return false;
-        if (minecraft.getConnection() == null) return !targets().isEmpty();
+        if (serverStateKnown) return availableTargets > 0;
 
+        // Short-lived fallback while the query packet is in flight. This is only
+        // presentation; START is still validated and selected by the server.
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.getConnection() == null) return false;
         UUID self = minecraft.player.getUUID();
         for (PlayerInfo info : minecraft.getConnection().getOnlinePlayers()) {
             UUID id = info.getProfile().getId();
-            if (self.equals(id) || info.getGameMode() == GameType.SPECTATOR) continue;
-
-            // ClientLevel#getPlayerByUUID intentionally exposes the common Player
-            // type. We only need liveness/spectator state here, so keep that type
-            // instead of assuming every returned implementation is client-specific.
-            if (minecraft.level != null) {
-                Player local = minecraft.level.getPlayerByUUID(id);
-                if (local != null) {
-                    if (local.isAlive() && !local.isSpectator()) return true;
-                    continue;
-                }
-            }
-            return true;
+            if (!self.equals(id) && info.getGameMode() != GameType.SPECTATOR) return true;
         }
         return false;
+    }
+
+    /** Invoked reflectively by DeathSpectateStatePacket. */
+    public static void receiveServerState(boolean serverActive, UUID id,
+            String name, int targetCount) {
+        serverStateKnown = true;
+        availableTargets = Math.max(0, targetCount);
+        requestPending = false;
+
+        if (!serverActive || id == null || NIL.equals(id)) {
+            boolean wasActive = active;
+            stopLocalCamera();
+            targetId = null;
+            targetDisplayName = "No living personnel";
+            if (wasActive) returnTransferUntil = Util.getMillis() + 2200L;
+            return;
+        }
+
+        boolean changed = targetId == null || !targetId.equals(id);
+        if (!active) {
+            previousCameraType = Minecraft.getInstance().options.getCameraType();
+            orbitYaw = 0.0F;
+            orbitPitch = 10.0F;
+        } else if (changed) {
+            orbitYaw = 0.0F;
+            orbitPitch = 10.0F;
+        }
+        active = true;
+        targetId = id;
+        targetDisplayName = name == null || name.isBlank()
+                ? "Acquiring personnel feed..." : name;
+        returnTransferUntil = -1L;
+        if (changed) kickInterference();
+        updateCamera();
+    }
+
+    /** True while a dimension/chunk hand-off must not dispose the death UI. */
+    public static boolean preserveDeathScreenDuringTransfer() {
+        return active || requestPending || Util.getMillis() < returnTransferUntil;
     }
 
     /** 1 -> 0 burst used by the death screen when changing camera feeds. */
@@ -153,15 +169,20 @@ public final class MineZeroSpectateClient {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !active) return;
-        if (target() == null) {
-            List<AbstractClientPlayer> targets = targets();
-            if (targets.isEmpty()) {
-                stop();
-                return;
-            }
-            targetId = targets.get(0).getUUID();
-            kickInterference();
+        if (event.phase != TickEvent.Phase.END) return;
+
+        if ((active || Util.getMillis() < returnTransferUntil)
+                && Minecraft.getInstance().screen == null) {
+            ScpDeathScreen.restorePreservedSpectateScreen();
+        }
+        if (!active) return;
+
+        // Cross-dimension teleports replace ClientLevel. Never keep an ArmorStand
+        // camera created in the previous dimension.
+        Minecraft minecraft = Minecraft.getInstance();
+        if (cameraRigLevel != null && cameraRigLevel != minecraft.level) {
+            cameraRig = null;
+            cameraRigLevel = null;
         }
         updateCamera();
     }
@@ -172,10 +193,12 @@ public final class MineZeroSpectateClient {
 
     private static void ensureRig() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (cameraRig != null || minecraft.level == null) return;
+        if (minecraft.level == null) return;
+        if (cameraRig != null && cameraRigLevel == minecraft.level) return;
         ArmorStand created = EntityType.ARMOR_STAND.create(minecraft.level);
         if (created == null) return;
         cameraRig = created;
+        cameraRigLevel = minecraft.level;
         cameraRig.setInvisible(true);
         cameraRig.setNoGravity(true);
     }
@@ -183,7 +206,15 @@ public final class MineZeroSpectateClient {
     private static void updateCamera() {
         Minecraft minecraft = Minecraft.getInstance();
         AbstractClientPlayer target = target();
-        if (minecraft.level == null || target == null) return;
+        if (minecraft.level == null || target == null) {
+            // While chunks for a new dimension/feed are arriving, leave the
+            // camera on the observer. The death screen masks the world until the
+            // real target entity becomes available.
+            if (minecraft.player != null && minecraft.getCameraEntity() != minecraft.player) {
+                minecraft.setCameraEntity(minecraft.player);
+            }
+            return;
+        }
         ensureRig();
         if (cameraRig == null) return;
 
@@ -210,24 +241,22 @@ public final class MineZeroSpectateClient {
     }
 
     private static AbstractClientPlayer target() {
-        if (targetId == null) return null;
-        for (AbstractClientPlayer player : targets()) {
-            if (player.getUUID().equals(targetId)) return player;
-        }
-        return null;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (targetId == null || minecraft.level == null) return null;
+        Player player = minecraft.level.getPlayerByUUID(targetId);
+        return player instanceof AbstractClientPlayer clientPlayer
+                && clientPlayer.isAlive() && !clientPlayer.isSpectator()
+                ? clientPlayer : null;
     }
 
-    /** Renderable targets currently tracked by the client world. */
-    private static List<AbstractClientPlayer> targets() {
+    private static void stopLocalCamera() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) return List.of();
-        UUID self = minecraft.player.getUUID();
-        return minecraft.level.players().stream()
-                .filter(player -> !player.getUUID().equals(self))
-                .filter(Entity::isAlive)
-                .filter(player -> !player.isSpectator())
-                .sorted(Comparator.comparing(player ->
-                        player.getName().getString().toLowerCase()))
-                .toList();
+        active = false;
+        cameraRig = null;
+        cameraRigLevel = null;
+        switchedAt = -1L;
+        if (minecraft.player != null) minecraft.setCameraEntity(minecraft.player);
+        if (previousCameraType != null) minecraft.options.setCameraType(previousCameraType);
+        previousCameraType = null;
     }
 }

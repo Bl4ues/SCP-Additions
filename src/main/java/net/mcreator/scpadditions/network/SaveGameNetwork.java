@@ -44,5 +44,13 @@ public final class SaveGameNetwork {
                 MineZeroCompatibilityRequestPacket::encode,
                 MineZeroCompatibilityRequestPacket::decode,
                 MineZeroCompatibilityRequestPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(DeathSpectateRequestPacket.class,
+                DeathSpectateRequestPacket::encode,
+                DeathSpectateRequestPacket::decode,
+                DeathSpectateRequestPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(DeathSpectateStatePacket.class,
+                DeathSpectateStatePacket::encode,
+                DeathSpectateStatePacket::decode,
+                DeathSpectateStatePacket::handle);
     }
 }

@@ -18,7 +18,6 @@
     "Scp173PushabilityMixin",
     "CoreRoomElevatorManagerFixMixin",
     "compat.MineZeroDeathHandlerMixin",
-    "compat.MineZeroCheckpointTickerMixin",
     "compat.MineZeroCheckpointManagerMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",

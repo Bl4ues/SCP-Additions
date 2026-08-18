@@ -27,6 +27,7 @@
     "client.ScreenInvoker",
     "client.DeathScreenInvoker",
     "client.DeathScreenDimensionTransferMixin",
+    "client.ScpDeathScreenSpectateControlsMixin",
     "client.AbstractContainerScreenAccessor",
     "client.AbstractWidgetSoundMixin",
     "client.StyleFontMixin",

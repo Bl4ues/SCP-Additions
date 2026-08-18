@@ -31,7 +31,7 @@ public final class SaveGameSoundEvents {
     public static final String LAST_SAVE_METHOD_TAG =
             "scp_additions.last_save_method";
 
-    private static final long DUPLICATE_FEEDBACK_WINDOW_MS = 1200L;
+    private static final long DUPLICATE_FEEDBACK_WINDOW_MS = 7000L;
     private static final long RESPAWN_FEEDBACK_SILENCE_MS = 4500L;
     private static final Map<UUID, SpawnSnapshot> LAST_SPAWNS = new HashMap<>();
     private static final Map<UUID, FeedbackStamp> LAST_FEEDBACK = new HashMap<>();

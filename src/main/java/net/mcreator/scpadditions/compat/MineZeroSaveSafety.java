@@ -15,9 +15,11 @@ public final class MineZeroSaveSafety {
     private MineZeroSaveSafety() {
     }
 
-    /** A MineZero save is global, so one endangered player blocks the checkpoint. */
+    /** A MineZero save is global, so one endangered or dead player blocks it. */
     public static boolean canSave(MinecraftServer server) {
-        if (server == null) return false;
+        if (server == null || MineZeroDeathCoordinator.sessionActive()) {
+            return false;
+        }
         ScpAdditionsModVariables.MapVariables map =
                 ScpAdditionsModVariables.MapVariables.get(server.overworld());
         if (map.Scp914refining) return false;

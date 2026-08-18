@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -13,6 +14,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.MineZeroCompatibilityClientState;
+import net.mcreator.scpadditions.client.ModIntegrationLogoClient;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -23,6 +25,7 @@ public final class ModCompatibilitiesUi {
     private static final String HOME_SCREEN =
             "net.mcreator.scpadditions.config.ui.ConfigCenterClient$HomeScreen";
     private static final String LABEL = "Mod Integrations";
+    private static final String MINEZERO_ID = "minezero";
     private static final Map<Screen, Button> BUTTONS = new WeakHashMap<>();
 
     private ModCompatibilitiesUi() {
@@ -110,7 +113,7 @@ public final class ModCompatibilitiesUi {
                     Component.empty(), ignored -> {
                         MineZeroCompatibilityClientState.toggle();
                         refreshMineZeroButton();
-                    }).bounds(x + 24, y + 70, panelWidth - 48, 36).build());
+                    }).bounds(x + 24, y + 52, panelWidth - 48, 36).build());
             backButton = addRenderableWidget(Button.builder(
                     ScpFonts.roboto("Back"),
                     ignored -> Minecraft.getInstance().setScreen(parent))
@@ -154,8 +157,9 @@ public final class ModCompatibilitiesUi {
 
             ConfigCenterVisuals.drawPanel(graphics, font, x, y, panelWidth,
                     panelHeight, LABEL);
+
             int textX = x + 24 + ConfigCenterVisuals.contentOffsetX();
-            int textY = y + 118;
+            int textY = y + 98;
             String description = "Uses SCP Additions saves as MineZero checkpoints. Its automatic Return by Death is replaced by the SCP Additions death/spectate flow; after a team wipe, players vote to roll the world back to the latest valid save, including SCP Additions inventories and facility state.";
             for (var line : font.split(ScpFonts.roboto(description), panelWidth - 48)) {
                 graphics.drawString(font, line, textX, textY,
@@ -166,6 +170,18 @@ public final class ModCompatibilitiesUi {
             if (mineZeroButton != null) {
                 ConfigCenterVisuals.drawButton(graphics, font, mineZeroButton,
                         ScpFonts.roboto(mineZeroButton.getMessage()), mouseX, mouseY);
+
+                if (MineZeroCompatibilityClientState.installed()) {
+                    ResourceLocation logo = ModIntegrationLogoClient.logo(MINEZERO_ID);
+                    if (logo != null) {
+                        int iconSize = 26;
+                        int iconX = mineZeroButton.getX() + 8;
+                        int iconY = mineZeroButton.getY()
+                                + (mineZeroButton.getHeight() - iconSize) / 2;
+                        graphics.blit(logo, iconX, iconY, iconSize, iconSize,
+                                0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
+                    }
+                }
             }
             if (backButton != null) {
                 ConfigCenterVisuals.drawButton(graphics, font, backButton,

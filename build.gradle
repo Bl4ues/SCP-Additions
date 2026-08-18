@@ -15,6 +15,10 @@ minecraft {
 
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
+    // Keep IDE launches on the same prepared ForgeGradle workspace as runClient.
+    // Without this, IntelliJ's generated Application run can start with stale
+    // mappings/resources after large source or resource changes.
+    enableIdeaPrepareRuns true
     copyIdeResources = true
 
     runs {

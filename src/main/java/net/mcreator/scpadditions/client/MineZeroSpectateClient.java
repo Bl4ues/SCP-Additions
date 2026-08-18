@@ -29,7 +29,10 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MineZeroSpectateClient {
-    private static final long SWITCH_INTERFERENCE_MS = 520L;
+    private static final long SWITCH_HOLD_MS = 240L;
+    private static final long SWITCH_FADE_MS = 760L;
+    private static final long ACQUIRE_TIMEOUT_MS = 3200L;
+    private static final long LOST_CONNECTION_MS = 1250L;
     private static final UUID NIL = new UUID(0L, 0L);
     private static final float DEFAULT_ORBIT_PITCH = 10.0F;
     private static final double CAMERA_DISTANCE = 4.35D;
@@ -43,11 +46,14 @@ public final class MineZeroSpectateClient {
     private static boolean requestPending;
     private static boolean serverStateKnown;
     private static boolean orbitInitialized;
+    private static boolean connectionLost;
     private static int availableTargets;
     /** Absolute world-space yaw for the orbit, independent of target body rotation. */
     private static float orbitYaw;
     private static float orbitPitch = DEFAULT_ORBIT_PITCH;
     private static long switchedAt = -1L;
+    private static long feedReadyAt = -1L;
+    private static long lostConnectionAt = -1L;
 
     private MineZeroSpectateClient() {
     }
@@ -56,6 +62,10 @@ public final class MineZeroSpectateClient {
 
     public static boolean transferActive() {
         return active || requestPending;
+    }
+
+    public static boolean connectionLost() {
+        return connectionLost;
     }
 
     /** Reset stale roster knowledge and ask the current server about survivors. */
@@ -80,20 +90,18 @@ public final class MineZeroSpectateClient {
             orbitInitialized = false;
             orbitPitch = DEFAULT_ORBIT_PITCH;
         }
-        // Mark the presentation active immediately so the death screen can start
-        // sliding while the server moves this observer to the remote feed.
         active = true;
         requestPending = true;
         targetId = null;
         targetDisplayName = "Acquiring personnel feed...";
-        kickInterference();
+        beginHandoff();
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_START));
     }
 
     public static void stop() {
         Minecraft minecraft = Minecraft.getInstance();
-        boolean hadTransfer = active || requestPending;
+        boolean hadTransfer = (active || requestPending) && !connectionLost;
         if (minecraft.getConnection() != null && hadTransfer) {
             ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                     new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_STOP));
@@ -105,23 +113,24 @@ public final class MineZeroSpectateClient {
     }
 
     public static void cycle(int direction) {
-        if (!active || Minecraft.getInstance().getConnection() == null
+        if (!active || connectionLost
+                || Minecraft.getInstance().getConnection() == null
                 || availableTargets <= 1) {
             return;
         }
         int action = direction < 0
                 ? DeathSpectateCoordinator.ACTION_CYCLE_PREVIOUS
                 : DeathSpectateCoordinator.ACTION_CYCLE_NEXT;
-        kickInterference();
         targetId = null;
         targetDisplayName = "Acquiring personnel feed...";
         orbitInitialized = false;
+        beginHandoff();
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new DeathSpectateRequestPacket(action));
     }
 
     public static void orbit(double deltaX, double deltaY) {
-        if (!active) return;
+        if (!active || connectionLost) return;
         ensureOrbitInitialized(target());
         orbitYaw += (float) deltaX * 0.42F;
         orbitPitch = Mth.clamp(
@@ -136,11 +145,11 @@ public final class MineZeroSpectateClient {
 
     /** Authoritative survivor count supplied by the server. */
     public static boolean hasTargets() {
+        // Keep the feed layout alive long enough to show CONNECTION LOST before
+        // the death screen retracts it and removes Spectate.
+        if (connectionLost) return true;
         if (serverStateKnown) return availableTargets > 0;
 
-        // Short-lived fallback while the server query is in flight. START is
-        // still validated and selected by the server, so this cannot authorize
-        // an invalid feed.
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.getConnection() == null) return false;
         UUID self = minecraft.player.getUUID();
@@ -153,6 +162,7 @@ public final class MineZeroSpectateClient {
 
     /** Arrow controls are useful only if there is another live feed to switch to. */
     public static boolean hasMultipleTargets() {
+        if (connectionLost) return false;
         if (serverStateKnown) return availableTargets > 1;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.getConnection() == null) return false;
@@ -175,12 +185,17 @@ public final class MineZeroSpectateClient {
     /** Invoked reflectively by DeathSpectateStatePacket. */
     public static void receiveServerState(boolean serverActive, UUID id,
             String name, int targetCount) {
+        boolean wasActive = active || requestPending;
         serverStateKnown = true;
         availableTargets = Math.max(0, targetCount);
         requestPending = false;
 
         if (!serverActive || id == null || NIL.equals(id)) {
             targetId = null;
+            if (wasActive && availableTargets <= 0) {
+                beginLostConnection();
+                return;
+            }
             targetDisplayName = "No living personnel";
             stopLocalCamera();
             return;
@@ -188,30 +203,51 @@ public final class MineZeroSpectateClient {
 
         boolean changed = targetId == null || !targetId.equals(id);
         active = true;
+        connectionLost = false;
+        lostConnectionAt = -1L;
         targetId = id;
         targetDisplayName = name == null || name.isBlank()
                 ? "Acquiring personnel feed..." : name;
         if (changed) {
             orbitInitialized = false;
             orbitPitch = DEFAULT_ORBIT_PITCH;
-            kickInterference();
+            beginHandoff();
         }
         updateCamera(1.0F);
     }
 
     /** Reapply the camera every GUI frame so vanilla cannot leave it on the observer. */
     public static void updateForRender(float partialTick) {
-        if (!active) return;
+        if (!active || connectionLost) return;
         updateCamera(Mth.clamp(partialTick, 0.0F, 1.0F));
     }
 
-    /** 1 -> 0 burst used by the death screen when changing camera feeds. */
+    /** Static/noise strength for the current camera hand-off. */
     public static float switchInterference() {
+        if (connectionLost) return 1.0F;
         if (switchedAt < 0L) return 0.0F;
-        long elapsed = Math.max(0L, Util.getMillis() - switchedAt);
-        if (elapsed >= SWITCH_INTERFERENCE_MS) return 0.0F;
-        float t = Mth.clamp(
-                elapsed / (float) SWITCH_INTERFERENCE_MS, 0.0F, 1.0F);
+        long now = Util.getMillis();
+        if (feedReadyAt < 0L) {
+            return now - switchedAt < ACQUIRE_TIMEOUT_MS ? 1.0F : 0.92F;
+        }
+        long readyAge = Math.max(0L, now - feedReadyAt);
+        if (readyAge <= SWITCH_HOLD_MS) return 1.0F;
+        float t = Mth.clamp((readyAge - SWITCH_HOLD_MS)
+                / (float) SWITCH_FADE_MS, 0.0F, 1.0F);
+        t = t * t * (3.0F - 2.0F * t);
+        return 1.0F - t;
+    }
+
+    /** Opaque cover used to hide remote chunk/dimension acquisition. */
+    public static float switchOcclusion() {
+        if (connectionLost) return 1.0F;
+        if (switchedAt < 0L) return 0.0F;
+        long now = Util.getMillis();
+        if (feedReadyAt < 0L) return 1.0F;
+        long readyAge = Math.max(0L, now - feedReadyAt);
+        if (readyAge <= SWITCH_HOLD_MS) return 1.0F;
+        float t = Mth.clamp((readyAge - SWITCH_HOLD_MS)
+                / (float) SWITCH_FADE_MS, 0.0F, 1.0F);
         t = t * t * (3.0F - 2.0F * t);
         return 1.0F - t;
     }
@@ -220,8 +256,15 @@ public final class MineZeroSpectateClient {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !active) return;
 
-        // Cross-dimension teleports replace ClientLevel. Never keep an ArmorStand
-        // camera created in the previous dimension.
+        if (connectionLost) {
+            if (lostConnectionAt >= 0L
+                    && Util.getMillis() - lostConnectionAt >= LOST_CONNECTION_MS) {
+                targetDisplayName = "No living personnel";
+                stopLocalCamera();
+            }
+            return;
+        }
+
         Minecraft minecraft = Minecraft.getInstance();
         if (cameraRigLevel != null && cameraRigLevel != minecraft.level) {
             cameraRig = null;
@@ -230,8 +273,24 @@ public final class MineZeroSpectateClient {
         updateCamera(1.0F);
     }
 
-    private static void kickInterference() {
+    private static void beginHandoff() {
         switchedAt = Util.getMillis();
+        feedReadyAt = -1L;
+        connectionLost = false;
+        lostConnectionAt = -1L;
+    }
+
+    private static void beginLostConnection() {
+        active = true;
+        requestPending = false;
+        connectionLost = true;
+        lostConnectionAt = Util.getMillis();
+        switchedAt = lostConnectionAt;
+        feedReadyAt = -1L;
+        orbitInitialized = false;
+        targetDisplayName = "CONNECTION LOST";
+        // Keep the last rig frozen underneath the opaque static for the short
+        // disconnect presentation. It will be discarded when the timer expires.
     }
 
     private static void ensureRig() {
@@ -250,8 +309,6 @@ public final class MineZeroSpectateClient {
         if (orbitInitialized) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (target != null) {
-            // Start behind the target, then keep the orbit independent from any
-            // later body rotation so the watched player cannot steer our camera.
             orbitYaw = target.getYRot();
         } else if (minecraft.player != null) {
             orbitYaw = minecraft.player.getYRot();
@@ -267,6 +324,9 @@ public final class MineZeroSpectateClient {
         if (minecraft.level == null || minecraft.player == null) return;
 
         AbstractClientPlayer target = target();
+        if (target != null && feedReadyAt < 0L) {
+            feedReadyAt = Util.getMillis();
+        }
         ensureOrbitInitialized(target);
         ensureRig();
         if (cameraRig == null) return;
@@ -280,8 +340,8 @@ public final class MineZeroSpectateClient {
                     target.getBbHeight() * 0.72D), z);
         } else {
             // During a dimension hand-off the target entity can arrive a few
-            // frames after the observer. Orbit the streamed anchor instead of
-            // dropping back to a static first-person corpse camera.
+            // frames after the observer. Keep the camera rig attached to the
+            // streamed anchor, but the UI fully occludes this acquisition state.
             double x = Mth.lerp(partialTick, minecraft.player.xo,
                     minecraft.player.getX());
             double y = Mth.lerp(partialTick, minecraft.player.yo,
@@ -301,9 +361,6 @@ public final class MineZeroSpectateClient {
         float lookPitch = (float) -Math.toDegrees(
                 Math.atan2(delta.y, horizontal));
 
-        // The rig is not level-ticked, so keep both current and previous values
-        // synchronized. Camera interpolation otherwise keeps lerping from the
-        // entity's creation point and looks like a stationary/jumping feed.
         cameraRig.xo = camera.x;
         cameraRig.yo = camera.y;
         cameraRig.zo = camera.z;
@@ -332,10 +389,13 @@ public final class MineZeroSpectateClient {
         Minecraft minecraft = Minecraft.getInstance();
         active = false;
         requestPending = false;
+        connectionLost = false;
         cameraRig = null;
         cameraRigLevel = null;
         orbitInitialized = false;
         switchedAt = -1L;
+        feedReadyAt = -1L;
+        lostConnectionAt = -1L;
         if (minecraft.player != null) minecraft.setCameraEntity(minecraft.player);
         if (previousCameraType != null) minecraft.options.setCameraType(previousCameraType);
         previousCameraType = null;

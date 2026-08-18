@@ -7,6 +7,8 @@
   "mixins": [
     "CraftingGridDropMixin",
     "FacilityDiagnosticsActionbarMixin",
+    "DecontaminationCheckpointSaveMixin",
+    "ServerPlayerSaveTrackingMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",
     "Scp173FacingSyncMixin",
@@ -30,6 +32,8 @@
     "client.PauseMenuSettingsPanelCompatMixin",
     "client.ConfigWidgetRegistrationMixin",
     "client.ContextConfigClientEventsCompatMixin",
+    "client.CustomDeathScreenPreferenceMixin",
+    "client.DeathScreenCaptureMixin",
     "client.PauseMenuNativePanelsCompatMixin",
     "client.PauseMenuLanCompatibilityMixin",
     "client.IntegratedServerLanPortMixin",

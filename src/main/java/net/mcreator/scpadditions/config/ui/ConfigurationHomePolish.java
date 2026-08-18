@@ -75,9 +75,9 @@ public final class ConfigurationHomePolish {
             Button interactions = find(screen, "Contextual Interactions");
             Button drinks = find(screen, "SCP-294 Drinks");
             Button recipes = find(screen, "SCP-914 Recipes");
-            Button compatibilities = find(screen, "Mod Compatibilities");
+            Button integrations = find(screen, "Mod Integrations");
             Button[] primary = {general, inventory, interactions, drinks, recipes,
-                    compatibilities};
+                    integrations};
 
             int y = l.startY;
             for (Button button : primary) {
@@ -191,8 +191,8 @@ public final class ConfigurationHomePolish {
                         "Manage drink definitions, effects, colors and custom dispensing behavior.");
                 case "SCP-914 Recipes" -> new Info("SCP-914 Recipes",
                         "Review and edit refinement recipes across SCP-914 settings and recipe files.");
-                case "Mod Compatibilities" -> new Info("Mod Compatibilities",
-                        "Enable integrations for supported mods. Detected-but-unavailable integrations remain visible and disabled.");
+                case "Mod Integrations" -> new Info("Mod Integrations",
+                        "Enable deeper integrations that adapt supported mods to SCP Additions gameplay and systems.");
                 case "Crosshair" -> new Info("Crosshair",
                         "Configure the custom crosshair, visibility, colour channels and opacity.");
                 case "Accessibility" -> new Info("Accessibility",

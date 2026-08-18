@@ -49,6 +49,17 @@ public final class MineZeroSpectateClient {
 
     public static boolean active() { return active; }
 
+    public static boolean transferActive() {
+        return active || requestPending;
+    }
+
+    /** Reset stale roster knowledge and ask the current server about survivors. */
+    public static void refreshServerState() {
+        serverStateKnown = false;
+        availableTargets = 0;
+        queryAvailability();
+    }
+
     public static void queryAvailability() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getConnection() == null) return;

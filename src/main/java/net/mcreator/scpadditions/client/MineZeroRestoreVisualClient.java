@@ -40,7 +40,8 @@ public final class MineZeroRestoreVisualClient {
 
     @SubscribeEvent
     public static void onGuiOverlay(RenderGuiOverlayEvent.Post event) {
-        if (!event.getOverlay().id().equals(VanillaGuiOverlay.CHAT.id())) return;
+        if (!event.getOverlay().id().equals(
+                VanillaGuiOverlay.CHAT_PANEL.id())) return;
         float remaining = remaining();
         if (remaining <= 0.0F) return;
 
@@ -50,8 +51,6 @@ public final class MineZeroRestoreVisualClient {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
 
-        // A layered radial veil approximates the first blurred instant without
-        // forcing a post-processing shader onto shader packs such as Oculus.
         int baseAlpha = Mth.clamp(Math.round(remaining * 96.0F), 0, 96);
         graphics.fill(0, 0, width, height, baseAlpha << 24 | 0x0006090C);
         int bands = 8;

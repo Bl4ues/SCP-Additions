@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.Util;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -17,9 +18,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Local orbit camera used by dead MineZero co-op players. */
+/** Local orbit camera shared by the normal and MineZero death-screen live feeds. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MineZeroSpectateClient {
+    private static final long SWITCH_INTERFERENCE_MS = 520L;
+
     private static UUID targetId;
     private static ArmorStand cameraRig;
     private static Entity previousCamera;
@@ -27,6 +30,7 @@ public final class MineZeroSpectateClient {
     private static boolean active;
     private static float orbitYaw;
     private static float orbitPitch = 10.0F;
+    private static long switchedAt = -1L;
 
     private MineZeroSpectateClient() {
     }
@@ -46,6 +50,7 @@ public final class MineZeroSpectateClient {
         }
         active = true;
         targetId = targets.get(0).getUUID();
+        kickInterference();
         ensureRig();
         updateCamera();
     }
@@ -56,6 +61,7 @@ public final class MineZeroSpectateClient {
         active = false;
         targetId = null;
         cameraRig = null;
+        switchedAt = -1L;
         if (minecraft.player != null) {
             minecraft.setCameraEntity(previousCamera != null
                     ? previousCamera : minecraft.player);
@@ -83,6 +89,7 @@ public final class MineZeroSpectateClient {
         targetId = targets.get(next).getUUID();
         orbitYaw = 0.0F;
         orbitPitch = 10.0F;
+        kickInterference();
         updateCamera();
     }
 
@@ -101,6 +108,17 @@ public final class MineZeroSpectateClient {
 
     public static boolean hasTargets() { return !targets().isEmpty(); }
 
+    /** 1 -> 0 burst used by the death screen when changing camera feeds. */
+    public static float switchInterference() {
+        if (switchedAt < 0L) return 0.0F;
+        long elapsed = Math.max(0L, Util.getMillis() - switchedAt);
+        if (elapsed >= SWITCH_INTERFERENCE_MS) return 0.0F;
+        float t = net.minecraft.util.Mth.clamp(
+                elapsed / (float) SWITCH_INTERFERENCE_MS, 0.0F, 1.0F);
+        t = t * t * (3.0F - 2.0F * t);
+        return 1.0F - t;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !active) return;
@@ -111,8 +129,13 @@ public final class MineZeroSpectateClient {
                 return;
             }
             targetId = targets.get(0).getUUID();
+            kickInterference();
         }
         updateCamera();
+    }
+
+    private static void kickInterference() {
+        switchedAt = Util.getMillis();
     }
 
     private static void ensureRig() {

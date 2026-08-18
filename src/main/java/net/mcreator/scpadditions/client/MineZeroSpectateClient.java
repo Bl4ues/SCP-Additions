@@ -43,7 +43,6 @@ public final class MineZeroSpectateClient {
     private static float orbitYaw;
     private static float orbitPitch = 10.0F;
     private static long switchedAt = -1L;
-    private static long returnTransferUntil = -1L;
 
     private MineZeroSpectateClient() {
     }
@@ -60,8 +59,18 @@ public final class MineZeroSpectateClient {
     public static void start() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getConnection() == null || minecraft.player == null) return;
+        if (!active) {
+            previousCameraType = minecraft.options.getCameraType();
+            orbitYaw = 0.0F;
+            orbitPitch = 10.0F;
+        }
+        // Mark the presentation active immediately so the death screen can start
+        // sliding while the server moves this observer to the remote feed.
+        active = true;
         requestPending = true;
-        returnTransferUntil = -1L;
+        targetId = null;
+        targetDisplayName = "Acquiring personnel feed...";
+        kickInterference();
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_START));
     }
@@ -74,7 +83,8 @@ public final class MineZeroSpectateClient {
                     new DeathSpectateRequestPacket(DeathSpectateCoordinator.ACTION_STOP));
         }
         requestPending = false;
-        if (hadTransfer) returnTransferUntil = Util.getMillis() + 3000L;
+        targetId = null;
+        targetDisplayName = "No living personnel";
         stopLocalCamera();
     }
 
@@ -84,6 +94,8 @@ public final class MineZeroSpectateClient {
                 ? DeathSpectateCoordinator.ACTION_CYCLE_PREVIOUS
                 : DeathSpectateCoordinator.ACTION_CYCLE_NEXT;
         kickInterference();
+        targetId = null;
+        targetDisplayName = "Acquiring personnel feed...";
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new DeathSpectateRequestPacket(action));
     }
@@ -105,8 +117,9 @@ public final class MineZeroSpectateClient {
     public static boolean hasTargets() {
         if (serverStateKnown) return availableTargets > 0;
 
-        // Short-lived fallback while the query packet is in flight. This is only
-        // presentation; START is still validated and selected by the server.
+        // Short-lived fallback while the server query is in flight. START is
+        // still validated and selected by the server, so this cannot authorize
+        // an invalid feed.
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.getConnection() == null) return false;
         UUID self = minecraft.player.getUUID();
@@ -125,35 +138,23 @@ public final class MineZeroSpectateClient {
         requestPending = false;
 
         if (!serverActive || id == null || NIL.equals(id)) {
-            boolean wasActive = active;
-            stopLocalCamera();
             targetId = null;
             targetDisplayName = "No living personnel";
-            if (wasActive) returnTransferUntil = Util.getMillis() + 2200L;
+            stopLocalCamera();
             return;
         }
 
         boolean changed = targetId == null || !targetId.equals(id);
-        if (!active) {
-            previousCameraType = Minecraft.getInstance().options.getCameraType();
-            orbitYaw = 0.0F;
-            orbitPitch = 10.0F;
-        } else if (changed) {
-            orbitYaw = 0.0F;
-            orbitPitch = 10.0F;
-        }
         active = true;
         targetId = id;
         targetDisplayName = name == null || name.isBlank()
                 ? "Acquiring personnel feed..." : name;
-        returnTransferUntil = -1L;
-        if (changed) kickInterference();
+        if (changed) {
+            orbitYaw = 0.0F;
+            orbitPitch = 10.0F;
+            kickInterference();
+        }
         updateCamera();
-    }
-
-    /** True while a dimension/chunk hand-off must not dispose the death UI. */
-    public static boolean preserveDeathScreenDuringTransfer() {
-        return active || requestPending || Util.getMillis() < returnTransferUntil;
     }
 
     /** 1 -> 0 burst used by the death screen when changing camera feeds. */
@@ -169,13 +170,7 @@ public final class MineZeroSpectateClient {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-
-        if ((active || Util.getMillis() < returnTransferUntil)
-                && Minecraft.getInstance().screen == null) {
-            ScpDeathScreen.restorePreservedSpectateScreen();
-        }
-        if (!active) return;
+        if (event.phase != TickEvent.Phase.END || !active) return;
 
         // Cross-dimension teleports replace ClientLevel. Never keep an ArmorStand
         // camera created in the previous dimension.
@@ -208,8 +203,8 @@ public final class MineZeroSpectateClient {
         AbstractClientPlayer target = target();
         if (minecraft.level == null || target == null) {
             // While chunks for a new dimension/feed are arriving, leave the
-            // camera on the observer. The death screen masks the world until the
-            // real target entity becomes available.
+            // camera on the observer. The death screen masks everything except
+            // the feed area until the target entity is tracked locally.
             if (minecraft.player != null && minecraft.getCameraEntity() != minecraft.player) {
                 minecraft.setCameraEntity(minecraft.player);
             }

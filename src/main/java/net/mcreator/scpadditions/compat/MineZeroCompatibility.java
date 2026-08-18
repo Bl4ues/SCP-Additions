@@ -19,6 +19,8 @@ public final class MineZeroCompatibility {
     private static volatile Method checkpointDataGet;
     private static volatile Method getAnchorUuid;
     private static volatile boolean lookupAttempted;
+    private static final ThreadLocal<Boolean> CREATING =
+            ThreadLocal.withInitial(() -> false);
     private static final ThreadLocal<Boolean> RESTORING =
             ThreadLocal.withInitial(() -> false);
 
@@ -31,6 +33,10 @@ public final class MineZeroCompatibility {
 
     public static boolean enabled() {
         return installed() && ModCompatibilityConfig.mineZeroEnabled();
+    }
+
+    public static boolean creatingCheckpoint() {
+        return Boolean.TRUE.equals(CREATING.get());
     }
 
     public static boolean restoring() {
@@ -51,7 +57,9 @@ public final class MineZeroCompatibility {
     }
 
     public static boolean createCheckpoint(ServerPlayer anchor) {
-        if (!enabled() || anchor == null || restoring()) return false;
+        if (!enabled() || anchor == null || restoring()
+                || creatingCheckpoint()) return false;
+        CREATING.set(true);
         try {
             ensureMethods();
             if (setCheckpoint == null) return false;
@@ -61,6 +69,8 @@ public final class MineZeroCompatibility {
         } catch (ReflectiveOperationException exception) {
             logFailure("create MineZero checkpoint", exception);
             return false;
+        } finally {
+            CREATING.set(false);
         }
     }
 

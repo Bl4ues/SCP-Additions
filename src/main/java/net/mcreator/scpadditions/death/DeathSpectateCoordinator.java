@@ -83,8 +83,8 @@ public final class DeathSpectateCoordinator {
         }
 
         Session session = SESSIONS.computeIfAbsent(observer.getUUID(), ignored ->
-                new Session(observer.level().dimension(), observer.position(),
-                        observer.getYRot(), observer.getXRot(),
+                new Session(observer.getUUID(), observer.level().dimension(),
+                        observer.position(), observer.getYRot(), observer.getXRot(),
                         observer.gameMode.getGameModeForPlayer(),
                         observer.isInvulnerable()));
         ServerPlayer target = targets.get(0);
@@ -184,8 +184,8 @@ public final class DeathSpectateCoordinator {
     private static void follow(ServerPlayer observer, ServerPlayer target,
             boolean force) {
         if (observer == null || target == null) return;
-        boolean otherDimension = observer.level().dimension()
-                != target.level().dimension();
+        boolean otherDimension = !observer.level().dimension()
+                .equals(target.level().dimension());
         double distance = otherDimension ? Double.POSITIVE_INFINITY
                 : observer.distanceToSqr(target);
         if (!force && !otherDimension && distance <= 64.0D) return;
@@ -272,10 +272,10 @@ public final class DeathSpectateCoordinator {
         private final boolean originInvulnerable;
         private UUID targetId;
 
-        private Session(ResourceKey<Level> originDimension, Vec3 origin,
-                float originYaw, float originPitch, GameType originGameMode,
-                boolean originInvulnerable) {
-            this.observerId = null;
+        private Session(UUID observerId, ResourceKey<Level> originDimension,
+                Vec3 origin, float originYaw, float originPitch,
+                GameType originGameMode, boolean originInvulnerable) {
+            this.observerId = observerId;
             this.originDimension = originDimension;
             this.origin = origin;
             this.originYaw = originYaw;

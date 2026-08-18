@@ -83,10 +83,9 @@ public final class MineZeroClientState {
 
     public static void startSpectating() {
         if (!active || livingPlayers <= 0) return;
-        MineZeroSpectateClient.start();
-        if (!MineZeroSpectateClient.active()) return;
         spectating = true;
         spectateChangedAt = Util.getMillis();
+        MineZeroSpectateClient.start();
     }
 
     public static void stopSpectating() {
@@ -130,6 +129,7 @@ public final class MineZeroClientState {
         votes = 0;
         requiredVotes = 0;
         stopSpectating();
+        ScpDeathScreen.clearPreservedSpectateScreen();
         SaveGameClientState.suppressForLoadGame();
         EnterSoundClient.play();
         MineZeroRestoreVisualClient.start();

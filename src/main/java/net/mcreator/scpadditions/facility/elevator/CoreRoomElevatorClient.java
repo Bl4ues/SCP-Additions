@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.facility.elevator;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.RenderType;
@@ -47,11 +48,11 @@ public final class CoreRoomElevatorClient {
                 PulleyRenderer::new);
     }
 
-    private static float rotationFor(Direction facing) {
+    private static float rotationDegreesFor(Direction facing) {
         return switch (facing) {
-            case EAST -> (float) (-Math.PI / 2.0D);
-            case SOUTH -> (float) Math.PI;
-            case WEST -> (float) (Math.PI / 2.0D);
+            case EAST -> -90.0F;
+            case SOUTH -> 180.0F;
+            case WEST -> 90.0F;
             default -> 0.0F;
         };
     }
@@ -209,6 +210,24 @@ public final class CoreRoomElevatorClient {
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
             return RenderType.entityTranslucent(texture, true);
+        }
+
+        @Override
+        protected void applyRotations(CoreRoomElevatorCarriageEntity entity,
+                PoseStack poseStack, float ageInTicks, float rotationYaw,
+                float partialTick) {
+            super.applyRotations(entity, poseStack, ageInTicks, rotationYaw,
+                    partialTick);
+            // GeoEntityRenderer ignores entity yaw for non-LivingEntity models,
+            // which is why changing the carriage's YRot never changed its visual
+            // orientation. The authored model opens toward WEST in its baseline
+            // render. Collision and button geometry already compensate that by
+            // applying the model's EAST (-90 degree) basis before the logical
+            // station facing, so apply the exact same composition to the mesh.
+            float authoredBasis = -90.0F;
+            float logicalRotation = rotationDegreesFor(entity.facing());
+            poseStack.mulPose(Axis.YP.rotationDegrees(
+                    authoredBasis + logicalRotation));
         }
 
         @Override

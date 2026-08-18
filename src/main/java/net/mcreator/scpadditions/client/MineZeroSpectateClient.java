@@ -31,16 +31,13 @@ public final class MineZeroSpectateClient {
     private MineZeroSpectateClient() {
     }
 
-    public static boolean active() {
-        return active;
-    }
+    public static boolean active() { return active; }
 
     public static void start() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return;
         List<AbstractClientPlayer> targets = targets();
         if (targets.isEmpty()) return;
-
         if (!active) {
             previousCamera = minecraft.getCameraEntity();
             previousCameraType = minecraft.options.getCameraType();
@@ -63,9 +60,7 @@ public final class MineZeroSpectateClient {
             minecraft.setCameraEntity(previousCamera != null
                     ? previousCamera : minecraft.player);
         }
-        if (previousCameraType != null) {
-            minecraft.options.setCameraType(previousCameraType);
-        }
+        if (previousCameraType != null) minecraft.options.setCameraType(previousCameraType);
         previousCamera = null;
         previousCameraType = null;
     }
@@ -104,9 +99,7 @@ public final class MineZeroSpectateClient {
         return target == null ? "No living personnel" : target.getName().getString();
     }
 
-    public static boolean hasTargets() {
-        return !targets().isEmpty();
-    }
+    public static boolean hasTargets() { return !targets().isEmpty(); }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -125,12 +118,11 @@ public final class MineZeroSpectateClient {
     private static void ensureRig() {
         Minecraft minecraft = Minecraft.getInstance();
         if (cameraRig != null || minecraft.level == null) return;
-        var created = EntityType.ARMOR_STAND.create(minecraft.level);
-        if (created instanceof ArmorStand stand) {
-            cameraRig = stand;
-            cameraRig.setInvisible(true);
-            cameraRig.setNoGravity(true);
-        }
+        ArmorStand created = EntityType.ARMOR_STAND.create(minecraft.level);
+        if (created == null) return;
+        cameraRig = created;
+        cameraRig.setInvisible(true);
+        cameraRig.setNoGravity(true);
     }
 
     private static void updateCamera() {
@@ -143,10 +135,8 @@ public final class MineZeroSpectateClient {
         Vec3 focus = target.position().add(0.0D,
                 Math.max(0.9D, target.getBbHeight() * 0.72D), 0.0D);
         float yaw = target.getYRot() + orbitYaw;
-        float pitch = orbitPitch;
-        Vec3 direction = Vec3.directionFromRotation(pitch, yaw);
-        double distance = 4.35D;
-        Vec3 camera = focus.subtract(direction.scale(distance));
+        Vec3 direction = Vec3.directionFromRotation(orbitPitch, yaw);
+        Vec3 camera = focus.subtract(direction.scale(4.35D));
 
         Vec3 delta = focus.subtract(camera);
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
@@ -165,8 +155,7 @@ public final class MineZeroSpectateClient {
     }
 
     private static AbstractClientPlayer target() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || targetId == null) return null;
+        if (targetId == null) return null;
         for (AbstractClientPlayer player : targets()) {
             if (player.getUUID().equals(targetId)) return player;
         }
@@ -175,9 +164,7 @@ public final class MineZeroSpectateClient {
 
     private static List<AbstractClientPlayer> targets() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) {
-            return List.of();
-        }
+        if (minecraft.level == null || minecraft.player == null) return List.of();
         UUID self = minecraft.player.getUUID();
         return minecraft.level.players().stream()
                 .filter(player -> !player.getUUID().equals(self))

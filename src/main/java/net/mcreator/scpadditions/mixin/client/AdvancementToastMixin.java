@@ -11,8 +11,9 @@ import net.mcreator.scpadditions.client.ClientModulePreferences;
 import net.mcreator.scpadditions.client.CustomAdvancementToastClient;
 import net.mcreator.scpadditions.sound.AchievementSounds;
 import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Implements;
+import org.spongepowered.asm.mixin.Interface;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(AdvancementToast.class)
+@Implements(@Interface(iface = Toast.class, prefix = "scpToast$",
+        remap = Interface.Remap.ONLY_PREFIXED))
 public abstract class AdvancementToastMixin {
     @Shadow @Final private Advancement advancement;
 
@@ -58,25 +61,17 @@ public abstract class AdvancementToastMixin {
     }
 
     /**
-     * @author SCP Additions
-     * @reason The authored advancement card is wider than vanilla and the toast
-     * manager must reserve the same width in both development and reobfuscated
-     * production jars.
+     * Soft-implements Toast#width so Mixin's annotation processor remaps the
+     * inherited default method name into production instead of merging a
+     * development-only literal `width` method into AdvancementToast.
      */
-    @Overwrite
-    public int width() {
+    public int scpToast$width() {
         return ClientModulePreferences.customAdvancementToastsEnabled()
                 ? CustomAdvancementToastClient.WIDTH : 160;
     }
 
-    /**
-     * @author SCP Additions
-     * @reason The authored advancement card occupies multiple vanilla toast
-     * slots; production jars must retain the remapped height override so other
-     * toasts cannot overlap it.
-     */
-    @Overwrite
-    public int height() {
+    /** Same mapping-safe override strategy as scpToast$width(). */
+    public int scpToast$height() {
         return ClientModulePreferences.customAdvancementToastsEnabled()
                 ? CustomAdvancementToastClient.HEIGHT : 32;
     }

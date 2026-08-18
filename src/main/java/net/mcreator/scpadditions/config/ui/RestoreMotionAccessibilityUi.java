@@ -41,7 +41,18 @@ public final class RestoreMotionAccessibilityUi {
                     boolean.class);
             constructor.setAccessible(true);
 
-            List<Object> expanded = new ArrayList<>(rows.size() + 2);
+            // Accessibility used to receive its first heading through the screen's
+            // separate sectionTitle field while Motion Sickness was a real Row
+            // section. That made the two headings render with visibly different
+            // spacing and separators. Convert both headings into the same row type
+            // so they share one layout path.
+            Field sectionTitleField = screen.getClass().getDeclaredField("sectionTitle");
+            sectionTitleField.setAccessible(true);
+            sectionTitleField.set(screen, null);
+
+            List<Object> expanded = new ArrayList<>(rows.size() + 3);
+            expanded.add(constructor.newInstance(null, null,
+                    "Photosensitive Epilepsy", "", false));
             expanded.addAll(rows);
             expanded.add(constructor.newInstance(null, null,
                     "Motion Sickness", "", false));

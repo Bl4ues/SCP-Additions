@@ -44,18 +44,27 @@ public final class Scp330Hands {
     }
 
     public static boolean takeCandy(Level level, BlockPos pos, Player player) {
-        if (!(level instanceof ServerLevel serverLevel) || player == null
-                || isDisabled(player)) return false;
+        if (!(level instanceof ServerLevel serverLevel) || player == null) {
+            return false;
+        }
+
+        play(serverLevel, pos, ScpAdditionsModSounds.CANDY.get());
+
+        // Creative mode is an authoring/testing context, not a containment
+        // challenge. It may interact with SCP-330 freely without advancing the
+        // persistent two-candy counter or ever entering the hand-loss state.
+        if (player.isCreative()) {
+            ItemHandlerHelper.giveItemToPlayer(player,
+                    new ItemStack(randomCandy(serverLevel)));
+            return true;
+        }
+
+        if (isDisabled(player)) return false;
 
         int taken = Math.max(0, player.getPersistentData().getInt(COUNT_TAG));
-        play(serverLevel, pos, ScpAdditionsModSounds.CANDY.get());
         if (taken < 2) {
-            Item candy = switch (serverLevel.random.nextInt(3)) {
-                case 0 -> ScpAdditionsModItems.SCP_330_BLUE_CANDY.get();
-                case 1 -> ScpAdditionsModItems.SCP_330_PINK_CANDY.get();
-                default -> ScpAdditionsModItems.SCP_330_YELLOW_CANDY.get();
-            };
-            ItemHandlerHelper.giveItemToPlayer(player, new ItemStack(candy));
+            ItemHandlerHelper.giveItemToPlayer(player,
+                    new ItemStack(randomCandy(serverLevel)));
             int nextTaken = taken + 1;
             player.getPersistentData().putInt(COUNT_TAG, nextTaken);
             if (nextTaken == 2 && player instanceof ServerPlayer serverPlayer) {
@@ -91,6 +100,7 @@ public final class Scp330Hands {
     }
 
     private static void severHands(ServerLevel level, BlockPos pos, Player player) {
+        if (player.isCreative()) return;
         player.getPersistentData().putBoolean(DISABLED_TAG, true);
         player.addEffect(new MobEffectInstance(
                 ScpAdditionsModMobEffects.SCP_330_HAND_LOSS.get(),
@@ -112,6 +122,14 @@ public final class Scp330Hands {
                 current.hurt(damageSource(current), 1000.0F);
             }
         });
+    }
+
+    private static Item randomCandy(ServerLevel level) {
+        return switch (level.random.nextInt(3)) {
+            case 0 -> ScpAdditionsModItems.SCP_330_BLUE_CANDY.get();
+            case 1 -> ScpAdditionsModItems.SCP_330_PINK_CANDY.get();
+            default -> ScpAdditionsModItems.SCP_330_YELLOW_CANDY.get();
+        };
     }
 
     private static void removeCandies(Player player) {

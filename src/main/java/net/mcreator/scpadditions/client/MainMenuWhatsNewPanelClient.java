@@ -29,6 +29,7 @@ public final class MainMenuWhatsNewPanelClient {
     private static final int HEADER_HEIGHT = 54;
     private static final int ROW_HEIGHT = 19;
 
+    // Keep this list aligned with CHANGELOG.md -> SCP Additions 4.0.0 -> Highlights.
     private static final List<String> HIGHLIGHTS = List.of(
             "SCP-106",
             "Reworked SCP-079 facility control",
@@ -37,10 +38,12 @@ public final class MainMenuWhatsNewPanelClient {
             "Custom hotbar and oxygen HUD",
             "Expanded SCP Inventory interfaces",
             "Custom crosshair",
+            "Custom death, saving, and multiplayer spectating",
             "Documents and expanded Codex",
             "Rebuilt contextual interactions",
-            "Expanded Configuration Center",
-            "Reworked main menu and loading screens"
+            "Rebuilt Configuration Center",
+            "Mod Integrations",
+            "Reworked main menu, pause menu, and loading screens"
     );
 
     private static final Map<CustomMainMenuScreen, Integer> SCROLL =

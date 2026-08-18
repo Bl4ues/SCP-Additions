@@ -129,7 +129,6 @@ public final class MineZeroClientState {
         votes = 0;
         requiredVotes = 0;
         stopSpectating();
-        ScpDeathScreen.clearPreservedSpectateScreen();
         SaveGameClientState.suppressForLoadGame();
         EnterSoundClient.play();
         MineZeroRestoreVisualClient.start();

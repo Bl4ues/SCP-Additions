@@ -110,7 +110,7 @@ public final class ModCompatibilitiesUi {
                     Component.empty(), ignored -> {
                         MineZeroCompatibilityClientState.toggle();
                         refreshMineZeroButton();
-                    }).bounds(x + 24, y + 104, panelWidth - 48, 36).build());
+                    }).bounds(x + 24, y + 92, panelWidth - 48, 36).build());
             backButton = addRenderableWidget(Button.builder(
                     ScpFonts.roboto("Back"),
                     ignored -> Minecraft.getInstance().setScreen(parent))
@@ -160,28 +160,17 @@ public final class ModCompatibilitiesUi {
                     textX, textY, ConfigCenterVisuals.fadeColor(
                             ConfigCenterVisuals.ACCENT_BRIGHT), false);
 
-            textY += 29;
-            String status;
-            if (!MineZeroCompatibilityClientState.known()) {
-                status = "Reading the server mod list...";
-            } else if (!MineZeroCompatibilityClientState.installed()) {
-                status = "MineZero was not detected on the server. The integration remains visible but disabled.";
-            } else {
-                status = "Replaces MineZero's immediate Return by Death with SCP Additions save points, cooperative death spectating, rollback voting, and SCP state restoration.";
-            }
-            for (var line : font.split(ScpFonts.roboto(status), panelWidth - 48)) {
+            textY = y + 151;
+            graphics.drawString(font, ScpFonts.titillium("WHEN ENABLED"),
+                    textX, textY, ConfigCenterVisuals.fadeColor(
+                            ConfigCenterVisuals.ACCENT_BRIGHT), false);
+            textY += 22;
+            String description = "MineZero checkpoints follow SCP Additions saves instead of its automatic schedule. Death uses the SCP Additions death/spectate flow, and a team wipe requires the MineZero rollback vote before the world returns to the latest valid checkpoint. SCP Additions inventories, block states and facility systems rewind with it.";
+            for (var line : font.split(ScpFonts.roboto(description), panelWidth - 48)) {
                 graphics.drawString(font, line, textX, textY,
                         ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
                 textY += font.lineHeight + 3;
             }
-
-            textY = y + 158;
-            String ownership = MineZeroCompatibilityClientState.installed()
-                    && !MineZeroCompatibilityClientState.canEdit()
-                    ? "SERVER setting · Operator permission is required to change it."
-                    : "SERVER setting · Enabled by default when MineZero is installed.";
-            graphics.drawString(font, ScpFonts.roboto(ownership), textX, textY,
-                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
 
             if (mineZeroButton != null) {
                 ConfigCenterVisuals.drawButton(graphics, font, mineZeroButton,

@@ -1,6 +1,5 @@
 package net.mcreator.scpadditions.compat;
 
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.ModList;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -23,6 +22,8 @@ public final class MineZeroCompatibility {
     private static volatile Method checkpointDataGet;
     private static volatile Method getAnchorUuid;
     private static volatile boolean lookupAttempted;
+    private static final ThreadLocal<Boolean> RESTORING =
+            ThreadLocal.withInitial(() -> false);
 
     private MineZeroCompatibility() {
     }
@@ -33,6 +34,10 @@ public final class MineZeroCompatibility {
 
     public static boolean enabled() {
         return installed() && ModCompatibilityConfig.mineZeroEnabled();
+    }
+
+    public static boolean restoring() {
+        return Boolean.TRUE.equals(RESTORING.get());
     }
 
     public static boolean hasCheckpoint(ServerPlayer player) {
@@ -49,7 +54,7 @@ public final class MineZeroCompatibility {
     }
 
     public static boolean createCheckpoint(ServerPlayer anchor) {
-        if (!enabled() || anchor == null) return false;
+        if (!enabled() || anchor == null || restoring()) return false;
         try {
             ensureMethods();
             if (setCheckpoint == null) return false;
@@ -63,7 +68,8 @@ public final class MineZeroCompatibility {
     }
 
     public static boolean restoreCheckpoint(ServerPlayer anchor) {
-        if (!enabled() || anchor == null) return false;
+        if (!enabled() || anchor == null || restoring()) return false;
+        RESTORING.set(true);
         try {
             ensureMethods();
             if (restoreCheckpoint == null) return false;
@@ -73,6 +79,8 @@ public final class MineZeroCompatibility {
         } catch (ReflectiveOperationException exception) {
             logFailure("restore MineZero checkpoint", exception);
             return false;
+        } finally {
+            RESTORING.set(false);
         }
     }
 

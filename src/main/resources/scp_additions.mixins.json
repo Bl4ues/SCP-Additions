@@ -16,6 +16,8 @@
     "Scp173NavigationAuthorityMixin",
     "Scp173PushabilityMixin",
     "CoreRoomElevatorManagerFixMixin",
+    "compat.MineZeroDeathHandlerMixin",
+    "compat.MineZeroCheckpointTickerMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",
     "client.StorageContainerSupportCompatMixin"

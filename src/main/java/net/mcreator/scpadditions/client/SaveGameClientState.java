@@ -26,7 +26,8 @@ public final class SaveGameClientState {
     private static final long TOTAL_MS = FADE_IN_MS + HOLD_MS + FADE_OUT_MS;
     private static final long ROTATION_START_MS = 480L;
     private static final long ROTATION_END_MS = 2450L;
-    private static final long SAME_SAVE_REPLAY_GUARD_MS = TOTAL_MS + 2800L;
+    private static final long SAME_SAVE_REPLAY_GUARD_MS = TOTAL_MS + 4200L;
+    private static final long GENERIC_ECHO_GUARD_MS = TOTAL_MS + 7000L;
     private static final long LOAD_GAME_SUPPRESSION_MS = 6500L;
 
     private static volatile SaveMethod lastMethod = SaveMethod.WORLD_SPAWN;
@@ -46,9 +47,20 @@ public final class SaveGameClientState {
 
         long now = Util.getMillis();
         if (now < overlaySuppressedUntil) return;
+
+        long sinceLast = lastOverlayRequestAt < 0L
+                ? Long.MAX_VALUE : now - lastOverlayRequestAt;
         if (lastOverlayMethod == method
-                && lastOverlayRequestAt >= 0L
-                && now - lastOverlayRequestAt < SAME_SAVE_REPLAY_GUARD_MS) {
+                && sinceLast < SAME_SAVE_REPLAY_GUARD_MS) {
+            return;
+        }
+        // Vanilla/modded respawn-point tracking may report the same physical
+        // save again after the authored Quicksave/Checkpoint packet. Treat that
+        // generic label as an echo instead of restarting the animation after its
+        // fade has already finished.
+        if (method == SaveMethod.RESPAWN_POINT
+                && lastOverlayMethod != SaveMethod.RESPAWN_POINT
+                && sinceLast < GENERIC_ECHO_GUARD_MS) {
             return;
         }
 
@@ -100,9 +112,6 @@ public final class SaveGameClientState {
         int iconSize = Mth.clamp(Math.round(Mth.lerp(entrance, 27.0F, 32.0F)),
                 27, 32);
         int iconX = 20;
-        // The source artwork has more visual weight near its upper edge. Dropping
-        // the glyph a few pixels independently of the text aligns their perceived
-        // centers rather than merely their texture rectangles.
         int iconY = Math.round(22.0F + slideY);
         int centerX = iconX + iconSize / 2;
         int centerY = iconY + iconSize / 2;
@@ -135,8 +144,9 @@ public final class SaveGameClientState {
         Component saving = ScpFonts.roboto("Saving...");
         float textScale = 1.30F;
         float textX = iconX + iconSize + 11.0F;
-        // Keep the type baseline stable while the icon settles slightly lower.
-        float textY = 27.0F + slideY;
+        // Center the scaled type against the settled icon rather than keeping
+        // the old high baseline from the smaller pre-spinner notice.
+        float textY = 31.5F + slideY;
 
         graphics.pose().pushPose();
         graphics.pose().translate(textX, textY, 900.0F);

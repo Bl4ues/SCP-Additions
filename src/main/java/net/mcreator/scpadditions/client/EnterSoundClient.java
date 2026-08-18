@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.init.Scp106Sounds;
 
-/** Plays the optional non-positional sound used when joining a world. */
+/** Plays the optional non-positional sound used when entering playable world state. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class EnterSoundClient {
     private static boolean pendingWorldEntryCue;
@@ -19,11 +19,7 @@ public final class EnterSoundClient {
     private EnterSoundClient() {
     }
 
-    /**
-     * The server packet may arrive while Minecraft is still showing the 0-100%
-     * receiving-level screen. Defer the transition until an actual world frame
-     * has completed rendering instead of guessing from screen/player fields.
-     */
+    /** Queue the cue until a genuine playable world frame is available. */
     public static void play() {
         pendingWorldEntryCue = true;
     }
@@ -36,7 +32,11 @@ public final class EnterSoundClient {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) return;
+        if (minecraft.level == null || minecraft.player == null
+                || !minecraft.player.isAlive()
+                || minecraft.screen instanceof ScpDeathScreen) {
+            return;
+        }
 
         pendingWorldEntryCue = false;
         MainMenuMusicClient.onWorldEntryCue();

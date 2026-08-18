@@ -123,7 +123,7 @@ public class ScpAdditionsMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "18";
+    private static final String PROTOCOL_VERSION = "19";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),

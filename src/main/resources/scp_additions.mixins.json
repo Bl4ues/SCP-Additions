@@ -6,6 +6,7 @@
   "refmap": "scp_additions.refmap.json",
   "mixins": [
     "CraftingGridDropMixin",
+    "FacilityDiagnosticsActionbarMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",
     "Scp173FacingSyncMixin",

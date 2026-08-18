@@ -3,10 +3,12 @@ package net.mcreator.scpadditions.client;
 import net.minecraft.Util;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -106,7 +108,36 @@ public final class MineZeroSpectateClient {
         return target == null ? "No living personnel" : target.getName().getString();
     }
 
-    public static boolean hasTargets() { return !targets().isEmpty(); }
+    /**
+     * Button availability is based on the server-synchronized player roster, not
+     * only on entities currently returned by ClientLevel.players(). A player can
+     * be connected and alive before the client-side entity list happens to expose
+     * them during the death-screen initialization frame.
+     */
+    public static boolean hasTargets() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) return false;
+        if (minecraft.getConnection() == null) return !targets().isEmpty();
+
+        UUID self = minecraft.player.getUUID();
+        for (PlayerInfo info : minecraft.getConnection().getOnlinePlayers()) {
+            UUID id = info.getProfile().getId();
+            if (self.equals(id) || info.getGameMode() == GameType.SPECTATOR) continue;
+
+            // If the other player is already tracked locally, use actual entity
+            // liveness. Otherwise the multiplayer roster is the authoritative
+            // indication that a potentially spectatable survivor exists.
+            if (minecraft.level != null) {
+                AbstractClientPlayer local = minecraft.level.getPlayerByUUID(id);
+                if (local != null) {
+                    if (local.isAlive() && !local.isSpectator()) return true;
+                    continue;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
     /** 1 -> 0 burst used by the death screen when changing camera feeds. */
     public static float switchInterference() {
@@ -185,6 +216,7 @@ public final class MineZeroSpectateClient {
         return null;
     }
 
+    /** Renderable targets currently tracked by the client world. */
     private static List<AbstractClientPlayer> targets() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return List.of();

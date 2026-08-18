@@ -39,8 +39,11 @@ public class Keybinds {
             "key.categories.scpinventory"
     );
 
+    // KeyMapping displays an untranslated key verbatim. Using the final English
+    // label here avoids exposing a raw lang key while keeping the control fully
+    // rebindable; the project can move this string into additional locales later.
     public static final KeyMapping QUICK_SAVE = new KeyMapping(
-            "key.scpinventory.quicksave",
+            "Quicksave",
             KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6,

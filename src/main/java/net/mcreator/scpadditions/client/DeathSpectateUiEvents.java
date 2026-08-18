@@ -1,6 +1,10 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -9,12 +13,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 /**
- * Frame-rate camera updates and direct drag handling for the death live feed.
- *
- * The feed viewport is not a vanilla widget, so relying on Screen#mouseDragged
- * meant Minecraft could decide no component had captured the initial click and
- * never deliver a drag. Forge's screen input events let the viewport own that
- * interaction explicitly without changing the normal death-screen buttons.
+ * Frame-rate camera updates, direct drag handling and transition masking for the
+ * death-screen live personnel feed.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -31,10 +31,63 @@ public final class DeathSpectateUiEvents {
             draggingFeed = false;
             return;
         }
-        // The world is rendered immediately before its screen. Reapplying here
-        // updates the rig once per rendered frame (one frame ahead of the next
-        // world pass) rather than only at Minecraft's 20 Hz client tick.
         MineZeroSpectateClient.updateForRender(event.getPartialTick());
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderPost(ScreenEvent.Render.Post event) {
+        if (!(event.getScreen() instanceof ScpDeathScreen screen)
+                || !MineZeroSpectateClient.active()) {
+            return;
+        }
+
+        float cover = MineZeroSpectateClient.switchOcclusion();
+        boolean lost = MineZeroSpectateClient.connectionLost();
+        if (cover <= 0.001F && !lost) return;
+
+        Bounds feed = feed(screen);
+        var graphics = event.getGuiGraphics();
+        int a = Mth.clamp(Math.round(255.0F * Mth.clamp(cover, 0.0F, 1.0F)),
+                0, 255);
+        graphics.fill(feed.left, feed.top, feed.right, feed.bottom,
+                a << 24 | 0x00030406);
+
+        // Dense analog-looking noise sits above the opaque cover. During the
+        // hold phase this means the player sees interference, never half-loaded
+        // chunks, a stale dimension, or the previous target.
+        long frame = Util.getMillis() / 38L;
+        int strips = 18 + Math.round(cover * 34.0F);
+        int feedHeight = Math.max(1, feed.bottom - feed.top);
+        int feedWidth = Math.max(1, feed.right - feed.left);
+        for (int i = 0; i < strips; i++) {
+            long hash = noise(frame + i * 53L);
+            int y = feed.top + Math.floorMod((int) hash, feedHeight);
+            int height = 1 + Math.floorMod((int) (hash >>> 13), 7);
+            int leftInset = Math.floorMod((int) (hash >>> 21),
+                    Math.max(1, feedWidth / 5));
+            int rightInset = Math.floorMod((int) (hash >>> 29),
+                    Math.max(1, feedWidth / 6));
+            int alpha = Mth.clamp(36 + Math.round(cover * 130.0F), 0, 190);
+            int tint = ((hash >>> 39) & 3L) == 0L ? 0x008B2028 : 0x00C3C9CC;
+            graphics.fill(feed.left + leftInset, y,
+                    Math.max(feed.left + leftInset + 1,
+                            feed.right - rightInset),
+                    Math.min(feed.bottom, y + height), alpha << 24 | tint);
+        }
+
+        if (lost) {
+            Minecraft minecraft = Minecraft.getInstance();
+            var title = ScpFonts.montserrat("CONNECTION LOST");
+            var detail = ScpFonts.titillium("LIVE PERSONNEL FEED TERMINATED");
+            int centerX = (feed.left + feed.right) / 2;
+            int centerY = (feed.top + feed.bottom) / 2;
+            graphics.drawString(minecraft.font, title,
+                    centerX - minecraft.font.width(title) / 2,
+                    centerY - 9, 0xFFE8E9EA, false);
+            graphics.drawString(minecraft.font, detail,
+                    centerX - minecraft.font.width(detail) / 2,
+                    centerY + 9, 0xFFB55A60, false);
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -42,6 +95,7 @@ public final class DeathSpectateUiEvents {
         if (event.getButton() != 0
                 || !(event.getScreen() instanceof ScpDeathScreen screen)
                 || !MineZeroSpectateClient.active()
+                || MineZeroSpectateClient.connectionLost()
                 || !insideFeed(screen, event.getMouseX(), event.getMouseY())) {
             return;
         }
@@ -53,7 +107,8 @@ public final class DeathSpectateUiEvents {
     public static void onMouseDragged(ScreenEvent.MouseDragged.Pre event) {
         if (!draggingFeed || event.getMouseButton() != 0
                 || !(event.getScreen() instanceof ScpDeathScreen)
-                || !MineZeroSpectateClient.active()) {
+                || !MineZeroSpectateClient.active()
+                || MineZeroSpectateClient.connectionLost()) {
             return;
         }
         MineZeroSpectateClient.orbit(event.getDragX(), event.getDragY());
@@ -78,12 +133,27 @@ public final class DeathSpectateUiEvents {
 
     private static boolean insideFeed(ScpDeathScreen screen,
             double mouseX, double mouseY) {
+        Bounds feed = feed(screen);
+        return mouseX >= feed.left && mouseX < feed.right
+                && mouseY >= feed.top && mouseY < feed.bottom;
+    }
+
+    private static Bounds feed(ScpDeathScreen screen) {
         int left = Math.max(screen.width / 2 + 28,
                 Math.round(screen.width * 0.53F));
         int right = Math.max(left + 120, screen.width - 28);
         int top = Math.max(46, Math.round(screen.height * 0.095F));
         int bottom = Math.max(top + 100, screen.height - 64);
-        return mouseX >= left && mouseX < right
-                && mouseY >= top && mouseY < bottom;
+        return new Bounds(left, top, right, bottom);
+    }
+
+    private static long noise(long value) {
+        long x = value + 0x9E3779B97F4A7C15L;
+        x = (x ^ (x >>> 30)) * 0xBF58476D1CE4E5B9L;
+        x = (x ^ (x >>> 27)) * 0x94D049BB133111EBL;
+        return x ^ (x >>> 31);
+    }
+
+    private record Bounds(int left, int top, int right, int bottom) {
     }
 }

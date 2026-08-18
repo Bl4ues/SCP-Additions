@@ -5,10 +5,13 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.mcreator.scpadditions.save.SaveDifficultyPolicy;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +31,21 @@ public final class ScpDeathScreen extends DeathScreen {
     private static final int ACCENT_BRIGHT = 0xFFE5CC72;
     private static final int DANGER = 0xFF8E242B;
     private static final int DANGER_BRIGHT = 0xFFD45C62;
+    private static final int[] BACKGROUND_REDS = {
+            0xFF3A050A,
+            0xFF26030A,
+            0xFF4A0810,
+            0xFF300611
+    };
 
     private final Component causeOfDeath;
     private final boolean hardcoreMode;
     private final long openedAt = Util.getMillis();
+    private final long visualSeed = openedAt ^ System.nanoTime();
     private Button loadButton;
     private Button menuButton;
+    private Button hardcoreActionButton;
+    private boolean menuConfirmationArmed;
 
     public ScpDeathScreen(Component causeOfDeath, boolean hardcore) {
         super(causeOfDeath, hardcore);
@@ -52,6 +64,7 @@ public final class ScpDeathScreen extends DeathScreen {
     private void identifyButtons() {
         loadButton = null;
         menuButton = null;
+        hardcoreActionButton = null;
         List<Button> buttons = new ArrayList<>();
         for (var child : children()) {
             if (child instanceof Button button) buttons.add(button);
@@ -81,6 +94,14 @@ public final class ScpDeathScreen extends DeathScreen {
             menuButton = buttons.get(buttons.size() - 1);
             menuButton.setMessage(Component.literal("Main Menu"));
         }
+        if (hardcoreMode) {
+            for (Button button : buttons) {
+                if (button != menuButton) {
+                    hardcoreActionButton = button;
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -91,6 +112,7 @@ public final class ScpDeathScreen extends DeathScreen {
         float reveal = revealProgress();
         if (reveal <= 0.0F) return;
 
+        drawLivingRedBackground(graphics, reveal);
         drawRedVignette(graphics, reveal);
         int slide = Math.round((1.0F - reveal) * 14.0F);
         int x = cardX();
@@ -139,29 +161,23 @@ public final class ScpDeathScreen extends DeathScreen {
                 alpha(BORDER, reveal));
         int lineY = causeY + 27;
         int maxTextWidth = cardWidth - 44;
+        int separatorY = buttonSeparatorY(y);
         for (var line : minecraft.font.split(ScpFonts.roboto(causeOfDeath),
                 maxTextWidth)) {
             graphics.drawString(minecraft.font, line, x + 22, lineY,
                     alpha(TEXT, reveal), false);
             lineY += minecraft.font.lineHeight + 3;
-            if (lineY > y + cardHeight - 92) break;
+            if (lineY > separatorY - 14) break;
         }
 
-        graphics.fill(x + 16, y + cardHeight - 82,
-                x + cardWidth - 16, y + cardHeight - 81,
+        graphics.fill(x + 16, separatorY,
+                x + cardWidth - 16, separatorY + 1,
                 alpha(BORDER, reveal * 0.7F));
         drawButton(graphics, loadButton, mouseX, mouseY, reveal);
         drawButton(graphics, menuButton, mouseX, mouseY, reveal);
-
-        // Hardcore's first vanilla action is Spectate World rather than Respawn.
-        // Preserve it instead of lying by relabelling it as Load Game.
         if (hardcoreMode) {
-            for (var child : children()) {
-                if (child instanceof Button button && button != menuButton) {
-                    drawButton(graphics, button, mouseX, mouseY, reveal);
-                    break;
-                }
-            }
+            drawButton(graphics, hardcoreActionButton,
+                    mouseX, mouseY, reveal);
         }
     }
 
@@ -173,7 +189,7 @@ public final class ScpDeathScreen extends DeathScreen {
         graphics.drawString(minecraft.font, ScpFonts.titillium(label),
                 x + 7, y + 2, alpha(MUTED, reveal), false);
         graphics.drawString(minecraft.font, ScpFonts.roboto(value),
-                x + Math.min(116, Math.max(82, rowWidth / 4)), y + 2,
+                x + Math.min(112, Math.max(78, rowWidth / 4)), y + 2,
                 alpha(TEXT, reveal), false);
     }
 
@@ -190,7 +206,10 @@ public final class ScpDeathScreen extends DeathScreen {
         int border = button.active
                 ? hovered ? ACCENT_BRIGHT : BORDER : 0xFF24292E;
         int stripe = button.active
-                ? hovered ? ACCENT_BRIGHT : ACCENT : 0xFF33383D;
+                ? menuConfirmationArmed && button == menuButton
+                        ? DANGER_BRIGHT
+                        : hovered ? ACCENT_BRIGHT : ACCENT
+                : 0xFF33383D;
         int text = button.active ? TEXT : MUTED;
 
         graphics.fill(x, y, right, bottom, alpha(background, reveal));
@@ -206,13 +225,87 @@ public final class ScpDeathScreen extends DeathScreen {
                 textX, textY, alpha(text, reveal), false);
     }
 
+    /**
+     * Slow, seeded red fields made from overlapping softened scanline ellipses.
+     * The wobble changes independently per field, so the background never feels
+     * like a static radial vignette while remaining dark enough not to compete
+     * with the termination report.
+     */
+    private void drawLivingRedBackground(GuiGraphics graphics, float reveal) {
+        double seconds = Math.max(0L, Util.getMillis() - openedAt) / 1000.0D;
+        for (int blob = 0; blob < BACKGROUND_REDS.length; blob++) {
+            double phase = seedPhase(blob);
+            double speed = 0.055D + blob * 0.013D;
+            int centerX = (int) Math.round(width * (0.50D
+                    + 0.34D * Math.sin(seconds * speed + phase)));
+            int centerY = (int) Math.round(height * (0.50D
+                    + 0.30D * Math.cos(seconds * (speed * 0.83D)
+                    + phase * 1.31D)));
+            int radiusX = Math.max(90, (int) Math.round(width
+                    * (0.22D + 0.035D * Math.sin(phase * 1.7D))));
+            int radiusY = Math.max(70, (int) Math.round(height
+                    * (0.25D + 0.040D * Math.cos(phase * 1.4D))));
+            drawSoftBlob(graphics, centerX, centerY, radiusX, radiusY,
+                    BACKGROUND_REDS[blob], reveal, seconds, phase, blob);
+        }
+    }
+
+    private void drawSoftBlob(GuiGraphics graphics, int centerX, int centerY,
+            int radiusX, int radiusY, int color, float reveal,
+            double seconds, double phase, int blobIndex) {
+        int layers = 7;
+        int slices = 20;
+        for (int layer = 0; layer < layers; layer++) {
+            float scale = 1.0F - layer * 0.085F;
+            float layerAlpha = 0.012F + layer * 0.0022F;
+            int scaledY = Math.max(8, Math.round(radiusY * scale));
+            float sliceHeight = scaledY * 2.0F / slices;
+
+            for (int slice = 0; slice < slices; slice++) {
+                double normalizedY = -1.0D
+                        + 2.0D * (slice + 0.5D) / slices;
+                double envelope = Math.sqrt(Math.max(0.0D,
+                        1.0D - normalizedY * normalizedY));
+                double wobble = 1.0D
+                        + 0.11D * Math.sin(normalizedY * 4.2D + phase
+                        + seconds * (0.13D + blobIndex * 0.018D))
+                        + 0.055D * Math.sin(normalizedY * 7.3D
+                        + phase * 1.63D - seconds * 0.09D);
+                double driftX = radiusX * 0.065D
+                        * Math.sin(normalizedY * 2.7D + phase * 0.71D
+                        + seconds * 0.10D);
+                int halfWidth = Math.max(1, (int) Math.round(radiusX
+                        * scale * envelope * wobble));
+                int left = (int) Math.round(centerX + driftX) - halfWidth;
+                int right = (int) Math.round(centerX + driftX) + halfWidth;
+                int top = (int) Math.round(centerY - scaledY
+                        + slice * sliceHeight);
+                int bottom = Math.max(top + 1,
+                        (int) Math.ceil(top + sliceHeight + 1.0F));
+                float edgeFade = (float) (0.48D + envelope * 0.52D);
+                graphics.fill(left, top, right, bottom,
+                        alpha(color, reveal * layerAlpha * edgeFade));
+            }
+        }
+    }
+
+    private double seedPhase(int index) {
+        long mixed = visualSeed
+                ^ (0x9E3779B97F4A7C15L * (index + 1L));
+        mixed ^= mixed >>> 33;
+        mixed *= 0xff51afd7ed558ccdL;
+        mixed ^= mixed >>> 33;
+        long positive = mixed & Long.MAX_VALUE;
+        return (positive % 100000L) / 100000.0D * Math.PI * 2.0D;
+    }
+
     private void drawRedVignette(GuiGraphics graphics, float reveal) {
-        graphics.fill(0, 0, width, height, alpha(0x301A0205, reveal));
-        int bands = 8;
-        int band = Math.max(10, Math.min(width, height) / 36);
+        graphics.fill(0, 0, width, height, alpha(0x251A0205, reveal));
+        int bands = 9;
+        int band = Math.max(10, Math.min(width, height) / 38);
         for (int i = 0; i < bands; i++) {
             float strength = reveal * (bands - i) / (float) bands;
-            int color = alpha(0x240E0103, strength);
+            int color = alpha(0x210E0103, strength);
             int inset = i * band;
             graphics.fill(inset, inset, width - inset, inset + band, color);
             graphics.fill(inset, height - inset - band,
@@ -227,27 +320,39 @@ public final class ScpDeathScreen extends DeathScreen {
     private void positionButtons(int x, int y) {
         int buttonWidth = cardWidth() - 44;
         int buttonX = x + 22;
-        int firstY = y + cardHeight() - 70;
+        int menuY = y + cardHeight() - 48;
+        int upperY = menuY - 38;
+
         if (loadButton != null) {
             loadButton.setX(buttonX);
-            loadButton.setY(firstY - 34);
+            loadButton.setY(upperY);
             loadButton.setWidth(buttonWidth);
-            loadButton.setHeight(28);
+            loadButton.setHeight(30);
+        }
+        if (hardcoreActionButton != null) {
+            hardcoreActionButton.setX(buttonX);
+            hardcoreActionButton.setY(upperY);
+            hardcoreActionButton.setWidth(buttonWidth);
+            hardcoreActionButton.setHeight(30);
         }
         if (menuButton != null) {
             menuButton.setX(buttonX);
-            menuButton.setY(firstY);
+            menuButton.setY(menuY);
             menuButton.setWidth(buttonWidth);
-            menuButton.setHeight(28);
+            menuButton.setHeight(30);
         }
     }
 
+    private int buttonSeparatorY(int y) {
+        return y + cardHeight() - 102;
+    }
+
     private int cardWidth() {
-        return Mth.clamp(width - 80, 360, 620);
+        return Mth.clamp(Math.round(width * 0.52F), 380, 560);
     }
 
     private int cardHeight() {
-        return Mth.clamp(height - 70, 300, 390);
+        return Mth.clamp(height - 36, 330, 430);
     }
 
     private int cardX() {
@@ -270,15 +375,65 @@ public final class ScpDeathScreen extends DeathScreen {
         return Util.getMillis() - openedAt < BLACKOUT_MS;
     }
 
+    private void handleMenuButtonPress() {
+        if (menuButton == null || !menuButton.active) return;
+        menuButton.playDownSound(Minecraft.getInstance().getSoundManager());
+        if (!menuConfirmationArmed) {
+            menuConfirmationArmed = true;
+            menuButton.setMessage(Component.literal("Confirm"));
+            return;
+        }
+
+        // Run the real vanilla callback so saving/disconnect behavior remains
+        // compatible. Vanilla inserts a ConfirmScreen; immediately activate its
+        // Title Screen choice so that intermediate screen never gets rendered.
+        menuButton.onPress();
+        Minecraft minecraft = Minecraft.getInstance();
+        Screen opened = minecraft.screen;
+        if (!(opened instanceof ConfirmScreen confirm)) return;
+
+        String titleScreen = Component.translatable(
+                "deathScreen.titleScreen").getString();
+        Button affirmative = null;
+        for (var child : confirm.children()) {
+            if (child instanceof Button button && button.active
+                    && titleScreen.equals(button.getMessage().getString())) {
+                affirmative = button;
+                break;
+            }
+        }
+        if (affirmative == null) {
+            for (var child : confirm.children()) {
+                if (child instanceof Button button && button.active) {
+                    affirmative = button;
+                    break;
+                }
+            }
+        }
+        if (affirmative != null) affirmative.onPress();
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (blackoutActive()) return true;
+        if (menuButton != null && menuButton.visible && menuButton.active
+                && menuButton.isMouseOver(mouseX, mouseY)) {
+            handleMenuButtonPress();
+            return true;
+        }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (blackoutActive()) return true;
+        if (menuButton != null && menuButton.isFocused()
+                && (keyCode == GLFW.GLFW_KEY_ENTER
+                || keyCode == GLFW.GLFW_KEY_KP_ENTER
+                || keyCode == GLFW.GLFW_KEY_SPACE)) {
+            handleMenuButtonPress();
+            return true;
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 

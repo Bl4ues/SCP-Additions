@@ -25,11 +25,7 @@ import net.mcreator.scpadditions.network.ScpAdditionsModVariables;
 
 import java.util.Set;
 
-/**
- * Complements MineZero's vanilla snapshot with SCP Additions capabilities,
- * SavedData and internal block-state mutations that do not originate from a
- * vanilla player place/break event.
- */
+/** Complements MineZero snapshots with SCP Additions-owned state. */
 public final class MineZeroScpCheckpoint {
     private static final String DATA_NAME =
             "scp_additions_minezero_compat_checkpoint";
@@ -69,8 +65,6 @@ public final class MineZeroScpCheckpoint {
         root.put("Scp079", Scp079RollbackSupport.capture(server));
 
         data.snapshot = root;
-        // A new checkpoint is the new baseline. From now until rewind, only the
-        // first mutation of each SCP Additions position needs to be remembered.
         data.blockDiff = new CompoundTag();
         data.setDirty();
     }
@@ -150,8 +144,6 @@ public final class MineZeroScpCheckpoint {
             Scp079RollbackSupport.restore(server, root.getCompound("Scp079"));
         }
 
-        // The restored world is the checkpoint baseline again. New changes must
-        // start a fresh journal so repeated Return by Death cycles remain valid.
         data.blockDiff = new CompoundTag();
         data.setDirty();
     }
@@ -176,6 +168,7 @@ public final class MineZeroScpCheckpoint {
                 if (blockEntity != null) {
                     blockEntity.load(entry.getCompound("BlockEntity").copy());
                     blockEntity.setChanged();
+                    level.sendBlockUpdated(pos, state, state, 3);
                 }
             }
         }

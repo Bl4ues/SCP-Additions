@@ -31,6 +31,7 @@ public final class SaveGameClientState {
     private static final long GENERIC_ECHO_GUARD_MS = TOTAL_MS + 7000L;
     private static final long POST_FADE_SUPPRESSION_MS = 1200L;
     private static final long LOAD_GAME_SUPPRESSION_MS = 6500L;
+    private static final float FINAL_RENDER_CUTOFF = 0.055F;
 
     private static volatile SaveMethod lastMethod = SaveMethod.WORLD_SPAWN;
     private static volatile SaveMethod lastOverlayMethod = SaveMethod.WORLD_SPAWN;
@@ -52,21 +53,12 @@ public final class SaveGameClientState {
 
         long sinceLast = lastOverlayRequestAt < 0L
                 ? Long.MAX_VALUE : now - lastOverlayRequestAt;
-        // A save can be reported through more than one vanilla/modded path. The
-        // state update is still accepted above, but one authored save should only
-        // play one HUD presentation regardless of how the later echo is labelled.
-        if (sinceLast < ANY_SAVE_REPLAY_GUARD_MS) {
-            return;
-        }
+        if (sinceLast < ANY_SAVE_REPLAY_GUARD_MS) return;
         if (lastOverlayMethod == method
-                && sinceLast < SAME_SAVE_REPLAY_GUARD_MS) {
-            return;
-        }
+                && sinceLast < SAME_SAVE_REPLAY_GUARD_MS) return;
         if (method == SaveMethod.RESPAWN_POINT
                 && lastOverlayMethod != SaveMethod.RESPAWN_POINT
-                && sinceLast < GENERIC_ECHO_GUARD_MS) {
-            return;
-        }
+                && sinceLast < GENERIC_ECHO_GUARD_MS) return;
 
         lastOverlayMethod = method;
         lastOverlayRequestAt = now;
@@ -96,11 +88,7 @@ public final class SaveGameClientState {
         long now = Util.getMillis();
         long elapsed = now - overlayStartedAt;
         if (elapsed < 0L || elapsed >= TOTAL_MS) {
-            overlayStartedAt = -1L;
-            // Prevent an event arriving on the fade boundary from producing the
-            // one-frame disappearance/reappearance that used to look like a blink.
-            overlaySuppressedUntil = Math.max(overlaySuppressedUntil,
-                    now + POST_FADE_SUPPRESSION_MS);
+            finishOverlay(now);
             return;
         }
 
@@ -114,6 +102,14 @@ public final class SaveGameClientState {
                     / (float) FADE_OUT_MS;
         }
         alpha = smootherStep(alpha);
+
+        // Text survives very low alpha more visibly than the textured rings.
+        // Stop rendering the entire presentation together at the tail instead of
+        // allowing one nearly-transparent font frame to look like a second flash.
+        if (elapsed > FADE_IN_MS + HOLD_MS && alpha <= FINAL_RENDER_CUTOFF) {
+            finishOverlay(now);
+            return;
+        }
 
         float entrance = smootherStep(Mth.clamp(
                 elapsed / (float) FADE_IN_MS, 0.0F, 1.0F));
@@ -146,7 +142,6 @@ public final class SaveGameClientState {
         drawRotatedTexture(graphics, SAVE_INNER, centerX, centerY,
                 iconSize, innerAngle);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.disableBlend();
 
         int a = Mth.clamp(Math.round(alpha * 224.0F), 0, 255);
         int color = a << 24 | 0x00F2F2F2;
@@ -154,8 +149,6 @@ public final class SaveGameClientState {
         float textScale = 1.50F;
         float textX = iconX + iconSize + 11.0F;
         float scaledLineHeight = minecraft.font.lineHeight * textScale;
-        // Optical correction: center the larger type on the icon, then bias the
-        // glyphs slightly downward because Roboto's visible mass sits high in its line box.
         float textY = centerY - scaledLineHeight * 0.5F + 2.25F;
 
         graphics.pose().pushPose();
@@ -163,6 +156,17 @@ public final class SaveGameClientState {
         graphics.pose().scale(textScale, textScale, 1.0F);
         graphics.drawString(minecraft.font, saving, 0, 0, color, false);
         graphics.pose().popPose();
+
+        // Keep one blend state for icon and type. Disabling blending between the
+        // two made the font's final alpha behave differently from the textures on
+        // some render pipelines/shader combinations.
+        RenderSystem.disableBlend();
+    }
+
+    private static void finishOverlay(long now) {
+        overlayStartedAt = -1L;
+        overlaySuppressedUntil = Math.max(overlaySuppressedUntil,
+                now + POST_FADE_SUPPRESSION_MS);
     }
 
     private static void drawRotatedTexture(GuiGraphics graphics,

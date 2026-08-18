@@ -123,7 +123,7 @@ public class ScpAdditionsMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "19";
+    private static final String PROTOCOL_VERSION = "20";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),
@@ -151,8 +151,7 @@ public class ScpAdditionsMod {
     @SubscribeEvent
     public void tick(TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            List<AbstractMap.SimpleEntry<Runnable, Integer>> actions =
-                    new ArrayList<>();
+            List<AbstractMap.SimpleEntry<Runnable, Integer>> actions = new ArrayList<>();
             workQueue.forEach(work -> {
                 work.setValue(work.getValue() - 1);
                 if (work.getValue() == 0) actions.add(work);

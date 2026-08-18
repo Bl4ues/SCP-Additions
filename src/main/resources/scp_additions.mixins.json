@@ -9,6 +9,7 @@
     "FacilityDiagnosticsActionbarMixin",
     "DecontaminationCheckpointSaveMixin",
     "ServerPlayerSaveTrackingMixin",
+    "MineZeroScpBlockJournalMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",
     "Scp173FacingSyncMixin",
@@ -16,6 +17,8 @@
     "Scp173NavigationAuthorityMixin",
     "Scp173PushabilityMixin",
     "CoreRoomElevatorManagerFixMixin",
+    "compat.MineZeroDeathHandlerMixin",
+    "compat.MineZeroCheckpointManagerMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",
     "client.StorageContainerSupportCompatMixin"

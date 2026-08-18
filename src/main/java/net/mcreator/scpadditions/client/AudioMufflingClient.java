@@ -37,7 +37,6 @@ public final class AudioMufflingClient {
 
     private static final float HAZMAT_STRENGTH = 0.60F;
     private static final float SCP_714_INITIAL_STRENGTH = 0.08F;
-    private static final float DEATH_SCREEN_STRENGTH = 0.94F;
     private static final float TRANSITION_SPEED = 0.16F;
     private static final float UPDATE_EPSILON = 0.0015F;
 
@@ -76,9 +75,7 @@ public final class AudioMufflingClient {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+        if (event.phase != TickEvent.Phase.END) return;
 
         Minecraft minecraft = Minecraft.getInstance();
         float targetHazmat = 0.0F;
@@ -87,8 +84,8 @@ public final class AudioMufflingClient {
         masterVolume = minecraft.options.getSoundSourceVolume(SoundSource.MASTER);
 
         if (minecraft.player != null && minecraft.level != null) {
-            if (minecraft.screen instanceof ScpDeathScreen) {
-                targetDeath = DEATH_SCREEN_STRENGTH;
+            if (minecraft.screen instanceof ScpDeathScreen deathScreen) {
+                targetDeath = deathScreen.requestedDeathMuffleStrength();
             }
             if (minecraft.player.isAlive()) {
                 if (HazmatSuitAccess.isFullyEquipped(minecraft.player)) {
@@ -107,7 +104,10 @@ public final class AudioMufflingClient {
 
         currentHazmatStrength = approach(currentHazmatStrength, targetHazmat);
         currentScp714Strength = approach(currentScp714Strength, targetScp714);
-        currentDeathStrength = approach(currentDeathStrength, targetDeath);
+        // The death screen owns its deliberate two-second delay and ramp. Apply a
+        // slightly faster secondary ease here so spectate/full-death changes blend
+        // without adding another visibly long lag on top of that authored curve.
+        currentDeathStrength = approach(currentDeathStrength, targetDeath, 0.24F);
 
         if (Math.abs(currentHazmatStrength - lastQueuedHazmatStrength)
                 >= UPDATE_EPSILON
@@ -121,31 +121,29 @@ public final class AudioMufflingClient {
 
     private static void register(SoundEngine engine, Channel channel,
                                  SoundInstance sound) {
-        if (engine == null || channel == null || sound == null) {
-            return;
-        }
-
+        if (engine == null || channel == null || sound == null) return;
         if (soundEngine != engine) {
             soundEngine = engine;
             SOUNDS_BY_CHANNEL.clear();
             resetFilterHandles(engine);
         }
-
         SOUNDS_BY_CHANNEL.put(channel, sound);
         queueUpdate();
     }
 
     private static float approach(float current, float target) {
-        float next = Mth.lerp(TRANSITION_SPEED, current, target);
+        return approach(current, target, TRANSITION_SPEED);
+    }
+
+    private static float approach(float current, float target, float speed) {
+        float next = Mth.lerp(speed, current, target);
         return Math.abs(next - target) < UPDATE_EPSILON ? target : next;
     }
 
     private static void queueUpdate() {
         UPDATE_DIRTY.set(true);
         SoundEngine engine = soundEngine;
-        if (engine == null || !UPDATE_QUEUED.compareAndSet(false, true)) {
-            return;
-        }
+        if (engine == null || !UPDATE_QUEUED.compareAndSet(false, true)) return;
         scheduleUpdate(engine);
     }
 
@@ -165,9 +163,7 @@ public final class AudioMufflingClient {
                         requestedMasterVolume);
             } finally {
                 UPDATE_QUEUED.set(false);
-                if (UPDATE_DIRTY.get()) {
-                    queueUpdate();
-                }
+                if (UPDATE_DIRTY.get()) queueUpdate();
             }
         });
     }
@@ -186,16 +182,12 @@ public final class AudioMufflingClient {
 
         float worldStrength = combine(combine(hazmat, scp714), death);
         if (worldStrength <= UPDATE_EPSILON && scp714 <= UPDATE_EPSILON) {
-            if (worldFilter != 0 || internalFilter != 0) {
-                detachFilters(channels);
-            }
+            if (worldFilter != 0 || internalFilter != 0) detachFilters(channels);
             engine.listener.setGain(requestedMasterVolume);
             return;
         }
 
         if (!ensureFilters(engine)) {
-            // Selective fallback is intentionally preferred over globally lowering
-            // the listener, which would incorrectly mute music and interface audio.
             engine.listener.setGain(requestedMasterVolume);
             return;
         }
@@ -230,12 +222,8 @@ public final class AudioMufflingClient {
     }
 
     private static boolean isDiegetic(SoundInstance sound) {
-        if (sound == null) {
-            return false;
-        }
+        if (sound == null) return false;
         SoundSource source = sound.getSource();
-        // MUSIC is non-diegetic soundtrack. MASTER is used by interface/UI sounds.
-        // RECORDS remain diegetic because they originate from jukeboxes in-world.
         return source != SoundSource.MUSIC && source != SoundSource.MASTER;
     }
 
@@ -245,10 +233,7 @@ public final class AudioMufflingClient {
     }
 
     private static boolean configureFilter(int filter, float strength) {
-        if (filter == 0) {
-            return false;
-        }
-
+        if (filter == 0) return false;
         clearAlError();
         EXTEfx.alFilterf(filter, EXTEfx.AL_LOWPASS_GAIN,
                 gainForStrength(strength));
@@ -258,31 +243,21 @@ public final class AudioMufflingClient {
     }
 
     private static float gainForStrength(float strength) {
-        if (strength >= 0.999F) {
-            return 0.0F;
-        }
+        if (strength >= 0.999F) return 0.0F;
         return Mth.clamp((float) Math.pow(1.0F - strength, 0.82D),
                 0.0F, 1.0F);
     }
 
     private static float highFrequencyGainForStrength(float strength) {
-        if (strength >= 0.999F) {
-            return 0.0F;
-        }
+        if (strength >= 0.999F) return 0.0F;
         return Mth.clamp((float) Math.pow(1.0F - strength, 3.40D),
                 0.0F, 1.0F);
     }
 
     private static boolean ensureFilters(SoundEngine engine) {
-        if (filterEngine != engine) {
-            resetFilterHandles(engine);
-        }
-        if (worldFilter != 0 && internalFilter != 0) {
-            return true;
-        }
-        if (efxUnavailable) {
-            return false;
-        }
+        if (filterEngine != engine) resetFilterHandles(engine);
+        if (worldFilter != 0 && internalFilter != 0) return true;
+        if (efxUnavailable) return false;
 
         long context = ALC10.alcGetCurrentContext();
         long device = context == 0L ? 0L : ALC10.alcGetContextsDevice(context);
@@ -300,12 +275,8 @@ public final class AudioMufflingClient {
         EXTEfx.alFilteri(second, EXTEfx.AL_FILTER_TYPE,
                 EXTEfx.AL_FILTER_LOWPASS);
         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-            if (first != 0) {
-                EXTEfx.alDeleteFilters(first);
-            }
-            if (second != 0) {
-                EXTEfx.alDeleteFilters(second);
-            }
+            if (first != 0) EXTEfx.alDeleteFilters(first);
+            if (second != 0) EXTEfx.alDeleteFilters(second);
             markEfxUnavailable();
             return false;
         }
@@ -324,13 +295,9 @@ public final class AudioMufflingClient {
     }
 
     private static boolean isInternalHazmatSound(SoundInstance sound) {
-        if (sound == null) {
-            return false;
-        }
+        if (sound == null) return false;
         ResourceLocation location = sound.getLocation();
-        if (!ScpAdditionsMod.MODID.equals(location.getNamespace())) {
-            return false;
-        }
+        if (!ScpAdditionsMod.MODID.equals(location.getNamespace())) return false;
         return switch (location.getPath()) {
             case "hazmat_breathing", "hazmat_equip", "hazmat_remove" -> true;
             default -> false;

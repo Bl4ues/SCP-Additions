@@ -26,12 +26,14 @@ public final class SaveGameClientState {
     private static final long TOTAL_MS = FADE_IN_MS + HOLD_MS + FADE_OUT_MS;
     private static final long ROTATION_START_MS = 480L;
     private static final long ROTATION_END_MS = 2450L;
-    private static final long DUPLICATE_REQUEST_GUARD_MS = 900L;
+    private static final long SAME_SAVE_REPLAY_GUARD_MS = TOTAL_MS + 2800L;
+    private static final long LOAD_GAME_SUPPRESSION_MS = 6500L;
 
     private static volatile SaveMethod lastMethod = SaveMethod.WORLD_SPAWN;
     private static volatile SaveMethod lastOverlayMethod = SaveMethod.WORLD_SPAWN;
     private static volatile long overlayStartedAt = -1L;
     private static volatile long lastOverlayRequestAt = -1L;
+    private static volatile long overlaySuppressedUntil = -1L;
 
     private SaveGameClientState() {
     }
@@ -43,17 +45,27 @@ public final class SaveGameClientState {
         if (!showOverlay) return;
 
         long now = Util.getMillis();
-        boolean overlayActive = overlayStartedAt >= 0L
-                && now - overlayStartedAt < TOTAL_MS;
+        if (now < overlaySuppressedUntil) return;
         if (lastOverlayMethod == method
-                && (overlayActive
-                || now - lastOverlayRequestAt < DUPLICATE_REQUEST_GUARD_MS)) {
+                && lastOverlayRequestAt >= 0L
+                && now - lastOverlayRequestAt < SAME_SAVE_REPLAY_GUARD_MS) {
             return;
         }
 
         lastOverlayMethod = method;
         lastOverlayRequestAt = now;
         overlayStartedAt = now;
+    }
+
+    /**
+     * A respawn or world rewind is loading an existing save, not creating one.
+     * Silence delayed setRespawnPosition echoes and kill any overlay still alive.
+     */
+    public static void suppressForLoadGame() {
+        long now = Util.getMillis();
+        overlayStartedAt = -1L;
+        overlaySuppressedUntil = Math.max(overlaySuppressedUntil,
+                now + LOAD_GAME_SUPPRESSION_MS);
     }
 
     public static SaveMethod lastMethod() {
@@ -88,7 +100,10 @@ public final class SaveGameClientState {
         int iconSize = Mth.clamp(Math.round(Mth.lerp(entrance, 27.0F, 32.0F)),
                 27, 32);
         int iconX = 20;
-        int iconY = Math.round(17.0F + slideY);
+        // The source artwork has more visual weight near its upper edge. Dropping
+        // the glyph a few pixels independently of the text aligns their perceived
+        // centers rather than merely their texture rectangles.
+        int iconY = Math.round(22.0F + slideY);
         int centerX = iconX + iconSize / 2;
         int centerY = iconY + iconSize / 2;
 
@@ -120,8 +135,8 @@ public final class SaveGameClientState {
         Component saving = ScpFonts.roboto("Saving...");
         float textScale = 1.30F;
         float textX = iconX + iconSize + 11.0F;
-        float textY = iconY + (iconSize
-                - minecraft.font.lineHeight * textScale) / 2.0F + 0.5F;
+        // Keep the type baseline stable while the icon settles slightly lower.
+        float textY = 27.0F + slideY;
 
         graphics.pose().pushPose();
         graphics.pose().translate(textX, textY, 900.0F);

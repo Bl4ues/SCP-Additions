@@ -20,6 +20,10 @@ import java.util.List;
 public final class ScpDeathScreen extends DeathScreen {
     private static final long BLACKOUT_MS = 1000L;
     private static final long REVEAL_MS = 620L;
+    private static final long MUFFLE_DELAY_MS = 2000L;
+    private static final long MUFFLE_RAMP_MS = 1450L;
+    private static final float FULL_DEATH_MUFFLE = 0.94F;
+    private static final float SPECTATE_MUFFLE = 0.47F;
 
     private static final int BACKGROUND = 0xFF030405;
     private static final int CARD = 0xF20B0D10;
@@ -31,33 +35,63 @@ public final class ScpDeathScreen extends DeathScreen {
     private static final int ACCENT_BRIGHT = 0xFFE5CC72;
     private static final int DANGER = 0xFF8E242B;
     private static final int DANGER_BRIGHT = 0xFFD45C62;
-    private static final int[] BACKGROUND_REDS = {
-            0xFF3A050A,
-            0xFF26030A,
-            0xFF4A0810,
-            0xFF300611
-    };
+
+    private static final int METABALL_COUNT = 14;
+    private static final int METABALL_CELL = 8;
 
     private final Component causeOfDeath;
     private final boolean hardcoreMode;
+    private final boolean mineZeroMode;
     private final long openedAt = Util.getMillis();
     private final long visualSeed = openedAt ^ System.nanoTime();
     private Button loadButton;
     private Button menuButton;
     private Button hardcoreActionButton;
+    private Button mineZeroPrimaryButton;
+    private Button previousSpectateButton;
+    private Button nextSpectateButton;
     private boolean menuConfirmationArmed;
+    private boolean mineZeroRestoreStarted;
 
     public ScpDeathScreen(Component causeOfDeath, boolean hardcore) {
+        this(causeOfDeath, hardcore, false);
+    }
+
+    private ScpDeathScreen(Component causeOfDeath, boolean hardcore,
+            boolean mineZeroMode) {
         super(causeOfDeath, hardcore);
         this.causeOfDeath = causeOfDeath == null
                 ? Component.literal("Unknown cause of death.") : causeOfDeath;
         this.hardcoreMode = hardcore;
+        this.mineZeroMode = mineZeroMode;
+    }
+
+    public static ScpDeathScreen mineZero(Component causeOfDeath) {
+        return new ScpDeathScreen(causeOfDeath, false, true);
     }
 
     @Override
     protected void init() {
         super.init();
         identifyButtons();
+
+        if (mineZeroMode) {
+            if (loadButton != null) {
+                loadButton.visible = false;
+                loadButton.active = false;
+            }
+            mineZeroPrimaryButton = addRenderableWidget(Button.builder(
+                    Component.literal("Spectate"), ignored ->
+                            handleMineZeroPrimary()).bounds(0, 0, 200, 30).build());
+            previousSpectateButton = addRenderableWidget(Button.builder(
+                    Component.literal("<"), ignored ->
+                            MineZeroClientState.cycleSpectatedPlayer(-1))
+                    .bounds(0, 0, 30, 26).build());
+            nextSpectateButton = addRenderableWidget(Button.builder(
+                    Component.literal(">"), ignored ->
+                            MineZeroClientState.cycleSpectatedPlayer(1))
+                    .bounds(0, 0, 30, 26).build());
+        }
         positionButtons(cardX(), cardY());
     }
 
@@ -83,9 +117,6 @@ public final class ScpDeathScreen extends DeathScreen {
             }
         }
 
-        // Translation packs or mods can replace the literal button text while
-        // preserving the vanilla order. Keep the callbacks rather than cloning
-        // them so respawn-altering mods remain compatible with this screen.
         if (loadButton == null && !hardcoreMode && !buttons.isEmpty()) {
             loadButton = buttons.get(0);
             loadButton.setMessage(Component.literal("Load Game"));
@@ -104,23 +135,78 @@ public final class ScpDeathScreen extends DeathScreen {
         }
     }
 
+    /** Target intensity consumed by the shared OpenAL low-pass mixer. */
+    public float requestedDeathMuffleStrength() {
+        long age = Math.max(0L, Util.getMillis() - openedAt);
+        if (age <= MUFFLE_DELAY_MS) return 0.0F;
+        float progress = smootherStep(Mth.clamp(
+                (age - MUFFLE_DELAY_MS) / (float) MUFFLE_RAMP_MS,
+                0.0F, 1.0F));
+        float target = mineZeroMode && MineZeroClientState.spectating()
+                ? SPECTATE_MUFFLE : FULL_DEATH_MUFFLE;
+        return target * progress;
+    }
+
+    public void beginMineZeroRestore() {
+        mineZeroRestoreStarted = true;
+        if (mineZeroPrimaryButton != null) mineZeroPrimaryButton.active = false;
+        if (menuButton != null) menuButton.active = false;
+        if (previousSpectateButton != null) previousSpectateButton.active = false;
+        if (nextSpectateButton != null) nextSpectateButton.active = false;
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
             float partialTick) {
-        graphics.fill(0, 0, width, height, BACKGROUND);
+        boolean spectating = mineZeroMode && MineZeroClientState.spectating();
+        Viewport viewport = viewport();
+
+        if (spectating) {
+            drawSpectateMask(graphics, viewport);
+        } else {
+            graphics.fill(0, 0, width, height, BACKGROUND);
+        }
 
         float reveal = revealProgress();
         if (reveal <= 0.0F) return;
 
-        drawLivingRedBackground(graphics, reveal);
-        drawRedVignette(graphics, reveal);
+        drawLivingRedBackground(graphics, reveal, spectating ? viewport : null);
+        drawRedVignette(graphics, reveal, spectating ? viewport : null);
+
         int slide = Math.round((1.0F - reveal) * 14.0F);
-        int x = cardX();
+        int centeredX = cardX();
+        int leftX = Math.max(22, Math.round(width * 0.035F));
+        float layout = mineZeroMode
+                ? MineZeroClientState.spectateLayoutProgress() : 0.0F;
+        int x = Mth.lerpInt(layout, centeredX, leftX);
         int y = cardY() + slide;
         int cardWidth = cardWidth();
         int cardHeight = cardHeight();
         positionButtons(x, y);
+        updateMineZeroWidgets(viewport);
 
+        float restoreZoom = mineZeroMode && mineZeroRestoreStarted
+                ? MineZeroClientState.restoreZoomProgress() : 0.0F;
+        float restoreScale = 1.0F + restoreZoom * 0.13F;
+        float restoreAlpha = 1.0F - restoreZoom * 0.40F;
+
+        graphics.pose().pushPose();
+        if (restoreZoom > 0.0F) {
+            float centerX = x + cardWidth / 2.0F;
+            float centerY = y + cardHeight / 2.0F;
+            graphics.pose().translate(centerX, centerY, 0.0F);
+            graphics.pose().scale(restoreScale, restoreScale, 1.0F);
+            graphics.pose().translate(-centerX, -centerY, 0.0F);
+        }
+        drawReportCard(graphics, mouseX, mouseY, reveal * restoreAlpha,
+                x, y, cardWidth, cardHeight);
+        graphics.pose().popPose();
+
+        if (spectating) drawSpectateFrame(graphics, viewport, reveal);
+    }
+
+    private void drawReportCard(GuiGraphics graphics, int mouseX, int mouseY,
+            float reveal, int x, int y, int cardWidth, int cardHeight) {
         int cardColor = alpha(CARD, reveal);
         int borderColor = alpha(BORDER, reveal);
         int accentColor = alpha(DANGER_BRIGHT, reveal);
@@ -167,13 +253,27 @@ public final class ScpDeathScreen extends DeathScreen {
             graphics.drawString(minecraft.font, line, x + 22, lineY,
                     alpha(TEXT, reveal), false);
             lineY += minecraft.font.lineHeight + 3;
-            if (lineY > separatorY - 14) break;
+            if (lineY > separatorY - 31) break;
+        }
+
+        if (mineZeroMode && MineZeroClientState.allDead()) {
+            String vote = "ROLLBACK VOTE  " + MineZeroClientState.votes()
+                    + " / " + MineZeroClientState.requiredVotes();
+            Component text = ScpFonts.titillium(vote);
+            int voteX = x + (cardWidth - minecraft.font.width(text)) / 2;
+            graphics.drawString(minecraft.font, text, voteX,
+                    separatorY - 19, alpha(MUTED, reveal), false);
         }
 
         graphics.fill(x + 16, separatorY,
                 x + cardWidth - 16, separatorY + 1,
                 alpha(BORDER, reveal * 0.7F));
-        drawButton(graphics, loadButton, mouseX, mouseY, reveal);
+
+        if (mineZeroMode) {
+            drawButton(graphics, mineZeroPrimaryButton, mouseX, mouseY, reveal);
+        } else {
+            drawButton(graphics, loadButton, mouseX, mouseY, reveal);
+        }
         drawButton(graphics, menuButton, mouseX, mouseY, reveal);
         if (hardcoreMode) {
             drawButton(graphics, hardcoreActionButton,
@@ -226,65 +326,67 @@ public final class ScpDeathScreen extends DeathScreen {
     }
 
     /**
-     * Slow, seeded red fields made from overlapping softened scanline ellipses.
-     * The wobble changes independently per field, so the background never feels
-     * like a static radial vignette while remaining dark enough not to compete
-     * with the termination report.
+     * Metaball field rather than independent ellipses. Nearby organisms merge,
+     * split and deform each other, producing one living bacterial-looking red
+     * layer instead of a predictable set of orbiting circles.
      */
-    private void drawLivingRedBackground(GuiGraphics graphics, float reveal) {
+    private void drawLivingRedBackground(GuiGraphics graphics, float reveal,
+            Viewport protectedViewport) {
         double seconds = Math.max(0L, Util.getMillis() - openedAt) / 1000.0D;
-        for (int blob = 0; blob < BACKGROUND_REDS.length; blob++) {
-            double phase = seedPhase(blob);
-            double speed = 0.055D + blob * 0.013D;
-            int centerX = (int) Math.round(width * (0.50D
-                    + 0.34D * Math.sin(seconds * speed + phase)));
-            int centerY = (int) Math.round(height * (0.50D
-                    + 0.30D * Math.cos(seconds * (speed * 0.83D)
-                    + phase * 1.31D)));
-            int radiusX = Math.max(90, (int) Math.round(width
-                    * (0.22D + 0.035D * Math.sin(phase * 1.7D))));
-            int radiusY = Math.max(70, (int) Math.round(height
-                    * (0.25D + 0.040D * Math.cos(phase * 1.4D))));
-            drawSoftBlob(graphics, centerX, centerY, radiusX, radiusY,
-                    BACKGROUND_REDS[blob], reveal, seconds, phase, blob);
-        }
-    }
+        int cell = Math.max(6, METABALL_CELL);
+        for (int y = 0; y < height; y += cell) {
+            for (int x = 0; x < width; x += cell) {
+                if (protectedViewport != null
+                        && protectedViewport.containsCell(x, y, cell)) continue;
 
-    private void drawSoftBlob(GuiGraphics graphics, int centerX, int centerY,
-            int radiusX, int radiusY, int color, float reveal,
-            double seconds, double phase, int blobIndex) {
-        int layers = 7;
-        int slices = 20;
-        for (int layer = 0; layer < layers; layer++) {
-            float scale = 1.0F - layer * 0.085F;
-            float layerAlpha = 0.012F + layer * 0.0022F;
-            int scaledY = Math.max(8, Math.round(radiusY * scale));
-            float sliceHeight = scaledY * 2.0F / slices;
+                double field = 0.0D;
+                double colorBias = 0.0D;
+                double px = x + cell * 0.5D;
+                double py = y + cell * 0.5D;
+                for (int i = 0; i < METABALL_COUNT; i++) {
+                    double p1 = seedPhase(i);
+                    double p2 = seedPhase(i + 37);
+                    double speed = 0.055D + (i % 5) * 0.013D;
+                    double cx = width * (0.5D
+                            + 0.47D * Math.sin(seconds * speed + p1)
+                            + 0.09D * Math.sin(seconds * speed * 2.37D + p2));
+                    double cy = height * (0.5D
+                            + 0.43D * Math.cos(seconds * speed * 0.81D + p2)
+                            + 0.08D * Math.sin(seconds * speed * 1.73D + p1));
+                    double pulse = 1.0D
+                            + 0.20D * Math.sin(seconds * (0.19D + i * 0.011D)
+                            + p1 * 1.7D)
+                            + 0.08D * Math.sin(seconds * 0.47D + p2);
+                    double rx = width * (0.075D + (i % 4) * 0.009D) * pulse;
+                    double ry = height * (0.105D + (i % 3) * 0.014D)
+                            * (2.0D - pulse * 0.72D);
 
-            for (int slice = 0; slice < slices; slice++) {
-                double normalizedY = -1.0D
-                        + 2.0D * (slice + 0.5D) / slices;
-                double envelope = Math.sqrt(Math.max(0.0D,
-                        1.0D - normalizedY * normalizedY));
-                double wobble = 1.0D
-                        + 0.11D * Math.sin(normalizedY * 4.2D + phase
-                        + seconds * (0.13D + blobIndex * 0.018D))
-                        + 0.055D * Math.sin(normalizedY * 7.3D
-                        + phase * 1.63D - seconds * 0.09D);
-                double driftX = radiusX * 0.065D
-                        * Math.sin(normalizedY * 2.7D + phase * 0.71D
-                        + seconds * 0.10D);
-                int halfWidth = Math.max(1, (int) Math.round(radiusX
-                        * scale * envelope * wobble));
-                int left = (int) Math.round(centerX + driftX) - halfWidth;
-                int right = (int) Math.round(centerX + driftX) + halfWidth;
-                int top = (int) Math.round(centerY - scaledY
-                        + slice * sliceHeight);
-                int bottom = Math.max(top + 1,
-                        (int) Math.ceil(top + sliceHeight + 1.0F));
-                float edgeFade = (float) (0.48D + envelope * 0.52D);
-                graphics.fill(left, top, right, bottom,
-                        alpha(color, reveal * layerAlpha * edgeFade));
+                    double dx = (px - cx) / Math.max(1.0D, rx);
+                    double dy = (py - cy) / Math.max(1.0D, ry);
+                    double warp = 0.18D * Math.sin(dy * 3.4D + p2
+                            + seconds * (0.22D + i * 0.007D));
+                    dx += warp;
+                    dy += 0.11D * Math.sin(dx * 4.1D + p1 - seconds * 0.17D);
+                    double d2 = dx * dx + dy * dy;
+                    double contribution = Math.exp(-2.05D * d2);
+                    field += contribution;
+                    colorBias += contribution * ((i % 4) / 3.0D);
+                }
+
+                if (field < 0.16D) continue;
+                double edge = Mth.clamp((field - 0.16D) / 1.45D,
+                        0.0D, 1.0D);
+                double breathing = 0.82D + 0.18D
+                        * Math.sin(seconds * 0.24D + x * 0.006D - y * 0.004D);
+                float opacity = (float) (reveal * edge * breathing * 0.115D);
+                int bias = Mth.clamp((int) Math.round(
+                        20.0D * colorBias / Math.max(0.001D, field)), 0, 20);
+                int red = 39 + bias;
+                int green = 3 + bias / 5;
+                int blue = 8 + bias / 3;
+                int color = 0xFF000000 | red << 16 | green << 8 | blue;
+                graphics.fill(x, y, Math.min(width, x + cell + 1),
+                        Math.min(height, y + cell + 1), alpha(color, opacity));
             }
         }
     }
@@ -299,8 +401,11 @@ public final class ScpDeathScreen extends DeathScreen {
         return (positive % 100000L) / 100000.0D * Math.PI * 2.0D;
     }
 
-    private void drawRedVignette(GuiGraphics graphics, float reveal) {
-        graphics.fill(0, 0, width, height, alpha(0x251A0205, reveal));
+    private void drawRedVignette(GuiGraphics graphics, float reveal,
+            Viewport protectedViewport) {
+        if (protectedViewport == null) {
+            graphics.fill(0, 0, width, height, alpha(0x251A0205, reveal));
+        }
         int bands = 9;
         int band = Math.max(10, Math.min(width, height) / 38);
         for (int i = 0; i < bands; i++) {
@@ -317,23 +422,99 @@ public final class ScpDeathScreen extends DeathScreen {
         }
     }
 
+    private void drawSpectateMask(GuiGraphics graphics, Viewport viewport) {
+        graphics.fill(0, 0, width, viewport.top(), BACKGROUND);
+        graphics.fill(0, viewport.bottom(), width, height, BACKGROUND);
+        graphics.fill(0, viewport.top(), viewport.left(), viewport.bottom(),
+                BACKGROUND);
+        graphics.fill(viewport.right(), viewport.top(), width,
+                viewport.bottom(), BACKGROUND);
+        graphics.fill(viewport.left(), viewport.top(), viewport.right(),
+                viewport.bottom(), 0x3D020304);
+    }
+
+    private void drawSpectateFrame(GuiGraphics graphics, Viewport viewport,
+            float reveal) {
+        int border = alpha(BORDER, reveal);
+        int accent = alpha(DANGER_BRIGHT, reveal * 0.82F);
+        graphics.fill(viewport.left() - 2, viewport.top() - 2,
+                viewport.right() + 2, viewport.top(), border);
+        graphics.fill(viewport.left() - 2, viewport.bottom(),
+                viewport.right() + 2, viewport.bottom() + 2, border);
+        graphics.fill(viewport.left() - 2, viewport.top(),
+                viewport.left(), viewport.bottom(), accent);
+        graphics.fill(viewport.right(), viewport.top(),
+                viewport.right() + 2, viewport.bottom(), border);
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Component label = ScpFonts.titillium("LIVE PERSONNEL FEED");
+        Component name = ScpFonts.roboto(MineZeroClientState.spectatedName());
+        graphics.drawString(minecraft.font, label, viewport.left(),
+                viewport.top() - 18, alpha(DANGER_BRIGHT, reveal), false);
+        int nameX = viewport.left()
+                + (viewport.width() - minecraft.font.width(name)) / 2;
+        graphics.drawString(minecraft.font, name, nameX,
+                viewport.bottom() + 10, alpha(TEXT, reveal), false);
+        drawButton(graphics, previousSpectateButton,
+                Integer.MIN_VALUE, Integer.MIN_VALUE, reveal);
+        drawButton(graphics, nextSpectateButton,
+                Integer.MIN_VALUE, Integer.MIN_VALUE, reveal);
+    }
+
+    private void updateMineZeroWidgets(Viewport viewport) {
+        if (!mineZeroMode || mineZeroPrimaryButton == null) return;
+        boolean allDead = MineZeroClientState.allDead();
+        boolean spectating = MineZeroClientState.spectating();
+
+        if (allDead) {
+            mineZeroPrimaryButton.setMessage(Component.literal("Load Game"));
+            mineZeroPrimaryButton.active = !MineZeroClientState.restoring();
+        } else if (spectating) {
+            mineZeroPrimaryButton.setMessage(Component.literal("Spectating"));
+            mineZeroPrimaryButton.active = false;
+        } else {
+            mineZeroPrimaryButton.setMessage(Component.literal("Spectate"));
+            mineZeroPrimaryButton.active = MineZeroClientState.livingPlayers() > 0;
+        }
+
+        boolean arrows = spectating && MineZeroSpectateClient.hasTargets();
+        if (previousSpectateButton != null) {
+            previousSpectateButton.visible = arrows;
+            previousSpectateButton.active = arrows;
+            previousSpectateButton.setX(viewport.left() + 8);
+            previousSpectateButton.setY(viewport.bottom() + 4);
+        }
+        if (nextSpectateButton != null) {
+            nextSpectateButton.visible = arrows;
+            nextSpectateButton.active = arrows;
+            nextSpectateButton.setX(viewport.right() - 38);
+            nextSpectateButton.setY(viewport.bottom() + 4);
+        }
+    }
+
+    private void handleMineZeroPrimary() {
+        if (!mineZeroMode || MineZeroClientState.restoring()) return;
+        if (MineZeroClientState.allDead()) {
+            MineZeroClientState.voteToRestore();
+        } else {
+            MineZeroClientState.startSpectating();
+        }
+    }
+
     private void positionButtons(int x, int y) {
         int buttonWidth = cardWidth() - 44;
         int buttonX = x + 22;
         int menuY = y + cardHeight() - 48;
         int upperY = menuY - 38;
 
-        if (loadButton != null) {
-            loadButton.setX(buttonX);
-            loadButton.setY(upperY);
-            loadButton.setWidth(buttonWidth);
-            loadButton.setHeight(30);
-        }
-        if (hardcoreActionButton != null) {
-            hardcoreActionButton.setX(buttonX);
-            hardcoreActionButton.setY(upperY);
-            hardcoreActionButton.setWidth(buttonWidth);
-            hardcoreActionButton.setHeight(30);
+        Button upper = mineZeroMode ? mineZeroPrimaryButton
+                : hardcoreMode ? hardcoreActionButton : loadButton;
+        if (upper != null) {
+            upper.setX(buttonX);
+            upper.setY(upperY);
+            upper.setWidth(buttonWidth);
+            upper.setHeight(30);
+            upper.visible = true;
         }
         if (menuButton != null) {
             menuButton.setX(buttonX);
@@ -348,6 +529,9 @@ public final class ScpDeathScreen extends DeathScreen {
     }
 
     private int cardWidth() {
+        if (mineZeroMode && width < 700) {
+            return Mth.clamp(Math.round(width * 0.55F), 330, 480);
+        }
         return Mth.clamp(Math.round(width * 0.52F), 380, 560);
     }
 
@@ -363,16 +547,30 @@ public final class ScpDeathScreen extends DeathScreen {
         return (height - cardHeight()) / 2;
     }
 
+    private Viewport viewport() {
+        int left = Math.max(width / 2 + 34,
+                Math.round(width * 0.54F));
+        int right = Math.max(left + 120, width - 28);
+        int top = Math.max(46, Math.round(height * 0.095F));
+        int bottom = Math.max(top + 100, height - 64);
+        return new Viewport(left, top, right, bottom);
+    }
+
     private float revealProgress() {
         long elapsed = Util.getMillis() - openedAt;
         if (elapsed <= BLACKOUT_MS) return 0.0F;
-        float t = Mth.clamp((elapsed - BLACKOUT_MS) / (float) REVEAL_MS,
-                0.0F, 1.0F);
-        return t * t * (3.0F - 2.0F * t);
+        return smootherStep(Mth.clamp(
+                (elapsed - BLACKOUT_MS) / (float) REVEAL_MS,
+                0.0F, 1.0F));
     }
 
     private boolean blackoutActive() {
         return Util.getMillis() - openedAt < BLACKOUT_MS;
+    }
+
+    private void prepareNormalLoadGame() {
+        SaveGameClientState.suppressForLoadGame();
+        EnterSoundClient.play();
     }
 
     private void handleMenuButtonPress() {
@@ -384,9 +582,6 @@ public final class ScpDeathScreen extends DeathScreen {
             return;
         }
 
-        // Run the real vanilla callback so saving/disconnect behavior remains
-        // compatible. Vanilla inserts a ConfirmScreen; immediately activate its
-        // Title Screen choice so that intermediate screen never gets rendered.
         menuButton.onPress();
         Minecraft minecraft = Minecraft.getInstance();
         Screen opened = minecraft.screen;
@@ -421,20 +616,56 @@ public final class ScpDeathScreen extends DeathScreen {
             handleMenuButtonPress();
             return true;
         }
+        if (!mineZeroMode && loadButton != null && loadButton.visible
+                && loadButton.active && loadButton.isMouseOver(mouseX, mouseY)) {
+            prepareNormalLoadGame();
+            loadButton.playDownSound(Minecraft.getInstance().getSoundManager());
+            loadButton.onPress();
+            return true;
+        }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button,
+            double dragX, double dragY) {
+        if (mineZeroMode && MineZeroClientState.spectating() && button == 0
+                && viewport().contains(mouseX, mouseY)) {
+            MineZeroClientState.orbit(dragX, dragY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (blackoutActive()) return true;
-        if (menuButton != null && menuButton.isFocused()
-                && (keyCode == GLFW.GLFW_KEY_ENTER
+        boolean activate = keyCode == GLFW.GLFW_KEY_ENTER
                 || keyCode == GLFW.GLFW_KEY_KP_ENTER
-                || keyCode == GLFW.GLFW_KEY_SPACE)) {
+                || keyCode == GLFW.GLFW_KEY_SPACE;
+        if (menuButton != null && menuButton.isFocused() && activate) {
             handleMenuButtonPress();
             return true;
         }
+        if (!mineZeroMode && loadButton != null && loadButton.isFocused()
+                && activate) {
+            prepareNormalLoadGame();
+            loadButton.playDownSound(Minecraft.getInstance().getSoundManager());
+            loadButton.onPress();
+            return true;
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public void onClose() {
+        if (mineZeroMode) MineZeroClientState.stopSpectating();
+        super.onClose();
+    }
+
+    private static float smootherStep(float value) {
+        float t = Mth.clamp(value, 0.0F, 1.0F);
+        return t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F);
     }
 
     private static int alpha(int color, float alpha) {
@@ -442,5 +673,20 @@ public final class ScpDeathScreen extends DeathScreen {
         int a = Mth.clamp(Math.round(source * Mth.clamp(alpha, 0.0F, 1.0F)),
                 0, 255);
         return a << 24 | color & 0x00FFFFFF;
+    }
+
+    private record Viewport(int left, int top, int right, int bottom) {
+        int width() {
+            return Math.max(0, right - left);
+        }
+
+        boolean contains(double x, double y) {
+            return x >= left && x < right && y >= top && y < bottom;
+        }
+
+        boolean containsCell(int x, int y, int size) {
+            return x + size > left && x < right
+                    && y + size > top && y < bottom;
+        }
     }
 }

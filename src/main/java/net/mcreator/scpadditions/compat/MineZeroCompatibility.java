@@ -6,12 +6,9 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 
 import java.lang.reflect.Method;
 
-/**
- * Optional MineZero bridge. No MineZero class is linked at compile time, so the
- * SCP Additions jar remains usable when the mod is absent.
- */
+/** Optional MineZero bridge with no hard compile-time dependency. */
 public final class MineZeroCompatibility {
-    public static final String MOD_ID = "mine_zero";
+    public static final String MOD_ID = "minezero";
     private static final String MANAGER =
             "boomcow.minezero.checkpoint.CheckpointManager";
     private static final String DATA =

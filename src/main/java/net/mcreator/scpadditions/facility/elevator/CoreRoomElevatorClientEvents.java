@@ -5,8 +5,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -20,7 +18,7 @@ import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 
-/** Client construction preview and facing synchronization for Core Room elevators. */
+/** Client construction preview for Core Room elevators. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class CoreRoomElevatorClientEvents {
@@ -29,7 +27,6 @@ public final class CoreRoomElevatorClientEvents {
     private static final DustParticleOptions INVALID_LINE =
             new DustParticleOptions(new Vector3f(1.0F, 0.16F, 0.12F), 0.75F);
     private static final double PARTICLE_SPACING = 0.50D;
-    private static final float CARRIAGE_MODEL_YAW_OFFSET = 90.0F;
 
     private CoreRoomElevatorClientEvents() {
     }
@@ -41,25 +38,8 @@ public final class CoreRoomElevatorClientEvents {
         ClientLevel level = minecraft.level;
         if (level == null || minecraft.player == null) return;
 
-        synchronizeCarriageFacing(level);
         if ((level.getGameTime() & 1L) != 0L) return;
         renderPlacementGuide(minecraft, level);
-    }
-
-    private static void synchronizeCarriageFacing(ClientLevel level) {
-        for (Entity entity : level.entitiesForRendering()) {
-            if (!(entity instanceof CoreRoomElevatorCarriageEntity carriage)) {
-                continue;
-            }
-            // The authored carriage model is quarter-turned relative to the
-            // logical station facing. Collision, buttons, and interaction
-            // anchors already pre-align that model through Direction.EAST;
-            // apply the same 90-degree basis correction to rendered entity yaw.
-            float yaw = Mth.wrapDegrees(carriage.facing().toYRot()
-                    + CARRIAGE_MODEL_YAW_OFFSET);
-            carriage.setYRot(yaw);
-            carriage.yRotO = yaw;
-        }
     }
 
     private static void renderPlacementGuide(Minecraft minecraft,

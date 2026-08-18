@@ -8,6 +8,7 @@
     "CraftingGridDropMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",
+    "Scp173FacingSyncMixin",
     "Scp173NativeChaseDisableMixin",
     "Scp173NavigationAuthorityMixin",
     "Scp173PushabilityMixin",

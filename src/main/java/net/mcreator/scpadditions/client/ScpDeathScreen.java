@@ -100,7 +100,6 @@ public final class ScpDeathScreen extends DeathScreen {
         positionButtons(x, y);
 
         int cardColor = alpha(CARD, reveal);
-        int altColor = alpha(CARD_ALT, reveal);
         int borderColor = alpha(BORDER, reveal);
         int accentColor = alpha(DANGER_BRIGHT, reveal);
 
@@ -267,10 +266,20 @@ public final class ScpDeathScreen extends DeathScreen {
         return t * t * (3.0F - 2.0F * t);
     }
 
+    private boolean blackoutActive() {
+        return Util.getMillis() - openedAt < BLACKOUT_MS;
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (Util.getMillis() - openedAt < BLACKOUT_MS) return true;
+        if (blackoutActive()) return true;
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (blackoutActive()) return true;
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     private static int alpha(int color, float alpha) {

@@ -7,7 +7,7 @@ import net.mcreator.scpadditions.compat.MineZeroCompatibility;
 import net.mcreator.scpadditions.compat.ModCompatibilityConfig;
 import net.mcreator.scpadditions.network.MineZeroCompatibilityRequestPacket;
 
-/** Cached server-owned status used by the Mod Compatibilities screen. */
+/** Cached server-owned status used by the Mod Integrations screen. */
 public final class MineZeroCompatibilityClientState {
     private static volatile boolean known;
     private static volatile boolean installed;

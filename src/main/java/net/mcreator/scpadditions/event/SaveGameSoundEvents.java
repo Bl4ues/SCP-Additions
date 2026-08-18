@@ -95,6 +95,10 @@ public final class SaveGameSoundEvents {
                 resolved.id());
         LAST_SPAWNS.put(player.getUUID(), snapshot(player));
 
+        // Some compatibility mods set respawn data while constructing/logging
+        // in a ServerPlayer. Persist the method immediately, but defer visible
+        // feedback until a real network connection exists.
+        if (player.connection == null) return;
         player.playNotifySound(GameplaySounds.SAVE_GAME.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
         syncState(player, resolved, true);

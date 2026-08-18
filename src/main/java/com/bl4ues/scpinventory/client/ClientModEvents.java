@@ -5,6 +5,7 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.mcreator.scpadditions.client.MineZeroRestoreVisualClient;
 import net.mcreator.scpadditions.client.SaveGameClientState;
 
 @Mod.EventBusSubscriber(modid = "scp_additions", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -31,6 +32,9 @@ public final class ClientModEvents {
         event.registerAboveAll("scp_save_notice",
                 (gui, graphics, partialTick, width, height) ->
                         SaveGameClientState.render(graphics, width, height));
+        event.registerAboveAll("scp_restore_transition",
+                (gui, graphics, partialTick, width, height) ->
+                        MineZeroRestoreVisualClient.render(graphics, width, height));
     }
 
     @SubscribeEvent

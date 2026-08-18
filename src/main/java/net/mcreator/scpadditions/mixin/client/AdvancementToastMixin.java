@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.toasts.AdvancementToast;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastComponent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.mcreator.scpadditions.client.AdvancementToastHudCoordination;
 import net.mcreator.scpadditions.client.ClientModulePreferences;
 import net.mcreator.scpadditions.client.CustomAdvancementToastClient;
 import net.mcreator.scpadditions.sound.AchievementSounds;
@@ -45,6 +46,7 @@ public abstract class AdvancementToastMixin {
                             AchievementSounds.ACHIEVEMENT.get(), 1.0F));
         }
 
+        AdvancementToastHudCoordination.markRendered();
         Toast.Visibility visibility = CustomAdvancementToastClient.render(
                 graphics, toastComponent, display, age);
         if (!scpAdditions$showSoundSuppressed) {

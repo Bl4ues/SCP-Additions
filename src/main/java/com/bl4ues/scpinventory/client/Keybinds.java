@@ -38,4 +38,12 @@ public class Keybinds {
             GLFW.GLFW_KEY_H,
             "key.categories.scpinventory"
     );
+
+    public static final KeyMapping QUICK_SAVE = new KeyMapping(
+            "key.scpinventory.quicksave",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F6,
+            "key.categories.scpinventory"
+    );
 }

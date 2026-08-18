@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MineZeroDeathHandlerMixin {
     @Inject(method = "onPlayerDeath", at = @At("HEAD"), cancellable = true,
             require = 0)
-    private static void scpAdditions$deferAutomaticRestore(
+    private void scpAdditions$deferAutomaticRestore(
             LivingDeathEvent event, CallbackInfo callback) {
         if (MineZeroCompatibility.enabled()) callback.cancel();
     }

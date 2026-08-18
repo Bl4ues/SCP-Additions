@@ -10,10 +10,12 @@
 - Custom hotbar and oxygen HUD
 - Expanded SCP Inventory interfaces
 - Custom crosshair
+- Custom death, saving, and multiplayer spectating
 - Documents and expanded Codex
 - Rebuilt contextual interactions
 - Rebuilt Configuration Center
-- Reworked main menu and loading screens
+- Mod Integrations
+- Reworked main menu, pause menu, and loading screens
 
 ## SCP-106
 
@@ -81,6 +83,7 @@
 ## Interface and presentation
 
 - Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with SCP Additions backgrounds, animated elements, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
+- Added a default-enabled client-side **Custom Pause Menu** preference with SCP Additions-styled navigation, Achievements, Statistics, Open to LAN, Settings, and mod access while preserving the corresponding vanilla actions and extensibility;
 - Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the SCP Additions background and custom world-generation progress.
 - Added a default-enabled **Custom Achievement Toasts** preference that replaces vanilla advancement popups with animated SCP Additions achievement cards;
 - Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
@@ -105,6 +108,25 @@
 - Added clear Configuration Center notices identifying per-player preferences and host-only settings, and kept server configuration editors locked for players without operator permission;
 - Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior.
 
+## Death, saving, and spectating
+
+- Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, progressive audio muffling, and SCP Additions-styled Load Game and Main Menu actions;
+- Added **Quicksave**, bound to F6 by default and fully rebindable, which records the player's current position as their respawn point on Safe and Thaumiel difficulties;
+- Reworked checkpoint availability around difficulty: Safe and Thaumiel allow Quicksave and Decontamination Checkpoint saves, Euclid allows Decontamination Checkpoints but not Quicksave, and Keter disables both while leaving vanilla, command, and compatible modded respawn-point methods available;
+- Added a shared save pipeline that recognizes respawn points set through SCP Additions, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated Roboto **Saving...** indicator with the rotating SCP Additions loading emblem;
+- Added a short Load Game return transition with FOV and screen effects, accompanied by the world-entry cue, with an Accessibility option to disable the motion effect;
+- Added multiplayer **Spectate** support to the custom Death Screen: when another player remains alive, dead players can open a third-person **Live Personnel Feed**, orbit the camera, switch between surviving players, and view CCTV-style scan noise and interference during feed changes;
+- Live Personnel Feed target selection is server-authoritative and supports surviving players outside normal tracking distance or in other dimensions by streaming the selected player's region to the dead observer while keeping the custom Death Screen active.
+
+## Mod Integrations
+
+- Added a dedicated **Mod Integrations** section to the Configuration Center for optional behavior-level integrations with detected mods; unavailable integrations remain visible but disabled;
+- Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP Additions death/spectate flow while using SCP Additions saves as MineZero checkpoints;
+- MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
+- Extended MineZero checkpoint snapshots with SCP Additions player capabilities, SCP Inventory state, persistent facility/SCP-079 data, and tracked SCP Additions block and BlockEntity changes so the mod's custom state rewinds with the world;
+- Added save-safety checks for MineZero-integrated sessions, preventing checkpoints while players are in active combat, dangerous damage/effect states, SCP-914 processing, SCP-330 hand-loss conditions, or an existing death session where saving could create a deterministic death loop;
+- MineZero's own automatic and alternate checkpoint paths are suppressed while the integration is active so checkpoints remain synchronized with the SCP Additions save system.
+
 ## Codex and documents
 
 - Added a dedicated Document item to the creative tab;
@@ -125,6 +147,7 @@
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
+- Added a construction preview for Core Room elevators: holding a Floor Station or Pulley displays a vertical green/red particle guide for valid range and obstruction checks, while structural beams are generated only after a valid Pulley closes the column and are removed when that connection becomes invalid;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
@@ -201,7 +224,8 @@
 
 - Colored module **ON** and **OFF** states green and red for faster visual scanning;
 - Added a dedicated Accessibility screen to the Configuration Center, beginning with a Photosensitive Epilepsy section;
-- Added **Reduce SCP-012 Visual Effects**, which disables the rapidly flashing interference and subliminal full-screen images during SCP-012 psychosis while preserving its gradual veil and smooth vignette.
+- Added **Reduce SCP-012 Visual Effects**, which disables the rapidly flashing interference and subliminal full-screen images during SCP-012 psychosis while preserving its gradual veil and smooth vignette;
+- Added a **Motion Sickness** section with **Disable Load Transition**, allowing players to remove the animated FOV and screen effect used when returning from a saved death state.
 
 ## Bug Fixes
 

@@ -5,27 +5,42 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
-/** Short post-rewind FOV/tunnel transition after a MineZero checkpoint restore. */
+/** Short FOV/tunnel transition after returning from any custom death screen. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class MineZeroRestoreVisualClient {
-    private static final long DURATION_MS = 1050L;
+    private static final long DURATION_MS = 1250L;
     private static volatile long startedAt = -1L;
+    private static volatile boolean pending;
 
     private MineZeroRestoreVisualClient() {
     }
 
+    /** Queue the transition until the death screen is actually gone. */
     public static void start() {
         if (ClientModulePreferences.reduceRestoreMotion()) {
+            pending = false;
             startedAt = -1L;
             return;
         }
+        pending = true;
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !pending) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null
+                || !minecraft.player.isAlive()
+                || minecraft.screen instanceof ScpDeathScreen) {
+            return;
+        }
+        pending = false;
         startedAt = Util.getMillis();
     }
 
@@ -34,31 +49,25 @@ public final class MineZeroRestoreVisualClient {
         float remaining = remaining();
         if (remaining <= 0.0F) return;
         double normal = event.getFOV();
-        double expanded = Math.max(normal, 110.0D);
+        double expanded = Math.max(normal, 120.0D);
         event.setFOV(Mth.lerp(remaining, normal, expanded));
     }
 
-    @SubscribeEvent
-    public static void onGuiOverlay(RenderGuiOverlayEvent.Post event) {
-        if (!event.getOverlay().id().equals(
-                VanillaGuiOverlay.CHAT_PANEL.id())) return;
+    /** Rendered from the SCP Additions above-all HUD overlay. */
+    public static void render(GuiGraphics graphics, int width, int height) {
         float remaining = remaining();
-        if (remaining <= 0.0F) return;
-
+        if (graphics == null || remaining <= 0.0F) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null) return;
-        GuiGraphics graphics = event.getGuiGraphics();
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        int height = minecraft.getWindow().getGuiScaledHeight();
 
-        int baseAlpha = Mth.clamp(Math.round(remaining * 96.0F), 0, 96);
-        graphics.fill(0, 0, width, height, baseAlpha << 24 | 0x0006090C);
-        int bands = 8;
-        int band = Math.max(8, Math.min(width, height) / 38);
+        int baseAlpha = Mth.clamp(Math.round(remaining * 126.0F), 0, 126);
+        graphics.fill(0, 0, width, height, baseAlpha << 24 | 0x0005090D);
+        int bands = 10;
+        int band = Math.max(8, Math.min(width, height) / 42);
         for (int i = 0; i < bands; i++) {
             float edge = remaining * (bands - i) / (float) bands;
-            int alpha = Mth.clamp(Math.round(edge * 62.0F), 0, 62);
-            int color = alpha << 24 | 0x00151A21;
+            int alpha = Mth.clamp(Math.round(edge * 82.0F), 0, 82);
+            int color = alpha << 24 | 0x00141A22;
             int inset = i * band;
             graphics.fill(inset, inset, width - inset, inset + band, color);
             graphics.fill(inset, height - inset - band,

@@ -26,8 +26,10 @@ public final class SaveGameClientState {
     private static final long TOTAL_MS = FADE_IN_MS + HOLD_MS + FADE_OUT_MS;
     private static final long ROTATION_START_MS = 480L;
     private static final long ROTATION_END_MS = 2450L;
+    private static final long ANY_SAVE_REPLAY_GUARD_MS = TOTAL_MS + 1400L;
     private static final long SAME_SAVE_REPLAY_GUARD_MS = TOTAL_MS + 4200L;
     private static final long GENERIC_ECHO_GUARD_MS = TOTAL_MS + 7000L;
+    private static final long POST_FADE_SUPPRESSION_MS = 1200L;
     private static final long LOAD_GAME_SUPPRESSION_MS = 6500L;
 
     private static volatile SaveMethod lastMethod = SaveMethod.WORLD_SPAWN;
@@ -50,14 +52,16 @@ public final class SaveGameClientState {
 
         long sinceLast = lastOverlayRequestAt < 0L
                 ? Long.MAX_VALUE : now - lastOverlayRequestAt;
+        // A save can be reported through more than one vanilla/modded path. The
+        // state update is still accepted above, but one authored save should only
+        // play one HUD presentation regardless of how the later echo is labelled.
+        if (sinceLast < ANY_SAVE_REPLAY_GUARD_MS) {
+            return;
+        }
         if (lastOverlayMethod == method
                 && sinceLast < SAME_SAVE_REPLAY_GUARD_MS) {
             return;
         }
-        // Vanilla/modded respawn-point tracking may report the same physical
-        // save again after the authored Quicksave/Checkpoint packet. Treat that
-        // generic label as an echo instead of restarting the animation after its
-        // fade has already finished.
         if (method == SaveMethod.RESPAWN_POINT
                 && lastOverlayMethod != SaveMethod.RESPAWN_POINT
                 && sinceLast < GENERIC_ECHO_GUARD_MS) {
@@ -89,9 +93,14 @@ public final class SaveGameClientState {
         if (graphics == null || minecraft.player == null
                 || overlayStartedAt < 0L) return;
 
-        long elapsed = Util.getMillis() - overlayStartedAt;
+        long now = Util.getMillis();
+        long elapsed = now - overlayStartedAt;
         if (elapsed < 0L || elapsed >= TOTAL_MS) {
             overlayStartedAt = -1L;
+            // Prevent an event arriving on the fade boundary from producing the
+            // one-frame disappearance/reappearance that used to look like a blink.
+            overlaySuppressedUntil = Math.max(overlaySuppressedUntil,
+                    now + POST_FADE_SUPPRESSION_MS);
             return;
         }
 
@@ -142,11 +151,12 @@ public final class SaveGameClientState {
         int a = Mth.clamp(Math.round(alpha * 224.0F), 0, 255);
         int color = a << 24 | 0x00F2F2F2;
         Component saving = ScpFonts.roboto("Saving...");
-        float textScale = 1.30F;
+        float textScale = 1.50F;
         float textX = iconX + iconSize + 11.0F;
-        // Center the scaled type against the settled icon rather than keeping
-        // the old high baseline from the smaller pre-spinner notice.
-        float textY = 31.5F + slideY;
+        float scaledLineHeight = minecraft.font.lineHeight * textScale;
+        // Optical correction: center the larger type on the icon, then bias the
+        // glyphs slightly downward because Roboto's visible mass sits high in its line box.
+        float textY = centerY - scaledLineHeight * 0.5F + 2.25F;
 
         graphics.pose().pushPose();
         graphics.pose().translate(textX, textY, 900.0F);

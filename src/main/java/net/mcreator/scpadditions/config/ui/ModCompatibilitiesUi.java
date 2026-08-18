@@ -17,12 +17,12 @@ import net.mcreator.scpadditions.client.MineZeroCompatibilityClientState;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-/** Entry point and detected-mod controls for optional integrations. */
+/** Entry point and controls for optional mod integrations. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class ModCompatibilitiesUi {
     private static final String HOME_SCREEN =
             "net.mcreator.scpadditions.config.ui.ConfigCenterClient$HomeScreen";
-    private static final String LABEL = "Mod Compatibilities";
+    private static final String LABEL = "Mod Integrations";
     private static final Map<Screen, Button> BUTTONS = new WeakHashMap<>();
 
     private ModCompatibilitiesUi() {
@@ -110,7 +110,7 @@ public final class ModCompatibilitiesUi {
                     Component.empty(), ignored -> {
                         MineZeroCompatibilityClientState.toggle();
                         refreshMineZeroButton();
-                    }).bounds(x + 24, y + 92, panelWidth - 48, 36).build());
+                    }).bounds(x + 24, y + 70, panelWidth - 48, 36).build());
             backButton = addRenderableWidget(Button.builder(
                     ScpFonts.roboto("Back"),
                     ignored -> Minecraft.getInstance().setScreen(parent))
@@ -132,7 +132,7 @@ public final class ModCompatibilitiesUi {
                 mineZeroButton.active = false;
                 return;
             }
-            mineZeroButton.setMessage(Component.literal("MineZero Compatibility: "
+            mineZeroButton.setMessage(Component.literal("MineZero Integration: "
                     + (MineZeroCompatibilityClientState.enabled() ? "ON" : "OFF")));
             mineZeroButton.active = MineZeroCompatibilityClientState.canEdit();
         }
@@ -155,17 +155,8 @@ public final class ModCompatibilitiesUi {
             ConfigCenterVisuals.drawPanel(graphics, font, x, y, panelWidth,
                     panelHeight, LABEL);
             int textX = x + 24 + ConfigCenterVisuals.contentOffsetX();
-            int textY = y + 58;
-            graphics.drawString(font, ScpFonts.titillium("DETECTED INTEGRATIONS"),
-                    textX, textY, ConfigCenterVisuals.fadeColor(
-                            ConfigCenterVisuals.ACCENT_BRIGHT), false);
-
-            textY = y + 151;
-            graphics.drawString(font, ScpFonts.titillium("WHEN ENABLED"),
-                    textX, textY, ConfigCenterVisuals.fadeColor(
-                            ConfigCenterVisuals.ACCENT_BRIGHT), false);
-            textY += 22;
-            String description = "MineZero checkpoints follow SCP Additions saves instead of its automatic schedule. Death uses the SCP Additions death/spectate flow, and a team wipe requires the MineZero rollback vote before the world returns to the latest valid checkpoint. SCP Additions inventories, block states and facility systems rewind with it.";
+            int textY = y + 118;
+            String description = "Uses SCP Additions saves as MineZero checkpoints. Its automatic Return by Death is replaced by the SCP Additions death/spectate flow; after a team wipe, players vote to roll the world back to the latest valid save, including SCP Additions inventories and facility state.";
             for (var line : font.split(ScpFonts.roboto(description), panelWidth - 48)) {
                 graphics.drawString(font, line, textX, textY,
                         ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);

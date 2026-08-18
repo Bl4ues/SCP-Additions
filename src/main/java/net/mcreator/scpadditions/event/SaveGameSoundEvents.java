@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.event;
 
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,7 +34,9 @@ public final class SaveGameSoundEvents {
     public static final String LAST_SAVE_METHOD_TAG =
             "scp_additions.last_save_method";
 
+    private static final long DUPLICATE_FEEDBACK_WINDOW_MS = 1200L;
     private static final Map<UUID, SpawnSnapshot> LAST_SPAWNS = new HashMap<>();
+    private static final Map<UUID, FeedbackStamp> LAST_FEEDBACK = new HashMap<>();
 
     private SaveGameSoundEvents() {
     }
@@ -42,6 +45,7 @@ public final class SaveGameSoundEvents {
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             LAST_SPAWNS.put(player.getUUID(), snapshot(player));
+            LAST_FEEDBACK.remove(player.getUUID());
             syncState(player, methodFor(player), false);
         }
     }
@@ -66,7 +70,9 @@ public final class SaveGameSoundEvents {
 
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        LAST_SPAWNS.remove(event.getEntity().getUUID());
+        UUID id = event.getEntity().getUUID();
+        LAST_SPAWNS.remove(id);
+        LAST_FEEDBACK.remove(id);
     }
 
     @SubscribeEvent
@@ -91,9 +97,30 @@ public final class SaveGameSoundEvents {
 
         SaveMethod resolved = method == null
                 ? SaveMethod.RESPAWN_POINT : method;
+        SpawnSnapshot current = snapshot(player);
+        long now = Util.getMillis();
+        UUID playerId = player.getUUID();
+        FeedbackStamp previousFeedback = LAST_FEEDBACK.get(playerId);
+
+        boolean sameEffectiveSave = previousFeedback != null
+                && previousFeedback.snapshot().equals(current)
+                && now - previousFeedback.atMillis()
+                < DUPLICATE_FEEDBACK_WINDOW_MS
+                && (resolved == previousFeedback.method()
+                || resolved == SaveMethod.RESPAWN_POINT);
+
+        // A generic compatibility/fallback write immediately following a named
+        // save must not erase the more useful Quicksave/Checkpoint identity.
+        SaveMethod storedMethod = sameEffectiveSave
+                && resolved == SaveMethod.RESPAWN_POINT
+                ? previousFeedback.method() : resolved;
         player.getPersistentData().putString(LAST_SAVE_METHOD_TAG,
-                resolved.id());
-        LAST_SPAWNS.put(player.getUUID(), snapshot(player));
+                storedMethod.id());
+        LAST_SPAWNS.put(playerId, current);
+
+        if (sameEffectiveSave) return;
+        LAST_FEEDBACK.put(playerId,
+                new FeedbackStamp(current, storedMethod, now));
 
         // Some compatibility mods set respawn data while constructing/logging
         // in a ServerPlayer. Persist the method immediately, but defer visible
@@ -101,7 +128,7 @@ public final class SaveGameSoundEvents {
         if (player.connection == null) return;
         player.playNotifySound(GameplaySounds.SAVE_GAME.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
-        syncState(player, resolved, true);
+        syncState(player, storedMethod, true);
     }
 
     public static SaveMethod methodFor(ServerPlayer player) {
@@ -130,5 +157,9 @@ public final class SaveGameSoundEvents {
 
     private record SpawnSnapshot(ResourceKey<Level> dimension,
             @Nullable BlockPos position, boolean forced) {
+    }
+
+    private record FeedbackStamp(SpawnSnapshot snapshot, SaveMethod method,
+            long atMillis) {
     }
 }

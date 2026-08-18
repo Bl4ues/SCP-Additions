@@ -15,16 +15,6 @@
 - Rebuilt Configuration Center
 - Reworked main menu and loading screens
 
-## Achievements
-
-- Added **From the Trenches** for surviving an SCP-106 hunt;
-- Added **Concrete and Rebar** for surviving an activated SCP-173 roamer encounter;
-- Added the hidden **Eyes on me** achievement for witnessing SCP-131 stop to observe SCP-173;
-- Added the hidden **What?** achievement for having SCP-714 prevent SCP-012 from taking hold;
-- Reworked the Tesla Gate and SCP-330 achievements into non-lethal interaction goals, keeping the full achievement set obtainable in Hardcore runs;
-- Reworked the custom Achievements panel to list the server's complete advancement catalog instead of inheriting vanilla visibility filtering, keeping every advancement category present even before its first completion;
-- Unfinished advancements are now visually subdued, while unfinished hidden advancements are sorted to the end and shown only as **Hidden Achievement** placeholders with their rarity visible.
-
 ## SCP-106
 
 - Added SCP-106 as a new roaming threat;
@@ -78,30 +68,39 @@
 - Remote-session cache purge is now the sole operation that clears learned access and forces a five-minute SCiPNET index rebuild;
 - Added gradual reconstruction telemetry, a compact technician-session warning, and a subtle unusual-network-activity advisory after SCP-079 gains access.
 
+## Achievements
+
+- Added **From the Trenches** for surviving an SCP-106 hunt;
+- Added **Concrete and Rebar** for surviving an activated SCP-173 roamer encounter;
+- Added the hidden **Eyes on me** achievement for witnessing SCP-131 stop to observe SCP-173;
+- Added the hidden **What?** achievement for having SCP-714 prevent SCP-012 from taking hold;
+- Reworked the Tesla Gate and SCP-330 achievements into non-lethal interaction goals, keeping the full achievement set obtainable in Hardcore runs;
+- Reworked the custom Achievements panel to list the server's complete advancement catalog instead of inheriting vanilla visibility filtering, keeping every advancement category present even before its first completion;
+- Unfinished advancements are now visually subdued, while unfinished hidden advancements are sorted to the end and shown only as **Hidden Achievement** placeholders with their rarity visible.
+
 ## Interface and presentation
 
-- Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with rotating SCP Additions backgrounds, a translucent authored menu layer, animated logo elements, direct Configuration Center access, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
-- Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the authored SCP Additions background, truthful world-generation progress, a themed gold progress line, and a dual-layer SCP logo spinner with opposing eased rotations;
-- Added a default-enabled **Custom Achievement Toasts** client preference that replaces vanilla advancement popups with animated SCP Additions cards;
-- Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable icon-backed mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
-- Added an SCP-themed Difficulty drop-right to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
+- Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with SCP Additions backgrounds, animated elements, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
+- Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the SCP Additions background and custom world-generation progress.
+- Added a default-enabled **Custom Achievement Toasts** preference that replaces vanilla advancement popups with animated SCP Additions achievement cards;
+- Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
+- Added an SCP-themed Difficulty to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
 - Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP Additions presentation;
 - SCP Inventory can now be closed with its configured open key, matching vanilla inventory-toggle behavior, and Crafting items can be dragged outside the interface to drop them into the world;
-- Rebuilt the Configuration Center as a continuation of the modern main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth spinner-backed entry and exit transitions while retaining the existing configuration editors and validation logic;
+- Rebuilt the Configuration Center to match the new main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth entry and exit transitions while retaining the existing configuration editors and validation logic;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;
-- Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;
+- Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand pickup prompt artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;
 - Added an SCP Inventory-style interface for plain slot-only storage containers while the custom inventory is enabled, replacing supported chest, barrel, shulker, hopper, dispenser, and compatible modded storage screens with responsive Backpack/Keys/Codex and container lists;
 - Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including integrated and custom Roomba spawn floors, SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
-- Fixed Configuration Center presentation regressions from reversible entry toggles: Contextual Interaction previews and Roboto row styling are restored, Enable/Disable controls remain visibly separated from row summaries, SCP-294 rows describe their actual configured drink profile instead of the generic carrier cup, and save confirmation text no longer overlaps the home controls;
-- Rebuilt the Configuration Center as a continuation of the custom main-menu presentation: opening it from Extras or the native Mods browser preserves the active title background beneath a translucent dark veil, accelerates and enlarges the dual rotating logo into a left-side anchor that reacts to option hover, and reflows the existing editors into responsive right-side navigation without changing configuration behavior or permission scopes;
+- Fixed Configuration Center presentation regressions from reversible entry toggles;
 - Added an optional SCP: Unity-inspired custom crosshair, enabled by default, with independent in-game visibility settings;
 - Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar, level indicator, experience-orb rendering, and XP pickup and level-up sounds;
 - Added a default-enabled custom oxygen meter that replaces vanilla air bubbles, appears beneath the crosshair, shifts from light blue toward red as air runs out, adds a progressively stronger suffocation vignette, and darkens the screen further with each drowning-damage pulse until air recovery;
 - Added a default-enabled custom hotbar, available only while SCP Inventory is enabled, that replaces the vanilla bar with a centered list of occupied slots, category labels, navy-and-gold selected-item styling, compact scrolling that skips empty slots, and one blank selection between the end and beginning of the list;
 - Added the **Stow Held Item** control, bound to H by default, which returns an active Usable item or equipped Weapon to the SCP Inventory without dropping it;
 - Added a default-enabled module that renders Action Bar messages in Roboto;
-- Added native full-bright emissive overlays for authored block textures without requiring an external emissive-texture mod, while retaining LabPBR material emission for compatible shader packs;
+- Added native full-bright emissive overlays for  block textures without requiring an external emissive-texture mod, while retaining LabPBR material emission for compatible shader packs;
 - Split configuration modules into personal presentation preferences and host-authoritative gameplay rules: each player can independently choose their HUD, crosshair, custom hotbar, voice profile, presentation audio, music suppression, and accessibility settings without operator permission, while mechanics that alter gameplay or the world remain controlled by the host;
 - Added clear Configuration Center notices identifying per-player preferences and host-only settings, and kept server configuration editors locked for players without operator permission;
 - Reorganized **General & Modules** into **Gameplay Features** and **Preferences** groups, and removed the obsolete SCP-173 behavior option from that screen without changing its underlying configuration or behavior.
@@ -127,7 +126,6 @@
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
-- Core Room elevator columns now wait for a valid Pulley before generating connecting beams, remove generated beams when the Pulley becomes invalid or is removed, and show green/red vertical construction guides while positioning Floor Stations or Pulleys;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
@@ -179,7 +177,7 @@
 - Added a drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
 - Added a default-enabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music;
-- Added a default-enabled main menu soundtrack option that loops `main_menu.ogg` across the title screen and other menus until a world is opened.
+- Added a default-enabled main menu soundtrack across the title screen and other menus until a world is opened.
 
 ## Contextual interactions
 
@@ -221,28 +219,3 @@
 - Removed unintended shader reflections from the SL1 floor arrows and added dedicated handheld item textures for both arrow sizes;
 - Removed duplicated Heater base geometry that reused the top emissive region;
 - Separated the Decontamination Checkpoint's window trim from the wall planes to prevent z-fighting with shaders.
-
----
----
----
-
-# SCP Additions 3.0.7 — Hotfix
-
-## Multiplayer and configuration synchronization
-
-- Made the host's gameplay configuration authoritative for connected clients, including item rules and effects, hidden Status effects, Codex definitions, contextual interactions, entity interaction rules, and SCP-173 target configuration;
-- Added configuration synchronization on login and after supported save, delete, and reload operations;
-- Cleared synchronized host snapshots when clients disconnect so single-player and later servers cannot inherit stale settings;
-- Synchronized Survival `USABLE` and `WEAPON` tool sessions with the real selected hotbar slot, fixing mining and item-use behavior that could disagree between client and server.
-
-## Gameplay fixes and refinements
-
-- Corrected SCP-294 cups having missing-texture outputs;
-- Corrected duplicated `Cup of Cup of` names on configurable SCP-294 drinks;
-- Made item category changes update immediately after saving them through the in-game editor;
-- Made context interactions ignore missing block and entity IDs instead of incorrectly assigning them to vanilla entries;
-- Made SCP-173 immune to attacks dealing 6 damage or less while allowing stronger weapons to damage it;
-- Prevented damaged SCP-173 instance from restoring all health when their chunk or world is loaded again;
-- Corrected SCP-173 observer handling so players retain broad on-screen observation, configured generic mobs must face the statue directly, and SCP-131 uses its own intentional viewing threshold;
-- Changed the SCP-572 advancement title to **The Chosen One**;
-- Removed the bundled legacy context rule and ignored exact obsolete copies so old defaults do not reappear;

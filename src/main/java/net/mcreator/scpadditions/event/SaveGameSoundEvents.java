@@ -24,13 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Authoritative save feedback for every effective player respawn point.
- *
- * Normal vanilla/modded calls are intercepted immediately by the ServerPlayer
- * mixin. The tick snapshot remains as a compatibility fallback for mods that
- * mutate respawn data without going through setRespawnPosition.
- */
+/** Authoritative feedback and last-save identity for effective respawn points. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class SaveGameSoundEvents {
@@ -91,14 +85,10 @@ public final class SaveGameSoundEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END
                 || !(event.player instanceof ServerPlayer player)) return;
-
         SpawnSnapshot current = snapshot(player);
         SpawnSnapshot previous = LAST_SPAWNS.put(player.getUUID(), current);
         if (previous == null || previous.equals(current)
                 || current.position() == null) return;
-
-        // Fallback for compatibility mods that alter the effective respawn data
-        // without calling ServerPlayer#setRespawnPosition.
         recordRespawnPointSet(player, SaveMethod.RESPAWN_POINT);
     }
 
@@ -145,12 +135,29 @@ public final class SaveGameSoundEvents {
                 ScpAdditionsMod.LOGGER.warn(
                         "A respawn point was saved, but the MineZero checkpoint could not be updated for {}",
                         player.getGameProfile().getName());
+                return;
             }
+            broadcastGlobalMineZeroSave(player, storedMethod, now);
+            return;
         }
 
         player.playNotifySound(GameplaySounds.SAVE_GAME.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
         syncState(player, storedMethod, true);
+    }
+
+    /** MineZero checkpoints are global, so their save identity and feedback are too. */
+    private static void broadcastGlobalMineZeroSave(ServerPlayer source,
+            SaveMethod method, long now) {
+        for (ServerPlayer player : source.server.getPlayerList().getPlayers()) {
+            player.getPersistentData().putString(LAST_SAVE_METHOD_TAG, method.id());
+            LAST_FEEDBACK.put(player.getUUID(),
+                    new FeedbackStamp(snapshot(player), method, now));
+            if (player.connection == null || feedbackSilenced(player, now)) continue;
+            player.playNotifySound(GameplaySounds.SAVE_GAME.get(),
+                    SoundSource.PLAYERS, 1.0F, 1.0F);
+            syncState(player, method, true);
+        }
     }
 
     public static void silenceFeedback(ServerPlayer player, long durationMs) {

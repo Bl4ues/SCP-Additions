@@ -92,6 +92,7 @@ public final class ModCompatibilitiesUi {
 
     private static final class ModCompatibilitiesScreen extends Screen {
         private final Screen parent;
+        private Button backButton;
 
         private ModCompatibilitiesScreen(Screen parent) {
             super(Component.literal(LABEL));
@@ -104,7 +105,8 @@ public final class ModCompatibilitiesUi {
             int x = ConfigCenterVisuals.contentLeft(width, panelWidth);
             int panelHeight = Math.min(330, Math.max(220, height - 90));
             int y = Math.max(28, (height - panelHeight) / 2);
-            addRenderableWidget(Button.builder(ScpFonts.roboto("Back"),
+            backButton = addRenderableWidget(Button.builder(
+                    ScpFonts.roboto("Back"),
                     ignored -> Minecraft.getInstance().setScreen(parent))
                     .bounds(x + panelWidth - 126, y + panelHeight - 46,
                             104, 28).build());
@@ -149,7 +151,10 @@ public final class ModCompatibilitiesUi {
                     ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED),
                     false);
 
-            super.render(graphics, mouseX, mouseY, partialTick);
+            if (backButton != null) {
+                ConfigCenterVisuals.drawButton(graphics, font, backButton,
+                        ScpFonts.roboto("Back"), mouseX, mouseY);
+            }
         }
 
         @Override

@@ -13,7 +13,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Adds the MineZero rewind-motion preference under Accessibility. */
+/** Adds the save-load transition preference under Accessibility. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class RestoreMotionAccessibilityUi {
     private static final String EXTENDED_SCREEN =
@@ -33,7 +33,7 @@ public final class RestoreMotionAccessibilityUi {
             rowsField.setAccessible(true);
             Object value = rowsField.get(screen);
             if (!(value instanceof List<?> rows) || rows.isEmpty()
-                    || contains(rows, "Reduce Restore Motion")) return;
+                    || contains(rows, "Disable Load Transition")) return;
 
             Class<?> rowType = rows.get(0).getClass();
             Constructor<?> constructor = rowType.getDeclaredConstructor(
@@ -46,13 +46,13 @@ public final class RestoreMotionAccessibilityUi {
             expanded.add(constructor.newInstance(null, null,
                     "Motion Sickness", "", false));
             expanded.add(constructor.newInstance("accessibility",
-                    "reduce_restore_motion", "Reduce Restore Motion",
-                    "Disables the zoom, expanded-FOV and tunnel transition used when a MineZero checkpoint is restored.",
+                    "reduce_restore_motion", "Disable Load Transition",
+                    "Disables the animated FOV and screen effect after loading a save.",
                     false));
             rowsField.set(screen, List.copyOf(expanded));
         } catch (ReflectiveOperationException exception) {
             ScpAdditionsMod.LOGGER.warn(
-                    "Could not add the restore-motion accessibility row", exception);
+                    "Could not add the load-transition accessibility row", exception);
         }
     }
 

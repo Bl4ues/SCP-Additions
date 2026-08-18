@@ -30,13 +30,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-/** Client-side listener perception effects for sealed equipment and SCP-714. */
+/** Client-side listener perception effects for sealed equipment, SCP-714 and death. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class AudioMufflingClient {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final float HAZMAT_STRENGTH = 0.60F;
     private static final float SCP_714_INITIAL_STRENGTH = 0.08F;
+    private static final float DEATH_SCREEN_STRENGTH = 0.94F;
     private static final float TRANSITION_SPEED = 0.16F;
     private static final float UPDATE_EPSILON = 0.0015F;
 
@@ -54,8 +55,10 @@ public final class AudioMufflingClient {
 
     private static float currentHazmatStrength;
     private static float currentScp714Strength;
+    private static float currentDeathStrength;
     private static float lastQueuedHazmatStrength = -1.0F;
     private static float lastQueuedScp714Strength = -1.0F;
+    private static float lastQueuedDeathStrength = -1.0F;
     private static float masterVolume = 1.0F;
 
     private AudioMufflingClient() {
@@ -80,30 +83,37 @@ public final class AudioMufflingClient {
         Minecraft minecraft = Minecraft.getInstance();
         float targetHazmat = 0.0F;
         float targetScp714 = 0.0F;
+        float targetDeath = 0.0F;
+        masterVolume = minecraft.options.getSoundSourceVolume(SoundSource.MASTER);
 
-        if (minecraft.player != null && minecraft.level != null
-                && minecraft.player.isAlive()) {
-            if (HazmatSuitAccess.isFullyEquipped(minecraft.player)) {
-                targetHazmat = HAZMAT_STRENGTH;
+        if (minecraft.player != null && minecraft.level != null) {
+            if (minecraft.screen instanceof ScpDeathScreen) {
+                targetDeath = DEATH_SCREEN_STRENGTH;
             }
-            if (Scp714ClientState.isActive()) {
-                targetScp714 = Mth.lerp(
-                        Scp714ClientState.getTargetProgress(),
-                        SCP_714_INITIAL_STRENGTH, 1.0F);
-                if (Scp714ClientState.isImmobilized()) {
-                    targetScp714 = 1.0F;
+            if (minecraft.player.isAlive()) {
+                if (HazmatSuitAccess.isFullyEquipped(minecraft.player)) {
+                    targetHazmat = HAZMAT_STRENGTH;
+                }
+                if (Scp714ClientState.isActive()) {
+                    targetScp714 = Mth.lerp(
+                            Scp714ClientState.getTargetProgress(),
+                            SCP_714_INITIAL_STRENGTH, 1.0F);
+                    if (Scp714ClientState.isImmobilized()) {
+                        targetScp714 = 1.0F;
+                    }
                 }
             }
-            masterVolume = minecraft.options.getSoundSourceVolume(
-                    SoundSource.MASTER);
         }
 
         currentHazmatStrength = approach(currentHazmatStrength, targetHazmat);
         currentScp714Strength = approach(currentScp714Strength, targetScp714);
+        currentDeathStrength = approach(currentDeathStrength, targetDeath);
 
         if (Math.abs(currentHazmatStrength - lastQueuedHazmatStrength)
                 >= UPDATE_EPSILON
                 || Math.abs(currentScp714Strength - lastQueuedScp714Strength)
+                >= UPDATE_EPSILON
+                || Math.abs(currentDeathStrength - lastQueuedDeathStrength)
                 >= UPDATE_EPSILON) {
             queueUpdate();
         }
@@ -143,13 +153,15 @@ public final class AudioMufflingClient {
         UPDATE_DIRTY.set(false);
         float hazmat = Mth.clamp(currentHazmatStrength, 0.0F, 1.0F);
         float scp714 = Mth.clamp(currentScp714Strength, 0.0F, 1.0F);
+        float death = Mth.clamp(currentDeathStrength, 0.0F, 1.0F);
         float requestedMasterVolume = Mth.clamp(masterVolume, 0.0F, 1.0F);
         lastQueuedHazmatStrength = hazmat;
         lastQueuedScp714Strength = scp714;
+        lastQueuedDeathStrength = death;
 
         engine.channelAccess.executeOnChannels(channels -> {
             try {
-                applyToChannels(engine, channels, hazmat, scp714,
+                applyToChannels(engine, channels, hazmat, scp714, death,
                         requestedMasterVolume);
             } finally {
                 UPDATE_QUEUED.set(false);
@@ -163,6 +175,7 @@ public final class AudioMufflingClient {
     private static void applyToChannels(SoundEngine engine,
                                         Stream<Channel> channelStream,
                                         float hazmat, float scp714,
+                                        float death,
                                         float requestedMasterVolume) {
         List<Channel> channels = channelStream.toList();
         Set<Channel> activeChannels = Collections.newSetFromMap(
@@ -171,7 +184,7 @@ public final class AudioMufflingClient {
         SOUNDS_BY_CHANNEL.keySet().removeIf(channel ->
                 !activeChannels.contains(channel));
 
-        float worldStrength = combine(hazmat, scp714);
+        float worldStrength = combine(combine(hazmat, scp714), death);
         if (worldStrength <= UPDATE_EPSILON && scp714 <= UPDATE_EPSILON) {
             if (worldFilter != 0 || internalFilter != 0) {
                 detachFilters(channels);

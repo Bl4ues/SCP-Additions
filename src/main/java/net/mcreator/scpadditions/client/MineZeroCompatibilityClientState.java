@@ -1,6 +1,10 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.fml.ModList;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.compat.MineZeroCompatibility;
+import net.mcreator.scpadditions.compat.ModCompatibilityConfig;
 import net.mcreator.scpadditions.network.MineZeroCompatibilityRequestPacket;
 
 /** Cached server-owned status used by the Mod Compatibilities screen. */
@@ -23,12 +27,28 @@ public final class MineZeroCompatibilityClientState {
 
     public static void query() {
         known = false;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) {
+            // From the title screen this is the future integrated-server host's
+            // local config, so it is safe and useful to edit before world entry.
+            receive(ModList.get().isLoaded(MineZeroCompatibility.MOD_ID),
+                    ModCompatibilityConfig.mineZeroEnabled(), true);
+            return;
+        }
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new MineZeroCompatibilityRequestPacket(false, false));
     }
 
     public static void toggle() {
         if (!known || !installed || !canEdit) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) {
+            boolean next = !enabled;
+            if (ModCompatibilityConfig.setMineZeroEnabled(next)) {
+                receive(installed, next, true);
+            }
+            return;
+        }
         ScpAdditionsMod.PACKET_HANDLER.sendToServer(
                 new MineZeroCompatibilityRequestPacket(true, !enabled));
     }

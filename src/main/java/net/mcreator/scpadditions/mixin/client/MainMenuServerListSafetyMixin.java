@@ -96,6 +96,46 @@ public abstract class MainMenuServerListSafetyMixin {
         }
     }
 
+    /**
+     * Contain a late Netty/pinger failure as a failed status refresh rather
+     * than letting it escape through the title-screen event loop.
+     */
+    @Inject(method = "onClientTick", at = @At("HEAD"), cancellable = true,
+            remap = false)
+    private static void scpAdditions$tickPingerSafely(
+            net.minecraftforge.event.TickEvent.ClientTickEvent event,
+            CallbackInfo callback) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(minecraft.screen instanceof net.mcreator.scpadditions.client.CustomMainMenuScreen screen)) {
+            return;
+        }
+        try {
+            Object state = states().get(screen);
+            if (state == null) return;
+            ServerStatusPinger pinger = field(state, "serverPinger",
+                    ServerStatusPinger.class);
+            if (pinger == null) return;
+            callback.cancel();
+            try {
+                pinger.tick();
+            } catch (Exception exception) {
+                ScpAdditionsMod.LOGGER.debug(
+                        "Ignoring failed multiplayer status-pinger tick",
+                        exception);
+                try {
+                    pinger.removeAll();
+                } catch (Exception ignored) {
+                }
+                setField(state, "serverPinger", null);
+            }
+        } catch (ReflectiveOperationException exception) {
+            ScpAdditionsMod.LOGGER.debug(
+                    "Could not access custom multiplayer pinger state",
+                    exception);
+        }
+    }
+
     private static void pingSafely(ServerStatusPinger pinger,
             ServerData server, Set<String> dirtyIcons) {
         try {
@@ -121,6 +161,13 @@ public abstract class MainMenuServerListSafetyMixin {
         server.motd = Component.translatable("multiplayer.status.cannot_connect");
         server.status = CommonComponents.EMPTY;
         server.ping = -1L;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<Object, Object> states() throws ReflectiveOperationException {
+        Field field = MainMenuPlayPanelsClient.class.getDeclaredField("STATES");
+        field.setAccessible(true);
+        return (Map<Object, Object>) field.get(null);
     }
 
     @SuppressWarnings("unchecked")

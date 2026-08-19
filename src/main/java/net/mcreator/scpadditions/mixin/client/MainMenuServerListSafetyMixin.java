@@ -23,12 +23,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * The vanilla multiplayer screen starts status pings away from the render
- * thread. The custom title-screen flyout originally called pingServer directly
- * while handling the Multiplayer click, allowing a connection timeout to
- * escape through Screen#mouseClicked and crash the client. Keep the custom UI,
- * but load the list synchronously and dispatch only the network probes to
- * workers, just as a server browser should.
+ * Keep custom multiplayer status probes away from the render/input thread.
+ * A remote timeout must degrade into a normal "cannot connect" state rather
+ * than escape through Screen#mouseClicked and terminate the client.
  */
 @Mixin(value = MainMenuPlayPanelsClient.class, remap = false)
 public abstract class MainMenuServerListSafetyMixin {
@@ -96,7 +93,6 @@ public abstract class MainMenuServerListSafetyMixin {
         }
     }
 
-    /** Contain late Netty/pinger failures as failed status refreshes. */
     @Inject(method = "onClientTick", at = @At("HEAD"), cancellable = true,
             remap = false)
     private static void scpAdditions$tickPingerSafely(

@@ -28,6 +28,9 @@ import java.util.UUID;
  * retrofit a purely visual corpse later.</p>
  */
 public final class PlayerCorpseEntity extends PathfinderMob {
+    private static final int SETTLE_TICKS = 18;
+    private static final int POSE_VARIANTS = 6;
+
     private static final EntityDataAccessor<Optional<UUID>> OWNER_ID =
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
                     EntityDataSerializers.OPTIONAL_UUID);
@@ -35,6 +38,12 @@ public final class PlayerCorpseEntity extends PathfinderMob {
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
                     EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> LOGICAL_DEATH =
+            SynchedEntityData.defineId(PlayerCorpseEntity.class,
+                    EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> POSE_VARIANT =
+            SynchedEntityData.defineId(PlayerCorpseEntity.class,
+                    EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> SETTLED =
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
                     EntityDataSerializers.BOOLEAN);
 
@@ -66,6 +75,8 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         entityData.define(OWNER_ID, Optional.empty());
         entityData.define(OWNER_NAME, "");
         entityData.define(LOGICAL_DEATH, false);
+        entityData.define(POSE_VARIANT, 0);
+        entityData.define(SETTLED, false);
     }
 
     public void initializeFrom(ServerPlayer player, boolean logicalDeath) {
@@ -73,13 +84,23 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         entityData.set(OWNER_ID, Optional.of(player.getUUID()));
         entityData.set(OWNER_NAME, player.getGameProfile().getName());
         entityData.set(LOGICAL_DEATH, logicalDeath);
+        entityData.set(POSE_VARIANT, random.nextInt(POSE_VARIANTS));
+        entityData.set(SETTLED, false);
         moveTo(player.getX(), player.getY(), player.getZ(),
                 player.yBodyRot, 0.0F);
         setYBodyRot(player.yBodyRot);
         setYHeadRot(player.yBodyRot);
         yBodyRotO = player.yBodyRot;
         yHeadRotO = player.yBodyRot;
-        setDeltaMovement(Vec3.ZERO);
+
+        // Preserve only a restrained fraction of the player's momentum. This
+        // gives the fake ragdoll a little physical follow-through without
+        // turning bodies into low-friction projectiles.
+        Vec3 movement = player.getDeltaMovement();
+        double vertical = Math.max(-0.60D,
+                Math.min(0.08D, movement.y * 0.35D));
+        setDeltaMovement(movement.x * 0.22D, vertical,
+                movement.z * 0.22D);
         hasImpulse = true;
     }
 
@@ -95,6 +116,14 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         return entityData.get(LOGICAL_DEATH);
     }
 
+    public int poseVariant() {
+        return Math.floorMod(entityData.get(POSE_VARIANT), POSE_VARIANTS);
+    }
+
+    public boolean settled() {
+        return entityData.get(SETTLED);
+    }
+
     @Override
     public void tick() {
         setNoAi(true);
@@ -103,11 +132,17 @@ public final class PlayerCorpseEntity extends PathfinderMob {
 
         Vec3 movement = getDeltaMovement();
         if (onGround()) {
-            setDeltaMovement(Vec3.ZERO);
+            if (!settled() && tickCount < SETTLE_TICKS) {
+                setDeltaMovement(movement.x * 0.48D, 0.0D,
+                        movement.z * 0.48D);
+            } else {
+                setDeltaMovement(Vec3.ZERO);
+            }
         } else {
-            // Let gravity settle a body that died in mid-air without allowing
-            // horizontal AI or collision impulses to drag it away.
-            setDeltaMovement(0.0D, movement.y, 0.0D);
+            // A body that died in mid-air keeps a little horizontal inertia
+            // while gravity does the real vertical settling.
+            setDeltaMovement(movement.x * 0.82D, movement.y,
+                    movement.z * 0.82D);
         }
         getNavigation().stop();
         setYBodyRot(getYRot());
@@ -117,6 +152,11 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         if (!ScpAdditionsModulesConfig.get().deathBodies.enabled) {
             discard();
             return;
+        }
+
+        if (!settled() && tickCount >= SETTLE_TICKS) {
+            entityData.set(SETTLED, true);
+            setDeltaMovement(Vec3.ZERO);
         }
 
         if (logicalDeath() && level() instanceof ServerLevel serverLevel) {
@@ -157,6 +197,8 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         if (id != null) tag.putUUID("Owner", id);
         tag.putString("OwnerName", ownerName());
         tag.putBoolean("LogicalDeath", logicalDeath());
+        tag.putInt("PoseVariant", poseVariant());
+        tag.putBoolean("Settled", settled());
     }
 
     @Override
@@ -166,6 +208,12 @@ public final class PlayerCorpseEntity extends PathfinderMob {
                 ? Optional.of(tag.getUUID("Owner")) : Optional.empty());
         entityData.set(OWNER_NAME, tag.getString("OwnerName"));
         entityData.set(LOGICAL_DEATH, tag.getBoolean("LogicalDeath"));
+        entityData.set(POSE_VARIANT,
+                Math.floorMod(tag.getInt("PoseVariant"), POSE_VARIANTS));
+        // Legacy bodies predate the flag and should load already settled rather
+        // than theatrically collapsing again every time their chunk is opened.
+        entityData.set(SETTLED,
+                !tag.contains("Settled") || tag.getBoolean("Settled"));
         setNoAi(true);
         setPersistenceRequired();
     }

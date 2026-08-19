@@ -40,8 +40,8 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
     private static final int MIN_API_MAJOR = 2;
     private static final int MIN_API_MINOR = 6;
     private static final int MIN_API_PATCH = 20;
-    private static final int MICROPHONE_PRIORITY = 1000;
-    private static final int ROUTING_PRIORITY = -1000;
+    private static final int MICROPHONE_PRIORITY = Integer.MAX_VALUE;
+    private static final int ROUTING_PRIORITY = Integer.MIN_VALUE;
     private static final Pattern SEMVER = Pattern.compile(
             "(\\d+)\\.(\\d+)\\.(\\d+)");
 

@@ -56,5 +56,13 @@ public final class SaveGameNetwork {
         ScpAdditionsMod.addNetworkMessage(SaveFeedbackPacket.class,
                 SaveFeedbackPacket::encode, SaveFeedbackPacket::decode,
                 SaveFeedbackPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(SimpleVoiceChatCompatibilityStatusPacket.class,
+                SimpleVoiceChatCompatibilityStatusPacket::encode,
+                SimpleVoiceChatCompatibilityStatusPacket::decode,
+                SimpleVoiceChatCompatibilityStatusPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(SimpleVoiceChatCompatibilityRequestPacket.class,
+                SimpleVoiceChatCompatibilityRequestPacket::encode,
+                SimpleVoiceChatCompatibilityRequestPacket::decode,
+                SimpleVoiceChatCompatibilityRequestPacket::handle);
     }
 }

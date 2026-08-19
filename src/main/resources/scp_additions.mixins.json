@@ -50,6 +50,7 @@
     "client.MainMenuSettingsPlayPanelMixin",
     "client.EditGameRulesScreenMixin",
     "client.FontMixin",
+    "client.DamageIndicatorParticleMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",
     "client.CommandSuggestionsMixin",

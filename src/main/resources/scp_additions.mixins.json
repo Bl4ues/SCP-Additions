@@ -19,6 +19,7 @@
     "CoreRoomElevatorManagerFixMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",
+    "compat.MineZeroRuntimeRestoreMixin",
     "client.ScpItemClassifierCompatMixin",
     "client.ContextConfigManagerCompatMixin",
     "client.StorageContainerSupportCompatMixin"

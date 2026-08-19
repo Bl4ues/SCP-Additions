@@ -1,6 +1,5 @@
 package net.mcreator.scpadditions.mixin.compat;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.mcreator.scpadditions.compat.MineZeroCompatibility;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,11 +22,6 @@ public abstract class MineZeroCheckpointManagerMixin {
             ServerPlayer player, CallbackInfo callback) {
         if (!MineZeroCompatibility.enabled()
                 || MineZeroCompatibility.creatingCheckpoint()) return;
-        if (player != null && player.connection != null) {
-            player.displayClientMessage(Component.literal(
-                    "MineZero checkpoints are managed by SCP Additions saves."),
-                    true);
-        }
         callback.cancel();
     }
 
@@ -37,11 +31,6 @@ public abstract class MineZeroCheckpointManagerMixin {
             ServerPlayer player, CallbackInfo callback) {
         if (!MineZeroCompatibility.enabled()
                 || MineZeroCompatibility.restoring()) return;
-        if (player != null && player.connection != null) {
-            player.displayClientMessage(Component.literal(
-                    "Return by Death is controlled from the SCP death screen."),
-                    true);
-        }
         callback.cancel();
     }
 }

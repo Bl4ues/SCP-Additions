@@ -30,7 +30,9 @@ import java.util.WeakHashMap;
 /**
  * Hosts a real ShareToLanScreen behind the custom pause panel. Mods keep their
  * original callbacks and validation, while their injected widgets are laid out
- * and rendered as a continuation of SCP Additions' LAN presentation.
+ * and rendered as a continuation of SCP Additions' LAN presentation. Widgets
+ * sharing a source Y coordinate are treated as one logical option row, which
+ * keeps arbitrary LAN extensions usable without per-mod hardcoded coordinates.
  */
 public final class PauseMenuLanCompatibilityClient {
     private static final int PANEL = 0xE20B0E12;

@@ -111,6 +111,7 @@
 ## Death, saving, and spectating
 
 - Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, progressive audio muffling, and SCP Additions-styled Load Game and Main Menu actions;
+- Added a default-enabled server-side **Persistent Death Bodies** module that leaves an inert, interactable player body in a prone crawl pose at the death location, providing a physical entity for future SCP and recovery interactions;
 - Added **Quicksave**, bound to F6 by default and fully rebindable, which records the player's current position as their respawn point on Safe and Thaumiel difficulties;
 - Reworked checkpoint availability around difficulty: Safe and Thaumiel allow Quicksave and Decontamination Checkpoint saves, Euclid allows Decontamination Checkpoints but not Quicksave, and Keter disables both while leaving vanilla, command, and compatible modded respawn-point methods available;
 - Added a shared save pipeline that recognizes respawn points set through SCP Additions, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated Roboto **Saving...** indicator with the rotating SCP Additions loading emblem;

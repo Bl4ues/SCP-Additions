@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.mixin.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.JoinMultiplayerScreen;
+import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.CustomMainMenuScreen;
 import net.mcreator.scpadditions.client.MainMenuPlayPanelsClient;

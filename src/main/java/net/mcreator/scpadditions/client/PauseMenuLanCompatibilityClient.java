@@ -431,6 +431,7 @@ public final class PauseMenuLanCompatibilityClient {
         int contentX = layout.x + 16;
         int contentWidth = Math.max(120, layout.width - 32);
         int y = layout.y + 52;
+        int maxBottom = layout.y + layout.height - 12;
         int index = 0;
 
         while (index < visible.size()) {
@@ -444,6 +445,7 @@ public final class PauseMenuLanCompatibilityClient {
             boolean hasField = group.stream().anyMatch(p -> p.widget instanceof EditBox);
             if (hasField) {
                 for (WidgetPlacement placement : group) {
+                    if (y + 39 > maxBottom) break;
                     placement.rowY = y;
                     placement.widget.setX(contentX);
                     placement.widget.setY(y + 13);
@@ -458,7 +460,7 @@ public final class PauseMenuLanCompatibilityClient {
             }
 
             int groupIndex = 0;
-            while (groupIndex < group.size()) {
+            while (groupIndex < group.size() && y + BUTTON_HEIGHT <= maxBottom) {
                 int columns = Math.min(3, group.size() - groupIndex);
                 int cellWidth = Math.max(64,
                         (contentWidth - CONTENT_GAP * (columns - 1)) / columns);
@@ -516,8 +518,6 @@ public final class PauseMenuLanCompatibilityClient {
             return;
         }
 
-        // Unknown custom widgets keep their own renderer after being positioned
-        // in the integrated grid. This is the escape hatch for future LAN mods.
         widget.render(graphics, mouseX, mouseY, partialTick);
     }
 

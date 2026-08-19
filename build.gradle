@@ -66,6 +66,11 @@ repositories {
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
     }
 
+    maven {
+        name = 'SimpleVoiceChat'
+        url = 'https://maven.maxhenkel.de/repository/public'
+    }
+
     // Client-side test dependencies are resolved from Modrinth without being
     // compiled into or bundled with the public SCP Additions artifact.
     exclusiveContent {
@@ -87,12 +92,18 @@ dependencies {
     implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
+    // API-only compile dependency for the optional Simple Voice Chat bridge.
+    // The API is not shaded into SCP Additions; users still install the mod
+    // normally on both client and server when they want voice integration.
+    implementation 'de.maxhenkel.voicechat:voicechat-api:2.6.20'
+
     // Optional client runtime used by runClient to validate shader compatibility
     // and custom player/entity rendering. These are not transitive requirements
     // for users of SCP Additions.
     runtimeOnly fg.deobf('maven.modrinth:oaG6aa1j:u7GegV7U') // Kleider's Custom Renderer 7.4.1
     runtimeOnly fg.deobf('maven.modrinth:sk9rgfiA:UTbfe5d1') // Embeddium 0.3.31
     runtimeOnly fg.deobf('maven.modrinth:GchcoXML:iQ1SwGc3') // Oculus 1.8.0
+    runtimeOnly fg.deobf('maven.modrinth:simple-voice-chat:forge-1.20.1-2.6.22')
 }
 
 processResources {

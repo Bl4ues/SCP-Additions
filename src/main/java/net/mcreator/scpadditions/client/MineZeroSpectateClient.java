@@ -10,7 +10,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -34,10 +37,15 @@ public final class MineZeroSpectateClient {
     private static final long ACQUIRE_TIMEOUT_MS = 3200L;
     private static final long LOST_CONNECTION_MS = 1250L;
     private static final UUID NIL = new UUID(0L, 0L);
-    private static final float DEFAULT_ORBIT_PITCH = 6.0F;
-    private static final float ORBIT_YAW_SENSITIVITY = 0.28F;
-    private static final float ORBIT_PITCH_SENSITIVITY = 0.22F;
-    private static final double CAMERA_DISTANCE = 3.20D;
+
+    private static final float ORBIT_YAW_SENSITIVITY = 0.24F;
+    private static final double CAMERA_DISTANCE = 3.25D;
+    private static final double CAMERA_WALL_MARGIN = 0.16D;
+    private static final double CAMERA_PROBE_RADIUS = 0.10D;
+    private static final double CAMERA_MIN_CLEARANCE = 0.06D;
+    private static final double CAMERA_RETURN_SMOOTHING = 0.22D;
+    private static final double FOCUS_SMOOTHING_TIME_MS = 42.0D;
+    private static final double FOCUS_SNAP_DISTANCE_SQR = 36.0D;
 
     private static UUID targetId;
     private static String targetDisplayName = "No living personnel";
@@ -50,9 +58,12 @@ public final class MineZeroSpectateClient {
     private static boolean orbitInitialized;
     private static boolean connectionLost;
     private static int availableTargets;
+
     /** Absolute world-space yaw for the orbit, independent of target body rotation. */
     private static float orbitYaw;
-    private static float orbitPitch = DEFAULT_ORBIT_PITCH;
+    private static Vec3 smoothedFocus;
+    private static long lastFocusUpdateAt = -1L;
+    private static double currentCameraDistance = CAMERA_DISTANCE;
     private static long switchedAt = -1L;
     private static long feedReadyAt = -1L;
     private static long lostConnectionAt = -1L;
@@ -60,7 +71,9 @@ public final class MineZeroSpectateClient {
     private MineZeroSpectateClient() {
     }
 
-    public static boolean active() { return active; }
+    public static boolean active() {
+        return active;
+    }
 
     public static boolean transferActive() {
         return active || requestPending;
@@ -90,7 +103,6 @@ public final class MineZeroSpectateClient {
         if (!active) {
             previousCameraType = minecraft.options.getCameraType();
             orbitInitialized = false;
-            orbitPitch = DEFAULT_ORBIT_PITCH;
         }
         active = true;
         requestPending = true;
@@ -131,13 +143,12 @@ public final class MineZeroSpectateClient {
                 new DeathSpectateRequestPacket(action));
     }
 
+    /** Horizontal-only orbit. Vertical mouse movement is intentionally ignored. */
     public static void orbit(double deltaX, double deltaY) {
         if (!active || connectionLost) return;
         ensureOrbitInitialized(target());
-        orbitYaw += (float) deltaX * ORBIT_YAW_SENSITIVITY;
-        orbitPitch = Mth.clamp(
-                orbitPitch + (float) deltaY * ORBIT_PITCH_SENSITIVITY,
-                -35.0F, 52.0F);
+        orbitYaw = Mth.wrapDegrees(
+                orbitYaw + (float) deltaX * ORBIT_YAW_SENSITIVITY);
     }
 
     public static String targetName() {
@@ -212,7 +223,6 @@ public final class MineZeroSpectateClient {
                 ? "Acquiring personnel feed..." : name;
         if (changed) {
             orbitInitialized = false;
-            orbitPitch = DEFAULT_ORBIT_PITCH;
             beginHandoff();
         }
     }
@@ -285,6 +295,9 @@ public final class MineZeroSpectateClient {
         if (cameraRigLevel != null && cameraRigLevel != minecraft.level) {
             cameraRig = null;
             cameraRigLevel = null;
+            smoothedFocus = null;
+            lastFocusUpdateAt = -1L;
+            currentCameraDistance = CAMERA_DISTANCE;
         }
     }
 
@@ -293,6 +306,9 @@ public final class MineZeroSpectateClient {
         feedReadyAt = -1L;
         connectionLost = false;
         lostConnectionAt = -1L;
+        smoothedFocus = null;
+        lastFocusUpdateAt = -1L;
+        currentCameraDistance = CAMERA_DISTANCE;
     }
 
     private static void beginLostConnection() {
@@ -330,7 +346,6 @@ public final class MineZeroSpectateClient {
         } else {
             orbitYaw = 0.0F;
         }
-        orbitPitch = DEFAULT_ORBIT_PITCH;
         orbitInitialized = true;
     }
 
@@ -346,40 +361,68 @@ public final class MineZeroSpectateClient {
         ensureRig();
         if (cameraRig == null) return;
 
-        Vec3 focus;
+        Vec3 rawFocus;
+        Player collisionContext;
         if (target != null) {
             double x = Mth.lerp(partialTick, target.xo, target.getX());
             double y = Mth.lerp(partialTick, target.yo, target.getY());
             double z = Mth.lerp(partialTick, target.zo, target.getZ());
-            focus = new Vec3(x, y + Math.max(1.05D,
-                    target.getBbHeight() * 0.66D), z);
+            rawFocus = new Vec3(x, y + Math.max(0.95D,
+                    target.getBbHeight() * 0.58D), z);
+            collisionContext = target;
         } else {
             // During a dimension hand-off the target entity can arrive a few
-            // frames after the observer. Keep the camera rig attached to the
-            // streamed anchor, but the UI fully occludes this acquisition state.
+            // frames after the observer. The feed is fully occluded in this state.
             double x = Mth.lerp(partialTick, minecraft.player.xo,
                     minecraft.player.getX());
             double y = Mth.lerp(partialTick, minecraft.player.yo,
                     minecraft.player.getY());
             double z = Mth.lerp(partialTick, minecraft.player.zo,
                     minecraft.player.getZ());
-            focus = new Vec3(x, y + 1.15D, z);
+            rawFocus = new Vec3(x, y + 1.05D, z);
+            collisionContext = minecraft.player;
         }
 
-        Vec3 direction = Vec3.directionFromRotation(orbitPitch, orbitYaw);
-        Vec3 camera = focus.subtract(direction.scale(CAMERA_DISTANCE));
+        Vec3 focus = smoothFocus(rawFocus);
+        Vec3 forward = Vec3.directionFromRotation(0.0F, orbitYaw);
+        Vec3 outward = new Vec3(-forward.x, 0.0D, -forward.z);
+        if (outward.lengthSqr() < 1.0E-6D) {
+            outward = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            outward = outward.normalize();
+        }
 
-        Vec3 delta = focus.subtract(camera);
+        double allowedDistance = cameraDistanceForObstacles(
+                minecraft.level, collisionContext, focus, outward,
+                CAMERA_DISTANCE);
+        if (allowedDistance < currentCameraDistance) {
+            // Never smooth through a wall. Closing the distance is immediate.
+            currentCameraDistance = allowedDistance;
+        } else {
+            // Ease back out after an obstruction disappears to avoid corner jitter.
+            currentCameraDistance += (allowedDistance - currentCameraDistance)
+                    * CAMERA_RETURN_SMOOTHING;
+        }
+        currentCameraDistance = Mth.clamp(currentCameraDistance,
+                CAMERA_MIN_CLEARANCE, CAMERA_DISTANCE);
+
+        Vec3 cameraEye = focus.add(outward.scale(currentCameraDistance));
+        Vec3 delta = focus.subtract(cameraEye);
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
         float lookYaw = (float) (Math.toDegrees(Math.atan2(delta.z, delta.x))
                 - 90.0D);
-        float lookPitch = (float) -Math.toDegrees(
-                Math.atan2(delta.y, horizontal));
+        float lookPitch = horizontal < 1.0E-5D ? 0.0F
+                : (float) -Math.toDegrees(Math.atan2(delta.y, horizontal));
 
-        cameraRig.xo = camera.x;
-        cameraRig.yo = camera.y;
-        cameraRig.zo = camera.z;
-        cameraRig.setPos(camera.x, camera.y, camera.z);
+        // Minecraft cameras use the camera entity's eye position. The previous
+        // implementation placed the ArmorStand base at cameraEye, effectively
+        // adding the stand's eye height again and pushing the feed far upward.
+        double eyeOffset = cameraRig.getEyeY() - cameraRig.getY();
+        double rigY = cameraEye.y - eyeOffset;
+        cameraRig.xo = cameraEye.x;
+        cameraRig.yo = rigY;
+        cameraRig.zo = cameraEye.z;
+        cameraRig.setPos(cameraEye.x, rigY, cameraEye.z);
         cameraRig.yRotO = lookYaw;
         cameraRig.xRotO = lookPitch;
         cameraRig.setYRot(lookYaw);
@@ -389,6 +432,60 @@ public final class MineZeroSpectateClient {
         if (minecraft.getCameraEntity() != cameraRig) {
             minecraft.setCameraEntity(cameraRig);
         }
+    }
+
+    private static Vec3 smoothFocus(Vec3 desired) {
+        long now = Util.getMillis();
+        if (smoothedFocus == null || lastFocusUpdateAt < 0L
+                || smoothedFocus.distanceToSqr(desired) > FOCUS_SNAP_DISTANCE_SQR) {
+            smoothedFocus = desired;
+            lastFocusUpdateAt = now;
+            return desired;
+        }
+
+        long elapsed = Math.max(0L, Math.min(100L, now - lastFocusUpdateAt));
+        lastFocusUpdateAt = now;
+        if (elapsed <= 0L) return smoothedFocus;
+
+        double alpha = 1.0D - Math.exp(-elapsed / FOCUS_SMOOTHING_TIME_MS);
+        alpha = Mth.clamp(alpha, 0.0D, 1.0D);
+        smoothedFocus = new Vec3(
+                Mth.lerp(alpha, smoothedFocus.x, desired.x),
+                Mth.lerp(alpha, smoothedFocus.y, desired.y),
+                Mth.lerp(alpha, smoothedFocus.z, desired.z));
+        return smoothedFocus;
+    }
+
+    /**
+     * Vanilla-style third-person collision probes. The orbit is shortened as soon
+     * as a wall intersects the camera volume, then smoothly returns to full range.
+     */
+    private static double cameraDistanceForObstacles(ClientLevel level,
+            Player context, Vec3 focus, Vec3 outward, double desiredDistance) {
+        double allowed = desiredDistance;
+        allowed = Math.min(allowed, clipDistance(level, context, focus,
+                focus.add(outward.scale(desiredDistance)), desiredDistance));
+
+        double r = CAMERA_PROBE_RADIUS;
+        for (int i = 0; i < 8; i++) {
+            double ox = ((i & 1) == 0 ? -r : r);
+            double oy = ((i & 2) == 0 ? -r : r);
+            double oz = ((i & 4) == 0 ? -r : r);
+            Vec3 start = focus.add(ox, oy, oz);
+            Vec3 end = start.add(outward.scale(desiredDistance));
+            allowed = Math.min(allowed,
+                    clipDistance(level, context, start, end, desiredDistance));
+        }
+        return Mth.clamp(allowed, CAMERA_MIN_CLEARANCE, desiredDistance);
+    }
+
+    private static double clipDistance(ClientLevel level, Player context,
+            Vec3 start, Vec3 end, double desiredDistance) {
+        BlockHitResult hit = level.clip(new ClipContext(start, end,
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context));
+        if (hit.getType() == HitResult.Type.MISS) return desiredDistance;
+        double distance = start.distanceTo(hit.getLocation()) - CAMERA_WALL_MARGIN;
+        return Math.max(CAMERA_MIN_CLEARANCE, distance);
     }
 
     private static AbstractClientPlayer target() {
@@ -408,6 +505,9 @@ public final class MineZeroSpectateClient {
         cameraRig = null;
         cameraRigLevel = null;
         orbitInitialized = false;
+        smoothedFocus = null;
+        lastFocusUpdateAt = -1L;
+        currentCameraDistance = CAMERA_DISTANCE;
         switchedAt = -1L;
         feedReadyAt = -1L;
         lostConnectionAt = -1L;

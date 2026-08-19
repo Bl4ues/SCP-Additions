@@ -44,6 +44,7 @@
     "client.DeathScreenCaptureMixin",
     "client.PauseMenuNativePanelsCompatMixin",
     "client.PauseMenuLanCompatibilityMixin",
+    "client.LanServerPropertiesFieldMixin",
     "client.IntegratedServerLanPortMixin",
     "client.MainMenuPlayPanelsPolishMixin",
     "client.MainMenuSettingsPlayPanelMixin",

@@ -15,6 +15,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.compat.MineZeroDeathCoordinator;
+import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -112,8 +113,13 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         setYBodyRot(getYRot());
         setYHeadRot(getYRot());
 
-        if (!level().isClientSide && logicalDeath()
-                && level() instanceof ServerLevel serverLevel) {
+        if (level().isClientSide) return;
+        if (!ScpAdditionsModulesConfig.get().deathBodies.enabled) {
+            discard();
+            return;
+        }
+
+        if (logicalDeath() && level() instanceof ServerLevel serverLevel) {
             UUID id = ownerId();
             ServerPlayer owner = id == null ? null
                     : serverLevel.getServer().getPlayerList().getPlayer(id);

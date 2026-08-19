@@ -1,35 +1,57 @@
 package net.mcreator.scpadditions.entity;
 
+import com.bl4ues.scpinventory.capability.IScpInventory;
+import com.bl4ues.scpinventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
+import com.bl4ues.scpinventory.network.ModNetwork;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkHooks;
 import net.mcreator.scpadditions.compat.MineZeroDeathCoordinator;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
+import net.mcreator.scpadditions.world.inventory.PlayerCorpseMenu;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Server-owned physical remnant of a dead player.
  *
- * <p>The entity is intentionally inert but remains pickable so future SCP,
- * recovery, and body-interaction systems can target it without having to
- * retrofit a purely visual corpse later.</p>
+ * <p>Besides being a physical target for future recovery/SCP mechanics, the
+ * corpse owns the inventory left behind by its player and exposes that state as
+ * ordinary container storage. This makes looting use the same server-authority
+ * and SCP-storage presentation already used by chests and other containers.</p>
  */
-public final class PlayerCorpseEntity extends PathfinderMob {
+public final class PlayerCorpseEntity extends PathfinderMob
+        implements MenuProvider {
     private static final int SETTLE_TICKS = 18;
     private static final int POSE_VARIANTS = 6;
+    private static final int MIN_CONTAINER_SIZE = 9;
 
     private static final EntityDataAccessor<Optional<UUID>> OWNER_ID =
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
@@ -46,6 +68,9 @@ public final class PlayerCorpseEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> SETTLED =
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
                     EntityDataSerializers.BOOLEAN);
+
+    private SimpleContainer inventory = new SimpleContainer(MIN_CONTAINER_SIZE);
+    private boolean scpInventoryMode;
 
     public PlayerCorpseEntity(EntityType<? extends PlayerCorpseEntity> type,
             Level level) {
@@ -81,11 +106,15 @@ public final class PlayerCorpseEntity extends PathfinderMob {
 
     public void initializeFrom(ServerPlayer player, boolean logicalDeath) {
         if (player == null) return;
+        String name = player.getGameProfile().getName();
         entityData.set(OWNER_ID, Optional.of(player.getUUID()));
-        entityData.set(OWNER_NAME, player.getGameProfile().getName());
+        entityData.set(OWNER_NAME, name);
         entityData.set(LOGICAL_DEATH, logicalDeath);
         entityData.set(POSE_VARIANT, random.nextInt(POSE_VARIANTS));
         entityData.set(SETTLED, false);
+        scpInventoryMode = ScpAdditionsModulesConfig.get().inventory.enabled;
+        setCustomName(Component.literal(name));
+        setCustomNameVisible(false);
         moveTo(player.getX(), player.getY(), player.getZ(),
                 player.yBodyRot, 0.0F);
         setYBodyRot(player.yBodyRot);
@@ -102,6 +131,110 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         setDeltaMovement(movement.x * 0.22D, vertical,
                 movement.z * 0.22D);
         hasImpulse = true;
+    }
+
+    /**
+     * Moves the dead player's canonical inventory into this body.
+     *
+     * <p>Normal deaths respect keepInventory. MineZero logical deaths always
+     * move the inventory because the dead spectator must no longer own loot;
+     * rollback restores the checkpoint snapshot later.</p>
+     */
+    public void captureInventoryFrom(ServerPlayer player) {
+        if (player == null || level().isClientSide) return;
+
+        scpInventoryMode = ScpAdditionsModulesConfig.get().inventory.enabled;
+        boolean keepInventory = !logicalDeath()
+                && player.level().getGameRules()
+                .getBoolean(GameRules.RULE_KEEPINVENTORY);
+        if (keepInventory) {
+            replaceInventory(List.of());
+            return;
+        }
+
+        List<ItemStack> captured = new ArrayList<>();
+        if (scpInventoryMode) {
+            IScpInventory scp = player.getCapability(ScpInventoryCapability.INSTANCE)
+                    .resolve().orElse(null);
+            if (scp != null) {
+                collect(captured, scp.getInventory());
+                collect(captured, scp.getKeys());
+                collect(captured, scp.getDocuments());
+                for (ScpEquipmentSlot slot : ScpEquipmentSlot.values()) {
+                    collect(captured, scp.getEquipment(slot));
+                }
+                collect(captured, scp.getActiveUsable());
+                clearScpInventory(scp);
+                ModNetwork.syncTo(player, scp);
+            } else {
+                // Capability attachment should be unconditional, but falling
+                // back to vanilla contents is safer than silently deleting a
+                // player's inventory if another mod disrupts capability setup.
+                collectVanilla(captured, player.getInventory());
+            }
+
+            // SCP Inventory owns the canonical stacks. Vanilla hand/armor slots
+            // may contain temporary mirrors and must not be allowed to drop a
+            // second copy after this death event returns.
+            player.getInventory().clearContent();
+            player.getInventory().setChanged();
+        } else {
+            collectVanilla(captured, player.getInventory());
+            player.getInventory().clearContent();
+            player.getInventory().setChanged();
+        }
+
+        replaceInventory(captured);
+    }
+
+    private static void clearScpInventory(IScpInventory scp) {
+        if (scp == null) return;
+        int capacity = scp.getMaxMainSlots();
+        List<ItemStack> emptyMain = new ArrayList<>(capacity);
+        for (int i = 0; i < capacity; i++) emptyMain.add(ItemStack.EMPTY);
+        scp.setInventory(emptyMain);
+        scp.setKeys(List.of());
+        scp.setDocuments(List.of());
+        for (ScpEquipmentSlot slot : ScpEquipmentSlot.values()) {
+            scp.setEquipment(slot, ItemStack.EMPTY);
+        }
+        scp.setActiveUsable(ItemStack.EMPTY);
+        scp.setCoinCount(0);
+        // Preserve upgraded main-slot capacity across death. Only contents move
+        // to the body; inventory progression is still owned by the player.
+        scp.setMaxMainSlots(capacity);
+    }
+
+    private static void collectVanilla(List<ItemStack> target,
+            Inventory inventory) {
+        if (inventory == null) return;
+        collect(target, inventory.items);
+        collect(target, inventory.armor);
+        collect(target, inventory.offhand);
+    }
+
+    private static void collect(List<ItemStack> target,
+            Iterable<ItemStack> stacks) {
+        if (target == null || stacks == null) return;
+        for (ItemStack stack : stacks) collect(target, stack);
+    }
+
+    private static void collect(List<ItemStack> target, ItemStack stack) {
+        if (target == null || stack == null || stack.isEmpty()) return;
+        target.add(stack.copy());
+    }
+
+    private void replaceInventory(List<ItemStack> stacks) {
+        int itemCount = stacks == null ? 0 : stacks.size();
+        int size = Math.max(MIN_CONTAINER_SIZE,
+                ((itemCount + 8) / 9) * 9);
+        SimpleContainer replacement = new SimpleContainer(size);
+        if (stacks != null) {
+            for (int i = 0; i < stacks.size() && i < size; i++) {
+                replacement.setItem(i, stacks.get(i).copy());
+            }
+        }
+        inventory = replacement;
     }
 
     public UUID ownerId() {
@@ -122,6 +255,50 @@ public final class PlayerCorpseEntity extends PathfinderMob {
 
     public boolean settled() {
         return entityData.get(SETTLED);
+    }
+
+    public SimpleContainer container() {
+        return inventory;
+    }
+
+    public int containerSize() {
+        return inventory.getContainerSize();
+    }
+
+    public boolean scpInventoryMode() {
+        return scpInventoryMode;
+    }
+
+    @Override
+    public Component getDisplayName() {
+        String name = ownerName();
+        return Component.literal(name == null || name.isBlank()
+                ? "Unknown Personnel" : name);
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int containerId,
+            Inventory playerInventory, Player player) {
+        return new PlayerCorpseMenu(containerId, playerInventory, this);
+    }
+
+    @Override
+    public InteractionResult interact(Player player, InteractionHand hand) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResult.SUCCESS;
+        }
+        if (!ScpAdditionsModulesConfig.get().deathBodies.enabled
+                || serverPlayer.isSpectator()
+                || serverPlayer.distanceToSqr(this) > 64.0D) {
+            return InteractionResult.PASS;
+        }
+
+        NetworkHooks.openScreen(serverPlayer, this, buffer -> {
+            buffer.writeInt(getId());
+            buffer.writeVarInt(containerSize());
+            buffer.writeBoolean(scpInventoryMode());
+        });
+        return InteractionResult.CONSUME;
     }
 
     @Override
@@ -199,6 +376,19 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         tag.putBoolean("LogicalDeath", logicalDeath());
         tag.putInt("PoseVariant", poseVariant());
         tag.putBoolean("Settled", settled());
+        tag.putBoolean("ScpInventoryMode", scpInventoryMode);
+        tag.putInt("CorpseContainerSize", containerSize());
+
+        ListTag items = new ListTag();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack.isEmpty()) continue;
+            CompoundTag itemTag = new CompoundTag();
+            itemTag.putInt("Slot", slot);
+            stack.save(itemTag);
+            items.add(itemTag);
+        }
+        tag.put("CorpseItems", items);
     }
 
     @Override
@@ -214,6 +404,28 @@ public final class PlayerCorpseEntity extends PathfinderMob {
         // than theatrically collapsing again every time their chunk is opened.
         entityData.set(SETTLED,
                 !tag.contains("Settled") || tag.getBoolean("Settled"));
+        scpInventoryMode = tag.getBoolean("ScpInventoryMode");
+
+        int requestedSize = tag.contains("CorpseContainerSize")
+                ? tag.getInt("CorpseContainerSize") : MIN_CONTAINER_SIZE;
+        int size = Math.max(MIN_CONTAINER_SIZE,
+                ((requestedSize + 8) / 9) * 9);
+        SimpleContainer loaded = new SimpleContainer(size);
+        ListTag items = tag.getList("CorpseItems", CompoundTag.TAG_COMPOUND);
+        for (int i = 0; i < items.size(); i++) {
+            CompoundTag itemTag = items.getCompound(i);
+            int slot = itemTag.getInt("Slot");
+            if (slot >= 0 && slot < size) {
+                loaded.setItem(slot, ItemStack.of(itemTag));
+            }
+        }
+        inventory = loaded;
+
+        String name = ownerName();
+        if (name != null && !name.isBlank()) {
+            setCustomName(Component.literal(name));
+            setCustomNameVisible(false);
+        }
         setNoAi(true);
         setPersistenceRequired();
     }

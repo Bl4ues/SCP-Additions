@@ -96,10 +96,7 @@ public abstract class MainMenuServerListSafetyMixin {
         }
     }
 
-    /**
-     * Contain a late Netty/pinger failure as a failed status refresh rather
-     * than letting it escape through the title-screen event loop.
-     */
+    /** Contain late Netty/pinger failures as failed status refreshes. */
     @Inject(method = "onClientTick", at = @At("HEAD"), cancellable = true,
             remap = false)
     private static void scpAdditions$tickPingerSafely(
@@ -112,7 +109,7 @@ public abstract class MainMenuServerListSafetyMixin {
         }
         try {
             Object state = states().get(screen);
-            if (state == null) return;
+            if (state == null || !isMultiplayerOpen(state)) return;
             ServerStatusPinger pinger = field(state, "serverPinger",
                     ServerStatusPinger.class);
             if (pinger == null) return;
@@ -134,6 +131,14 @@ public abstract class MainMenuServerListSafetyMixin {
                     "Could not access custom multiplayer pinger state",
                     exception);
         }
+    }
+
+    private static boolean isMultiplayerOpen(Object state)
+            throws ReflectiveOperationException {
+        Object open = rawField(state, "open");
+        Object mode = rawField(state, "mode");
+        return Boolean.TRUE.equals(open) && mode != null
+                && "MULTIPLAYER".equals(mode.toString());
     }
 
     private static void pingSafely(ServerStatusPinger pinger,

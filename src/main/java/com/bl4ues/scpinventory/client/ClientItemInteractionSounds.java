@@ -37,7 +37,7 @@ public final class ClientItemInteractionSounds {
     }
 
     /**
-     * Suppresses only the vanilla sound produced by the same SCP Inventory
+     * Suppresses only vanilla feedback produced by the same SCP Inventory
      * interaction that armed the window. Ordinary vanilla pickups and eating
      * remain untouched, and disabling the preference restores them directly.
      */
@@ -50,6 +50,12 @@ public final class ClientItemInteractionSounds {
         boolean matching = location.equals(SoundEvents.ITEM_PICKUP.getLocation())
                 && now <= suppressPickupUntilNanos;
         matching |= location.equals(SoundEvents.GENERIC_EAT.getLocation())
+                && now <= suppressFoodUntilNanos;
+        // The vanilla food-completion cue is a separate player.burp event, not
+        // part of generic_eat. Keep it in the same short, local suppression
+        // window so the custom SCP Inventory eating sound genuinely replaces
+        // the vanilla presentation instead of merely layering over it.
+        matching |= location.equals(SoundEvents.PLAYER_BURP.getLocation())
                 && now <= suppressFoodUntilNanos;
         matching |= location.equals(SoundEvents.GENERIC_DRINK.getLocation())
                 && now <= suppressDrinkUntilNanos;

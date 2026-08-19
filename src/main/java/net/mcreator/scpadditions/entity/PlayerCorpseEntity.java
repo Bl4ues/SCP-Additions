@@ -6,6 +6,7 @@ import com.bl4ues.scpinventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpinventory.network.ModNetwork;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -283,7 +284,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
     }
 
     @Override
-    public InteractionResult interact(Player player, InteractionHand hand) {
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.SUCCESS;
         }
@@ -411,7 +412,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
         int size = Math.max(MIN_CONTAINER_SIZE,
                 ((requestedSize + 8) / 9) * 9);
         SimpleContainer loaded = new SimpleContainer(size);
-        ListTag items = tag.getList("CorpseItems", CompoundTag.TAG_COMPOUND);
+        ListTag items = tag.getList("CorpseItems", Tag.TAG_COMPOUND);
         for (int i = 0; i < items.size(); i++) {
             CompoundTag itemTag = items.getCompound(i);
             int slot = itemTag.getInt("Slot");

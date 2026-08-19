@@ -1,6 +1,9 @@
 package net.mcreator.scpadditions.mixin.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.JoinMultiplayerScreen;
+import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.CustomMainMenuScreen;
 import net.mcreator.scpadditions.client.MainMenuPlayPanelsClient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,8 +27,18 @@ public abstract class CustomMainMenuPlayPanelsMixin {
             callback.setReturnValue(() ->
                     MainMenuPlayPanelsClient.toggleSingleplayer(screen));
         } else if ("menu.multiplayer".equals(key)) {
-            callback.setReturnValue(() ->
-                    MainMenuPlayPanelsClient.toggleMultiplayer(screen));
+            callback.setReturnValue(() -> {
+                try {
+                    MainMenuPlayPanelsClient.toggleMultiplayer(screen);
+                } catch (Exception exception) {
+                    ScpAdditionsMod.LOGGER.warn(
+                            "Could not initialize the custom multiplayer panel; falling back to vanilla",
+                            exception);
+                    MainMenuPlayPanelsClient.close(screen);
+                    Minecraft.getInstance().setScreen(
+                            new JoinMultiplayerScreen(screen));
+                }
+            });
         }
     }
 

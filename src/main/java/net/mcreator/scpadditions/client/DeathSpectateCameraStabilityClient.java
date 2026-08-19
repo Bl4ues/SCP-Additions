@@ -24,6 +24,13 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
  * visibly oscillate relative to a camera that was technically moving smoothly.
  * This pass runs after the normal feed update and anchors the rig to the exact
  * position LevelRenderer will use for the watched player in the same frame.
+ *
+ * The world itself is still rendered across the whole game window and the death
+ * screen merely masks a right-hand viewport over it. Consequently looking
+ * directly at the target centers them behind the report card, not inside the
+ * feed. The final aim below offsets the view ray so the watched player lands at
+ * the actual Live Personnel Feed viewport center while orbit geometry remains
+ * independent of that screen-space correction.
  */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -67,12 +74,16 @@ public final class DeathSpectateCameraStabilityClient {
         float partialTick = Mth.clamp(event.renderTickTime, 0.0F, 1.0F);
         Vec3 focus = renderedFocus(target, partialTick);
 
-        // The normal feed update already owns user input and therefore the
-        // authoritative orbit angle. Its body yaw is independent of the stale
-        // focus point, so reuse that angle and only replace position interpolation.
-        float orbitYaw = rig.getYRot();
-        Vec3 forward = Vec3.directionFromRotation(0.0F, orbitYaw);
-        Vec3 outward = new Vec3(-forward.x, 0.0D, -forward.z);
+        // Derive the orbit radius from the rig's world position, not from its
+        // view yaw. The view yaw now includes a deliberate screen-space offset;
+        // feeding that offset back into the next orbit frame would slowly walk
+        // the camera around the player even when the mouse is untouched.
+        Vec3 outward = new Vec3(rig.getX() - focus.x, 0.0D,
+                rig.getZ() - focus.z);
+        if (outward.lengthSqr() < 1.0E-6D) {
+            Vec3 forward = Vec3.directionFromRotation(0.0F, target.getYRot());
+            outward = new Vec3(-forward.x, 0.0D, -forward.z);
+        }
         if (outward.lengthSqr() < 1.0E-6D) {
             outward = new Vec3(0.0D, 0.0D, 1.0D);
         } else {
@@ -98,6 +109,13 @@ public final class DeathSpectateCameraStabilityClient {
                 Math.atan2(toFocus.z, toFocus.x)) - 90.0D);
         float lookPitch = horizontal < 1.0E-5D ? 0.0F
                 : (float) -Math.toDegrees(Math.atan2(toFocus.y, horizontal));
+
+        // Shift the target from the full-screen projection center to the center
+        // of the visible right-hand feed. This is an angular projection offset,
+        // so it remains correct across resolutions, GUI scales, and aspect ratios.
+        AimOffset aim = feedAimOffset(minecraft);
+        lookYaw -= aim.yaw();
+        lookPitch -= aim.pitch();
 
         double eyeOffset = rig.getEyeY() - rig.getY();
         double rigY = cameraEye.y - eyeOffset;
@@ -139,6 +157,40 @@ public final class DeathSpectateCameraStabilityClient {
                 target.getBbHeight() * 0.58D), z);
     }
 
+    private static AimOffset feedAimOffset(Minecraft minecraft) {
+        int guiWidth = minecraft.getWindow().getGuiScaledWidth();
+        int guiHeight = minecraft.getWindow().getGuiScaledHeight();
+        if (guiWidth <= 0 || guiHeight <= 0) return new AimOffset(0.0F, 0.0F);
+
+        // Keep these bounds mathematically identical to ScpDeathScreen#viewport.
+        int left = Math.max(guiWidth / 2 + 28, Math.round(guiWidth * 0.53F));
+        int right = Math.max(left + 120, guiWidth - 28);
+        int top = Math.max(46, Math.round(guiHeight * 0.095F));
+        int bottom = Math.max(top + 100, guiHeight - 64);
+
+        double centerX = (left + right) * 0.5D;
+        double centerY = (top + bottom) * 0.5D;
+        double normalizedX = (centerX - guiWidth * 0.5D)
+                / (guiWidth * 0.5D);
+        double normalizedDown = (centerY - guiHeight * 0.5D)
+                / (guiHeight * 0.5D);
+
+        double verticalFov = Math.toRadians(
+                minecraft.options.fov().get().doubleValue());
+        double tanHalfVertical = Math.tan(verticalFov * 0.5D);
+        int framebufferHeight = minecraft.getWindow().getHeight();
+        double aspect = framebufferHeight <= 0
+                ? guiWidth / (double) guiHeight
+                : minecraft.getWindow().getWidth()
+                        / (double) framebufferHeight;
+
+        float yaw = (float) Math.toDegrees(Math.atan(
+                normalizedX * tanHalfVertical * aspect));
+        float pitch = (float) Math.toDegrees(Math.atan(
+                normalizedDown * tanHalfVertical));
+        return new AimOffset(yaw, pitch);
+    }
+
     private static double cameraDistanceForObstacles(Minecraft minecraft,
             AbstractClientPlayer target, Vec3 focus, Vec3 outward,
             double desiredDistance) {
@@ -172,5 +224,8 @@ public final class DeathSpectateCameraStabilityClient {
         if (MineZeroSpectateClient.active()) return;
         lastTargetName = "";
         currentDistance = CAMERA_DISTANCE;
+    }
+
+    private record AimOffset(float yaw, float pitch) {
     }
 }

@@ -63,6 +63,7 @@ public final class MineZeroRuntimeRestoreSupport {
     public static void restoreCarriages(MinecraftServer server) {
         if (server == null) return;
         RuntimeData data = data(server);
+        if (!data.snapshot.contains("Carriages", Tag.TAG_LIST)) return;
         ListTag saved = data.snapshot.getList("Carriages", Tag.TAG_COMPOUND);
 
         for (ServerLevel level : server.getAllLevels()) {
@@ -121,8 +122,8 @@ public final class MineZeroRuntimeRestoreSupport {
 
     /**
      * MineZero rewinds game time but does not rewind Minecraft's scheduled-tick
-     * queues. Clear stale ticks for restored SCP blocks, then rebuild the local
-     * neighbor state and restart only the runtime machines that need ticking.
+     * queues. Clear stale ticks for restored SCP runtime blocks and their linked
+     * neighbors, then rebuild local power state and restart required machines.
      */
     public static void rehydrateBlockDiff(MinecraftServer server,
             CompoundTag diff) {
@@ -142,16 +143,25 @@ public final class MineZeroRuntimeRestoreSupport {
         }
 
         for (RestoredBlock restoredBlock : restored) {
-            ServerLevel level = restoredBlock.level();
-            BlockPos pos = restoredBlock.pos();
-            level.getBlockTicks().clearArea(new BoundingBox(
-                    pos.getX(), pos.getY(), pos.getZ(),
-                    pos.getX(), pos.getY(), pos.getZ()));
+            clearRuntimeTick(restoredBlock.level(), restoredBlock.pos());
+            for (Direction direction : Direction.values()) {
+                BlockPos neighborPos = restoredBlock.pos().relative(direction);
+                if (isFacilityRuntimeBlock(
+                        restoredBlock.level().getBlockState(neighborPos))) {
+                    clearRuntimeTick(restoredBlock.level(), neighborPos);
+                }
+            }
         }
 
         for (RestoredBlock restoredBlock : restored) {
             rehydrateBlock(restoredBlock.level(), restoredBlock.pos());
         }
+    }
+
+    private static void clearRuntimeTick(ServerLevel level, BlockPos pos) {
+        level.getBlockTicks().clearArea(new BoundingBox(
+                pos.getX(), pos.getY(), pos.getZ(),
+                pos.getX(), pos.getY(), pos.getZ()));
     }
 
     private static void rehydrateBlock(ServerLevel level, BlockPos pos) {
@@ -180,6 +190,14 @@ public final class MineZeroRuntimeRestoreSupport {
         if (path.contains("opening") || path.contains("closing")) {
             level.scheduleTick(pos, block, 1);
         }
+    }
+
+    private static boolean isFacilityRuntimeBlock(BlockState state) {
+        if (state == null) return false;
+        if (FacilityModule.isFacilityDoor(state)) return true;
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        return id != null && ScpAdditionsMod.MODID.equals(id.getNamespace())
+                && id.getPath().startsWith("button_");
     }
 
     private static RuntimeData data(MinecraftServer server) {

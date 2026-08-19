@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.mcreator.scpadditions.world.inventory.TeslaTerminalMenu;
 import net.mcreator.scpadditions.world.inventory.Scp914GuiMenu;
 import net.mcreator.scpadditions.world.inventory.Scp294GuiMenu;
+import net.mcreator.scpadditions.world.inventory.PlayerCorpseMenu;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 
 public class ScpAdditionsModMenus {
@@ -21,4 +22,5 @@ public class ScpAdditionsModMenus {
 	public static final RegistryObject<MenuType<TeslaTerminalMenu>> TESLA_TERMINAL = REGISTRY.register("tesla_terminal", () -> IForgeMenuType.create(TeslaTerminalMenu::new));
 	public static final RegistryObject<MenuType<Scp914GuiMenu>> SCP_914_GUI = REGISTRY.register("scp_914_gui", () -> IForgeMenuType.create(Scp914GuiMenu::new));
 	public static final RegistryObject<MenuType<Scp294GuiMenu>> SCP_294_GUI = REGISTRY.register("scp_294_gui", () -> IForgeMenuType.create(Scp294GuiMenu::new));
+	public static final RegistryObject<MenuType<PlayerCorpseMenu>> PLAYER_CORPSE = REGISTRY.register("player_corpse", () -> IForgeMenuType.create(PlayerCorpseMenu::new));
 }

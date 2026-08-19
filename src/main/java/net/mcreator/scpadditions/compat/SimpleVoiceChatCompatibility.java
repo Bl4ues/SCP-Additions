@@ -35,8 +35,6 @@ import java.util.regex.Pattern;
 @ForgeVoicechatPlugin
 public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
     private static final String PLUGIN_ID = "scp_additions_death_voice";
-    private static final String API_MOD_ID = "voicechat_api";
-    private static final String VOICECHAT_MOD_ID = "voicechat";
     private static final int MIN_API_MAJOR = 2;
     private static final int MIN_API_MINOR = 6;
     private static final int MIN_API_PATCH = 20;
@@ -66,15 +64,11 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
             return;
         }
 
-        // Dead microphones are a privacy/isolation boundary, so intercept them
-        // before ordinary proximity/group routing or lower-priority plugins.
+        // Register once and consult the host-owned setting at packet time. This
+        // allows the Config Center toggle to take effect immediately at runtime.
         registration.registerEvent(MicrophonePacketEvent.class,
                 SimpleVoiceChatCompatibility::onMicrophone,
                 MICROPHONE_PRIORITY);
-
-        // Outgoing sound routing runs last. This lets other voice plugins modify
-        // or cancel the target's packet first; the watcher then hears exactly the
-        // packet that the living target would actually receive.
         registration.registerEvent(EntitySoundPacketEvent.class,
                 SimpleVoiceChatCompatibility::onEntitySound,
                 ROUTING_PRIORITY);
@@ -86,11 +80,11 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
                 ROUTING_PRIORITY);
 
         ScpAdditionsMod.LOGGER.info(
-                "Enabled Simple Voice Chat death/spectate integration");
+                "Registered Simple Voice Chat death/spectate integration");
     }
 
     private static void onMicrophone(MicrophonePacketEvent event) {
-        if (forwarding()) return;
+        if (!ModCompatibilityConfig.simpleVoiceChatEnabled() || forwarding()) return;
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
         if (sender == null) return;
 
@@ -143,7 +137,7 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
     }
 
     private static void onEntitySound(EntitySoundPacketEvent event) {
-        if (forwarding()) return;
+        if (!ModCompatibilityConfig.simpleVoiceChatEnabled() || forwarding()) return;
         ServerPlayer receiver = minecraftPlayer(event.getReceiverConnection());
         if (receiver == null) return;
 
@@ -161,7 +155,7 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
     }
 
     private static void onLocationalSound(LocationalSoundPacketEvent event) {
-        if (forwarding()) return;
+        if (!ModCompatibilityConfig.simpleVoiceChatEnabled() || forwarding()) return;
         ServerPlayer receiver = minecraftPlayer(event.getReceiverConnection());
         if (receiver == null) return;
 
@@ -176,7 +170,7 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
     }
 
     private static void onStaticSound(StaticSoundPacketEvent event) {
-        if (forwarding()) return;
+        if (!ModCompatibilityConfig.simpleVoiceChatEnabled() || forwarding()) return;
         ServerPlayer receiver = minecraftPlayer(event.getReceiverConnection());
         if (receiver == null) return;
 
@@ -249,7 +243,8 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
     }
 
     private static boolean supportedApiInstalled() {
-        String apiVersion = ModList.get().getModContainerById(API_MOD_ID)
+        String apiVersion = ModList.get()
+                .getModContainerById(SimpleVoiceChatPresence.API_MOD_ID)
                 .map(container -> container.getModInfo().getVersion().toString())
                 .orElse("");
         if (versionAtLeast(apiVersion, MIN_API_MAJOR, MIN_API_MINOR,
@@ -261,7 +256,7 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
         // only the parent voicechat mod. Its version is Minecraft-prefixed, so
         // compare the last semantic triplet (e.g. 1.20.1-2.6.22 -> 2.6.22).
         String voicechatVersion = ModList.get()
-                .getModContainerById(VOICECHAT_MOD_ID)
+                .getModContainerById(SimpleVoiceChatPresence.MOD_ID)
                 .map(container -> container.getModInfo().getVersion().toString())
                 .orElse("");
         return versionAtLeast(voicechatVersion, MIN_API_MAJOR, MIN_API_MINOR,

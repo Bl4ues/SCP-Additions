@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.compat.MineZeroScpCheckpoint;
 
 import java.util.ArrayList;
@@ -39,8 +40,18 @@ public final class ScpSignSupportBlockEntity extends BlockEntity {
 
     public void setData(ScpSignData updated) {
         if (level instanceof ServerLevel serverLevel) {
-            MineZeroScpCheckpoint.recordBlockBeforeChange(serverLevel,
-                    worldPosition, getBlockState());
+            // MineZero rollback bookkeeping is auxiliary to the sign edit. A
+            // compatibility snapshot failure must never turn pressing Done into
+            // a server/client crash; the edit remains authoritative even if that
+            // one mutation cannot be journaled for a future rewind.
+            try {
+                MineZeroScpCheckpoint.recordBlockBeforeChange(serverLevel,
+                        worldPosition, getBlockState());
+            } catch (RuntimeException exception) {
+                ScpAdditionsMod.LOGGER.error(
+                        "Could not journal SCP sign {} before editing; applying the edit without a MineZero rollback entry",
+                        worldPosition, exception);
+            }
         }
         data = updated == null ? ScpSignData.DEFAULT : updated;
         setChanged();

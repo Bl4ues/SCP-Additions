@@ -11,6 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.AbstractScp131Entity;
+import net.mcreator.scpadditions.entity.PlayerCorpseEntity;
 import net.mcreator.scpadditions.entity.RoombaEntity;
 import net.mcreator.scpadditions.entity.Scp106Entity;
 import net.mcreator.scpadditions.entity.Scp131AEntity;
@@ -60,6 +61,14 @@ public class ScpAdditionsModEntities {
                     .fireImmune()
                     .build("roomba"));
 
+    public static final RegistryObject<EntityType<PlayerCorpseEntity>> PLAYER_CORPSE =
+            REGISTRY.register("player_corpse", () -> EntityType.Builder.of(
+                    PlayerCorpseEntity::new, MobCategory.MISC)
+                    .sized(0.72F, 0.42F)
+                    .clientTrackingRange(10)
+                    .updateInterval(2)
+                    .build("player_corpse"));
+
     @SubscribeEvent
     public static void createAttributes(EntityAttributeCreationEvent event) {
         event.put(SCP_106.get(), Scp106Entity.createAttributes().build());
@@ -73,5 +82,6 @@ public class ScpAdditionsModEntities {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
                 .build());
         event.put(ROOMBA.get(), RoombaEntity.createAttributes().build());
+        event.put(PLAYER_CORPSE.get(), PlayerCorpseEntity.createAttributes().build());
     }
 }

@@ -18,10 +18,10 @@ import net.mcreator.scpadditions.network.DeathSpectateStatePacket;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Server authority for the death-screen live feed.
@@ -41,7 +41,11 @@ public final class DeathSpectateCoordinator {
     public static final int ACTION_CYCLE_NEXT = 3;
     public static final int ACTION_STOP = 4;
 
-    private static final Map<UUID, Session> SESSIONS = new HashMap<>();
+    // Simple Voice Chat dispatches microphone/audio events on its own packet
+    // thread. Sessions are therefore concurrent and targetId is volatile so the
+    // optional voice bridge can read the live feed topology without touching the
+    // Minecraft server thread or racing a target switch.
+    private static final Map<UUID, Session> SESSIONS = new ConcurrentHashMap<>();
     private static int followTick;
 
     private DeathSpectateCoordinator() {
@@ -149,10 +153,49 @@ public final class DeathSpectateCoordinator {
         sendState(observer, false, null, eligibleTargets(observer).size());
     }
 
-    private static boolean canObserve(ServerPlayer player) {
+    /**
+     * True only for players participating in the SCP Additions death flow.
+     * Ordinary admin/creative spectators are deliberately excluded.
+     */
+    public static boolean isDeadVoiceParticipant(ServerPlayer player) {
         return player != null && (!player.isAlive()
                 || MineZeroDeathCoordinator.isLogicallyDead(player)
                 || SESSIONS.containsKey(player.getUUID()));
+    }
+
+    /** Returns the living personnel feed currently watched by this dead player. */
+    public static UUID spectatedTargetId(ServerPlayer observer) {
+        if (observer == null) return null;
+        Session session = SESSIONS.get(observer.getUUID());
+        return session == null ? null : session.targetId;
+    }
+
+    /** Snapshot of all dead players that should share the non-positional call. */
+    public static List<ServerPlayer> deadVoiceParticipants(MinecraftServer server) {
+        if (server == null) return List.of();
+        List<ServerPlayer> result = new ArrayList<>();
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (isDeadVoiceParticipant(player)) result.add(player);
+        }
+        return List.copyOf(result);
+    }
+
+    /** Dead observers whose active personnel feed is attached to this player. */
+    public static List<ServerPlayer> observersOf(ServerPlayer target) {
+        if (target == null || target.server == null) return List.of();
+        UUID targetId = target.getUUID();
+        List<ServerPlayer> result = new ArrayList<>();
+        for (Session session : SESSIONS.values()) {
+            UUID watched = session.targetId;
+            if (watched == null || !watched.equals(targetId)) continue;
+            ServerPlayer observer = player(target.server, session.observerId);
+            if (isDeadVoiceParticipant(observer)) result.add(observer);
+        }
+        return List.copyOf(result);
+    }
+
+    private static boolean canObserve(ServerPlayer player) {
+        return isDeadVoiceParticipant(player);
     }
 
     private static List<ServerPlayer> eligibleTargets(ServerPlayer observer) {
@@ -270,7 +313,7 @@ public final class DeathSpectateCoordinator {
         private final float originPitch;
         private final GameType originGameMode;
         private final boolean originInvulnerable;
-        private UUID targetId;
+        private volatile UUID targetId;
 
         private Session(UUID observerId, ResourceKey<Level> originDimension,
                 Vec3 origin, float originYaw, float originPitch,

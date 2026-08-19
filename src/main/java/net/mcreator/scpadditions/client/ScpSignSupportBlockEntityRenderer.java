@@ -149,9 +149,12 @@ public final class ScpSignSupportBlockEntityRenderer
         poseStack.translate(panelX(imageX), panelY(imageY), CONTENT_Z);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
         poseStack.scale(scale, -scale, scale);
+        // Match vanilla sign-style text rendering. POLYGON_OFFSET is the path
+        // shader wrappers already have to support for sign text, while NORMAL
+        // can be folded into incompatible block-entity batching by Oculus.
         font.drawInBatch(sequence, centered ? -textWidth * 0.5F : 0.0F,
                 0.0F, TEXT_COLOR, false, poseStack.last().pose(), buffer,
-                Font.DisplayMode.NORMAL, 0, packedLight);
+                Font.DisplayMode.POLYGON_OFFSET, 0, packedLight);
         poseStack.popPose();
     }
 
@@ -163,8 +166,12 @@ public final class ScpSignSupportBlockEntityRenderer
         float top = panelY(area.y());
         float bottom = panelY(area.y() + area.height());
 
+        // Paper artwork and hazard icons are not translucent surfaces. Keeping
+        // them on an entity cutout layer avoids mixing several translucent
+        // entity buffers with sign text inside one block-entity render pass,
+        // which is fragile under Oculus/BSL's translucent ordering pipeline.
         VertexConsumer consumer = buffer.getBuffer(
-                RenderType.entityTranslucent(texture));
+                RenderType.entityCutoutNoCull(texture));
         PoseStack.Pose pose = poseStack.last();
         Matrix4f matrix = pose.pose();
         Matrix3f normal = pose.normal();

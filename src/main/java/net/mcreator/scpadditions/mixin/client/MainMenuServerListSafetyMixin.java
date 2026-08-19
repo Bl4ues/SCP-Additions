@@ -1,0 +1,153 @@
+package net.mcreator.scpadditions.mixin.client;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.FaviconTexture;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.multiplayer.ServerList;
+import net.minecraft.client.multiplayer.ServerStatusPinger;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.client.MainMenuPlayPanelsClient;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * The vanilla multiplayer screen starts status pings away from the render
+ * thread. The custom title-screen flyout originally called pingServer directly
+ * while handling the Multiplayer click, allowing a connection timeout to
+ * escape through Screen#mouseClicked and crash the client. Keep the custom UI,
+ * but load the list synchronously and dispatch only the network probes to
+ * workers, just as a server browser should.
+ */
+@Mixin(value = MainMenuPlayPanelsClient.class, remap = false)
+public abstract class MainMenuServerListSafetyMixin {
+    @Inject(method = "refreshServers", at = @At("HEAD"), cancellable = true,
+            remap = false)
+    private static void scpAdditions$refreshServersOffThread(
+            @Coerce Object state, CallbackInfo callback) {
+        callback.cancel();
+        try {
+            ServerStatusPinger previous = field(state, "serverPinger",
+                    ServerStatusPinger.class);
+            if (previous != null) {
+                try {
+                    previous.removeAll();
+                } catch (Exception ignored) {
+                }
+            }
+
+            Map<?, ?> icons = field(state, "serverIcons", Map.class);
+            if (icons != null) {
+                for (Object value : icons.values()) {
+                    if (value instanceof FaviconTexture favicon) {
+                        try {
+                            favicon.close();
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                icons.clear();
+            }
+
+            Set<String> dirtyIcons = stringSet(state, "dirtyServerIcons");
+            if (dirtyIcons != null) dirtyIcons.clear();
+
+            ServerList serverList = new ServerList(Minecraft.getInstance());
+            serverList.load();
+            List<ServerData> servers = new ArrayList<>();
+            for (int index = 0; index < serverList.size(); index++) {
+                servers.add(serverList.get(index));
+            }
+
+            ServerStatusPinger pinger = new ServerStatusPinger();
+            setField(state, "serverList", serverList);
+            setField(state, "servers", servers);
+            setField(state, "serverPinger", pinger);
+            setField(state, "scrollOffset", 0);
+            setField(state, "contextIndex", -1);
+
+            for (ServerData server : servers) {
+                server.pinged = true;
+                CompletableFuture.runAsync(() -> pingSafely(
+                        pinger, server, dirtyIcons));
+            }
+        } catch (Throwable throwable) {
+            ScpAdditionsMod.LOGGER.error(
+                    "Could not load the custom multiplayer server list safely",
+                    throwable);
+            try {
+                setField(state, "servers", new ArrayList<ServerData>());
+                setField(state, "serverPinger", null);
+                setField(state, "scrollOffset", 0);
+                setField(state, "contextIndex", -1);
+            } catch (ReflectiveOperationException ignored) {
+            }
+        }
+    }
+
+    private static void pingSafely(ServerStatusPinger pinger,
+            ServerData server, Set<String> dirtyIcons) {
+        try {
+            pinger.pingServer(server, () -> {
+                try {
+                    ServerList.saveSingleServer(server);
+                } catch (Exception exception) {
+                    ScpAdditionsMod.LOGGER.debug(
+                            "Could not persist ping result for {}", server.ip,
+                            exception);
+                }
+                if (dirtyIcons != null) dirtyIcons.add(server.ip);
+            });
+        } catch (Exception exception) {
+            markUnavailable(server);
+            ScpAdditionsMod.LOGGER.debug(
+                    "Server ping failed for {} without crashing the menu",
+                    server.ip, exception);
+        }
+    }
+
+    private static void markUnavailable(ServerData server) {
+        server.motd = Component.translatable("multiplayer.status.cannot_connect");
+        server.status = CommonComponents.EMPTY;
+        server.ping = -1L;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<String> stringSet(Object target, String name)
+            throws ReflectiveOperationException {
+        Object value = rawField(target, name);
+        return value instanceof Set<?> set ? (Set<String>) set : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T field(Object target, String name, Class<T> type)
+            throws ReflectiveOperationException {
+        Object value = rawField(target, name);
+        return type.isInstance(value) ? (T) value : null;
+    }
+
+    private static Object rawField(Object target, String name)
+            throws ReflectiveOperationException {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(target);
+    }
+
+    private static void setField(Object target, String name, Object value)
+            throws ReflectiveOperationException {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+}

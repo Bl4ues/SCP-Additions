@@ -2,7 +2,9 @@ package net.mcreator.scpadditions.client;
 
 import com.bl4ues.scpinventory.client.ScpFonts;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
@@ -18,6 +20,7 @@ import net.mcreator.scpadditions.mixin.client.ScreenInvoker;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,16 +28,22 @@ import java.util.Objects;
 import java.util.WeakHashMap;
 
 /**
- * Hosts a real ShareToLanScreen behind the custom pause panel. Mods may keep
- * injecting their normal LAN widgets and start callbacks; only their visual
- * placement is adapted to the SCP Additions presentation.
+ * Hosts a real ShareToLanScreen behind the custom pause panel. Mods keep their
+ * original callbacks and validation, while their injected widgets are laid out
+ * and rendered as a continuation of SCP Additions' LAN presentation.
  */
 public final class PauseMenuLanCompatibilityClient {
     private static final int PANEL = 0xE20B0E12;
+    private static final int ROW = 0xA2181D24;
+    private static final int ROW_HOVER = 0xC6242B35;
+    private static final int FIELD = 0xD110141A;
     private static final int BORDER = 0x70414A56;
     private static final int ACCENT = 0xFFC99B18;
+    private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int TEXT = 0xFFF5F6F7;
     private static final int MUTED = 0xFF9DA5AF;
+    private static final int CONTENT_GAP = 8;
+    private static final int BUTTON_HEIGHT = 30;
 
     private static final Map<CustomPauseMenuScreen, Backend> BACKENDS =
             new WeakHashMap<>();
@@ -72,22 +81,18 @@ public final class PauseMenuLanCompatibilityClient {
                 layout.y + layout.height, ACCENT);
         graphics.fill(layout.x, layout.y + layout.height - 1,
                 layout.x + layout.width, layout.y + layout.height, BORDER);
-        graphics.drawString(Minecraft.getInstance().font,
-                ScpFonts.montserrat("MOD OPTIONS"), layout.x + 14,
-                layout.y + 14, TEXT, false);
+
+        Font font = Minecraft.getInstance().font;
+        graphics.drawString(font, ScpFonts.montserrat("ADDITIONAL LAN OPTIONS"),
+                layout.x + 16, layout.y + 16, TEXT, false);
+        graphics.fill(layout.x + 16, layout.y + 36,
+                layout.x + layout.width - 16, layout.y + 37, BORDER);
 
         for (WidgetPlacement placement : backend.extras) {
             AbstractWidget widget = placement.widget;
-            if (!widget.visible) continue;
-            if (widget instanceof EditBox) {
-                String label = widget.getMessage().getString();
-                if (!label.isBlank()) {
-                    graphics.drawString(Minecraft.getInstance().font,
-                            ScpFonts.titillium(label), widget.getX(),
-                            widget.getY() - 10, MUTED, false);
-                }
-            }
-            widget.render(graphics, mouseX, mouseY, partialTick);
+            if (!widget.visible || placement.rowY < 0) continue;
+            renderIntegratedWidget(graphics, font, placement,
+                    mouseX, mouseY, partialTick);
         }
     }
 
@@ -99,8 +104,12 @@ public final class PauseMenuLanCompatibilityClient {
         if (backend == null) return false;
         syncBackendFromCustom(backend, nativeState);
 
+        ExtraLayout layout = extraLayout(parent, nativeState, backend);
+        if (layout != null) layoutExtras(backend, layout);
+
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.mouseClicked(mouseX, mouseY, button)) {
+            if (placement.widget.visible
+                    && placement.widget.mouseClicked(mouseX, mouseY, button)) {
                 return true;
             }
         }
@@ -120,7 +129,8 @@ public final class PauseMenuLanCompatibilityClient {
         Backend backend = activeBackend(parent);
         if (backend == null) return false;
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.mouseReleased(mouseX, mouseY, button)) {
+            if (placement.widget.visible
+                    && placement.widget.mouseReleased(mouseX, mouseY, button)) {
                 return true;
             }
         }
@@ -133,7 +143,8 @@ public final class PauseMenuLanCompatibilityClient {
         Backend backend = activeBackend(parent);
         if (backend == null) return false;
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.mouseDragged(mouseX, mouseY, button,
+            if (placement.widget.visible
+                    && placement.widget.mouseDragged(mouseX, mouseY, button,
                     dragX, dragY)) {
                 return true;
             }
@@ -146,7 +157,8 @@ public final class PauseMenuLanCompatibilityClient {
         Backend backend = activeBackend(parent);
         if (backend == null) return false;
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.mouseScrolled(mouseX, mouseY, delta)) {
+            if (placement.widget.visible
+                    && placement.widget.mouseScrolled(mouseX, mouseY, delta)) {
                 return true;
             }
         }
@@ -158,7 +170,8 @@ public final class PauseMenuLanCompatibilityClient {
         Backend backend = activeBackend(parent);
         if (backend == null) return false;
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.keyPressed(keyCode, scanCode, modifiers)) {
+            if (placement.widget.visible
+                    && placement.widget.keyPressed(keyCode, scanCode, modifiers)) {
                 return true;
             }
         }
@@ -170,7 +183,8 @@ public final class PauseMenuLanCompatibilityClient {
         Backend backend = activeBackend(parent);
         if (backend == null) return false;
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.keyReleased(keyCode, scanCode, modifiers)) {
+            if (placement.widget.visible
+                    && placement.widget.keyReleased(keyCode, scanCode, modifiers)) {
                 return true;
             }
         }
@@ -182,7 +196,8 @@ public final class PauseMenuLanCompatibilityClient {
         Backend backend = activeBackend(parent);
         if (backend == null) return false;
         for (WidgetPlacement placement : backend.extras) {
-            if (placement.widget.charTyped(codePoint, modifiers)) {
+            if (placement.widget.visible
+                    && placement.widget.charTyped(codePoint, modifiers)) {
                 return true;
             }
         }
@@ -257,6 +272,8 @@ public final class PauseMenuLanCompatibilityClient {
             extras.add(new WidgetPlacement(widget, widget.getX(), widget.getY(),
                     widget.getWidth(), widget.getHeight()));
         }
+        extras.sort(Comparator.comparingInt((WidgetPlacement p) -> p.originalY)
+                .thenComparingInt(p -> p.originalX));
         return new Backend(screen, width, height, start, gameMode, commands,
                 port, extras);
     }
@@ -360,50 +377,163 @@ public final class PauseMenuLanCompatibilityClient {
     private static ExtraLayout extraLayout(CustomPauseMenuScreen parent,
             Object nativeState, Backend backend) {
         if (backend.extras.isEmpty()) return null;
-        int minX = Integer.MAX_VALUE;
-        int maxX = Integer.MIN_VALUE;
-        int minY = Integer.MAX_VALUE;
-        for (WidgetPlacement placement : backend.extras) {
-            minX = Math.min(minX, placement.originalX);
-            maxX = Math.max(maxX, placement.originalX + placement.width);
-            minY = Math.min(minY, placement.originalY);
-        }
-        int panelWidth = Mth.clamp(maxX - minX + 24, 220,
-                Math.max(220, parent.width - 20));
-        int panelY = 10;
-        int panelHeight = Math.max(120, parent.height - 20);
 
-        Object layout = null;
+        Object nativeLayout = null;
         try {
-            layout = readField(nativeState, "layout");
+            nativeLayout = readField(nativeState, "layout");
         } catch (ReflectiveOperationException ignored) {
         }
         int nativeX = parent.width / 2;
-        int nativeWidth = 0;
-        if (layout != null) {
-            nativeX = intField(layout, "x", nativeX);
-            nativeWidth = intField(layout, "width", 0);
+        int nativeY = Math.max(24, Math.round(parent.height * 0.235F));
+        int nativeWidth = 360;
+        int nativeHeight = Mth.clamp(Math.round(parent.height * 0.53F),
+                220, 300);
+        if (nativeLayout != null) {
+            nativeX = intField(nativeLayout, "x", nativeX);
+            nativeY = intField(nativeLayout, "y", nativeY);
+            nativeWidth = intField(nativeLayout, "width", nativeWidth);
+            nativeHeight = intField(nativeLayout, "height", nativeHeight);
         }
 
-        int right = nativeX + nativeWidth + 12;
-        int left = nativeX - panelWidth - 12;
+        int availableRight = parent.width - (nativeX + nativeWidth) - 10;
+        int availableLeft = nativeX - 10;
+        int preferred = Mth.clamp(Math.round(parent.width * 0.31F),
+                380, 520);
+        int panelWidth;
         int panelX;
-        if (right + panelWidth <= parent.width - 8) panelX = right;
-        else if (left >= 8) panelX = left;
-        else panelX = Mth.clamp(parent.width - panelWidth - 8,
-                8, Math.max(8, parent.width - panelWidth - 8));
+        if (availableRight >= 330) {
+            panelWidth = Math.min(preferred, availableRight);
+            panelX = nativeX + nativeWidth;
+        } else if (availableLeft >= 330) {
+            panelWidth = Math.min(preferred, availableLeft);
+            panelX = nativeX - panelWidth;
+        } else {
+            panelWidth = Math.min(Math.max(300, parent.width - 20), preferred);
+            panelX = Math.max(10, parent.width - panelWidth - 10);
+        }
 
-        return new ExtraLayout(panelX, panelY, panelWidth, panelHeight,
-                minX, minY);
+        return new ExtraLayout(panelX, nativeY, panelWidth, nativeHeight);
     }
 
+    /**
+     * Preserve the mod's logical grouping (widgets created on the same vanilla
+     * Y coordinate stay on the same row) while replacing its screen coordinates
+     * with a compact SCP Additions grid. This remains generic for other mods.
+     */
     private static void layoutExtras(Backend backend, ExtraLayout layout) {
-        int dx = layout.x + 12 - layout.sourceMinX;
-        int dy = layout.y + 30 - layout.sourceMinY;
-        for (WidgetPlacement placement : backend.extras) {
-            placement.widget.setX(placement.originalX + dx);
-            placement.widget.setY(placement.originalY + dy);
+        for (WidgetPlacement placement : backend.extras) placement.rowY = -1;
+
+        List<WidgetPlacement> visible = backend.extras.stream()
+                .filter(p -> p.widget.visible)
+                .sorted(Comparator.comparingInt((WidgetPlacement p) -> p.originalY)
+                        .thenComparingInt(p -> p.originalX))
+                .toList();
+        int contentX = layout.x + 16;
+        int contentWidth = Math.max(120, layout.width - 32);
+        int y = layout.y + 52;
+        int index = 0;
+
+        while (index < visible.size()) {
+            int sourceY = visible.get(index).originalY;
+            List<WidgetPlacement> group = new ArrayList<>();
+            while (index < visible.size()
+                    && Math.abs(visible.get(index).originalY - sourceY) <= 4) {
+                group.add(visible.get(index++));
+            }
+
+            boolean hasField = group.stream().anyMatch(p -> p.widget instanceof EditBox);
+            if (hasField) {
+                for (WidgetPlacement placement : group) {
+                    placement.rowY = y;
+                    placement.widget.setX(contentX);
+                    placement.widget.setY(y + 13);
+                    placement.widget.setWidth(contentWidth);
+                    placement.widget.setHeight(24);
+                    if (placement.widget instanceof EditBox editBox) {
+                        editBox.setBordered(false);
+                    }
+                    y += 43;
+                }
+                continue;
+            }
+
+            int groupIndex = 0;
+            while (groupIndex < group.size()) {
+                int columns = Math.min(3, group.size() - groupIndex);
+                int cellWidth = Math.max(64,
+                        (contentWidth - CONTENT_GAP * (columns - 1)) / columns);
+                for (int column = 0; column < columns; column++) {
+                    WidgetPlacement placement = group.get(groupIndex + column);
+                    int x = contentX + column * (cellWidth + CONTENT_GAP);
+                    placement.rowY = y;
+                    placement.widget.setX(x);
+                    placement.widget.setY(y);
+                    placement.widget.setWidth(cellWidth);
+                    placement.widget.setHeight(BUTTON_HEIGHT);
+                }
+                groupIndex += columns;
+                y += BUTTON_HEIGHT + CONTENT_GAP;
+            }
         }
+    }
+
+    private static void renderIntegratedWidget(GuiGraphics graphics, Font font,
+            WidgetPlacement placement, int mouseX, int mouseY,
+            float partialTick) {
+        AbstractWidget widget = placement.widget;
+        int x = widget.getX();
+        int y = widget.getY();
+        int width = widget.getWidth();
+        int height = widget.getHeight();
+
+        if (widget instanceof EditBox editBox) {
+            String label = widget.getMessage().getString();
+            if (!label.isBlank()) {
+                graphics.drawString(font, ScpFonts.titillium(label),
+                        x, placement.rowY, MUTED, false);
+            }
+            boolean focused = editBox.isFocused();
+            graphics.fill(x, y, x + width, y + height, FIELD);
+            graphics.fill(x, y, x + (focused ? 4 : 3), y + height,
+                    focused ? ACCENT_BRIGHT : ACCENT);
+            graphics.fill(x, y + height - 1, x + width, y + height, BORDER);
+            editBox.render(graphics, mouseX, mouseY, partialTick);
+            return;
+        }
+
+        if (widget instanceof AbstractButton) {
+            boolean hovered = widget.active && widget.isMouseOver(mouseX, mouseY);
+            graphics.fill(x, y, x + width, y + height,
+                    hovered ? ROW_HOVER : ROW);
+            graphics.fill(x, y, x + (hovered ? 5 : 3), y + height,
+                    widget.active ? (hovered ? ACCENT_BRIGHT : ACCENT)
+                            : 0xFF4D535C);
+            graphics.fill(x, y + height - 1, x + width, y + height, BORDER);
+            Component message = widget.getMessage() == null
+                    ? Component.empty() : ScpFonts.roboto(widget.getMessage());
+            drawFittedCentered(graphics, font, message, x + 8, y,
+                    width - 16, height, widget.active ? TEXT : MUTED);
+            return;
+        }
+
+        // Unknown custom widgets keep their own renderer after being positioned
+        // in the integrated grid. This is the escape hatch for future LAN mods.
+        widget.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private static void drawFittedCentered(GuiGraphics graphics, Font font,
+            Component text, int x, int y, int width, int height, int color) {
+        int measured = Math.max(1, font.width(text));
+        float scale = Math.min(1.0F, width / (float) measured);
+        int scaledWidth = Math.round(measured * scale);
+        int scaledHeight = Math.round(font.lineHeight * scale);
+        float drawX = x + (width - scaledWidth) / 2.0F;
+        float drawY = y + (height - scaledHeight) / 2.0F + 1.0F;
+        graphics.pose().pushPose();
+        graphics.pose().translate(drawX, drawY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
     }
 
     private static boolean isNativeStartArea(Object nativeState,
@@ -519,20 +649,22 @@ public final class PauseMenuLanCompatibilityClient {
         private final AbstractWidget widget;
         private final int originalX;
         private final int originalY;
-        private final int width;
-        private final int height;
+        @SuppressWarnings("unused")
+        private final int originalWidth;
+        @SuppressWarnings("unused")
+        private final int originalHeight;
+        private int rowY = -1;
 
         private WidgetPlacement(AbstractWidget widget, int originalX,
                 int originalY, int width, int height) {
             this.widget = widget;
             this.originalX = originalX;
             this.originalY = originalY;
-            this.width = width;
-            this.height = height;
+            this.originalWidth = width;
+            this.originalHeight = height;
         }
     }
 
-    private record ExtraLayout(int x, int y, int width, int height,
-                               int sourceMinX, int sourceMinY) {
+    private record ExtraLayout(int x, int y, int width, int height) {
     }
 }

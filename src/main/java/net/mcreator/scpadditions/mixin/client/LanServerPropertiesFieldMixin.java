@@ -37,7 +37,7 @@ public abstract class LanServerPropertiesFieldMixin {
         scpAdditions$lanFieldOriginalX = field.getX();
         scpAdditions$lanFieldOriginalY = field.getY();
         field.setX(scpAdditions$lanFieldOriginalX + 8);
-        field.setY(scpAdditions$lanFieldOriginalY + 2);
+        field.setY(scpAdditions$lanFieldOriginalY + 6);
         scpAdditions$lanFieldShifted = true;
     }
 

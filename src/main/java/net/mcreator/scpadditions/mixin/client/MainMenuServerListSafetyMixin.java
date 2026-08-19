@@ -152,6 +152,7 @@ public abstract class MainMenuServerListSafetyMixin {
             });
         } catch (Exception exception) {
             markUnavailable(server);
+            if (dirtyIcons != null) dirtyIcons.add(server.ip);
             ScpAdditionsMod.LOGGER.debug(
                     "Server ping failed for {} without crashing the menu",
                     server.ip, exception);

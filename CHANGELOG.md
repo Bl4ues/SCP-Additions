@@ -123,6 +123,8 @@
 ## Mod Integrations
 
 - Added a dedicated **Mod Integrations** section to the Configuration Center for optional behavior-level integrations with detected mods; unavailable integrations remain visible but disabled;
+- Added **Simple Voice Chat** integration for multiplayer death and spectating: living players keep normal voice-chat behavior, while dead players share a non-positional dead-only call that cannot be heard by living players;
+- Live Personnel Feed observers also receive the voice-chat audio heard by their selected surviving player, including that survivor's own microphone, while remaining isolated from ordinary proximity and group routing at the dead observer's server-side position;
 - Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP Additions death/spectate flow while using SCP Additions saves as MineZero checkpoints;
 - MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
 - Extended MineZero checkpoint snapshots with SCP Additions player capabilities, SCP Inventory state, persistent facility/SCP-079 data, and tracked SCP Additions block and BlockEntity changes so the mod's custom state rewinds with the world;

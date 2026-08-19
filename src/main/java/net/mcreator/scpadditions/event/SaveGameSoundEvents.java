@@ -2,7 +2,6 @@ package net.mcreator.scpadditions.event;
 
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -15,6 +14,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.compat.MineZeroCompatibility;
 import net.mcreator.scpadditions.compat.MineZeroSaveSafety;
+import net.mcreator.scpadditions.network.SaveFeedbackPacket;
 import net.mcreator.scpadditions.network.SaveStatePacket;
 import net.mcreator.scpadditions.save.SaveMethod;
 import net.mcreator.scpadditions.sound.GameplaySounds;
@@ -127,8 +127,7 @@ public final class SaveGameSoundEvents {
 
         if (MineZeroCompatibility.enabled()) {
             if (!MineZeroSaveSafety.canSave(player.server)) {
-                player.displayClientMessage(
-                        Component.literal("You can't save right now"), true);
+                showSaveBlocked(player);
                 return;
             }
             if (!MineZeroCompatibility.createCheckpoint(player)) {
@@ -144,6 +143,14 @@ public final class SaveGameSoundEvents {
         player.playNotifySound(GameplaySounds.SAVE_GAME.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
         syncState(player, storedMethod, true);
+    }
+
+    /** Sends the save-rejection presentation without touching the current save. */
+    public static void showSaveBlocked(ServerPlayer player) {
+        if (player == null || player.connection == null) return;
+        ScpAdditionsMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new SaveFeedbackPacket(SaveFeedbackPacket.SAVE_BLOCKED));
     }
 
     /** MineZero checkpoints are global, so their save identity and feedback are too. */

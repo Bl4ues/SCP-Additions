@@ -83,7 +83,7 @@ public final class PauseMenuLanCompatibilityClient {
                 layout.x + layout.width, layout.y + layout.height, BORDER);
 
         Font font = Minecraft.getInstance().font;
-        graphics.drawString(font, ScpFonts.montserrat("ADDITIONAL LAN OPTIONS"),
+        graphics.drawString(font, ScpFonts.montserrat("LAN OPTIONS"),
                 layout.x + 16, layout.y + 16, TEXT, false);
         graphics.fill(layout.x + 16, layout.y + 36,
                 layout.x + layout.width - 16, layout.y + 37, BORDER);
@@ -415,11 +415,6 @@ public final class PauseMenuLanCompatibilityClient {
         return new ExtraLayout(panelX, nativeY, panelWidth, nativeHeight);
     }
 
-    /**
-     * Preserve the mod's logical grouping (widgets created on the same vanilla
-     * Y coordinate stay on the same row) while replacing its screen coordinates
-     * with a compact SCP Additions grid. This remains generic for other mods.
-     */
     private static void layoutExtras(Backend backend, ExtraLayout layout) {
         for (WidgetPlacement placement : backend.extras) placement.rowY = -1;
 

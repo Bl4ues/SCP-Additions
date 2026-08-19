@@ -38,7 +38,8 @@ public final class ClientModulePreferences {
             "hud.hide_active_effect_indicators", "hud.hide_empty_hand",
             "hud.disable_experience_bar", "hud.custom_oxygen_bar",
             "hud.action_bars_roboto", "hud.disable_text_drop_shadows",
-            "hud.facility_chat_interface", "vitals.custom_health_enabled",
+            "hud.facility_chat_interface", "hud.hide_damage_indicator_particles",
+            "vitals.custom_health_enabled",
             "ui.custom_main_menu", "ui.custom_pause_menu",
             "ui.custom_loading_screen", "ui.custom_advancement_toasts",
             "audio.enter_sound_enabled", "audio.save_game_sound_enabled",
@@ -106,6 +107,8 @@ public final class ClientModulePreferences {
         next.hud.actionBarsRoboto = bool(hud, "action_bars_roboto", next.hud.actionBarsRoboto);
         next.hud.disableTextDropShadows = bool(hud, "disable_text_drop_shadows", next.hud.disableTextDropShadows);
         next.hud.facilityChatInterface = bool(hud, "facility_chat_interface", next.hud.facilityChatInterface);
+        next.hud.hideDamageIndicatorParticles = bool(hud,
+                "hide_damage_indicator_particles", next.hud.hideDamageIndicatorParticles);
 
         JsonObject vitals = object(modules, "vitals");
         next.vitals.customHealthEnabled = bool(vitals, "custom_health_enabled", next.vitals.customHealthEnabled);
@@ -166,6 +169,8 @@ public final class ClientModulePreferences {
         hud.addProperty("action_bars_roboto", value.hud.actionBarsRoboto);
         hud.addProperty("disable_text_drop_shadows", value.hud.disableTextDropShadows);
         hud.addProperty("facility_chat_interface", value.hud.facilityChatInterface);
+        hud.addProperty("hide_damage_indicator_particles",
+                value.hud.hideDamageIndicatorParticles);
 
         object(modules, "vitals").addProperty("custom_health_enabled", value.vitals.customHealthEnabled);
 
@@ -230,6 +235,7 @@ public final class ClientModulePreferences {
     public static boolean customItemInteractionSoundsEnabled() { return current.audio.customItemInteractionSounds; }
     public static boolean disableTextDropShadows() { return current.hud.disableTextDropShadows; }
     public static boolean facilityChatInterfaceEnabled() { return current.hud.facilityChatInterface; }
+    public static boolean hideDamageIndicatorParticles() { return current.hud.hideDamageIndicatorParticles; }
     public static boolean reduceRestoreMotion() { return current.accessibility.reduceRestoreMotion; }
 
     private static synchronized void write() throws IOException {
@@ -324,6 +330,7 @@ public final class ClientModulePreferences {
         private boolean actionBarsRoboto = true;
         private boolean disableTextDropShadows = true;
         private boolean facilityChatInterface = true;
+        private boolean hideDamageIndicatorParticles = true;
     }
 
     private static final class Vitals { private boolean customHealthEnabled = true; }

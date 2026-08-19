@@ -59,8 +59,10 @@ public final class FramedSignFrameRenderer {
                 px(0.2F), px(12.85F), px(15.7F), px(13.35F),
                 px(15.7F), px(15.9F));
 
+        // Metal is opaque. Keeping it out of the translucent entity pass leaves
+        // the glass as the only surface that BSL/Oculus has to order here.
         VertexConsumer metal = buffer.getBuffer(
-                RenderType.entityTranslucent(METAL));
+                RenderType.entityCutoutNoCull(METAL));
         renderRotatedCorner(metal, poseStack, packedLight, packedOverlay,
                 0.2F, 12.25F, 0.7F, 12.75F, 0.7F, 12.75F);
         renderRotatedCorner(metal, poseStack, packedLight, packedOverlay,

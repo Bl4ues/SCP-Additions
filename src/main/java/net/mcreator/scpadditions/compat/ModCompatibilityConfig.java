@@ -69,6 +69,23 @@ public final class ModCompatibilityConfig {
         }
     }
 
+    public static boolean simpleVoiceChatEnabled() {
+        return current.simpleVoiceChat;
+    }
+
+    public static synchronized boolean setSimpleVoiceChatEnabled(boolean value) {
+        current.simpleVoiceChat = value;
+        try {
+            write();
+            return true;
+        } catch (IOException exception) {
+            ScpAdditionsMod.LOGGER.error(
+                    "Failed to save Simple Voice Chat compatibility setting",
+                    exception);
+            return false;
+        }
+    }
+
     private static void write() throws IOException {
         ConfigFilePersistence.writeWithBackup(PATH,
                 GSON.toJson(current) + System.lineSeparator());
@@ -76,5 +93,6 @@ public final class ModCompatibilityConfig {
 
     private static final class Data {
         private boolean mineZero = true;
+        private boolean simpleVoiceChat = true;
     }
 }

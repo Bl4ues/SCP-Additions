@@ -21,7 +21,7 @@ import java.util.UUID;
 public final class PlayerCorpseRenderer extends
         MobRenderer<PlayerCorpseEntity, PlayerCorpseRenderer.CorpseModel> {
     private static final float FALL_TICKS = 16.0F;
-    private static final float FINAL_Y_OFFSET = -1.10F;
+    private static final float FINAL_Y_OFFSET = -1.16F;
     private static final float FINAL_Z_OFFSET = 0.30F;
     private static final float[] FINAL_YAW_OFFSETS = {
             -8.0F, 6.0F, -3.0F, 10.0F, -11.0F, 3.0F
@@ -50,9 +50,6 @@ public final class PlayerCorpseRenderer extends
     protected void setupRotations(PlayerCorpseEntity entity,
             PoseStack poseStack, float ageInTicks, float rotationYaw,
             float partialTick) {
-        // Keep LivingEntityRenderer's normal yaw handling, then add only our
-        // controlled collapse. The corpse itself never enters vanilla deathTime,
-        // so there is no second death-roll fighting this transform.
         super.setupRotations(entity, poseStack, ageInTicks, rotationYaw,
                 partialTick);
 

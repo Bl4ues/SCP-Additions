@@ -21,6 +21,7 @@ SCP Additions is currently developed and released for **Minecraft 1.20.1 with Fo
 - [Wiki source mirror](docs/wiki/Home.md)
 - [Changelog](CHANGELOG.md)
 - [Issue tracker](https://github.com/Bl4ues/SCP-Additions/issues)
+- [Roadmap](https://trello.com/b/UFdqpaC8/scp-additions-roadmap)
 
 ## Requirements
 
@@ -41,10 +42,6 @@ Optional client integrations:
 - Server-authoritative configuration center for modules, inventory rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes.
 - Broad vanilla and modded integration through registry-based configuration, automatic item classification, and SCP-914 recipe inference.
 - Multiplayer synchronization for host-controlled gameplay configuration and custom inventory behavior.
-
-## Beta testers
-
-Special thanks to **Aronga** and **Evansky** for multiplayer testing, bug reproduction, and pre-release feedback during the 4.0 development cycle.
 
 ## Installation
 

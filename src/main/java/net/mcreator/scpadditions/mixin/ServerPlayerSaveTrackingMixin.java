@@ -1,7 +1,6 @@
 package net.mcreator.scpadditions.mixin;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -28,8 +27,7 @@ public abstract class ServerPlayerSaveTrackingMixin {
         if (player.connection == null
                 || MineZeroSaveSafety.canSave(player.server)) return;
 
-        player.displayClientMessage(
-                Component.literal("You can't save right now"), true);
+        SaveGameSoundEvents.showSaveBlocked(player);
         callback.cancel();
     }
 

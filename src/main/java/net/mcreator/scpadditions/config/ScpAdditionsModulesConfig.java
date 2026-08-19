@@ -84,6 +84,9 @@ public final class ScpAdditionsModulesConfig {
 		public Accessibility accessibility = new Accessibility();
 		public Debug debug = new Debug();
 
+		@SerializedName("death_bodies")
+		public Toggle deathBodies = new Toggle();
+
 		@SerializedName("scp_173")
 		public Toggle scp173 = new Toggle();
 
@@ -103,6 +106,7 @@ public final class ScpAdditionsModulesConfig {
 			if (audio == null) audio = new Audio();
 			if (accessibility == null) accessibility = new Accessibility();
 			if (debug == null) debug = new Debug();
+			if (deathBodies == null) deathBodies = new Toggle();
 			if (scp173 == null) scp173 = new Toggle();
 			return this;
 		}

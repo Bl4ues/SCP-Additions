@@ -32,6 +32,12 @@ public final class PlayerCorpseManager {
                 .create(player.serverLevel());
         if (corpse == null) return;
         corpse.initializeFrom(player, logicalDeath);
-        player.serverLevel().addFreshEntity(corpse);
+
+        // Do not remove items from the player until the corpse actually exists
+        // in the level. A failed entity spawn must never become an item-deletion
+        // mechanism.
+        if (player.serverLevel().addFreshEntity(corpse)) {
+            corpse.captureInventoryFrom(player);
+        }
     }
 }

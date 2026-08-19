@@ -92,6 +92,7 @@
 - SCP Inventory can now be closed with its configured open key, matching vanilla inventory-toggle behavior, and Crafting items can be dragged outside the interface to drop them into the world;
 - Rebuilt the Configuration Center to match the new main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth entry and exit transitions while retaining the existing configuration editors and validation logic;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
+- Added a default-enabled client-side **Hide Damage Indicator Particles** preference that suppresses the vanilla heart-like hit-feedback particles without affecting other particle effects;
 - Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;
 - Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand pickup prompt artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;
 - Added an SCP Inventory-style interface for plain slot-only storage containers while the custom inventory is enabled, replacing supported chest, barrel, shulker, hopper, dispenser, and compatible modded storage screens with responsive Backpack/Keys/Codex and container lists;
@@ -111,7 +112,7 @@
 ## Death, saving, and spectating
 
 - Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, progressive audio muffling, and SCP Additions-styled Load Game and Main Menu actions;
-- Added a default-enabled server-side **Persistent Death Bodies** module that leaves an inert, interactable player body in a prone crawl pose at the death location, providing a physical entity for future SCP and recovery interactions;
+- Added a default-enabled server-side **Persistent Death Bodies** module that leaves an inert, interactable player body at the death location, using a short fake-ragdoll collapse and several low, randomized prone poses as a physical target for future SCP and recovery interactions;
 - Added **Quicksave**, bound to F6 by default and fully rebindable, which records the player's current position as their respawn point on Safe and Thaumiel difficulties;
 - Reworked checkpoint availability around difficulty: Safe and Thaumiel allow Quicksave and Decontamination Checkpoint saves, Euclid allows Decontamination Checkpoints but not Quicksave, and Keter disables both while leaving vanilla, command, and compatible modded respawn-point methods available;
 - Added a shared save pipeline that recognizes respawn points set through SCP Additions, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated Roboto **Saving...** indicator with the rotating SCP Additions loading emblem;

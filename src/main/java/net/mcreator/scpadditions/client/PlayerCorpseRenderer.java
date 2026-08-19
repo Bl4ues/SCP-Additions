@@ -50,6 +50,9 @@ public final class PlayerCorpseRenderer extends
     protected void setupRotations(PlayerCorpseEntity entity,
             PoseStack poseStack, float ageInTicks, float rotationYaw,
             float partialTick) {
+        // Keep LivingEntityRenderer's normal yaw handling, then add only our
+        // controlled collapse. The corpse itself never enters vanilla deathTime,
+        // so there is no second death-roll fighting this transform.
         super.setupRotations(entity, poseStack, ageInTicks, rotationYaw,
                 partialTick);
 

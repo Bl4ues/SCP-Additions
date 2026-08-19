@@ -34,8 +34,10 @@ public final class MineZeroSpectateClient {
     private static final long ACQUIRE_TIMEOUT_MS = 3200L;
     private static final long LOST_CONNECTION_MS = 1250L;
     private static final UUID NIL = new UUID(0L, 0L);
-    private static final float DEFAULT_ORBIT_PITCH = 10.0F;
-    private static final double CAMERA_DISTANCE = 4.35D;
+    private static final float DEFAULT_ORBIT_PITCH = 6.0F;
+    private static final float ORBIT_YAW_SENSITIVITY = 0.28F;
+    private static final float ORBIT_PITCH_SENSITIVITY = 0.22F;
+    private static final double CAMERA_DISTANCE = 3.20D;
 
     private static UUID targetId;
     private static String targetDisplayName = "No living personnel";
@@ -132,10 +134,10 @@ public final class MineZeroSpectateClient {
     public static void orbit(double deltaX, double deltaY) {
         if (!active || connectionLost) return;
         ensureOrbitInitialized(target());
-        orbitYaw += (float) deltaX * 0.42F;
+        orbitYaw += (float) deltaX * ORBIT_YAW_SENSITIVITY;
         orbitPitch = Mth.clamp(
-                orbitPitch + (float) deltaY * 0.32F, -42.0F, 62.0F);
-        updateCamera(1.0F);
+                orbitPitch + (float) deltaY * ORBIT_PITCH_SENSITIVITY,
+                -35.0F, 52.0F);
     }
 
     public static String targetName() {
@@ -213,13 +215,20 @@ public final class MineZeroSpectateClient {
             orbitPitch = DEFAULT_ORBIT_PITCH;
             beginHandoff();
         }
-        updateCamera(1.0F);
     }
 
-    /** Reapply the camera every GUI frame so vanilla cannot leave it on the observer. */
+    /**
+     * Screen rendering happens after the level has already been drawn. This hook
+     * therefore only reasserts the rig as the camera entity; frame-rate position
+     * interpolation is owned by RenderTickEvent.START before world rendering.
+     */
     public static void updateForRender(float partialTick) {
         if (!active || connectionLost) return;
-        updateCamera(Mth.clamp(partialTick, 0.0F, 1.0F));
+        Minecraft minecraft = Minecraft.getInstance();
+        ensureRig();
+        if (cameraRig != null && minecraft.getCameraEntity() != cameraRig) {
+            minecraft.setCameraEntity(cameraRig);
+        }
     }
 
     /** Static/noise strength for the current camera hand-off. */
@@ -253,6 +262,13 @@ public final class MineZeroSpectateClient {
     }
 
     @SubscribeEvent
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase != TickEvent.Phase.START || !active
+                || connectionLost) return;
+        updateCamera(Mth.clamp(event.renderTickTime, 0.0F, 1.0F));
+    }
+
+    @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !active) return;
 
@@ -270,7 +286,6 @@ public final class MineZeroSpectateClient {
             cameraRig = null;
             cameraRigLevel = null;
         }
-        updateCamera(1.0F);
     }
 
     private static void beginHandoff() {
@@ -336,8 +351,8 @@ public final class MineZeroSpectateClient {
             double x = Mth.lerp(partialTick, target.xo, target.getX());
             double y = Mth.lerp(partialTick, target.yo, target.getY());
             double z = Mth.lerp(partialTick, target.zo, target.getZ());
-            focus = new Vec3(x, y + Math.max(0.9D,
-                    target.getBbHeight() * 0.72D), z);
+            focus = new Vec3(x, y + Math.max(1.05D,
+                    target.getBbHeight() * 0.66D), z);
         } else {
             // During a dimension hand-off the target entity can arrive a few
             // frames after the observer. Keep the camera rig attached to the

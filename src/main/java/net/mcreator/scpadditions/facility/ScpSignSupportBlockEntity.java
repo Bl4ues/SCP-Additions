@@ -7,9 +7,11 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.mcreator.scpadditions.compat.MineZeroScpCheckpoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +38,10 @@ public final class ScpSignSupportBlockEntity extends BlockEntity {
     }
 
     public void setData(ScpSignData updated) {
+        if (level instanceof ServerLevel serverLevel) {
+            MineZeroScpCheckpoint.recordBlockBeforeChange(serverLevel,
+                    worldPosition, getBlockState());
+        }
         data = updated == null ? ScpSignData.DEFAULT : updated;
         setChanged();
         if (level != null && !level.isClientSide) {

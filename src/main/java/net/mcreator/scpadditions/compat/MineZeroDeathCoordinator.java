@@ -66,13 +66,30 @@ public final class MineZeroDeathCoordinator {
     }
 
     @SubscribeEvent
+    public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!MineZeroCompatibility.enabled() || !sessionActive()
+                || !(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        ScpAdditionsMod.queueServerWork(1,
+                () -> broadcast(player.server, null));
+    }
+
+    @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        UUID id = event.getEntity().getUUID();
-        if (!DEAD.remove(id)) return;
-        VOTES.remove(id);
-        CAUSES.remove(id);
-        if (event.getEntity() instanceof ServerPlayer player) {
-            broadcast(player.server, null);
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        UUID id = player.getUUID();
+        if (DEAD.remove(id)) {
+            VOTES.remove(id);
+            CAUSES.remove(id);
+        }
+
+        // LoggedOutEvent can fire while the disconnecting player is still in
+        // PlayerList. Recount one server tick later so the last survivor leaving
+        // immediately turns the remaining death session back into a local load.
+        if (sessionActive()) {
+            ScpAdditionsMod.queueServerWork(1,
+                    () -> broadcast(player.server, null));
         }
     }
 
@@ -145,6 +162,11 @@ public final class MineZeroDeathCoordinator {
         if (server == null) return;
         SessionCounts counts = counts(server);
         VOTES.removeIf(id -> !DEAD.contains(id));
+        if (counts.living() > 0) {
+            // A living player means continuation is possible again. Old rollback
+            // votes must not survive that topology change and reappear later.
+            VOTES.clear();
+        }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (!DEAD.contains(player.getUUID())) continue;
             boolean open = player.getUUID().equals(newlyDead);

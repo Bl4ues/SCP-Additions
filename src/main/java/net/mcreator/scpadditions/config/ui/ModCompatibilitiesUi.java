@@ -15,6 +15,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.MineZeroCompatibilityClientState;
 import net.mcreator.scpadditions.client.ModIntegrationLogoClient;
+import net.mcreator.scpadditions.client.SimpleVoiceChatCompatibilityClientState;
+import net.mcreator.scpadditions.compat.SimpleVoiceChatPresence;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -95,6 +97,7 @@ public final class ModCompatibilitiesUi {
     private static final class ModCompatibilitiesScreen extends Screen {
         private final Screen parent;
         private Button mineZeroButton;
+        private Button voiceChatButton;
         private Button backButton;
 
         private ModCompatibilitiesScreen(Screen parent) {
@@ -104,23 +107,41 @@ public final class ModCompatibilitiesUi {
 
         @Override
         protected void init() {
-            int panelWidth = Math.min(720, Math.max(420, width - 48));
+            int panelWidth = panelWidth();
             int x = ConfigCenterVisuals.contentLeft(width, panelWidth);
-            int panelHeight = Math.min(360, Math.max(250, height - 90));
-            int y = Math.max(28, (height - panelHeight) / 2);
+            int panelHeight = panelHeight();
+            int y = Math.max(18, (height - panelHeight) / 2);
 
             mineZeroButton = addRenderableWidget(Button.builder(
                     Component.empty(), ignored -> {
                         MineZeroCompatibilityClientState.toggle();
                         refreshMineZeroButton();
-                    }).bounds(x + 24, y + 52, panelWidth - 48, 36).build());
+                    }).bounds(x + 24, y + 50, panelWidth - 48, 36).build());
+
+            voiceChatButton = addRenderableWidget(Button.builder(
+                    Component.empty(), ignored -> {
+                        SimpleVoiceChatCompatibilityClientState.toggle();
+                        refreshVoiceChatButton();
+                    }).bounds(x + 24, y + 144, panelWidth - 48, 36).build());
+
             backButton = addRenderableWidget(Button.builder(
                     ScpFonts.roboto("Back"),
                     ignored -> Minecraft.getInstance().setScreen(parent))
-                    .bounds(x + panelWidth - 126, y + panelHeight - 46,
+                    .bounds(x + panelWidth - 126, y + panelHeight - 44,
                             104, 28).build());
+
             refreshMineZeroButton();
+            refreshVoiceChatButton();
             MineZeroCompatibilityClientState.query();
+            SimpleVoiceChatCompatibilityClientState.query();
+        }
+
+        private int panelWidth() {
+            return Math.min(760, Math.max(440, width - 48));
+        }
+
+        private int panelHeight() {
+            return Math.min(440, Math.max(280, height - 70));
         }
 
         private void refreshMineZeroButton() {
@@ -140,6 +161,27 @@ public final class ModCompatibilitiesUi {
             mineZeroButton.active = MineZeroCompatibilityClientState.canEdit();
         }
 
+        private void refreshVoiceChatButton() {
+            if (voiceChatButton == null) return;
+            if (!SimpleVoiceChatCompatibilityClientState.known()) {
+                voiceChatButton.setMessage(Component.literal(
+                        "Simple Voice Chat — Detecting..."));
+                voiceChatButton.active = false;
+                return;
+            }
+            if (!SimpleVoiceChatCompatibilityClientState.installed()) {
+                voiceChatButton.setMessage(Component.literal(
+                        "Simple Voice Chat — NOT INSTALLED"));
+                voiceChatButton.active = false;
+                return;
+            }
+            voiceChatButton.setMessage(Component.literal(
+                    "Simple Voice Chat Integration: "
+                            + (SimpleVoiceChatCompatibilityClientState.enabled()
+                            ? "ON" : "OFF")));
+            voiceChatButton.active = SimpleVoiceChatCompatibilityClientState.canEdit();
+        }
+
         @Override
         public void renderBackground(GuiGraphics graphics) {
             ConfigCenterVisuals.renderBackdrop(this, graphics, 0, 0);
@@ -149,44 +191,59 @@ public final class ModCompatibilitiesUi {
         public void render(GuiGraphics graphics, int mouseX, int mouseY,
                 float partialTick) {
             refreshMineZeroButton();
+            refreshVoiceChatButton();
             renderBackground(graphics);
-            int panelWidth = Math.min(720, Math.max(420, width - 48));
+            int panelWidth = panelWidth();
             int x = ConfigCenterVisuals.contentLeft(width, panelWidth);
-            int panelHeight = Math.min(360, Math.max(250, height - 90));
-            int y = Math.max(28, (height - panelHeight) / 2);
+            int panelHeight = panelHeight();
+            int y = Math.max(18, (height - panelHeight) / 2);
 
             ConfigCenterVisuals.drawPanel(graphics, font, x, y, panelWidth,
                     panelHeight, LABEL);
 
             int textX = x + 24 + ConfigCenterVisuals.contentOffsetX();
-            int textY = y + 98;
-            String description = "Uses SCP Additions saves as MineZero checkpoints. Its automatic Return by Death is replaced by the SCP Additions death/spectate flow; after a team wipe, players vote to roll the world back to the latest valid save, including SCP Additions inventories and facility state.";
-            for (var line : font.split(ScpFonts.roboto(description), panelWidth - 48)) {
-                graphics.drawString(font, line, textX, textY,
-                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
-                textY += font.lineHeight + 3;
-            }
+            drawDescription(graphics, textX, y + 94, panelWidth - 48,
+                    "Uses SCP Additions saves as MineZero checkpoints and replaces automatic Return by Death with the death/spectate flow. Team wipes require a vote before rollback.");
+            drawDescription(graphics, textX, y + 188, panelWidth - 48,
+                    "Dead players share a non-positional voice channel and hear the voice-chat audio of the survivor in their Live Personnel Feed. Living players cannot hear the dead.");
 
-            if (mineZeroButton != null) {
-                ConfigCenterVisuals.drawButton(graphics, font, mineZeroButton,
-                        ScpFonts.roboto(mineZeroButton.getMessage()), mouseX, mouseY);
+            drawIntegrationButton(graphics, mineZeroButton, MINEZERO_ID,
+                    MineZeroCompatibilityClientState.installed(), mouseX, mouseY);
+            drawIntegrationButton(graphics, voiceChatButton,
+                    SimpleVoiceChatPresence.MOD_ID,
+                    SimpleVoiceChatCompatibilityClientState.installed(),
+                    mouseX, mouseY);
 
-                if (MineZeroCompatibilityClientState.installed()) {
-                    ResourceLocation logo = ModIntegrationLogoClient.logo(MINEZERO_ID);
-                    if (logo != null) {
-                        int iconSize = 26;
-                        int iconX = mineZeroButton.getX() + 8;
-                        int iconY = mineZeroButton.getY()
-                                + (mineZeroButton.getHeight() - iconSize) / 2;
-                        graphics.blit(logo, iconX, iconY, iconSize, iconSize,
-                                0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
-                    }
-                }
-            }
             if (backButton != null) {
                 ConfigCenterVisuals.drawButton(graphics, font, backButton,
                         ScpFonts.roboto("Back"), mouseX, mouseY);
             }
+        }
+
+        private void drawDescription(GuiGraphics graphics, int x, int y,
+                int width, String description) {
+            int lineY = y;
+            for (var line : font.split(ScpFonts.roboto(description), width)) {
+                graphics.drawString(font, line, x, lineY,
+                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
+                lineY += font.lineHeight + 3;
+            }
+        }
+
+        private void drawIntegrationButton(GuiGraphics graphics, Button button,
+                String modId, boolean installed, int mouseX, int mouseY) {
+            if (button == null) return;
+            ConfigCenterVisuals.drawButton(graphics, font, button,
+                    ScpFonts.roboto(button.getMessage()), mouseX, mouseY);
+
+            if (!installed) return;
+            ResourceLocation logo = ModIntegrationLogoClient.logo(modId);
+            if (logo == null) return;
+            int iconSize = 26;
+            int iconX = button.getX() + 8;
+            int iconY = button.getY() + (button.getHeight() - iconSize) / 2;
+            graphics.blit(logo, iconX, iconY, iconSize, iconSize,
+                    0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
         }
 
         @Override

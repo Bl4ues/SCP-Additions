@@ -52,5 +52,9 @@ public final class SaveGameNetwork {
                 DeathSpectateStatePacket::encode,
                 DeathSpectateStatePacket::decode,
                 DeathSpectateStatePacket::handle);
+        // Keep new save/death packets appended so established message IDs do not move.
+        ScpAdditionsMod.addNetworkMessage(SaveFeedbackPacket.class,
+                SaveFeedbackPacket::encode, SaveFeedbackPacket::decode,
+                SaveFeedbackPacket::handle);
     }
 }

@@ -20,12 +20,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Cooperative logical-death and rollback voting for MineZero compatibility. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class MineZeroDeathCoordinator {
-    private static final Set<UUID> DEAD = new HashSet<>();
+    // Voice-chat packet callbacks can ask whether a player is logically dead
+    // off the main server thread. Keep this one membership set safe for reads
+    // from that integration without changing the server-owned voting maps.
+    private static final Set<UUID> DEAD = ConcurrentHashMap.newKeySet();
     private static final Set<UUID> VOTES = new HashSet<>();
     private static final Map<UUID, String> CAUSES = new HashMap<>();
     private static boolean restorePending;

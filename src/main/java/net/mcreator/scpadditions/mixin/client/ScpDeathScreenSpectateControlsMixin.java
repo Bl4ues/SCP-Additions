@@ -39,11 +39,9 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
 
     @Inject(method = "updateSpectateWidgets", at = @At("TAIL"))
     private void scpAdditions$polishSpectateControls(CallbackInfo callback) {
-        // Do not inject into ScpDeathScreen#init. Although ScpDeathScreen is our
-        // own class, init overrides Screen#init and is therefore re-obfuscated in
-        // the production JAR. A remap=false mixin can find "init" in the dev run
-        // but not in the packaged runtime. updateSpectateWidgets is an SCP
-        // Additions-owned method and keeps the same name in both environments.
+        // Keep every injection in this mixin on methods owned by ScpDeathScreen.
+        // Vanilla overrides such as Screen#init are re-obfuscated in a production
+        // JAR and are not safe targets for this remap=false compatibility mixin.
         if (mineZeroMode) {
             if (MineZeroClientState.livingPlayers() > 0
                     && !MineZeroClientState.spectating()

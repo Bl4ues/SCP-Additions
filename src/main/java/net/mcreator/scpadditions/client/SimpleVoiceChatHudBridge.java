@@ -33,7 +33,7 @@ public final class SimpleVoiceChatHudBridge {
     private static final int VITALS_BOTTOM_MARGIN = 70;
     private static final int VITALS_ROW_GAP = 18;
     private static final int VOICE_ICON_SIZE = 16;
-    private static final int VOICE_ICON_GAP = 18;
+    private static final int VOICE_ICON_GAP = 8;
 
     private SimpleVoiceChatHudBridge() {
     }

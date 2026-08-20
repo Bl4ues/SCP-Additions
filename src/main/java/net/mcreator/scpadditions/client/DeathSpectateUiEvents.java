@@ -43,36 +43,40 @@ public final class DeathSpectateUiEvents {
 
         float cover = MineZeroSpectateClient.switchOcclusion();
         boolean lost = MineZeroSpectateClient.connectionLost();
-        if (cover <= 0.001F && !lost) return;
-
         Bounds feed = feed(screen);
         var graphics = event.getGuiGraphics();
-        int a = Mth.clamp(Math.round(255.0F * Mth.clamp(cover, 0.0F, 1.0F)),
-                0, 255);
-        graphics.fill(feed.left, feed.top, feed.right, feed.bottom,
-                a << 24 | 0x00030406);
 
-        // Dense analog-looking noise sits above the opaque cover. During the
-        // hold phase this means the player sees interference, never half-loaded
-        // chunks, a stale dimension, or the previous target.
-        long frame = Util.getMillis() / 38L;
-        int strips = 18 + Math.round(cover * 34.0F);
-        int feedHeight = Math.max(1, feed.bottom - feed.top);
-        int feedWidth = Math.max(1, feed.right - feed.left);
-        for (int i = 0; i < strips; i++) {
-            long hash = noise(frame + i * 53L);
-            int y = feed.top + Math.floorMod((int) hash, feedHeight);
-            int height = 1 + Math.floorMod((int) (hash >>> 13), 7);
-            int leftInset = Math.floorMod((int) (hash >>> 21),
-                    Math.max(1, feedWidth / 5));
-            int rightInset = Math.floorMod((int) (hash >>> 29),
-                    Math.max(1, feedWidth / 6));
-            int alpha = Mth.clamp(36 + Math.round(cover * 130.0F), 0, 190);
-            int tint = ((hash >>> 39) & 3L) == 0L ? 0x008B2028 : 0x00C3C9CC;
-            graphics.fill(feed.left + leftInset, y,
-                    Math.max(feed.left + leftInset + 1,
-                            feed.right - rightInset),
-                    Math.min(feed.bottom, y + height), alpha << 24 | tint);
+        if (cover > 0.001F || lost) {
+            int a = Mth.clamp(Math.round(255.0F
+                    * Mth.clamp(cover, 0.0F, 1.0F)), 0, 255);
+            graphics.fill(feed.left, feed.top, feed.right, feed.bottom,
+                    a << 24 | 0x00030406);
+
+            // Dense analog-looking noise sits above the opaque cover. During the
+            // hold phase this means the player sees interference, never half-loaded
+            // chunks, a stale dimension, or the previous target.
+            long frame = Util.getMillis() / 38L;
+            int strips = 18 + Math.round(cover * 34.0F);
+            int feedHeight = Math.max(1, feed.bottom - feed.top);
+            int feedWidth = Math.max(1, feed.right - feed.left);
+            for (int i = 0; i < strips; i++) {
+                long hash = noise(frame + i * 53L);
+                int y = feed.top + Math.floorMod((int) hash, feedHeight);
+                int height = 1 + Math.floorMod((int) (hash >>> 13), 7);
+                int leftInset = Math.floorMod((int) (hash >>> 21),
+                        Math.max(1, feedWidth / 5));
+                int rightInset = Math.floorMod((int) (hash >>> 29),
+                        Math.max(1, feedWidth / 6));
+                int alpha = Mth.clamp(36 + Math.round(cover * 130.0F),
+                        0, 190);
+                int tint = ((hash >>> 39) & 3L) == 0L
+                        ? 0x008B2028 : 0x00C3C9CC;
+                graphics.fill(feed.left + leftInset, y,
+                        Math.max(feed.left + leftInset + 1,
+                                feed.right - rightInset),
+                        Math.min(feed.bottom, y + height),
+                        alpha << 24 | tint);
+            }
         }
 
         if (lost) {
@@ -87,7 +91,15 @@ public final class DeathSpectateUiEvents {
             graphics.drawString(minecraft.font, detail,
                     centerX - minecraft.font.width(detail) / 2,
                     centerY + 9, 0xFFB55A60, false);
+            return;
         }
+
+        // Let the voice call settle in after the camera hand-off rather than
+        // drawing portraits through the acquisition/static transition.
+        float voiceUiAlpha = Mth.clamp((0.72F - cover) / 0.42F,
+                0.0F, 1.0F);
+        SimpleVoiceChatDeathScreenUi.render(screen, graphics,
+                event.getMouseX(), event.getMouseY(), voiceUiAlpha);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -95,8 +107,18 @@ public final class DeathSpectateUiEvents {
         if (event.getButton() != 0
                 || !(event.getScreen() instanceof ScpDeathScreen screen)
                 || !MineZeroSpectateClient.active()
-                || MineZeroSpectateClient.connectionLost()
-                || !insideFeed(screen, event.getMouseX(), event.getMouseY())) {
+                || MineZeroSpectateClient.connectionLost()) {
+            return;
+        }
+
+        if (SimpleVoiceChatDeathScreenUi.handleMousePressed(screen,
+                event.getMouseX(), event.getMouseY())) {
+            draggingFeed = false;
+            event.setCanceled(true);
+            return;
+        }
+
+        if (!insideFeed(screen, event.getMouseX(), event.getMouseY())) {
             return;
         }
         draggingFeed = true;

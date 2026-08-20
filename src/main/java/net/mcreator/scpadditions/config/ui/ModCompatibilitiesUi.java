@@ -31,6 +31,9 @@ public final class ModCompatibilitiesUi {
     private static final int INTEGRATION_ICON_SIZE = 26;
     private static final int INTEGRATION_ICON_LEFT = 8;
     private static final int INTEGRATION_ICON_GAP = 10;
+    private static final int INTEGRATION_ROW_START = 50;
+    private static final int INTEGRATION_ROW_STRIDE = 78;
+    private static final int INTEGRATION_DESCRIPTION_OFFSET = 44;
     private static final Map<Screen, Button> BUTTONS = new WeakHashMap<>();
 
     private ModCompatibilitiesUi() {
@@ -119,13 +122,16 @@ public final class ModCompatibilitiesUi {
                     Component.empty(), ignored -> {
                         MineZeroCompatibilityClientState.toggle();
                         refreshMineZeroButton();
-                    }).bounds(x + 24, y + 50, panelWidth - 48, 36).build());
+                    }).bounds(x + 24, y + INTEGRATION_ROW_START,
+                            panelWidth - 48, 36).build());
 
             voiceChatButton = addRenderableWidget(Button.builder(
                     Component.empty(), ignored -> {
                         SimpleVoiceChatCompatibilityClientState.toggle();
                         refreshVoiceChatButton();
-                    }).bounds(x + 24, y + 144, panelWidth - 48, 36).build());
+                    }).bounds(x + 24,
+                            y + INTEGRATION_ROW_START + INTEGRATION_ROW_STRIDE,
+                            panelWidth - 48, 36).build());
 
             backButton = addRenderableWidget(Button.builder(
                     ScpFonts.roboto("Back"),
@@ -205,9 +211,14 @@ public final class ModCompatibilitiesUi {
                     panelHeight, LABEL);
 
             int textX = x + 24 + ConfigCenterVisuals.contentOffsetX();
-            drawDescription(graphics, textX, y + 94, panelWidth - 48,
+            drawDescription(graphics, textX,
+                    y + INTEGRATION_ROW_START + INTEGRATION_DESCRIPTION_OFFSET,
+                    panelWidth - 48,
                     "Uses SCP Additions saves as MineZero checkpoints and replaces automatic Return by Death with the death/spectate flow. Team wipes require a vote before rollback.");
-            drawDescription(graphics, textX, y + 188, panelWidth - 48,
+            drawDescription(graphics, textX,
+                    y + INTEGRATION_ROW_START + INTEGRATION_ROW_STRIDE
+                            + INTEGRATION_DESCRIPTION_OFFSET,
+                    panelWidth - 48,
                     "Dead players share a non-positional voice channel and hear the voice-chat audio of the survivor in their Live Personnel Feed. Living players cannot hear the dead.");
 
             drawIntegrationButton(graphics, mineZeroButton, MINEZERO_ID,

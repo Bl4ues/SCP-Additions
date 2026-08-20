@@ -129,7 +129,7 @@ public final class AcousticStimulusSystem {
         long now = level.getGameTime();
         AcousticPerception best = null;
         for (AcousticStimulus stimulus : recent(level, sinceGameTime)) {
-            if (stimulus.dimension() != level.dimension()) continue;
+            if (!stimulus.dimension().equals(level.dimension())) continue;
 
             double distance = listenerPosition.distanceTo(stimulus.position());
             double maxRange = stimulus.category().baseRange()

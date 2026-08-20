@@ -93,16 +93,11 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
         if (sender == null) return;
 
-        // Detection is intentionally separate from future mimicry. Publishing a
-        // VOICE stimulus records only where/when somebody spoke and a gameplay
-        // intensity; it never copies or retains the microphone packet payload.
-        AcousticStimulusSystem.emitVoice(sender,
-                event.getPacket().isWhispering() ? 0.45F : 1.00F);
-
         VoicechatServerApi api = event.getVoicechat();
         if (DeathSpectateCoordinator.isDeadVoiceParticipant(sender)) {
             // Cancel first. Even if another part of the bridge fails, a dead
-            // player's microphone must never fall through to living proximity.
+            // player's microphone must never fall through to living proximity or
+            // become physical acoustic evidence for sound-driven SCPs.
             event.cancel();
             StaticSoundPacket packet;
             try {
@@ -123,6 +118,12 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
             }
             return;
         }
+
+        // Detection is intentionally separate from future mimicry. Publishing a
+        // VOICE stimulus records only where/when a living player spoke and a
+        // gameplay intensity; it never copies or retains the microphone payload.
+        AcousticStimulusSystem.emitVoice(sender,
+                event.getPacket().isWhispering() ? 0.45F : 1.00F);
 
         // The watched player does not hear their own microphone through normal
         // Simple Voice Chat routing, but a dead observer must. Feed it directly

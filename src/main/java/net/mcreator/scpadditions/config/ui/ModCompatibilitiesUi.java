@@ -159,7 +159,7 @@ public final class ModCompatibilitiesUi {
                 mineZeroButton.active = false;
                 return;
             }
-            mineZeroButton.setMessage(Component.literal("MineZero Integration: "
+            mineZeroButton.setMessage(Component.literal("MineZero: "
                     + (MineZeroCompatibilityClientState.enabled() ? "ON" : "OFF")));
             mineZeroButton.active = MineZeroCompatibilityClientState.canEdit();
         }
@@ -179,7 +179,7 @@ public final class ModCompatibilitiesUi {
                 return;
             }
             voiceChatButton.setMessage(Component.literal(
-                    "Simple Voice Chat Integration: "
+                    "Simple Voice Chat: "
                             + (SimpleVoiceChatCompatibilityClientState.enabled()
                             ? "ON" : "OFF")));
             voiceChatButton.active = SimpleVoiceChatCompatibilityClientState.canEdit();

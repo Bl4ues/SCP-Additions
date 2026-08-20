@@ -55,7 +55,8 @@
     "client.ChatScreenMixin",
     "client.CommandSuggestionsMixin",
     "client.AdvancementToastMixin",
-    "client.ToastVisibilityMixin"
+    "client.ToastVisibilityMixin",
+    "client.SimpleVoiceChatHudIconMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -24,6 +24,13 @@ public final class SimpleVoiceChatCompatibilityClientState {
         canEdit = editable;
     }
 
+    public static void reset() {
+        known = false;
+        installed = false;
+        enabled = false;
+        canEdit = false;
+    }
+
     public static void query() {
         known = false;
         Minecraft minecraft = Minecraft.getInstance();

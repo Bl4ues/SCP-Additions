@@ -97,14 +97,15 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
             }
         }
 
-        if (MineZeroSpectateClient.hasMultipleTargets()) return;
+        // Keep player cycling available only when there is an actual choice.
+        boolean multipleTargets = MineZeroSpectateClient.hasMultipleTargets();
         if (previousSpectateButton != null) {
-            previousSpectateButton.visible = false;
-            previousSpectateButton.active = false;
+            previousSpectateButton.visible = multipleTargets && MineZeroSpectateClient.active();
+            previousSpectateButton.active = previousSpectateButton.visible;
         }
         if (nextSpectateButton != null) {
-            nextSpectateButton.visible = false;
-            nextSpectateButton.active = false;
+            nextSpectateButton.visible = multipleTargets && MineZeroSpectateClient.active();
+            nextSpectateButton.active = nextSpectateButton.visible;
         }
     }
 }

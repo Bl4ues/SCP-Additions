@@ -64,5 +64,9 @@ public final class SaveGameNetwork {
                 SimpleVoiceChatCompatibilityRequestPacket::encode,
                 SimpleVoiceChatCompatibilityRequestPacket::decode,
                 SimpleVoiceChatCompatibilityRequestPacket::handle);
+        ScpAdditionsMod.addNetworkMessage(DeathVoiceRosterPacket.class,
+                DeathVoiceRosterPacket::encode,
+                DeathVoiceRosterPacket::decode,
+                DeathVoiceRosterPacket::handle);
     }
 }

@@ -2,7 +2,7 @@ package net.mcreator.scpadditions.client;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.PathPackResources.PathResourcesSupplier;
+import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -41,12 +41,11 @@ public final class SimpleVoiceChatPresentationResources {
         }
 
         var resourcePath = modFile.getFile().findResource(PACK_ROOT);
-        var supplier = new PathResourcesSupplier(resourcePath, false);
         var pack = Pack.readMetaAndCreate(
                 PACK_ID,
                 Component.literal("SCP Additions - Simple Voice Chat Presentation"),
                 true,
-                supplier,
+                id -> new PathPackResources(id, resourcePath, false),
                 PackType.CLIENT_RESOURCES,
                 Pack.Position.TOP,
                 PackSource.BUILT_IN);

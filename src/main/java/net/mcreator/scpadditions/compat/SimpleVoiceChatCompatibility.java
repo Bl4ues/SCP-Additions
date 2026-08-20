@@ -15,6 +15,7 @@ import de.maxhenkel.voicechat.api.packets.StaticSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.ModList;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.acoustics.AcousticStimulusSystem;
 import net.mcreator.scpadditions.death.DeathSpectateCoordinator;
 
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,10 @@ import java.util.regex.Pattern;
  * receive the exact voice-chat packets that reach the living player they are
  * currently watching. The watched player's own microphone is added explicitly,
  * since Simple Voice Chat normally never echoes a speaker back to themselves.
+ *
+ * Living microphone packets also publish positional acoustic evidence for
+ * sound-driven SCP AI. Only metadata is published: encoded voice data is never
+ * retained by the acoustic system.
  */
 @ForgeVoicechatPlugin
 public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
@@ -87,6 +92,12 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
         if (!ModCompatibilityConfig.simpleVoiceChatEnabled() || forwarding()) return;
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
         if (sender == null) return;
+
+        // Detection is intentionally separate from future mimicry. Publishing a
+        // VOICE stimulus records only where/when somebody spoke and a gameplay
+        // intensity; it never copies or retains the microphone packet payload.
+        AcousticStimulusSystem.emitVoice(sender,
+                event.getPacket().isWhispering() ? 0.45F : 1.00F);
 
         VoicechatServerApi api = event.getVoicechat();
         if (DeathSpectateCoordinator.isDeadVoiceParticipant(sender)) {

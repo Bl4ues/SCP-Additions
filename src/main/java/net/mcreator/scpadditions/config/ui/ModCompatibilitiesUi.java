@@ -28,6 +28,9 @@ public final class ModCompatibilitiesUi {
             "net.mcreator.scpadditions.config.ui.ConfigCenterClient$HomeScreen";
     private static final String LABEL = "Mod Integrations";
     private static final String MINEZERO_ID = "minezero";
+    private static final int INTEGRATION_ICON_SIZE = 26;
+    private static final int INTEGRATION_ICON_LEFT = 8;
+    private static final int INTEGRATION_ICON_GAP = 10;
     private static final Map<Screen, Button> BUTTONS = new WeakHashMap<>();
 
     private ModCompatibilitiesUi() {
@@ -233,17 +236,85 @@ public final class ModCompatibilitiesUi {
         private void drawIntegrationButton(GuiGraphics graphics, Button button,
                 String modId, boolean installed, int mouseX, int mouseY) {
             if (button == null) return;
+
+            // Draw only the shared button chrome here. Integration labels use a
+            // dedicated layout below so every row reserves exactly the same icon
+            // slot, including mods that do not expose a logo.
             ConfigCenterVisuals.drawButton(graphics, font, button,
-                    ScpFonts.roboto(button.getMessage()), mouseX, mouseY);
+                    Component.empty(), mouseX, mouseY);
+
+            int left = button.getX() + ConfigCenterVisuals.contentOffsetX();
+            int right = left + button.getWidth();
+            int textX = left + INTEGRATION_ICON_LEFT + INTEGRATION_ICON_SIZE
+                    + INTEGRATION_ICON_GAP;
+            int textY = button.getY() + Math.max(1,
+                    (button.getHeight() - font.lineHeight) / 2);
+            boolean hovered = button.active
+                    && (button.isMouseOver(mouseX, mouseY) || button.isFocused());
+            int textColor = !button.active ? ConfigCenterVisuals.MUTED
+                    : hovered ? ConfigCenterVisuals.ACCENT_BRIGHT
+                    : ConfigCenterVisuals.TEXT;
+
+            String plain = button.getMessage().getString();
+            int stateLength = plain.endsWith(": ON") ? 2
+                    : plain.endsWith(": OFF") ? 3 : 0;
+            if (stateLength > 0 && button.getWidth() >= 155) {
+                String prefix = plain.substring(0,
+                        plain.length() - stateLength).trim();
+                if (prefix.endsWith(":")) {
+                    prefix = prefix.substring(0,
+                            prefix.length() - 1).trim();
+                }
+                String state = plain.substring(plain.length() - stateLength);
+                int stateWidth = font.width(ScpFonts.roboto(state));
+                int maxPrefix = Math.max(20,
+                        right - 28 - stateWidth - textX);
+                graphics.drawString(font,
+                        ScpFonts.roboto(fitIntegrationText(prefix, maxPrefix)),
+                        textX, textY,
+                        ConfigCenterVisuals.fadeColor(textColor), false);
+                graphics.drawString(font, ScpFonts.roboto(state),
+                        right - 14 - stateWidth, textY,
+                        ConfigCenterVisuals.fadeColor(!button.active
+                                ? ConfigCenterVisuals.MUTED
+                                : "ON".equals(state)
+                                ? ConfigCenterVisuals.GREEN
+                                : ConfigCenterVisuals.RED), false);
+            } else {
+                int maxWidth = Math.max(12, right - 12 - textX);
+                graphics.drawString(font,
+                        ScpFonts.roboto(fitIntegrationText(plain, maxWidth)),
+                        textX, textY,
+                        ConfigCenterVisuals.fadeColor(textColor), false);
+            }
 
             if (!installed) return;
             ResourceLocation logo = ModIntegrationLogoClient.logo(modId);
             if (logo == null) return;
-            int iconSize = 26;
-            int iconX = button.getX() + 8;
-            int iconY = button.getY() + (button.getHeight() - iconSize) / 2;
-            graphics.blit(logo, iconX, iconY, iconSize, iconSize,
-                    0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
+            int iconX = left + INTEGRATION_ICON_LEFT;
+            int iconY = button.getY()
+                    + (button.getHeight() - INTEGRATION_ICON_SIZE) / 2;
+            graphics.blit(logo, iconX, iconY,
+                    INTEGRATION_ICON_SIZE, INTEGRATION_ICON_SIZE,
+                    0.0F, 0.0F,
+                    INTEGRATION_ICON_SIZE, INTEGRATION_ICON_SIZE,
+                    INTEGRATION_ICON_SIZE, INTEGRATION_ICON_SIZE);
+        }
+
+        private String fitIntegrationText(String value, int maxWidth) {
+            if (font.width(ScpFonts.roboto(value)) <= maxWidth) return value;
+            String suffix = "...";
+            int suffixWidth = font.width(ScpFonts.roboto(suffix));
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i < value.length(); i++) {
+                String candidate = out.toString() + value.charAt(i);
+                if (font.width(ScpFonts.roboto(candidate)) + suffixWidth
+                        > maxWidth) {
+                    break;
+                }
+                out.append(value.charAt(i));
+            }
+            return out + suffix;
         }
 
         @Override

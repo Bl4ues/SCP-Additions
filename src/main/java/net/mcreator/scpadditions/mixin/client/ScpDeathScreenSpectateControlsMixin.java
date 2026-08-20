@@ -30,37 +30,6 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
     @Shadow private boolean normalSpectating;
     @Shadow private long normalSpectateChangedAt;
 
-    @Inject(method = "init", at = @At("TAIL"))
-    private void scpAdditions$startPersonnelFeedAutomatically(
-            CallbackInfo callback) {
-        if (mineZeroMode) {
-            if (MineZeroClientState.livingPlayers() > 0
-                    && !MineZeroClientState.spectating()
-                    && !MineZeroSpectateClient.transferActive()) {
-                MineZeroClientState.startSpectating();
-            }
-            return;
-        }
-
-        if (hardcoreMode) return;
-
-        // The normal death screen no longer exposes a Spectate/Return control.
-        // Keep the old widget inert as well as unreferenced so Screen's generic
-        // input dispatch cannot activate an invisible leftover button.
-        if (normalSpectateButton != null) {
-            normalSpectateButton.visible = false;
-            normalSpectateButton.active = false;
-            normalSpectateButton = null;
-        }
-
-        // Reset stale roster knowledge before the first automatic decision. The
-        // authoritative query response supplies availableTargetCount(), avoiding
-        // PlayerInfo guesses that can mistake another dead player for a survivor.
-        if (!MineZeroSpectateClient.transferActive()) {
-            MineZeroSpectateClient.refreshServerState();
-        }
-    }
-
     @Redirect(method = "drawReportCard", at = @At(value = "INVOKE",
             target = "Lnet/mcreator/scpadditions/client/MineZeroClientState;allDead()Z"),
             remap = false)
@@ -70,7 +39,16 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
 
     @Inject(method = "updateSpectateWidgets", at = @At("TAIL"))
     private void scpAdditions$polishSpectateControls(CallbackInfo callback) {
+        // Keep every injection in this mixin on methods owned by ScpDeathScreen.
+        // Vanilla overrides such as Screen#init are re-obfuscated in a production
+        // JAR and are not safe targets for this remap=false compatibility mixin.
         if (mineZeroMode) {
+            if (MineZeroClientState.livingPlayers() > 0
+                    && !MineZeroClientState.spectating()
+                    && !MineZeroSpectateClient.transferActive()) {
+                MineZeroClientState.startSpectating();
+            }
+
             if (mineZeroPrimaryButton != null) {
                 boolean rollbackReady = MineZeroClientState.allDead()
                         && !MineZeroClientState.spectating()
@@ -88,26 +66,46 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
                     mineZeroPrimaryButton.setMessage(Component.literal(label));
                 }
             }
-        } else if (!hardcoreMode && !normalSpectating
-                && !MineZeroSpectateClient.transferActive()
-                && MineZeroSpectateClient.availableTargetCount() > 0) {
-            // The first server roster response found a survivor. Enter the feed
-            // immediately and leave Load Game available on the death card.
-            MineZeroSpectateClient.start();
-            if (MineZeroSpectateClient.active()) {
-                normalSpectating = true;
+        } else if (!hardcoreMode) {
+            // The normal death screen no longer exposes a Spectate/Return
+            // control. Disable the already-created widget and clear our field so
+            // the next layout pass gives Load Game the full button width.
+            if (normalSpectateButton != null) {
+                normalSpectateButton.visible = false;
+                normalSpectateButton.active = false;
+                normalSpectateButton = null;
+            }
+
+            // After CONNECTION LOST has completed, release the normal feed layout
+            // and return the report card to its centered state.
+            if (normalSpectating && !MineZeroSpectateClient.active()) {
+                normalSpectating = false;
                 normalSpectateChangedAt = Util.getMillis();
+            }
+
+            // DeathSpectateClientEvents performs the authoritative roster query
+            // when this screen first appears. Once its reply reports a survivor,
+            // start the feed automatically while Load Game remains available.
+            if (!normalSpectating
+                    && !MineZeroSpectateClient.transferActive()
+                    && MineZeroSpectateClient.availableTargetCount() > 0) {
+                MineZeroSpectateClient.start();
+                if (MineZeroSpectateClient.active()) {
+                    normalSpectating = true;
+                    normalSpectateChangedAt = Util.getMillis();
+                }
             }
         }
 
-        if (MineZeroSpectateClient.hasMultipleTargets()) return;
+        // Keep player cycling available only when there is an actual choice.
+        boolean multipleTargets = MineZeroSpectateClient.hasMultipleTargets();
         if (previousSpectateButton != null) {
-            previousSpectateButton.visible = false;
-            previousSpectateButton.active = false;
+            previousSpectateButton.visible = multipleTargets && MineZeroSpectateClient.active();
+            previousSpectateButton.active = previousSpectateButton.visible;
         }
         if (nextSpectateButton != null) {
-            nextSpectateButton.visible = false;
-            nextSpectateButton.active = false;
+            nextSpectateButton.visible = multipleTargets && MineZeroSpectateClient.active();
+            nextSpectateButton.active = nextSpectateButton.visible;
         }
     }
 }

@@ -51,6 +51,7 @@ import java.util.UUID;
 public final class PlayerCorpseEntity extends PathfinderMob
         implements MenuProvider {
     private static final int SETTLE_TICKS = 18;
+    private static final int EMPTY_DESPAWN_TICKS = 20 * 60;
     private static final int POSE_VARIANTS = 6;
     private static final int MIN_CONTAINER_SIZE = 9;
 
@@ -72,6 +73,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
 
     private SimpleContainer inventory = new SimpleContainer(MIN_CONTAINER_SIZE);
     private boolean scpInventoryMode;
+    private int emptyTicks;
 
     public PlayerCorpseEntity(EntityType<? extends PlayerCorpseEntity> type,
             Level level) {
@@ -114,6 +116,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
         entityData.set(POSE_VARIANT, random.nextInt(POSE_VARIANTS));
         entityData.set(SETTLED, false);
         scpInventoryMode = ScpAdditionsModulesConfig.get().inventory.enabled;
+        emptyTicks = 0;
         setCustomName(Component.literal(name));
         setCustomNameVisible(false);
         moveTo(player.getX(), player.getY(), player.getZ(),
@@ -346,6 +349,14 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 discard();
             }
         }
+
+        if (inventory.isEmpty()) {
+            if (++emptyTicks >= EMPTY_DESPAWN_TICKS) {
+                discard();
+            }
+        } else {
+            emptyTicks = 0;
+        }
     }
 
     @Override
@@ -379,6 +390,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
         tag.putBoolean("Settled", settled());
         tag.putBoolean("ScpInventoryMode", scpInventoryMode);
         tag.putInt("CorpseContainerSize", containerSize());
+        tag.putInt("EmptyTicks", emptyTicks);
 
         ListTag items = new ListTag();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
@@ -406,6 +418,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
         entityData.set(SETTLED,
                 !tag.contains("Settled") || tag.getBoolean("Settled"));
         scpInventoryMode = tag.getBoolean("ScpInventoryMode");
+        emptyTicks = Math.max(0, tag.getInt("EmptyTicks"));
 
         int requestedSize = tag.contains("CorpseContainerSize")
                 ? tag.getInt("CorpseContainerSize") : MIN_CONTAINER_SIZE;

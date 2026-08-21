@@ -97,13 +97,15 @@ public final class Scp939ClientEvents {
             Minecraft minecraft, int width, int height) {
         int centerX = width / 2;
         int centerY = height / 2 + 28;
-        String key = Scp939ClientState.expectedKey() == 0 ? "A" : "D";
+        Component key = Scp939ClientState.expectedKey() == 0
+                ? minecraft.options.keyLeft.getTranslatedKeyMessage()
+                : minecraft.options.keyRight.getTranslatedKeyMessage();
         graphics.fill(centerX - 48, centerY - 20, centerX + 48,
                 centerY + 23, 0xB8000000);
         graphics.drawCenteredString(minecraft.font,
                 Component.literal("BREAK FREE"), centerX, centerY - 15,
                 0xFFFFFFFF);
-        graphics.drawCenteredString(minecraft.font, Component.literal(key),
+        graphics.drawCenteredString(minecraft.font, key,
                 centerX, centerY - 2, 0xFFFFFFFF);
 
         int time = Math.max(0, Math.min(20,

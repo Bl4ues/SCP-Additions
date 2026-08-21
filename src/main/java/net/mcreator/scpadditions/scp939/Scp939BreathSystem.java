@@ -109,6 +109,7 @@ public final class Scp939BreathSystem {
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         STATES.remove(player.getUUID());
+        Scp939Network.forgetPlayer(player.getUUID());
     }
 
     @SubscribeEvent
@@ -144,7 +145,8 @@ public final class Scp939BreathSystem {
     }
 
     private static void sync(ServerPlayer player, State state, boolean force) {
-        int tick = player.server == null ? 0 : player.server.getTickCount();
+        MinecraftServer server = player.getServer();
+        int tick = server == null ? 0 : server.getTickCount();
         if (!force && tick - state.lastSyncTick < 5) return;
         state.lastSyncTick = tick;
         Scp939Network.sync(player);

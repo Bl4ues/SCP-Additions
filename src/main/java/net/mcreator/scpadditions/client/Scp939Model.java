@@ -2,18 +2,12 @@ package net.mcreator.scpadditions.client;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.entity.Scp939Entity;
+import net.mcreator.scpadditions.scp939.Scp939AwarenessState;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
-
-import java.util.Map;
-import java.util.WeakHashMap;
 
 public class Scp939Model<T extends Scp939Entity> extends GeoModel<T> {
     private static final ResourceLocation MODEL = new ResourceLocation(
@@ -23,17 +17,13 @@ public class Scp939Model<T extends Scp939Entity> extends GeoModel<T> {
     private static final ResourceLocation ANIMATION = new ResourceLocation(
             ScpAdditionsMod.MODID, "animations/entity/scp939.animation.json");
 
-    // Approximate model-space paw anchors, expressed in world blocks after the
-    // entity facing is applied. They deliberately sit under the distal limbs,
-    // not at the body origin, so stairs and uneven floors can affect each leg.
-    private static final double PAW_LATERAL = 0.23D;
-    private static final double FRONT_PAW_FORWARD = 0.72D;
-    private static final double REAR_PAW_FORWARD = -0.58D;
-    private static final float GROUND_BIAS_PIXELS = -1.05F;
-    private static final float MAX_GROUND_CORRECTION_PIXELS = 3.20F;
-
-    private final Map<Scp939Entity, float[]> pawGrounding =
-            new WeakHashMap<>();
+    private static final float WALK_GAIT_PHASE_SCALE = 0.6662F;
+    private static final float WALK_SUPPORT_FRACTION = 0.64F;
+    private static final float WALK_FRONT_PLANT_RADIANS =
+            22.0F * Mth.DEG_TO_RAD;
+    private static final float WALK_REAR_PLANT_RADIANS =
+            18.0F * Mth.DEG_TO_RAD;
+    private static final double WALK_REFERENCE_SPEED = 0.09D;
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
@@ -56,12 +46,12 @@ public class Scp939Model<T extends Scp939Entity> extends GeoModel<T> {
         super.setCustomAnimations(animatable, instanceId, animationState);
         applyTurnLead(animatable);
         applyPounceAirPose(animatable);
-        applyPawGrounding(animatable);
+        applyWalkFootPlanting(animatable, animationState);
     }
 
     /**
      * The old turn pass twisted every torso segment from frame-to-frame yaw and
-     * produced a rubber-spine wobble. Turning is now handled by smooth entity
+     * produced a rubber-spine wobble. Turning is handled by smooth entity
      * rotation; only the neck/head lead the body by a small amount.
      */
     private void applyTurnLead(T animatable) {
@@ -94,80 +84,91 @@ public class Scp939Model<T extends Scp939Entity> extends GeoModel<T> {
     }
 
     /**
-     * Lightweight quadruped IK approximation layered over the authored gait.
-     * Minecraft/GeckoLib does not provide an analytic IK solver here, so each
-     * paw samples the collision floor beneath its expected world-space anchor.
-     * The body takes a small common correction and the distal limb absorbs the
-     * remainder. This keeps paws visually attached to flat/stepped floors while
-     * preserving the original walk/run animation instead of replacing it.
+     * Adds a planted stance pass to the authored walking clip without moving
+     * bones away from their parents. The previous terrain solver translated the
+     * distal bones every render frame; GeckoLib keeps those offsets as mutable
+     * bone state, so the corrections accumulated and eventually sent paws below
+     * the world while also separating them from the limb chain.
+     *
+     * This pass instead uses the entity's real limb-swing phase. During the
+     * support portion of each step the limb sweeps backward almost linearly as
+     * the body advances, then returns forward quickly during the airborne swing
+     * portion. That is the visual foot-locking trick used by ordinary procedural
+     * quadruped gaits: the paw appears planted instead of sliding with the body,
+     * while every joint remains connected because only rotations are changed.
+     *
+     * The authored run is a bounding gait rather than the walk's left/right
+     * pacing gait, so it is intentionally left alone here instead of forcing a
+     * walk-style phase correction over it.
      */
-    private void applyPawGrounding(T animatable) {
+    private void applyWalkFootPlanting(T animatable,
+            AnimationState<T> animationState) {
         byte action = animatable.getAction();
-        boolean compatibleAction = action == Scp939Entity.ACTION_NONE
+        boolean locomotionCompatible = action == Scp939Entity.ACTION_NONE
                 || action == Scp939Entity.ACTION_BITE
                 || action == Scp939Entity.ACTION_MIMIC;
-        if (!animatable.onGround() || !compatibleAction) {
-            pawGrounding.remove(animatable);
+        if (!locomotionCompatible || !animatable.onGround()) return;
+
+        double speed = Math.sqrt(animatable.getDeltaMovement()
+                .horizontalDistanceSqr());
+        if (speed < 0.004D) return;
+
+        Scp939AwarenessState awareness = animatable.getAwarenessState();
+        if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
+                || awareness == Scp939AwarenessState.LOST_SEARCH) {
             return;
         }
 
-        Vec3 forward = horizontal(animatable.getLookAngle());
-        if (forward.lengthSqr() < 0.0001D) return;
-        forward = forward.normalize();
-        Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
+        float strength = Mth.clamp((float) (speed / WALK_REFERENCE_SPEED),
+                0.0F, 1.0F);
+        if (strength <= 0.01F) return;
 
-        float[] target = new float[] {
-                sampleGroundOffsetPixels(animatable,
-                        animatable.position().add(right.scale(-PAW_LATERAL))
-                                .add(forward.scale(FRONT_PAW_FORWARD))),
-                sampleGroundOffsetPixels(animatable,
-                        animatable.position().add(right.scale(PAW_LATERAL))
-                                .add(forward.scale(FRONT_PAW_FORWARD))),
-                sampleGroundOffsetPixels(animatable,
-                        animatable.position().add(right.scale(-PAW_LATERAL))
-                                .add(forward.scale(REAR_PAW_FORWARD))),
-                sampleGroundOffsetPixels(animatable,
-                        animatable.position().add(right.scale(PAW_LATERAL))
-                                .add(forward.scale(REAR_PAW_FORWARD)))
-        };
+        float phase = animationState.getLimbSwing()
+                * WALK_GAIT_PHASE_SCALE;
+        float leftSweep = plantedSweep(phase);
+        float rightSweep = plantedSweep(phase + Mth.PI);
 
-        float[] current = pawGrounding.computeIfAbsent(animatable,
-                ignored -> target.clone());
-        double speed = Math.sqrt(animatable.getDeltaMovement()
-                .horizontalDistanceSqr());
-        float response = speed > 0.16D ? 0.48F : 0.34F;
-        for (int i = 0; i < current.length; i++) {
-            current[i] += (target[i] - current[i]) * response;
-        }
+        float front = WALK_FRONT_PLANT_RADIANS * strength;
+        float rear = WALK_REAR_PLANT_RADIANS * strength;
 
-        float average = (current[0] + current[1] + current[2] + current[3])
-                * 0.25F;
-        float bodyCorrection = average * 0.20F;
-        addPosition("939body", 0.0F, bodyCorrection, 0.0F);
-        addPosition("left_hand", 0.0F, current[0] - bodyCorrection, 0.0F);
-        addPosition("right_hand", 0.0F, current[1] - bodyCorrection, 0.0F);
-        addPosition("left_foot", 0.0F, current[2] - bodyCorrection, 0.0F);
-        addPosition("right_foot", 0.0F, current[3] - bodyCorrection, 0.0F);
+        // The authored walk moves both limbs on a side together. Keep that
+        // pacing rhythm, but extend the support sweep enough to counter the
+        // entity's actual translation through the world.
+        addRotation("left_arm", leftSweep * front, 0.0F, 0.0F);
+        addRotation("right_arm", rightSweep * front, 0.0F, 0.0F);
+        addRotation("left_leg", leftSweep * rear, 0.0F, 0.0F);
+        addRotation("right_leg", rightSweep * rear, 0.0F, 0.0F);
+
+        // Counter-rotate the next joint a little so the distal paw does not
+        // point straight into the floor while the upper limb performs the
+        // larger anti-slide sweep.
+        addRotation("left_hand", -leftSweep * front * 0.34F,
+                0.0F, 0.0F);
+        addRotation("right_hand", -rightSweep * front * 0.34F,
+                0.0F, 0.0F);
+        addRotation("left_foot", -leftSweep * rear * 0.26F,
+                0.0F, 0.0F);
+        addRotation("right_foot", -rightSweep * rear * 0.26F,
+                0.0F, 0.0F);
     }
 
-    private float sampleGroundOffsetPixels(T animatable, Vec3 anchor) {
-        Vec3 from = anchor.add(0.0D, 1.15D, 0.0D);
-        Vec3 to = anchor.add(0.0D, -1.05D, 0.0D);
-        BlockHitResult hit = animatable.level().clip(new ClipContext(from, to,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, animatable));
-        if (hit.getType() == HitResult.Type.MISS) {
-            return GROUND_BIAS_PIXELS;
+    private static float plantedSweep(float phase) {
+        float normalized = Mth.positiveModulo(
+                phase / (Mth.PI * 2.0F), 1.0F);
+        if (normalized < WALK_SUPPORT_FRACTION) {
+            float support = normalized / WALK_SUPPORT_FRACTION;
+            return 1.0F - support * 2.0F;
         }
 
-        float terrainPixels = (float) ((hit.getLocation().y - animatable.getY())
-                * 16.0D);
-        return Mth.clamp(terrainPixels + GROUND_BIAS_PIXELS,
-                -MAX_GROUND_CORRECTION_PIXELS,
-                MAX_GROUND_CORRECTION_PIXELS);
+        float swing = (normalized - WALK_SUPPORT_FRACTION)
+                / (1.0F - WALK_SUPPORT_FRACTION);
+        swing = smoothstep(swing);
+        return -1.0F + swing * 2.0F;
     }
 
-    private static Vec3 horizontal(Vec3 value) {
-        return new Vec3(value.x, 0.0D, value.z);
+    private static float smoothstep(float value) {
+        float clamped = Mth.clamp(value, 0.0F, 1.0F);
+        return clamped * clamped * (3.0F - 2.0F * clamped);
     }
 
     private void addRotation(String boneName, float x, float y, float z) {
@@ -176,13 +177,5 @@ public class Scp939Model<T extends Scp939Entity> extends GeoModel<T> {
         bone.setRotX(bone.getRotX() + x);
         bone.setRotY(bone.getRotY() + y);
         bone.setRotZ(bone.getRotZ() + z);
-    }
-
-    private void addPosition(String boneName, float x, float y, float z) {
-        CoreGeoBone bone = getAnimationProcessor().getBone(boneName);
-        if (bone == null) return;
-        bone.setPosX(bone.getPosX() + x);
-        bone.setPosY(bone.getPosY() + y);
-        bone.setPosZ(bone.getPosZ() + z);
     }
 }

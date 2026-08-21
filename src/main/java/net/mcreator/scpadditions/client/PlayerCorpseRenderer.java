@@ -22,10 +22,10 @@ public final class PlayerCorpseRenderer extends
         MobRenderer<PlayerCorpseEntity, PlayerCorpseRenderer.CorpseModel> {
     private static final float FALL_TICKS = 16.0F;
     private static final float FINAL_Y_OFFSET = -1.16F;
-    // After the authored -90 degree X rotation, local Z is world vertical.
-    // A positive value was literally lifting settled bodies above their entity's
-    // grounded Y. Move the thin horizontal model down to rest on the floor.
-    private static final float FINAL_Z_OFFSET = -0.45F;
+    // Empirically this axis changes the settled body's floor clearance after the
+    // -90 degree collapse. +0.16 hovered; -0.45 buried it. Keep only the tiny
+    // positive clearance needed to prevent z-fighting with the block surface.
+    private static final float FINAL_Z_OFFSET = 0.04F;
     private static final float[] FINAL_YAW_OFFSETS = {
             -8.0F, 6.0F, -3.0F, 10.0F, -11.0F, 3.0F
     };
@@ -62,17 +62,11 @@ public final class PlayerCorpseRenderer extends
         int variant = entity.poseVariant();
         float side = (variant & 1) == 0 ? -1.0F : 1.0F;
 
-        // A small lateral lean during the fall keeps the transition from looking
-        // like a rigid board rotating around its ankles. It returns to zero at
-        // rest so every final pose remains properly flat against the floor.
         float fallLean = side * (float) Math.sin(collapse * Math.PI) * 7.0F;
         poseStack.mulPose(Axis.YP.rotationDegrees(
                 FINAL_YAW_OFFSETS[variant] * collapse));
         poseStack.mulPose(Axis.ZP.rotationDegrees(fallLean));
 
-        // Briefly overshoot the floor angle near impact, then settle back to a
-        // clean -90 degree prone pose. This is deliberately modest: fake ragdoll,
-        // not a human-shaped spring toy.
         float impact = 0.0F;
         if (!entity.settled() && raw > 0.72F) {
             float impactProgress = Mth.clamp((raw - 0.72F) / 0.28F,
@@ -81,7 +75,6 @@ public final class PlayerCorpseRenderer extends
         }
         poseStack.mulPose(Axis.XP.rotationDegrees(
                 -90.0F * collapse - impact));
-
         poseStack.translate(0.0F, FINAL_Y_OFFSET * collapse,
                 FINAL_Z_OFFSET * collapse);
     }
@@ -147,10 +140,6 @@ public final class PlayerCorpseRenderer extends
             super.setupAnim(entity, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
 
             int variant = entity.poseVariant();
-
-            // Keep every limb essentially straight and rotate only in the plane
-            // of the floor. The previous frozen swim frame bent the legs upward,
-            // which looked less like a body and more like a discarded action figure.
             head.xRot = 0.0F;
             head.yRot = HEAD_TURNS[variant];
             head.zRot = 0.0F;

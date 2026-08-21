@@ -28,12 +28,6 @@ public final class Scp939PinPresentationClient {
     private Scp939PinPresentationClient() {
     }
 
-    /**
-     * Sets the authored look direction before the existing maul shake handler
-     * runs at normal priority. This is deliberately first-person only: a
-     * detached third-person camera must remain freely controllable so the pin
-     * animation can be inspected from outside.
-     */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -59,13 +53,17 @@ public final class Scp939PinPresentationClient {
         event.setRoll(0.0F);
     }
 
-    /** Keep the prone victim visually close to the floor. */
+    /**
+     * The sleeping-style rotation pivots the player model around its entity
+     * origin. With the entity feet correctly anchored to the block surface the
+     * old negative offset buried most of the horizontal model below the floor.
+     */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         Player player = event.getEntity();
         if (!isPinnedVictim(player)) return;
         PoseStack pose = event.getPoseStack();
-        pose.translate(0.0D, -0.18D, 0.0D);
+        pose.translate(0.0D, 0.24D, 0.0D);
     }
 
     public static Scp939Entity findPinning939(Player player) {

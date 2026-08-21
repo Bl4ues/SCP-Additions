@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.client;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
@@ -14,8 +15,14 @@ public final class Scp939ClientModEvents {
     }
 
     @SubscribeEvent
-    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+    public static void registerRenderers(
+            EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ScpAdditionsModEntities.SCP_939.get(),
                 Scp939Renderer::new);
+    }
+
+    @SubscribeEvent
+    public static void registerKeys(RegisterKeyMappingsEvent event) {
+        event.register(Scp939Keybinds.HOLD_BREATH);
     }
 }

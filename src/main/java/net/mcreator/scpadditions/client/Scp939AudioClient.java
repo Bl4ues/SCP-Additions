@@ -139,7 +139,10 @@ public final class Scp939AudioClient {
                 POUNCE_SNARL_PLAYED.remove(id);
             }
 
-            if (action == Scp939Entity.ACTION_MAUL) {
+            // The loop begins with the impact/bite cue as the victim is knocked
+            // down, then stays alive seamlessly through the dedicated MAUL state.
+            if (action == Scp939Entity.ACTION_PIN_LAND
+                    || action == Scp939Entity.ACTION_MAUL) {
                 maulingIds.add(id);
                 Scp939LoopSound loop = MAUL_LOOPS.get(id);
                 if (loop == null || loop.isFinished()) {

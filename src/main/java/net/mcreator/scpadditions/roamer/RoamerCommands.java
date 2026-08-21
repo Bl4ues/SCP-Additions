@@ -13,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.event.Scp106SpawnEvents;
 import net.mcreator.scpadditions.event.Scp173SpawnEvents;
+import net.mcreator.scpadditions.event.Scp939SpawnEvents;
 
 /** Operator commands for world-persistent roamer spawn rules and cleanup. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -84,6 +85,7 @@ public final class RoamerCommands {
         RoamerResult result = switch (type) {
             case SCP_173 -> Scp173SpawnEvents.forceSpawn(player);
             case SCP_106 -> Scp106SpawnEvents.forceSpawn(player);
+            case SCP_939 -> Scp939SpawnEvents.forceSpawn(player);
         };
 
         if (result == RoamerResult.SPAWNED) {

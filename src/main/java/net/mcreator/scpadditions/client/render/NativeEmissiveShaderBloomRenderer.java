@@ -75,6 +75,11 @@ public final class NativeEmissiveShaderBloomRenderer {
     private static final String TEXTURE_MANIFEST =
             "/assets/scp_additions/native_emissive_textures.txt";
     private static final long INSPECTION_SEED = 42L;
+    // Eyes/spidereyes programs are not guaranteed to transform vertices by the
+    // exact same floating-point path as terrain. Keep the bloom shell a tiny
+    // distance above its source face so shader packs such as BSL cannot make
+    // the two coplanar surfaces compete in the depth buffer.
+    private static final float SHADER_SURFACE_OFFSET = 1.0F / 1024.0F;
     private static final Direction[] ALL_FACES_AND_NULL =
             Arrays.copyOf(Direction.values(), Direction.values().length + 1);
     private static final int[][] RESCAN_OFFSETS = {
@@ -361,9 +366,20 @@ public final class NativeEmissiveShaderBloomRenderer {
 
         int[] vertices = Arrays.copyOf(source.getVertices(),
                 source.getVertices().length);
+        Direction normal = source.getDirection();
         for (int vertex = 0; vertex < 4; vertex++) {
-            int uvOffset = vertex * IQuadTransformer.STRIDE
-                    + IQuadTransformer.UV0;
+            int positionOffset = vertex * IQuadTransformer.STRIDE;
+            vertices[positionOffset] = Float.floatToRawIntBits(
+                    Float.intBitsToFloat(vertices[positionOffset])
+                            + normal.getStepX() * SHADER_SURFACE_OFFSET);
+            vertices[positionOffset + 1] = Float.floatToRawIntBits(
+                    Float.intBitsToFloat(vertices[positionOffset + 1])
+                            + normal.getStepY() * SHADER_SURFACE_OFFSET);
+            vertices[positionOffset + 2] = Float.floatToRawIntBits(
+                    Float.intBitsToFloat(vertices[positionOffset + 2])
+                            + normal.getStepZ() * SHADER_SURFACE_OFFSET);
+
+            int uvOffset = positionOffset + IQuadTransformer.UV0;
             float sourceU = Float.intBitsToFloat(vertices[uvOffset]);
             float sourceV = Float.intBitsToFloat(vertices[uvOffset + 1]);
             float localU = baseSprite.getUOffset(sourceU);

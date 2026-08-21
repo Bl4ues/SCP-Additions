@@ -4,6 +4,7 @@
 
 ## Highlights
 - SCP-106
+- SCP-939
 - Reworked SCP-079 facility control
 - Core Room Elevator
 - Reworked survival systems
@@ -28,6 +29,24 @@
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
 - Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot lose SCP-106 before the hunt ends.
+
+## SCP-939
+
+- Added SCP-939 as a new roaming predator with its completed GeckoLib model, texture, animations, spawn egg, localization, renderer, and entity registration;
+- SCP-939 is functionally blind and does not use ordinary visual target tracking for long-range pursuit; instead, it follows a shared acoustic-stimulus system that records sound evidence and drives `IDLE`, `HEARD_SOUND`, `INVESTIGATE`, `SEARCH`, `CONFIRMED_HUNT`, and `LOST_SEARCH` awareness states;
+- Player movement, sprinting, jumping and landing, facility doors and buttons, block and interaction noises, breathing, forced gasps, and compatible voice-chat speech can create acoustic evidence with different intensity and range;
+- SCP-939 can investigate the last known location of a sound, search around stale evidence, accelerate into a committed hunt when evidence becomes strong enough, and return to wandering when it loses the trail;
+- Added short-range physical prey detection for attacks without giving SCP-939 supernatural knowledge of a player's current position through walls;
+- Added a close-range bite attack and a committed pounce attack that physically launches SCP-939 toward prey;
+- Successful pounces knock the victim prone and pin them beneath SCP-939, synchronizing the restrained player and predator so other players can see the attack in progress;
+- Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue;
+- Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim and forcing SCP-939 into its kicked-off recovery behavior;
+- Added a dedicated breath reserve, independent from vanilla underwater air, which becomes relevant while SCP-939 is nearby;
+- Added a rebindable **Hold Breath** control and HUD meter; holding breath suppresses normal breathing acoustic stimuli until the reserve is exhausted, at which point the player is forced to gasp loudly and temporarily cannot continue holding their breath;
+- Added natural SCP-939 encounters that attempt to place it near a Survival player while outside direct sight, then keep it roaming around the encounter area until the encounter becomes quiet enough to despawn;
+- Added the `939spawn` gamerule, SCP-939 support in the shared roamer scheduler, force-spawn/despawn commands, and the Debug Tools roamer timer display;
+- Added optional Simple Voice Chat mimicry: consenting players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position; fragments expire automatically and are cleared when consent is revoked or the player disconnects;
+- Added `/scp939 mimicry allow`, `/scp939 mimicry deny`, and `/scp939 mimicry status` session controls for explicit voice-mimicry consent.
 
 ## SCP-330
 
@@ -126,6 +145,7 @@
 - Added a dedicated **Mod Integrations** section to the Configuration Center for optional behavior-level integrations with detected mods; unavailable integrations remain visible but disabled;
 - Added **Simple Voice Chat** integration for multiplayer death and spectating: living players keep normal voice-chat behavior, while dead players share a non-positional dead-only call that cannot be heard by living players;
 - Live Personnel Feed observers also receive the voice-chat audio heard by their selected surviving player, including that survivor's own microphone, while remaining isolated from ordinary proximity and group routing at the dead observer's server-side position;
+- Extended the Simple Voice Chat integration to SCP-939: living speech now produces acoustic evidence for its hearing system, while explicit session consent can additionally provide temporary in-memory voice fragments for SCP-939 mimicry without writing captured audio to disk;
 - Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP Additions death/spectate flow while using SCP Additions saves as MineZero checkpoints;
 - MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
 - Extended MineZero checkpoint snapshots with SCP Additions player capabilities, SCP Inventory state, persistent facility/SCP-079 data, and tracked SCP Additions block and BlockEntity changes so the mod's custom state rewinds with the world;
@@ -185,11 +205,11 @@
 
 ## Roamer spawning and developer tools
 
-- Added natural spawn cycles for both SCP-173 and SCP-106, with separate `173spawn` and `106spawn` gamerules;
-- SCP-106 begins checking for a possible encounter earlier than SCP-173, while both continue with recurring checks afterward;
-- When one roamer is already active, the other becomes less likely to appear, but rare double encounters are still possible;
+- Added natural spawn cycles for SCP-173, SCP-106, and SCP-939, with separate `173spawn`, `106spawn`, and `939spawn` gamerules;
+- SCP-106 begins checking for a possible encounter earlier than SCP-939 and SCP-173, while all three continue with recurring checks afterward;
+- When another roamer is already active, additional roamer encounters become less likely, but rare overlapping encounters are still possible;
 - Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
-- Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106>`, and `/roamerForceSpawn <scp173|scp106>`;
+- Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106|scp939>`, and `/roamerForceSpawn <scp173|scp106|scp939>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
 - Added sparse natural Roomba encounters on approved facility flooring;
 - Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters;

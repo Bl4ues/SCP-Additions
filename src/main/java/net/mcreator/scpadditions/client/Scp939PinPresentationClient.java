@@ -30,14 +30,17 @@ public final class Scp939PinPresentationClient {
 
     /**
      * Sets the authored look direction before the existing maul shake handler
-     * runs at normal priority. The later handler therefore adds shake around
-     * the 939's head instead of around whatever direction the player had before
-     * being knocked down.
+     * runs at normal priority. This is deliberately first-person only: a
+     * detached third-person camera must remain freely controllable so the pin
+     * animation can be inspected from outside.
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!Scp939ClientState.pinned() || minecraft.player == null) return;
+        if (!Scp939ClientState.pinned() || minecraft.player == null
+                || !minecraft.options.getCameraType().isFirstPerson()) {
+            return;
+        }
         Scp939Entity predator = findPinning939(minecraft.player);
         if (predator == null) return;
 
@@ -56,13 +59,7 @@ public final class Scp939PinPresentationClient {
         event.setRoll(0.0F);
     }
 
-    /**
-     * Keep the prone victim visually close to the floor. Rotation is applied in
-     * PlayerRenderer.setupRotations by a dedicated mixin, after vanilla has
-     * established the player's yaw. Doing the -90 degree transform here, before
-     * PlayerRenderer's own transforms, was what could make the pinned model read
-     * backwards/upside-down from another player's camera.
-     */
+    /** Keep the prone victim visually close to the floor. */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         Player player = event.getEntity();
@@ -86,10 +83,6 @@ public final class Scp939PinPresentationClient {
 
     public static Vec3 cameraPosition(Scp939Entity predator) {
         Vec3 forward = horizontalForward(predator);
-        // Put the viewpoint genuinely on the floor and farther underneath the
-        // front half of the 939. Moving it closer than the previous 1.04-block
-        // offset makes the animal dominate the frame rather than looking like it
-        // is attacking someone several feet in front of the camera.
         return predator.position().add(forward.scale(0.74D))
                 .add(0.0D, 0.075D, 0.0D);
     }
@@ -116,7 +109,7 @@ public final class Scp939PinPresentationClient {
                 <= REMOTE_PIN_TOLERANCE_SQR;
     }
 
-    private static Vec3 horizontalForward(Scp939Entity predator) {
+    public static Vec3 horizontalForward(Scp939Entity predator) {
         Vec3 look = predator.getLookAngle();
         Vec3 forward = new Vec3(look.x, 0.0D, look.z);
         if (forward.lengthSqr() < 1.0E-4D) {

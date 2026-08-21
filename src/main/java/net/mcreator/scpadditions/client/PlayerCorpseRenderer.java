@@ -22,7 +22,10 @@ public final class PlayerCorpseRenderer extends
         MobRenderer<PlayerCorpseEntity, PlayerCorpseRenderer.CorpseModel> {
     private static final float FALL_TICKS = 16.0F;
     private static final float FINAL_Y_OFFSET = -1.16F;
-    private static final float FINAL_Z_OFFSET = 0.16F;
+    // After the authored -90 degree X rotation, local Z is world vertical.
+    // A positive value was literally lifting settled bodies above their entity's
+    // grounded Y. Move the thin horizontal model down to rest on the floor.
+    private static final float FINAL_Z_OFFSET = -0.45F;
     private static final float[] FINAL_YAW_OFFSETS = {
             -8.0F, 6.0F, -3.0F, 10.0F, -11.0F, 3.0F
     };
@@ -79,9 +82,6 @@ public final class PlayerCorpseRenderer extends
         poseStack.mulPose(Axis.XP.rotationDegrees(
                 -90.0F * collapse - impact));
 
-        // After the -90 degree turn, this local Z translation is the vertical
-        // floor-contact adjustment. Keep it low enough that the body actually
-        // rests on the block instead of hovering just above it.
         poseStack.translate(0.0F, FINAL_Y_OFFSET * collapse,
                 FINAL_Z_OFFSET * collapse);
     }

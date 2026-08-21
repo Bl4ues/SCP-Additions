@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import com.bl4ues.scpinventory.client.ScpFonts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;

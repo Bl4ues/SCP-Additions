@@ -46,11 +46,11 @@ public abstract class Scp939ModelPolishMixin {
             31.0F * Mth.DEG_TO_RAD;
     @Unique
     private static final float SCPADDITIONS_MAX_STEP =
-            4.25F * Mth.DEG_TO_RAD;
+            2.4F * Mth.DEG_TO_RAD;
     @Unique
-    private static final float SCPADDITIONS_LOCK_GAIN = 0.92F;
+    private static final float SCPADDITIONS_LOCK_GAIN = 0.82F;
     @Unique
-    private static final float SCPADDITIONS_RELEASE = 0.48F;
+    private static final float SCPADDITIONS_RELEASE = 0.72F;
     @Unique
     private static final float SCPADDITIONS_REANCHOR_TURN = 24.0F;
     @Unique
@@ -109,10 +109,7 @@ public abstract class Scp939ModelPolishMixin {
         Scp939FootState state = scpadditions$footStates.get(entity);
         if (!walking) {
             if (state == null) return;
-            if (state.lastTick != entity.tickCount) {
-                state.lastTick = entity.tickCount;
-                state.releaseAll();
-            }
+            state.releaseAll();
             scpadditions$applyCorrections(state);
             if (state.released()) scpadditions$footStates.remove(entity);
             return;
@@ -120,35 +117,35 @@ public abstract class Scp939ModelPolishMixin {
 
         state = scpadditions$footStates.computeIfAbsent(entity,
                 ignored -> new Scp939FootState());
-        if (state.lastTick != entity.tickCount) {
-            state.lastTick = entity.tickCount;
-            float strength = Mth.clamp((float) (speed
-                    / SCPADDITIONS_WALK_REFERENCE_SPEED), 0.45F, 1.0F);
+        float strength = Mth.clamp((float) (speed
+                / SCPADDITIONS_WALK_REFERENCE_SPEED), 0.45F, 1.0F);
 
-            GeoBone leftHand = scpadditions$bone("left_hand");
-            GeoBone rightHand = scpadditions$bone("right_hand");
-            GeoBone leftFoot2 = scpadditions$bone("left_foot2");
-            GeoBone rightFoot2 = scpadditions$bone("right_foot2");
-            GeoBone leftFoot3 = scpadditions$bone("left_foot3");
-            GeoBone rightFoot3 = scpadditions$bone("right_foot3");
+        GeoBone leftHand = scpadditions$bone("left_hand");
+        GeoBone rightHand = scpadditions$bone("right_hand");
+        GeoBone leftFoot2 = scpadditions$bone("left_foot2");
+        GeoBone rightFoot2 = scpadditions$bone("right_foot2");
+        GeoBone leftFoot3 = scpadditions$bone("left_foot3");
+        GeoBone rightFoot3 = scpadditions$bone("right_foot3");
 
-            scpadditions$updateLock(entity, state.frontLeft, leftHand,
-                    leftHand != null
-                            && leftHand.getRotX() > SCPADDITIONS_FRONT_STANCE,
-                    SCPADDITIONS_FRONT_MAX * strength);
-            scpadditions$updateLock(entity, state.frontRight, rightHand,
-                    rightHand != null
-                            && rightHand.getRotX() > SCPADDITIONS_FRONT_STANCE,
-                    SCPADDITIONS_FRONT_MAX * strength);
-            scpadditions$updateLock(entity, state.rearLeft, leftFoot3,
-                    leftFoot2 != null
-                            && leftFoot2.getRotX() > SCPADDITIONS_REAR_STANCE,
-                    SCPADDITIONS_REAR_MAX * strength);
-            scpadditions$updateLock(entity, state.rearRight, rightFoot3,
-                    rightFoot2 != null
-                            && rightFoot2.getRotX() > SCPADDITIONS_REAR_STANCE,
-                    SCPADDITIONS_REAR_MAX * strength);
-        }
+        // Update every rendered frame, not merely once per game tick. The entity
+        // itself is interpolated between ticks; a tick-rate-only lock still lets
+        // a paw visibly skate for the two or three frames between corrections.
+        scpadditions$updateLock(entity, state.frontLeft, leftHand,
+                leftHand != null
+                        && leftHand.getRotX() > SCPADDITIONS_FRONT_STANCE,
+                SCPADDITIONS_FRONT_MAX * strength);
+        scpadditions$updateLock(entity, state.frontRight, rightHand,
+                rightHand != null
+                        && rightHand.getRotX() > SCPADDITIONS_FRONT_STANCE,
+                SCPADDITIONS_FRONT_MAX * strength);
+        scpadditions$updateLock(entity, state.rearLeft, leftFoot3,
+                leftFoot2 != null
+                        && leftFoot2.getRotX() > SCPADDITIONS_REAR_STANCE,
+                SCPADDITIONS_REAR_MAX * strength);
+        scpadditions$updateLock(entity, state.rearRight, rightFoot3,
+                rightFoot2 != null
+                        && rightFoot2.getRotX() > SCPADDITIONS_REAR_STANCE,
+                SCPADDITIONS_REAR_MAX * strength);
 
         scpadditions$applyCorrections(state);
     }
@@ -353,7 +350,6 @@ public abstract class Scp939ModelPolishMixin {
 
     @Unique
     private static final class Scp939FootState {
-        private int lastTick = Integer.MIN_VALUE;
         private final Scp939LimbLock frontLeft = new Scp939LimbLock();
         private final Scp939LimbLock frontRight = new Scp939LimbLock();
         private final Scp939LimbLock rearLeft = new Scp939LimbLock();

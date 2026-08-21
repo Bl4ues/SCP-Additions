@@ -17,6 +17,7 @@
     "Scp173NavigationAuthorityMixin",
     "Scp173PushabilityMixin",
     "Scp939PinnedViewFreedomMixin",
+    "Scp939AnimationControllerMixin",
     "CoreRoomElevatorManagerFixMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",

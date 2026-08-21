@@ -49,6 +49,15 @@ public final class Scp131Items {
                             "SCP-173 Spawn Egg",
                             "tooltip.scp_additions.scp_173_spawn_egg"));
 
+    public static final RegistryObject<Item> SCP_939_SPAWN_EGG =
+            REGISTRY.register("scp_939_spawn_egg", () ->
+                    new NamedSpawnEggItem(
+                            ScpAdditionsModEntities.SCP_939,
+                            0x5A1615, 0xA64334,
+                            new Item.Properties().rarity(Rarity.EPIC),
+                            "SCP-939 Spawn Egg",
+                            "tooltip.scp_additions.scp_939_spawn_egg"));
+
     /**
      * Kept under the original registry ID for world compatibility, but exposed
      * as the handheld Roomba placement item rather than a vanilla-looking egg.

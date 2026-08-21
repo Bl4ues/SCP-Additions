@@ -16,12 +16,11 @@ import software.bernie.geckolib.core.object.PlayState;
 /**
  * Keeps SCP-939 locomotion visually tied to real displacement.
  *
- * The previous controller forced walk/run playback to at least 0.90x even when
- * navigation had slowed almost to a stop. That guarantees visible paw skating:
- * the authored stance continues moving while the entity barely advances. This
- * replacement derives playback from actual horizontal velocity and keeps idle,
- * walk, run, search and listening on one controller so GeckoLib can transition
- * between them instead of snapping between separate controllers.
+ * Playback is calibrated against the authored gait cycle rather than the mob's
+ * navigation speed modifier. Navigation speed is a MoveControl target and is not
+ * the number of blocks actually travelled per tick after Minecraft movement
+ * physics. Treating it as physical velocity made the 1.8-second walk play at a
+ * fraction of its intended speed while the entity visibly crossed the floor.
  */
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939AnimationControllerMixin {
@@ -65,12 +64,17 @@ public abstract class Scp939AnimationControllerMixin {
     private static final RawAnimation SCPADDITIONS_939_DEATH =
             RawAnimation.begin().thenPlay("death");
 
-    // Nominal physical speeds: MOVEMENT_SPEED 0.285 * navigation modifier.
-    // IDLE 0.46 -> 0.1311 block/tick; HUNT 1.20 -> 0.342 block/tick.
+    /*
+     * The authored walk lasts 1.8 s (36 ticks) and visually covers roughly one
+     * full quadrupedal stride. A reference near 0.032 block/tick therefore lets
+     * one 1x cycle accompany about 1.15 blocks of travel. The 0.82 s run has a
+     * much longer stride and uses ~0.095 block/tick, or about 1.56 blocks/cycle.
+     * These are displacement references, not navigation modifiers.
+     */
     @Unique
-    private static final double SCPADDITIONS_WALK_REFERENCE_SPEED = 0.131D;
+    private static final double SCPADDITIONS_WALK_REFERENCE_SPEED = 0.032D;
     @Unique
-    private static final double SCPADDITIONS_RUN_REFERENCE_SPEED = 0.342D;
+    private static final double SCPADDITIONS_RUN_REFERENCE_SPEED = 0.095D;
     @Unique
     private static final double SCPADDITIONS_MOVING_EPSILON_SQR = 0.00012D;
 
@@ -81,15 +85,12 @@ public abstract class Scp939AnimationControllerMixin {
         Scp939Entity entity = (Scp939Entity) (Object) this;
 
         AnimationController<Scp939Entity> locomotion =
-                new AnimationController<>(entity, "locomotion", 9, state -> {
+                new AnimationController<>(entity, "locomotion", 7, state -> {
                     byte action = entity.getAction();
                     if (scpadditions$isCombatFullBodyAction(action)) {
                         return PlayState.STOP;
                     }
 
-                    // Listening belongs here rather than on the action controller.
-                    // This gives walk -> listen and listen -> walk the same native
-                    // transition as every other locomotion state.
                     if (action == Scp939Entity.ACTION_LISTEN) {
                         return state.setAndContinue(SCPADDITIONS_939_LISTEN);
                     }
@@ -131,12 +132,13 @@ public abstract class Scp939AnimationControllerMixin {
                     ? SCPADDITIONS_RUN_REFERENCE_SPEED
                     : SCPADDITIONS_WALK_REFERENCE_SPEED;
 
-            // A low floor is intentional. If collision/pathing reduces physical
-            // speed, the feet must slow with the body rather than treadmill at
-            // almost full animation speed.
+            // At the movement threshold the walk floor still corresponds to
+            // roughly one authored stride over the travelled distance. It keeps
+            // the paws alive during slow pathing without returning to the old
+            // 0.90x treadmill behaviour.
             return Mth.clamp(movement / reference,
-                    running ? 0.28D : 0.12D,
-                    running ? 1.75D : 2.00D);
+                    running ? 0.45D : 0.35D,
+                    running ? 1.80D : 1.85D);
         });
         controllers.add(locomotion);
 

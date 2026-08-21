@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939PinnedViewFreedomMixin {
-    @Unique private static final double SCPADDITIONS_PIN_FORWARD = 1.02D;
+    @Unique private static final double SCPADDITIONS_PIN_FORWARD = 0.62D;
     @Unique private double scpadditions$pinGroundY = Double.NaN;
 
     @Inject(method = "beginPin", at = @At("TAIL"), remap = false)
@@ -25,16 +25,14 @@ public abstract class Scp939PinnedViewFreedomMixin {
         Scp939Entity predator = (Scp939Entity) (Object) this;
         double playerGround = scpadditions$findGroundY(player, 4.0D);
         scpadditions$pinGroundY = Double.isFinite(playerGround)
-                ? playerGround + 0.01D : player.getY();
+                ? playerGround : player.getY();
+        scpadditions$groundPredator(predator, 4.0D);
+    }
 
-        double predatorGround = scpadditions$findGroundY(predator, 4.0D);
-        if (Double.isFinite(predatorGround)
-                && predator.getY() >= predatorGround - 0.10D
-                && predator.getY() - predatorGround <= 3.25D) {
-            predator.setPos(predator.getX(), predatorGround + 0.01D, predator.getZ());
-            predator.setDeltaMovement(Vec3.ZERO);
-            predator.fallDistance = 0.0F;
-        }
+    @Inject(method = "tickPinned", at = @At("HEAD"), remap = false)
+    private void scpadditions$keepMaulOnFloor(
+            net.minecraft.server.level.ServerLevel level, CallbackInfo ci) {
+        scpadditions$groundPredator((Scp939Entity) (Object) this, 2.75D);
     }
 
     @Inject(method = "releasePin", at = @At("TAIL"), remap = false)
@@ -56,9 +54,12 @@ public abstract class Scp939PinnedViewFreedomMixin {
             Vec3 look = predator.getLookAngle();
             radial = new Vec3(look.x, 0.0D, look.z);
         }
-        if (radial.horizontalDistanceSqr() < 1.0E-5D) radial = new Vec3(0.0D, 0.0D, 1.0D);
+        if (radial.horizontalDistanceSqr() < 1.0E-5D) {
+            radial = new Vec3(0.0D, 0.0D, 1.0D);
+        }
         radial = radial.normalize();
-        Vec3 pinPosition = predator.position().add(radial.scale(SCPADDITIONS_PIN_FORWARD));
+        Vec3 pinPosition = predator.position().add(
+                radial.scale(SCPADDITIONS_PIN_FORWARD));
         double groundedY = Double.isFinite(scpadditions$pinGroundY)
                 ? scpadditions$pinGroundY : player.getY();
         connection.teleport(pinPosition.x, groundedY, pinPosition.z,
@@ -66,12 +67,26 @@ public abstract class Scp939PinnedViewFreedomMixin {
     }
 
     @Unique
+    private static void scpadditions$groundPredator(Scp939Entity predator,
+            double depth) {
+        if (predator == null) return;
+        double ground = scpadditions$findGroundY(predator, depth);
+        if (!Double.isFinite(ground)) return;
+        double above = predator.getY() - ground;
+        if (above < -0.15D || above > depth) return;
+        predator.setPos(predator.getX(), ground + 0.001D, predator.getZ());
+        predator.setDeltaMovement(Vec3.ZERO);
+        predator.fallDistance = 0.0F;
+    }
+
+    @Unique
     private static double scpadditions$findGroundY(Entity entity, double depth) {
         if (entity == null) return Double.NaN;
-        Vec3 start = entity.position().add(0.0D, 0.35D, 0.0D);
+        Vec3 start = entity.position().add(0.0D, 0.65D, 0.0D);
         Vec3 end = entity.position().add(0.0D, -Math.max(1.0D, depth), 0.0D);
         BlockHitResult hit = entity.level().clip(new ClipContext(start, end,
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
-        return hit.getType() == HitResult.Type.BLOCK ? hit.getLocation().y : Double.NaN;
+        return hit.getType() == HitResult.Type.BLOCK
+                ? hit.getLocation().y : Double.NaN;
     }
 }

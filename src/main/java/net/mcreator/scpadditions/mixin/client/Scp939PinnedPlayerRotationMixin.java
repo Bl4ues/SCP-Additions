@@ -12,15 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Renders an SCP-939 maul victim as a person lying face-up on the floor.
- *
- * Rotating the standing model -90 degrees around X produced a front-flip pose:
- * the player ended face-down and the longitudinal direction was easy to invert.
- * Vanilla sleeping already solves the exact geometric problem we need, so this
- * uses the same Y -> Z(90) -> Y(270) basis as a player lying in a bed, with a
- * synthetic facing direction whose head points back toward the attacking 939.
- */
+/** Renders an SCP-939 maul victim face-up with their head toward the attacker. */
 @Mixin(PlayerRenderer.class)
 public abstract class Scp939PinnedPlayerRotationMixin {
     @Inject(method = "setupRotations", at = @At("HEAD"), cancellable = true)
@@ -33,26 +25,21 @@ public abstract class Scp939PinnedPlayerRotationMixin {
         Scp939Entity predator =
                 Scp939PinPresentationClient.findPinning939(player);
 
-        // The 939 faces outward from itself toward the pinned player. The
-        // victim's head must point the other way, back toward the 939, while
-        // their feet extend away from it.
-        float headFacingYaw = predator != null
-                ? Mth.rotLerp(partialTick, predator.yRotO,
-                        predator.getYRot()) + 180.0F
+        /*
+         * The sleeping basis below reverses the model's longitudinal direction
+         * compared with ordinary Minecraft facing. Feeding predatorYaw + 180
+         * therefore put the victim's feet at the 939. Use the predator's own
+         * outward yaw here: after the sleeping transform the model's head points
+         * back toward the attacker and its feet extend away from it.
+         */
+        float sleepingFacingYaw = predator != null
+                ? Mth.rotLerp(partialTick, predator.yRotO, predator.getYRot())
                 : rotationYaw;
 
-        // Equivalent orientation basis to LivingEntityRenderer's sleeping
-        // branch. For Minecraft yaw, the sleeping direction rotation is
-        // 90 - facingYaw. Z+90 lays the model on its back rather than pitching
-        // it face-first into the floor.
-        float sleepingDirectionRotation = 90.0F - headFacingYaw;
+        float sleepingDirectionRotation = 90.0F - sleepingFacingYaw;
         poseStack.mulPose(Axis.YP.rotationDegrees(sleepingDirectionRotation));
         poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
         poseStack.mulPose(Axis.YP.rotationDegrees(270.0F));
-
-        // Do not add the old -1Y/+Z corrective translation here. Vanilla's
-        // player render pipeline positions a sleeping body around this basis;
-        // Scp939PinPresentationClient supplies the small floor offset globally.
         ci.cancel();
     }
 }

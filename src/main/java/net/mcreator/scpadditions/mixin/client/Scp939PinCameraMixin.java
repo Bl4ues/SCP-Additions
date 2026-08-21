@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Forces the local maul camera down to a true floor-level viewpoint. */
+/** Forces only the first-person maul camera down to a floor-level viewpoint. */
 @Mixin(Camera.class)
 public abstract class Scp939PinCameraMixin {
     @Shadow
@@ -31,7 +31,9 @@ public abstract class Scp939PinCameraMixin {
     private void scpadditions$positionPinnedCamera(BlockGetter level,
             Entity cameraEntity, boolean detached, boolean mirror,
             float partialTick, CallbackInfo ci) {
-        if (!(cameraEntity instanceof LocalPlayer player)
+        // Detached is Minecraft's third-person camera. It must remain a normal,
+        // freely orbiting camera so the player can inspect the pin animation.
+        if (detached || !(cameraEntity instanceof LocalPlayer player)
                 || !Scp939ClientState.pinned()) {
             return;
         }

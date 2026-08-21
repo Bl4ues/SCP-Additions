@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -55,6 +56,11 @@ public final class Scp939ClientEvents {
 
     @SubscribeEvent
     public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
+        // Render exactly once in Forge's overlay pass. Without this guard the
+        // translucent panels were drawn once for every vanilla overlay, making
+        // them progressively darker and doing needless work every frame.
+        if (event.getOverlay() != VanillaGuiOverlay.PORTAL.type()) return;
+
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.options.hideGui
                 || minecraft.screen != null) return;

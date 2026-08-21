@@ -2,6 +2,7 @@ package net.mcreator.scpadditions.mixin.client;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import net.mcreator.scpadditions.client.Scp939ClientState;
 import net.mcreator.scpadditions.client.SimpleVoiceChatHudBridge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -17,6 +18,10 @@ public abstract class SimpleVoiceChatHudIconMixin {
             require = 0, remap = false)
     private void scpAdditions$positionVoiceHudIcon(GuiGraphics graphics,
             ResourceLocation texture, CallbackInfo callback) {
+        if (Scp939ClientState.pinned()) {
+            callback.cancel();
+            return;
+        }
         if (!SimpleVoiceChatHudBridge.shouldRelocateHudIcon()) return;
         SimpleVoiceChatHudBridge.renderRelocatedHudIcon(graphics, texture);
         callback.cancel();

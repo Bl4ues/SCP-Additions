@@ -41,16 +41,25 @@ public final class Scp173ClientModEvents {
                 (gui, graphics, partialTick, width, height) ->
                         BlinkClient.renderBlackout(graphics, width, height));
         event.registerAboveAll("equipment_progress_overlay",
-                (gui, graphics, partialTick, width, height) ->
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
                         EquipmentProgressOverlay.render(graphics, width, height,
-                                partialTick));
+                                partialTick);
+                    }
+                });
         event.registerAboveAll("blink_meter_overlay",
-                (gui, graphics, partialTick, width, height) ->
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
                         BlinkClient.renderHud(graphics, width, height,
-                                partialTick));
+                                partialTick);
+                    }
+                });
         event.registerAboveAll("scp_131_notice_overlay",
-                (gui, graphics, partialTick, width, height) ->
-                        Scp131NoticeOverlay.render(graphics));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
+                        Scp131NoticeOverlay.render(graphics);
+                    }
+                });
     }
 
     @SubscribeEvent

@@ -17,6 +17,7 @@ import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.scp939.Scp939BreathSystem;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -107,9 +108,14 @@ public final class PlayerAcousticEvents {
         }
 
         if (now >= state.nextBreathTick && !player.isInWaterOrBubble()) {
-            AcousticStimulusSystem.emit(player.serverLevel(), current.add(0.0D,
-                    player.getBbHeight() * 0.75D, 0.0D),
-                    AcousticCategory.BREATH, 1.00F, player);
+            // When SCP-939 is close, the dedicated reserve system owns breathing
+            // completely. This is what makes Hold Breath actually silent instead
+            // of leaving this ambient producer to betray the player anyway.
+            if (!Scp939BreathSystem.isActive(player)) {
+                AcousticStimulusSystem.emit(player.serverLevel(), current.add(0.0D,
+                        player.getBbHeight() * 0.75D, 0.0D),
+                        AcousticCategory.BREATH, 1.00F, player);
+            }
             state.nextBreathTick = now + 45L + player.getRandom().nextInt(30);
         }
 

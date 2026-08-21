@@ -30,6 +30,8 @@ public final class CustomHotbarModEvents {
         event.registerAboveAll("scp939_interaction_overlay",
                 (gui, graphics, partialTick, width, height) -> {
                     if (Scp939ClientState.pinned()) {
+                        Scp939MaulImpactOverlay.render(
+                                graphics, width, height);
                         Scp939ClientEvents.renderOverlay(
                                 graphics, width, height);
                     } else {

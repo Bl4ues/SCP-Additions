@@ -16,11 +16,12 @@ import software.bernie.geckolib.core.object.PlayState;
 /**
  * Keeps SCP-939 locomotion visually tied to real displacement.
  *
- * Playback is calibrated against the authored gait cycle rather than the mob's
- * navigation speed modifier. Navigation speed is a MoveControl target and is not
- * the number of blocks actually travelled per tick after Minecraft movement
- * physics. Treating it as physical velocity made the 1.8-second walk play at a
- * fraction of its intended speed while the entity visibly crossed the floor.
+ * Client-side deltaMovement is not a reliable measure of how far a remote mob
+ * was actually interpolated this tick. Using it made the model enter walk while
+ * its playback rate was calculated from a much smaller stale velocity, producing
+ * the exact "frozen paws sliding over the floor" look. The controller now uses
+ * measured X/Z displacement between entity ticks for both state selection and
+ * playback speed.
  */
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939AnimationControllerMixin {
@@ -65,18 +66,18 @@ public abstract class Scp939AnimationControllerMixin {
             RawAnimation.begin().thenPlay("death");
 
     /*
-     * The authored walk lasts 1.8 s (36 ticks) and visually covers roughly one
-     * full quadrupedal stride. A reference near 0.032 block/tick therefore lets
-     * one 1x cycle accompany about 1.15 blocks of travel. The 0.82 s run has a
-     * much longer stride and uses ~0.095 block/tick, or about 1.56 blocks/cycle.
-     * These are displacement references, not navigation modifiers.
+     * Authored stride calibration. The walk is 1.8 s and the run 0.82 s. These
+     * references are physical displacement per tick, not MoveControl targets.
+     * A modest floor keeps very slow path corrections visibly alive; below the
+     * movement threshold we use idle/turn presentation instead of pretending a
+     * nearly stationary body is walking.
      */
     @Unique
-    private static final double SCPADDITIONS_WALK_REFERENCE_SPEED = 0.032D;
+    private static final double SCPADDITIONS_WALK_REFERENCE_SPEED = 0.030D;
     @Unique
-    private static final double SCPADDITIONS_RUN_REFERENCE_SPEED = 0.095D;
+    private static final double SCPADDITIONS_RUN_REFERENCE_SPEED = 0.082D;
     @Unique
-    private static final double SCPADDITIONS_MOVING_EPSILON_SQR = 0.00012D;
+    private static final double SCPADDITIONS_MOVING_EPSILON_SQR = 0.0035D * 0.0035D;
 
     @Inject(method = "registerControllers", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replace939AnimationControllers(
@@ -85,7 +86,7 @@ public abstract class Scp939AnimationControllerMixin {
         Scp939Entity entity = (Scp939Entity) (Object) this;
 
         AnimationController<Scp939Entity> locomotion =
-                new AnimationController<>(entity, "locomotion", 7, state -> {
+                new AnimationController<>(entity, "locomotion", 6, state -> {
                     byte action = entity.getAction();
                     if (scpadditions$isCombatFullBodyAction(action)) {
                         return PlayState.STOP;
@@ -96,8 +97,7 @@ public abstract class Scp939AnimationControllerMixin {
                     }
 
                     Scp939AwarenessState awareness = entity.getAwarenessState();
-                    boolean moving = entity.getDeltaMovement()
-                            .horizontalDistanceSqr()
+                    boolean moving = scpadditions$horizontalDisplacementSqr(entity)
                             > SCPADDITIONS_MOVING_EPSILON_SQR;
                     if (moving) {
                         if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
@@ -119,8 +119,8 @@ public abstract class Scp939AnimationControllerMixin {
             byte action = animatable.getAction();
             if (action == Scp939Entity.ACTION_LISTEN) return 1.0D;
 
-            double movement = Math.sqrt(animatable.getDeltaMovement()
-                    .horizontalDistanceSqr());
+            double movement = Math.sqrt(
+                    scpadditions$horizontalDisplacementSqr(animatable));
             if (movement * movement <= SCPADDITIONS_MOVING_EPSILON_SQR) {
                 return 1.0D;
             }
@@ -132,18 +132,12 @@ public abstract class Scp939AnimationControllerMixin {
                     ? SCPADDITIONS_RUN_REFERENCE_SPEED
                     : SCPADDITIONS_WALK_REFERENCE_SPEED;
 
-            // At the movement threshold the walk floor still corresponds to
-            // roughly one authored stride over the travelled distance. It keeps
-            // the paws alive during slow pathing without returning to the old
-            // 0.90x treadmill behaviour.
             return Mth.clamp(movement / reference,
-                    running ? 0.45D : 0.35D,
-                    running ? 1.80D : 1.85D);
+                    running ? 0.70D : 0.58D,
+                    running ? 1.85D : 1.95D);
         });
         controllers.add(locomotion);
 
-        // Bite and mimic only author upper-body bones and therefore layer over
-        // locomotion. Pounce/maul/hurt/death still replace the full body quickly.
         AnimationController<Scp939Entity> actionController =
                 new AnimationController<>(entity, "action", 2, state -> {
                     return switch (entity.getAction()) {
@@ -168,6 +162,14 @@ public abstract class Scp939AnimationControllerMixin {
                 });
         controllers.add(actionController);
         ci.cancel();
+    }
+
+    @Unique
+    private static double scpadditions$horizontalDisplacementSqr(
+            Scp939Entity entity) {
+        double dx = entity.getX() - entity.xo;
+        double dz = entity.getZ() - entity.zo;
+        return dx * dx + dz * dz;
     }
 
     @Unique

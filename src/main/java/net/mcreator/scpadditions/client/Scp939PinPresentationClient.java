@@ -22,7 +22,7 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp939PinPresentationClient {
     private static final double PIN_SEARCH_RANGE = 3.25D;
-    private static final double EXPECTED_PIN_FORWARD = 1.02D;
+    private static final double EXPECTED_PIN_FORWARD = 0.62D;
     private static final double REMOTE_PIN_TOLERANCE_SQR = 0.90D * 0.90D;
 
     private Scp939PinPresentationClient() {
@@ -53,17 +53,13 @@ public final class Scp939PinPresentationClient {
         event.setRoll(0.0F);
     }
 
-    /**
-     * The sleeping-style rotation pivots the player model around its entity
-     * origin. With the entity feet correctly anchored to the block surface the
-     * old negative offset buried most of the horizontal model below the floor.
-     */
+    /** Keep the sleeping-style victim just above the block surface. */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         Player player = event.getEntity();
         if (!isPinnedVictim(player)) return;
         PoseStack pose = event.getPoseStack();
-        pose.translate(0.0D, 0.24D, 0.0D);
+        pose.translate(0.0D, 0.07D, 0.0D);
     }
 
     public static Scp939Entity findPinning939(Player player) {

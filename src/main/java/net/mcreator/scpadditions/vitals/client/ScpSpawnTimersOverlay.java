@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.mcreator.scpadditions.client.Scp079EnergyClientState;
 import net.mcreator.scpadditions.client.Scp079EnergyClientState.ClientRoamerSnapshot;
 import net.mcreator.scpadditions.init.Scp131Items;
-import net.mcreator.scpadditions.roamer.RoamerResult;
 import net.mcreator.scpadditions.roamer.RoamerState;
 import net.mcreator.scpadditions.roamer.RoamerType;
 
@@ -37,9 +36,7 @@ public final class ScpSpawnTimersOverlay {
         Minecraft minecraft = Minecraft.getInstance();
         if (!Scp079EnergyClientState.spawnTimersVisible()
                 || minecraft.player == null || minecraft.screen != null
-                || minecraft.options.hideGui) {
-            return;
-        }
+                || minecraft.options.hideGui) return;
 
         int x = screenWidth - WIDTH - MARGIN;
         int y = MARGIN;
@@ -51,10 +48,8 @@ public final class ScpSpawnTimersOverlay {
         int index = 0;
         for (RoamerType type : RoamerType.values()) {
             int rowY = y + 17 + index * ROW_HEIGHT;
-            if (index > 0) {
-                graphics.fill(x + 5, rowY, x + WIDTH - 5, rowY + 1,
-                        DIVIDER);
-            }
+            if (index > 0) graphics.fill(x + 5, rowY, x + WIDTH - 5,
+                    rowY + 1, DIVIDER);
             renderRoamer(graphics, minecraft, type, x, rowY);
             index++;
         }
@@ -64,13 +59,9 @@ public final class ScpSpawnTimersOverlay {
             Minecraft minecraft, RoamerType type, int x, int rowY) {
         ClientRoamerSnapshot snapshot = Scp079EnergyClientState.roamer(type);
         graphics.renderItem(icon(type), x + 6, rowY + 7);
-        draw(graphics, minecraft, type.displayName(), x + 28,
-                rowY + 4, WHITE);
-
-        String state = stateText(snapshot);
-        Component stateComponent = styled(state);
-        int stateX = x + WIDTH - 7
-                - minecraft.font.width(stateComponent);
+        draw(graphics, minecraft, type.displayName(), x + 28, rowY + 4, WHITE);
+        Component stateComponent = styled(stateText(snapshot));
+        int stateX = x + WIDTH - 7 - minecraft.font.width(stateComponent);
         graphics.drawString(minecraft.font, stateComponent, stateX,
                 rowY + 4, WHITE, false);
         draw(graphics, minecraft, resultText(snapshot), x + 28,
@@ -88,24 +79,19 @@ public final class ScpSpawnTimersOverlay {
     }
 
     private static String resultText(ClientRoamerSnapshot snapshot) {
-        if (snapshot.state() == RoamerState.CONTAINED) {
+        if (snapshot.state() == RoamerState.CONTAINED)
             return "SPAWN CYCLE HELD BY CONTAINMENT";
-        }
-        if (snapshot.state() == RoamerState.SPAWNED) {
+        if (snapshot.state() == RoamerState.SPAWNED)
             return "ACTIVE INSTANCE · TIMER STOPPED";
-        }
         return switch (snapshot.result()) {
             case NONE -> "COUNTDOWN ACTIVE";
             case TIMER_STARTED -> "SPAWN ENABLED · TIMER STARTED";
             case SPAWNED -> "LAST CHECK: SPAWN SUCCESSFUL";
-            case DESPAWNED_TIMER_RESET ->
-                    "DESPAWNED · FULL TIMER RESTARTED";
+            case DESPAWNED_TIMER_RESET -> "DESPAWNED · FULL TIMER RESTARTED";
             case CHANCE_FAILED -> "LAST CHECK: CHANCE FAILED";
-            case CHANCE_FAILED_OTHER_ROAMER ->
-                    "LAST CHECK: OTHER ROAMER REDUCED CHANCE";
+            case CHANCE_FAILED_OTHER_ROAMER -> "LAST CHECK: OTHER ROAMER REDUCED CHANCE";
             case NO_VALID_POSITION -> "LAST CHECK: NO VALID POSITION";
-            case BLOCKED_BY_EXISTING ->
-                    "EXISTING INSTANCE · TIMER STOPPED";
+            case BLOCKED_BY_EXISTING -> "EXISTING INSTANCE · TIMER STOPPED";
             case RULE_DISABLED -> "SPAWN GAMERULE IS OFF";
             case MODULE_DISABLED -> "ENTITY MODULE IS OFF";
             case NOT_IMPLEMENTED -> "SPAWN SYSTEM NOT IMPLEMENTED";
@@ -116,19 +102,17 @@ public final class ScpSpawnTimersOverlay {
 
     private static ItemStack icon(RoamerType type) {
         return switch (type) {
-            case SCP_173 -> new ItemStack(
-                    Scp131Items.SCP_173_SPAWN_EGG.get());
-            case SCP_106 -> new ItemStack(
-                    Scp131Items.SCP_106_SPAWN_EGG.get());
+            case SCP_173 -> new ItemStack(Scp131Items.SCP_173_SPAWN_EGG.get());
+            case SCP_106 -> new ItemStack(Scp131Items.SCP_106_SPAWN_EGG.get());
+            case SCP_939 -> new ItemStack(Scp131Items.SCP_939_SPAWN_EGG.get());
         };
     }
 
     private static String formatTime(int ticks) {
         if (ticks < 0) return "--:--";
         int totalSeconds = Math.max(0, (ticks + 19) / 20);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return String.format("%02d:%02d", minutes, seconds);
+        return String.format("%02d:%02d", totalSeconds / 60,
+                totalSeconds % 60);
     }
 
     private static void draw(GuiGraphics graphics, Minecraft minecraft,
@@ -137,8 +121,7 @@ public final class ScpSpawnTimersOverlay {
     }
 
     private static Component styled(String text) {
-        return Component.literal(text).withStyle(style ->
-                style.withFont(ROBOTO_FONT));
+        return Component.literal(text).withStyle(style -> style.withFont(ROBOTO_FONT));
     }
 
     private static void border(GuiGraphics graphics, int x, int y,

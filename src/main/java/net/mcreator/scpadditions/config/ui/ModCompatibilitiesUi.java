@@ -220,8 +220,8 @@ public final class ModCompatibilitiesUi {
             boolean enabled = configured
                     && Scp939VoiceClientPreferences.allowMimicry();
             mimicryButton.setMessage(Component.literal(installed
-                    ? "939 Mimicry: " + (enabled ? "ON" : "OFF")
-                    : "939 Mimicry — N/A"));
+                    ? "SCP-939's Mimicry: " + (enabled ? "ON" : "OFF")
+                    : "SCP-939's Mimicry — N/A"));
             mimicryButton.active = installed;
         }
 

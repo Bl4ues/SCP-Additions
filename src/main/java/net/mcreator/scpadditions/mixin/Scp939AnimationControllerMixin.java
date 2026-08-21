@@ -14,70 +14,44 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 /**
- * Keeps SCP-939 locomotion visually tied to real displacement.
- *
- * Client-side deltaMovement is not a reliable measure of how far a remote mob
- * was actually interpolated this tick. Using it made the model enter walk while
- * its playback rate was calculated from a much smaller stale velocity, producing
- * the exact "frozen paws sliding over the floor" look. The controller now uses
- * measured X/Z displacement between entity ticks for both state selection and
- * playback speed.
+ * Keeps SCP-939 locomotion tied to real displacement and real heading changes.
+ * Remote-client deltaMovement is not authoritative enough for presentation, so
+ * gait timing is based on measured X/Z displacement between entity ticks.
  */
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939AnimationControllerMixin {
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_IDLE =
+    @Unique private static final RawAnimation SCPADDITIONS_939_IDLE =
             RawAnimation.begin().thenLoop("idle");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_LISTEN =
+    @Unique private static final RawAnimation SCPADDITIONS_939_LISTEN =
             RawAnimation.begin().thenLoop("idle_listen");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_WALK =
+    @Unique private static final RawAnimation SCPADDITIONS_939_WALK =
             RawAnimation.begin().thenLoop("walk");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_RUN =
+    @Unique private static final RawAnimation SCPADDITIONS_939_RUN =
             RawAnimation.begin().thenLoop("run");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_SEARCH =
+    @Unique private static final RawAnimation SCPADDITIONS_939_SEARCH =
             RawAnimation.begin().thenLoop("search");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_MIMIC =
+    @Unique private static final RawAnimation SCPADDITIONS_939_MIMIC =
             RawAnimation.begin().thenPlay("mimic_call");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_BITE =
+    @Unique private static final RawAnimation SCPADDITIONS_939_BITE =
             RawAnimation.begin().thenPlay("attack_bite");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_POUNCE =
+    @Unique private static final RawAnimation SCPADDITIONS_939_POUNCE =
             RawAnimation.begin().thenPlay("pounce_start");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_PIN =
+    @Unique private static final RawAnimation SCPADDITIONS_939_PIN =
             RawAnimation.begin().thenPlay("pounce_land_pin");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_MAUL =
+    @Unique private static final RawAnimation SCPADDITIONS_939_MAUL =
             RawAnimation.begin().thenLoop("pounce_maul_loop");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_KICKED =
+    @Unique private static final RawAnimation SCPADDITIONS_939_KICKED =
             RawAnimation.begin().thenPlay("pounce_kicked_off");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_HURT =
+    @Unique private static final RawAnimation SCPADDITIONS_939_HURT =
             RawAnimation.begin().thenPlay("hurt_stagger");
-    @Unique
-    private static final RawAnimation SCPADDITIONS_939_DEATH =
+    @Unique private static final RawAnimation SCPADDITIONS_939_DEATH =
             RawAnimation.begin().thenPlay("death");
 
-    /*
-     * Authored stride calibration. The walk is 1.8 s and the run 0.82 s. These
-     * references are physical displacement per tick, not MoveControl targets.
-     * A modest floor keeps very slow path corrections visibly alive; below the
-     * movement threshold we use idle/turn presentation instead of pretending a
-     * nearly stationary body is walking.
-     */
-    @Unique
-    private static final double SCPADDITIONS_WALK_REFERENCE_SPEED = 0.030D;
-    @Unique
-    private static final double SCPADDITIONS_RUN_REFERENCE_SPEED = 0.082D;
-    @Unique
-    private static final double SCPADDITIONS_MOVING_EPSILON_SQR = 0.0035D * 0.0035D;
+    @Unique private static final double SCPADDITIONS_WALK_REFERENCE_SPEED = 0.030D;
+    @Unique private static final double SCPADDITIONS_RUN_REFERENCE_SPEED = 0.082D;
+    @Unique private static final double SCPADDITIONS_MOVING_EPSILON_SQR =
+            0.0035D * 0.0035D;
+    @Unique private static final float SCPADDITIONS_TURN_STEP_THRESHOLD = 0.55F;
 
     @Inject(method = "registerControllers", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replace939AnimationControllers(
@@ -91,7 +65,6 @@ public abstract class Scp939AnimationControllerMixin {
                     if (scpadditions$isCombatFullBodyAction(action)) {
                         return PlayState.STOP;
                     }
-
                     if (action == Scp939Entity.ACTION_LISTEN) {
                         return state.setAndContinue(SCPADDITIONS_939_LISTEN);
                     }
@@ -99,11 +72,20 @@ public abstract class Scp939AnimationControllerMixin {
                     Scp939AwarenessState awareness = entity.getAwarenessState();
                     boolean moving = scpadditions$horizontalDisplacementSqr(entity)
                             > SCPADDITIONS_MOVING_EPSILON_SQR;
+                    boolean turning = Math.abs(scpadditions$yawStep(entity))
+                            >= SCPADDITIONS_TURN_STEP_THRESHOLD;
+
                     if (moving) {
                         if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
                                 || awareness == Scp939AwarenessState.LOST_SEARCH) {
                             return state.setAndContinue(SCPADDITIONS_939_RUN);
                         }
+                        return state.setAndContinue(SCPADDITIONS_939_WALK);
+                    }
+                    // A quadruped cannot rotate its whole body around its centre
+                    // while every paw remains frozen. Use a restrained walk cycle
+                    // as a stepping turn, then layer the spine bend in the model.
+                    if (turning) {
                         return state.setAndContinue(SCPADDITIONS_939_WALK);
                     }
                     if (awareness == Scp939AwarenessState.SEARCH) {
@@ -119,9 +101,14 @@ public abstract class Scp939AnimationControllerMixin {
             byte action = animatable.getAction();
             if (action == Scp939Entity.ACTION_LISTEN) return 1.0D;
 
-            double movement = Math.sqrt(
-                    scpadditions$horizontalDisplacementSqr(animatable));
-            if (movement * movement <= SCPADDITIONS_MOVING_EPSILON_SQR) {
+            double movementSqr = scpadditions$horizontalDisplacementSqr(animatable);
+            double movement = Math.sqrt(movementSqr);
+            float turn = Math.abs(scpadditions$yawStep(animatable));
+
+            if (movementSqr <= SCPADDITIONS_MOVING_EPSILON_SQR) {
+                if (turn >= SCPADDITIONS_TURN_STEP_THRESHOLD) {
+                    return Mth.clamp(0.46D + turn * 0.055D, 0.50D, 0.95D);
+                }
                 return 1.0D;
             }
 
@@ -141,22 +128,14 @@ public abstract class Scp939AnimationControllerMixin {
         AnimationController<Scp939Entity> actionController =
                 new AnimationController<>(entity, "action", 2, state -> {
                     return switch (entity.getAction()) {
-                        case Scp939Entity.ACTION_BITE ->
-                                state.setAndContinue(SCPADDITIONS_939_BITE);
-                        case Scp939Entity.ACTION_POUNCE ->
-                                state.setAndContinue(SCPADDITIONS_939_POUNCE);
-                        case Scp939Entity.ACTION_PIN_LAND ->
-                                state.setAndContinue(SCPADDITIONS_939_PIN);
-                        case Scp939Entity.ACTION_MAUL ->
-                                state.setAndContinue(SCPADDITIONS_939_MAUL);
-                        case Scp939Entity.ACTION_KICKED ->
-                                state.setAndContinue(SCPADDITIONS_939_KICKED);
-                        case Scp939Entity.ACTION_HURT ->
-                                state.setAndContinue(SCPADDITIONS_939_HURT);
-                        case Scp939Entity.ACTION_DEATH ->
-                                state.setAndContinue(SCPADDITIONS_939_DEATH);
-                        case Scp939Entity.ACTION_MIMIC ->
-                                state.setAndContinue(SCPADDITIONS_939_MIMIC);
+                        case Scp939Entity.ACTION_BITE -> state.setAndContinue(SCPADDITIONS_939_BITE);
+                        case Scp939Entity.ACTION_POUNCE -> state.setAndContinue(SCPADDITIONS_939_POUNCE);
+                        case Scp939Entity.ACTION_PIN_LAND -> state.setAndContinue(SCPADDITIONS_939_PIN);
+                        case Scp939Entity.ACTION_MAUL -> state.setAndContinue(SCPADDITIONS_939_MAUL);
+                        case Scp939Entity.ACTION_KICKED -> state.setAndContinue(SCPADDITIONS_939_KICKED);
+                        case Scp939Entity.ACTION_HURT -> state.setAndContinue(SCPADDITIONS_939_HURT);
+                        case Scp939Entity.ACTION_DEATH -> state.setAndContinue(SCPADDITIONS_939_DEATH);
+                        case Scp939Entity.ACTION_MIMIC -> state.setAndContinue(SCPADDITIONS_939_MIMIC);
                         default -> PlayState.STOP;
                     };
                 });
@@ -165,11 +144,15 @@ public abstract class Scp939AnimationControllerMixin {
     }
 
     @Unique
-    private static double scpadditions$horizontalDisplacementSqr(
-            Scp939Entity entity) {
+    private static double scpadditions$horizontalDisplacementSqr(Scp939Entity entity) {
         double dx = entity.getX() - entity.xo;
         double dz = entity.getZ() - entity.zo;
         return dx * dx + dz * dz;
+    }
+
+    @Unique
+    private static float scpadditions$yawStep(Scp939Entity entity) {
+        return Mth.wrapDegrees(entity.getYRot() - entity.yRotO);
     }
 
     @Unique

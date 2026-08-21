@@ -3,8 +3,8 @@ package net.mcreator.scpadditions.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.mcreator.scpadditions.entity.Scp939Entity;
 import net.mcreator.scpadditions.scp939.Scp939BreathSystem;
-import net.mcreator.scpadditions.scp939.Scp939PinSystem;
 
 import java.util.function.Supplier;
 
@@ -40,10 +40,12 @@ public final class Scp939InputPacket {
                 case HOLD_BREATH -> Scp939BreathSystem.setHolding(player,
                         message.pressed);
                 case STRUGGLE_LEFT -> {
-                    if (message.pressed) Scp939PinSystem.acceptInput(player, 0);
+                    if (message.pressed) Scp939Entity.handleStruggleInput(player,
+                            0);
                 }
                 case STRUGGLE_RIGHT -> {
-                    if (message.pressed) Scp939PinSystem.acceptInput(player, 1);
+                    if (message.pressed) Scp939Entity.handleStruggleInput(player,
+                            1);
                 }
                 default -> {
                 }

@@ -19,8 +19,9 @@ public final class PlayerPresentationEvents {
 
     @SubscribeEvent
     public static void beforeHand(RenderHandEvent event) {
-        if (InventoryModuleRuntimeState.hideEmptyHandForClient()
-                && event.getItemStack().isEmpty()) {
+        if (Scp939ClientState.pinned()
+                || (InventoryModuleRuntimeState.hideEmptyHandForClient()
+                && event.getItemStack().isEmpty())) {
             event.setCanceled(true);
         }
     }

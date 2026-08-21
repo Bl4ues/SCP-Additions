@@ -15,7 +15,10 @@ public final class CustomOxygenModEvents {
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("custom_oxygen_overlay",
-                (gui, graphics, partialTick, width, height) ->
-                        CustomOxygenOverlay.render(graphics, width, height));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
+                        CustomOxygenOverlay.render(graphics, width, height);
+                    }
+                });
     }
 }

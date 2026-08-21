@@ -30,7 +30,13 @@ public final class Scp939BreathSystem {
     private static final int RECOVERY_PER_TICK = 2;
     private static final int BREATH_INTERVAL = 24;
     private static final int EXHAUSTED_LOCK_TICKS = 35;
-    private static final double ACTIVE_RADIUS = 20.0D;
+
+    // The breath mechanic is a close-range danger cue, not a permanent second
+    // oxygen meter whenever a 939 happens to exist in the same corridor wing.
+    // A small hysteresis prevents the HUD flickering at the edge of the radius.
+    private static final double ACTIVE_ENTER_RADIUS = 9.5D;
+    private static final double ACTIVE_EXIT_RADIUS = 11.0D;
+
     private static final Map<UUID, State> STATES = new HashMap<>();
 
     private Scp939BreathSystem() {
@@ -72,7 +78,8 @@ public final class Scp939BreathSystem {
             return;
         }
 
-        state.active = hasNearby939(player);
+        state.active = hasNearby939(player, state.active
+                ? ACTIVE_EXIT_RADIUS : ACTIVE_ENTER_RADIUS);
         if (state.exhaustedTicks > 0) state.exhaustedTicks--;
 
         boolean canHold = state.active && state.requestHolding
@@ -117,10 +124,12 @@ public final class Scp939BreathSystem {
         STATES.clear();
     }
 
-    private static boolean hasNearby939(ServerPlayer player) {
+    private static boolean hasNearby939(ServerPlayer player, double radius) {
         return !player.serverLevel().getEntitiesOfClass(Scp939Entity.class,
-                player.getBoundingBox().inflate(ACTIVE_RADIUS),
-                entity -> entity.isAlive() && !entity.isRemoved()).isEmpty();
+                player.getBoundingBox().inflate(radius),
+                entity -> entity.isAlive() && !entity.isRemoved()
+                        && entity.distanceToSqr(player) <= radius * radius)
+                .isEmpty();
     }
 
     private static void emit(ServerPlayer player, AcousticCategory category,

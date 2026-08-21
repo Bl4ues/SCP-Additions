@@ -15,6 +15,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.MineZeroCompatibilityClientState;
 import net.mcreator.scpadditions.client.ModIntegrationLogoClient;
+import net.mcreator.scpadditions.client.Scp939ClientEvents;
+import net.mcreator.scpadditions.client.Scp939VoiceClientPreferences;
 import net.mcreator.scpadditions.client.SimpleVoiceChatCompatibilityClientState;
 import net.mcreator.scpadditions.compat.SimpleVoiceChatPresence;
 
@@ -34,6 +36,7 @@ public final class ModCompatibilitiesUi {
     private static final int INTEGRATION_ROW_START = 50;
     private static final int INTEGRATION_ROW_STRIDE = 78;
     private static final int INTEGRATION_DESCRIPTION_OFFSET = 44;
+    private static final int MIMICRY_BUTTON_GAP = 8;
     private static final Map<Screen, Button> BUTTONS = new WeakHashMap<>();
 
     private ModCompatibilitiesUi() {
@@ -104,6 +107,7 @@ public final class ModCompatibilitiesUi {
         private final Screen parent;
         private Button mineZeroButton;
         private Button voiceChatButton;
+        private Button mimicryButton;
         private Button backButton;
 
         private ModCompatibilitiesScreen(Screen parent) {
@@ -125,13 +129,26 @@ public final class ModCompatibilitiesUi {
                     }).bounds(x + 24, y + INTEGRATION_ROW_START,
                             panelWidth - 48, 36).build());
 
+            int voiceRowWidth = panelWidth - 48;
+            int mimicryWidth = Math.min(154,
+                    Math.max(124, voiceRowWidth / 3));
+            int voiceWidth = voiceRowWidth - mimicryWidth
+                    - MIMICRY_BUTTON_GAP;
+            int voiceY = y + INTEGRATION_ROW_START + INTEGRATION_ROW_STRIDE;
             voiceChatButton = addRenderableWidget(Button.builder(
                     Component.empty(), ignored -> {
                         SimpleVoiceChatCompatibilityClientState.toggle();
                         refreshVoiceChatButton();
-                    }).bounds(x + 24,
-                            y + INTEGRATION_ROW_START + INTEGRATION_ROW_STRIDE,
-                            panelWidth - 48, 36).build());
+                    }).bounds(x + 24, voiceY, voiceWidth, 36).build());
+
+            mimicryButton = addRenderableWidget(Button.builder(
+                    Component.empty(), ignored -> {
+                        boolean next = !Scp939VoiceClientPreferences
+                                .allowMimicry();
+                        Scp939ClientEvents.setMimicConsent(next);
+                        refreshMimicryButton();
+                    }).bounds(x + 24 + voiceWidth + MIMICRY_BUTTON_GAP,
+                            voiceY, mimicryWidth, 36).build());
 
             backButton = addRenderableWidget(Button.builder(
                     ScpFonts.roboto("Back"),
@@ -141,6 +158,7 @@ public final class ModCompatibilitiesUi {
 
             refreshMineZeroButton();
             refreshVoiceChatButton();
+            refreshMimicryButton();
             MineZeroCompatibilityClientState.query();
             SimpleVoiceChatCompatibilityClientState.query();
         }
@@ -156,17 +174,20 @@ public final class ModCompatibilitiesUi {
         private void refreshMineZeroButton() {
             if (mineZeroButton == null) return;
             if (!MineZeroCompatibilityClientState.known()) {
-                mineZeroButton.setMessage(Component.literal("MineZero — Detecting..."));
+                mineZeroButton.setMessage(Component.literal(
+                        "MineZero — Detecting..."));
                 mineZeroButton.active = false;
                 return;
             }
             if (!MineZeroCompatibilityClientState.installed()) {
-                mineZeroButton.setMessage(Component.literal("MineZero — NOT INSTALLED"));
+                mineZeroButton.setMessage(Component.literal(
+                        "MineZero — NOT INSTALLED"));
                 mineZeroButton.active = false;
                 return;
             }
             mineZeroButton.setMessage(Component.literal("MineZero: "
-                    + (MineZeroCompatibilityClientState.enabled() ? "ON" : "OFF")));
+                    + (MineZeroCompatibilityClientState.enabled()
+                    ? "ON" : "OFF")));
             mineZeroButton.active = MineZeroCompatibilityClientState.canEdit();
         }
 
@@ -188,7 +209,20 @@ public final class ModCompatibilitiesUi {
                     "Simple Voice Chat: "
                             + (SimpleVoiceChatCompatibilityClientState.enabled()
                             ? "ON" : "OFF")));
-            voiceChatButton.active = SimpleVoiceChatCompatibilityClientState.canEdit();
+            voiceChatButton.active =
+                    SimpleVoiceChatCompatibilityClientState.canEdit();
+        }
+
+        private void refreshMimicryButton() {
+            if (mimicryButton == null) return;
+            boolean installed = SimpleVoiceChatPresence.installed();
+            boolean configured = Scp939VoiceClientPreferences.setupComplete();
+            boolean enabled = configured
+                    && Scp939VoiceClientPreferences.allowMimicry();
+            mimicryButton.setMessage(Component.literal(installed
+                    ? "939 Mimicry: " + (enabled ? "ON" : "OFF")
+                    : "939 Mimicry — N/A"));
+            mimicryButton.active = installed;
         }
 
         @Override
@@ -201,6 +235,7 @@ public final class ModCompatibilitiesUi {
                 float partialTick) {
             refreshMineZeroButton();
             refreshVoiceChatButton();
+            refreshMimicryButton();
             renderBackground(graphics);
             int panelWidth = panelWidth();
             int x = ConfigCenterVisuals.contentLeft(width, panelWidth);
@@ -212,21 +247,24 @@ public final class ModCompatibilitiesUi {
 
             int textX = x + 24 + ConfigCenterVisuals.contentOffsetX();
             drawDescription(graphics, textX,
-                    y + INTEGRATION_ROW_START + INTEGRATION_DESCRIPTION_OFFSET,
+                    y + INTEGRATION_ROW_START
+                            + INTEGRATION_DESCRIPTION_OFFSET,
                     panelWidth - 48,
                     "Uses SCP Additions saves as MineZero checkpoints and replaces automatic Return by Death with the death/spectate flow. Team wipes require a vote before rollback.");
             drawDescription(graphics, textX,
                     y + INTEGRATION_ROW_START + INTEGRATION_ROW_STRIDE
                             + INTEGRATION_DESCRIPTION_OFFSET,
                     panelWidth - 48,
-                    "Dead players share a non-positional voice channel and hear the voice-chat audio of the survivor in their Live Personnel Feed. Living players cannot hear the dead.");
+                    "Provides SCP Additions voice features. SCP-939 Mimicry separately controls whether short consenting voice fragments may be reused from memory by SCP-939; fragments expire and are never written to disk.");
 
             drawIntegrationButton(graphics, mineZeroButton, MINEZERO_ID,
-                    MineZeroCompatibilityClientState.installed(), mouseX, mouseY);
+                    MineZeroCompatibilityClientState.installed(),
+                    mouseX, mouseY);
             drawIntegrationButton(graphics, voiceChatButton,
                     SimpleVoiceChatPresence.MOD_ID,
                     SimpleVoiceChatCompatibilityClientState.installed(),
                     mouseX, mouseY);
+            drawMimicryButton(graphics, mouseX, mouseY);
 
             if (backButton != null) {
                 ConfigCenterVisuals.drawButton(graphics, font, backButton,
@@ -239,18 +277,71 @@ public final class ModCompatibilitiesUi {
             int lineY = y;
             for (var line : font.split(ScpFonts.roboto(description), width)) {
                 graphics.drawString(font, line, x, lineY,
-                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
+                        ConfigCenterVisuals.fadeColor(
+                                ConfigCenterVisuals.MUTED), false);
                 lineY += font.lineHeight + 3;
             }
         }
 
-        private void drawIntegrationButton(GuiGraphics graphics, Button button,
-                String modId, boolean installed, int mouseX, int mouseY) {
+        private void drawMimicryButton(GuiGraphics graphics,
+                int mouseX, int mouseY) {
+            if (mimicryButton == null) return;
+            ConfigCenterVisuals.drawButton(graphics, font, mimicryButton,
+                    Component.empty(), mouseX, mouseY);
+
+            String plain = mimicryButton.getMessage().getString();
+            int left = mimicryButton.getX()
+                    + ConfigCenterVisuals.contentOffsetX() + 10;
+            int right = mimicryButton.getX()
+                    + ConfigCenterVisuals.contentOffsetX()
+                    + mimicryButton.getWidth() - 10;
+            int textY = mimicryButton.getY()
+                    + Math.max(1,
+                    (mimicryButton.getHeight() - font.lineHeight) / 2);
+            boolean hovered = mimicryButton.active
+                    && (mimicryButton.isMouseOver(mouseX, mouseY)
+                    || mimicryButton.isFocused());
+            int textColor = !mimicryButton.active
+                    ? ConfigCenterVisuals.MUTED
+                    : hovered ? ConfigCenterVisuals.ACCENT_BRIGHT
+                    : ConfigCenterVisuals.TEXT;
+
+            int stateLength = plain.endsWith(": ON") ? 2
+                    : plain.endsWith(": OFF") ? 3 : 0;
+            if (stateLength <= 0) {
+                graphics.drawString(font,
+                        ScpFonts.roboto(fitIntegrationText(plain,
+                                Math.max(12, right - left))),
+                        left, textY,
+                        ConfigCenterVisuals.fadeColor(textColor), false);
+                return;
+            }
+
+            String prefix = plain.substring(0,
+                    plain.length() - stateLength).trim();
+            if (prefix.endsWith(":")) {
+                prefix = prefix.substring(0, prefix.length() - 1).trim();
+            }
+            String state = plain.substring(plain.length() - stateLength);
+            int stateWidth = font.width(ScpFonts.roboto(state));
+            int prefixWidth = Math.max(18,
+                    right - stateWidth - 12 - left);
+            graphics.drawString(font,
+                    ScpFonts.roboto(fitIntegrationText(prefix, prefixWidth)),
+                    left, textY,
+                    ConfigCenterVisuals.fadeColor(textColor), false);
+            graphics.drawString(font, ScpFonts.roboto(state),
+                    right - stateWidth, textY,
+                    ConfigCenterVisuals.fadeColor("ON".equals(state)
+                            ? ConfigCenterVisuals.GREEN
+                            : ConfigCenterVisuals.RED), false);
+        }
+
+        private void drawIntegrationButton(GuiGraphics graphics,
+                Button button, String modId, boolean installed,
+                int mouseX, int mouseY) {
             if (button == null) return;
 
-            // Draw only the shared button chrome here. Integration labels use a
-            // dedicated layout below so every row reserves exactly the same icon
-            // slot, including mods that do not expose a logo.
             ConfigCenterVisuals.drawButton(graphics, font, button,
                     Component.empty(), mouseX, mouseY);
 
@@ -261,7 +352,8 @@ public final class ModCompatibilitiesUi {
             int textY = button.getY() + Math.max(1,
                     (button.getHeight() - font.lineHeight) / 2);
             boolean hovered = button.active
-                    && (button.isMouseOver(mouseX, mouseY) || button.isFocused());
+                    && (button.isMouseOver(mouseX, mouseY)
+                    || button.isFocused());
             int textColor = !button.active ? ConfigCenterVisuals.MUTED
                     : hovered ? ConfigCenterVisuals.ACCENT_BRIGHT
                     : ConfigCenterVisuals.TEXT;

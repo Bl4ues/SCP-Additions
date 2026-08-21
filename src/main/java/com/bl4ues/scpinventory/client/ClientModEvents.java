@@ -7,6 +7,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.client.MineZeroRestoreVisualClient;
 import net.mcreator.scpadditions.client.SaveGameClientState;
+import net.mcreator.scpadditions.client.Scp939ClientState;
 
 @Mod.EventBusSubscriber(modid = "scp_additions", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -17,24 +18,39 @@ public final class ClientModEvents {
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("scp_inventory_pickup_prompt",
                 (gui, graphics, partialTick, width, height) -> {
-                    if (gui.getMinecraft().screen == null) {
-                        PickupPromptClient.render(graphics, width, height, partialTick);
+                    if (gui.getMinecraft().screen == null
+                            && !Scp939ClientState.pinned()) {
+                        PickupPromptClient.render(graphics, width, height,
+                                partialTick);
                     }
                 });
         event.registerAboveAll("scp_inventory_context_prompt",
                 (gui, graphics, partialTick, width, height) -> {
-                    if (gui.getMinecraft().screen == null) {
-                        ContextPromptClient.render(graphics, width, height, partialTick);
+                    if (gui.getMinecraft().screen == null
+                            && !Scp939ClientState.pinned()) {
+                        ContextPromptClient.render(graphics, width, height,
+                                partialTick);
                     }
                 });
         event.registerAboveAll("scp_inventory_full_notice",
-                (gui, graphics, partialTick, width, height) -> InventoryFullOverlay.render(graphics));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
+                        InventoryFullOverlay.render(graphics);
+                    }
+                });
         event.registerAboveAll("scp_save_notice",
-                (gui, graphics, partialTick, width, height) ->
-                        SaveGameClientState.render(graphics, width, height));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
+                        SaveGameClientState.render(graphics, width, height);
+                    }
+                });
         event.registerAboveAll("scp_restore_transition",
-                (gui, graphics, partialTick, width, height) ->
-                        MineZeroRestoreVisualClient.render(graphics, width, height));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
+                        MineZeroRestoreVisualClient.render(graphics,
+                                width, height);
+                    }
+                });
     }
 
     @SubscribeEvent

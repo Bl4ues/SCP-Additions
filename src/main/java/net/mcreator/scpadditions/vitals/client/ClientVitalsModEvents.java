@@ -7,6 +7,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.client.AdvancementToastHudCoordination;
+import net.mcreator.scpadditions.client.Scp939ClientState;
 
 /** Client MOD-bus registration for the custom gameplay overlays. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID,
@@ -18,18 +19,26 @@ public final class ClientVitalsModEvents {
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("player_vitals_overlay",
-                (gui, graphics, partialTick, width, height) ->
-                        PlayerVitalsOverlay.render(graphics, width, height, partialTick));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (!Scp939ClientState.pinned()) {
+                        PlayerVitalsOverlay.render(graphics, width, height,
+                                partialTick);
+                    }
+                });
         event.registerAboveAll("scp_079_energy_debug",
-                (gui, graphics, partialTick, width, height) ->
-                        renderBelowAchievementToast(graphics,
-                                () -> Scp079EnergyOverlay.render(graphics,
-                                        width, height, partialTick)));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (Scp939ClientState.pinned()) return;
+                    renderBelowAchievementToast(graphics,
+                            () -> Scp079EnergyOverlay.render(graphics,
+                                    width, height, partialTick));
+                });
         event.registerAboveAll("scp_spawn_timers_debug",
-                (gui, graphics, partialTick, width, height) ->
-                        renderBelowAchievementToast(graphics,
-                                () -> ScpSpawnTimersOverlay.render(graphics,
-                                        width, height, partialTick)));
+                (gui, graphics, partialTick, width, height) -> {
+                    if (Scp939ClientState.pinned()) return;
+                    renderBelowAchievementToast(graphics,
+                            () -> ScpSpawnTimersOverlay.render(graphics,
+                                    width, height, partialTick));
+                });
     }
 
     private static void renderBelowAchievementToast(GuiGraphics graphics,

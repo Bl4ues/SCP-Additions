@@ -7,16 +7,18 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.compat.SimpleVoiceChatPresence;
 import net.mcreator.scpadditions.config.ui.ConfigCenterVisuals;
+import net.mcreator.scpadditions.entity.Scp939Entity;
 import net.mcreator.scpadditions.network.Scp939InputPacket;
 import net.mcreator.scpadditions.network.Scp939Network;
 
+import java.util.Set;
 import java.util.UUID;
 
 /** Client input and authored HUD/camera feedback for SCP-939 interactions. */
@@ -34,6 +36,12 @@ public final class Scp939ClientEvents {
     private static final int WARNING_RED = 0xFFED5E55;
     private static final int CRITICAL_RED = 0xFFFF2A2A;
     private static final int CONSENT_REFRESH_TICKS = 20 * 10;
+
+    private static final Set<String> PIN_HIDDEN_VANILLA_OVERLAYS = Set.of(
+            "hotbar", "crosshair", "boss_event_progress", "player_health",
+            "armor_level", "food_level", "mount_health", "air_level",
+            "jump_bar", "experience_bar", "item_name", "potion_icons",
+            "record_overlay", "player_list");
 
     private static boolean previousHold;
     private static boolean previousLeft;
@@ -78,6 +86,19 @@ public final class Scp939ClientEvents {
         previousRight = right;
     }
 
+    /** Called by the integration menu as the client-local mimicry switch. */
+    public static void setMimicConsent(boolean allowed) {
+        Scp939VoiceClientPreferences.completeSetup(allowed);
+        consentRefreshTicks = CONSENT_REFRESH_TICKS;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!SimpleVoiceChatPresence.installed() || minecraft.player == null
+                || minecraft.getConnection() == null) {
+            return;
+        }
+        consentPlayer = minecraft.player.getUUID();
+        Scp939Network.sendInput(Scp939InputPacket.MIMIC_CONSENT, allowed);
+    }
+
     private static void syncMimicConsent(UUID playerId) {
         if (!SimpleVoiceChatPresence.installed()
                 || !Scp939VoiceClientPreferences.setupComplete()) {
@@ -98,24 +119,27 @@ public final class Scp939ClientEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
-        // Render exactly once in Forge's overlay pass. Without this guard the
-        // translucent panels are drawn once for every vanilla overlay.
-        if (event.getOverlay() != VanillaGuiOverlay.PORTAL.type()) return;
+    /** Keep the pin sequence readable by removing ordinary gameplay HUD chrome. */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onBeforeOverlay(RenderGuiOverlayEvent.Pre event) {
+        if (!Scp939ClientState.pinned()) return;
+        if (PIN_HIDDEN_VANILLA_OVERLAYS.contains(
+                event.getOverlay().id().getPath())) {
+            event.setCanceled(true);
+        }
+    }
 
+    /** Rendered from the dedicated SCP-939 above-all overlay registration. */
+    public static void renderOverlay(GuiGraphics graphics, int width,
+            int height) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.options.hideGui
                 || minecraft.screen != null) return;
-        GuiGraphics graphics = event.getGuiGraphics();
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        int height = minecraft.getWindow().getGuiScaledHeight();
 
-        if (Scp939ClientState.breathActive()) {
-            renderBreath(graphics, minecraft, width, height);
-        }
         if (Scp939ClientState.pinned()) {
             renderStruggle(graphics, minecraft, width, height);
+        } else if (Scp939ClientState.breathActive()) {
+            renderBreath(graphics, minecraft, width, height);
         }
     }
 
@@ -145,77 +169,94 @@ public final class Scp939ClientEvents {
                 promptY + minecraft.font.lineHeight + 3, 0xB50B0E12);
         graphics.fill(keyX, promptY - 3, keyX + keyWidth, promptY - 2,
                 keyColor);
-        graphics.fill(keyX, promptY + minecraft.font.lineHeight + 2,
-                keyX + keyWidth, promptY + minecraft.font.lineHeight + 3,
-                0x663A424D);
         graphics.drawString(minecraft.font, key, keyX + 5, promptY,
                 keyColor, false);
     }
 
     private static void renderStruggle(GuiGraphics graphics,
             Minecraft minecraft, int width, int height) {
-        int panelWidth = 196;
-        int panelHeight = 82;
+        int panelWidth = 184;
+        int panelHeight = 54;
         int x = width / 2 - panelWidth / 2;
-        int y = height / 2 + 18;
+        int y = Math.max(8, height - panelHeight - 18);
         int centerX = width / 2;
 
         graphics.fill(x, y, x + panelWidth, y + panelHeight,
-                ConfigCenterVisuals.PANEL_STRONG);
+                0xD20B0E12);
         graphics.fill(x, y, x + panelWidth, y + 2,
                 ConfigCenterVisuals.ACCENT);
-        graphics.fill(x, y, x + 4, y + panelHeight,
+        graphics.fill(x, y, x + 3, y + panelHeight,
                 ConfigCenterVisuals.ACCENT);
 
         graphics.drawString(minecraft.font, ScpFonts.roboto("BREAK FREE"),
-                x + 14, y + 10, ConfigCenterVisuals.TEXT, false);
+                x + 11, y + 9, ConfigCenterVisuals.TEXT, false);
 
         Component key = ScpFonts.roboto(Scp939ClientState.expectedKey() == 0
                 ? minecraft.options.keyLeft.getTranslatedKeyMessage()
                 : minecraft.options.keyRight.getTranslatedKeyMessage());
-        int keyWidth = Math.max(54, minecraft.font.width(key) + 18);
-        int keyX = centerX - keyWidth / 2;
-        int keyY = y + 27;
-        graphics.fill(keyX, keyY, keyX + keyWidth, keyY + 24,
-                0xD00D1116);
+        Component press = ScpFonts.roboto("PRESS");
+        int keyWidth = Math.max(30, minecraft.font.width(key) + 14);
+        int pressWidth = minecraft.font.width(press);
+        int promptWidth = pressWidth + 5 + keyWidth;
+        int promptX = x + panelWidth - 11 - promptWidth;
+        int keyX = promptX + pressWidth + 5;
+        int keyY = y + 5;
+
+        graphics.drawString(minecraft.font, press, promptX, y + 9,
+                ConfigCenterVisuals.MUTED, false);
+        graphics.fill(keyX, keyY, keyX + keyWidth, keyY + 20,
+                0xE00D1116);
         graphics.fill(keyX, keyY, keyX + keyWidth, keyY + 2,
                 ConfigCenterVisuals.ACCENT_BRIGHT);
-        graphics.fill(keyX, keyY + 23, keyX + keyWidth, keyY + 24,
-                ConfigCenterVisuals.BORDER);
         graphics.drawCenteredString(minecraft.font, key,
-                centerX, keyY + 8, ConfigCenterVisuals.TEXT);
+                keyX + keyWidth / 2, keyY + 7, ConfigCenterVisuals.TEXT);
 
-        int progress = Math.min(3, Scp939ClientState.pinProgress());
-        int failures = Math.min(3, Scp939ClientState.pinFailures());
-        int pipY = y + 57;
-        drawPips(graphics, x + 15, pipY, progress, ConfigCenterVisuals.GREEN);
-        drawPips(graphics, x + panelWidth - 54, pipY, failures,
+        int progress = Math.min(Scp939Entity.STRUGGLE_SUCCESS_REQUIRED,
+                Scp939ClientState.pinProgress());
+        int failures = Math.min(Scp939Entity.STRUGGLE_FAILURE_LIMIT,
+                Scp939ClientState.pinFailures());
+        drawPips(graphics, x + 11, y + 31, progress,
+                Scp939Entity.STRUGGLE_SUCCESS_REQUIRED,
+                ConfigCenterVisuals.GREEN);
+        drawPipsRight(graphics, x + panelWidth - 11, y + 31, failures,
+                Scp939Entity.STRUGGLE_FAILURE_LIMIT,
                 ConfigCenterVisuals.RED);
 
-        int remaining = Mth.clamp(Scp939ClientState.pinWindowTicks(), 0, 20);
-        float timeRatio = remaining / 20.0F;
-        int barX = x + 63;
-        int barY = y + 61;
-        int barWidth = 70;
-        graphics.fill(barX, barY, barX + barWidth, barY + 5, 0xFF242A31);
+        int remaining = Mth.clamp(Scp939ClientState.pinWindowTicks(), 0,
+                Scp939Entity.STRUGGLE_WINDOW_TICKS);
+        float timeRatio = remaining
+                / (float) Scp939Entity.STRUGGLE_WINDOW_TICKS;
+        int barX = x + 11;
+        int barY = y + 43;
+        int barWidth = panelWidth - 22;
+        graphics.fill(barX, barY, barX + barWidth, barY + 4, 0xFF242A31);
         int fill = Math.round(barWidth * timeRatio);
         int color = lerpColor(ConfigCenterVisuals.RED,
                 ConfigCenterVisuals.ACCENT_BRIGHT, timeRatio);
-        if (fill > 0) graphics.fill(barX, barY, barX + fill, barY + 5, color);
+        if (fill > 0) {
+            graphics.fill(barX, barY, barX + fill, barY + 4, color);
+        }
 
-        graphics.drawString(minecraft.font, ScpFonts.roboto("ESCAPE"),
-                x + 14, y + 70, ConfigCenterVisuals.MUTED, false);
-        Component danger = ScpFonts.roboto("DANGER");
-        graphics.drawString(minecraft.font, danger,
-                x + panelWidth - 14 - minecraft.font.width(danger), y + 70,
-                ConfigCenterVisuals.MUTED, false);
+        // A tiny center notch makes it immediately legible as a timed input
+        // without reintroducing the old wall of labels and counters.
+        graphics.fill(centerX, barY - 1, centerX + 1, barY + 5,
+                0x887A8790);
     }
 
     private static void drawPips(GuiGraphics graphics, int x, int y,
-            int filled, int color) {
-        for (int i = 0; i < 3; i++) {
-            int left = x + i * 13;
-            graphics.fill(left, y, left + 9, y + 6,
+            int filled, int count, int color) {
+        for (int i = 0; i < count; i++) {
+            int left = x + i * 12;
+            graphics.fill(left, y, left + 8, y + 5,
+                    i < filled ? color : 0xFF343B44);
+        }
+    }
+
+    private static void drawPipsRight(GuiGraphics graphics, int right, int y,
+            int filled, int count, int color) {
+        for (int i = 0; i < count; i++) {
+            int left = right - (i + 1) * 12 + 4;
+            graphics.fill(left, y, left + 8, y + 5,
                     i < filled ? color : 0xFF343B44);
         }
     }
@@ -225,17 +266,17 @@ public final class Scp939ClientEvents {
         if (!Scp939ClientState.pinned()) return;
         float time = Scp939ClientState.pinElapsedSeconds();
         float impact = 1.0F - Mth.clamp(time / 0.75F, 0.0F, 1.0F);
-        float stress = 0.75F + Scp939ClientState.pinFailures() * 0.16F
-                + impact * 0.85F;
+        float stress = 0.78F + Scp939ClientState.pinFailures() * 0.18F
+                + impact * 0.90F;
         float rapid = time * 31.0F;
         float slow = time * 14.0F;
         event.setYaw(event.getYaw()
-                + Mth.sin(rapid) * 0.42F * stress
-                + Mth.sin(slow + 1.3F) * 0.28F * stress);
+                + Mth.sin(rapid) * 0.48F * stress
+                + Mth.sin(slow + 1.3F) * 0.30F * stress);
         event.setPitch(event.getPitch()
-                + Mth.sin(time * 24.0F + 0.7F) * 0.62F * stress);
+                + Mth.sin(time * 24.0F + 0.7F) * 0.70F * stress);
         event.setRoll(event.getRoll()
-                + Mth.sin(time * 19.0F + 2.1F) * 0.78F * stress);
+                + Mth.sin(time * 19.0F + 2.1F) * 0.88F * stress);
     }
 
     private static void drawBar(GuiGraphics graphics, int x, int y,

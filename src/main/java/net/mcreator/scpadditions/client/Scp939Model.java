@@ -35,33 +35,28 @@ public class Scp939Model<T extends Scp939Entity> extends GeoModel<T> {
     public void setCustomAnimations(T animatable, long instanceId,
             AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-        applyProceduralTurn(animatable);
+        applyTurnLead(animatable);
         applyPounceAirPose(animatable);
     }
 
     /**
-     * Lets the long torso absorb part of a direction change instead of rotating
-     * like one rigid Minecraft cuboid. The authored gait remains the base pose;
-     * these are deliberately small additive offsets.
+     * The old turn pass twisted every torso segment from frame-to-frame yaw and
+     * produced a rubber-spine wobble. Turning is now handled by smooth entity
+     * rotation; only the neck/head lead the body by a small amount.
      */
-    private void applyProceduralTurn(T animatable) {
+    private void applyTurnLead(T animatable) {
         if (animatable.getAction() != Scp939Entity.ACTION_NONE
                 || animatable.getDeltaMovement().horizontalDistanceSqr()
                 < 0.00008D) {
             return;
         }
 
-        float turnDegrees = Mth.wrapDegrees(
-                animatable.getYRot() - animatable.yRotO);
-        float turn = Mth.clamp(turnDegrees / 12.0F, -1.0F, 1.0F);
-        if (Math.abs(turn) < 0.02F) return;
-
-        addRotation("939body", 0.0F, turn * 0.045F, -turn * 0.025F);
-        addRotation("torso", 0.0F, turn * 0.070F, -turn * 0.020F);
-        addRotation("torso2", 0.0F, turn * 0.060F, -turn * 0.014F);
-        addRotation("torso3", 0.0F, turn * 0.045F, 0.0F);
-        addRotation("neck", 0.0F, -turn * 0.105F, turn * 0.018F);
-        addRotation("head", 0.0F, -turn * 0.045F, 0.0F);
+        float difference = Mth.clamp(Mth.wrapDegrees(
+                animatable.getYHeadRot() - animatable.yBodyRot),
+                -22.0F, 22.0F) * Mth.DEG_TO_RAD;
+        if (Math.abs(difference) < 0.004F) return;
+        addRotation("neck", 0.0F, difference * 0.42F, 0.0F);
+        addRotation("head", 0.0F, difference * 0.18F, 0.0F);
     }
 
     /** Keeps the launch silhouette extended while the entity is genuinely airborne. */

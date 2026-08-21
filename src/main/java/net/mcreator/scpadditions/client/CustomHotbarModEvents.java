@@ -20,9 +20,16 @@ public final class CustomHotbarModEvents {
                                 graphics, width, height));
         event.registerAboveAll("custom_hotbar_overlay",
                 (gui, graphics, partialTick, width, height) -> {
+                    if (Scp939ClientState.pinned()) return;
                     CustomHotbarOverlay.render(graphics, width, height);
                     SimpleVoiceChatHudBridge.restoreCanceledVanillaHotbarPost(
                             graphics, partialTick);
                 });
+        // Register last in this local overlay group so the encounter prompt sits
+        // over normal gameplay UI, while the pin state suppresses that UI first.
+        event.registerAboveAll("scp939_interaction_overlay",
+                (gui, graphics, partialTick, width, height) ->
+                        Scp939ClientEvents.renderOverlay(
+                                graphics, width, height));
     }
 }

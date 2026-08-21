@@ -29,7 +29,12 @@ public abstract class Scp939AnimationControllerMixin {
     @Unique private static final RawAnimation SCPADDITIONS_939_HURT = RawAnimation.begin().thenPlay("hurt_stagger");
     @Unique private static final RawAnimation SCPADDITIONS_939_DEATH = RawAnimation.begin().thenPlay("death");
 
+    @Unique private static final double SCPADDITIONS_MOVE_DELTA_SQR = 0.0015D * 0.0015D;
+    @Unique private static final int SCPADDITIONS_MOVE_HOLD_TICKS = 4;
+
     @Unique private float scpadditions$turnVelocity;
+    @Unique private int scpadditions$movementHoldTicks;
+    @Unique private int scpadditions$lastMovementSampleTick = Integer.MIN_VALUE;
 
     @Inject(method = "registerControllers", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replace939AnimationControllers(
@@ -45,9 +50,12 @@ public abstract class Scp939AnimationControllerMixin {
                     }
 
                     Scp939AwarenessState awareness = entity.getAwarenessState();
+                    boolean moving = scpadditions$isVisuallyMoving(entity,
+                            state.isMoving());
                     boolean turning = Math.abs(Mth.wrapDegrees(
                             entity.getYRot() - entity.yRotO)) >= 0.45F;
-                    if (state.isMoving()) {
+
+                    if (moving) {
                         if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
                                 || awareness == Scp939AwarenessState.LOST_SEARCH) {
                             return state.setAndContinue(SCPADDITIONS_939_RUN);
@@ -69,9 +77,15 @@ public abstract class Scp939AnimationControllerMixin {
             Scp939AwarenessState awareness = animatable.getAwarenessState();
             boolean running = awareness == Scp939AwarenessState.CONFIRMED_HUNT
                     || awareness == Scp939AwarenessState.LOST_SEARCH;
-            double movement = Math.sqrt(animatable.getDeltaMovement().horizontalDistanceSqr());
-            if (movement > 0.004D) return running ? 1.10D : 1.28D;
-            float turn = Math.abs(Mth.wrapDegrees(animatable.getYRot() - animatable.yRotO));
+
+            if (scpadditions$movementHoldTicks > 0
+                    || animatable.getDeltaMovement().horizontalDistanceSqr()
+                    > SCPADDITIONS_MOVE_DELTA_SQR) {
+                return running ? 1.10D : 1.28D;
+            }
+
+            float turn = Math.abs(Mth.wrapDegrees(
+                    animatable.getYRot() - animatable.yRotO));
             return turn >= 0.45F ? 0.72D : 1.0D;
         });
         controllers.add(locomotion);
@@ -90,6 +104,30 @@ public abstract class Scp939AnimationControllerMixin {
                 });
         controllers.add(actionController);
         ci.cancel();
+    }
+
+    @Unique
+    private boolean scpadditions$isVisuallyMoving(Scp939Entity entity,
+            boolean geckoMoving) {
+        if (scpadditions$lastMovementSampleTick != entity.tickCount) {
+            scpadditions$lastMovementSampleTick = entity.tickCount;
+
+            double dx = entity.getX() - entity.xo;
+            double dz = entity.getZ() - entity.zo;
+            double positionDeltaSqr = dx * dx + dz * dz;
+            double velocitySqr = entity.getDeltaMovement().horizontalDistanceSqr();
+
+            if (geckoMoving || positionDeltaSqr > SCPADDITIONS_MOVE_DELTA_SQR
+                    || velocitySqr > SCPADDITIONS_MOVE_DELTA_SQR) {
+                scpadditions$movementHoldTicks = SCPADDITIONS_MOVE_HOLD_TICKS;
+            } else if (scpadditions$movementHoldTicks > 0) {
+                scpadditions$movementHoldTicks--;
+            }
+        } else if (geckoMoving) {
+            scpadditions$movementHoldTicks = SCPADDITIONS_MOVE_HOLD_TICKS;
+        }
+
+        return scpadditions$movementHoldTicks > 0;
     }
 
     @Inject(method = "smoothLocomotionRotation", at = @At("HEAD"), cancellable = true)

@@ -77,6 +77,7 @@ public class ScpAdditionsModTabs {
         stacks.add(new ItemStack(Scp131Items.SCP_131_A_SPAWN_EGG.get()));
         stacks.add(new ItemStack(Scp131Items.SCP_131_B_SPAWN_EGG.get()));
         stacks.add(new ItemStack(Scp131Items.SCP_173_SPAWN_EGG.get()));
+        stacks.add(new ItemStack(Scp131Items.SCP_939_SPAWN_EGG.get()));
         stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_294.get()));
         stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_330.get()));
         stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_426.get()));

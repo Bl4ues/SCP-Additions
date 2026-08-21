@@ -30,7 +30,7 @@ import java.util.WeakHashMap;
  * the measured world-space drift, applies the opposite correction, and permits
  * enough angular travel for a long quadruped limb to actually stay planted.
  */
-@Mixin(Scp939Model.class)
+@Mixin(value = Scp939Model.class, remap = false)
 public abstract class Scp939ModelPolishMixin {
     @Unique
     private static final float SCPADDITIONS_FRONT_STANCE =

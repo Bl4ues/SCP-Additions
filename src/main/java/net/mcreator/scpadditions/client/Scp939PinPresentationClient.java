@@ -1,7 +1,6 @@
 package net.mcreator.scpadditions.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
@@ -58,26 +57,18 @@ public final class Scp939PinPresentationClient {
     }
 
     /**
-     * Forced Pose.SWIMMING changes hitbox/pose but does not necessarily drive
-     * LivingEntity's swim animation amount, especially with custom player
-     * renderers. Reproduce the vanilla horizontal swim transform explicitly for
-     * the pinned body, then lower it so the victim rests on the floor.
+     * Keep the prone victim visually close to the floor. Rotation is applied in
+     * PlayerRenderer.setupRotations by a dedicated mixin, after vanilla has
+     * established the player's yaw. Doing the -90 degree transform here, before
+     * PlayerRenderer's own transforms, was what could make the pinned model read
+     * backwards/upside-down from another player's camera.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         Player player = event.getEntity();
         if (!isPinnedVictim(player)) return;
-
         PoseStack pose = event.getPoseStack();
-        if (player.getSwimAmount(1.0F) < 0.20F) {
-            pose.translate(0.0D, -0.16D, 0.0D);
-            pose.mulPose(Axis.XP.rotationDegrees(-90.0F));
-            pose.translate(0.0D, -1.0D, 0.30D);
-        } else {
-            // If another renderer already honors the swim amount, only fix the
-            // characteristic hover above the floor rather than rotating twice.
-            pose.translate(0.0D, -0.24D, 0.0D);
-        }
+        pose.translate(0.0D, -0.18D, 0.0D);
     }
 
     public static Scp939Entity findPinning939(Player player) {
@@ -95,20 +86,21 @@ public final class Scp939PinPresentationClient {
 
     public static Vec3 cameraPosition(Scp939Entity predator) {
         Vec3 forward = horizontalForward(predator);
-        // Floor-level viewpoint just beyond the front paws. It deliberately
-        // does not reuse the player's eye height; that was why the old camera
-        // stayed chest-high despite the server forcing a prone pose.
-        return predator.position().add(forward.scale(1.04D))
-                .add(0.0D, 0.16D, 0.0D);
+        // Put the viewpoint genuinely on the floor and farther underneath the
+        // front half of the 939. Moving it closer than the previous 1.04-block
+        // offset makes the animal dominate the frame rather than looking like it
+        // is attacking someone several feet in front of the camera.
+        return predator.position().add(forward.scale(0.74D))
+                .add(0.0D, 0.075D, 0.0D);
     }
 
     public static Vec3 headTarget(Scp939Entity predator) {
         Vec3 forward = horizontalForward(predator);
-        return predator.position().add(forward.scale(0.62D))
-                .add(0.0D, 1.00D, 0.0D);
+        return predator.position().add(forward.scale(0.50D))
+                .add(0.0D, 0.94D, 0.0D);
     }
 
-    private static boolean isPinnedVictim(Player player) {
+    public static boolean isPinnedVictim(Player player) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null
                 && player.getId() == minecraft.player.getId()

@@ -1,0 +1,74 @@
+{
+  "bite": {
+    "sounds": [
+      {
+        "name": "scp_additions:939bite",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "hurt": {
+    "sounds": [
+      {
+        "name": "scp_additions:939hurt",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "maul": {
+    "sounds": [
+      {
+        "name": "scp_additions:939maul",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "snarl": {
+    "sounds": [
+      {
+        "name": "scp_additions:939snarl",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "listen": {
+    "sounds": [
+      {
+        "name": "scp_additions:939listen",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "prey_breath": {
+    "sounds": [
+      {
+        "name": "scp_additions:939prey_breath",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "ambient": {
+    "sounds": [
+      {
+        "name": "scp_additions:939ambient",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "chase": {
+    "sounds": [
+      {
+        "name": "scp_additions:939chase",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  }
+}

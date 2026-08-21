@@ -130,9 +130,20 @@ public final class RoamerManager {
         synchronized (STATES) {
             RoamerData data = data(server, type);
             data.activeEntityIds.add(entityId);
-            data.nextCheckTicks.clear();
+            boolean concurrent = allowsConcurrentInstances(type);
+            if (!concurrent) data.nextCheckTicks.clear();
+
+            int next = server.getTickCount()
+                    + Math.max(1, type.spawnIntervalTicks());
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                data.lastResults.put(player.getUUID(), RoamerResult.SPAWNED);
+                UUID playerId = player.getUUID();
+                data.lastResults.put(playerId, RoamerResult.SPAWNED);
+                if (concurrent && !data.nextCheckTicks.containsKey(playerId)
+                        && type.spawnImplemented() && moduleEnabled(type)
+                        && !data.contained && isSpawnRuleEnabled(server, type)
+                        && !player.isCreative() && !player.isSpectator()) {
+                    data.nextCheckTicks.put(playerId, next);
+                }
             }
         }
     }
@@ -143,7 +154,8 @@ public final class RoamerManager {
         synchronized (STATES) {
             RoamerData data = data(server, type);
             data.activeEntityIds.remove(entityId);
-            if (data.activeEntityIds.isEmpty()) {
+            if (data.activeEntityIds.isEmpty()
+                    && !allowsConcurrentInstances(type)) {
                 restartAllSchedules(server, type, data,
                         RoamerResult.DESPAWNED_TIMER_RESET);
             }
@@ -225,7 +237,8 @@ public final class RoamerManager {
                                 ? RoamerResult.MODULE_DISABLED
                                 : RoamerResult.RULE_DISABLED;
                 setResultForAll(server, data, result);
-            } else if (data.activeEntityIds.isEmpty() && !data.contained) {
+            } else if (!data.contained && (data.activeEntityIds.isEmpty()
+                    || allowsConcurrentInstances(type))) {
                 scheduleAll(server, type, data, type.initialSpawnDelayTicks(),
                         RoamerResult.TIMER_STARTED);
             }
@@ -241,7 +254,8 @@ public final class RoamerManager {
             data.contained = contained;
             if (contained) {
                 data.nextCheckTicks.clear();
-            } else if (data.activeEntityIds.isEmpty()
+            } else if ((data.activeEntityIds.isEmpty()
+                    || allowsConcurrentInstances(type))
                     && isSpawnRuleEnabled(server, type)
                     && type.spawnImplemented() && moduleEnabled(type)) {
                 scheduleAll(server, type, data, type.initialSpawnDelayTicks(),
@@ -278,7 +292,8 @@ public final class RoamerManager {
             for (Entity entity : loaded) {
                 data.activeEntityIds.remove(entity.getUUID());
             }
-            if (!loaded.isEmpty() && data.activeEntityIds.isEmpty()) {
+            if (!loaded.isEmpty() && data.activeEntityIds.isEmpty()
+                    && !allowsConcurrentInstances(type)) {
                 restartAllSchedules(server, type, data,
                         RoamerResult.DESPAWNED_TIMER_RESET);
             }
@@ -316,7 +331,8 @@ public final class RoamerManager {
             data.lastResults.put(playerId, RoamerResult.RULE_DISABLED);
             return RoamerState.DISABLED;
         }
-        if (!data.activeEntityIds.isEmpty()) {
+        if (!data.activeEntityIds.isEmpty()
+                && !allowsConcurrentInstances(type)) {
             data.nextCheckTicks.remove(playerId);
             data.lastResults.put(playerId, RoamerResult.SPAWNED);
             return RoamerState.SPAWNED;
@@ -383,6 +399,11 @@ public final class RoamerManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             data.lastResults.put(player.getUUID(), result);
         }
+    }
+
+    /** SCP-939 can have overlapping encounters; other roamers remain exclusive. */
+    private static boolean allowsConcurrentInstances(RoamerType type) {
+        return type == RoamerType.SCP_939;
     }
 
     private static boolean moduleEnabled(RoamerType type) {

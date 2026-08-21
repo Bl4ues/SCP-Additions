@@ -62,6 +62,7 @@ public final class ModMusicExclusivityClient {
                 || Scp1176MusicClient.isPlaying()
                 || Scp106ChaseAudioClient.isPlaying()
                 || Scp173EncounterAudioClient.isPlaying()
+                || Scp939AudioClient.isMusicPlaying()
                 || Scp714MusicClient.isPlaying();
     }
 }

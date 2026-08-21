@@ -31,15 +31,13 @@ public final class Scp939SpawnEvents {
     private static final int OTHER_ROAMER_CHANCE_BOUND = 7;
     private static final int SPAWN_ATTEMPTS = 112;
     private static final int BEHIND_ATTEMPTS = 76;
+    private static final int REGION_SPAWN_ATTEMPTS = 96;
     private static final int LOCAL_Y_SCAN_UP = 4;
     private static final int LOCAL_Y_SCAN_DOWN = 10;
     private static final double MIN_DISTANCE = 12.0D;
     private static final double MAX_DISTANCE = 27.0D;
     private static final double ENTITY_HALF_WIDTH = 0.60D;
     private static final double ENTITY_HEIGHT = 1.48D;
-    private static final AABB WORLD_BOUNDS = new AABB(-30000000.0D,
-            -2048.0D, -30000000.0D, 30000000.0D, 4096.0D,
-            30000000.0D);
 
     private Scp939SpawnEvents() {
     }
@@ -55,19 +53,11 @@ public final class Scp939SpawnEvents {
 
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        Scp939Entity existing = findAny(server);
-        if (existing != null) {
-            RoamerManager.markSpawned(server, RoamerType.SCP_939,
-                    existing.getUUID());
-            RoamerManager.recordResult(player, RoamerType.SCP_939,
-                    RoamerResult.BLOCKED_BY_EXISTING);
-            return;
-        }
 
         boolean otherRoamerActive = RoamerManager.hasOtherActive(server,
                 RoamerType.SCP_939);
-        int chanceBound = otherRoamerActive
-                ? OTHER_ROAMER_CHANCE_BOUND : NORMAL_CHANCE_BOUND;
+        int existing939 = RoamerManager.activeCount(server, RoamerType.SCP_939);
+        int chanceBound = spawnChanceBound(otherRoamerActive, existing939);
         RandomSource random = player.getRandom();
         if (random.nextInt(chanceBound) != 0) {
             RoamerManager.recordResult(player, RoamerType.SCP_939,
@@ -77,7 +67,7 @@ public final class Scp939SpawnEvents {
             return;
         }
 
-        Scp939Entity spawned = trySpawnNearPlayer(player, random);
+        Scp939Entity spawned = trySpawnNatural(player, random);
         if (spawned == null) {
             RoamerManager.recordResult(player, RoamerType.SCP_939,
                     RoamerResult.NO_VALID_POSITION);
@@ -94,16 +84,7 @@ public final class Scp939SpawnEvents {
             return RoamerResult.NO_VALID_POSITION;
         }
         MinecraftServer server = player.getServer();
-        Scp939Entity existing = findAny(server);
-        if (existing != null) {
-            RoamerManager.markSpawned(server, RoamerType.SCP_939,
-                    existing.getUUID());
-            RoamerManager.recordResult(player, RoamerType.SCP_939,
-                    RoamerResult.BLOCKED_BY_EXISTING);
-            return RoamerResult.BLOCKED_BY_EXISTING;
-        }
-
-        Scp939Entity spawned = trySpawnNearPlayer(player, player.getRandom());
+        Scp939Entity spawned = trySpawnNatural(player, player.getRandom());
         if (spawned == null) {
             RoamerManager.recordResult(player, RoamerType.SCP_939,
                     RoamerResult.NO_VALID_POSITION);
@@ -116,14 +97,63 @@ public final class Scp939SpawnEvents {
         return RoamerResult.SPAWNED;
     }
 
-    private static Scp939Entity findAny(MinecraftServer server) {
-        for (ServerLevel level : server.getAllLevels()) {
-            var entities = level.getEntitiesOfClass(Scp939Entity.class,
-                    WORLD_BOUNDS, entity -> entity.isAlive()
-                            && !entity.isRemoved());
-            if (!entities.isEmpty()) return entities.get(0);
+    /**
+     * Existing SCP-939 instances never block their own scheduler. They instead
+     * make another 939 somewhat more likely, while the normal cross-roamer
+     * dampening still applies when another roamer type is active.
+     */
+    private static int spawnChanceBound(boolean otherRoamerActive,
+            int existing939) {
+        int base = otherRoamerActive
+                ? OTHER_ROAMER_CHANCE_BOUND : NORMAL_CHANCE_BOUND;
+        int bonus = Math.min(2, Math.max(0, existing939));
+        return Math.max(2, base - bonus);
+    }
+
+    private static Scp939Entity trySpawnNatural(ServerPlayer player,
+            RandomSource random) {
+        Scp939SpawnRegionRegistry.SpawnRegion region =
+                Scp939SpawnRegionRegistry.chooseNatural(player, random);
+        if (region != null) {
+            Scp939Entity regional = trySpawnInRegion(player, random, region);
+            if (regional != null) return regional;
+        }
+        return trySpawnNearPlayer(player, random);
+    }
+
+    private static Scp939Entity trySpawnInRegion(ServerPlayer player,
+            RandomSource random,
+            Scp939SpawnRegionRegistry.SpawnRegion region) {
+        ServerLevel level = player.serverLevel();
+        if (!region.dimension().equals(level.dimension())) return null;
+        AABB bounds = region.bounds();
+        int minX = Mth.floor(bounds.minX);
+        int maxX = Mth.ceil(bounds.maxX) - 1;
+        int minY = Math.max(level.getMinBuildHeight() + 1,
+                Mth.floor(bounds.minY));
+        int maxY = Math.min(level.getMaxBuildHeight() - 2,
+                Mth.ceil(bounds.maxY) - 1);
+        int minZ = Mth.floor(bounds.minZ);
+        int maxZ = Mth.ceil(bounds.maxZ) - 1;
+        if (maxX < minX || maxY < minY || maxZ < minZ) return null;
+
+        for (int attempt = 0; attempt < REGION_SPAWN_ATTEMPTS; attempt++) {
+            int x = randomBetween(random, minX, maxX);
+            int y = randomBetween(random, minY, maxY);
+            int z = randomBetween(random, minZ, maxZ);
+            BlockPos pos = new BlockPos(x, y, z);
+            if (!isValidPosition(level, pos)) continue;
+            Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
+            if (isDirectlyVisible(player, spawnPos)) continue;
+            Scp939Entity spawned = spawn(level, spawnPos, player);
+            if (spawned != null) return spawned;
         }
         return null;
+    }
+
+    private static int randomBetween(RandomSource random, int min, int max) {
+        if (max <= min) return min;
+        return min + random.nextInt(max - min + 1);
     }
 
     private static Scp939Entity trySpawnNearPlayer(ServerPlayer player,

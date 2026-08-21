@@ -24,19 +24,18 @@ public abstract class Scp939PinnedPlayerRotationMixin {
 
         Scp939Entity predator =
                 Scp939PinPresentationClient.findPinning939(player);
-
-        /*
-         * The sleeping basis below reverses the model's longitudinal direction
-         * compared with ordinary Minecraft facing. Feeding predatorYaw + 180
-         * therefore put the victim's feet at the 939. Use the predator's own
-         * outward yaw here: after the sleeping transform the model's head points
-         * back toward the attacker and its feet extend away from it.
-         */
-        float sleepingFacingYaw = predator != null
+        float predatorYaw = predator != null
                 ? Mth.rotLerp(partialTick, predator.yRotO, predator.getYRot())
                 : rotationYaw;
 
-        float sleepingDirectionRotation = 90.0F - sleepingFacingYaw;
+        /*
+         * PlayerRenderer's sleeping-style basis is longitudinally reversed from
+         * ordinary standing yaw. The previous 90-yaw basis left the victim's
+         * feet pointing at the 939; adding the half turn places the head at the
+         * predator and lets the legs extend outward, while keeping the player
+         * face-up like a body lying on a bed.
+         */
+        float sleepingDirectionRotation = 270.0F - predatorYaw;
         poseStack.mulPose(Axis.YP.rotationDegrees(sleepingDirectionRotation));
         poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
         poseStack.mulPose(Axis.YP.rotationDegrees(270.0F));

@@ -22,7 +22,7 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp939PinPresentationClient {
     private static final double PIN_SEARCH_RANGE = 3.25D;
-    private static final double EXPECTED_PIN_FORWARD = 0.46D;
+    private static final double EXPECTED_PIN_FORWARD = 1.02D;
     private static final double REMOTE_PIN_TOLERANCE_SQR = 0.90D * 0.90D;
 
     private Scp939PinPresentationClient() {

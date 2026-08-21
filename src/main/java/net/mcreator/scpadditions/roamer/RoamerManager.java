@@ -15,6 +15,7 @@ import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.config.ScpAdditionsModulesConfig;
 import net.mcreator.scpadditions.entity.Scp106Entity;
 import net.mcreator.scpadditions.entity.Scp173Entity;
+import net.mcreator.scpadditions.entity.Scp939Entity;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -76,7 +77,9 @@ public final class RoamerManager {
         RoamerType type = RoamerType.fromEntity(event.getEntity());
         if (type == null) return;
         MinecraftServer server = event.getLevel().getServer();
-        if (server != null) markSpawned(server, type, event.getEntity().getUUID());
+        if (server != null) {
+            markSpawned(server, type, event.getEntity().getUUID());
+        }
     }
 
     @SubscribeEvent
@@ -99,15 +102,12 @@ public final class RoamerManager {
         if (server == null || type == null) return false;
         synchronized (STATES) {
             RoamerData data = data(server, type);
-            if (normalizePlayer(player, type, data)
-                    != RoamerState.COUNTDOWN) {
+            if (normalizePlayer(player, type, data) != RoamerState.COUNTDOWN) {
                 return false;
             }
             int currentTick = server.getTickCount();
             int nextTick = data.nextCheckTicks.get(player.getUUID());
             if (currentTick < nextTick) return false;
-            // Reserve the regular interval before evaluating this attempt so a
-            // failed chance or invalid position cannot retrigger every tick.
             data.nextCheckTicks.put(player.getUUID(), currentTick
                     + Math.max(1, type.spawnIntervalTicks()));
             return true;
@@ -193,8 +193,7 @@ public final class RoamerManager {
         }
     }
 
-    public static List<RoamerDebugSnapshot> debugSnapshots(
-            ServerPlayer player) {
+    public static List<RoamerDebugSnapshot> debugSnapshots(ServerPlayer player) {
         List<RoamerDebugSnapshot> snapshots = new ArrayList<>();
         for (RoamerType type : RoamerType.values()) {
             snapshots.add(debugSnapshot(player, type));
@@ -218,8 +217,7 @@ public final class RoamerManager {
         overworld.getGameRules().getRule(type.spawnRule()).set(enabled, server);
         synchronized (STATES) {
             RoamerData data = data(server, type);
-            if (!enabled || !type.spawnImplemented()
-                    || !moduleEnabled(type)) {
+            if (!enabled || !type.spawnImplemented() || !moduleEnabled(type)) {
                 data.nextCheckTicks.clear();
                 RoamerResult result = !type.spawnImplemented()
                         ? RoamerResult.NOT_IMPLEMENTED
@@ -260,10 +258,6 @@ public final class RoamerManager {
         }
     }
 
-    /**
-     * Returns whether this SCP profile is enabled and currently released from
-     * containment, regardless of whether an entity is spawned at this moment.
-     */
     public static boolean isOperationallyUncontained(MinecraftServer server,
             RoamerType type) {
         if (server == null || type == null || !type.spawnImplemented()
@@ -279,8 +273,6 @@ public final class RoamerManager {
         if (server == null || type == null) return 0;
         List<Entity> loaded = findLoaded(server, type);
         for (Entity entity : loaded) entity.discard();
-        // EntityLeaveLevel normally reconciles immediately. Repeat the state
-        // cleanup once so command behavior stays deterministic across loaders.
         synchronized (STATES) {
             RoamerData data = data(server, type);
             for (Entity entity : loaded) {
@@ -339,7 +331,6 @@ public final class RoamerManager {
             data.lastResults.put(playerId, RoamerResult.PAUSED_CREATIVE);
             return RoamerState.PAUSED;
         }
-
         if (!data.nextCheckTicks.containsKey(playerId)) {
             data.nextCheckTicks.put(playerId, player.getServer().getTickCount()
                     + Math.max(1, type.initialSpawnDelayTicks()));
@@ -397,7 +388,7 @@ public final class RoamerManager {
     private static boolean moduleEnabled(RoamerType type) {
         return switch (type) {
             case SCP_173 -> ScpAdditionsModulesConfig.get().scp173.enabled;
-            case SCP_106 -> true;
+            case SCP_106, SCP_939 -> true;
         };
     }
 
@@ -411,6 +402,9 @@ public final class RoamerManager {
                         entity -> entity.isAlive() && !entity.isRemoved()));
                 case SCP_106 -> entities.addAll(level.getEntitiesOfClass(
                         Scp106Entity.class, WORLD_BOUNDS,
+                        entity -> entity.isAlive() && !entity.isRemoved()));
+                case SCP_939 -> entities.addAll(level.getEntitiesOfClass(
+                        Scp939Entity.class, WORLD_BOUNDS,
                         entity -> entity.isAlive() && !entity.isRemoved()));
             }
         }

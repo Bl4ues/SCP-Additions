@@ -18,6 +18,8 @@
     "Scp173PushabilityMixin",
     "Scp939PinnedViewFreedomMixin",
     "Scp939AnimationControllerMixin",
+    "Scp939CollisionAuthorityMixin",
+    "RoombaNoEntityPushMixin",
     "CoreRoomElevatorManagerFixMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",

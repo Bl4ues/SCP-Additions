@@ -98,16 +98,16 @@ public final class Scp939SpawnEvents {
     }
 
     /**
-     * Existing SCP-939 instances never block their own scheduler. They instead
-     * make another 939 somewhat more likely, while the normal cross-roamer
-     * dampening still applies when another roamer type is active.
+     * Existing SCP-939 instances never block their own scheduler. They make an
+     * additional 939 progressively less likely instead, so overlapping
+     * encounters remain possible without snowballing into a pack every cycle.
      */
     private static int spawnChanceBound(boolean otherRoamerActive,
             int existing939) {
         int base = otherRoamerActive
                 ? OTHER_ROAMER_CHANCE_BOUND : NORMAL_CHANCE_BOUND;
-        int bonus = Math.min(2, Math.max(0, existing939));
-        return Math.max(2, base - bonus);
+        int penalty = Math.min(8, Math.max(0, existing939) * 2);
+        return base + penalty;
     }
 
     private static Scp939Entity trySpawnNatural(ServerPlayer player,

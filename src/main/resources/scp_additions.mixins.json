@@ -56,7 +56,8 @@
     "client.CommandSuggestionsMixin",
     "client.AdvancementToastMixin",
     "client.ToastVisibilityMixin",
-    "client.SimpleVoiceChatHudIconMixin"
+    "client.SimpleVoiceChatHudIconMixin",
+    "client.Scp939PinCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

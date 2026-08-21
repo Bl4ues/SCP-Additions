@@ -12,7 +12,10 @@ import net.mcreator.scpadditions.entity.Scp939Entity;
 
 /** Reusable fading loop for SCP-939 local music, breathing, and maul audio. */
 public final class Scp939LoopSound extends AbstractTickableSoundInstance {
+    private static final float MAX_VOLUME = 4.0F;
+
     private final Scp939Entity entity;
+    private final float volumeMultiplier;
     private final float fadeInStep;
     private final float fadeOutStep;
     private float targetVolume;
@@ -25,12 +28,16 @@ public final class Scp939LoopSound extends AbstractTickableSoundInstance {
         super(SoundEvent.createVariableRangeEvent(soundId), source,
                 RandomSource.create());
         this.entity = entity;
-        this.fadeInStep = Math.max(0.0001F, fadeInStep);
-        this.fadeOutStep = Math.max(0.0001F, fadeOutStep);
-        this.targetVolume = Mth.clamp(targetVolume, 0.0F, 1.0F);
+        this.volumeMultiplier = encounterMixMultiplier(soundId);
+        this.fadeInStep = Math.max(0.0001F,
+                fadeInStep * this.volumeMultiplier);
+        this.fadeOutStep = Math.max(0.0001F,
+                fadeOutStep * this.volumeMultiplier);
+        this.targetVolume = scaledVolume(targetVolume);
         this.looping = true;
         this.delay = 0;
-        this.volume = Mth.clamp(initialVolume, 0.001F, 1.0F);
+        this.volume = Mth.clamp(initialVolume * this.volumeMultiplier,
+                0.001F, MAX_VOLUME);
         this.pitch = 1.0F;
         this.relative = relative;
         this.attenuation = relative
@@ -65,14 +72,14 @@ public final class Scp939LoopSound extends AbstractTickableSoundInstance {
 
     public void setTargetVolume(float targetVolume) {
         if (finished) return;
-        this.targetVolume = Mth.clamp(targetVolume, 0.0F, 1.0F);
+        this.targetVolume = scaledVolume(targetVolume);
         this.fadingOut = false;
     }
 
     /** Used by prey breathing, which intentionally resumes without a fade-in. */
     public void setTargetVolumeImmediately(float targetVolume) {
         if (finished) return;
-        this.targetVolume = Mth.clamp(targetVolume, 0.0F, 1.0F);
+        this.targetVolume = scaledVolume(targetVolume);
         this.volume = Math.max(0.001F, this.targetVolume);
         this.fadingOut = false;
     }
@@ -94,6 +101,22 @@ public final class Scp939LoopSound extends AbstractTickableSoundInstance {
         finished = true;
         volume = 0.0F;
         Minecraft.getInstance().getSoundManager().stop(this);
+    }
+
+    private float scaledVolume(float rawVolume) {
+        return Mth.clamp(rawVolume * volumeMultiplier, 0.0F, MAX_VOLUME);
+    }
+
+    /**
+     * Ambient tension, chase music, and the prey breathing bed are authored
+     * intentionally louder than the positional creature loops. Keep the boost
+     * here so later target-volume changes cannot accidentally undo it.
+     */
+    private static float encounterMixMultiplier(ResourceLocation soundId) {
+        if (soundId == null) return 1.0F;
+        String path = soundId.getPath();
+        return "ambient".equals(path) || "chase".equals(path)
+                || "prey_breath".equals(path) ? 2.0F : 1.0F;
     }
 
     private void updatePosition() {

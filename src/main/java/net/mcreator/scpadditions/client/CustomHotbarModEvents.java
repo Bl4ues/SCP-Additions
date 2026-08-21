@@ -28,8 +28,13 @@ public final class CustomHotbarModEvents {
         // Register last in this local overlay group so the encounter prompt sits
         // over normal gameplay UI, while the pin state suppresses that UI first.
         event.registerAboveAll("scp939_interaction_overlay",
-                (gui, graphics, partialTick, width, height) ->
+                (gui, graphics, partialTick, width, height) -> {
+                    if (Scp939ClientState.pinned()) {
                         Scp939ClientEvents.renderOverlay(
-                                graphics, width, height));
+                                graphics, width, height);
+                    } else {
+                        Scp939BreathOverlay.render(graphics, width, height);
+                    }
+                });
     }
 }

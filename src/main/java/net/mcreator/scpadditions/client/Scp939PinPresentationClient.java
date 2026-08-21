@@ -3,7 +3,6 @@ package net.mcreator.scpadditions.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -66,7 +65,7 @@ public final class Scp939PinPresentationClient {
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
-        AbstractClientPlayer player = event.getEntity();
+        Player player = event.getEntity();
         if (!isPinnedVictim(player)) return;
 
         PoseStack pose = event.getPoseStack();
@@ -109,7 +108,7 @@ public final class Scp939PinPresentationClient {
                 .add(0.0D, 1.00D, 0.0D);
     }
 
-    private static boolean isPinnedVictim(AbstractClientPlayer player) {
+    private static boolean isPinnedVictim(Player player) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null
                 && player.getId() == minecraft.player.getId()

@@ -58,7 +58,8 @@
     "client.ToastVisibilityMixin",
     "client.SimpleVoiceChatHudIconMixin",
     "client.Scp939PinCameraMixin",
-    "client.Scp939PinnedPlayerRotationMixin"
+    "client.Scp939PinnedPlayerRotationMixin",
+    "client.Scp939ModelPolishMixin"
   ],
   "injectors": {
     "defaultRequire": 1

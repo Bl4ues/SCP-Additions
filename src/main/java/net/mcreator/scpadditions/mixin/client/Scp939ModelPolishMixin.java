@@ -5,6 +5,7 @@ import net.mcreator.scpadditions.client.Scp939Model;
 import net.mcreator.scpadditions.entity.Scp939Entity;
 import net.mcreator.scpadditions.scp939.Scp939AwarenessState;
 import org.joml.Vector3d;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,16 +20,14 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Corrects two presentation problems that are easier to solve after GeckoLib
- * has authored the pose: planted paws sliding with the entity and locomotion
- * clips snapping into one another.
+ * Corrects planted-paw sliding and abrupt non-combat locomotion transitions.
  *
- * The old paw servo used the right idea but the wrong correction direction and
- * only allowed about ten degrees of compensation. On this model positive X
- * rotation pushes a limb farther in the direction of travel, so the servo was
- * effectively helping the slide it was meant to cancel. This replacement uses
- * the measured world-space drift, applies the opposite correction, and permits
- * enough angular travel for a long quadruped limb to actually stay planted.
+ * The original servo was measuring the pivot of each distal bone. That happens
+ * to be close to the rear paw, but the front "hand" pivot is the elbow, roughly
+ * ten model pixels away from the actual toes. A perfectly fixed elbow can still
+ * leave the visible paw skating across the floor. This pass tracks authored paw
+ * contact points inside the distal bones instead, then uses their measured
+ * world-space drift as feedback for the connected limb chain.
  */
 @Mixin(value = Scp939Model.class, remap = false)
 public abstract class Scp939ModelPolishMixin {
@@ -61,6 +60,17 @@ public abstract class Scp939ModelPolishMixin {
     @Unique
     private static final double SCPADDITIONS_BLEND_TICKS = 9.0D;
 
+    // Contact points are offsets from each tracked bone pivot in model pixels.
+    // They come from the actual paw/toe planes in scp939.geo.json.
+    @Unique
+    private static final float SCPADDITIONS_FRONT_CONTACT_Y = -10.6109F;
+    @Unique
+    private static final float SCPADDITIONS_FRONT_CONTACT_Z = -10.4604F;
+    @Unique
+    private static final float SCPADDITIONS_REAR_CONTACT_Y = -0.3289F;
+    @Unique
+    private static final float SCPADDITIONS_REAR_CONTACT_Z = -4.3225F;
+
     @Unique
     private static final String[] SCPADDITIONS_BLEND_BONES = {
             "939body", "torso", "torso2", "torso3", "neck", "head", "jaw",
@@ -76,7 +86,6 @@ public abstract class Scp939ModelPolishMixin {
     private final Map<Scp939Entity, Scp939BlendState> scpadditions$blendStates =
             new WeakHashMap<>();
 
-    /** Replace the previous stance servo while leaving the rest of the model pass intact. */
     @Inject(method = "applyWalkFootLocking", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replaceWalkFootLocking(Scp939Entity entity,
             CallbackInfo ci) {
@@ -84,7 +93,6 @@ public abstract class Scp939ModelPolishMixin {
         scpadditions$applyWalkFootLocking(entity);
     }
 
-    /** Replace the five-tick blend with a slower, clearly visible locomotion blend. */
     @Inject(method = "applyLocomotionBlend", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replaceLocomotionBlend(Scp939Entity entity,
             AnimationState<?> animationState, CallbackInfo ci) {
@@ -127,22 +135,34 @@ public abstract class Scp939ModelPolishMixin {
         GeoBone leftFoot3 = scpadditions$bone("left_foot3");
         GeoBone rightFoot3 = scpadditions$bone("right_foot3");
 
-        // Update every rendered frame, not merely once per game tick. The entity
-        // itself is interpolated between ticks; a tick-rate-only lock still lets
-        // a paw visibly skate for the two or three frames between corrections.
-        scpadditions$updateLock(entity, state.frontLeft, leftHand,
+        // Update on every rendered frame. The entity itself interpolates between
+        // game ticks, so a tick-only correction still visibly skates between
+        // those updates at normal framerates.
+        scpadditions$updateLock(entity, state.frontLeft,
+                scpadditions$contactPoint(leftHand,
+                        SCPADDITIONS_FRONT_CONTACT_Y,
+                        SCPADDITIONS_FRONT_CONTACT_Z),
                 leftHand != null
                         && leftHand.getRotX() > SCPADDITIONS_FRONT_STANCE,
                 SCPADDITIONS_FRONT_MAX * strength);
-        scpadditions$updateLock(entity, state.frontRight, rightHand,
+        scpadditions$updateLock(entity, state.frontRight,
+                scpadditions$contactPoint(rightHand,
+                        SCPADDITIONS_FRONT_CONTACT_Y,
+                        SCPADDITIONS_FRONT_CONTACT_Z),
                 rightHand != null
                         && rightHand.getRotX() > SCPADDITIONS_FRONT_STANCE,
                 SCPADDITIONS_FRONT_MAX * strength);
-        scpadditions$updateLock(entity, state.rearLeft, leftFoot3,
+        scpadditions$updateLock(entity, state.rearLeft,
+                scpadditions$contactPoint(leftFoot3,
+                        SCPADDITIONS_REAR_CONTACT_Y,
+                        SCPADDITIONS_REAR_CONTACT_Z),
                 leftFoot2 != null
                         && leftFoot2.getRotX() > SCPADDITIONS_REAR_STANCE,
                 SCPADDITIONS_REAR_MAX * strength);
-        scpadditions$updateLock(entity, state.rearRight, rightFoot3,
+        scpadditions$updateLock(entity, state.rearRight,
+                scpadditions$contactPoint(rightFoot3,
+                        SCPADDITIONS_REAR_CONTACT_Y,
+                        SCPADDITIONS_REAR_CONTACT_Z),
                 rightFoot2 != null
                         && rightFoot2.getRotX() > SCPADDITIONS_REAR_STANCE,
                 SCPADDITIONS_REAR_MAX * strength);
@@ -150,19 +170,29 @@ public abstract class Scp939ModelPolishMixin {
         scpadditions$applyCorrections(state);
     }
 
+    /**
+     * Reads the previous rendered frame's world matrix and transforms the actual
+     * toe contact point rather than the bone origin. Calling getWorldSpaceMatrix
+     * also opts the bone into GeckoLib matrix tracking for subsequent frames.
+     */
+    @Unique
+    private static Vector3d scpadditions$contactPoint(GeoBone bone,
+            float localYPixels, float localZPixels) {
+        if (bone == null) return null;
+        boolean hadMatrix = bone.isTrackingMatrices();
+        var matrix = bone.getWorldSpaceMatrix();
+        if (!hadMatrix) return null;
+
+        Vector4f point = matrix.transform(new Vector4f(0.0F,
+                localYPixels / 16.0F, localZPixels / 16.0F, 1.0F));
+        return new Vector3d(point.x(), point.y(), point.z());
+    }
+
     @Unique
     private void scpadditions$updateLock(Scp939Entity entity,
-            Scp939LimbLock lock, GeoBone contactBone, boolean stance,
+            Scp939LimbLock lock, Vector3d world, boolean stance,
             float maximumCorrection) {
-        if (contactBone == null) {
-            lock.release();
-            return;
-        }
-
-        boolean hadWorldMatrix = contactBone.isTrackingMatrices();
-        Vector3d world = contactBone.getWorldPosition();
-        if (!stance || !hadWorldMatrix
-                || !scpadditions$validWorldSample(entity, world)) {
+        if (!stance || !scpadditions$validWorldSample(entity, world)) {
             lock.release();
             return;
         }
@@ -188,8 +218,9 @@ public abstract class Scp939ModelPolishMixin {
         double forwardZ = Mth.cos(yaw);
         double forwardDrift = dx * forwardX + dz * forwardZ;
 
-        // Negative is intentional. On the 939 rig, positive X rotation sends
-        // the paw farther forward, which was the sign error in the old solver.
+        // Positive X rotation pushes these limbs toward model-forward. The old
+        // solver used the same sign as the measured drift and therefore helped
+        // the foot slide. Feedback must oppose the drift.
         float adjustment = Mth.clamp(
                 -(float) forwardDrift * SCPADDITIONS_LOCK_GAIN,
                 -SCPADDITIONS_MAX_STEP, SCPADDITIONS_MAX_STEP);

@@ -13,6 +13,15 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
+/**
+ * Keeps the authored SCP-939 gait synchronized with the entity's real motion.
+ *
+ * <p>The important distinction here is that locomotion selection and playback
+ * speed are driven by a filtered world-space displacement sampled once per game
+ * tick. Feeding raw per-frame/network deltas into GeckoLib made the gait visibly
+ * stutter, while a fixed animation speed made planted paws skate whenever the
+ * navigator changed speed.</p>
+ */
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939AnimationControllerMixin {
     @Unique private static final RawAnimation SCPADDITIONS_939_IDLE = RawAnimation.begin().thenLoop("idle");
@@ -29,12 +38,16 @@ public abstract class Scp939AnimationControllerMixin {
     @Unique private static final RawAnimation SCPADDITIONS_939_HURT = RawAnimation.begin().thenPlay("hurt_stagger");
     @Unique private static final RawAnimation SCPADDITIONS_939_DEATH = RawAnimation.begin().thenPlay("death");
 
-    @Unique private static final double SCPADDITIONS_MOVE_DELTA_SQR = 0.0015D * 0.0015D;
-    @Unique private static final int SCPADDITIONS_MOVE_HOLD_TICKS = 4;
+    @Unique private static final double SCPADDITIONS_MOVE_DELTA = 0.0015D;
+    @Unique private static final int SCPADDITIONS_MOVE_HOLD_TICKS = 3;
+    @Unique private static final double SCPADDITIONS_WALK_REFERENCE = 0.090D;
+    @Unique private static final double SCPADDITIONS_RUN_REFERENCE = 0.210D;
 
-    @Unique private float scpadditions$turnVelocity;
     @Unique private int scpadditions$movementHoldTicks;
     @Unique private int scpadditions$lastMovementSampleTick = Integer.MIN_VALUE;
+    @Unique private int scpadditions$lastPlaybackSampleTick = Integer.MIN_VALUE;
+    @Unique private double scpadditions$smoothedDistance;
+    @Unique private double scpadditions$smoothedPlayback = 1.0D;
 
     @Inject(method = "registerControllers", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replace939AnimationControllers(
@@ -42,7 +55,7 @@ public abstract class Scp939AnimationControllerMixin {
         Scp939Entity entity = (Scp939Entity) (Object) this;
 
         AnimationController<Scp939Entity> locomotion =
-                new AnimationController<>(entity, "locomotion", 7, state -> {
+                new AnimationController<>(entity, "locomotion", 8, state -> {
                     byte action = entity.getAction();
                     if (scpadditions$isCombatFullBodyAction(action)) return PlayState.STOP;
                     if (action == Scp939Entity.ACTION_LISTEN) {
@@ -52,9 +65,6 @@ public abstract class Scp939AnimationControllerMixin {
                     Scp939AwarenessState awareness = entity.getAwarenessState();
                     boolean moving = scpadditions$isVisuallyMoving(entity,
                             state.isMoving());
-                    boolean turning = Math.abs(Mth.wrapDegrees(
-                            entity.getYRot() - entity.yRotO)) >= 0.45F;
-
                     if (moving) {
                         if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
                                 || awareness == Scp939AwarenessState.LOST_SEARCH) {
@@ -62,7 +72,6 @@ public abstract class Scp939AnimationControllerMixin {
                         }
                         return state.setAndContinue(SCPADDITIONS_939_WALK);
                     }
-                    if (turning) return state.setAndContinue(SCPADDITIONS_939_WALK);
                     if (awareness == Scp939AwarenessState.SEARCH) {
                         return state.setAndContinue(SCPADDITIONS_939_SEARCH);
                     }
@@ -72,22 +81,8 @@ public abstract class Scp939AnimationControllerMixin {
                     return state.setAndContinue(SCPADDITIONS_939_IDLE);
                 });
 
-        locomotion.setAnimationSpeedHandler(animatable -> {
-            if (animatable.getAction() == Scp939Entity.ACTION_LISTEN) return 1.0D;
-            Scp939AwarenessState awareness = animatable.getAwarenessState();
-            boolean running = awareness == Scp939AwarenessState.CONFIRMED_HUNT
-                    || awareness == Scp939AwarenessState.LOST_SEARCH;
-
-            if (scpadditions$movementHoldTicks > 0
-                    || animatable.getDeltaMovement().horizontalDistanceSqr()
-                    > SCPADDITIONS_MOVE_DELTA_SQR) {
-                return running ? 1.10D : 1.28D;
-            }
-
-            float turn = Math.abs(Mth.wrapDegrees(
-                    animatable.getYRot() - animatable.yRotO));
-            return turn >= 0.45F ? 0.72D : 1.0D;
-        });
+        locomotion.setAnimationSpeedHandler(animatable ->
+                scpadditions$locomotionPlayback(animatable));
         controllers.add(locomotion);
 
         AnimationController<Scp939Entity> actionController =
@@ -109,47 +104,67 @@ public abstract class Scp939AnimationControllerMixin {
     @Unique
     private boolean scpadditions$isVisuallyMoving(Scp939Entity entity,
             boolean geckoMoving) {
-        if (scpadditions$lastMovementSampleTick != entity.tickCount) {
-            scpadditions$lastMovementSampleTick = entity.tickCount;
-
-            double dx = entity.getX() - entity.xo;
-            double dz = entity.getZ() - entity.zo;
-            double positionDeltaSqr = dx * dx + dz * dz;
-            double velocitySqr = entity.getDeltaMovement().horizontalDistanceSqr();
-
-            if (geckoMoving || positionDeltaSqr > SCPADDITIONS_MOVE_DELTA_SQR
-                    || velocitySqr > SCPADDITIONS_MOVE_DELTA_SQR) {
-                scpadditions$movementHoldTicks = SCPADDITIONS_MOVE_HOLD_TICKS;
-            } else if (scpadditions$movementHoldTicks > 0) {
-                scpadditions$movementHoldTicks--;
-            }
-        } else if (geckoMoving) {
+        scpadditions$sampleMovement(entity);
+        if (geckoMoving || scpadditions$smoothedDistance > SCPADDITIONS_MOVE_DELTA) {
             scpadditions$movementHoldTicks = SCPADDITIONS_MOVE_HOLD_TICKS;
         }
-
         return scpadditions$movementHoldTicks > 0;
     }
 
-    @Inject(method = "smoothLocomotionRotation", at = @At("HEAD"), cancellable = true)
-    private void scpadditions$smoothTurnAcceleration(CallbackInfo ci) {
-        Scp939Entity entity = (Scp939Entity) (Object) this;
-        float desired = entity.getYRot();
-        float previous = entity.yRotO;
-        float error = Mth.wrapDegrees(desired - previous);
-        byte action = entity.getAction();
-        float maxSpeed = action == Scp939Entity.ACTION_POUNCE ? 13.0F
-                : action == Scp939Entity.ACTION_BITE ? 9.0F : 5.5F;
-        float targetVelocity = Mth.clamp(error * 0.34F, -maxSpeed, maxSpeed);
-        scpadditions$turnVelocity += (targetVelocity - scpadditions$turnVelocity) * 0.30F;
-        if (Math.abs(error) < 0.12F) scpadditions$turnVelocity *= 0.60F;
-        if (Math.abs(scpadditions$turnVelocity) > Math.abs(error)) scpadditions$turnVelocity = error;
+    @Unique
+    private void scpadditions$sampleMovement(Scp939Entity entity) {
+        if (scpadditions$lastMovementSampleTick == entity.tickCount) return;
+        scpadditions$lastMovementSampleTick = entity.tickCount;
 
-        float yaw = previous + scpadditions$turnVelocity;
-        entity.setYRot(yaw);
-        entity.yBodyRot = Mth.rotLerp(0.24F, entity.yBodyRot, yaw);
-        float headTarget = previous + Mth.clamp(error, -24.0F, 24.0F);
-        entity.yHeadRot = Mth.rotLerp(0.38F, entity.yHeadRot, headTarget);
-        ci.cancel();
+        double dx = entity.getX() - entity.xo;
+        double dz = entity.getZ() - entity.zo;
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        // Entity teleports/pounce corrections must not spike the gait clock.
+        if (!Double.isFinite(distance) || distance > 0.65D) distance = 0.0D;
+
+        double response = distance > scpadditions$smoothedDistance ? 0.28D : 0.18D;
+        scpadditions$smoothedDistance +=
+                (distance - scpadditions$smoothedDistance) * response;
+        if (distance < SCPADDITIONS_MOVE_DELTA * 0.5D) {
+            scpadditions$smoothedDistance *= 0.88D;
+        }
+
+        if (distance > SCPADDITIONS_MOVE_DELTA) {
+            scpadditions$movementHoldTicks = SCPADDITIONS_MOVE_HOLD_TICKS;
+        } else if (scpadditions$movementHoldTicks > 0) {
+            scpadditions$movementHoldTicks--;
+        }
+    }
+
+    @Unique
+    private double scpadditions$locomotionPlayback(Scp939Entity entity) {
+        if (entity.getAction() == Scp939Entity.ACTION_LISTEN) return 1.0D;
+        scpadditions$sampleMovement(entity);
+
+        if (scpadditions$lastPlaybackSampleTick != entity.tickCount) {
+            scpadditions$lastPlaybackSampleTick = entity.tickCount;
+            Scp939AwarenessState awareness = entity.getAwarenessState();
+            boolean running = awareness == Scp939AwarenessState.CONFIRMED_HUNT
+                    || awareness == Scp939AwarenessState.LOST_SEARCH;
+
+            double reference = running
+                    ? SCPADDITIONS_RUN_REFERENCE : SCPADDITIONS_WALK_REFERENCE;
+            double target;
+            if (scpadditions$movementHoldTicks <= 0
+                    && scpadditions$smoothedDistance < SCPADDITIONS_MOVE_DELTA) {
+                target = 1.0D;
+            } else {
+                target = Mth.clamp(scpadditions$smoothedDistance / reference,
+                        running ? 0.45D : 0.38D,
+                        running ? 1.60D : 1.70D);
+            }
+
+            // Playback follows the body over several ticks rather than snapping
+            // to every tiny pathfinding/network speed correction.
+            scpadditions$smoothedPlayback +=
+                    (target - scpadditions$smoothedPlayback) * 0.22D;
+        }
+        return scpadditions$smoothedPlayback;
     }
 
     @Unique

@@ -20,14 +20,15 @@ import java.util.UUID;
  * receives a perfect target position from an encounter director.
  */
 public final class Scp939AcousticBrain {
-    private static final double HEARING_RANGE_MULTIPLIER = 1.25D;
-    private static final float MIN_AUDIBLE_INTENSITY = 0.028F;
-    private static final float IMMEDIATE_HUNT_INTENSITY = 0.46F;
-    private static final float HUNT_CONFIDENCE = 0.70F;
-    private static final float CONFIDENCE_DECAY_PER_TICK = 0.0045F;
+    private static final double HEARING_RANGE_MULTIPLIER = 1.05D;
+    private static final float MIN_AUDIBLE_INTENSITY = 0.055F;
+    private static final float IMMEDIATE_HUNT_INTENSITY = 0.58F;
+    private static final float HUNT_CONFIDENCE = 0.78F;
+    private static final float CONFIDENCE_DECAY_PER_TICK = 0.0060F;
+    private static final float ENVIRONMENT_CONFIDENCE_CAP = 0.52F;
 
-    private static final int ALERT_REACTION_TICKS = 7;
-    private static final int HUNT_EVIDENCE_GRACE_TICKS = 26;
+    private static final int ALERT_REACTION_TICKS = 10;
+    private static final int HUNT_EVIDENCE_GRACE_TICKS = 22;
     private static final int LOST_SEARCH_TO_SEARCH_TICKS = 70;
     private static final int SEARCH_GIVE_UP_TICKS = 20 * 12;
 
@@ -80,15 +81,21 @@ public final class Scp939AcousticBrain {
 
     private void observe(AcousticPerception perception, long now) {
         AcousticStimulus stimulus = perception.stimulus();
-        boolean sameSource = stimulus.sourceEntityId() != null
+        boolean environmental = stimulus.sourceEntityId() == null;
+        boolean sameSource = !environmental
                 && stimulus.sourceEntityId().equals(lastSourceId)
                 && now - lastEvidenceTick <= 60L;
 
+        float categoryWeight = categoryConfidenceWeight(stimulus.category());
         float evidenceStrength = Mth.clamp(
-                perception.perceivedIntensity() * 1.35F, 0.0F, 1.0F);
-        confidence = Mth.clamp(confidence * 0.72F
-                + evidenceStrength * 0.62F + (sameSource ? 0.08F : 0.0F),
+                perception.perceivedIntensity() * 1.18F * categoryWeight,
                 0.0F, 1.0F);
+        confidence = Mth.clamp(confidence * 0.68F
+                + evidenceStrength * 0.58F + (sameSource ? 0.07F : 0.0F),
+                0.0F, 1.0F);
+        if (environmental) {
+            confidence = Math.min(confidence, ENVIRONMENT_CONFIDENCE_CAP);
+        }
 
         lastKnownPosition = stimulus.position();
         lastCategory = stimulus.category();
@@ -99,8 +106,10 @@ public final class Scp939AcousticBrain {
     private void transition(long now, boolean newEvidence,
             AcousticPerception evidence, boolean reachedLastKnownPosition) {
         boolean strongEvidence = evidence != null
+                && canConfirmPrey(evidence.stimulus())
                 && evidence.perceivedIntensity() >= IMMEDIATE_HUNT_INTENSITY;
-        boolean huntEvidence = strongEvidence || confidence >= HUNT_CONFIDENCE;
+        boolean huntEvidence = strongEvidence
+                || (lastSourceId != null && confidence >= HUNT_CONFIDENCE);
         long evidenceAge = evidenceAge(now);
 
         switch (state) {
@@ -152,6 +161,28 @@ public final class Scp939AcousticBrain {
                 }
             }
         }
+    }
+
+    private static boolean canConfirmPrey(AcousticStimulus stimulus) {
+        if (stimulus == null || stimulus.sourceEntityId() == null) return false;
+        return switch (stimulus.category()) {
+            case SPRINT, JUMP, LAND, VOICE, GASP, WEAPON, BLOCK, DOOR -> true;
+            case FOOTSTEP, BUTTON, INTERACTION, BREATH, OTHER -> false;
+        };
+    }
+
+    private static float categoryConfidenceWeight(AcousticCategory category) {
+        if (category == null) return 0.60F;
+        return switch (category) {
+            case VOICE, GASP, WEAPON -> 1.00F;
+            case SPRINT, LAND -> 0.92F;
+            case JUMP, BLOCK -> 0.82F;
+            case FOOTSTEP -> 0.72F;
+            case DOOR -> 0.64F;
+            case BUTTON, INTERACTION -> 0.52F;
+            case BREATH -> 0.46F;
+            case OTHER -> 0.40F;
+        };
     }
 
     private void decayConfidence(long now) {

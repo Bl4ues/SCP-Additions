@@ -93,17 +93,21 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     private static final RawAnimation DEATH =
             RawAnimation.begin().thenPlay("death");
 
-    private static final double IDLE_NAV_SPEED = 0.62D;
-    private static final double INVESTIGATE_NAV_SPEED = 1.05D;
-    private static final double SEARCH_NAV_SPEED = 0.72D;
-    private static final double HUNT_NAV_SPEED = 1.52D;
+    // Navigation modifiers are deliberately slower than vanilla pathfinder mobs.
+    // The authored walk/run clips have long, weighty strides and look like ice
+    // skating when the entity covers several blocks per gait cycle.
+    private static final double IDLE_NAV_SPEED = 0.42D;
+    private static final double INVESTIGATE_NAV_SPEED = 0.62D;
+    private static final double SEARCH_NAV_SPEED = 0.48D;
+    private static final double HUNT_NAV_SPEED = 1.02D;
     private static final double LOCAL_HEAT_RANGE = 8.5D;
     private static final double BITE_RANGE = 2.25D;
     private static final double POUNCE_MIN_RANGE = 3.4D;
     private static final double POUNCE_MAX_RANGE = 8.25D;
     private static final int BITE_DURATION_TICKS = 15;
     private static final int BITE_HIT_REMAINING_TICKS = 8;
-    private static final int POUNCE_DURATION_TICKS = 20;
+    private static final int POUNCE_DURATION_TICKS = 22;
+    private static final int POUNCE_WINDUP_TICKS = 7;
     private static final int POUNCE_COOLDOWN_TICKS = 20 * 9;
     private static final int PIN_LAND_TICKS = 17;
     private static final int STRUGGLE_WINDOW_TICKS = 20;
@@ -118,8 +122,10 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     private static final int IDLE_POINT_RANDOM_TICKS = 90;
     private static final int LISTEN_MIN_TICKS = 28;
     private static final int LISTEN_RANDOM_TICKS = 28;
-    private static final int MIMIC_MIN_INTERVAL = 20 * 15;
-    private static final int MIMIC_RANDOM_INTERVAL = 20 * 20;
+    private static final int MIMIC_MIN_INTERVAL = 20 * 8;
+    private static final int MIMIC_RANDOM_INTERVAL = 20 * 6;
+    private static final int MIMIC_RETRY_MIN_TICKS = 20 * 2;
+    private static final int MIMIC_RETRY_RANDOM_TICKS = 20 * 2;
     private static final int ROUTINE_QUIET_DESPAWN_TICKS = 20 * 30;
     private static final int ROUTINE_HARD_DESPAWN_TICKS = 20 * 60;
 
@@ -141,6 +147,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     private int pinWindowTicks;
     private int pinLandTicks;
     private boolean pounceLaunched;
+    private Vec3 pounceTargetPosition;
     private boolean routineEncounter;
     private Vec3 encounterAnchor;
     private UUID encounterTriggerId;
@@ -182,6 +189,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
+        smoothLocomotionRotation();
         if (level().isClientSide || !(level() instanceof ServerLevel serverLevel)) {
             return;
         }
@@ -320,19 +328,25 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     private void startPounce(ServerPlayer target) {
         getNavigation().stop();
         pounceCooldownTicks = POUNCE_COOLDOWN_TICKS;
-        Vec3 from = position();
-        Vec3 to = target.position().add(0.0D,
-                target.getBbHeight() * 0.35D, 0.0D);
-        Vec3 delta = to.subtract(from);
+        pounceTargetPosition = target.position().add(0.0D,
+                target.getBbHeight() * 0.30D, 0.0D);
+        pounceLaunched = false;
+        setDeltaMovement(Vec3.ZERO);
+        setAction(ACTION_POUNCE, POUNCE_DURATION_TICKS);
+        orientToward(pounceTargetPosition);
+    }
+
+    private void launchPounce() {
+        Vec3 to = pounceTargetPosition;
+        if (to == null) return;
+        Vec3 delta = to.subtract(position());
         Vec3 horizontal = new Vec3(delta.x, 0.0D, delta.z);
         if (horizontal.lengthSqr() < 0.0001D) return;
         pounceLaunched = true;
         Vec3 launch = horizontal.normalize().scale(
-                Mth.clamp(horizontal.length() * 0.17D, 0.72D, 1.10D));
-        setDeltaMovement(launch.x, 0.30D, launch.z);
+                Mth.clamp(horizontal.length() * 0.16D, 0.68D, 1.04D));
+        setDeltaMovement(launch.x, 0.34D, launch.z);
         hasImpulse = true;
-        setAction(ACTION_POUNCE, POUNCE_DURATION_TICKS);
-        orientToward(to);
     }
 
     private void tickActionTimer() {
@@ -340,7 +354,13 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         if (action == ACTION_BITE) {
             if (actionTicks == BITE_HIT_REMAINING_TICKS) performBiteHit();
         } else if (action == ACTION_POUNCE) {
-            tickPounceCollision();
+            if (!pounceLaunched) {
+                orientToward(pounceTargetPosition);
+                if (actionTicks <= POUNCE_DURATION_TICKS - POUNCE_WINDUP_TICKS) {
+                    launchPounce();
+                }
+            }
+            if (pounceLaunched) tickPounceCollision();
         }
 
         if (actionTicks <= 0) return;
@@ -352,6 +372,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         }
         biteTargetId = null;
         pounceLaunched = false;
+        pounceTargetPosition = null;
         clearAction();
     }
 
@@ -392,6 +413,8 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         pinExpectedKey = random.nextBoolean() ? 1 : 0;
         pinWindowTicks = STRUGGLE_WINDOW_TICKS;
         pinLandTicks = PIN_LAND_TICKS;
+        pounceLaunched = false;
+        pounceTargetPosition = null;
         setAction(ACTION_PIN_LAND, PIN_LAND_TICKS);
         getNavigation().stop();
         setDeltaMovement(Vec3.ZERO);
@@ -415,13 +438,15 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         Vec3 horizontal = new Vec3(forward.x, 0.0D, forward.z);
         if (horizontal.lengthSqr() < 0.0001D) horizontal = new Vec3(0, 0, 1);
         horizontal = horizontal.normalize();
-        Vec3 pinPos = position().add(horizontal.scale(0.66D));
+        // Keep the player's head in front of the forelimbs instead of inside
+        // the chest/shoulder volume, producing a floor-level pinned perspective.
+        Vec3 pinPos = position().add(horizontal.scale(1.02D));
         player.setDeltaMovement(Vec3.ZERO);
         player.fallDistance = 0.0F;
         if (tickCount % 2 == 0) {
             float faceYaw = getYRot() + 180.0F;
-            player.connection.teleport(pinPos.x, getY() + 0.08D, pinPos.z,
-                    faceYaw, 8.0F);
+            player.connection.teleport(pinPos.x, getY() + 0.01D, pinPos.z,
+                    faceYaw, -14.0F);
         }
 
         if (pinLandTicks > 0) {
@@ -569,17 +594,25 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
 
     private void maybeMimic(ServerLevel level, Scp939AwarenessState state) {
         if (nextMimicTicks > 0 || getAction() != ACTION_NONE) return;
-        nextMimicTicks = MIMIC_MIN_INTERVAL + random.nextInt(
-                MIMIC_RANDOM_INTERVAL + 1);
         if (state != Scp939AwarenessState.IDLE
                 && state != Scp939AwarenessState.SEARCH
                 && state != Scp939AwarenessState.LOST_SEARCH) {
+            nextMimicTicks = MIMIC_RETRY_MIN_TICKS;
             return;
         }
+
         if (Scp939MimicryHooks.request(level, getUUID(), position(),
                 preferredMimicUuid)) {
+            nextMimicTicks = MIMIC_MIN_INTERVAL + random.nextInt(
+                    MIMIC_RANDOM_INTERVAL + 1);
             getNavigation().stop();
             setAction(ACTION_MIMIC, MIMIC_TICKS);
+        } else {
+            // No usable clip yet is not a fifteen-second failure. Re-check soon
+            // so a newly spoken phrase can actually be mimicked during testing
+            // and normal encounters instead of missing the entire opportunity.
+            nextMimicTicks = MIMIC_RETRY_MIN_TICKS + random.nextInt(
+                    MIMIC_RETRY_RANDOM_TICKS + 1);
         }
     }
 
@@ -641,11 +674,27 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         if (position == null) return;
         Vec3 delta = position.subtract(this.position());
         if (delta.horizontalDistanceSqr() <= 0.0001D) return;
-        float yaw = (float) (Mth.atan2(delta.z, delta.x)
+        float targetYaw = (float) (Mth.atan2(delta.z, delta.x)
                 * Mth.RAD_TO_DEG) - 90.0F;
+        float yaw = approachAngle(getYRot(), targetYaw, 18.0F);
         setYRot(yaw);
-        yBodyRot = yaw;
-        yHeadRot = yaw;
+        yBodyRot = approachAngle(yBodyRot, yaw, 10.0F);
+        yHeadRot = approachAngle(yHeadRot, targetYaw, 22.0F);
+    }
+
+    private void smoothLocomotionRotation() {
+        float maximumTurn = getAction() == ACTION_POUNCE
+                || getAction() == ACTION_BITE ? 22.0F : 12.0F;
+        float smoothedYaw = approachAngle(yRotO, getYRot(), maximumTurn);
+        setYRot(smoothedYaw);
+        yBodyRot = approachAngle(yBodyRot, smoothedYaw, 8.0F);
+        yHeadRot = approachAngle(yHeadRot, smoothedYaw, 14.0F);
+    }
+
+    private static float approachAngle(float current, float target,
+            float maximumChange) {
+        float delta = Mth.wrapDegrees(target - current);
+        return current + Mth.clamp(delta, -maximumChange, maximumChange);
     }
 
     private void setAwareness(Scp939AwarenessState state) {
@@ -759,43 +808,68 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         acousticBrain.reset();
         clearAction();
         pinnedPlayerId = null;
+        pounceLaunched = false;
+        pounceTargetPosition = null;
     }
 
     @Override
     public void registerControllers(
             AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 3, state -> {
-            byte action = getAction();
-            if (action == ACTION_BITE) return state.setAndContinue(ATTACK_BITE);
-            if (action == ACTION_POUNCE) return state.setAndContinue(POUNCE_START);
-            if (action == ACTION_PIN_LAND) {
-                return state.setAndContinue(POUNCE_LAND_PIN);
-            }
-            if (action == ACTION_MAUL) return state.setAndContinue(POUNCE_MAUL);
-            if (action == ACTION_KICKED) {
-                return state.setAndContinue(POUNCE_KICKED);
-            }
-            if (action == ACTION_HURT) return state.setAndContinue(HURT);
-            if (action == ACTION_DEATH) return state.setAndContinue(DEATH);
-            if (action == ACTION_MIMIC) return state.setAndContinue(MIMIC_CALL);
-            if (action == ACTION_LISTEN) return state.setAndContinue(IDLE_LISTEN);
+        AnimationController<Scp939Entity> controller =
+                new AnimationController<>(this, "main", 3, state -> {
+                    byte action = getAction();
+                    if (action == ACTION_BITE) {
+                        return state.setAndContinue(ATTACK_BITE);
+                    }
+                    if (action == ACTION_POUNCE) {
+                        return state.setAndContinue(POUNCE_START);
+                    }
+                    if (action == ACTION_PIN_LAND) {
+                        return state.setAndContinue(POUNCE_LAND_PIN);
+                    }
+                    if (action == ACTION_MAUL) {
+                        return state.setAndContinue(POUNCE_MAUL);
+                    }
+                    if (action == ACTION_KICKED) {
+                        return state.setAndContinue(POUNCE_KICKED);
+                    }
+                    if (action == ACTION_HURT) return state.setAndContinue(HURT);
+                    if (action == ACTION_DEATH) return state.setAndContinue(DEATH);
+                    if (action == ACTION_MIMIC) {
+                        return state.setAndContinue(MIMIC_CALL);
+                    }
+                    if (action == ACTION_LISTEN) {
+                        return state.setAndContinue(IDLE_LISTEN);
+                    }
 
-            Scp939AwarenessState awareness = getAwarenessState();
-            if (state.isMoving()) {
-                if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
-                        || awareness == Scp939AwarenessState.LOST_SEARCH) {
-                    return state.setAndContinue(RUN);
-                }
-                return state.setAndContinue(WALK);
-            }
-            if (awareness == Scp939AwarenessState.SEARCH) {
-                return state.setAndContinue(SEARCH);
-            }
-            if (awareness == Scp939AwarenessState.HEARD_SOUND) {
-                return state.setAndContinue(IDLE_LISTEN);
-            }
-            return state.setAndContinue(IDLE);
-        }));
+                    Scp939AwarenessState awareness = getAwarenessState();
+                    if (state.isMoving()) {
+                        if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
+                                || awareness == Scp939AwarenessState.LOST_SEARCH) {
+                            return state.setAndContinue(RUN);
+                        }
+                        return state.setAndContinue(WALK);
+                    }
+                    if (awareness == Scp939AwarenessState.SEARCH) {
+                        return state.setAndContinue(SEARCH);
+                    }
+                    if (awareness == Scp939AwarenessState.HEARD_SOUND) {
+                        return state.setAndContinue(IDLE_LISTEN);
+                    }
+                    return state.setAndContinue(IDLE);
+                });
+        controller.setAnimationSpeedHandler(entity -> {
+            if (entity.getAction() != ACTION_NONE) return 1.0D;
+            double movement = Math.sqrt(entity.getDeltaMovement()
+                    .horizontalDistanceSqr());
+            if (movement < 0.001D) return 1.0D;
+            Scp939AwarenessState awareness = entity.getAwarenessState();
+            boolean running = awareness == Scp939AwarenessState.CONFIRMED_HUNT
+                    || awareness == Scp939AwarenessState.LOST_SEARCH;
+            double reference = running ? 0.29D : 0.14D;
+            return Mth.clamp(movement / reference, 0.72D, 1.35D);
+        });
+        controllers.add(controller);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.client;
 
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -15,17 +16,28 @@ public final class CustomMainMenuClient {
 
     @SubscribeEvent
     public static void onScreenOpening(ScreenEvent.Opening event) {
-        if (!ClientModulePreferences.customMainMenuEnabled()) return;
-
         if (MainMenuSettingsPanelClient.shouldReplaceOptionsReturn(
                 event.getScreen())) {
-            event.setNewScreen(new CustomMainMenuScreen());
+            Screen target = ClientModulePreferences.customMainMenuEnabled()
+                    ? new CustomMainMenuScreen() : new TitleScreen();
+            event.setNewScreen(target);
             return;
         }
 
-        if (event.getScreen() instanceof TitleScreen
-                && !(event.getScreen() instanceof CustomMainMenuScreen)) {
-            event.setNewScreen(new CustomMainMenuScreen());
+        if (!(event.getScreen() instanceof TitleScreen)
+                || event.getScreen() instanceof CustomMainMenuScreen) {
+            return;
+        }
+
+        Screen title = ClientModulePreferences.customMainMenuEnabled()
+                ? new CustomMainMenuScreen() : event.getScreen();
+        if (Scp939VoiceSetupScreen.shouldOpenAutomatically()) {
+            event.setNewScreen(new Scp939VoiceSetupScreen(title));
+            return;
+        }
+
+        if (ClientModulePreferences.customMainMenuEnabled()) {
+            event.setNewScreen(title);
         }
     }
 }

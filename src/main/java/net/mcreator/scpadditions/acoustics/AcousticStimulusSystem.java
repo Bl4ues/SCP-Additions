@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -49,6 +50,12 @@ public final class AcousticStimulusSystem {
     public static AcousticStimulus emit(ServerLevel level, Vec3 position,
             AcousticCategory category, float intensity, Entity source) {
         if (level == null || position == null || category == null) return null;
+        if (source instanceof Player player
+                && (player.isCreative() || player.isSpectator())) {
+            // Creative/spectator players are observers and builders, not prey.
+            // Filtering here prevents every producer from having to remember it.
+            return null;
+        }
         float clampedIntensity = Mth.clamp(intensity, 0.0F, 4.0F);
         if (clampedIntensity <= 0.0F) return null;
 
@@ -72,7 +79,8 @@ public final class AcousticStimulusSystem {
      * server ticks per speaker; the newest packet remains ordinary SVC traffic.
      */
     public static void emitVoice(ServerPlayer player, float intensity) {
-        if (player == null || !player.isAlive() || player.isSpectator()) return;
+        if (player == null || !player.isAlive() || player.isCreative()
+                || player.isSpectator()) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
         long now = player.serverLevel().getGameTime();

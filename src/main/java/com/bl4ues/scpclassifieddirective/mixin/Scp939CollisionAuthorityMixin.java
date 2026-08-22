@@ -30,9 +30,14 @@ public abstract class Scp939CollisionAuthorityMixin extends PathfinderMob {
      * than Monster, and it is deliberately persistent, so vanilla has no reason
      * to remove an already-spawned specimen when the difficulty changes. Handle
      * that policy explicitly and clean up any pinned player's forced pose first.
+     *
+     * tick() is a Minecraft method and is reobfuscated in production jars. The
+     * target class itself is ours (hence @Mixin remap=false), but this injector
+     * must still be remapped through the generated refmap so it resolves the SRG
+     * name outside the development environment.
      */
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true,
-            remap = false)
+            remap = true)
     private void scpadditions$despawnOnThaumiel(CallbackInfo ci) {
         Scp939Entity self = (Scp939Entity) (Object) this;
         if (self.level().isClientSide

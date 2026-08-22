@@ -29,13 +29,13 @@ public abstract class Scp939PinnedPlayerRotationMixin {
                 : rotationYaw;
 
         /*
-         * PlayerRenderer's sleeping-style basis is longitudinally reversed from
-         * ordinary standing yaw. The previous 90-yaw basis left the victim's
-         * feet pointing at the 939; adding the half turn places the head at the
-         * predator and lets the legs extend outward, while keeping the player
-         * face-up like a body lying on a bed.
+         * The flat sleeping basis reverses the apparent longitudinal axis after
+         * the Z/Y rotations below. In this basis 90 - predatorYaw is the version
+         * that puts the victim's head under the 939's head/chest and their feet
+         * away from it. The opposite half-turn visibly puts the legs at the
+         * predator, which is exactly the failure this transform must avoid.
          */
-        float sleepingDirectionRotation = 270.0F - predatorYaw;
+        float sleepingDirectionRotation = 90.0F - predatorYaw;
         poseStack.mulPose(Axis.YP.rotationDegrees(sleepingDirectionRotation));
         poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
         poseStack.mulPose(Axis.YP.rotationDegrees(270.0F));

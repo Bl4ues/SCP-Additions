@@ -69,14 +69,19 @@ jobs:
           git add -A
           git commit -m "Rebrand as SCP: Classified Directive"
 
-      - name: Rebase onto current master and revalidate
+      - name: Rebase, revalidate and push safely
         run: |
-          git fetch origin master
-          git rebase origin/master
-          ./gradlew clean build --stacktrace
-
-      - name: Push rebrand to master
-        run: git push origin HEAD:master
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin master
+            git rebase origin/master
+            ./gradlew clean build --stacktrace
+            if git push origin HEAD:master; then
+              exit 0
+            fi
+          done
+          echo "Master kept moving during every push attempt"
+          exit 1
 
       - name: Record failed run
         if: failure()

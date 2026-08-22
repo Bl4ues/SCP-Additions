@@ -1,6 +1,7 @@
 package net.mcreator.scpadditions.scp1576;
 
 import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
+import com.bl4ues.scpinventory.item.ScpPickupRouter;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -108,6 +109,11 @@ public final class Scp1576Item extends Item implements GeoItem {
         ItemStack held = context.getItemInHand();
         ItemStack stored = held.copy();
         stored.setCount(1);
+        // The vanilla hotbar copy of an active Usable carries temporary mirror
+        // metadata. The physical communicator must keep its SCP-1576 session and
+        // cooldown NBT, but not remain flagged as an SCP Inventory mirror.
+        ScpPickupRouter.stripUsableSession(stored);
+        ScpPickupRouter.stripNoMergeMarker(stored);
         placed.setStoredItem(stored);
 
         boolean clearedUsableMirror = player instanceof ServerPlayer serverPlayer

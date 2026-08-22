@@ -4,14 +4,6 @@
 
 SCP: Classified Directive (formerly SCP Additions) is an SCP survival-horror and facility-building mod for Minecraft 1.20.1. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
 
-## Development status
-
-SCP: Classified Directive is currently developed and released for **Minecraft 1.20.1 with Forge**.
-
-| Minecraft | Loader | Status | Java | Branch |
-|---|---|---|---|---|
-| 1.20.1 | Forge 47.4.10+ | Stable public edition | 17 | [`master`](../../tree/master) |
-
 ## Links
 
 - [Download source snapshot](https://api.github.com/repos/Bl4ues/SCP-Additions/zipball/master)
@@ -28,11 +20,6 @@ SCP: Classified Directive is currently developed and released for **Minecraft 1.
 - Minecraft **1.20.1**
 - Forge **47.4.10 or newer**
 - GeckoLib **4.4.9 or newer**
-
-Optional client integrations:
-
-- [Kleiders Custom Renderer API](https://modrinth.com/mod/kleiders-custom-renderer-api) renders custom SCP-914 **1:1** player skins. All other SCP-914 behavior works without it.
-- Shader packs with LabPBR support can add material-aware emission and bloom to supported block textures. Built-in emissive block overlays remain full-bright without shaders or additional emissive-texture mods.
 
 ## Main features
 

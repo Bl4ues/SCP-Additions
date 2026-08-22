@@ -17,11 +17,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939PinnedViewFreedomMixin {
-    // The flat player model extends forward from its entity origin. Keeping that
-    // origin in front of SCP-939 therefore pushed most of the victim outside the
-    // animal's footprint. A small rearward offset centers the torso under the
-    // predator while the victim's head still points toward the 939's head.
-    @Unique private static final double SCPADDITIONS_PIN_FORWARD = -0.18D;
+    // Keep the prone victim far enough forward that the predator's head lands at
+    // the victim's face instead of over the abdomen. This is the alignment used
+    // by the earlier maul presentation before the torso-centering regression.
+    @Unique private static final double SCPADDITIONS_PIN_FORWARD = 0.62D;
     @Unique private double scpadditions$pinGroundY = Double.NaN;
 
     @Inject(method = "beginPin", at = @At("TAIL"), remap = false)

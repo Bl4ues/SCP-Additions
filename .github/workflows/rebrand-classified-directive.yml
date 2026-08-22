@@ -1,33 +1,27 @@
-name: Classified Directive Rebrand
+name: Classified Directive Final Validation
 
 on:
   push:
     branches:
       - master
     paths:
-      - 'scripts/rebrand_classified_directive.py'
-      - 'scripts/rebrand_classified_directive_hotfix.py'
-      - 'scripts/rebrand_classified_directive_compat.py'
-      - 'scripts/rebrand_transition_label.py'
       - '.github/workflows/rebrand-classified-directive.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: classified-directive-rebrand
+  group: classified-directive-final-validation
   cancel-in-progress: true
 
 jobs:
-  rebrand:
+  validate:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -38,54 +32,30 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Sync master
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin master
-          git reset --hard origin/master
-          rm -f .github/rebrand-failure.txt
-
-      - name: Run migration scripts
-        run: |
-          set -euo pipefail
-          python3 scripts/rebrand_classified_directive_hotfix.py
-          python3 scripts/rebrand_classified_directive.py
-          python3 scripts/rebrand_classified_directive_compat.py
-
-      - name: Apply transition labeling
-        run: |
-          set -euo pipefail
-          python3 scripts/rebrand_transition_label.py
-
-      - name: Validate migrated build
+      - name: Validate final Classified Directive build
         run: |
           set -euo pipefail
           chmod +x gradlew
           ./gradlew clean build --stacktrace
 
-      - name: Commit migrated tree
+      - name: Record successful validation
+        if: success()
         run: |
           set -euo pipefail
-          git add -A
-          git commit -m "Rebrand as SCP: Classified Directive"
-
-      - name: Push migrated tree
-        run: |
-          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf 'status=success\nvalidated_sha=%s\nrun_id=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .github/classified-directive-validation.txt
+          git add .github/classified-directive-validation.txt
+          git commit -m "Record successful Classified Directive validation [skip ci]"
           git push origin HEAD:master
 
-      - name: Record failed run
+      - name: Record failed validation
         if: failure()
         run: |
           set -euo pipefail
-          git rebase --abort 2>/dev/null || true
-          git fetch origin master
-          git reset --hard origin/master
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          printf 'run_id=%s\nrun_url=%s/actions/runs/%s\n' "$GITHUB_RUN_ID" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > .github/rebrand-failure.txt
-          git add .github/rebrand-failure.txt
-          git commit -m "Record failed Classified Directive migration [skip ci]" || true
-          git push origin HEAD:master || true
+          printf 'status=failure\nvalidated_sha=%s\nrun_id=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .github/classified-directive-validation.txt
+          git add .github/classified-directive-validation.txt
+          git commit -m "Record failed Classified Directive validation [skip ci]"
+          git push origin HEAD:master

@@ -12,66 +12,24 @@ import java.util.WeakHashMap;
 /** Presentation-only SCP-939 model polish. */
 public final class Scp939ModelPolish {
     /*
-     * The previous procedural walk tried to invent a new limb motion on top of
-     * an already-authored GeckoLib walk. That produced the conspicuous folding
-     * and skating seen in game. These curves are the actual X-axis animation
-     * deltas sampled from the SCP-939 walk clip every 0.15 seconds across its
-     * 1.8 second loop. We keep the rig-specific arcs and only change their phase
-     * and distance calibration.
-     *
-     * A normal canine walk is a lateral-sequence four-beat gait. The gait clock
-     * below advances from real horizontal displacement, so a paw in stance moves
-     * backward through model space at the same rate the entity moves forward in
-     * world space. It therefore appears planted instead of sliding along the
-     * floor, without a fragile world-space IK/servo fighting GeckoLib.
+     * The walk is advanced by actual horizontal distance rather than elapsed
+     * animation time. A complete four-beat stride deliberately covers a long
+     * distance: SCP-939 is built like a large, heavy canine, not a small animal
+     * taking nervous little steps. This also makes the stance sweep naturally
+     * cancel most of the entity's forward travel in world space.
      */
-    public static final double WALK_STRIDE_BLOCKS = 0.78D;
-
-    private static final float[] FRONT_UPPER_X = {
-            9.8374F, 17.0119F, 9.5990F, -12.0239F,
-            -8.9736F, -6.0630F, -3.3023F, -0.7005F,
-            1.7361F, 4.0048F, 6.1069F, 8.0481F
-    };
-    private static final float[] FRONT_LOWER_X = {
-            -2.5549F, -22.0952F, -20.8063F, 6.4158F,
-            4.2688F, 2.4021F, 0.8267F, -0.4504F,
-            -1.4282F, -2.1122F, -2.5149F, -2.6549F
-    };
-    private static final float[] REAR_HIP_X = {
-            3.2570F, 5.3630F, 7.3956F, 9.3541F,
-            10.0844F, 2.5828F, -10.4605F, -8.1139F,
-            -5.7691F, -3.4441F, -1.1559F, 1.0815F
-    };
-    private static final float[] REAR_KNEE_X = {
-            0.9733F, 1.6666F, 2.3656F, 3.0799F,
-            -2.2622F, -3.5834F, -4.2636F, -3.1126F,
-            -2.1199F, -1.2477F, -0.4610F, 0.2708F
-    };
-    private static final float[] REAR_HOCK_X = {
-            -3.1695F, -4.6353F, -5.8476F, -6.8328F,
-            -19.7043F, -15.1942F, 12.0059F, 8.6578F,
-            5.6475F, 2.9692F, 0.6150F, -1.4260F
-    };
-    private static final float[] REAR_PAW_X = {
-            -1.0784F, -1.6101F, -2.0686F, -2.4620F,
-            -5.8916F, -4.3021F, 3.9498F, 2.8808F,
-            1.9042F, 1.0216F, 0.2323F, -0.4662F
-    };
+    public static final double WALK_STRIDE_BLOCKS = 2.10D;
+    private static final float STANCE_END = 0.68F;
 
     /*
-     * Approximate contact points in the original authored curves are front=0.25
-     * and rear=0.50. Offsetting each chain from those contacts gives the desired
-     * RH -> RF -> LH -> LF touchdown order without changing the limb shapes.
+     * Lateral-sequence four-beat walk. Local limb phase zero is touchdown:
+     * right hind -> right fore -> left hind -> left fore. More than half of
+     * every limb cycle is stance, so multiple paws are always carrying weight.
      */
-    private static final float RIGHT_REAR_SAMPLE_OFFSET = 0.50F;
-    private static final float RIGHT_FRONT_SAMPLE_OFFSET = 0.07F;
-    private static final float LEFT_REAR_SAMPLE_OFFSET = 0.00F;
-    private static final float LEFT_FRONT_SAMPLE_OFFSET = 0.57F;
-
-    // Small root-only amplification increases physical reach while preserving
-    // the authored elbow/stifle/hock relationships instead of over-flexing them.
-    private static final float FRONT_ROOT_SCALE = 1.25F;
-    private static final float REAR_ROOT_SCALE = 1.18F;
+    private static final float RIGHT_REAR_CONTACT = 0.00F;
+    private static final float RIGHT_FRONT_CONTACT = 0.25F;
+    private static final float LEFT_REAR_CONTACT = 0.50F;
+    private static final float LEFT_FRONT_CONTACT = 0.75F;
 
     private static final Map<Scp939Entity, WalkClock> WALK_CLOCKS =
             new WeakHashMap<>();
@@ -82,11 +40,10 @@ public final class Scp939ModelPolish {
     /** The obsolete world-space paw servo remains deliberately disabled. */
     public static void applyWalkFootLocking(Scp939Model<?> model,
             Scp939Entity entity) {
-        // Distance-locked gait timing provides stance anchoring without mutating
-        // bone positions or depending on GeckoLib matrix tracking.
+        // Grounding is built into the spatial stance portion of the gait.
     }
 
-    /** Applies a distance-driven lateral-sequence canine walk. */
+    /** Applies a grounded, weight-bearing large-canine walk. */
     public static void applyWalkGait(Scp939Model<?> model,
             Scp939Entity entity, AnimationState<?> animationState) {
         if (model == null || entity == null || animationState == null) return;
@@ -109,14 +66,15 @@ public final class Scp939ModelPolish {
 
         float phase = walkPhase(entity, animationState.getPartialTick());
 
+        applyBodyMotion(model, phase);
         applyRear(model, "right_leg", "right_foot", "right_foot2",
-                "right_foot3", phase + RIGHT_REAR_SAMPLE_OFFSET);
+                "right_foot3", phase, RIGHT_REAR_CONTACT, -1.0F);
         applyFront(model, "right_arm", "right_hand",
-                phase + RIGHT_FRONT_SAMPLE_OFFSET);
+                phase, RIGHT_FRONT_CONTACT, -1.0F);
         applyRear(model, "left_leg", "left_foot", "left_foot2",
-                "left_foot3", phase + LEFT_REAR_SAMPLE_OFFSET);
+                "left_foot3", phase, LEFT_REAR_CONTACT, 1.0F);
         applyFront(model, "left_arm", "left_hand",
-                phase + LEFT_FRONT_SAMPLE_OFFSET);
+                phase, LEFT_FRONT_CONTACT, 1.0F);
     }
 
     private static float walkPhase(Scp939Entity entity, float partialTick) {
@@ -150,51 +108,163 @@ public final class Scp939ModelPolish {
                 clock.phaseStart + clock.phaseAdvance * partial, 1.0F);
     }
 
+    /**
+     * The shoulder girdle and pelvis counter-rotate through the step while the
+     * spine distributes that motion. The neck then cancels most of it, keeping
+     * the head comparatively stable instead of making the whole creature sway as
+     * one rigid object.
+     */
+    private static void applyBodyMotion(Scp939Model<?> model, float phase) {
+        float cycle = phase * (float) (Math.PI * 2.0D);
+        float doubleCycle = cycle * 2.0F;
+        float side = Mth.sin(cycle);
+        float sideLead = Mth.sin(cycle + 0.55F);
+        float support = Mth.cos(doubleCycle);
+
+        setAnimationRotationDelta(model, "939body",
+                0.9F + support * 0.45F,
+                side * 0.80F,
+                sideLead * 0.55F);
+        setAnimationRotationDelta(model, "torso",
+                -0.55F - support * 0.30F,
+                -side * 1.05F,
+                -sideLead * 0.62F);
+        setAnimationRotationDelta(model, "torso2",
+                0.75F + Mth.sin(cycle + 0.35F) * 0.30F,
+                sideLead * 0.90F,
+                side * 0.35F);
+        setAnimationRotationDelta(model, "torso3",
+                -0.35F + Mth.sin(cycle + 0.85F) * 0.28F,
+                Mth.sin(cycle + 0.60F) * 1.35F,
+                Mth.sin(cycle + 0.50F) * 0.70F);
+        setAnimationRotationDelta(model, "neck",
+                1.00F - support * 0.42F,
+                -side * 0.40F,
+                -sideLead * 0.24F);
+        setAnimationRotationDelta(model, "head",
+                -0.25F + support * 0.18F,
+                -side * 0.17F,
+                -sideLead * 0.10F);
+    }
+
     private static void applyFront(Scp939Model<?> model,
-            String upperName, String lowerName, float phase) {
-        float local = Mth.positiveModulo(phase, 1.0F);
-        setAnimationXDelta(model, upperName,
-                sampleCyclic(FRONT_UPPER_X, local) * FRONT_ROOT_SCALE);
-        setAnimationXDelta(model, lowerName,
-                sampleCyclic(FRONT_LOWER_X, local));
+            String upperName, String lowerName, float globalPhase,
+            float contactPhase, float side) {
+        float phase = localPhase(globalPhase, contactPhase);
+        FrontPose pose = frontPose(phase);
+        float lift = swingLift(phase);
+
+        // Clearance is intentionally restrained. A walking animal does not throw
+        // its forelimbs sideways; it merely unloads and folds them enough to pass.
+        setAnimationRotationDelta(model, upperName,
+                pose.upper(), side * 0.28F * lift,
+                side * (0.62F + 0.52F * lift));
+        setAnimationRotationDelta(model, lowerName,
+                pose.lower(), side * 0.09F * lift,
+                side * (0.16F + 0.16F * lift));
     }
 
     private static void applyRear(Scp939Model<?> model,
             String hipName, String kneeName, String hockName, String pawName,
-            float phase) {
-        float local = Mth.positiveModulo(phase, 1.0F);
-        setAnimationXDelta(model, hipName,
-                sampleCyclic(REAR_HIP_X, local) * REAR_ROOT_SCALE);
-        setAnimationXDelta(model, kneeName,
-                sampleCyclic(REAR_KNEE_X, local));
-        setAnimationXDelta(model, hockName,
-                sampleCyclic(REAR_HOCK_X, local));
-        setAnimationXDelta(model, pawName,
-                sampleCyclic(REAR_PAW_X, local));
+            float globalPhase, float contactPhase, float side) {
+        float phase = localPhase(globalPhase, contactPhase);
+        RearPose pose = rearPose(phase);
+        float lift = swingLift(phase);
+
+        setAnimationRotationDelta(model, hipName,
+                pose.hip(), side * 0.20F * lift,
+                side * (0.52F + 0.48F * lift));
+        setAnimationRotationDelta(model, kneeName,
+                pose.knee(), side * 0.08F * lift, side * 0.14F);
+        setAnimationRotationDelta(model, hockName,
+                pose.hock(), 0.0F, side * 0.10F);
+        setAnimationRotationDelta(model, pawName,
+                pose.paw(), 0.0F, side * 0.08F);
     }
 
     /**
-     * Cyclic Catmull-Rom interpolation preserves the rounded motion of the source
-     * animation while allowing the phase to be driven continuously by distance.
+     * During stance the shoulder sweeps almost linearly from in front of the
+     * body to behind it, approximating a planted paw while the entity advances.
+     * Recovery is shorter: unload, fold, carry forward, extend, touch down.
      */
-    private static float sampleCyclic(float[] samples, float phase) {
-        float scaled = Mth.positiveModulo(phase, 1.0F) * samples.length;
-        int i1 = Mth.floor(scaled) % samples.length;
-        float t = scaled - Mth.floor(scaled);
-        int i0 = (i1 - 1 + samples.length) % samples.length;
-        int i2 = (i1 + 1) % samples.length;
-        int i3 = (i1 + 2) % samples.length;
+    private static FrontPose frontPose(float phase) {
+        if (phase < STANCE_END) {
+            float u = phase / STANCE_END;
+            return new FrontPose(
+                    Mth.lerp(u, -14.0F, 16.0F),
+                    Mth.lerp(u, 5.0F, -4.0F));
+        }
 
-        float p0 = samples[i0];
-        float p1 = samples[i1];
-        float p2 = samples[i2];
-        float p3 = samples[i3];
-        float t2 = t * t;
-        float t3 = t2 * t;
-        return 0.5F * ((2.0F * p1)
-                + (-p0 + p2) * t
-                + (2.0F * p0 - 5.0F * p1 + 4.0F * p2 - p3) * t2
-                + (-p0 + 3.0F * p1 - 3.0F * p2 + p3) * t3);
+        float swing = (phase - STANCE_END) / (1.0F - STANCE_END);
+        if (swing < 0.30F) {
+            float u = smoothstep(swing / 0.30F);
+            return new FrontPose(
+                    Mth.lerp(u, 16.0F, 22.0F),
+                    Mth.lerp(u, -4.0F, -28.0F));
+        }
+        if (swing < 0.72F) {
+            float u = smoothstep((swing - 0.30F) / 0.42F);
+            return new FrontPose(
+                    Mth.lerp(u, 22.0F, -10.0F),
+                    Mth.lerp(u, -28.0F, -9.0F));
+        }
+
+        float u = smoothstep((swing - 0.72F) / 0.28F);
+        return new FrontPose(
+                Mth.lerp(u, -10.0F, -14.0F),
+                Mth.lerp(u, -9.0F, 5.0F));
+    }
+
+    /** Same support/recovery logic, distributed through hip, knee, hock and paw. */
+    private static RearPose rearPose(float phase) {
+        if (phase < STANCE_END) {
+            float u = phase / STANCE_END;
+            return new RearPose(
+                    Mth.lerp(u, -11.0F, 11.0F),
+                    Mth.lerp(u, -3.5F, 2.5F),
+                    Mth.lerp(u, 11.0F, -7.0F),
+                    Mth.lerp(u, 4.0F, -2.0F));
+        }
+
+        float swing = (phase - STANCE_END) / (1.0F - STANCE_END);
+        if (swing < 0.30F) {
+            float u = smoothstep(swing / 0.30F);
+            return new RearPose(
+                    Mth.lerp(u, 11.0F, 16.0F),
+                    Mth.lerp(u, 2.5F, -5.0F),
+                    Mth.lerp(u, -7.0F, -24.0F),
+                    Mth.lerp(u, -2.0F, -7.0F));
+        }
+        if (swing < 0.74F) {
+            float u = smoothstep((swing - 0.30F) / 0.44F);
+            return new RearPose(
+                    Mth.lerp(u, 16.0F, -8.0F),
+                    Mth.lerp(u, -5.0F, -4.0F),
+                    Mth.lerp(u, -24.0F, 6.0F),
+                    Mth.lerp(u, -7.0F, 3.0F));
+        }
+
+        float u = smoothstep((swing - 0.74F) / 0.26F);
+        return new RearPose(
+                Mth.lerp(u, -8.0F, -11.0F),
+                Mth.lerp(u, -4.0F, -3.5F),
+                Mth.lerp(u, 6.0F, 11.0F),
+                Mth.lerp(u, 3.0F, 4.0F));
+    }
+
+    private static float localPhase(float globalPhase, float contactPhase) {
+        return Mth.positiveModulo(globalPhase - contactPhase, 1.0F);
+    }
+
+    private static float swingLift(float phase) {
+        if (phase < STANCE_END) return 0.0F;
+        float swing = (phase - STANCE_END) / (1.0F - STANCE_END);
+        return Mth.sin(Mth.clamp(swing, 0.0F, 1.0F) * (float) Math.PI);
+    }
+
+    private static float smoothstep(float value) {
+        float t = Mth.clamp(value, 0.0F, 1.0F);
+        return t * t * (3.0F - 2.0F * t);
     }
 
     /** Adds only a restrained head/neck lead during turns. */
@@ -221,17 +291,16 @@ public final class Scp939ModelPolish {
         addRotation(model, "head", 0.0F, difference * 0.16F, 0.0F);
     }
 
-    /**
-     * Replaces only the X animation delta. Y/Z remain exactly as authored by the
-     * GeckoLib clip; zeroing them was one source of the previous robotic gait.
-     */
-    private static void setAnimationXDelta(Scp939Model<?> model,
-            String boneName, float xDegrees) {
+    /** Replaces the authored walk rotation for one bone on all three axes. */
+    private static void setAnimationRotationDelta(Scp939Model<?> model,
+            String boneName, float xDegrees, float yDegrees, float zDegrees) {
         CoreGeoBone bone = model.getAnimationProcessor().getBone(boneName);
         if (bone == null || bone.getInitialSnapshot() == null) return;
 
         var rest = bone.getInitialSnapshot();
         bone.setRotX(rest.getRotX() + xDegrees * Mth.DEG_TO_RAD);
+        bone.setRotY(rest.getRotY() + yDegrees * Mth.DEG_TO_RAD);
+        bone.setRotZ(rest.getRotZ() + zDegrees * Mth.DEG_TO_RAD);
     }
 
     private static void addRotation(Scp939Model<?> model, String boneName,
@@ -241,6 +310,12 @@ public final class Scp939ModelPolish {
         bone.setRotX(bone.getRotX() + x);
         bone.setRotY(bone.getRotY() + y);
         bone.setRotZ(bone.getRotZ() + z);
+    }
+
+    private record FrontPose(float upper, float lower) {
+    }
+
+    private record RearPose(float hip, float knee, float hock, float paw) {
     }
 
     private static final class WalkClock {

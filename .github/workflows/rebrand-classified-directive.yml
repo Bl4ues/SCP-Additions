@@ -49,12 +49,8 @@ jobs:
           python3 scripts/rebrand_classified_directive.py
           python3 scripts/rebrand_classified_directive_compat.py
 
-      - name: Remove one-shot migration files
+      - name: Preserve one-shot files until handoff lands
         run: |
-          rm scripts/rebrand_classified_directive.py
-          rm scripts/rebrand_classified_directive_hotfix.py
-          rm scripts/rebrand_classified_directive_compat.py
-          rm .github/workflows/rebrand-classified-directive.yml
           rm -f .github/rebrand-failure.txt
 
       - name: Validate migrated build

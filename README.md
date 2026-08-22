@@ -1,4 +1,4 @@
-# SCP: Classified Directive
+# SCP: Classified Directive (Formerly SCP Additions)
 
 ![SCP: Classified Directive banner](https://cdn.modrinth.com/data/cached_images/b9d834bc5afc41d56f44146c8c8521d6170d723c_0.webp)
 

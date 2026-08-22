@@ -13,24 +13,29 @@ import java.util.UUID;
 
 /**
  * SCP-939's sound memory and awareness state machine, intentionally detached
- * from navigation and Mob targeting.
+ * from vanilla visual targeting.
  *
- * The brain only receives listener-relative acoustic perceptions and remembers
- * the last evidenced position. It never asks for the nearest player and never
- * receives a perfect target position from an encounter director.
+ * <p>A running target does not merely leave disconnected points behind. Repeated
+ * sounds from the same source let the 939 infer a short movement vector and
+ * project the next likely sound position. That gives a blind predator competent
+ * pursuit without handing it the player's live coordinates.</p>
  */
 public final class Scp939AcousticBrain {
-    private static final double HEARING_RANGE_MULTIPLIER = 1.05D;
-    private static final float MIN_AUDIBLE_INTENSITY = 0.055F;
-    private static final float IMMEDIATE_HUNT_INTENSITY = 0.58F;
-    private static final float HUNT_CONFIDENCE = 0.78F;
-    private static final float CONFIDENCE_DECAY_PER_TICK = 0.0060F;
+    private static final double HEARING_RANGE_MULTIPLIER = 1.16D;
+    private static final float MIN_AUDIBLE_INTENSITY = 0.050F;
+    private static final float IMMEDIATE_HUNT_INTENSITY = 0.46F;
+    private static final float HUNT_CONFIDENCE = 0.68F;
+    private static final float CONFIDENCE_DECAY_PER_TICK = 0.0050F;
     private static final float ENVIRONMENT_CONFIDENCE_CAP = 0.52F;
 
-    private static final int ALERT_REACTION_TICKS = 10;
-    private static final int HUNT_EVIDENCE_GRACE_TICKS = 22;
-    private static final int LOST_SEARCH_TO_SEARCH_TICKS = 70;
+    private static final int EVIDENCE_LOOKBACK_TICKS = 3;
+    private static final int ALERT_REACTION_TICKS = 8;
+    private static final int HUNT_EVIDENCE_GRACE_TICKS = 30;
+    private static final int LOST_SEARCH_TO_SEARCH_TICKS = 82;
     private static final int SEARCH_GIVE_UP_TICKS = 20 * 12;
+
+    private static final double MAX_TRACKED_SPEED_PER_TICK = 0.48D;
+    private static final double MAX_PREDICTION_DISTANCE = 2.60D;
 
     private Scp939AwarenessState state = Scp939AwarenessState.IDLE;
     private Vec3 lastKnownPosition;
@@ -42,9 +47,14 @@ public final class Scp939AcousticBrain {
     private long alertUntilTick = Long.MIN_VALUE / 4L;
     private EvidenceSignature lastEvidenceSignature;
 
+    private UUID trackedSourceId;
+    private Vec3 trackedSourcePosition;
+    private long trackedSourceTick = Long.MIN_VALUE / 4L;
+    private Vec3 trackedVelocity = Vec3.ZERO;
+
     /**
-     * Advances the awareness model once. reachedLastKnownPosition should come
-     * from navigation, not from distance to a player.
+     * Advances the awareness model once. reachedLastKnownPosition comes from
+     * navigation, never from distance to a hidden player.
      */
     public Snapshot tick(ServerLevel level, Vec3 listenerPosition,
             boolean reachedLastKnownPosition) {
@@ -53,7 +63,7 @@ public final class Scp939AcousticBrain {
         long now = level.getGameTime();
         decayConfidence(now);
 
-        long lookback = Math.max(0L, now - 2L);
+        long lookback = Math.max(0L, now - EVIDENCE_LOOKBACK_TICKS);
         Optional<AcousticPerception> perceived =
                 AcousticStimulusSystem.loudest(level, listenerPosition,
                         lookback, HEARING_RANGE_MULTIPLIER,
@@ -81,26 +91,115 @@ public final class Scp939AcousticBrain {
 
     private void observe(AcousticPerception perception, long now) {
         AcousticStimulus stimulus = perception.stimulus();
-        boolean environmental = stimulus.sourceEntityId() == null;
+        UUID sourceId = stimulus.sourceEntityId();
+        boolean environmental = sourceId == null;
         boolean sameSource = !environmental
-                && stimulus.sourceEntityId().equals(lastSourceId)
+                && sourceId.equals(lastSourceId)
                 && now - lastEvidenceTick <= 60L;
 
         float categoryWeight = categoryConfidenceWeight(stimulus.category());
         float evidenceStrength = Mth.clamp(
-                perception.perceivedIntensity() * 1.18F * categoryWeight,
+                perception.perceivedIntensity() * 1.22F * categoryWeight,
                 0.0F, 1.0F);
-        confidence = Mth.clamp(confidence * 0.68F
-                + evidenceStrength * 0.58F + (sameSource ? 0.07F : 0.0F),
+        confidence = Mth.clamp(confidence * 0.70F
+                + evidenceStrength * 0.60F + (sameSource ? 0.08F : 0.0F),
                 0.0F, 1.0F);
         if (environmental) {
             confidence = Math.min(confidence, ENVIRONMENT_CONFIDENCE_CAP);
         }
 
-        lastKnownPosition = stimulus.position();
+        updateTrajectory(sourceId, stimulus.position(), now);
+        lastKnownPosition = environmental
+                ? stimulus.position()
+                : predictedPosition(stimulus.position(), stimulus.category());
         lastCategory = stimulus.category();
-        lastSourceId = stimulus.sourceEntityId();
+        lastSourceId = sourceId;
         lastEvidenceTick = now;
+    }
+
+    /**
+     * Learns direction only from consecutive evidenced positions. Teleports or
+     * implausibly large jumps reset the estimate instead of becoming psychic
+     * velocity samples.
+     */
+    private void updateTrajectory(UUID sourceId, Vec3 position, long now) {
+        if (sourceId == null || position == null) {
+            clearTrajectory();
+            return;
+        }
+
+        if (!sourceId.equals(trackedSourceId)
+                || trackedSourcePosition == null
+                || trackedSourceTick <= Long.MIN_VALUE / 8L) {
+            trackedSourceId = sourceId;
+            trackedSourcePosition = position;
+            trackedSourceTick = now;
+            trackedVelocity = Vec3.ZERO;
+            return;
+        }
+
+        long elapsed = now - trackedSourceTick;
+        if (elapsed <= 0L || elapsed > 20L) {
+            trackedSourcePosition = position;
+            trackedSourceTick = now;
+            trackedVelocity = trackedVelocity.scale(0.35D);
+            return;
+        }
+
+        Vec3 delta = position.subtract(trackedSourcePosition);
+        Vec3 sample = delta.scale(1.0D / elapsed);
+        double horizontalSpeed = Math.sqrt(sample.x * sample.x
+                + sample.z * sample.z);
+        if (!Double.isFinite(horizontalSpeed)
+                || horizontalSpeed > 1.20D) {
+            trackedVelocity = Vec3.ZERO;
+        } else {
+            if (horizontalSpeed > MAX_TRACKED_SPEED_PER_TICK) {
+                double scale = MAX_TRACKED_SPEED_PER_TICK / horizontalSpeed;
+                sample = new Vec3(sample.x * scale,
+                        Mth.clamp(sample.y, -0.22D, 0.22D),
+                        sample.z * scale);
+            } else {
+                sample = new Vec3(sample.x,
+                        Mth.clamp(sample.y, -0.22D, 0.22D), sample.z);
+            }
+            trackedVelocity = trackedVelocity.scale(0.35D)
+                    .add(sample.scale(0.65D));
+        }
+
+        trackedSourcePosition = position;
+        trackedSourceTick = now;
+    }
+
+    private Vec3 predictedPosition(Vec3 observed,
+            AcousticCategory category) {
+        if (observed == null || trackedVelocity.lengthSqr() < 0.00020D) {
+            return observed;
+        }
+
+        double leadTicks = predictionTicks(category);
+        Vec3 prediction = trackedVelocity.scale(leadTicks);
+        double horizontal = Math.sqrt(prediction.x * prediction.x
+                + prediction.z * prediction.z);
+        if (horizontal > MAX_PREDICTION_DISTANCE) {
+            double scale = MAX_PREDICTION_DISTANCE / horizontal;
+            prediction = new Vec3(prediction.x * scale,
+                    prediction.y * Math.min(1.0D, scale),
+                    prediction.z * scale);
+        }
+        return observed.add(prediction);
+    }
+
+    private static double predictionTicks(AcousticCategory category) {
+        if (category == null) return 1.0D;
+        return switch (category) {
+            case SPRINT -> 4.5D;
+            case FOOTSTEP -> 3.0D;
+            case JUMP, LAND -> 3.5D;
+            case VOICE, GASP -> 2.5D;
+            case WEAPON, BLOCK, DOOR -> 1.5D;
+            case BUTTON, INTERACTION, BREATH, OTHER -> 1.0D;
+        };
     }
 
     private void transition(long now, boolean newEvidence,
@@ -175,10 +274,10 @@ public final class Scp939AcousticBrain {
         if (category == null) return 0.60F;
         return switch (category) {
             case VOICE, GASP, WEAPON -> 1.00F;
-            case SPRINT, LAND -> 0.92F;
-            case JUMP, BLOCK -> 0.82F;
-            case FOOTSTEP -> 0.72F;
-            case DOOR -> 0.64F;
+            case SPRINT, LAND -> 0.94F;
+            case JUMP, BLOCK -> 0.84F;
+            case FOOTSTEP -> 0.75F;
+            case DOOR -> 0.66F;
             case BUTTON, INTERACTION -> 0.52F;
             case BREATH -> 0.46F;
             case OTHER -> 0.40F;
@@ -197,6 +296,13 @@ public final class Scp939AcousticBrain {
         return Math.max(0L, now - lastEvidenceTick);
     }
 
+    private void clearTrajectory() {
+        trackedSourceId = null;
+        trackedSourcePosition = null;
+        trackedSourceTick = Long.MIN_VALUE / 4L;
+        trackedVelocity = Vec3.ZERO;
+    }
+
     private void clearToIdle() {
         state = Scp939AwarenessState.IDLE;
         lastKnownPosition = null;
@@ -205,6 +311,7 @@ public final class Scp939AcousticBrain {
         confidence = 0.0F;
         lastEvidenceTick = Long.MIN_VALUE / 4L;
         lastEvidenceSignature = null;
+        clearTrajectory();
     }
 
     public void reset() {

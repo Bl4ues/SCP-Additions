@@ -8,54 +8,71 @@ import software.bernie.geckolib.core.animation.AnimationState;
 
 /** Presentation-only SCP-939 model polish. */
 public final class Scp939ModelPolish {
-    private static final float FRONT_BASE = 0.0F * Mth.DEG_TO_RAD;
-    private static final float FRONT_HAND_BASE = 0.0F * Mth.DEG_TO_RAD;
-    private static final float REAR_HIP_BASE = 32.5F * Mth.DEG_TO_RAD;
-    private static final float REAR_KNEE_BASE = 60.0F * Mth.DEG_TO_RAD;
-    private static final float REAR_HOCK_BASE = -102.5F * Mth.DEG_TO_RAD;
-    private static final float REAR_PAW_BASE = 54.0F * Mth.DEG_TO_RAD;
-
-    private static final float FRONT_STRIDE = 25.0F * Mth.DEG_TO_RAD;
-    private static final float FRONT_COUNTER = 10.0F * Mth.DEG_TO_RAD;
-    private static final float FRONT_LIFT_FLEX = 18.0F * Mth.DEG_TO_RAD;
-    private static final float REAR_STRIDE = 21.0F * Mth.DEG_TO_RAD;
-    private static final float REAR_KNEE_COUNTER = 11.0F * Mth.DEG_TO_RAD;
-    private static final float REAR_SWING_FLEX = 25.0F * Mth.DEG_TO_RAD;
-    private static final float REAR_PAW_FLEX = 12.0F * Mth.DEG_TO_RAD;
-    private static final float SUPPORT_FRACTION = 0.61F;
-    private static final double WALK_REFERENCE_SPEED = 0.09D;
+    /*
+     * These are the actual animation-space X rotations authored in the walk clip,
+     * sampled every 0.15 seconds across its 1.8 second loop. They are deliberately
+     * not values from the .geo model. Geometry rotations already define the rest
+     * pose and must never be applied again as animation deltas.
+     */
+    private static final float[] FRONT_UPPER_X = {
+            9.8374F, 17.0119F, 9.5990F, -12.0239F,
+            -8.9736F, -6.0630F, -3.3023F, -0.7005F,
+            1.7361F, 4.0048F, 6.1069F, 8.0481F
+    };
+    private static final float[] FRONT_LOWER_X = {
+            -2.5549F, -22.0952F, -20.8063F, 6.4158F,
+            4.2688F, 2.4021F, 0.8267F, -0.4504F,
+            -1.4282F, -2.1122F, -2.5149F, -2.6549F
+    };
+    private static final float[] REAR_HIP_X = {
+            3.2570F, 5.3630F, 7.3956F, 9.3541F,
+            10.0844F, 2.5828F, -10.4605F, -8.1139F,
+            -5.7691F, -3.4441F, -1.1559F, 1.0815F
+    };
+    private static final float[] REAR_KNEE_X = {
+            0.9733F, 1.6666F, 2.3656F, 3.0799F,
+            -2.2622F, -3.5834F, -4.2636F, -3.1126F,
+            -2.1199F, -1.2477F, -0.4610F, 0.2708F
+    };
+    private static final float[] REAR_HOCK_X = {
+            -3.1695F, -4.6353F, -5.8476F, -6.8328F,
+            -19.7043F, -15.1942F, 12.0059F, 8.6578F,
+            5.6475F, 2.9692F, 0.6150F, -1.4260F
+    };
+    private static final float[] REAR_PAW_X = {
+            -1.0784F, -1.6101F, -2.0686F, -2.4620F,
+            -5.8916F, -4.3021F, 3.9498F, 2.8808F,
+            1.9042F, 1.0216F, 0.2323F, -0.4662F
+    };
 
     private Scp939ModelPolish() {
     }
 
     public static void applyWalkFootLocking(Scp939Model<?> model,
             Scp939Entity entity) {
-        // The old independent per-paw servo fought the authored animation and
-        // produced detached or skating feet. The gait below owns stance/swing
-        // timing as one coherent quadruped cycle instead.
+        // Intentionally empty. Positional foot servos previously accumulated on
+        // mutable GeckoLib bones and detached paws from their chains.
     }
 
     /**
-     * Replaces the authored four-beat-looking walk with a canine diagonal gait.
+     * Re-phases the existing walk into a diagonal canine gait without changing
+     * the rig's rest pose.
      *
-     * <p>The Blockbench clip moved the four paws in visibly isolated turns. That
-     * reads acceptably in the editor but, once the body actually travels through
-     * the world, it looks like the creature is carefully operating four separate
-     * levers. A dog-like trot is much clearer in motion: left-front moves with
-     * right-rear, then right-front with left-rear. The support part of each cycle
-     * is deliberately longer than the recovery swing so a loaded paw sweeps back
-     * beneath the body rather than moonwalking forward across the floor.</p>
-     *
-     * <p>This runs after GeckoLib has evaluated the authored clip. Only the limb
-     * chains are replaced; body, spine, neck and head motion from the animation
-     * remain intact. Running keeps its separate authored gallop.</p>
+     * <p>The authored clip has good individual limb arcs, but plays them as four
+     * conspicuously isolated beats in game. Rather than inventing new joint angles,
+     * this method reuses those exact authored curves and only changes when each
+     * chain plays them: right-front with left-rear, then left-front with right-rear.
+     * Y/Z rotations remain entirely owned by the GeckoLib clip.</p>
      */
     public static void applyLocomotionBlend(Scp939Model<?> model,
             Scp939Entity entity, AnimationState<?> animationState) {
         if (model == null || entity == null || animationState == null) return;
-        if (entity.getAction() != Scp939Entity.ACTION_NONE || !entity.onGround()) {
-            return;
-        }
+
+        byte action = entity.getAction();
+        boolean compatibleAction = action == Scp939Entity.ACTION_NONE
+                || action == Scp939Entity.ACTION_BITE
+                || action == Scp939Entity.ACTION_MIMIC;
+        if (!compatibleAction || !entity.onGround()) return;
 
         Scp939AwarenessState awareness = entity.getAwarenessState();
         if (awareness == Scp939AwarenessState.CONFIRMED_HUNT
@@ -67,93 +84,50 @@ public final class Scp939ModelPolish {
                 .horizontalDistanceSqr());
         if (speed < 0.004D) return;
 
-        float gaitStrength = Mth.clamp((float) (speed / WALK_REFERENCE_SPEED),
-                0.38F, 1.0F);
-        float replaceBlend = Mth.clamp((float) (speed / 0.055D),
-                0.08F, 1.0F);
-        float phase = animationState.getLimbSwing() * 0.6662F;
+        float blend = Mth.clamp((float) (speed / 0.055D), 0.30F, 1.0F);
+        float cycle = Mth.positiveModulo(
+                animationState.getLimbSwing() * 0.6662F
+                        / (Mth.PI * 2.0F),
+                1.0F);
 
-        GaitSample diagonalA = gaitSample(phase);
-        GaitSample diagonalB = gaitSample(phase + Mth.PI);
+        // Pair A: right front + left rear.
+        applyFront(model, "right_arm", "right_hand", cycle, blend);
+        applyRear(model, "left_leg", "left_foot", "left_foot2",
+                "left_foot3", cycle + 0.25F, blend);
 
-        // Diagonal pair A: left front + right rear.
-        applyFrontLeg(model, "left_arm", "left_hand",
-                diagonalA, gaitStrength, replaceBlend);
-        applyRearLeg(model, "right_leg", "right_foot", "right_foot2",
-                "right_foot3", diagonalA, gaitStrength, replaceBlend);
-
-        // Diagonal pair B: right front + left rear.
-        applyFrontLeg(model, "right_arm", "right_hand",
-                diagonalB, gaitStrength, replaceBlend);
-        applyRearLeg(model, "left_leg", "left_foot", "left_foot2",
-                "left_foot3", diagonalB, gaitStrength, replaceBlend);
-
-        // A tiny weight transfer keeps the torso from reading as a rigid table.
-        float transfer = Mth.sin(phase * 2.0F) * gaitStrength;
-        addRotation(model, "939body",
-                transfer * 0.55F * Mth.DEG_TO_RAD,
-                0.0F,
-                transfer * 0.35F * Mth.DEG_TO_RAD);
+        // Pair B: left front + right rear, half a stride later.
+        applyFront(model, "left_arm", "left_hand", cycle + 0.50F, blend);
+        applyRear(model, "right_leg", "right_foot", "right_foot2",
+                "right_foot3", cycle + 0.75F, blend);
     }
 
-    private static void applyFrontLeg(Scp939Model<?> model,
-            String upperName, String lowerName, GaitSample sample,
-            float strength, float replaceBlend) {
-        float upper = FRONT_BASE + sample.sweep * FRONT_STRIDE * strength;
-        float lower = FRONT_HAND_BASE
-                - sample.sweep * FRONT_COUNTER * strength
-                - sample.lift * FRONT_LIFT_FLEX * strength;
-        blendRotation(model, upperName, upper, 0.0F, 0.0F, replaceBlend);
-        blendRotation(model, lowerName, lower, 0.0F, 0.0F, replaceBlend);
+    private static void applyFront(Scp939Model<?> model,
+            String upperName, String lowerName, float phase, float blend) {
+        blendX(model, upperName, sampleDegrees(FRONT_UPPER_X, phase), blend);
+        blendX(model, lowerName, sampleDegrees(FRONT_LOWER_X, phase), blend);
     }
 
-    private static void applyRearLeg(Scp939Model<?> model,
+    private static void applyRear(Scp939Model<?> model,
             String hipName, String kneeName, String hockName, String pawName,
-            GaitSample sample, float strength, float replaceBlend) {
-        float hip = REAR_HIP_BASE + sample.sweep * REAR_STRIDE * strength;
-        float knee = REAR_KNEE_BASE
-                - sample.sweep * REAR_KNEE_COUNTER * strength
-                - sample.lift * 7.0F * Mth.DEG_TO_RAD * strength;
-        float hock = REAR_HOCK_BASE
-                + sample.lift * REAR_SWING_FLEX * strength;
-        float paw = REAR_PAW_BASE
-                - sample.lift * REAR_PAW_FLEX * strength;
-
-        blendRotation(model, hipName, hip, 0.0F, 0.0F, replaceBlend);
-        blendRotation(model, kneeName, knee, 0.0F, 0.0F, replaceBlend);
-        blendRotation(model, hockName, hock, 0.0F, 0.0F, replaceBlend);
-        blendRotation(model, pawName, paw, 0.0F, 0.0F, replaceBlend);
+            float phase, float blend) {
+        blendX(model, hipName, sampleDegrees(REAR_HIP_X, phase), blend);
+        blendX(model, kneeName, sampleDegrees(REAR_KNEE_X, phase), blend);
+        blendX(model, hockName, sampleDegrees(REAR_HOCK_X, phase), blend);
+        blendX(model, pawName, sampleDegrees(REAR_PAW_X, phase), blend);
     }
 
-    private static GaitSample gaitSample(float phase) {
-        float cycle = Mth.positiveModulo(phase / (Mth.PI * 2.0F), 1.0F);
-        if (cycle < SUPPORT_FRACTION) {
-            float support = cycle / SUPPORT_FRACTION;
-            return new GaitSample(1.0F - support * 2.0F, 0.0F);
-        }
-
-        float recovery = (cycle - SUPPORT_FRACTION)
-                / (1.0F - SUPPORT_FRACTION);
-        float smooth = smoothstep(recovery);
-        float sweep = -1.0F + smooth * 2.0F;
-        float lift = Mth.sin(Mth.PI * recovery);
-        return new GaitSample(sweep, Math.max(0.0F, lift));
+    private static float sampleDegrees(float[] values, float phase) {
+        float wrapped = Mth.positiveModulo(phase, 1.0F);
+        float scaled = wrapped * values.length;
+        int base = Mth.floor(scaled);
+        int index = base % values.length;
+        int next = (index + 1) % values.length;
+        float alpha = scaled - base;
+        alpha = alpha * alpha * (3.0F - 2.0F * alpha);
+        return Mth.lerp(alpha, values[index], values[next]) * Mth.DEG_TO_RAD;
     }
 
-    private static float smoothstep(float value) {
-        float clamped = Mth.clamp(value, 0.0F, 1.0F);
-        return clamped * clamped * (3.0F - 2.0F * clamped);
-    }
-
-    /**
-     * Adds only a restrained head/neck lead during turns.
-     *
-     * <p>Older polish twisted every torso segment in opposite directions and
-     * added roll on top of entity yaw. That made the quadruped look crooked and
-     * occasionally twitch when pathfinding adjusted its heading. The body now
-     * follows the entity normally while the sensory end of the animal leads the
-     * turn by a few degrees.</p>
-     */
+    /** Adds only a restrained head/neck lead during turns. */
     public static void applyTurnMotion(Scp939Model<?> model,
             Scp939Entity entity) {
         if (model == null || entity == null) return;
@@ -177,14 +151,12 @@ public final class Scp939ModelPolish {
         addRotation(model, "head", 0.0F, difference * 0.16F, 0.0F);
     }
 
-    private static void blendRotation(Scp939Model<?> model, String boneName,
-            float targetX, float targetY, float targetZ, float blend) {
+    private static void blendX(Scp939Model<?> model, String boneName,
+            float targetX, float blend) {
         CoreGeoBone bone = model.getAnimationProcessor().getBone(boneName);
         if (bone == null) return;
         float amount = Mth.clamp(blend, 0.0F, 1.0F);
         bone.setRotX(Mth.lerp(amount, bone.getRotX(), targetX));
-        bone.setRotY(Mth.lerp(amount, bone.getRotY(), targetY));
-        bone.setRotZ(Mth.lerp(amount, bone.getRotZ(), targetZ));
     }
 
     private static void addRotation(Scp939Model<?> model, String boneName,
@@ -194,8 +166,5 @@ public final class Scp939ModelPolish {
         bone.setRotX(bone.getRotX() + x);
         bone.setRotY(bone.getRotY() + y);
         bone.setRotZ(bone.getRotZ() + z);
-    }
-
-    private record GaitSample(float sweep, float lift) {
     }
 }

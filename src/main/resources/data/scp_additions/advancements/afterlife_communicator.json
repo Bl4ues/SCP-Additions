@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_additions:scp_1576"
+    },
+    "title": {
+      "text": "Afterlife Communicator"
+    },
+    "description": {
+      "text": "Contact the dead using SCP-1576"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "afterlife_communicator": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_additions:scp_additions_ach"
+}

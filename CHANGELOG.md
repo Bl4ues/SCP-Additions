@@ -2,6 +2,9 @@
 
 # SCP: Classified Directive 4.0.0 — In Development
 
+> [!WARNING]
+> **World compatibility notice:** Worlds created with SCP Additions before the 4.0.0 rebrand are **not block-compatible** with SCP: Classified Directive. Because the registry namespace changed, blocks placed by older versions will not be preserved when those worlds are loaded under 4.0.0 and may be removed from the world. **Back up old worlds before updating.** Configuration, player-capability, and SavedData migrations remain supported where explicitly described below, but placed legacy blocks should be treated as non-migrating content.
+
 ## Highlights
 - SCP: Classified Directive rebrand (formerly SCP Additions)
 - SCP-106
@@ -25,7 +28,7 @@
 - Rebranded the project as **SCP: Classified Directive** (formerly **SCP Additions**);
 - Migrated the public mod ID and registry namespace from the legacy ID to `scp_classified_directive`;
 - Consolidated the former resource namespaces into `scp_classified_directive`;
-- Added Forge missing-mapping migration so legacy registered world content resolves to the new namespace;
+- Added Forge missing-mapping handling for legacy registry identifiers where Forge exposes them during migration; placed blocks from pre-4.0 worlds are not block-compatible across the namespace change and are not guaranteed to survive loading;
 - Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;
 - Legacy configuration files now migrate embedded SCP resource identifiers to the unified namespace while preserving user customizations;
 - Existing world SavedData storage keys remain recognized internally so SCP-294 and SCP-914 state survives the rebrand;

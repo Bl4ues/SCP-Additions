@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "scp_additions:block/archivists_chair_particle" },
-    "facing=east": { "model": "scp_additions:block/archivists_chair_particle" },
-    "facing=south": { "model": "scp_additions:block/archivists_chair_particle" },
-    "facing=west": { "model": "scp_additions:block/archivists_chair_particle" }
-  }
-}

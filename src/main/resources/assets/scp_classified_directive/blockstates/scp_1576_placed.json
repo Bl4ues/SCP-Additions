@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "scp_classified_directive:block/scp_1576_placed_particle"
+      }
+    }
+  ]
+}

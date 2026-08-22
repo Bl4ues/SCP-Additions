@@ -1,12 +1,12 @@
-# SCP Additions
+# SCP: Classified Directive (Formerly SCP Additions)
 
-![SCP Additions banner](https://cdn.modrinth.com/data/cached_images/b9d834bc5afc41d56f44146c8c8521d6170d723c_0.webp)
+![SCP: Classified Directive banner](https://cdn.modrinth.com/data/cached_images/b9d834bc5afc41d56f44146c8c8521d6170d723c_0.webp)
 
-SCP Additions is an SCP survival-horror and facility-building mod for Minecraft 1.20.1. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
+SCP: Classified Directive (formerly SCP Additions) is an SCP survival-horror and facility-building mod for Minecraft 1.20.1. Inspired by SCP: Containment Breach and SCP Unity, it combines functional SCPs and containment machinery with a custom inventory, survival systems, keycard security, animated doors, and a large collection of facility-building content.
 
 ## Development status
 
-SCP Additions is currently developed and released for **Minecraft 1.20.1 with Forge**.
+SCP: Classified Directive is currently developed and released for **Minecraft 1.20.1 with Forge**.
 
 | Minecraft | Loader | Status | Java | Branch |
 |---|---|---|---|---|
@@ -47,7 +47,7 @@ Optional client integrations:
 
 1. Install Minecraft **1.20.1** with Forge **47.4.10 or newer**.
 2. Install GeckoLib **4.4.9 or newer**.
-3. Place the SCP Additions JAR in the instance's `mods` folder.
+3. Place the SCP: Classified Directive JAR in the instance's `mods` folder.
 4. Install optional integrations only when compatible versions are available for Minecraft 1.20.1 Forge.
 
 The complete usage guide, controls, commands, configuration reference, and troubleshooting information are maintained in the [Wiki](https://github.com/Bl4ues/SCP-Additions/wiki). A source mirror is kept in [`docs/wiki`](docs/wiki/Home.md).
@@ -57,13 +57,13 @@ The complete usage guide, controls, commands, configuration reference, and troub
 While connected to a world, open:
 
 ```text
-Mods → SCP Additions → Config
+Mods → SCP: Classified Directive → Config
 ```
 
 or run:
 
 ```mcfunction
-/scpadditions config
+/scp_classified_directive config
 ```
 
 The integrated single-player owner and operators with permission level 2 or higher can edit supported systems with validation, automatic `.bak` backups, rollback, and runtime reload. Existing customized configuration files are never silently replaced by new defaults.

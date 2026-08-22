@@ -1,0 +1,11 @@
+{
+  "parent": "scp_classified_directive:custom/default_closed",
+  "textures": {
+    "all": "scp_classified_directive:block/default_texture",
+    "particle": "scp_classified_directive:block/default_texture",
+    "0": "scp_classified_directive:block/doorframe",
+    "1": "scp_classified_directive:block/knob",
+    "2": "scp_classified_directive:block/default_door"
+  },
+  "render_type": "cutout"
+}

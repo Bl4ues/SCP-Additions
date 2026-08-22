@@ -1,0 +1,225 @@
+package com.bl4ues.scpclassifieddirective.client;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.level.block.state.BlockState;
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.AbstractFramedSignBlock;
+import com.bl4ues.scpclassifieddirective.facility.ScpSignData;
+import com.bl4ues.scpclassifieddirective.facility.ScpSignHazards;
+import com.bl4ues.scpclassifieddirective.facility.ScpSignSupportBlock;
+import com.bl4ues.scpclassifieddirective.facility.ScpSignSupportBlockEntity;
+import com.bl4ues.scpclassifieddirective.facility.ScpSignTemplates;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+
+/** Renders the selected sign artwork directly behind the shared glass. */
+public final class ScpSignSupportBlockEntityRenderer
+        implements BlockEntityRenderer<ScpSignSupportBlockEntity> {
+    private static final ResourceLocation BASE =
+            ScpSignTemplates.INFORMATION_TEXTURE;
+
+    private static final float IMAGE_WIDTH = 1024.0F;
+    private static final float IMAGE_HEIGHT = 640.0F;
+    private static final float PANEL_MIN_X = 0.2F / 16.0F;
+    private static final float PANEL_MAX_X = 15.7F / 16.0F;
+    private static final float PANEL_MIN_Y = 3.15F / 16.0F;
+    private static final float PANEL_MAX_Y = 12.85F / 16.0F;
+    private static final float PANEL_WIDTH = PANEL_MAX_X - PANEL_MIN_X;
+    private static final float PANEL_HEIGHT = PANEL_MAX_Y - PANEL_MIN_Y;
+    private static final float BASE_Z = FramedSignFrameRenderer.ARTWORK_Z;
+    private static final float CONTENT_Z =
+            FramedSignFrameRenderer.ARTWORK_DETAIL_Z;
+    private static final float FONT_HEIGHT = 7.5F;
+    private static final int TEXT_COLOR = 0xFF000000;
+
+    private static final ImageArea CLEARANCE =
+            new ImageArea(778.0F, 85.0F, 66.0F, 47.0F);
+    private static final ImageArea SCP_NUMBER =
+            new ImageArea(64.0F, 261.0F, 370.0F, 64.0F);
+    private static final ImageArea CONTAINMENT =
+            new ImageArea(65.0F, 343.0F, 365.0F, 40.0F);
+    private static final ImageArea ANOMALY =
+            new ImageArea(528.0F, 299.0F, 351.0F, 23.0F);
+    private static final ImageArea[] HAZARDS = {
+            new ImageArea(473.0F, 375.0F, 167.0F, 164.0F),
+            new ImageArea(622.0F, 375.0F, 166.0F, 164.0F),
+            new ImageArea(771.0F, 375.0F, 167.0F, 164.0F)
+    };
+
+    private final Font font;
+
+    public ScpSignSupportBlockEntityRenderer(
+            BlockEntityRendererProvider.Context context) {
+        font = context.getFont();
+    }
+
+    @Override
+    public void render(ScpSignSupportBlockEntity sign, float partialTick,
+            PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+            int packedOverlay) {
+        BlockState state = sign.getBlockState();
+        if (!(state.getBlock() instanceof ScpSignSupportBlock)) return;
+
+        FramedSignFrameRenderer.render(state, poseStack, buffer,
+                packedLight, packedOverlay);
+
+        poseStack.pushPose();
+        poseStack.translate(0.5D, 0.5D, 0.5D);
+        poseStack.mulPose(Axis.YP.rotationDegrees(rotationDegrees(
+                state.getValue(AbstractFramedSignBlock.FACING))));
+        poseStack.translate(-0.5D, -0.5D, -0.5D);
+        poseStack.translate(state.getValue(AbstractFramedSignBlock.POSITION)
+                .modelOffsetBlocks(), 0.0D, 0.0D);
+
+        ScpSignData data = sign.data();
+        String templateId = data.templateId();
+        if (!ScpSignTemplates.isInformation(templateId)) {
+            ResourceLocation selected = ScpSignTemplateClient.texture(
+                    templateId);
+            if (selected != null) {
+                renderImage(selected, new ImageArea(0.0F, 0.0F,
+                        IMAGE_WIDTH, IMAGE_HEIGHT), BASE_Z,
+                        poseStack, buffer, packedLight);
+                poseStack.popPose();
+                return;
+            }
+        }
+
+        renderInformation(data, poseStack, buffer, packedLight);
+        poseStack.popPose();
+    }
+
+    private void renderInformation(ScpSignData data, PoseStack poseStack,
+            MultiBufferSource buffer, int packedLight) {
+        renderImage(BASE, new ImageArea(0.0F, 0.0F,
+                IMAGE_WIDTH, IMAGE_HEIGHT), BASE_Z,
+                poseStack, buffer, packedLight);
+
+        for (int slot = 0; slot < ScpSignData.HAZARD_SLOTS; slot++) {
+            ScpSignHazards.Option option = ScpSignHazards.option(
+                    data.hazards().get(slot));
+            ResourceLocation texture = option.texture();
+            if (!resourceExists(texture)) {
+                texture = ScpSignHazards.NONE.texture();
+            }
+            if (resourceExists(texture)) {
+                renderImage(texture, HAZARDS[slot], CONTENT_Z,
+                        poseStack, buffer, packedLight);
+            }
+        }
+
+        renderText(String.format("%02d", data.clearanceLevel()), CLEARANCE,
+                true, poseStack, buffer, packedLight);
+        renderText(data.scpLabel(), SCP_NUMBER, false,
+                poseStack, buffer, packedLight);
+        renderText(data.containmentLabel(), CONTAINMENT, false,
+                poseStack, buffer, packedLight);
+        renderText(data.anomalyLabel(), ANOMALY, true,
+                poseStack, buffer, packedLight);
+    }
+
+    private void renderText(String value, ImageArea area, boolean centered,
+            PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        Component component = ScpFonts.scpSign(value);
+        FormattedCharSequence sequence = component.getVisualOrderText();
+        float textWidth = Math.max(1.0F, font.width(sequence));
+        float scale = Math.min(
+                area.width() * PANEL_WIDTH / IMAGE_WIDTH / textWidth,
+                area.height() * PANEL_HEIGHT / IMAGE_HEIGHT / FONT_HEIGHT);
+        float imageX = centered ? area.x() + area.width() * 0.5F : area.x();
+        float renderedImageHeight = FONT_HEIGHT * scale
+                * IMAGE_HEIGHT / PANEL_HEIGHT;
+        float imageY = area.y()
+                + (area.height() - renderedImageHeight) * 0.5F;
+
+        poseStack.pushPose();
+        poseStack.translate(panelX(imageX), panelY(imageY), CONTENT_Z);
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+        poseStack.scale(scale, -scale, scale);
+        // Match vanilla sign-style text rendering. POLYGON_OFFSET is the path
+        // shader wrappers already have to support for sign text, while NORMAL
+        // can be folded into incompatible block-entity batching by Oculus.
+        font.drawInBatch(sequence, centered ? -textWidth * 0.5F : 0.0F,
+                0.0F, TEXT_COLOR, false, poseStack.last().pose(), buffer,
+                Font.DisplayMode.POLYGON_OFFSET, 0, packedLight);
+        poseStack.popPose();
+    }
+
+    private static void renderImage(ResourceLocation texture, ImageArea area,
+            float z, PoseStack poseStack, MultiBufferSource buffer,
+            int packedLight) {
+        float left = panelX(area.x());
+        float right = panelX(area.x() + area.width());
+        float top = panelY(area.y());
+        float bottom = panelY(area.y() + area.height());
+
+        // Paper artwork and hazard icons are not translucent surfaces. Keeping
+        // them on an entity cutout layer avoids mixing several translucent
+        // entity buffers with sign text inside one block-entity render pass,
+        // which is fragile under Oculus/BSL's translucent ordering pipeline.
+        VertexConsumer consumer = buffer.getBuffer(
+                RenderType.entityCutoutNoCull(texture));
+        PoseStack.Pose pose = poseStack.last();
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+
+        vertex(consumer, matrix, normal, left, top, z,
+                0.0F, 0.0F, packedLight);
+        vertex(consumer, matrix, normal, left, bottom, z,
+                0.0F, 1.0F, packedLight);
+        vertex(consumer, matrix, normal, right, bottom, z,
+                1.0F, 1.0F, packedLight);
+        vertex(consumer, matrix, normal, right, top, z,
+                1.0F, 0.0F, packedLight);
+    }
+
+    private static void vertex(VertexConsumer consumer, Matrix4f matrix,
+            Matrix3f normal, float x, float y, float z, float u, float v,
+            int packedLight) {
+        consumer.vertex(matrix, x, y, z)
+                .color(255, 255, 255, 255)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(packedLight)
+                .normal(normal, 0.0F, 0.0F, -1.0F)
+                .endVertex();
+    }
+
+    private static boolean resourceExists(ResourceLocation texture) {
+        return texture != null && Minecraft.getInstance().getResourceManager()
+                .getResource(texture).isPresent();
+    }
+
+    private static float panelX(float imageX) {
+        return PANEL_MAX_X - imageX / IMAGE_WIDTH * PANEL_WIDTH;
+    }
+
+    private static float panelY(float imageY) {
+        return PANEL_MAX_Y - imageY / IMAGE_HEIGHT * PANEL_HEIGHT;
+    }
+
+    private static float rotationDegrees(Direction direction) {
+        return switch (direction) {
+            case EAST -> -90.0F;
+            case SOUTH -> 180.0F;
+            case WEST -> 90.0F;
+            default -> 0.0F;
+        };
+    }
+
+    private record ImageArea(float x, float y, float width, float height) {
+    }
+}

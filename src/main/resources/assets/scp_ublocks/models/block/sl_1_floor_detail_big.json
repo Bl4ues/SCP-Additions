@@ -1,9 +1,0 @@
-{
-  "parent": "scp_ublocks:custom/ground_detail_big",
-  "textures": {
-    "all": "scp_ublocks:block/ground_detail_big",
-    "particle": "scp_ublocks:block/ground_detail_big",
-    "0": "scp_ublocks:block/ground_detail_big"
-  },
-  "render_type": "cutout"
-}

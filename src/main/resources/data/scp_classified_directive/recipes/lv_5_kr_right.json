@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "scp_classified_directive:button_roff"
+    },
+    {
+      "item": "scp_classified_directive:level_5_keycard"
+    }
+  ],
+  "result": {
+    "item": "scp_classified_directive:lv_5_right_reader",
+    "count": 1
+  }
+}

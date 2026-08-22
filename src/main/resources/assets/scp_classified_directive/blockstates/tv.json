@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_classified_directive:block/tv"
+    },
+    "facing=east": {
+      "model": "scp_classified_directive:block/tv",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_classified_directive:block/tv",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_classified_directive:block/tv",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "scp_classified_directive:block/tv",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "scp_classified_directive:block/tv",
+      "x": 90
+    }
+  }
+}

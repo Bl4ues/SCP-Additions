@@ -1,0 +1,7 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "scp_classified_directive:block/sl1_ceiling_alt"
+  },
+  "render_type": "solid"
+}

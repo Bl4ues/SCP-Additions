@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/resting_floor",
+    "up": "scp_classified_directive:block/resting3",
+    "north": "scp_classified_directive:block/resting_floor",
+    "east": "scp_classified_directive:block/resting_floor",
+    "south": "scp_classified_directive:block/resting_floor",
+    "west": "scp_classified_directive:block/resting_floor",
+    "particle": "scp_classified_directive:block/resting_floor"
+  },
+  "render_type": "solid"
+}

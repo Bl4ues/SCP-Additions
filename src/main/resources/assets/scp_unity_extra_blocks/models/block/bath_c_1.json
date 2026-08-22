@@ -1,9 +1,0 @@
-{
-  "parent": "scp_unity_extra_blocks:custom/bdoor_3",
-  "textures": {
-    "all": "scp_unity_extra_blocks:block/bdoor",
-    "particle": "scp_unity_extra_blocks:block/bdoor",
-    "0": "scp_unity_extra_blocks:block/bathroomdoor"
-  },
-  "render_type": "translucent"
-}

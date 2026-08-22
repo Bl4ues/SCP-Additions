@@ -1,0 +1,31 @@
+package com.bl4ues.scpclassifieddirective.inventory.client;
+
+import com.bl4ues.scpclassifieddirective.inventory.ScpInventoryMod;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+
+public final class ScpFonts {
+    public static final ResourceLocation ROBOTO = new ResourceLocation(ScpInventoryMod.MODID, "roboto");
+    public static final ResourceLocation MONTSERRAT = new ResourceLocation(ScpInventoryMod.MODID, "montserrat");
+    public static final ResourceLocation TITILLIUM = new ResourceLocation(ScpInventoryMod.MODID, "titillium");
+
+    private ScpFonts() {
+    }
+
+    public static MutableComponent roboto(String text) {
+        return Component.literal(text == null ? "" : text).withStyle(style -> style.withFont(ROBOTO));
+    }
+
+    public static MutableComponent roboto(Component component) {
+        return Component.empty().append(component == null ? Component.empty() : component).withStyle(style -> style.withFont(ROBOTO));
+    }
+
+    public static MutableComponent montserrat(String text) {
+        return Component.literal(text == null ? "" : text).withStyle(style -> style.withFont(MONTSERRAT));
+    }
+
+    public static MutableComponent titillium(String text) {
+        return Component.literal(text == null ? "" : text).withStyle(style -> style.withFont(TITILLIUM));
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,waterlogged=false": {"model": "scp_classified_directive:block/emergency_button"},
+    "facing=north,waterlogged=true": {"model": "scp_classified_directive:block/emergency_button"},
+    "facing=east,waterlogged=false": {"model": "scp_classified_directive:block/emergency_button", "y": 90},
+    "facing=east,waterlogged=true": {"model": "scp_classified_directive:block/emergency_button", "y": 90},
+    "facing=south,waterlogged=false": {"model": "scp_classified_directive:block/emergency_button", "y": 180},
+    "facing=south,waterlogged=true": {"model": "scp_classified_directive:block/emergency_button", "y": 180},
+    "facing=west,waterlogged=false": {"model": "scp_classified_directive:block/emergency_button", "y": 270},
+    "facing=west,waterlogged=true": {"model": "scp_classified_directive:block/emergency_button", "y": 270}
+  }
+}

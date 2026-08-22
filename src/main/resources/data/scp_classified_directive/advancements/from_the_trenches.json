@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_classified_directive:scp_106_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.from_the_trenches.title"
+    },
+    "description": {
+      "translate": "advancements.from_the_trenches.descr"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "from_the_trenches": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_classified_directive:scp_additions_ach"
+}

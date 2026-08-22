@@ -1,0 +1,60 @@
+package com.bl4ues.scpclassifieddirective.mixin.client;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ChatScreen;
+import com.bl4ues.scpclassifieddirective.client.ClientModulePreferences;
+import com.bl4ues.scpclassifieddirective.client.FacilityChatLayout;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/** Moves the vanilla chat input field underneath the top-down facility console. */
+@Mixin(ChatScreen.class)
+public abstract class ChatScreenMixin {
+    @Shadow protected EditBox input;
+
+    @Inject(method = "init", at = @At("TAIL"))
+    private void scpClassifiedDirective$positionFacilityInput(CallbackInfo ci) {
+        if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatComponent chat = minecraft.gui.getChat();
+        FacilityChatLayout.beginOpenAnimation();
+        this.input.setX(FacilityChatLayout.inputX());
+        this.input.setY(FacilityChatLayout.inputY(chat)
+                + FacilityChatLayout.openOffsetScreen(chat)
+                + FacilityChatLayout.INPUT_TEXT_OFFSET);
+        this.input.setWidth(FacilityChatLayout.inputWidth(chat));
+    }
+
+    @Inject(method = "render", at = @At("HEAD"))
+    private void scpClassifiedDirective$animateFacilityInput(GuiGraphics graphics,
+            int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
+        ChatComponent chat = Minecraft.getInstance().gui.getChat();
+        this.input.setX(FacilityChatLayout.inputX());
+        this.input.setY(FacilityChatLayout.inputY(chat)
+                + FacilityChatLayout.openOffsetScreen(chat)
+                + FacilityChatLayout.INPUT_TEXT_OFFSET);
+        this.input.setWidth(FacilityChatLayout.inputWidth(chat));
+    }
+
+    @Redirect(method = "render",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V",
+                    ordinal = 0))
+    private void scpClassifiedDirective$renderFacilityInputFrame(GuiGraphics graphics,
+            int left, int top, int right, int bottom, int color) {
+        if (!ClientModulePreferences.facilityChatInterfaceEnabled()) {
+            graphics.fill(left, top, right, bottom, color);
+            return;
+        }
+        FacilityChatLayout.drawInputFrame(graphics,
+                Minecraft.getInstance().gui.getChat(), this.input);
+    }
+}

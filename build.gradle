@@ -5,8 +5,8 @@ plugins {
 }
 
 version = '4.0.0'
-group = 'com.bl4ues.scpadditions'
-archivesBaseName = 'scp_additions'
+group = 'com.bl4ues.scpclassifieddirective'
+archivesBaseName = 'scp_classified_directive'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -27,7 +27,7 @@ minecraft {
             property 'mixin.env.refMapRemappingFile', "${project.layout.buildDirectory.get().asFile}/createSrgToMcp/output.srg"
 
             mods {
-                scp_additions {
+                scp_classified_directive {
                     source sourceSets.main
                 }
             }
@@ -42,7 +42,7 @@ minecraft {
             property 'mixin.env.refMapRemappingFile', "${project.layout.buildDirectory.get().asFile}/createSrgToMcp/output.srg"
 
             mods {
-                scp_additions {
+                scp_classified_directive {
                     source sourceSets.main
                 }
             }
@@ -51,8 +51,8 @@ minecraft {
 }
 
 mixin {
-    add sourceSets.main, 'scp_additions.refmap.json'
-    config 'scp_additions.mixins.json'
+    add sourceSets.main, 'scp_classified_directive.refmap.json'
+    config 'scp_classified_directive.mixins.json'
 }
 
 repositories {
@@ -72,7 +72,7 @@ repositories {
     }
 
     // Client-side test dependencies are resolved from Modrinth without being
-    // compiled into or bundled with the public SCP Additions artifact.
+    // compiled into or bundled with the public SCP: Classified Directive artifact.
     exclusiveContent {
         forRepository {
             maven {
@@ -93,13 +93,13 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // API-only compile dependency for the optional Simple Voice Chat bridge.
-    // The API is not shaded into SCP Additions; users still install the mod
+    // The API is not shaded into SCP: Classified Directive; users still install the mod
     // normally on both client and server when they want voice integration.
     implementation 'de.maxhenkel.voicechat:voicechat-api:2.6.20'
 
     // Optional client runtime used by runClient to validate shader compatibility
     // and custom player/entity rendering. These are not transitive requirements
-    // for users of SCP Additions.
+    // for users of SCP: Classified Directive.
     runtimeOnly fg.deobf('maven.modrinth:oaG6aa1j:u7GegV7U') // Kleider's Custom Renderer 7.4.1
     runtimeOnly fg.deobf('maven.modrinth:sk9rgfiA:UTbfe5d1') // Embeddium 0.3.31
     runtimeOnly fg.deobf('maven.modrinth:GchcoXML:iQ1SwGc3') // Oculus 1.8.0
@@ -112,7 +112,7 @@ processResources {
         expand mod_version: project.version
     }
 
-    exclude 'assets/scp_additions/lang/en_us_3_0.json'
+    exclude 'assets/scp_classified_directive/lang/en_us_3_0.json'
 
     // The standalone Inventory replaced Minecraft's global font with Roboto.
     // The integrated mod must use Roboto only through explicitly styled UI text.
@@ -120,19 +120,19 @@ processResources {
 
     // All left/right and level-specific reader recipes are legacy. The only
     // public recipe now creates the single level-1-by-default reader item.
-    exclude 'data/scp_additions/recipes/lv_*_kr_right.json'
-    exclude 'data/scp_additions/recipes/lv_*_lto_r.json'
-    exclude 'data/scp_additions/recipes/lv_*_rto_l.json'
-    exclude 'data/scp_additions/recipes/lv_2_kr_left.json'
-    exclude 'data/scp_additions/recipes/lv_3_kr_left.json'
-    exclude 'data/scp_additions/recipes/lv_4_kr_left.json'
-    exclude 'data/scp_additions/recipes/lv_5_kr_left.json'
-    exclude 'data/scp_additions/recipes/lv_6_kr_left.json'
+    exclude 'data/scp_classified_directive/recipes/lv_*_kr_right.json'
+    exclude 'data/scp_classified_directive/recipes/lv_*_lto_r.json'
+    exclude 'data/scp_classified_directive/recipes/lv_*_rto_l.json'
+    exclude 'data/scp_classified_directive/recipes/lv_2_kr_left.json'
+    exclude 'data/scp_classified_directive/recipes/lv_3_kr_left.json'
+    exclude 'data/scp_classified_directive/recipes/lv_4_kr_left.json'
+    exclude 'data/scp_classified_directive/recipes/lv_5_kr_left.json'
+    exclude 'data/scp_classified_directive/recipes/lv_6_kr_left.json'
 
     // The original Additions left/right buttons are retained only as hidden
     // registry compatibility. The Unity door button is the sole public recipe.
-    exclude 'data/scp_additions/recipes/button_left_swap.json'
-    exclude 'data/scp_additions/recipes/button_right_swap.json'
+    exclude 'data/scp_classified_directive/recipes/button_left_swap.json'
+    exclude 'data/scp_classified_directive/recipes/button_right_swap.json'
 
     from('config') {
         into 'config'
@@ -148,7 +148,7 @@ processResources {
                     'UTF-8')
         }
 
-        def scpConfigDir = file("$buildDir/resources/main/config/scpadditions")
+        def scpConfigDir = file("$buildDir/resources/main/config/scp_classified_directive")
         if (scpConfigDir.exists()) {
             fileTree(scpConfigDir).matching {
                 include '*.json'
@@ -158,27 +158,12 @@ processResources {
             }
         }
 
-        // Facility registry IDs now live under scp_additions, while the original
+        // Facility registry IDs now live under scp_classified_directive, while the original
         // models and textures remain a read-only resource library in the legacy
         // namespace. Duplicate only the registry-facing resource files.
-        def legacyAssets = file("$buildDir/resources/main/assets/scp_unity_extra_blocks")
-        def additionsAssets = file("$buildDir/resources/main/assets/scp_additions")
+        def legacyAssets = file("$buildDir/resources/main/assets/scp_classified_directive")
+        def additionsAssets = file("$buildDir/resources/main/assets/scp_classified_directive")
         if (legacyAssets.exists()) {
-            project.copy {
-                from new File(legacyAssets, 'blockstates')
-                into new File(additionsAssets, 'blockstates')
-            }
-            project.copy {
-                from new File(legacyAssets, 'models/item')
-                into new File(additionsAssets, 'models/item')
-            }
-
-            // Registry-facing copies now live under scp_additions. Remove the
-            // duplicate legacy copies from processed resources while retaining
-            // the legacy custom/block models, textures and sounds they reference.
-            project.delete(new File(legacyAssets, 'blockstates'))
-            project.delete(new File(legacyAssets, 'models/item'))
-
             // The original Unity button has geometry only for one lateral
             // offset. Generate reflected geometry for the opposite half while
             // keeping the texture UVs readable rather than mirroring the text.
@@ -229,85 +214,59 @@ processResources {
                 if (sourceBlockModel.exists()) {
                     def blockModel = parser.parse(sourceBlockModel)
                     String sourceParent = blockModel.parent?.toString()
-                    if (sourceParent?.startsWith('scp_unity_extra_blocks:custom/')) {
+                    if (sourceParent?.startsWith('scp_classified_directive:custom/')) {
                         blockModel.parent = "${sourceParent}_mirrored"
                     } else {
-                        blockModel.parent = "scp_unity_extra_blocks:custom/${buttonName}_mirrored"
+                        blockModel.parent = "scp_classified_directive:custom/${buttonName}_mirrored"
                     }
                     writeJson(new File(legacyAssets,
                             "models/block/${buttonName}_mirrored.json"), blockModel)
                 }
 
                 def blockState = [variants: [
-                        'facing=north': [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored"],
-                        'facing=east' : [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored", y: 90],
-                        'facing=south': [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored", y: 180],
-                        'facing=west' : [model: "scp_unity_extra_blocks:block/${buttonName}_mirrored", y: 270]
+                        'facing=north': [model: "scp_classified_directive:block/${buttonName}_mirrored"],
+                        'facing=east' : [model: "scp_classified_directive:block/${buttonName}_mirrored", y: 90],
+                        'facing=south': [model: "scp_classified_directive:block/${buttonName}_mirrored", y: 180],
+                        'facing=west' : [model: "scp_classified_directive:block/${buttonName}_mirrored", y: 270]
                 ]]
                 writeJson(new File(additionsAssets,
                         "blockstates/${buttonName}_mirrored.json"), blockState)
             }
         }
 
-        // SCP UBlocks follows the same consolidation rule: registry-facing
-        // blockstates and item models are copied into scp_additions, while the
-        // original namespace remains the library for block/custom models and textures.
-        def ublocksAssets = file("$buildDir/resources/main/assets/scp_ublocks")
-        if (ublocksAssets.exists()) {
-            project.copy {
-                from new File(ublocksAssets, 'blockstates')
-                into new File(additionsAssets, 'blockstates')
-            }
-            project.copy {
-                from new File(ublocksAssets, 'models/item')
-                into new File(additionsAssets, 'models/item')
-            }
-            project.delete(new File(ublocksAssets, 'blockstates'))
-            project.delete(new File(ublocksAssets, 'models/item'))
-        }
-
-        // Copy loot tables, recipes and other namespace-owned data into the new
+        // Data already lives in the unified namespace.
         // namespace. Also rewrite tag entries under data/minecraft so mineable
         // and tool tags point to the migrated registry IDs.
-        def legacyData = file("$buildDir/resources/main/data/scp_unity_extra_blocks")
-        def additionsData = file("$buildDir/resources/main/data/scp_additions")
-        if (legacyData.exists()) {
-            project.copy {
-                from legacyData
-                into additionsData
-            }
-            project.delete(legacyData)
-        }
         def allData = file("$buildDir/resources/main/data")
         if (allData.exists()) {
             fileTree(allData).matching {
                 include '**/*.json'
             }.each { jsonFile ->
                 def raw = jsonFile.getText('UTF-8')
-                if (raw.contains('scp_unity_extra_blocks:')) {
-                    jsonFile.setText(raw.replace('scp_unity_extra_blocks:', 'scp_additions:'), 'UTF-8')
+                if (raw.contains('scp_classified_directive:')) {
+                    jsonFile.setText(raw.replace('scp_classified_directive:', 'scp_classified_directive:'), 'UTF-8')
                 }
             }
         }
 
         // Keep new 3.0 translation entries isolated from the generated legacy
         // language file, then merge both into the single locale Minecraft loads.
-        def langDir = file("$buildDir/resources/main/assets/scp_additions/lang")
+        def langDir = file("$buildDir/resources/main/assets/scp_classified_directive/lang")
         def baseLangFile = new File(langDir, 'en_us.json')
-        def langPatchFile = file('src/main/resources/assets/scp_additions/lang/en_us_3_0.json')
-        def legacyLangFile = file('src/main/resources/assets/scp_unity_extra_blocks/lang/en_us.json')
-        def ublocksLangFile = file('src/main/resources/assets/scp_ublocks/lang/en_us.json')
+        def langPatchFile = file('src/main/resources/assets/scp_classified_directive/lang/en_us_3_0.json')
+        def legacyLangFile = file('src/main/resources/assets/scp_classified_directive/lang/en_us.json')
+        def ublocksLangFile = file('src/main/resources/assets/scp_classified_directive/lang/en_us.json')
         if (baseLangFile.exists()) {
             def baseLang = parser.parse(baseLangFile)
 
             if (legacyLangFile.exists()) {
                 def legacyLang = parser.parse(legacyLangFile)
                 legacyLang.each { key, value ->
-                    if (key.startsWith('block.scp_unity_extra_blocks.')) {
-                        baseLang[key.replace('block.scp_unity_extra_blocks.', 'block.scp_additions.')] = value
+                    if (key.startsWith('block.scp_classified_directive.')) {
+                        baseLang[key.replace('block.scp_classified_directive.', 'block.scp_classified_directive.')] = value
                     }
-                    if (key.startsWith('item.scp_unity_extra_blocks.')) {
-                        baseLang[key.replace('item.scp_unity_extra_blocks.', 'item.scp_additions.')] = value
+                    if (key.startsWith('item.scp_classified_directive.')) {
+                        baseLang[key.replace('item.scp_classified_directive.', 'item.scp_classified_directive.')] = value
                     }
                 }
             }
@@ -315,11 +274,11 @@ processResources {
             if (ublocksLangFile.exists()) {
                 def ublocksLang = parser.parse(ublocksLangFile)
                 ublocksLang.each { key, value ->
-                    if (key.startsWith('block.scp_ublocks.')) {
-                        baseLang[key.replace('block.scp_ublocks.', 'block.scp_additions.')] = value
+                    if (key.startsWith('block.scp_classified_directive.')) {
+                        baseLang[key.replace('block.scp_classified_directive.', 'block.scp_classified_directive.')] = value
                     }
-                    if (key.startsWith('item.scp_ublocks.')) {
-                        baseLang[key.replace('item.scp_ublocks.', 'item.scp_additions.')] = value
+                    if (key.startsWith('item.scp_classified_directive.')) {
+                        baseLang[key.replace('item.scp_classified_directive.', 'item.scp_classified_directive.')] = value
                     }
                 }
             }
@@ -336,7 +295,7 @@ processResources {
         // model uses the corrected teslagate2.png atlas, but also contains a
         // separate electrical "shock" element. Generate the inactive model
         // from that corrected base and remove only the electrical element.
-        def modelDir = file("$buildDir/resources/main/assets/scp_additions/models/custom")
+        def modelDir = file("$buildDir/resources/main/assets/scp_classified_directive/models/custom")
         def activeTeslaModel = new File(modelDir, 'teslagateactive1.json')
         def inactiveTeslaModel = new File(modelDir, 'teslagateinactive.json')
         if (activeTeslaModel.exists()) {

@@ -1,0 +1,24 @@
+{
+  "multipart": [
+    {
+      "when": {"part": "controller", "facing": "north"},
+      "apply": {"model": "scp_classified_directive:block/terminal_table"}
+    },
+    {
+      "when": {"part": "controller", "facing": "east"},
+      "apply": {"model": "scp_classified_directive:block/terminal_table", "y": 90}
+    },
+    {
+      "when": {"part": "controller", "facing": "south"},
+      "apply": {"model": "scp_classified_directive:block/terminal_table", "y": 180}
+    },
+    {
+      "when": {"part": "controller", "facing": "west"},
+      "apply": {"model": "scp_classified_directive:block/terminal_table", "y": 270}
+    },
+    {
+      "when": {"part": "extension"},
+      "apply": {"model": "minecraft:block/air"}
+    }
+  ]
+}

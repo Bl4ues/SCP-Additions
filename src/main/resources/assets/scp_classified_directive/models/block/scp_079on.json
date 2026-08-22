@@ -1,0 +1,10 @@
+{
+  "parent": "scp_classified_directive:custom/scp079off",
+  "textures": {
+    "all": "scp_classified_directive:block/079body",
+    "particle": "scp_classified_directive:block/079body",
+    "0": "scp_classified_directive:block/079body",
+    "1": "scp_classified_directive:block/079face"
+  },
+  "render_type": "cutout"
+}

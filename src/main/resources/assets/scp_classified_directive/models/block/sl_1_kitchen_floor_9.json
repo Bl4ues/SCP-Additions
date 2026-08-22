@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/kitchen_floor",
+    "up": "scp_classified_directive:block/kitchen9",
+    "north": "scp_classified_directive:block/kitchen_floor",
+    "east": "scp_classified_directive:block/kitchen_floor",
+    "south": "scp_classified_directive:block/kitchen_floor",
+    "west": "scp_classified_directive:block/kitchen_floor",
+    "particle": "scp_classified_directive:block/kitchen_floor"
+  },
+  "render_type": "solid"
+}

@@ -71,7 +71,16 @@ def paths():
     j=R/'src/main/java'; tmp=j/'com/bl4ues/__inv_tmp'; oldi=j/'com/bl4ues/scpinventory'; oldm=j/'net/mcreator/scpadditions'; new=j/'com/bl4ues/scpclassifieddirective'
     if oldi.exists(): tmp.parent.mkdir(parents=True,exist_ok=True); oldi.rename(tmp)
     if oldm.exists(): new.parent.mkdir(parents=True,exist_ok=True); oldm.rename(new)
-    if tmp.exists(): tmp.rename(new/'inventory')
+    if tmp.exists():
+        target = new/'inventory'; target.mkdir(parents=True, exist_ok=True)
+        for p in sorted(tmp.rglob('*')):
+            if not p.is_file(): continue
+            q = target/p.relative_to(tmp); q.parent.mkdir(parents=True, exist_ok=True)
+            if q.exists():
+                if q.read_bytes() != p.read_bytes(): raise RuntimeError(f'java package collision: {q.relative_to(j)}')
+                p.unlink()
+            else: shutil.move(str(p), str(q))
+        shutil.rmtree(tmp, ignore_errors=True)
     for p in list(j.rglob('*ScpAdditions*.java')): p.rename(p.with_name(p.name.replace('ScpAdditions','ScpClassifiedDirective')))
     res=R/'src/main/resources'; a=res/'scp_additions.mixins.json'; b=res/'scp_classified_directive.mixins.json'
     if a.exists(): a.rename(b)

@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/sl1_ceiling_lamp_on",
+    "up": "scp_classified_directive:block/sl1_ceiling_lamp_top",
+    "north": "scp_classified_directive:block/sl1_ceiling",
+    "east": "scp_classified_directive:block/sl1_ceiling",
+    "south": "scp_classified_directive:block/sl1_ceiling",
+    "west": "scp_classified_directive:block/sl1_ceiling",
+    "particle": "scp_classified_directive:block/sl1_ceiling"
+  },
+  "render_type": "solid"
+}

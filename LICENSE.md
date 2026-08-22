@@ -1,6 +1,6 @@
 # License
 
-SCP Additions is licensed under the **Creative Commons Attribution-ShareAlike 3.0 Unported license (CC BY-SA 3.0)**.
+SCP: Classified Directive is licensed under the **Creative Commons Attribution-ShareAlike 3.0 Unported license (CC BY-SA 3.0)**.
 
 Content relating to the SCP Foundation, including the SCP Foundation logo and SCP concepts, originates from the [SCP Wiki](https://scp-wiki.wikidot.com/) and its respective authors. SCP Wiki content is also licensed under CC BY-SA 3.0.
 
@@ -10,20 +10,20 @@ Under this license, you may share and adapt the project provided that you:
 2. indicate whether changes were made; and
 3. distribute adapted material under the same or a compatible license.
 
-When redistributing SCP Additions or a derivative work, preserve attribution to the SCP Wiki and the authors of the SCP concepts used by the project.
+When redistributing SCP: Classified Directive or a derivative work, preserve attribution to the SCP Wiki and the authors of the SCP concepts used by the project.
 
 The full license terms are available at:
 
 - https://creativecommons.org/licenses/by-sa/3.0/
 - https://creativecommons.org/licenses/by-sa/3.0/legalcode
 
-Project: **SCP Additions**  
+Project: **SCP: Classified Directive**  
 Author: **Bl4ues**  
 Repository: https://github.com/Bl4ues/SCP-Additions
 
-SCP Unity is the main visual and mechanical inspiration for the project. Special thanks to [SCP: Overtime](https://modrinth.com/mod/scp-overtime) for inspiring the original creation of SCP Additions. Various facility assets were adapted from or inspired by SCP Unity-related blocks in its 1.16.5 version.
+SCP Unity is the main visual and mechanical inspiration for the project. Special thanks to [SCP: Overtime](https://modrinth.com/mod/scp-overtime) for inspiring the original creation of SCP: Classified Directive. Various facility assets were adapted from or inspired by SCP Unity-related blocks in its 1.16.5 version.
 
-The following font files are redistributed with SCP Additions and remain under their respective licenses; they are **not** relicensed under the project's Creative Commons Attribution-ShareAlike 3.0 license.
+The following font files are redistributed with SCP: Classified Directive and remain under their respective licenses; they are **not** relicensed under the project's Creative Commons Attribution-ShareAlike 3.0 license.
 
 | Font | Use in the mod | Copyright and design credit | License |
 |---|---|---|---|
@@ -37,7 +37,7 @@ The following font files are redistributed with SCP Additions and remain under t
 
 Copyright notices and license metadata embedded in the font files have been preserved. Distributions and forks that include these fonts must retain the applicable notices and license terms. Modified versions may also be subject to reserved-font-name and source-distribution requirements stated in their respective licenses.
 
-SCP Additions is an unofficial fan project. It is not affiliated with or endorsed by Mojang, Microsoft, the SCP Wiki staff, or Aerie Gaming Studios.
+SCP: Classified Directive is an unofficial fan project. It is not affiliated with or endorsed by Mojang, Microsoft, the SCP Wiki staff, or Aerie Gaming Studios.
 
 Third-party libraries and optional integrations remain subject to their own licenses.
 

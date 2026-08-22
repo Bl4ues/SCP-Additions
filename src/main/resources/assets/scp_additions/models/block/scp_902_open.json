@@ -1,9 +1,0 @@
-{
-  "parent": "scp_additions:custom/scp902open",
-  "textures": {
-    "all": "scp_additions:block/scp902",
-    "particle": "scp_additions:block/scp902",
-    "0": "scp_additions:block/scp902"
-  },
-  "render_type": "solid"
-}

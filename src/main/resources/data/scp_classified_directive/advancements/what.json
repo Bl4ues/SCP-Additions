@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_classified_directive:scp_714"
+    },
+    "title": {
+      "translate": "advancements.what.title"
+    },
+    "description": {
+      "translate": "advancements.what.descr"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "what": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_classified_directive:scp_additions_ach"
+}

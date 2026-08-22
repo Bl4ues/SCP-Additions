@@ -1,0 +1,72 @@
+package com.bl4ues.scpclassifieddirective.inventory.client;
+
+import com.bl4ues.scpclassifieddirective.inventory.client.gui.ScpInventoryScreen;
+import com.bl4ues.scpclassifieddirective.inventory.config.InventoryModuleRuntimeState;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
+import com.bl4ues.scpclassifieddirective.inventory.network.EquipmentActionPacket;
+import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
+import com.bl4ues.scpclassifieddirective.inventory.network.UsableSessionReturnPacket;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.network.QuickSavePacket;
+
+@Mod.EventBusSubscriber(modid = "scp_classified_directive", value = Dist.CLIENT)
+public class ClientKeyHandler {
+
+    @SubscribeEvent
+    public static void onKeyInput(InputEvent.Key event) {
+        if (Keybinds.OPEN_SCP_INVENTORY.consumeClick()
+                && InventoryModuleRuntimeState.isEnabledForClient()) {
+            ClientNetwork.requestInventorySync();
+            Minecraft.getInstance().setScreen(new ScpInventoryScreen());
+        }
+
+        while (Keybinds.STOW_HELD_ITEM.consumeClick()) {
+            stowHeldItem();
+        }
+
+        while (Keybinds.QUICK_SAVE.consumeClick()) {
+            quickSave();
+        }
+    }
+
+    private static void quickSave() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null || minecraft.screen != null
+                || !player.isAlive() || player.isSpectator()) {
+            return;
+        }
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(new QuickSavePacket());
+    }
+
+    private static void stowHeldItem() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.screen != null
+                || !InventoryModuleRuntimeState.isEnabledForClient()) {
+            return;
+        }
+
+        ItemStack held = player.getMainHandItem();
+        if (held.isEmpty()) return;
+
+        if (ScpItemClassifier.getEquipmentSlot(held).orElse(null)
+                == ScpEquipmentSlot.WEAPON) {
+            ModNetwork.CHANNEL.sendToServer(new EquipmentActionPacket(
+                    ScpEquipmentSlot.WEAPON.name(),
+                    EquipmentActionPacket.ACTION_UNEQUIP));
+            return;
+        }
+
+        ModNetwork.CHANNEL.sendToServer(new UsableSessionReturnPacket(
+                player.getInventory().selected));
+    }
+}

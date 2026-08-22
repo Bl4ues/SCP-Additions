@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp714",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp714_loading.png",
+  "left_title": "SCP-714",
+  "left_subtitle": "SAFE",
+  "right_label": "THREAT LEVEL",
+  "right_value": "LOW",
+  "description": "SCP-714 has been shown to be able to expand and contract to perfectly fit the finger of anyone who touches it. Within minutes of putting on SCP-714, wearers report feeling exhausted, suffering severely impaired reaction times, and being unable to think clearly. Wearers also show abnormally high resilience to memetic and mental influences, while the ring nullifies the effects of various chemicals on the body.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

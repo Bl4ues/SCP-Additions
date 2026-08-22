@@ -1,0 +1,33 @@
+package com.bl4ues.scpclassifieddirective.sound;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+
+/** Sound events for general gameplay feedback. */
+public final class GameplaySounds {
+    public static final DeferredRegister<SoundEvent> REGISTRY =
+            DeferredRegister.create(ForgeRegistries.SOUND_EVENTS,
+                    ScpClassifiedDirectiveMod.MODID);
+
+    public static final RegistryObject<SoundEvent> SAVE_GAME =
+            register("save_game");
+    public static final RegistryObject<SoundEvent> ITEM_PICKUP =
+            register("inventory_pickup");
+    public static final RegistryObject<SoundEvent> ITEM_EAT =
+            register("inventory_eat");
+    public static final RegistryObject<SoundEvent> ITEM_DRINK =
+            register("inventory_drink");
+
+    private GameplaySounds() {
+    }
+
+    private static RegistryObject<SoundEvent> register(String path) {
+        ResourceLocation id = new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path);
+        return REGISTRY.register(path,
+                () -> SoundEvent.createVariableRangeEvent(id));
+    }
+}

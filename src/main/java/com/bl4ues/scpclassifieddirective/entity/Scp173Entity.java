@@ -1,0 +1,1153 @@
+package com.bl4ues.scpclassifieddirective.entity;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HalfTransparentBlock;
+import net.minecraft.world.level.block.IronBarsBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.advancement.ScpAdvancementAwards;
+import com.bl4ues.scpclassifieddirective.client.BlinkClient;
+import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.network.Scp173ObservationPacket;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+public class Scp173Entity extends BlinkWatcherEntity {
+    private static final String BLINK_TUTORIAL_SHOWN_TAG = "Scp173BlinkTutorialShown";
+    private static final EntityDataAccessor<Boolean> SCRAPING = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> MANUAL_YAW = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> ACTIVATED = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> ROUTINE_SPAWN = SynchedEntityData.defineId(Scp173Entity.class, EntityDataSerializers.BOOLEAN);
+
+    private static final ResourceKey<DamageType> NECK_SNAP_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE,
+            new ResourceLocation(ScpClassifiedDirectiveMod.MODID, "scp_173_neck_snap"));
+    // The client camera remains authoritative for players and intentionally
+    // covers the complete forward hemisphere. Generic mobs, however, must face
+    // the statue directly instead of freezing it from a broad 180-degree arc.
+    private static final double PLAYER_OBSERVED_DOT_THRESHOLD = 0.0D;
+    private static final double MOB_OBSERVED_DOT_THRESHOLD = 0.8660254037844386D;
+    private static final double SCP_131_OBSERVED_DOT_THRESHOLD = 0.70D;
+    private static final double DIRECT_STEP_PER_TICK = 1.20D;
+    // Per-tick motion controls how smoothly the statue advances. Automatic
+    // blinks also have a hard total-distance budget below, so packet timing can
+    // never turn one blink into additional movement steps.
+    private static final double BLINK_STEP_PER_TICK = 0.95D;
+    private static final double AUTOMATIC_BLINK_TRAVEL_DISTANCE = 6.0D;
+    private static final double STOP_DISTANCE = 0.72D;
+    private static final double PATH_NODE_REACHED_DISTANCE_SQR = 0.55D * 0.55D;
+    private static final int ROUTE_MEMORY_TICKS = 100;
+    private static final int ROUTE_REPLAN_INTERVAL_TICKS = 4;
+    private static final int ROUTE_REPLAN_AFTER_STALLS = 2;
+    private static final int ROUTE_ABANDON_AFTER_STALLS = 8;
+    private static final int MAX_REMEMBERED_ROUTE_NODES = 128;
+    private static final double ROUTE_ENDPOINT_IMPROVEMENT_SQR = 0.75D;
+    private static final double ROUTE_EQUIVALENT_ENDPOINT_MARGIN_SQR = 0.25D;
+    private static final double ROUTE_FIRST_NODE_DIFFERENCE_SQR = 0.50D * 0.50D;
+    private static final double ROUTE_TARGET_SHIFT_REPLAN_SQR = 2.0D * 2.0D;
+    private static final double FROZEN_AIR_GRAVITY = 0.08D;
+    private static final double FROZEN_WATER_GRAVITY = 0.045D;
+    private static final double FROZEN_MAX_AIR_FALL_SPEED = -3.92D;
+    private static final double FROZEN_MAX_WATER_SINK_SPEED = -0.32D;
+    private static final double LINE_OF_SIGHT_STEP = 0.25D;
+    private static final double VISIBILITY_EPSILON = 0.03D;
+    private static final double RAY_ADVANCE_EPSILON = 0.01D;
+    private static final int MAX_TRANSPARENT_RAY_HITS = 64;
+    private static final double IMMEDIATE_REACTION_RANGE = 48.0D;
+    private static final double IMMEDIATE_REACTION_RANGE_SQR = IMMEDIATE_REACTION_RANGE * IMMEDIATE_REACTION_RANGE;
+    private static final double DESPAWN_DISTANCE = 20.0D;
+    private static final double DESPAWN_DISTANCE_SQR = DESPAWN_DISTANCE * DESPAWN_DISTANCE;
+    private static final int ROUTINE_DESPAWN_UNSEEN_TICKS = 400;
+    private static final int OBSERVATION_GRACE_TICKS = 3;
+    private static final int CLIENT_OBSERVATION_HEARTBEAT_TICKS = 4;
+    private static final int CLIENT_OBSERVATION_TIMEOUT_TICKS = 8;
+    private static final int ATTACK_COOLDOWN_TICKS = 20;
+    private static final float NECK_SNAP_DAMAGE = 200.0F;
+
+    private FrozenPose clientObservedVisualLock;
+    private boolean lastReportedClientObservation;
+    private int nextClientObservationReportTick;
+    private final Map<UUID, Integer> clientObservationUntilTicks = new HashMap<>();
+    private final Map<UUID, Double> automaticBlinkTravelRemaining = new HashMap<>();
+    private final List<Vec3> rememberedRouteNodes = new ArrayList<>();
+    private LivingEntity lastObservationGraceObserver;
+    private UUID rememberedRouteTarget;
+    private Vec3 rememberedRouteTargetPosition;
+    private int rememberedRouteIndex;
+    private int rememberedRouteExpiresTick = Integer.MIN_VALUE;
+    private int nextRouteReplanTick;
+    private int routeStallAttempts;
+    private double rememberedRouteEndpointDistanceSqr = Double.POSITIVE_INFINITY;
+    private int lastSeenOrCloseTick;
+    private int observationGraceUntilTick = Integer.MIN_VALUE;
+    private int nextAttackTick;
+    private double frozenFallSpeed;
+    private UUID routineEncounterPlayerId;
+
+    public Scp173Entity(EntityType<? extends Scp173Entity> type, Level level) {
+        super(type, level);
+        setMaxUpStep(1.05F);
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Zombie.createAttributes()
+                .add(Attributes.MAX_HEALTH, 80.0D)
+                .add(Attributes.FOLLOW_RANGE, 48.0D)
+                // Snap movement is authoritative, but keep vanilla movement at
+                // the same safe rate so navigation can never bypass the cap.
+                .add(Attributes.MOVEMENT_SPEED, BLINK_STEP_PER_TICK)
+                .add(Attributes.ATTACK_DAMAGE, 0.0D);
+    }
+
+    public static void reactToBlinkState(ServerPlayer player, boolean closed, boolean manual) {
+        if (player == null || player.level().isClientSide || player.isCreative() || player.isSpectator()
+                || !ScpClassifiedDirectiveModulesConfig.get().scp173.enabled) return;
+        AABB area = player.getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
+        for (Scp173Entity scp173 : player.serverLevel().getEntitiesOfClass(Scp173Entity.class, area,
+                entity -> entity.isAlive() && entity.distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR)) {
+            // A confirmed blink releases only this player's recent-observation
+            // grace; any other current observer still freezes the statue.
+            if (closed) {
+                scp173.clearObservationGrace(player);
+                scp173.clearClientObservation(player);
+            }
+            Entity target = scp173.getTarget();
+            if (target != null && target != player) continue;
+            if (!scp173.isActivated() && !scp173.isObservedBy(player)) continue;
+            scp173.activateFor(player);
+            scp173.setTarget(player);
+            if (closed) scp173.beginBlinkMovement(player, manual);
+            else scp173.endBlinkMovement(player);
+            // Closing the eyes must not grant an extra movement step outside
+            // the normal entity tick. Opening them may freeze the statue at its
+            // current position immediately, without advancing it again.
+            if (!closed) scp173.freezeImmediatelyIfObserved();
+        }
+    }
+
+    public void markRoutineSpawn() {
+        markRoutineSpawn(null);
+    }
+
+    public void markRoutineSpawn(ServerPlayer player) {
+        routineEncounterPlayerId = player == null
+                ? null : player.getUUID();
+        entityData.set(ROUTINE_SPAWN, true);
+        setActivated(false);
+        setNoAi(true);
+        entityData.set(SCRAPING, false);
+        setPersistenceRequired();
+        lastSeenOrCloseTick = tickCount;
+        setTarget(null);
+        clearStrategicRoute();
+        getNavigation().stop();
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        entityData.define(SCRAPING, false);
+        entityData.define(MANUAL_YAW, 0.0F);
+        entityData.define(ACTIVATED, false);
+        entityData.define(ROUTINE_SPAWN, false);
+    }
+
+    @Override
+    protected void registerGoals() {
+        goalSelector.addGoal(0, new FloatGoal(this));
+        targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
+    }
+
+    @Override
+    public void tick() {
+        setMaxUpStep(1.05F);
+        if (level().isClientSide) {
+            super.tick();
+            if (!ScpClassifiedDirectiveModulesConfig.get().scp173.enabled) {
+                reportClientObservation(false);
+                hardStopLocalMovement();
+                return;
+            }
+            boolean observed = isClientObservedByLocalPlayer();
+            reportClientObservation(observed);
+            if (observed) {
+                freezeClientAtObservedPosition();
+                return;
+            }
+            clientObservedVisualLock = null;
+            applyClientManualRotation();
+            if (!isScraping()) hardStopLocalMovement();
+            return;
+        }
+
+        FrozenPose preTickPose = capturePose();
+        if (!ScpClassifiedDirectiveModulesConfig.get().scp173.enabled) {
+            clearStrategicRoute();
+            stopAndLock(preTickPose);
+            return;
+        }
+        if (!isActivated()) {
+            // Natural spawns remain inert until a non-creative player actually sees them.
+            // No-AI prevents target selection/navigation during super.tick(), while the
+            // explicit target and scraping reset also protects worlds saved before 3.0.1.
+            setNoAi(true);
+            setTarget(null);
+            clearStrategicRoute();
+            getNavigation().stop();
+            entityData.set(SCRAPING, false);
+            super.tick();
+
+            Player observer = findObservingPlayer();
+            if (observer != null) {
+                activateFor(observer);
+                setTarget(observer);
+                lastSeenOrCloseTick = tickCount;
+            }
+            restorePose(preTickPose);
+            stopAndLock(preTickPose);
+            handleRoutineDespawn();
+            return;
+        }
+
+        LivingEntity observer = findObservingEntity();
+        if (observer != null) rememberObservation(observer);
+        if (observer instanceof Player) lastSeenOrCloseTick = tickCount;
+        if (observer != null || hasObservationGrace() || hasClientObservationLock()) {
+            restorePose(preTickPose);
+            stopAndLock(preTickPose);
+            handleRoutineDespawn();
+            return;
+        }
+
+        // Navigation is used only to calculate a detour below. It must never
+        // execute its own movement in addition to the authoritative snap step.
+        getNavigation().stop();
+        super.tick();
+        LivingEntity target = resolveTarget();
+        if (target != null) {
+            if (target instanceof Player && distanceToSqr(target) <= DESPAWN_DISTANCE_SQR) lastSeenOrCloseTick = tickCount;
+            if (!trySnapAttack(target)) reactImmediatelyToTarget(target);
+        } else {
+            clearStrategicRoute();
+            stopAndLock(preTickPose);
+        }
+        handleRoutineDespawn();
+    }
+
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int increments, boolean teleport) {
+        if (isClientObservedByLocalPlayer()) {
+            // Observation freezes future movement, but it must never discard an
+            // authoritative server position. Discarding it left a harmless
+            // client statue behind while an invisible server hitbox advanced.
+            clientObservedVisualLock = new FrozenPose(x, y, z, 0.0F, entityData.get(MANUAL_YAW));
+            restorePose(clientObservedVisualLock);
+            return;
+        }
+        if (!isScraping()) {
+            absMoveTo(x, y, z, entityData.get(MANUAL_YAW), 0.0F);
+            hardStopLocalMovement();
+            return;
+        }
+        super.lerpTo(x, y, z, yRot, xRot, increments, teleport);
+    }
+
+    @Override
+    public void lerpMotion(double x, double y, double z) {
+        if (isClientObservedByLocalPlayer()) {
+            freezeClientAtObservedPosition();
+            return;
+        }
+        if (!isScraping()) {
+            setDeltaMovement(Vec3.ZERO);
+            return;
+        }
+        super.lerpMotion(x, y, z);
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) { return false; }
+
+    @Override
+    public boolean causeFallDamage(float distance, float multiplier, DamageSource source) { return false; }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("Activated", isActivated());
+        tag.putBoolean("ActivationConfirmed", isActivated());
+        tag.putBoolean("RoutineSpawn", isRoutineSpawn());
+        tag.putInt("LastSeenOrCloseTick", lastSeenOrCloseTick);
+        if (routineEncounterPlayerId != null) {
+            tag.putUUID("RoutineEncounterPlayer",
+                    routineEncounterPlayerId);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        // Older saves could persist an entity that started active merely because
+        // it came from a spawn egg. Require the new confirmation marker so those
+        // statues return to waiting for genuine survival-player observation.
+        boolean activationConfirmed = tag.contains("ActivationConfirmed")
+                && tag.getBoolean("ActivationConfirmed");
+        setActivated(activationConfirmed && tag.getBoolean("Activated"));
+        entityData.set(ROUTINE_SPAWN, tag.getBoolean("RoutineSpawn"));
+        lastSeenOrCloseTick = tag.getInt("LastSeenOrCloseTick");
+        routineEncounterPlayerId = tag.hasUUID("RoutineEncounterPlayer")
+                ? tag.getUUID("RoutineEncounterPlayer") : null;
+        clearStrategicRoute();
+        if (!isActivated()) {
+            setNoAi(true);
+            setTarget(null);
+            entityData.set(SCRAPING, false);
+        }
+    }
+
+    public boolean isScraping() { return entityData.get(SCRAPING); }
+    public boolean isActivated() { return entityData.get(ACTIVATED); }
+    public boolean isRoutineSpawn() { return entityData.get(ROUTINE_SPAWN); }
+    public boolean isObservedBy(Player player) {
+        return shouldFreezeFor(player) || hasClientObservationLock(player);
+    }
+
+    /**
+     * Receives the local camera's exact on-screen result. The server still owns
+     * movement and attacks; this short-lived signal only adds a safety lock for
+     * view-angle or interpolation differences between client and server.
+     */
+    public void updateClientObservation(ServerPlayer player, boolean visible) {
+        if (level().isClientSide || player == null) return;
+        UUID playerId = player.getUUID();
+        boolean accepted = visible && isValidTargetPlayer(player)
+                && distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR
+                && !BlinkServerState.isBlinkClosed(player);
+        if (!accepted) {
+            clientObservationUntilTicks.remove(playerId);
+            return;
+        }
+
+        clientObservationUntilTicks.put(playerId, tickCount + CLIENT_OBSERVATION_TIMEOUT_TICKS);
+        rememberObservation(player);
+        lastSeenOrCloseTick = tickCount;
+        if (!isActivated()) {
+            activateFor(player);
+            setTarget(player);
+        } else if (!isValidTargetEntity(getTarget())) {
+            setTarget(player);
+        }
+    }
+
+    @Override
+    public boolean doHurtTarget(Entity entity) {
+        if (level().isClientSide || !(entity instanceof LivingEntity target) || !canSnapTarget(target)) return false;
+        return snapTargetNeck(target);
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        if (!level().isClientSide) level().playSound(null, getX(), getY(), getZ(), Scp173Sounds.STATUE_DEATH.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+        super.die(source);
+    }
+
+    @Override protected SoundEvent getAmbientSound() { return null; }
+    @Override protected SoundEvent getHurtSound(DamageSource source) { return null; }
+    @Override protected SoundEvent getDeathSound() { return null; }
+    @Override protected void playStepSound(BlockPos pos, BlockState state) { }
+    @Override protected boolean isSunSensitive() { return false; }
+
+    private void setActivated(boolean value) { entityData.set(ACTIVATED, value); }
+
+    private void activateFor(Player observer) {
+        boolean newlyActivated = !isActivated();
+        setActivated(true);
+        setNoAi(false);
+        if (newlyActivated && observer instanceof ServerPlayer serverPlayer) {
+            showBlinkTutorialOnce(serverPlayer);
+        }
+    }
+
+    private static void showBlinkTutorialOnce(ServerPlayer player) {
+        if (!ScpClassifiedDirectiveModulesConfig.get().blink.enabled) return;
+        CompoundTag persistentData = player.getPersistentData();
+        CompoundTag persisted = persistentData.getCompound(Player.PERSISTED_NBT_TAG);
+        if (persisted.getBoolean(BLINK_TUTORIAL_SHOWN_TAG)) return;
+
+        persisted.putBoolean(BLINK_TUTORIAL_SHOWN_TAG, true);
+        persistentData.put(Player.PERSISTED_NBT_TAG, persisted);
+        player.displayClientMessage(Component.translatable(
+                "message.scp_classified_directive.scp_173_blink_hint",
+                Component.keybind("key.scp_classified_directive.blink")), true);
+    }
+
+    private boolean shouldFreezeFor(LivingEntity observer) {
+        if (!isValidObserver(observer)) return false;
+        if (observer instanceof Player player && BlinkServerState.isBlinkClosed(player)) return false;
+        return isObservedGeometry(observer);
+    }
+
+    private boolean isValidObserver(LivingEntity entity) {
+        if (entity == null || entity == this || !entity.isAlive() || entity.isRemoved()) return false;
+        if (entity instanceof Player player) return !player.isCreative() && !player.isSpectator();
+        return Scp173TargetConfig.isConfiguredTarget(entity);
+    }
+
+    private LivingEntity resolveTarget() {
+        LivingEntity current = getTarget();
+        if (isValidTargetEntity(current)) return current;
+        LivingEntity nearest = findNearestTargetEntity();
+        if (nearest != null) setTarget(nearest);
+        return nearest;
+    }
+
+    private LivingEntity findNearestTargetEntity() {
+        LivingEntity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        AABB area = getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
+        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, area,
+                entity -> entity != this && isValidTargetEntity(entity))) {
+            double distance = distanceToSqr(entity);
+            if (distance <= IMMEDIATE_REACTION_RANGE_SQR && distance < bestDistance) {
+                bestDistance = distance;
+                best = entity;
+            }
+        }
+        return best;
+    }
+
+    private boolean isValidTargetEntity(LivingEntity entity) {
+        if (entity == null || entity == this || !entity.isAlive() || entity.isRemoved()) return false;
+        if (entity instanceof Player player) return isValidTargetPlayer(player);
+        return Scp173TargetConfig.isConfiguredTarget(entity);
+    }
+
+    private boolean isValidTargetPlayer(Player player) {
+        return player != null && player.isAlive() && !player.isCreative() && !player.isSpectator();
+    }
+
+    private LivingEntity findObservingEntity() {
+        LivingEntity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        AABB area = getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
+        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, area,
+                entity -> entity != this && isValidObserver(entity))) {
+            if (shouldFreezeFor(entity)) {
+                double distance = distanceToSqr(entity);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = entity;
+                }
+            }
+        }
+        return best;
+    }
+
+    private Player findObservingPlayer() {
+        Player best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (Player player : level().players()) {
+            if (player.isCreative() || player.isSpectator()) continue;
+            if (shouldFreezeFor(player)) {
+                double distance = distanceToSqr(player);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = player;
+                }
+            }
+        }
+        return best;
+    }
+
+    private boolean hasClosePlayer() {
+        for (Player player : level().players()) {
+            if (!player.isCreative() && !player.isSpectator() && distanceToSqr(player) <= DESPAWN_DISTANCE_SQR) return true;
+        }
+        return false;
+    }
+
+    private void handleRoutineDespawn() {
+        if (!isRoutineSpawn() || level().isClientSide) return;
+        if (findObservingPlayer() != null || hasClientObservationLock() || hasClosePlayer()) return;
+        if (tickCount - lastSeenOrCloseTick >= ROUTINE_DESPAWN_UNSEEN_TICKS) {
+            completeRoutineEncounter();
+            discard();
+        }
+    }
+
+    public void completeRoutineEncounter() {
+        if (!isRoutineSpawn() || !isActivated()
+                || routineEncounterPlayerId == null
+                || level().isClientSide) {
+            return;
+        }
+        ServerPlayer player = getServer() == null ? null
+                : getServer().getPlayerList()
+                .getPlayer(routineEncounterPlayerId);
+        if (player != null && player.isAlive()
+                && !player.isCreative() && !player.isSpectator()) {
+            ScpAdvancementAwards.award(player,
+                    ScpAdvancementAwards.CONCRETE_AND_REBAR);
+        }
+        routineEncounterPlayerId = null;
+    }
+
+    private boolean isClientObservedByLocalPlayer() {
+        if (!level().isClientSide) return false;
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.player == null || mc.level == null || mc.player.isCreative() || mc.player.isSpectator()
+                || BlinkClient.isBlinkClosedLocally()) return false;
+        net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 eye = camera.getPosition();
+        Vec3 look = Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).normalize();
+        return isObservedGeometry(eye, look);
+    }
+
+    private boolean isObservedGeometry(LivingEntity observer) {
+        Vec3 eye = observer.getEyePosition(1.0F);
+        Vec3 look = observer.getViewVector(1.0F).normalize();
+        double threshold = observer instanceof Player
+                ? PLAYER_OBSERVED_DOT_THRESHOLD
+                : observer instanceof AbstractScp131Entity
+                        ? SCP_131_OBSERVED_DOT_THRESHOLD
+                        : MOB_OBSERVED_DOT_THRESHOLD;
+        return isObservedGeometry(eye, look, threshold);
+    }
+
+    private boolean isObservedGeometry(Vec3 eye, Vec3 look) {
+        return isObservedGeometry(eye, look, PLAYER_OBSERVED_DOT_THRESHOLD);
+    }
+
+    private boolean isObservedGeometry(Vec3 eye, Vec3 look, double dotThreshold) {
+        AABB box = getBoundingBox();
+        double minX = box.minX + VISIBILITY_EPSILON, midX = (box.minX + box.maxX) * 0.5D, maxX = box.maxX - VISIBILITY_EPSILON;
+        double minY = box.minY + VISIBILITY_EPSILON, midY = (box.minY + box.maxY) * 0.5D, maxY = box.maxY - VISIBILITY_EPSILON;
+        double minZ = box.minZ + VISIBILITY_EPSILON, midZ = (box.minZ + box.maxZ) * 0.5D, maxZ = box.maxZ - VISIBILITY_EPSILON;
+        return isVisibleSample(eye, look, dotThreshold, new Vec3(midX, midY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, maxY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, minY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, midY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, midY, midZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, midY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(midX, midY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, minY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, minY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, maxY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(minX, maxY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, minY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, minY, maxZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, maxY, minZ))
+                || isVisibleSample(eye, look, dotThreshold, new Vec3(maxX, maxY, maxZ));
+    }
+
+    private void reportClientObservation(boolean observed) {
+        if (!level().isClientSide) return;
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.getConnection() == null || mc.player == null || mc.level == null) return;
+        if (observed == lastReportedClientObservation && tickCount < nextClientObservationReportTick) return;
+        lastReportedClientObservation = observed;
+        nextClientObservationReportTick = tickCount + CLIENT_OBSERVATION_HEARTBEAT_TICKS;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(new Scp173ObservationPacket(getId(), observed));
+    }
+
+    private boolean isVisibleSample(Vec3 eye, Vec3 look, double dotThreshold, Vec3 point) {
+        Vec3 toPoint = point.subtract(eye);
+        double distance = toPoint.length();
+        if (distance <= 0.001D) return true;
+        double dot = look.dot(toPoint.scale(1.0D / distance));
+        return dot >= dotThreshold && hasVisualLineOfSightThroughTransparentBlocks(eye, point);
+    }
+
+    private boolean hasVisualLineOfSightThroughTransparentBlocks(Vec3 start, Vec3 end) {
+        if (blocksFacilityDoorVisionAlongRay(start, end)) return false;
+
+        // Use Minecraft's exact voxel ray traversal for ordinary blocks. Running
+        // both collision and visual shapes keeps solid walls authoritative while
+        // also catching opaque decorative blocks that do not have collision.
+        return hasTransparentAwareLineOfSight(start, end, ClipContext.Block.COLLIDER)
+                && hasTransparentAwareLineOfSight(start, end, ClipContext.Block.VISUAL);
+    }
+
+    private boolean blocksFacilityDoorVisionAlongRay(Vec3 start, Vec3 end) {
+        double distance = start.distanceTo(end);
+        int steps = Math.max(1, (int) Math.ceil(distance / LINE_OF_SIGHT_STEP));
+        BlockPos previous = null;
+        for (int i = 1; i < steps; i++) {
+            Vec3 point = start.lerp(end, i / (double) steps);
+            BlockPos pos = BlockPos.containing(point);
+            if (pos.equals(previous)) continue;
+            previous = pos;
+
+            // Facility doors are single registered blocks with two-block-tall
+            // models. A ray through their upper half visits the air block above
+            // the registered state, so inspect both that cell and the base below.
+            if (blocksFacilityDoorVision(pos, start, end)
+                    || blocksFacilityDoorVision(pos.below(), start, end)) return true;
+        }
+        return false;
+    }
+
+    private boolean hasTransparentAwareLineOfSight(Vec3 start, Vec3 end, ClipContext.Block shapeMode) {
+        Vec3 direction = end.subtract(start).normalize();
+        Vec3 cursor = start;
+
+        for (int hitCount = 0; hitCount < MAX_TRANSPARENT_RAY_HITS; hitCount++) {
+            if (cursor.distanceToSqr(end) <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) return true;
+
+            BlockHitResult hit = level().clip(new ClipContext(
+                    cursor, end, shapeMode, ClipContext.Fluid.NONE, this));
+            if (hit.getType() == HitResult.Type.MISS) return true;
+
+            BlockPos hitPos = hit.getBlockPos();
+            BlockState hitState = level().getBlockState(hitPos);
+            // Facility doors use a dedicated model-accurate visual shape above.
+            // Real glass, panes and leaves remain intentionally transparent.
+            if (!FacilityModule.isFacilityDoor(hitState) && !isVisionTransparent(hitState)) return false;
+
+            Vec3 advanced = advancePastBlock(hit.getLocation(), direction, hitPos);
+            if (advanced.distanceToSqr(cursor) <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) return false;
+            cursor = advanced;
+        }
+
+        // Fail closed if an unusually dense transparent-block ray exceeds the
+        // safety bound instead of accidentally activating SCP-173 through it.
+        return false;
+    }
+
+    private static Vec3 advancePastBlock(Vec3 point, Vec3 direction, BlockPos pos) {
+        double distance = Math.min(
+                distanceToExit(point.x, direction.x, pos.getX(), pos.getX() + 1.0D),
+                Math.min(
+                        distanceToExit(point.y, direction.y, pos.getY(), pos.getY() + 1.0D),
+                        distanceToExit(point.z, direction.z, pos.getZ(), pos.getZ() + 1.0D)));
+        if (!Double.isFinite(distance)) return point.add(direction.scale(RAY_ADVANCE_EPSILON));
+        return point.add(direction.scale(Math.max(RAY_ADVANCE_EPSILON, distance + RAY_ADVANCE_EPSILON)));
+    }
+
+    private static double distanceToExit(double coordinate, double direction, double min, double max) {
+        if (direction > 1.0E-7D) return Math.max(0.0D, (max - coordinate) / direction);
+        if (direction < -1.0E-7D) return Math.max(0.0D, (min - coordinate) / direction);
+        return Double.POSITIVE_INFINITY;
+    }
+
+    private boolean blocksFacilityDoorVision(BlockPos pos, Vec3 start, Vec3 end) {
+        BlockState state = level().getBlockState(pos);
+        if (!FacilityModule.isFacilityDoor(state)) return false;
+
+        VoxelShape visualShape = FacilityModule.doorVisualOcclusionShape(state);
+        return !visualShape.isEmpty() && visualShape.clip(start, end, pos) != null;
+    }
+
+    private boolean isVisionTransparent(BlockState state) {
+        return state.getBlock() instanceof HalfTransparentBlock
+                || state.getBlock() instanceof IronBarsBlock
+                || state.is(BlockTags.LEAVES);
+    }
+
+    private void freezeClientAtObservedPosition() {
+        if (clientObservedVisualLock == null) clientObservedVisualLock = capturePose();
+        restorePose(clientObservedVisualLock);
+        setManualYaw(clientObservedVisualLock.yRot());
+        applyFrozenVerticalPhysics();
+        clientObservedVisualLock = capturePose();
+        hardStopLocalMovement();
+    }
+
+    private void reactImmediatelyToTarget(LivingEntity target) {
+        FrozenPose preActionPose = capturePose();
+        if (isObservationLocked()) {
+            restorePose(preActionPose);
+            stopAndLock(preActionPose);
+        } else chaseImmediately(target, preActionPose);
+    }
+
+    private void freezeImmediatelyIfObserved() {
+        FrozenPose pose = capturePose();
+        if (isObservationLocked()) stopAndLock(pose);
+    }
+
+    /**
+     * Observation is a single server-authoritative decision shared by movement
+     * and attack. A tiny grace period absorbs one-tick view/packet jitter so a
+     * watched statue cannot exploit a transient failed ray at contact range.
+     */
+    private boolean isObservationLocked() {
+        LivingEntity observer = findObservingEntity();
+        if (observer != null) {
+            rememberObservation(observer);
+            return true;
+        }
+        return hasObservationGrace() || hasClientObservationLock();
+    }
+
+    private void rememberObservation(LivingEntity observer) {
+        lastObservationGraceObserver = observer;
+        observationGraceUntilTick = tickCount + OBSERVATION_GRACE_TICKS;
+    }
+
+    private boolean hasObservationGrace() {
+        LivingEntity observer = lastObservationGraceObserver;
+        if (observer == null || tickCount > observationGraceUntilTick || !isValidObserver(observer)) {
+            lastObservationGraceObserver = null;
+            observationGraceUntilTick = Integer.MIN_VALUE;
+            return false;
+        }
+        if (observer instanceof Player player && BlinkServerState.isBlinkClosed(player)) return false;
+        return true;
+    }
+
+    private void clearObservationGrace(Player player) {
+        LivingEntity observer = lastObservationGraceObserver;
+        if (player != null && observer != null && observer.getUUID().equals(player.getUUID())) {
+            lastObservationGraceObserver = null;
+            observationGraceUntilTick = Integer.MIN_VALUE;
+        }
+    }
+
+    private boolean hasClientObservationLock() {
+        if (level().isClientSide || clientObservationUntilTicks.isEmpty()) return false;
+        boolean observed = false;
+        Iterator<Map.Entry<UUID, Integer>> iterator = clientObservationUntilTicks.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, Integer> entry = iterator.next();
+            Player player = findPlayer(entry.getKey());
+            if (entry.getValue() < tickCount || !isValidTargetPlayer(player)
+                    || BlinkServerState.isBlinkClosed(player)
+                    || distanceToSqr(player) > IMMEDIATE_REACTION_RANGE_SQR) {
+                iterator.remove();
+                continue;
+            }
+            observed = true;
+        }
+        return observed;
+    }
+
+    private boolean hasClientObservationLock(Player player) {
+        if (level().isClientSide || player == null) return false;
+        Integer untilTick = clientObservationUntilTicks.get(player.getUUID());
+        if (untilTick == null) return false;
+        if (untilTick < tickCount || !isValidTargetPlayer(player) || BlinkServerState.isBlinkClosed(player)
+                || distanceToSqr(player) > IMMEDIATE_REACTION_RANGE_SQR) {
+            clientObservationUntilTicks.remove(player.getUUID());
+            return false;
+        }
+        return true;
+    }
+
+    private Player findPlayer(UUID playerId) {
+        for (Player player : level().players()) {
+            if (player.getUUID().equals(playerId)) return player;
+        }
+        return null;
+    }
+
+    private void clearClientObservation(Player player) {
+        if (player != null) clientObservationUntilTicks.remove(player.getUUID());
+    }
+
+    private void beginBlinkMovement(Player player, boolean manual) {
+        if (player == null) return;
+        if (manual) automaticBlinkTravelRemaining.remove(player.getUUID());
+        else automaticBlinkTravelRemaining.put(player.getUUID(), AUTOMATIC_BLINK_TRAVEL_DISTANCE);
+    }
+
+    private void endBlinkMovement(Player player) {
+        if (player != null) automaticBlinkTravelRemaining.remove(player.getUUID());
+    }
+
+    private void stopAndLock(FrozenPose pose) {
+        restorePose(pose);
+        setManualYaw(pose.yRot());
+        applyFrozenVerticalPhysics();
+        freezeCompletely();
+    }
+
+    private void freezeCompletely() {
+        entityData.set(SCRAPING, false);
+        getNavigation().stop();
+        getMoveControl().setWantedPosition(getX(), getY(), getZ(), 0.0D);
+        hardStopLocalMovement();
+        xxa = yya = zza = 0.0F;
+        hasImpulse = true;
+    }
+
+    private void applyFrozenVerticalPhysics() {
+        if (isInWater()) frozenFallSpeed = Math.max(frozenFallSpeed - FROZEN_WATER_GRAVITY, FROZEN_MAX_WATER_SINK_SPEED);
+        else if (!onGround()) frozenFallSpeed = Math.max(frozenFallSpeed - FROZEN_AIR_GRAVITY, FROZEN_MAX_AIR_FALL_SPEED);
+        else { frozenFallSpeed = 0.0D; return; }
+        move(MoverType.SELF, new Vec3(0.0D, frozenFallSpeed, 0.0D));
+        if (onGround() && frozenFallSpeed < 0.0D) frozenFallSpeed = 0.0D;
+    }
+
+    private void applyHeavyWaterSinking() {
+        if (isInWater()) move(MoverType.SELF, new Vec3(0.0D, -0.08D, 0.0D));
+    }
+
+    private void chaseImmediately(LivingEntity target, FrozenPose preTickPose) {
+        Vec3 toTarget = target.position().subtract(position());
+        Vec3 horizontal = new Vec3(toTarget.x, 0.0D, toTarget.z);
+        double distance = horizontal.length();
+        if (distance <= STOP_DISTANCE) {
+            stopAndLock(preTickPose);
+            trySnapAttack(target);
+            return;
+        }
+        Player blinkPlayer = target instanceof Player player ? player : null;
+        boolean blinkClosed = blinkPlayer != null && BlinkServerState.isBlinkClosed(blinkPlayer);
+        boolean manualBlink = blinkClosed && BlinkServerState.isManualBlink(blinkPlayer);
+        double maxStep = blinkClosed ? BLINK_STEP_PER_TICK : DIRECT_STEP_PER_TICK;
+        if (blinkClosed && !manualBlink) {
+            double remaining = automaticBlinkTravelRemaining.computeIfAbsent(
+                    blinkPlayer.getUUID(), ignored -> AUTOMATIC_BLINK_TRAVEL_DISTANCE);
+            maxStep = Math.min(maxStep, remaining);
+            if (maxStep <= 0.001D) {
+                stopAndLock(preTickPose);
+                return;
+            }
+        }
+        Vec3 step = chooseChaseStep(target, horizontal, distance, maxStep);
+        if (step.lengthSqr() <= 0.000001D) {
+            stopAndLock(preTickPose);
+            return;
+        }
+
+        entityData.set(SCRAPING, true);
+        faceTarget(target);
+        snapMove(step);
+        if (blinkClosed && !manualBlink) consumeAutomaticBlinkTravel(blinkPlayer, step.length());
+        getNavigation().stop();
+        applyHeavyWaterSinking();
+        hardStopLocalMovement();
+        trySnapAttack(target);
+    }
+
+    private void consumeAutomaticBlinkTravel(Player player, double distance) {
+        if (player == null || distance <= 0.0D) return;
+        UUID playerId = player.getUUID();
+        double remaining = automaticBlinkTravelRemaining.getOrDefault(
+                playerId, AUTOMATIC_BLINK_TRAVEL_DISTANCE);
+        automaticBlinkTravelRemaining.put(playerId, Math.max(0.0D, remaining - distance));
+    }
+
+    private Vec3 chooseChaseStep(LivingEntity target, Vec3 directHorizontal,
+            double distance, double maxStep) {
+        double stepDistance = Math.min(maxStep, distance - STOP_DISTANCE);
+        if (stepDistance <= 0.001D
+                || directHorizontal.lengthSqr() <= 0.000001D) {
+            return Vec3.ZERO;
+        }
+
+        Vec3 directStep = directHorizontal.scale(1.0D / distance)
+                .scale(stepDistance);
+        if (canMoveBy(directStep)) {
+            rememberDirectApproach(target);
+            getNavigation().stop();
+            return directStep;
+        }
+        return strategicPathStep(target, stepDistance);
+    }
+
+    /**
+     * Reuses the last credible route when a door closes between path updates,
+     * while periodically asking pathfinding for a better or newly opened flank.
+     * The statue advances to the last reachable staging point, then gives up
+     * only after repeated blocked movement opportunities.
+     */
+    private Vec3 strategicPathStep(LivingEntity target, double stepDistance) {
+        prepareRouteTarget(target);
+        boolean routeExpired = !hasUsableRememberedRoute(target);
+        boolean targetShifted = rememberedRouteTargetPosition == null
+                || horizontalDistanceSqr(rememberedRouteTargetPosition,
+                        target.position()) >= ROUTE_TARGET_SHIFT_REPLAN_SQR;
+        if (routeExpired || targetShifted
+                || tickCount >= nextRouteReplanTick
+                || routeStallAttempts >= ROUTE_REPLAN_AFTER_STALLS) {
+            considerFreshRoute(target);
+            nextRouteReplanTick = tickCount + ROUTE_REPLAN_INTERVAL_TICKS;
+        }
+
+        Vec3 step = stepAlongRememberedRoute(stepDistance);
+        if (step.lengthSqr() > 0.000001D) {
+            routeStallAttempts = 0;
+            rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+            return step;
+        }
+
+        routeStallAttempts++;
+        if (routeStallAttempts >= ROUTE_REPLAN_AFTER_STALLS) {
+            nextRouteReplanTick = tickCount;
+            if (considerFreshRoute(target)) {
+                step = stepAlongRememberedRoute(stepDistance);
+                if (step.lengthSqr() > 0.000001D) {
+                    routeStallAttempts = 0;
+                    rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+                    return step;
+                }
+            }
+        }
+
+        if (routeStallAttempts >= ROUTE_ABANDON_AFTER_STALLS) {
+            clearStrategicRoute();
+        }
+        return Vec3.ZERO;
+    }
+
+    private void prepareRouteTarget(LivingEntity target) {
+        UUID targetId = target.getUUID();
+        if (rememberedRouteTarget == null
+                || !rememberedRouteTarget.equals(targetId)) {
+            clearStrategicRoute();
+            rememberedRouteTarget = targetId;
+            rememberedRouteTargetPosition = target.position();
+        }
+    }
+
+    private void rememberDirectApproach(LivingEntity target) {
+        prepareRouteTarget(target);
+        rememberedRouteNodes.clear();
+        rememberedRouteNodes.add(target.position());
+        rememberedRouteIndex = 0;
+        rememberedRouteTargetPosition = target.position();
+        rememberedRouteEndpointDistanceSqr = 0.0D;
+        rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+        nextRouteReplanTick = tickCount + ROUTE_REPLAN_INTERVAL_TICKS;
+        routeStallAttempts = 0;
+    }
+
+    private boolean considerFreshRoute(LivingEntity target) {
+        Path path = getNavigation().createPath(target, 0);
+        List<Vec3> freshNodes = capturePathNodes(path);
+        trimReachedNodes(freshNodes);
+        if (freshNodes.isEmpty()) return false;
+
+        Vec3 freshEndpoint = freshNodes.get(freshNodes.size() - 1);
+        double freshEndpointDistance = horizontalDistanceSqr(
+                freshEndpoint, target.position());
+        boolean hasCurrent = hasUsableRememberedRoute(target);
+        boolean clearlyBetter = !hasCurrent
+                || freshEndpointDistance + ROUTE_ENDPOINT_IMPROVEMENT_SQR
+                < rememberedRouteEndpointDistanceSqr;
+        boolean equivalentAlternative = hasCurrent
+                && routeStallAttempts >= ROUTE_REPLAN_AFTER_STALLS
+                && freshEndpointDistance
+                <= rememberedRouteEndpointDistanceSqr
+                        + ROUTE_EQUIVALENT_ENDPOINT_MARGIN_SQR
+                && firstNodeDiffers(freshNodes);
+        if (!clearlyBetter && !equivalentAlternative) {
+            rememberedRouteTargetPosition = target.position();
+            return false;
+        }
+
+        rememberedRouteNodes.clear();
+        rememberedRouteNodes.addAll(freshNodes);
+        rememberedRouteIndex = 0;
+        rememberedRouteTarget = target.getUUID();
+        rememberedRouteTargetPosition = target.position();
+        rememberedRouteEndpointDistanceSqr = freshEndpointDistance;
+        rememberedRouteExpiresTick = tickCount + ROUTE_MEMORY_TICKS;
+        return true;
+    }
+
+    private List<Vec3> capturePathNodes(Path path) {
+        List<Vec3> nodes = new ArrayList<>();
+        if (path == null || path.isDone()) return nodes;
+
+        Vec3 previous = null;
+        int safety = 0;
+        while (!path.isDone() && safety++ < MAX_REMEMBERED_ROUTE_NODES) {
+            Vec3 node = path.getNextEntityPos(this);
+            if (previous == null
+                    || horizontalDistanceSqr(previous, node) > 0.01D) {
+                nodes.add(node);
+                previous = node;
+            }
+            path.advance();
+        }
+        return nodes;
+    }
+
+    private void trimReachedNodes(List<Vec3> nodes) {
+        while (!nodes.isEmpty()
+                && horizontalDistanceSqr(position(), nodes.get(0))
+                <= PATH_NODE_REACHED_DISTANCE_SQR) {
+            nodes.remove(0);
+        }
+    }
+
+    private boolean firstNodeDiffers(List<Vec3> freshNodes) {
+        if (freshNodes.isEmpty() || rememberedRouteIndex
+                >= rememberedRouteNodes.size()) return true;
+        return horizontalDistanceSqr(freshNodes.get(0),
+                rememberedRouteNodes.get(rememberedRouteIndex))
+                >= ROUTE_FIRST_NODE_DIFFERENCE_SQR;
+    }
+
+    private Vec3 stepAlongRememberedRoute(double stepDistance) {
+        while (rememberedRouteIndex < rememberedRouteNodes.size()
+                && horizontalDistanceSqr(position(),
+                        rememberedRouteNodes.get(rememberedRouteIndex))
+                <= PATH_NODE_REACHED_DISTANCE_SQR) {
+            rememberedRouteIndex++;
+        }
+        if (rememberedRouteIndex >= rememberedRouteNodes.size()) {
+            return Vec3.ZERO;
+        }
+
+        Vec3 waypoint = rememberedRouteNodes.get(rememberedRouteIndex);
+        Vec3 horizontal = new Vec3(waypoint.x - getX(), 0.0D,
+                waypoint.z - getZ());
+        double length = horizontal.length();
+        if (length <= 0.001D) return Vec3.ZERO;
+        Vec3 desired = horizontal.scale(1.0D / length)
+                .scale(Math.min(stepDistance, length));
+        return largestClearPathStep(desired);
+    }
+
+    private boolean hasUsableRememberedRoute(LivingEntity target) {
+        return target != null
+                && rememberedRouteTarget != null
+                && rememberedRouteTarget.equals(target.getUUID())
+                && tickCount <= rememberedRouteExpiresTick
+                && rememberedRouteIndex < rememberedRouteNodes.size();
+    }
+
+    private void clearStrategicRoute() {
+        rememberedRouteNodes.clear();
+        rememberedRouteIndex = 0;
+        rememberedRouteTarget = null;
+        rememberedRouteTargetPosition = null;
+        rememberedRouteExpiresTick = Integer.MIN_VALUE;
+        nextRouteReplanTick = 0;
+        routeStallAttempts = 0;
+        rememberedRouteEndpointDistanceSqr = Double.POSITIVE_INFINITY;
+    }
+
+    private static double horizontalDistanceSqr(Vec3 first, Vec3 second) {
+        if (first == null || second == null) return Double.POSITIVE_INFINITY;
+        double dx = first.x - second.x;
+        double dz = first.z - second.z;
+        return dx * dx + dz * dz;
+    }
+
+    private Vec3 largestClearPathStep(Vec3 desiredStep) {
+        if (desiredStep == null || desiredStep.lengthSqr() <= 0.000001D) return Vec3.ZERO;
+
+        // Fast snap movement can make a full path-node step clip a doorway edge
+        // even though the node itself is valid. Keep the path direction and try
+        // progressively smaller steps instead of wandering sideways.
+        Vec3 candidate = desiredStep;
+        for (int attempt = 0; attempt < 4; attempt++) {
+            if (canMoveBy(candidate)) return candidate;
+            candidate = candidate.scale(0.5D);
+        }
+        return Vec3.ZERO;
+    }
+
+    private boolean canMoveBy(Vec3 step) {
+        return step != null && step.lengthSqr() > 0.000001D && level().noCollision(this, getBoundingBox().move(step));
+    }
+
+    private void snapMove(Vec3 step) {
+        if (level().noCollision(this, getBoundingBox().move(step))) setPos(getX() + step.x, getY() + step.y, getZ() + step.z);
+        else move(MoverType.SELF, step);
+    }
+
+    private boolean trySnapAttack(LivingEntity target) { return canSnapTarget(target) && snapTargetNeck(target); }
+    private boolean isInSnapRange(LivingEntity target) {
+        if (target == null || !getBoundingBox().intersects(target.getBoundingBox())) return false;
+        double dx = getX() - target.getX();
+        double dz = getZ() - target.getZ();
+        double contactRadius = (getBbWidth() + target.getBbWidth()) * 0.5D;
+        return dx * dx + dz * dz < contactRadius * contactRadius;
+    }
+    private boolean canSnapTarget(LivingEntity target) {
+        return isActivated() && isValidTargetEntity(target) && tickCount >= nextAttackTick
+                && isInSnapRange(target) && !isObservationLocked();
+    }
+    private boolean snapTargetNeck(LivingEntity target) {
+        nextAttackTick = tickCount + ATTACK_COOLDOWN_TICKS;
+        target.invulnerableTime = 0;
+        boolean damaged = target.hurt(neckSnapDamageSource(), NECK_SNAP_DAMAGE);
+        if (damaged) playNeckSnapSound();
+        return damaged;
+    }
+    private DamageSource neckSnapDamageSource() {
+        return new DamageSource(level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(NECK_SNAP_DAMAGE_TYPE), this);
+    }
+
+    private void faceTarget(LivingEntity target) {
+        Vec3 toTarget = target.position().subtract(position());
+        if (toTarget.x * toTarget.x + toTarget.z * toTarget.z > 0.000001D) setManualYaw(yawTo(toTarget));
+    }
+    private float yawTo(Vec3 vector) { return (float) (Mth.atan2(vector.z, vector.x) * Mth.RAD_TO_DEG) - 90.0F; }
+    private void setManualYaw(float yaw) { yaw = Mth.wrapDegrees(yaw); entityData.set(MANUAL_YAW, yaw); applyYaw(yaw); }
+    private void applyClientManualRotation() {
+        if (isScraping()) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc.player != null) {
+                Vec3 toPlayer = mc.player.position().subtract(position());
+                if (toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z > 0.000001D) { applyYaw(yawTo(toPlayer)); return; }
+            }
+        }
+        applyYaw(entityData.get(MANUAL_YAW));
+    }
+    private void applyYaw(float yaw) {
+        yaw = Mth.wrapDegrees(yaw);
+        setYRot(yaw); yRotO = yaw; yBodyRot = yaw; yBodyRotO = yaw; yHeadRot = yaw; yHeadRotO = yaw;
+        setXRot(0.0F); xRotO = 0.0F;
+    }
+    private void hardStopLocalMovement() {
+        setDeltaMovement(Vec3.ZERO); xxa = yya = zza = 0.0F; setSpeed(0.0F);
+        xo = getX(); yo = getY(); zo = getZ(); hasImpulse = true;
+    }
+    private void playNeckSnapSound() {
+        level().playSound(null, getX(), getY(), getZ(), Scp173Sounds.NECK_SNAP.get(), SoundSource.HOSTILE, 1.0F,
+                0.96F + getRandom().nextFloat() * 0.08F);
+    }
+    private FrozenPose capturePose() { return new FrozenPose(getX(), getY(), getZ(), getXRot(), getYRot()); }
+    private void restorePose(FrozenPose pose) {
+        if (pose == null) return;
+        absMoveTo(pose.x(), pose.y(), pose.z(), pose.yRot(), 0.0F);
+        applyYaw(pose.yRot());
+        hardStopLocalMovement();
+    }
+    private record FrozenPose(double x, double y, double z, float xRot, float yRot) { }
+}

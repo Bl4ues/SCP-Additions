@@ -1,9 +1,0 @@
-{
-  "parent": "scp_ublocks:custom/sl1_wall_detail_mid",
-  "textures": {
-    "all": "scp_ublocks:block/lcz1mid",
-    "particle": "scp_ublocks:block/lcz1mid",
-    "0": "scp_ublocks:block/lcz1mid"
-  },
-  "render_type": "solid"
-}

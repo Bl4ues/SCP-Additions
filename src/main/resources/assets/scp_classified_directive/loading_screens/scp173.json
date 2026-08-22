@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp173",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp173_loading.png",
+  "left_title": "SCP-173",
+  "left_subtitle": "EUCLID",
+  "right_label": "THREAT LEVEL",
+  "right_value": "HIGH",
+  "description": "SCP-173 is a concrete sculpture of unknown origin measuring 2.0 meters tall and weighing approximately 468 kg. The statue is vaguely humanoid in shape, although improperly proportioned. Traces of Krylon brand spray paint are found on the statue's upper body, resembling a face.",
+  "description_anchor": "center",
+  "weight": 1.0
+}

@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_classified_directive:decon_open"
+    },
+    "title": {
+      "translate": "advancements.decon_achievement.title"
+    },
+    "description": {
+      "translate": "advancements.decon_achievement.descr"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "decon_achievement": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_classified_directive:scp_additions_ach"
+}

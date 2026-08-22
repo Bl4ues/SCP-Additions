@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/skyroom_block",
+    "up": "scp_classified_directive:block/skyroom_block",
+    "north": "scp_classified_directive:block/skyroom_top",
+    "east": "scp_classified_directive:block/skyroom_top",
+    "south": "scp_classified_directive:block/skyroom_top",
+    "west": "scp_classified_directive:block/skyroom_top",
+    "particle": "scp_classified_directive:block/skyroom_block"
+  },
+  "render_type": "solid"
+}

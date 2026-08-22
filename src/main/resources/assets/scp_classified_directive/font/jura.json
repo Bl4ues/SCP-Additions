@@ -1,0 +1,15 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "scp_classified_directive:jura_variable_font_wght.ttf",
+      "shift": [0, 0],
+      "size": 11.0,
+      "oversample": 8.0
+    },
+    {
+      "type": "reference",
+      "id": "scp_classified_directive:anonymous_pro"
+    }
+  ]
+}

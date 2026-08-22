@@ -1,0 +1,85 @@
+{
+  "variants": {
+    "transition=none": {
+      "model": "scp_classified_directive:block/sl_1_floor_2"
+    },
+    "transition=corner_sw": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a1"
+    },
+    "transition=edge_w": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a2"
+    },
+    "transition=inner_nw": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a3"
+    },
+    "transition=corner_nw": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a4"
+    },
+    "transition=edge_n": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a5"
+    },
+    "transition=inner_ne": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a6"
+    },
+    "transition=corner_ne": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a7"
+    },
+    "transition=edge_e": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a8"
+    },
+    "transition=inner_se": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a9"
+    },
+    "transition=corner_se": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a10"
+    },
+    "transition=edge_s": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a11"
+    },
+    "transition=inner_sw": {
+      "model": "scp_classified_directive:block/sl_1_floor_2_a12"
+    },
+    "transition=full": {
+      "model": "scp_classified_directive:block/sl_1_floor_1"
+    },
+    "transition=kitchen_corner_sw": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_1"
+    },
+    "transition=kitchen_edge_w": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_2"
+    },
+    "transition=kitchen_inner_nw": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_3"
+    },
+    "transition=kitchen_corner_nw": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_4"
+    },
+    "transition=kitchen_edge_n": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_5"
+    },
+    "transition=kitchen_inner_ne": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_6"
+    },
+    "transition=kitchen_corner_ne": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_7"
+    },
+    "transition=kitchen_edge_e": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_8"
+    },
+    "transition=kitchen_inner_se": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_9"
+    },
+    "transition=kitchen_corner_se": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_10"
+    },
+    "transition=kitchen_edge_s": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_11"
+    },
+    "transition=kitchen_inner_sw": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor_12"
+    },
+    "transition=kitchen_full": {
+      "model": "scp_classified_directive:block/sl_1_kitchen_floor"
+    }
+  }
+}

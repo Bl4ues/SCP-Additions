@@ -1,0 +1,10 @@
+{
+  "parent": "scp_classified_directive:custom/buttonroff",
+  "textures": {
+    "all": "scp_classified_directive:block/button",
+    "particle": "scp_classified_directive:block/button",
+    "1": "scp_classified_directive:block/butscreenright",
+    "2": "scp_classified_directive:block/button"
+  },
+  "render_type": "cutout"
+}

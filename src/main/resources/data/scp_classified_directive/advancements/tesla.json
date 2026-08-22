@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_classified_directive:tesla_gate"
+    },
+    "title": {
+      "translate": "advancements.tesla.title"
+    },
+    "description": {
+      "translate": "advancements.tesla.descr"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "tesla": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_classified_directive:scp_additions_ach"
+}

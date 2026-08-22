@@ -1,0 +1,15 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "scp_classified_directive:block/tesla"
+  },
+  "render_type": "translucent",
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 580001
+      },
+      "model": "scp_classified_directive:item/scp_additions_logo"
+    }
+  ]
+}

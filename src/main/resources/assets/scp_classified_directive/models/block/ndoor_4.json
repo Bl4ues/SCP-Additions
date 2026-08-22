@@ -1,0 +1,9 @@
+{
+  "parent": "scp_classified_directive:custom/d_door_4",
+  "textures": {
+    "all": "scp_classified_directive:block/door",
+    "particle": "scp_classified_directive:block/door",
+    "0": "scp_classified_directive:block/normal_door"
+  },
+  "render_type": "translucent"
+}

@@ -1,9 +1,0 @@
-{
-  "multipart": [
-    {
-      "apply": {
-        "model": "scp_additions:block/document_holder"
-      }
-    }
-  ]
-}

@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/tesla_bot_alt",
+    "up": "scp_classified_directive:block/tesla_bot_alt",
+    "north": "scp_classified_directive:block/tesla_top_alt",
+    "east": "scp_classified_directive:block/tesla_top_alt",
+    "south": "scp_classified_directive:block/tesla_top_alt",
+    "west": "scp_classified_directive:block/tesla_top_alt",
+    "particle": "scp_classified_directive:block/tesla_bot_alt"
+  },
+  "render_type": "solid"
+}

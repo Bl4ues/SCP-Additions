@@ -1,0 +1,10 @@
+
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "scp_classified_directive:block/wet_floor_particle"
+      }
+    }
+  ]
+}

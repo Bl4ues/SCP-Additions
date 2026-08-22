@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/security_top",
+    "up": "scp_classified_directive:block/security_top",
+    "north": "scp_classified_directive:block/office_bot",
+    "east": "scp_classified_directive:block/office_bot",
+    "south": "scp_classified_directive:block/office_bot",
+    "west": "scp_classified_directive:block/office_bot",
+    "particle": "scp_classified_directive:block/security_top"
+  },
+  "render_type": "solid"
+}

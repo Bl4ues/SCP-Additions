@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp106",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp106_loading.png",
+  "left_title": "SCP-106",
+  "left_subtitle": "KETER",
+  "right_label": "THREAT LEVEL",
+  "right_value": "HIGH",
+  "description": "SCP-106 appears to be an elderly humanoid, with the general appearance of advanced decomposition. SCP-106 causes a corrosion effect in all solid matter it touches. SCP-106 is capable of passing through solid matter, leaving behind a large patch of its corrosive mucus. SCP-106 is able to vanish inside solid matter, entering what is assumed to be a form of pocket dimension. SCP-106 is then able to exit this dimension from any point connected to the initial entry point.",
+  "description_anchor": "center",
+  "weight": 1.0
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "scp_classified_directive:item/scp294_cup_base",
+    "layer1": "scp_classified_directive:item/scp294_cup_liquid_mask"
+  }
+}

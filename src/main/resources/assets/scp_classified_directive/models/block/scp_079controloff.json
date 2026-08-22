@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/scp079control",
+    "up": "scp_classified_directive:block/scp079control",
+    "north": "scp_classified_directive:block/scp079control",
+    "east": "scp_classified_directive:block/scp079control",
+    "south": "scp_classified_directive:block/scp079control",
+    "west": "scp_classified_directive:block/scp079control",
+    "particle": "scp_classified_directive:block/scp079control"
+  },
+  "render_type": "cutout_mipped"
+}

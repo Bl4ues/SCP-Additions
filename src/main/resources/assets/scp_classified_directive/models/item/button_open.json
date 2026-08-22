@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "scp_classified_directive:item/screen_open"
+  },
+  "render_type": "translucent"
+}

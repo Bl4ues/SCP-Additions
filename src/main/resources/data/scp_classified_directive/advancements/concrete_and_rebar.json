@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "scp_classified_directive:scp_173_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.concrete_and_rebar.title"
+    },
+    "description": {
+      "translate": "advancements.concrete_and_rebar.descr"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "concrete_and_rebar": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 10
+  },
+  "parent": "scp_classified_directive:scp_additions_ach"
+}

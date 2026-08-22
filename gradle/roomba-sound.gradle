@@ -1,4 +1,4 @@
-// Keep the Roomba loop inside the main scp_additions sound namespace without
+// Keep the Roomba loop inside the main scp_classified_directive sound namespace without
 // hand-editing the generated/minified sounds.json source file.
 gradle.afterProject { evaluatedProject, state ->
     if (state.failure != null) {
@@ -12,17 +12,17 @@ gradle.afterProject { evaluatedProject, state ->
 
     resourceTask.doLast {
         File soundsFile = evaluatedProject.file(
-                "${evaluatedProject.buildDir}/resources/main/assets/scp_additions/sounds.json")
+                "${evaluatedProject.buildDir}/resources/main/assets/scp_classified_directive/sounds.json")
         if (!soundsFile.isFile()) {
-            throw new GradleException("Missing processed SCP Additions sounds.json")
+            throw new GradleException("Missing processed SCP: Classified Directive sounds.json")
         }
 
         def parser = new groovy.json.JsonSlurper()
         def sounds = parser.parse(soundsFile)
         sounds.roomba_loop = [
-                subtitle: 'subtitles.scp_additions.roomba',
+                subtitle: 'subtitles.scp_classified_directive.roomba',
                 sounds: [[
-                        name: 'scp_additions:roomba',
+                        name: 'scp_classified_directive:roomba',
                         stream: false,
                         volume: 1.0
                 ]]

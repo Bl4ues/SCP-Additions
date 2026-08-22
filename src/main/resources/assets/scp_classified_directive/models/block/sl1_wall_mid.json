@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/unity_sector_1_middle",
+    "up": "scp_classified_directive:block/unity_sector_1_middle",
+    "north": "scp_classified_directive:block/unity_sector_1_middle",
+    "east": "scp_classified_directive:block/unity_sector_1_middle",
+    "south": "scp_classified_directive:block/unity_sector_1_middle",
+    "west": "scp_classified_directive:block/unity_sector_1_middle",
+    "particle": "scp_classified_directive:block/unity_sector_1_middle"
+  },
+  "render_type": "solid"
+}

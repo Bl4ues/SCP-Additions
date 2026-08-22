@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp330",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp330_loading.png",
+  "left_title": "SCP-330",
+  "left_subtitle": "SAFE",
+  "right_label": "THREAT LEVEL",
+  "right_value": "LOW",
+  "description": "SCP-330 appears to be a small round stainless steel bowl filled with a variable amount of individually wrapped pieces of candy. Taped to the side of the bowl is a handwritten note reading, \"take no more than two, please!!\"",
+  "description_anchor": "center",
+  "weight": 1.0
+}

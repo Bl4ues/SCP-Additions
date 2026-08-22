@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "scp_classified_directive:scp_1176honey"
+    }
+  ],
+  "result": {
+    "item": "minecraft:sugar",
+    "count": 3
+  }
+}

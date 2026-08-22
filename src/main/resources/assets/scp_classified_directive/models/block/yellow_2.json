@@ -1,0 +1,11 @@
+{
+  "parent": "scp_classified_directive:custom/black_2",
+  "textures": {
+    "all": "scp_classified_directive:block/yellow_texture",
+    "particle": "scp_classified_directive:block/yellow_texture",
+    "0": "scp_classified_directive:block/doorframe",
+    "1": "scp_classified_directive:block/knob_yellow",
+    "2": "scp_classified_directive:block/yellow_door"
+  },
+  "render_type": "cutout"
+}

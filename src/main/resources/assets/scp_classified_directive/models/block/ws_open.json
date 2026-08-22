@@ -1,0 +1,10 @@
+{
+  "parent": "scp_classified_directive:custom/ws_open",
+  "textures": {
+    "all": "scp_classified_directive:block/ws",
+    "particle": "scp_classified_directive:block/ws",
+    "0": "scp_classified_directive:block/workshopdoor",
+    "1": "scp_classified_directive:block/workshop"
+  },
+  "render_type": "translucent"
+}

@@ -1,7 +1,0 @@
-
-{
-  "parent": "minecraft:block/block",
-  "textures": {
-    "particle": "scp_additions:block/wet_floor"
-  }
-}

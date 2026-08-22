@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "scp_classified_directive:block/document_holder"
+  }
+}

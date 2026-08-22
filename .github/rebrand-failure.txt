@@ -1,2 +1,0 @@
-run_id=32575159471
-run_url=https://github.com/Bl4ues/SCP-Additions/actions/runs/32575159471

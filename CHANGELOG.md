@@ -1,8 +1,11 @@
 # Changelog
 
-# SCP Additions 4.0.0 — In Development
+# SCP: Classified Directive 4.0.0 — In Development
+
+> **Formerly SCP Additions.**
 
 ## Highlights
+- SCP: Classified Directive rebrand (formerly SCP Additions)
 - SCP-106
 - SCP-939
 - SCP-1576
@@ -18,6 +21,18 @@
 - Rebuilt Configuration Center
 - Mod Integrations
 - Reworked main menu, pause menu, and loading screens
+
+## SCP: Classified Directive rebrand
+
+- Rebranded the project as **SCP: Classified Directive** (formerly **SCP Additions**) to reflect its expanded scope;
+- Migrated the public mod ID and registry namespace from the legacy ID to `scp_classified_directive`;
+- Consolidated the former Unity blocks, UBlocks, and inventory resource namespaces into `scp_classified_directive`;
+- Added Forge missing-mapping migration so legacy registered world content resolves to the new namespace;
+- Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;
+- Legacy configuration files now migrate embedded SCP resource identifiers to the unified namespace while preserving user customizations;
+- Existing world SavedData storage keys remain recognized internally so SCP-294 and SCP-914 state survives the rebrand;
+- Unified legacy configuration directories under `config/scp_classified_directive` without overwriting migrated files;
+- Refactored Java packages, mod metadata, mixin identifiers, build output naming, embedded resource-pack naming, and project-facing text around the new identity.
 
 ## SCP-106
 
@@ -116,13 +131,13 @@
 
 ## Interface and presentation
 
-- Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with SCP Additions backgrounds, animated elements, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
-- Added a default-enabled client-side **Custom Pause Menu** preference with SCP Additions-styled navigation, Achievements, Statistics, Open to LAN, Settings, and mod access while preserving the corresponding vanilla actions and extensibility;
-- Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the SCP Additions background and custom world-generation progress.
-- Added a default-enabled **Custom Achievement Toasts** preference that replaces vanilla advancement popups with animated SCP Additions achievement cards;
+- Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with SCP: Classified Directive backgrounds, animated elements, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
+- Added a default-enabled client-side **Custom Pause Menu** preference with SCP: Classified Directive-styled navigation, Achievements, Statistics, Open to LAN, Settings, and mod access while preserving the corresponding vanilla actions and extensibility;
+- Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the SCP: Classified Directive background and custom world-generation progress.
+- Added a default-enabled **Custom Achievement Toasts** preference that replaces vanilla advancement popups with animated SCP: Classified Directive achievement cards;
 - Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
 - Added an SCP-themed Difficulty to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
-- Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP Additions presentation;
+- Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP: Classified Directive presentation;
 - SCP Inventory can now be closed with its configured open key, matching vanilla inventory-toggle behavior, and Crafting items can be dragged outside the interface to drop them into the world;
 - Rebuilt the Configuration Center to match the new main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth entry and exit transitions while retaining the existing configuration editors and validation logic;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
@@ -145,12 +160,12 @@
 
 ## Death, saving, and spectating
 
-- Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, progressive audio muffling, and SCP Additions-styled Load Game and Main Menu actions;
+- Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, progressive audio muffling, and SCP: Classified Directive-styled Load Game and Main Menu actions;
 - Added a default-enabled server-side **Persistent Death Bodies** module that leaves an inert, interactable player body at the death location, using a short fake-ragdoll collapse and several low, randomized prone poses as a physical target for future SCP and recovery interactions;
 - Persistent Death Bodies can now be searched through an integrated hand prompt; each corpse opens player-named storage containing the items left by that player, using the normal container presentation when SCP Inventory was disabled and the SCP Inventory storage presentation when it was enabled;
 - Added **Quicksave**, bound to F6 by default and fully rebindable, which records the player's current position as their respawn point on Safe and Thaumiel difficulties;
 - Reworked checkpoint availability around difficulty: Safe and Thaumiel allow Quicksave and Decontamination Checkpoint saves, Euclid allows Decontamination Checkpoints but not Quicksave, and Keter disables both while leaving vanilla, command, and compatible modded respawn-point methods available;
-- Added a shared save pipeline that recognizes respawn points set through SCP Additions, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated Roboto **Saving...** indicator with the rotating SCP Additions loading emblem;
+- Added a shared save pipeline that recognizes respawn points set through SCP: Classified Directive, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated Roboto **Saving...** indicator with the rotating SCP: Classified Directive loading emblem;
 - Added a short Load Game return transition with FOV and screen effects, accompanied by the world-entry cue, with an Accessibility option to disable the motion effect;
 - Added multiplayer **Spectate** support to the custom Death Screen: when another player remains alive, dead players can open a third-person **Live Personnel Feed**, orbit the camera, switch between surviving players, and view CCTV-style scan noise and interference during feed changes;
 - Live Personnel Feed target selection is server-authoritative and supports surviving players outside normal tracking distance or in other dimensions by streaming the selected player's region to the dead observer while keeping the custom Death Screen active.
@@ -161,11 +176,11 @@
 - Added **Simple Voice Chat** integration for multiplayer death and spectating: living players keep normal voice-chat behavior, while dead players share a non-positional dead-only call that cannot be heard by living players;
 - Live Personnel Feed observers also receive the voice-chat audio heard by their selected surviving player, including that survivor's own microphone, while remaining isolated from ordinary proximity and group routing at the dead observer's server-side position;
 - Extended the Simple Voice Chat integration to SCP-939: living speech now produces acoustic evidence for its hearing system, while explicit session consent can additionally provide temporary in-memory voice fragments for SCP-939 mimicry without writing captured audio to disk;
-- Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP Additions death/spectate flow while using SCP Additions saves as MineZero checkpoints;
+- Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP: Classified Directive death/spectate flow while using SCP: Classified Directive saves as MineZero checkpoints;
 - MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
-- Extended MineZero checkpoint snapshots with SCP Additions player capabilities, SCP Inventory state, persistent facility/SCP-079 data, and tracked SCP Additions block and BlockEntity changes so the mod's custom state rewinds with the world;
+- Extended MineZero checkpoint snapshots with SCP: Classified Directive player capabilities, SCP Inventory state, persistent facility/SCP-079 data, and tracked SCP: Classified Directive block and BlockEntity changes so the mod's custom state rewinds with the world;
 - Added save-safety checks for MineZero-integrated sessions, preventing checkpoints while players are in active combat, dangerous damage/effect states, SCP-914 processing, SCP-330 hand-loss conditions, or an existing death session where saving could create a deterministic death loop;
-- MineZero's own automatic and alternate checkpoint paths are suppressed while the integration is active so checkpoints remain synchronized with the SCP Additions save system.
+- MineZero's own automatic and alternate checkpoint paths are suppressed while the integration is active so checkpoints remain synchronized with the SCP: Classified Directive save system.
 
 ## Codex and documents
 
@@ -213,7 +228,7 @@
 
 ## Creative inventory organization
 
-- Standardized the creative-tab names as **SCP Additions - SCPs**, **SCP Additions - Items**, and **SCP Additions - Blocks**;
+- Standardized the creative-tab names as **SCP: Classified Directive - SCPs**, **SCP: Classified Directive - Items**, and **SCP: Classified Directive - Blocks**;
 - Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**;
 - Added **Alternative Metal Wall (Bottom)**, **Rest Area Corner Floor**, and **Kitchen Corner Floor** to **LCZ - Sublevel 1**;
 - Added fixed-orientation automatic transitions from Rest Area Corner Floor to Metal Floor and from Blue Floor to Kitchen Corner Floor.
@@ -239,7 +254,7 @@
 - Added two mutually exclusive **Voice Profile** choices with an in-menu voice test, using profile-matched hurt reactions and a gasp after recovering from severe oxygen loss;
 - Added a drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
-- Added a default-enabled module that suppresses Minecraft's ambient soundtrack without blocking SCP Additions' contextual music;
+- Added a default-enabled module that suppresses Minecraft's ambient soundtrack without blocking SCP: Classified Directive' contextual music;
 - Added a default-enabled main menu soundtrack across the title screen and other menus until a world is opened.
 
 ## Contextual interactions
@@ -256,7 +271,7 @@
 
 ## Configuration integration
 
-- Added update-safe integrated defaults for SCP-914 recipes involving SCP Additions content, allowing new bundled transformations to appear in existing installations without resetting `914recipes.json` while keeping configured recipes and fragments authoritative;
+- Added update-safe integrated defaults for SCP-914 recipes involving SCP: Classified Directive content, allowing new bundled transformations to appear in existing installations without resetting `914recipes.json` while keeping configured recipes and fragments authoritative;
 - Applied the same layered-default system to contextual interactions, automatically exposing new bundled block and entity interactions to existing installations while preserving explicit overrides;
 - Added explicit tombstone support through `"enabled": false`: matching SCP-914 recipe IDs and contextual interaction identities can suppress an integrated default without deleting or rewriting bundled data.
 

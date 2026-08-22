@@ -1,0 +1,36 @@
+{
+  "multipart": [
+    {
+      "when": {"facing": "north"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher"}
+    },
+    {
+      "when": {"facing": "north"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher_glass"}
+    },
+    {
+      "when": {"facing": "east"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher", "y": 90}
+    },
+    {
+      "when": {"facing": "east"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher_glass", "y": 90}
+    },
+    {
+      "when": {"facing": "south"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher", "y": 180}
+    },
+    {
+      "when": {"facing": "south"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher_glass", "y": 180}
+    },
+    {
+      "when": {"facing": "west"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher", "y": 270}
+    },
+    {
+      "when": {"facing": "west"},
+      "apply": {"model": "scp_classified_directive:block/extinguisher_glass", "y": 270}
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "scp_classified_directive:block/archival_mid_alt",
+    "up": "scp_classified_directive:block/archival_mid_alt",
+    "north": "scp_classified_directive:block/archival_mid_alt",
+    "east": "scp_classified_directive:block/archival_mid_alt",
+    "south": "scp_classified_directive:block/archival_mid_alt",
+    "west": "scp_classified_directive:block/archival_mid_alt",
+    "particle": "scp_classified_directive:block/archival_mid_alt"
+  },
+  "render_type": "solid"
+}

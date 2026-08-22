@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "scp_classified_directive:block/heater"
+    },
+    "facing=east": {
+      "model": "scp_classified_directive:block/heater",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "scp_classified_directive:block/heater",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "scp_classified_directive:block/heater",
+      "y": 270
+    }
+  }
+}

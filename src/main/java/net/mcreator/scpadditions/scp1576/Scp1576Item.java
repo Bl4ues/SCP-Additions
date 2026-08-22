@@ -1,5 +1,6 @@
 package net.mcreator.scpadditions.scp1576;
 
+import com.bl4ues.scpinventory.event.ScpInventoryMaintenanceEvents;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -104,10 +105,18 @@ public final class Scp1576Item extends Item implements GeoItem {
             return InteractionResult.FAIL;
         }
 
-        ItemStack stored = context.getItemInHand().copy();
+        ItemStack held = context.getItemInHand();
+        ItemStack stored = held.copy();
         stored.setCount(1);
         placed.setStoredItem(stored);
-        context.getItemInHand().shrink(1);
+
+        boolean clearedUsableMirror = player instanceof ServerPlayer serverPlayer
+                && ScpInventoryMaintenanceEvents.discardActiveUsableFromSourceSlot(
+                        serverPlayer, -1, stored);
+        if (!clearedUsableMirror) {
+            held.shrink(1);
+        }
+
         level.gameEvent(player, GameEvent.BLOCK_PLACE, placePos);
         return InteractionResult.CONSUME;
     }

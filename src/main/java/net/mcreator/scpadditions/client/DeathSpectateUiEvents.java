@@ -52,9 +52,6 @@ public final class DeathSpectateUiEvents {
             graphics.fill(feed.left, feed.top, feed.right, feed.bottom,
                     a << 24 | 0x00030406);
 
-            // Dense analog-looking noise sits above the opaque cover. During the
-            // hold phase this means the player sees interference, never half-loaded
-            // chunks, a stale dimension, or the previous target.
             long frame = Util.getMillis() / 38L;
             int strips = 18 + Math.round(cover * 34.0F);
             int feedHeight = Math.max(1, feed.bottom - feed.top);
@@ -94,11 +91,11 @@ public final class DeathSpectateUiEvents {
             return;
         }
 
-        // Let the voice call settle in after the camera hand-off rather than
-        // drawing portraits through the acquisition/static transition.
         float voiceUiAlpha = Mth.clamp((0.72F - cover) / 0.42F,
                 0.0F, 1.0F);
         SimpleVoiceChatDeathScreenUi.render(screen, graphics,
+                event.getMouseX(), event.getMouseY(), voiceUiAlpha);
+        Scp1576DeathScreenUi.render(screen, graphics,
                 event.getMouseX(), event.getMouseY(), voiceUiAlpha);
     }
 

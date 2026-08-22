@@ -4,6 +4,7 @@
   "package": "net.mcreator.scpadditions.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "scp_additions.refmap.json",
+  "plugin": "net.mcreator.scpadditions.mixin.ScpAdditionsMixinPlugin",
   "mixins": [
     "CraftingGridDropMixin",
     "FacilityDiagnosticsActionbarMixin",
@@ -19,6 +20,7 @@
     "Scp939PinnedViewFreedomMixin",
     "Scp939AnimationControllerMixin",
     "Scp939CollisionAuthorityMixin",
+    "Scp1576VoiceBridgeMixin",
     "RoombaNoEntityPushMixin",
     "CoreRoomElevatorManagerFixMixin",
     "compat.MineZeroDeathHandlerMixin",

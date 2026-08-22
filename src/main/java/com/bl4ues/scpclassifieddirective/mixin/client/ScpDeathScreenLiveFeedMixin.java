@@ -14,12 +14,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Keeps the death-screen live personnel feed automatic and its cooperative
- * restore controls compact. A valid survivor is watched as part of the death
- * presentation itself instead of behind a separate Spectate/Return button.
+ * Keeps the death-screen live personnel feed automatic while preserving the
+ * cooperative MineZero rollback controls. This mixin deliberately injects only
+ * at a method boundary owned by ScpDeathScreen; it contains no bytecode-call
+ * redirects and therefore has no rebrand-sensitive method descriptor targets.
  */
 @Mixin(value = ScpDeathScreen.class, remap = false)
-public abstract class ScpDeathScreenSpectateControlsMixin {
+public abstract class ScpDeathScreenLiveFeedMixin {
     @Shadow @Final private boolean hardcoreMode;
     @Shadow @Final private boolean mineZeroMode;
     @Shadow private Button mineZeroPrimaryButton;
@@ -29,11 +30,8 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
     @Shadow private boolean normalSpectating;
     @Shadow private long normalSpectateChangedAt;
 
-    @Inject(method = "updateSpectateWidgets", at = @At("TAIL"))
+    @Inject(method = "updateSpectateWidgets", at = @At("TAIL"), remap = false)
     private void scpClassifiedDirective$polishSpectateControls(CallbackInfo callback) {
-        // Keep every injection in this mixin on methods owned by ScpDeathScreen.
-        // Vanilla overrides such as Screen#init are re-obfuscated in a production
-        // JAR and are not safe targets for this remap=false compatibility mixin.
         if (mineZeroMode) {
             if (MineZeroClientState.livingPlayers() > 0
                     && !MineZeroClientState.spectating()
@@ -49,35 +47,32 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
                 mineZeroPrimaryButton.active = rollbackReady
                         && !MineZeroClientState.restoring();
 
+                // ScpDeathScreen already renders the authoritative ROLLBACK VOTE
+                // count above the controls. Keep the action label stable instead
+                // of duplicating that count inside the button.
                 if (rollbackReady) {
-                    int required = MineZeroClientState.requiredVotes();
-                    String label = required > 0
-                            ? "Load Game  " + MineZeroClientState.votes()
-                                    + " / " + required
-                            : "Load Game";
-                    mineZeroPrimaryButton.setMessage(Component.literal(label));
+                    mineZeroPrimaryButton.setMessage(Component.literal("Load Game"));
                 }
             }
         } else if (!hardcoreMode) {
-            // The normal death screen no longer exposes a Spectate/Return
-            // control. Disable the already-created widget and clear our field so
-            // the next layout pass gives Load Game the full button width.
+            // The normal death screen enters a personnel feed automatically. The
+            // old manual Spectate/Return widget must be both inert and unreferenced
+            // so Screen's generic input dispatch cannot activate it invisibly.
             if (normalSpectateButton != null) {
                 normalSpectateButton.visible = false;
                 normalSpectateButton.active = false;
                 normalSpectateButton = null;
             }
 
-            // After CONNECTION LOST has completed, release the normal feed layout
-            // and return the report card to its centered state.
+            // Once CONNECTION LOST has finished, release the feed layout and let
+            // the report card return to its centered state.
             if (normalSpectating && !MineZeroSpectateClient.active()) {
                 normalSpectating = false;
                 normalSpectateChangedAt = Util.getMillis();
             }
 
-            // DeathSpectateClientEvents performs the authoritative roster query
-            // when this screen first appears. Once its reply reports a survivor,
-            // start the feed automatically while Load Game remains available.
+            // DeathSpectateClientEvents owns the authoritative roster refresh.
+            // Start only after that response proves there is a living target.
             if (!normalSpectating
                     && !MineZeroSpectateClient.transferActive()
                     && MineZeroSpectateClient.availableTargetCount() > 0) {
@@ -89,15 +84,16 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
             }
         }
 
-        // Keep player cycling available only when there is an actual choice.
+        // Cycling controls are meaningful only when there is an actual choice.
         boolean multipleTargets = MineZeroSpectateClient.hasMultipleTargets();
+        boolean showCycling = multipleTargets && MineZeroSpectateClient.active();
         if (previousSpectateButton != null) {
-            previousSpectateButton.visible = multipleTargets && MineZeroSpectateClient.active();
-            previousSpectateButton.active = previousSpectateButton.visible;
+            previousSpectateButton.visible = showCycling;
+            previousSpectateButton.active = showCycling;
         }
         if (nextSpectateButton != null) {
-            nextSpectateButton.visible = multipleTargets && MineZeroSpectateClient.active();
-            nextSpectateButton.active = nextSpectateButton.visible;
+            nextSpectateButton.visible = showCycling;
+            nextSpectateButton.active = showCycling;
         }
     }
 }

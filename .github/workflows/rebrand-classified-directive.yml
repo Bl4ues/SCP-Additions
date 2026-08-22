@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: classified-directive-rebrand
+  cancel-in-progress: true
+
 jobs:
   rebrand:
     if: github.actor != 'github-actions[bot]'
@@ -21,6 +25,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Sync to current master
+        run: |
+          git fetch origin master
+          git reset --hard origin/master
 
       - name: Set up Java 17
         uses: actions/setup-java@v4

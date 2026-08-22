@@ -17,7 +17,7 @@
   "item.scp_additions.scp_173_spawn_egg": "SCP-173 Spawn Egg",
   "item.scp_additions.scp_939_spawn_egg": "SCP-939 Spawn Egg",
   "item.scp_additions.roomba_spawn_egg": "Roomba",
-  "tooltip.scp_additions.scp_939_spawn_egg": "Spawns SCP-939",
+  "tooltip.scp_additions.scp_939_spawn_egg": "With Many Voices",
   "tooltip.scp_additions.roomba_spawn_egg": "Cleaning robot designed to clean rooms within ARC-Site 48",
   "gamerule.939spawn": "SCP-939 Natural Spawning",
   "gamerule.939spawn.description": "If enabled, SCP-939 can begin natural roaming encounters.",

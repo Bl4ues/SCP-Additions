@@ -1,5 +1,6 @@
 name: Validate Classified Directive Runtime Integrity
 
+# One-shot re-run after final identity cleanup.
 on:
   push:
     branches:

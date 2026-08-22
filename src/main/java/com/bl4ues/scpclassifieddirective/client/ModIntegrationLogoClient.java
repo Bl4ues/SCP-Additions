@@ -78,7 +78,7 @@ public final class ModIntegrationLogoClient {
                 NativeImage image = NativeImage.read(stream);
                 DynamicTexture texture = new DynamicTexture(image);
                 ResourceLocation registered = minecraft.getTextureManager().register(
-                        "scp_additions_integration_" + modId, texture);
+                        "scp_classified_directive_integration_" + modId, texture);
                 return Optional.of(registered);
             }
         } catch (ReflectiveOperationException | java.io.IOException exception) {

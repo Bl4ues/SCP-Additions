@@ -253,7 +253,7 @@ public abstract class Scp939AnimationControllerMixin {
         Vec3 velocity = prey.getDeltaMovement();
         Vec3 lead = new Vec3(velocity.x * leadTicks, 0.0D,
                 velocity.z * leadTicks);
-        double leadDistance = lead.horizontalDistance();
+        double leadDistance = Math.sqrt(lead.x * lead.x + lead.z * lead.z);
         if (leadDistance > SCPADDITIONS_MAX_POUNCE_LEAD) {
             lead = lead.scale(SCPADDITIONS_MAX_POUNCE_LEAD / leadDistance);
         }

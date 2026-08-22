@@ -3,10 +3,12 @@ package net.mcreator.scpadditions.scp1576;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,7 +18,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.mcreator.scpadditions.client.Scp1576ItemRenderer;
 import org.jetbrains.annotations.NotNull;
@@ -64,6 +70,46 @@ public final class Scp1576Item extends Item implements GeoItem {
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.NONE;
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+
+        Level level = context.getLevel();
+        BlockPos placePos = context.getClickedPos().relative(context.getClickedFace());
+        if (!level.getBlockState(placePos).isAir()) {
+            return InteractionResult.FAIL;
+        }
+
+        BlockState state = Scp1576Module.PLACED_BLOCK.get().defaultBlockState()
+                .setValue(Scp1576PlacedBlock.FACING,
+                        player.getDirection().getOpposite());
+        if (!state.canSurvive(level, placePos)) {
+            return InteractionResult.FAIL;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (!level.setBlock(placePos, state, 11)) {
+            return InteractionResult.FAIL;
+        }
+
+        BlockEntity blockEntity = level.getBlockEntity(placePos);
+        if (!(blockEntity instanceof Scp1576PlacedBlockEntity placed)) {
+            level.removeBlock(placePos, false);
+            return InteractionResult.FAIL;
+        }
+
+        ItemStack stored = context.getItemInHand().copy();
+        stored.setCount(1);
+        placed.setStoredItem(stored);
+        context.getItemInHand().shrink(1);
+        level.gameEvent(player, GameEvent.BLOCK_PLACE, placePos);
+        return InteractionResult.CONSUME;
     }
 
     @Override

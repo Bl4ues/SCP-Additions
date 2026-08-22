@@ -10,6 +10,10 @@ import java.util.Locale;
 import net.minecraftforge.fml.loading.FMLPaths;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
+/**
+ * Migrates configuration files from every pre-rebrand location without
+ * overwriting user-edited files in the current configuration directory.
+ */
 public final class LegacyConfigMigration {
     private static final List<String> LEGACY_NAMESPACES = List.of(
             "scp_additions", "scp_unity_extra_blocks", "scp_ublocks", "scpinventory");
@@ -26,12 +30,20 @@ public final class LegacyConfigMigration {
             Files.createDirectories(destination);
             copyLegacyTree(root.resolve("scpadditions"), destination);
             copyLegacyTree(root.resolve("scpinventory"), destination);
+
+            // A previous migration may already have copied the file before the
+            // namespace changed, or the user may have retained an older ID in a
+            // current config. Rewrite only resource-location namespace prefixes;
+            // unrelated legacy words and user data are deliberately untouched.
+            rewriteLegacyResourceIds(destination);
         } catch (IOException exception) {
-            ScpClassifiedDirectiveMod.LOGGER.warn("Could not migrate legacy SCP configuration", exception);
+            ScpClassifiedDirectiveMod.LOGGER.warn(
+                    "Could not migrate legacy SCP configuration", exception);
         }
     }
 
-    private static void copyLegacyTree(Path source, Path destination) throws IOException {
+    private static void copyLegacyTree(Path source, Path destination)
+            throws IOException {
         if (!Files.isDirectory(source)) return;
         try (var stream = Files.walk(source)) {
             for (Path path : stream.toList()) {
@@ -43,21 +55,47 @@ public final class LegacyConfigMigration {
                 if (Files.exists(target)) continue;
                 Files.createDirectories(target.getParent());
                 if (isTextConfig(path)) {
-                    String contents = Files.readString(path, StandardCharsets.UTF_8);
-                    for (String legacyNamespace : LEGACY_NAMESPACES) {
-                        contents = contents.replace(legacyNamespace + ":",
-                                ScpClassifiedDirectiveMod.MODID + ":");
-                    }
-                    Files.writeString(target, contents, StandardCharsets.UTF_8);
+                    Files.writeString(target,
+                            rewriteLegacyResourceIds(Files.readString(
+                                    path, StandardCharsets.UTF_8)),
+                            StandardCharsets.UTF_8);
                 } else {
-                    Files.copy(path, target, StandardCopyOption.COPY_ATTRIBUTES);
+                    Files.copy(path, target,
+                            StandardCopyOption.COPY_ATTRIBUTES);
                 }
             }
         }
     }
 
+    private static void rewriteLegacyResourceIds(Path destination)
+            throws IOException {
+        if (!Files.isDirectory(destination)) return;
+        try (var stream = Files.walk(destination)) {
+            for (Path path : stream.filter(Files::isRegularFile).toList()) {
+                if (!isTextConfig(path)) continue;
+                String original = Files.readString(path,
+                        StandardCharsets.UTF_8);
+                String migrated = rewriteLegacyResourceIds(original);
+                if (!original.equals(migrated)) {
+                    Files.writeString(path, migrated,
+                            StandardCharsets.UTF_8);
+                }
+            }
+        }
+    }
+
+    private static String rewriteLegacyResourceIds(String contents) {
+        String migrated = contents;
+        for (String legacyNamespace : LEGACY_NAMESPACES) {
+            migrated = migrated.replace(legacyNamespace + ":",
+                    ScpClassifiedDirectiveMod.MODID + ":");
+        }
+        return migrated;
+    }
+
     private static boolean isTextConfig(Path path) {
-        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+        String name = path.getFileName().toString()
+                .toLowerCase(Locale.ROOT);
         return TEXT_EXTENSIONS.stream().anyMatch(name::endsWith);
     }
 }

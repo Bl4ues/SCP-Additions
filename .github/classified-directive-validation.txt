@@ -1,7 +1,0 @@
-tested_sha=34be1021212ff23351fee26693c6372291b51041
-run_id=32584564480
-integrity_status=0
-clean_build_status=0
-refmap_status=0
-refmap_paths=build/tmp/compileJava/scp_classified_directive.refmap.json;
-result=PASS

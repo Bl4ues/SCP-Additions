@@ -1,4 +1,4 @@
-# SCP: Classified Directive (Formerly SCP Additions)
+# SCP: Classified Directive
 
 ![SCP: Classified Directive banner](https://cdn.modrinth.com/data/cached_images/b9d834bc5afc41d56f44146c8c8521d6170d723c_0.webp)
 
@@ -21,7 +21,7 @@ SCP: Classified Directive (formerly SCP Additions) is an SCP survival-horror and
 
 ## Main features
 
-- Functional SCPs including SCP-012, SCP-079, SCP-106, SCP-131, SCP-173, SCP-294, SCP-714, SCP-914, and more.
+- Functional SCPs including SCP-012, SCP-079, SCP-106, SCP-131, SCP-173, SCP-294, SCP-714, SCP-914, SCP-939, SCP-1576, and more.
 - SCP Unity-inspired inventory, Status, Crafting, Codex, health, stamina, movement, blink, and interaction systems.
 - Animated facility doors, keycard readers, Tesla Gates, decontamination machinery, terminals, lights, props, and modular building blocks.
 - Server-authoritative configuration center for modules, inventory rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes.
@@ -33,9 +33,9 @@ SCP: Classified Directive (formerly SCP Additions) is an SCP survival-horror and
 1. Install Minecraft **1.20.1** with Forge **47.4.10 or newer**.
 2. Install GeckoLib **4.4.9 or newer**.
 3. Place the SCP: Classified Directive JAR in the instance's `mods` folder.
-4. Install optional integrations only when compatible versions are available for Minecraft 1.20.1 Forge.
+4. Install optional integrations only if wanted additional features are desired.
 
-The complete usage guide, controls, commands, configuration reference, and troubleshooting information are maintained in the [Wiki](https://github.com/Bl4ues/SCP-Additions/wiki). A source mirror is kept in [`docs/wiki`](docs/wiki/Home.md).
+The complete usage guide, controls, commands, configuration reference, and troubleshooting information are maintained in the [Wiki](https://github.com/Bl4ues/SCP-Additions/wiki). 
 
 ## Configuration
 

@@ -69,18 +69,55 @@ jobs:
           git add -A
           git commit -m "Rebrand as SCP: Classified Directive"
 
-      - name: Rebase, revalidate and push safely
+      - name: Merge migrated tree into current master
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEMP_BRANCH: classified-directive-rebrand-tmp
         run: |
+          set -euo pipefail
+          cleanup() {
+            curl -sS -L -X DELETE \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/refs/heads/${TEMP_BRANCH}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
           for attempt in 1 2 3 4 5; do
-            echo "Push attempt ${attempt}/5"
+            echo "Atomic merge attempt ${attempt}/5"
             git fetch origin master
-            git rebase origin/master
+            if ! git rebase origin/master; then
+              git rebase --abort || true
+              echo "Rebase conflict against current master"
+              exit 1
+            fi
+
             ./gradlew clean build --stacktrace
-            if git push origin HEAD:master; then
+            git push --force origin HEAD:refs/heads/${TEMP_BRANCH}
+
+            body=$(printf '{"base":"master","head":"%s","commit_message":"Rebrand as SCP: Classified Directive"}' "${TEMP_BRANCH}")
+            response=$(curl -sS -w '\n%{http_code}' -L -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/merges" \
+              -d "${body}")
+            status=$(printf '%s' "${response}" | tail -n1)
+            payload=$(printf '%s' "${response}" | sed '$d')
+
+            if [ "${status}" = "201" ] || [ "${status}" = "204" ]; then
+              echo "Migration merged into master"
               exit 0
             fi
+
+            echo "Merge API returned HTTP ${status}: ${payload}"
+            if [ "${status}" != "409" ]; then
+              exit 1
+            fi
           done
-          echo "Master kept moving during every push attempt"
+
+          echo "Could not atomically merge after five attempts"
           exit 1
 
       - name: Record failed run

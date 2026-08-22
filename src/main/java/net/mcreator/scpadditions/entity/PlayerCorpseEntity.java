@@ -152,15 +152,25 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 && player.level().getGameRules()
                 .getBoolean(GameRules.RULE_KEEPINVENTORY);
         if (keepInventory) {
-            replaceInventory(List.of());
+            replaceInventory(List.of(), MIN_CONTAINER_SIZE);
             return;
         }
 
         List<ItemStack> captured = new ArrayList<>();
+        int capacityHint = MIN_CONTAINER_SIZE;
         if (scpInventoryMode) {
             IScpInventory scp = player.getCapability(ScpInventoryCapability.INSTANCE)
                     .resolve().orElse(null);
             if (scp != null) {
+                // Reserve the complete canonical capacity, not merely the number
+                // of occupied stacks. This covers upgraded main inventories,
+                // every key slot, equipment, the usable slot and the current
+                // document collection. captured.size() remains the final safety
+                // net for future inventory sections with no declared maximum.
+                capacityHint = scp.getMaxMainSlots()
+                        + IScpInventory.MAX_KEY_COUNT
+                        + scp.getDocuments().size()
+                        + ScpEquipmentSlot.values().length + 1;
                 collect(captured, scp.getInventory());
                 collect(captured, scp.getKeys());
                 collect(captured, scp.getDocuments());
@@ -174,7 +184,9 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 // Capability attachment should be unconditional, but falling
                 // back to vanilla contents is safer than silently deleting a
                 // player's inventory if another mod disrupts capability setup.
-                collectVanilla(captured, player.getInventory());
+                Inventory vanilla = player.getInventory();
+                capacityHint = vanillaCapacity(vanilla);
+                collectVanilla(captured, vanilla);
             }
 
             // SCP Inventory owns the canonical stacks. Vanilla hand/armor slots
@@ -183,12 +195,14 @@ public final class PlayerCorpseEntity extends PathfinderMob
             player.getInventory().clearContent();
             player.getInventory().setChanged();
         } else {
-            collectVanilla(captured, player.getInventory());
+            Inventory vanilla = player.getInventory();
+            capacityHint = vanillaCapacity(vanilla);
+            collectVanilla(captured, vanilla);
             player.getInventory().clearContent();
             player.getInventory().setChanged();
         }
 
-        replaceInventory(captured);
+        replaceInventory(captured, capacityHint);
     }
 
     private static void clearScpInventory(IScpInventory scp) {
@@ -207,6 +221,12 @@ public final class PlayerCorpseEntity extends PathfinderMob
         // Preserve upgraded main-slot capacity across death. Only contents move
         // to the body; inventory progression is still owned by the player.
         scp.setMaxMainSlots(capacity);
+    }
+
+    private static int vanillaCapacity(Inventory inventory) {
+        if (inventory == null) return MIN_CONTAINER_SIZE;
+        return inventory.items.size() + inventory.armor.size()
+                + inventory.offhand.size();
     }
 
     private static void collectVanilla(List<ItemStack> target,
@@ -228,13 +248,14 @@ public final class PlayerCorpseEntity extends PathfinderMob
         target.add(stack.copy());
     }
 
-    private void replaceInventory(List<ItemStack> stacks) {
+    private void replaceInventory(List<ItemStack> stacks, int capacityHint) {
         int itemCount = stacks == null ? 0 : stacks.size();
-        int size = Math.max(MIN_CONTAINER_SIZE,
-                ((itemCount + 8) / 9) * 9);
+        int required = Math.max(itemCount, Math.max(MIN_CONTAINER_SIZE,
+                capacityHint));
+        int size = ((required + 8) / 9) * 9;
         SimpleContainer replacement = new SimpleContainer(size);
         if (stacks != null) {
-            for (int i = 0; i < stacks.size() && i < size; i++) {
+            for (int i = 0; i < stacks.size(); i++) {
                 replacement.setItem(i, stacks.get(i).copy());
             }
         }

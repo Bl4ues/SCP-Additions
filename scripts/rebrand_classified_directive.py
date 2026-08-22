@@ -11,7 +11,17 @@ EXT={'.java','.json','.toml','.gradle','.properties','.cfg','.md','.txt','.mcmet
 SKIP={'.git','.gradle','build','run','out'}
 
 def files():
-    return [p for p in R.rglob('*') if p.is_file() and not any(x in SKIP for x in p.relative_to(R).parts) and p.suffix.lower() in EXT]
+    result=[]
+    for p in R.rglob('*'):
+        if not p.is_file(): continue
+        rel=p.relative_to(R)
+        # GITHUB_TOKEN may update repository contents but cannot publish workflow-file
+        # changes. Actions workflows are migrated separately through the GitHub connector
+        # after the validated rebrand commit lands on master.
+        if rel.parts[:2]==('.github','workflows'): continue
+        if any(x in SKIP for x in rel.parts): continue
+        if p.suffix.lower() in EXT: result.append(p)
+    return result
 
 def rw(p):
     try: s=p.read_text(encoding='utf-8')

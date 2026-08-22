@@ -47,10 +47,10 @@ public abstract class Scp939AnimationControllerMixin {
 
     @Unique private static final double SCPADDITIONS_MOVE_DELTA = 0.0015D;
     @Unique private static final int SCPADDITIONS_MOVE_HOLD_TICKS = 2;
-    // At 1x playback the 1.8 s walk covers roughly 3.24 blocks and the
-    // 0.82 s run roughly 3.44 blocks. These are stride calibration values,
-    // not movement-speed limits.
-    @Unique private static final double SCPADDITIONS_WALK_REFERENCE = 0.090D;
+    // The walk gait is calibrated to a roughly 1.30-block physical stride.
+    // The source clip lasts 36 ticks, so 1x playback corresponds to about
+    // 0.036 blocks/tick. Run keeps its existing gallop calibration.
+    @Unique private static final double SCPADDITIONS_WALK_REFERENCE = 0.036D;
     @Unique private static final double SCPADDITIONS_RUN_REFERENCE = 0.210D;
     @Unique private static final double SCPADDITIONS_CONFIRMED_HUNT_SPEED = 1.62D;
     @Unique private static final double SCPADDITIONS_LOST_HUNT_SPEED = 1.40D;
@@ -176,7 +176,7 @@ public abstract class Scp939AnimationControllerMixin {
             } else {
                 target = Mth.clamp(scpadditions$smoothedDistance / reference,
                         running ? 0.55D : 0.42D,
-                        running ? 2.60D : 2.45D);
+                        running ? 2.60D : 2.80D);
             }
 
             // A small blend prevents visible single-tick spikes, but intentionally

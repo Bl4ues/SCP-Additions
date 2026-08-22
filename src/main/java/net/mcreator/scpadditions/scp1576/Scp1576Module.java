@@ -9,6 +9,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
+import net.mcreator.scpadditions.network.Scp1576Network;
 
 /** Registry surface for SCP-1576 and its isolated sound catalog. */
 public final class Scp1576Module {
@@ -39,5 +40,6 @@ public final class Scp1576Module {
         ITEMS.register(bus);
         EFFECTS.register(bus);
         SOUNDS.register(bus);
+        Scp1576Network.register();
     }
 }

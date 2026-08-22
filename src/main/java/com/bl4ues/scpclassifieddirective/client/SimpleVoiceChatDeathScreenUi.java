@@ -124,10 +124,9 @@ public final class SimpleVoiceChatDeathScreenUi {
 
             boolean muted = isParticipantMuted(participant.id());
             boolean talking = !muted && isParticipantTalking(participant.id());
-            float portraitAlpha = talking ? 1.0F
+            float portraitBrightness = talking ? 1.0F
                     : muted ? DEAD_CALL_MUTED_ALPHA / 255.0F
                     : DEAD_CALL_IDLE_ALPHA / 255.0F;
-            portraitAlpha *= uiAlpha;
 
             graphics.fill(headX - 2, y - 2,
                     headX + headSize + 2, y + headSize + 2,
@@ -137,7 +136,17 @@ public final class SimpleVoiceChatDeathScreenUi {
                     withAlpha(0xC006090C, uiAlpha));
 
             HeadTexture texture = headTexture(participant);
-            renderHead(graphics, texture, headX, y, headSize, portraitAlpha);
+            renderHead(graphics, texture, headX, y, headSize, uiAlpha);
+
+            // Dimming the two skin layers by lowering shader alpha separately
+            // makes semi-transparent hat/outer-layer pixels effectively vanish.
+            // Composite the complete head first, then dim it as one image so the
+            // second layer remains visible whether the player is talking or idle.
+            if (portraitBrightness < 0.999F) {
+                graphics.fill(headX, y, headX + headSize, y + headSize,
+                        withAlpha(0xFF06090C,
+                                (1.0F - portraitBrightness) * uiAlpha));
+            }
 
             if (muted) {
                 drawMuteSlash(graphics, headX, y, headSize, uiAlpha);

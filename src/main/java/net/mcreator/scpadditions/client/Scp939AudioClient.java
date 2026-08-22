@@ -29,15 +29,14 @@ import java.util.Set;
 /** Client-side authored audio state for SCP-939 encounters. */
 @Mod.EventBusSubscriber(modid = ScpAdditionsMod.MODID, value = Dist.CLIENT)
 public final class Scp939AudioClient {
-    private static final String SOUND_NAMESPACE = "scp_additions_939";
-    private static final ResourceLocation BITE = id("bite");
-    private static final ResourceLocation HURT = id("hurt");
-    private static final ResourceLocation MAUL = id("maul");
-    private static final ResourceLocation SNARL = id("snarl");
-    private static final ResourceLocation LISTEN = id("listen");
-    private static final ResourceLocation PREY_BREATH = id("prey_breath");
-    private static final ResourceLocation AMBIENT = id("ambient");
-    private static final ResourceLocation CHASE = id("chase");
+    private static final ResourceLocation BITE = id("scp939_bite");
+    private static final ResourceLocation HURT = id("scp939_hurt");
+    private static final ResourceLocation MAUL = id("scp939_maul");
+    private static final ResourceLocation SNARL = id("scp939_snarl");
+    private static final ResourceLocation LISTEN = id("scp939_listen");
+    private static final ResourceLocation PREY_BREATH = id("scp939_prey_breath");
+    private static final ResourceLocation AMBIENT = id("scp939_ambient");
+    private static final ResourceLocation CHASE = id("scp939_chase");
     private static final ResourceLocation MALE_GASP = new ResourceLocation(
             ScpAdditionsMod.MODID, "voice_profile_a_gasp");
     private static final ResourceLocation FEMALE_GASP = new ResourceLocation(
@@ -376,7 +375,7 @@ public final class Scp939AudioClient {
     }
 
     private static ResourceLocation id(String path) {
-        return new ResourceLocation(SOUND_NAMESPACE, path);
+        return new ResourceLocation(ScpAdditionsMod.MODID, path);
     }
 
     private static void reset() {

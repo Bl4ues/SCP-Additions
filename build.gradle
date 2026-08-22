@@ -106,6 +106,42 @@ dependencies {
     runtimeOnly fg.deobf('maven.modrinth:simple-voice-chat:forge-1.20.1-2.6.22')
 }
 
+// A namespace/package migration can leave removed files in Gradle's incremental
+// output directories. Those files are still part of runClient's live classpath,
+// so a source deletion alone is not enough to make them harmless. Purge only
+// artifacts that can no longer be produced by the current source tree.
+def purgeLegacyRebrandOutputs = tasks.register('purgeLegacyRebrandOutputs') {
+    doLast {
+        delete(
+                "$buildDir/classes/java/main/net/mcreator/scpadditions",
+                "$buildDir/classes/java/main/com/bl4ues/scpinventory",
+                "$buildDir/classes/java/main/com/bl4ues/scpclassifieddirective/mixin/client/ScpDeathScreenSpectateControlsMixin.class",
+                "$buildDir/resources/main/assets/scp_additions",
+                "$buildDir/resources/main/assets/scp_ublocks",
+                "$buildDir/resources/main/assets/scp_unity_extra_blocks",
+                "$buildDir/resources/main/assets/scpinventory",
+                "$buildDir/resources/main/data/scp_additions",
+                "$buildDir/resources/main/data/scp_ublocks",
+                "$buildDir/resources/main/data/scp_unity_extra_blocks",
+                "$buildDir/resources/main/config/scpadditions",
+                "$buildDir/resources/main/config/scpinventory",
+                "$buildDir/resources/main/assets/minecraft/font/default.json"
+        )
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn purgeLegacyRebrandOutputs
+}
+
+tasks.named('processResources') {
+    dependsOn purgeLegacyRebrandOutputs
+}
+
+tasks.matching { it.name == 'runClient' || it.name == 'runServer' }.configureEach {
+    dependsOn purgeLegacyRebrandOutputs
+}
+
 processResources {
     inputs.property 'mod_version', project.version
     filesMatching('META-INF/mods.toml') {

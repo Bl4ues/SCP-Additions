@@ -136,14 +136,23 @@ public final class Scp1576PlacedBlock extends BaseEntityBlock {
 
     private static boolean giveToPlayer(ServerPlayer player, ItemStack stack) {
         if (stack.isEmpty()) return false;
+
+        // Placed communicators from worlds created before the placement cleanup
+        // can still contain the temporary hotbar-mirror flag. Strip only SCP
+        // Inventory transport metadata; the communicator's active/cooldown NBT
+        // is deliberately preserved so taking it does not reset its state.
+        ItemStack pickup = stack.copy();
+        ScpPickupRouter.stripUsableSession(pickup);
+        ScpPickupRouter.stripNoMergeMarker(pickup);
+
         if (ScpAdditionsModulesConfig.get().inventory.enabled
                 && !player.isCreative() && !player.isSpectator()) {
             IScpInventory inventory = player.getCapability(
                     ScpInventoryCapability.INSTANCE).resolve().orElse(null);
             if (inventory == null) return false;
-            int accepted = ScpPickupRouter.accept(inventory, player, stack.copy());
+            int accepted = ScpPickupRouter.accept(inventory, player, pickup.copy());
             ModNetwork.syncTo(player, inventory);
-            if (accepted < stack.getCount()) {
+            if (accepted < pickup.getCount()) {
                 ModNetwork.showInventoryFull(player);
                 return false;
             }
@@ -151,7 +160,7 @@ public final class Scp1576PlacedBlock extends BaseEntityBlock {
             return true;
         }
 
-        return player.addItem(stack.copy());
+        return player.addItem(pickup.copy());
     }
 
     @Override

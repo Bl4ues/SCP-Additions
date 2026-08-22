@@ -1,0 +1,81 @@
+name: Validate Classified Directive Runtime Integrity
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/validate-classified-directive-runtime.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate source, clean build and refmap
+        shell: bash
+        run: |
+          set +e
+          chmod +x gradlew
+
+          python3 scripts/verify_classified_directive_integrity.py
+          integrity_status=$?
+
+          ./gradlew clean build --stacktrace
+          build_status=$?
+
+          refmap_paths="$(find build -type f -name 'scp_classified_directive.refmap.json' -print 2>/dev/null | sort | tr '\n' ';')"
+          if [ -n "$refmap_paths" ]; then
+            refmap_status=0
+          else
+            refmap_status=1
+          fi
+
+          if [ "$integrity_status" -eq 0 ] && [ "$build_status" -eq 0 ] && [ "$refmap_status" -eq 0 ]; then
+            final_status=PASS
+          else
+            final_status=FAIL
+          fi
+
+          {
+            echo "tested_sha=$GITHUB_SHA"
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "integrity_status=$integrity_status"
+            echo "clean_build_status=$build_status"
+            echo "refmap_status=$refmap_status"
+            echo "refmap_paths=$refmap_paths"
+            echo "result=$final_status"
+          } > /tmp/classified-directive-validation.txt
+
+      - name: Publish validation result
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          git checkout -B master origin/master
+          cp /tmp/classified-directive-validation.txt .github/classified-directive-validation.txt
+          git add .github/classified-directive-validation.txt
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Record Classified Directive validation [skip ci]"
+          git push origin HEAD:master

@@ -38,39 +38,43 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Migrate, validate and land on master
+      - name: Sync master
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          git reset --hard origin/master
+          rm -f .github/rebrand-failure.txt
 
-          for attempt in 1 2 3; do
-            echo "Migration landing attempt ${attempt}/3"
-            git fetch origin master
-            git reset --hard origin/master
-            rm -f .github/rebrand-failure.txt
+      - name: Run migration scripts
+        run: |
+          set -euo pipefail
+          python3 scripts/rebrand_classified_directive_hotfix.py
+          python3 scripts/rebrand_classified_directive.py
+          python3 scripts/rebrand_classified_directive_compat.py
 
-            python3 scripts/rebrand_classified_directive_hotfix.py
-            python3 scripts/rebrand_classified_directive.py
-            python3 scripts/rebrand_classified_directive_compat.py
-            python3 scripts/rebrand_transition_label.py
+      - name: Apply transition labeling
+        run: |
+          set -euo pipefail
+          python3 scripts/rebrand_transition_label.py
 
-            chmod +x gradlew
-            ./gradlew clean build --stacktrace
+      - name: Validate migrated build
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
 
-            git add -A
-            git commit -m "Rebrand as SCP: Classified Directive"
+      - name: Commit migrated tree
+        run: |
+          set -euo pipefail
+          git add -A
+          git commit -m "Rebrand as SCP: Classified Directive"
 
-            if git push origin HEAD:master; then
-              echo "SCP: Classified Directive migration landed on master"
-              exit 0
-            fi
-
-            echo "Master moved during validation; rebuilding migration from the new head"
-          done
-
-          echo "Unable to land validated migration after three attempts"
-          exit 1
+      - name: Push migrated tree
+        run: |
+          set -euo pipefail
+          git push origin HEAD:master
 
       - name: Record failed run
         if: failure()

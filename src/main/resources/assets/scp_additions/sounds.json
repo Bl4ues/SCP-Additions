@@ -1330,5 +1330,23 @@
         "stream": true
       }
     ]
+  },
+  "scp1576_wind": {
+    "sounds": [
+      {
+        "name": "scp_additions:1576wind",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp1576_speak": {
+    "sounds": [
+      {
+        "name": "scp_additions:1576speak",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

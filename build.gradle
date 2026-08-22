@@ -129,8 +129,8 @@ processResources {
     exclude 'data/scp_classified_directive/recipes/lv_5_kr_left.json'
     exclude 'data/scp_classified_directive/recipes/lv_6_kr_left.json'
 
-    // The original Additions left/right buttons are retained only as hidden
-    // registry compatibility. The Unity door button is the sole public recipe.
+    // Legacy left/right button recipes remain only for hidden registry compatibility.
+    // The Unity door button is the sole public recipe.
     exclude 'data/scp_classified_directive/recipes/button_left_swap.json'
     exclude 'data/scp_classified_directive/recipes/button_right_swap.json'
 
@@ -158,20 +158,16 @@ processResources {
             }
         }
 
-        // Facility registry IDs now live under scp_classified_directive, while the original
-        // models and textures remain a read-only resource library in the legacy
-        // namespace. Duplicate only the registry-facing resource files.
-        def legacyAssets = file("$buildDir/resources/main/assets/scp_classified_directive")
-        def additionsAssets = file("$buildDir/resources/main/assets/scp_classified_directive")
-        if (legacyAssets.exists()) {
+        def directiveAssets = file("$buildDir/resources/main/assets/scp_classified_directive")
+        if (directiveAssets.exists()) {
             // The original Unity button has geometry only for one lateral
             // offset. Generate reflected geometry for the opposite half while
             // keeping the texture UVs readable rather than mirroring the text.
             ['button_locked', 'button_closed', 'button_opening',
              'button_open', 'button_closing'].each { buttonName ->
-                File sourceCustom = new File(legacyAssets,
+                File sourceCustom = new File(directiveAssets,
                         "models/custom/${buttonName}.json")
-                File mirroredCustom = new File(legacyAssets,
+                File mirroredCustom = new File(directiveAssets,
                         "models/custom/${buttonName}_mirrored.json")
 
                 if (sourceCustom.exists()) {
@@ -209,7 +205,7 @@ processResources {
                     writeJson(mirroredCustom, model)
                 }
 
-                File sourceBlockModel = new File(legacyAssets,
+                File sourceBlockModel = new File(directiveAssets,
                         "models/block/${buttonName}.json")
                 if (sourceBlockModel.exists()) {
                     def blockModel = parser.parse(sourceBlockModel)
@@ -219,7 +215,7 @@ processResources {
                     } else {
                         blockModel.parent = "scp_classified_directive:custom/${buttonName}_mirrored"
                     }
-                    writeJson(new File(legacyAssets,
+                    writeJson(new File(directiveAssets,
                             "models/block/${buttonName}_mirrored.json"), blockModel)
                 }
 
@@ -229,65 +225,19 @@ processResources {
                         'facing=south': [model: "scp_classified_directive:block/${buttonName}_mirrored", y: 180],
                         'facing=west' : [model: "scp_classified_directive:block/${buttonName}_mirrored", y: 270]
                 ]]
-                writeJson(new File(additionsAssets,
+                writeJson(new File(directiveAssets,
                         "blockstates/${buttonName}_mirrored.json"), blockState)
             }
         }
 
-        // Data already lives in the unified namespace.
-        // namespace. Also rewrite tag entries under data/minecraft so mineable
-        // and tool tags point to the migrated registry IDs.
-        def allData = file("$buildDir/resources/main/data")
-        if (allData.exists()) {
-            fileTree(allData).matching {
-                include '**/*.json'
-            }.each { jsonFile ->
-                def raw = jsonFile.getText('UTF-8')
-                if (raw.contains('scp_classified_directive:')) {
-                    jsonFile.setText(raw.replace('scp_classified_directive:', 'scp_classified_directive:'), 'UTF-8')
-                }
-            }
-        }
-
-        // Keep new 3.0 translation entries isolated from the generated legacy
-        // language file, then merge both into the single locale Minecraft loads.
+        // Merge the isolated 3.0 translation patch into the locale Minecraft loads.
         def langDir = file("$buildDir/resources/main/assets/scp_classified_directive/lang")
         def baseLangFile = new File(langDir, 'en_us.json')
         def langPatchFile = file('src/main/resources/assets/scp_classified_directive/lang/en_us_3_0.json')
-        def legacyLangFile = file('src/main/resources/assets/scp_classified_directive/lang/en_us.json')
-        def ublocksLangFile = file('src/main/resources/assets/scp_classified_directive/lang/en_us.json')
-        if (baseLangFile.exists()) {
+        if (baseLangFile.exists() && langPatchFile.exists()) {
             def baseLang = parser.parse(baseLangFile)
-
-            if (legacyLangFile.exists()) {
-                def legacyLang = parser.parse(legacyLangFile)
-                legacyLang.each { key, value ->
-                    if (key.startsWith('block.scp_classified_directive.')) {
-                        baseLang[key.replace('block.scp_classified_directive.', 'block.scp_classified_directive.')] = value
-                    }
-                    if (key.startsWith('item.scp_classified_directive.')) {
-                        baseLang[key.replace('item.scp_classified_directive.', 'item.scp_classified_directive.')] = value
-                    }
-                }
-            }
-
-            if (ublocksLangFile.exists()) {
-                def ublocksLang = parser.parse(ublocksLangFile)
-                ublocksLang.each { key, value ->
-                    if (key.startsWith('block.scp_classified_directive.')) {
-                        baseLang[key.replace('block.scp_classified_directive.', 'block.scp_classified_directive.')] = value
-                    }
-                    if (key.startsWith('item.scp_classified_directive.')) {
-                        baseLang[key.replace('item.scp_classified_directive.', 'item.scp_classified_directive.')] = value
-                    }
-                }
-            }
-
-            if (langPatchFile.exists()) {
-                def langPatch = parser.parse(langPatchFile)
-                langPatch.each { key, value -> baseLang[key] = value }
-            }
-
+            def langPatch = parser.parse(langPatchFile)
+            langPatch.each { key, value -> baseLang[key] = value }
             writeJson(baseLangFile, baseLang)
         }
 
@@ -303,7 +253,6 @@ processResources {
             model.elements = model.elements.findAll { element -> element.name != 'shock' }
             writeJson(inactiveTeslaModel, model)
         }
-
     }
 }
 

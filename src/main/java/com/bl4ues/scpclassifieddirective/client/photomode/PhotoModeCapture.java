@@ -2,7 +2,6 @@ package com.bl4ues.scpclassifieddirective.client.photomode;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
@@ -151,6 +150,7 @@ public final class PhotoModeCapture {
                 return;
             }
             finish();
+            event.setCanceled(true);
             return;
         }
 
@@ -286,24 +286,31 @@ public final class PhotoModeCapture {
                                            int width, int height) throws IOException {
         Minecraft minecraft = Minecraft.getInstance();
         RenderTarget mainTarget = minecraft.getMainRenderTarget();
-        TextureTarget matteTarget = new TextureTarget(width, height, true, Minecraft.ON_OSX);
-        matteTarget.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
-        matteTarget.clear(Minecraft.ON_OSX);
-
-        // Preserve occlusion when the selected object was partly hidden in the
-        // source frame. Some shader pipelines use custom depth targets, so a
-        // failed depth copy is deliberately non-fatal: isolation still works.
-        try {
-            matteTarget.copyDepthFrom(mainTarget);
-        } catch (RuntimeException ignored) {
-            matteTarget.clear(Minecraft.ON_OSX);
+        if (mainTarget.width != width || mainTarget.height != height) {
+            throw new IOException("the framebuffer size changed while Photo Mode was frozen");
         }
+
+        /*
+         * Do not render the matte into a separate TextureTarget. Minecraft's
+         * RenderType output states (and Oculus' replacements for them) are free
+         * to rebind the main world framebuffer when a batch is flushed. That
+         * made perfectly valid block renders, notably SCP-294, land in the main
+         * target while the auxiliary matte target remained empty.
+         *
+         * The shader-composited source frame already lives safely in CPU memory,
+         * so use the main framebuffer itself as disposable matte storage. This is
+         * the target vanilla render types and Oculus expect. The next world frame
+         * recreates the display after Photo Mode closes.
+         */
+        mainTarget.bindWrite(true);
+        mainTarget.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        mainTarget.clear(Minecraft.ON_OSX);
 
         Matrix4f previousProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
         RenderSystem.backupProjectionMatrix();
         boolean shadowStateChanged = false;
         try {
-            matteTarget.bindWrite(true);
+            mainTarget.bindWrite(true);
             RenderSystem.setProjectionMatrix(new Matrix4f(frame.projection),
                     VertexSorting.DISTANCE_TO_ORIGIN);
 
@@ -363,20 +370,14 @@ public final class PhotoModeCapture {
             }
             mainTarget.bindWrite(true);
             RenderSystem.restoreProjectionMatrix();
-            // restoreProjectionMatrix() should restore the exact matrix, but
-            // retain this assignment as a defensive fallback across Oculus builds.
             if (!RenderSystem.getProjectionMatrix().equals(previousProjection)) {
                 RenderSystem.setProjectionMatrix(previousProjection,
                         VertexSorting.DISTANCE_TO_ORIGIN);
             }
         }
 
-        try {
-            return download(matteTarget);
-        } finally {
-            matteTarget.destroyBuffers();
-            mainTarget.bindWrite(true);
-        }
+        mainTarget.bindWrite(true);
+        return download(mainTarget);
     }
 
     private static NativeImage compositeAndCrop(NativeImage source, NativeImage matte)

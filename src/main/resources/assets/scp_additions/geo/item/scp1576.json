@@ -1,0 +1,54 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    64,
+    64
+  ],
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [
+        -5,
+        133,
+        1
+      ],
+      "translation": [
+        -2,
+        1.5,
+        0
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        -5,
+        -153,
+        1
+      ],
+      "translation": [
+        0.75,
+        1.5,
+        0
+      ]
+    },
+    "gui": {
+      "rotation": [
+        15,
+        150,
+        0
+      ],
+      "translation": [
+        0,
+        -6.5,
+        0
+      ],
+      "scale": [
+        1.87,
+        1.87,
+        1.87
+      ]
+    }
+  },
+  "textures": {
+    "particle": "scp_additions:item/scp1576"
+  }
+}

@@ -25,6 +25,16 @@ public final class Scp939PinPresentationClient {
     private static final double EXPECTED_PIN_FORWARD = 0.62D;
     private static final double REMOTE_PIN_TOLERANCE_SQR = 0.90D * 0.90D;
 
+    /*
+     * The pinned player's entity origin remains near the first-person face/camera
+     * anchor, but the flat player model extends roughly a full standing-body length
+     * forward from that origin after setupRotations lays it on its back. Render the
+     * model from behind the predator instead, so the rendered face lands back at the
+     * first-person camera position and the shoulders sit beneath the forepaws.
+     */
+    private static final double PIN_RENDER_ORIGIN_FORWARD = -0.76D;
+    private static final double PIN_RENDER_GROUND_LIFT = 0.07D;
+
     private Scp939PinPresentationClient() {
     }
 
@@ -53,13 +63,26 @@ public final class Scp939PinPresentationClient {
         event.setRoll(0.0F);
     }
 
-    /** Seat the sleeping-style victim on the block surface without burying it. */
+    /**
+     * Render the prone victim from a predator-relative body anchor. The player's
+     * actual position intentionally remains untouched so the pin logic and the
+     * already-correct first-person camera keep using their existing coordinates.
+     */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         Player player = event.getEntity();
         if (!isPinnedVictim(player)) return;
+
+        Scp939Entity predator = findPinning939(player);
+        if (predator == null) return;
+
+        Vec3 forward = horizontalForward(predator);
+        Vec3 desiredOrigin = predator.position().add(
+                forward.scale(PIN_RENDER_ORIGIN_FORWARD));
+        Vec3 renderShift = desiredOrigin.subtract(player.position());
+
         PoseStack pose = event.getPoseStack();
-        pose.translate(0.0D, -0.06D, 0.0D);
+        pose.translate(renderShift.x, PIN_RENDER_GROUND_LIFT, renderShift.z);
     }
 
     public static Scp939Entity findPinning939(Player player) {

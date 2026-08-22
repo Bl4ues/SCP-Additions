@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -29,13 +28,6 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
     @Shadow private Button nextSpectateButton;
     @Shadow private boolean normalSpectating;
     @Shadow private long normalSpectateChangedAt;
-
-    @Redirect(method = "drawReportCard", at = @At(value = "INVOKE",
-            target = "Lcom/bl4ues/scpclassifieddirective/client/MineZeroClientState;allDead()Z"),
-            remap = false)
-    private boolean scpClassifiedDirective$hideSeparateRollbackVote() {
-        return false;
-    }
 
     @Inject(method = "updateSpectateWidgets", at = @At("TAIL"))
     private void scpClassifiedDirective$polishSpectateControls(CallbackInfo callback) {

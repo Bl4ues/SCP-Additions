@@ -1266,5 +1266,69 @@
         "volume": 1.0
       }
     ]
+  },
+  "scp939_bite": {
+    "sounds": [
+      {
+        "name": "scp_additions:939bite",
+        "stream": false
+      }
+    ]
+  },
+  "scp939_hurt": {
+    "sounds": [
+      {
+        "name": "scp_additions:939hurt",
+        "stream": false
+      }
+    ]
+  },
+  "scp939_maul": {
+    "sounds": [
+      {
+        "name": "scp_additions:939maul",
+        "stream": true
+      }
+    ]
+  },
+  "scp939_snarl": {
+    "sounds": [
+      {
+        "name": "scp_additions:939snarl",
+        "stream": false
+      }
+    ]
+  },
+  "scp939_listen": {
+    "sounds": [
+      {
+        "name": "scp_additions:939listen",
+        "stream": false
+      }
+    ]
+  },
+  "scp939_prey_breath": {
+    "sounds": [
+      {
+        "name": "scp_additions:939prey_breath",
+        "stream": true
+      }
+    ]
+  },
+  "scp939_ambient": {
+    "sounds": [
+      {
+        "name": "scp_additions:939ambient",
+        "stream": true
+      }
+    ]
+  },
+  "scp939_chase": {
+    "sounds": [
+      {
+        "name": "scp_additions:939chase",
+        "stream": true
+      }
+    ]
   }
 }

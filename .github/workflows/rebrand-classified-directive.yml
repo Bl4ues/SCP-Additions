@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'scripts/rebrand_classified_directive.py'
+      - 'scripts/rebrand_classified_directive_hotfix.py'
       - 'scripts/rebrand_classified_directive_compat.py'
       - '.github/workflows/rebrand-classified-directive.yml'
 
@@ -44,14 +45,17 @@ jobs:
 
       - name: Run migration
         run: |
+          python3 scripts/rebrand_classified_directive_hotfix.py
           python3 scripts/rebrand_classified_directive.py
           python3 scripts/rebrand_classified_directive_compat.py
 
       - name: Remove one-shot migration files
         run: |
           rm scripts/rebrand_classified_directive.py
+          rm scripts/rebrand_classified_directive_hotfix.py
           rm scripts/rebrand_classified_directive_compat.py
           rm .github/workflows/rebrand-classified-directive.yml
+          rm -f .github/rebrand-failure.txt
 
       - name: Validate migrated build
         run: |

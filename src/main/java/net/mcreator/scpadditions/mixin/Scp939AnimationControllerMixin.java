@@ -14,13 +14,15 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 /**
- * Keeps the authored SCP-939 gait synchronized with the entity's real motion.
+ * Keeps SCP-939 locomotion tied to actual distance travelled instead of a
+ * second, independent animation clock.
  *
- * <p>The important distinction here is that locomotion selection and playback
- * speed are driven by a filtered world-space displacement sampled once per game
- * tick. Feeding raw per-frame/network deltas into GeckoLib made the gait visibly
- * stutter, while a fixed animation speed made planted paws skate whenever the
- * navigator changed speed.</p>
+ * <p>For a quadruped this matters more than it does for a biped: when playback
+ * is slower than translation every stance paw visibly skates backwards, and
+ * when a heavily filtered playback speed catches up late the whole animal looks
+ * as if it is trembling through gear changes. The authored walk/run cycles are
+ * therefore scaled from world-space displacement with only a small amount of
+ * filtering for pathfinding/network noise.</p>
  */
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939AnimationControllerMixin {
@@ -39,7 +41,10 @@ public abstract class Scp939AnimationControllerMixin {
     @Unique private static final RawAnimation SCPADDITIONS_939_DEATH = RawAnimation.begin().thenPlay("death");
 
     @Unique private static final double SCPADDITIONS_MOVE_DELTA = 0.0015D;
-    @Unique private static final int SCPADDITIONS_MOVE_HOLD_TICKS = 3;
+    @Unique private static final int SCPADDITIONS_MOVE_HOLD_TICKS = 2;
+    // At 1x playback the 1.8 s walk covers roughly 3.24 blocks and the
+    // 0.82 s run roughly 3.44 blocks. These are stride calibration values,
+    // not movement-speed limits.
     @Unique private static final double SCPADDITIONS_WALK_REFERENCE = 0.090D;
     @Unique private static final double SCPADDITIONS_RUN_REFERENCE = 0.210D;
 
@@ -55,7 +60,7 @@ public abstract class Scp939AnimationControllerMixin {
         Scp939Entity entity = (Scp939Entity) (Object) this;
 
         AnimationController<Scp939Entity> locomotion =
-                new AnimationController<>(entity, "locomotion", 8, state -> {
+                new AnimationController<>(entity, "locomotion", 5, state -> {
                     byte action = entity.getAction();
                     if (scpadditions$isCombatFullBodyAction(action)) return PlayState.STOP;
                     if (action == Scp939Entity.ACTION_LISTEN) {
@@ -119,14 +124,17 @@ public abstract class Scp939AnimationControllerMixin {
         double dx = entity.getX() - entity.xo;
         double dz = entity.getZ() - entity.zo;
         double distance = Math.sqrt(dx * dx + dz * dz);
-        // Entity teleports/pounce corrections must not spike the gait clock.
-        if (!Double.isFinite(distance) || distance > 0.65D) distance = 0.0D;
+        // Teleports, pin placement and the actual pounce impulse do not belong to
+        // the ordinary locomotion gait clock.
+        if (!Double.isFinite(distance) || distance > 0.75D) distance = 0.0D;
 
-        double response = distance > scpadditions$smoothedDistance ? 0.28D : 0.18D;
+        // Fast enough to preserve stance timing, slow enough to discard the
+        // one-tick velocity chatter produced by path node changes.
+        double response = distance > scpadditions$smoothedDistance ? 0.68D : 0.54D;
         scpadditions$smoothedDistance +=
                 (distance - scpadditions$smoothedDistance) * response;
         if (distance < SCPADDITIONS_MOVE_DELTA * 0.5D) {
-            scpadditions$smoothedDistance *= 0.88D;
+            scpadditions$smoothedDistance *= 0.62D;
         }
 
         if (distance > SCPADDITIONS_MOVE_DELTA) {
@@ -155,14 +163,15 @@ public abstract class Scp939AnimationControllerMixin {
                 target = 1.0D;
             } else {
                 target = Mth.clamp(scpadditions$smoothedDistance / reference,
-                        running ? 0.45D : 0.38D,
-                        running ? 1.60D : 1.70D);
+                        running ? 0.55D : 0.42D,
+                        running ? 2.60D : 2.45D);
             }
 
-            // Playback follows the body over several ticks rather than snapping
-            // to every tiny pathfinding/network speed correction.
+            // A small blend prevents audible/visible single-tick spikes, but it
+            // intentionally catches up quickly so feet do not skate while the
+            // body has already accelerated.
             scpadditions$smoothedPlayback +=
-                    (target - scpadditions$smoothedPlayback) * 0.22D;
+                    (target - scpadditions$smoothedPlayback) * 0.58D;
         }
         return scpadditions$smoothedPlayback;
     }

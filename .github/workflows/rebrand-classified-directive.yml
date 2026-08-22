@@ -69,39 +69,51 @@ jobs:
           git add -A
           git commit -m "Rebrand as SCP: Classified Directive"
 
-      - name: Rebase, revalidate and push to master
+      - name: Rebase, revalidate and publish handoff
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 12); do
-            echo "Master landing attempt ${attempt}/12"
-            git fetch origin master
+          git fetch origin master
+          git rebase origin/master
+          ./gradlew build --stacktrace
+          git push --force origin HEAD:refs/heads/classified-directive-handoff
+          echo "Validated migration published for atomic master handoff"
 
-            if ! git rebase origin/master; then
-              git rebase --abort || true
-              echo "Migration commit conflicts with current master; refusing to overwrite concurrent work"
-              exit 1
-            fi
-
-            ./gradlew build --stacktrace
-
-            if git push origin HEAD:master; then
-              echo "SCP: Classified Directive migration landed on master"
+      - name: Wait for master landing and clean handoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected=$(git rev-parse HEAD)
+          for attempt in $(seq 1 120); do
+            current=$(curl -fsSL \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin)["object"]["sha"])')
+            if [ "${current}" = "${expected}" ]; then
+              curl -fsSL -X DELETE \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/refs/heads/classified-directive-handoff"
+              echo "Master landed at ${expected}; handoff branch removed"
               exit 0
             fi
-
-            echo "Master moved before push; retrying from its new tip"
-            sleep 2
+            sleep 5
           done
-
-          echo "Master kept moving through all landing attempts"
+          echo "Handoff remains available because master was not advanced in time"
           exit 1
 
       - name: Record failed run
         if: failure()
         run: |
           git rebase --abort 2>/dev/null || true
+          if git ls-remote --exit-code --heads origin classified-directive-handoff >/dev/null 2>&1; then
+            echo "Validated handoff exists; preserving it instead of writing a misleading failure marker"
+            exit 0
+          fi
           for attempt in 1 2 3; do
-            echo "Failure-marker push attempt ${attempt}/3"
             git fetch origin master
             git reset --hard origin/master
             git config user.name "github-actions[bot]"
@@ -113,5 +125,4 @@ jobs:
               exit 0
             fi
           done
-          echo "Could not record the failed migration after three attempts"
           exit 1

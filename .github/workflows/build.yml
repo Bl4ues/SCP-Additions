@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify Classified Directive integrity
+        run: python3 scripts/verify_classified_directive_integrity.py
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:

@@ -11,27 +11,27 @@ import net.minecraftforge.registries.RegistryObject;
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.network.Scp1576Network;
 
-/** Registry surface for SCP-1576 and its isolated sound catalog. */
+/** Registry surface for SCP-1576. */
 public final class Scp1576Module {
-    public static final String SOUND_NAMESPACE = "scp_additions_1576";
-
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
             ForgeRegistries.ITEMS, ScpAdditionsMod.MODID);
     public static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(
             ForgeRegistries.MOB_EFFECTS, ScpAdditionsMod.MODID);
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(
-            ForgeRegistries.SOUND_EVENTS, SOUND_NAMESPACE);
+            ForgeRegistries.SOUND_EVENTS, ScpAdditionsMod.MODID);
 
     public static final RegistryObject<Item> SCP_1576 = ITEMS.register(
             "scp_1576", Scp1576Item::new);
     public static final RegistryObject<MobEffect> SCP_1576_EFFECT = EFFECTS.register(
             "scp_1576", Scp1576Effect::new);
     public static final RegistryObject<SoundEvent> WIND = SOUNDS.register(
-            "wind", () -> SoundEvent.createVariableRangeEvent(
-                    new ResourceLocation(SOUND_NAMESPACE, "wind")));
+            "scp1576_wind", () -> SoundEvent.createVariableRangeEvent(
+                    new ResourceLocation(ScpAdditionsMod.MODID,
+                            "scp1576_wind")));
     public static final RegistryObject<SoundEvent> SPEAK = SOUNDS.register(
-            "speak", () -> SoundEvent.createVariableRangeEvent(
-                    new ResourceLocation(SOUND_NAMESPACE, "speak")));
+            "scp1576_speak", () -> SoundEvent.createVariableRangeEvent(
+                    new ResourceLocation(ScpAdditionsMod.MODID,
+                            "scp1576_speak")));
 
     private Scp1576Module() {
     }

@@ -14,6 +14,13 @@ for path in list(JAVA.rglob('*.java')):
 for path in list(JAVA.rglob('*SCPAdditions*.java')):
     path.rename(path.with_name(path.name.replace('SCPAdditions', 'SCPClassifiedDirective')))
 
+# Runtime config migration must migrate the contents too. Merely copying a user's old
+# JSON would preserve paths such as scp_additions:item and make those custom rules fail
+# against the newly registered namespace.
+compat_dir = JAVA / 'compat'
+compat_dir.mkdir(parents=True, exist_ok=True)
+(compat_dir / 'LegacyConfigMigration.java').write_text('''package com.bl4ues.scpclassifieddirective.compat;\n\nimport java.io.IOException;\nimport java.nio.charset.StandardCharsets;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\nimport java.nio.file.StandardCopyOption;\nimport java.util.List;\nimport java.util.Locale;\nimport net.minecraftforge.fml.loading.FMLPaths;\nimport com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;\n\npublic final class LegacyConfigMigration {\n    private static final List<String> LEGACY_NAMESPACES = List.of(\n            "scp_additions", "scp_unity_extra_blocks", "scp_ublocks", "scpinventory");\n    private static final List<String> TEXT_EXTENSIONS = List.of(\n            ".json", ".toml", ".cfg", ".properties", ".txt", ".csv", ".yaml", ".yml");\n\n    private LegacyConfigMigration() {\n    }\n\n    public static void migrate() {\n        Path root = FMLPaths.CONFIGDIR.get();\n        Path destination = root.resolve(ScpClassifiedDirectiveMod.MODID);\n        try {\n            Files.createDirectories(destination);\n            copyLegacyTree(root.resolve("scpadditions"), destination);\n            copyLegacyTree(root.resolve("scpinventory"), destination);\n        } catch (IOException exception) {\n            ScpClassifiedDirectiveMod.LOGGER.warn("Could not migrate legacy SCP configuration", exception);\n        }\n    }\n\n    private static void copyLegacyTree(Path source, Path destination) throws IOException {\n        if (!Files.isDirectory(source)) return;\n        try (var stream = Files.walk(source)) {\n            for (Path path : stream.toList()) {\n                Path target = destination.resolve(source.relativize(path));\n                if (Files.isDirectory(path)) {\n                    Files.createDirectories(target);\n                    continue;\n                }\n                if (Files.exists(target)) continue;\n                Files.createDirectories(target.getParent());\n                if (isTextConfig(path)) {\n                    String contents = Files.readString(path, StandardCharsets.UTF_8);\n                    for (String legacyNamespace : LEGACY_NAMESPACES) {\n                        contents = contents.replace(legacyNamespace + ":",\n                                ScpClassifiedDirectiveMod.MODID + ":");\n                    }\n                    Files.writeString(target, contents, StandardCharsets.UTF_8);\n                } else {\n                    Files.copy(path, target, StandardCopyOption.COPY_ATTRIBUTES);\n                }\n            }\n        }\n    }\n\n    private static boolean isTextConfig(Path path) {\n        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);\n        return TEXT_EXTENSIONS.stream().anyMatch(name::endsWith);\n    }\n}\n''', encoding='utf-8')
+
 # Forge capabilities are serialized under their attachment ResourceLocation, independently
 # from registry missing mappings. Copy legacy keys to the unified namespace during read;
 # the next normal save writes only the new key because only the new provider is attached.
@@ -30,8 +37,8 @@ MIXINS.write_text(json.dumps(mixins, indent=2) + '\n', encoding='utf-8')
 changelog = R / 'CHANGELOG.md'
 text = changelog.read_text(encoding='utf-8')
 needle = '- Added Forge missing-mapping migration so legacy registered world content resolves to the new namespace;\n'
-extra = '- Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;\n'
-if extra not in text:
+extra = '- Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;\n- Legacy configuration files now migrate embedded SCP resource identifiers to the unified namespace while preserving user customizations;\n'
+if 'serialized capability-key migration' not in text:
     text = text.replace(needle, needle + extra, 1)
 changelog.write_text(text, encoding='utf-8')
 

@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -22,6 +23,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -123,6 +125,10 @@ public final class Scp1576Item extends Item implements GeoItem {
             held.shrink(1);
         }
 
+        SoundType soundType = state.getSoundType(level, placePos, player);
+        level.playSound(null, placePos, soundType.getPlaceSound(),
+                SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F,
+                soundType.getPitch() * 0.8F);
         level.gameEvent(player, GameEvent.BLOCK_PLACE, placePos);
         return InteractionResult.CONSUME;
     }

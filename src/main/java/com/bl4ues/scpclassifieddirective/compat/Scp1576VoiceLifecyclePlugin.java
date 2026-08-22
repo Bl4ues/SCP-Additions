@@ -11,7 +11,7 @@ import de.maxhenkel.voicechat.api.events.VoicechatServerStoppedEvent;
 public final class Scp1576VoiceLifecyclePlugin implements VoicechatPlugin {
     @Override
     public String getPluginId() {
-        return "scp_additions_1576_lifecycle";
+        return "scp_classified_directive_1576_lifecycle";
     }
 
     @Override

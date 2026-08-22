@@ -178,60 +178,63 @@ public final class Scp939ModelPolish {
 
     /**
      * Touchdown starts with the paw in front of the shoulder. Through stance the
-     * upper limb sweeps rearward, opposing entity translation instead of adding
-     * to it. Recovery is compact: lift, fold, carry forward, extend.
+     * upper limb sweeps rearward slightly farther than before so the paw better
+     * matches ground travel. Recovery deliberately stays shallow: unload the paw,
+     * carry it forward, then extend. The forelimb should never tuck into a large
+     * circular loop during an ordinary walk.
      */
     private static FrontPose frontPose(float phase) {
         if (phase < STANCE_END) {
             float u = smoothstep(phase / STANCE_END);
             return new FrontPose(
-                    Mth.lerp(u, 15.0F, -13.0F),
-                    Mth.lerp(u, -3.0F, 4.0F));
+                    Mth.lerp(u, 15.0F, -15.0F),
+                    Mth.lerp(u, -3.0F, 2.0F));
         }
 
         float swing = (phase - STANCE_END) / (1.0F - STANCE_END);
-        if (swing < 0.28F) {
-            float u = smoothstep(swing / 0.28F);
+        if (swing < 0.22F) {
+            float u = smoothstep(swing / 0.22F);
             return new FrontPose(
-                    Mth.lerp(u, -13.0F, -17.0F),
-                    Mth.lerp(u, 4.0F, -17.0F));
+                    Mth.lerp(u, -15.0F, -10.0F),
+                    Mth.lerp(u, 2.0F, -5.0F));
         }
-        if (swing < 0.70F) {
-            float u = smoothstep((swing - 0.28F) / 0.42F);
+        if (swing < 0.78F) {
+            float u = smoothstep((swing - 0.22F) / 0.56F);
             return new FrontPose(
-                    Mth.lerp(u, -17.0F, 11.0F),
-                    Mth.lerp(u, -17.0F, -8.0F));
+                    Mth.lerp(u, -10.0F, 12.0F),
+                    -5.0F);
         }
 
-        float u = smoothstep((swing - 0.70F) / 0.30F);
+        float u = smoothstep((swing - 0.78F) / 0.22F);
         return new FrontPose(
-                Mth.lerp(u, 11.0F, 15.0F),
-                Mth.lerp(u, -8.0F, -3.0F));
+                Mth.lerp(u, 12.0F, 15.0F),
+                Mth.lerp(u, -5.0F, -3.0F));
     }
 
     /**
-     * Rear-leg timing follows the same forward-to-rear stance sweep. Joint
-     * compensation is deliberately small during support so the paw reads as
-     * loaded; most folding happens only after toe-off.
+     * Rear-leg timing follows the same forward-to-rear stance sweep. The support
+     * arc now reaches a little farther behind the hip to finish cancelling the
+     * small amount of visible ground slip from the previous pass. Most folding
+     * still happens only after toe-off.
      */
     private static RearPose rearPose(float phase) {
         if (phase < STANCE_END) {
             float u = smoothstep(phase / STANCE_END);
             return new RearPose(
-                    Mth.lerp(u, 12.0F, -10.0F),
-                    Mth.lerp(u, 2.0F, -3.0F),
-                    Mth.lerp(u, -5.0F, 9.0F),
-                    Mth.lerp(u, -1.0F, 3.0F));
+                    Mth.lerp(u, 12.0F, -12.5F),
+                    Mth.lerp(u, 2.0F, -3.5F),
+                    Mth.lerp(u, -5.0F, 10.5F),
+                    Mth.lerp(u, -1.0F, 3.5F));
         }
 
         float swing = (phase - STANCE_END) / (1.0F - STANCE_END);
         if (swing < 0.30F) {
             float u = smoothstep(swing / 0.30F);
             return new RearPose(
-                    Mth.lerp(u, -10.0F, -14.0F),
-                    Mth.lerp(u, -3.0F, -6.0F),
-                    Mth.lerp(u, 9.0F, 20.0F),
-                    Mth.lerp(u, 3.0F, 6.0F));
+                    Mth.lerp(u, -12.5F, -14.0F),
+                    Mth.lerp(u, -3.5F, -6.0F),
+                    Mth.lerp(u, 10.5F, 20.0F),
+                    Mth.lerp(u, 3.5F, 6.0F));
         }
         if (swing < 0.72F) {
             float u = smoothstep((swing - 0.30F) / 0.42F);

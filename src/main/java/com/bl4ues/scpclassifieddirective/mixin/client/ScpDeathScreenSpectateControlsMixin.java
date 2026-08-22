@@ -31,7 +31,7 @@ public abstract class ScpDeathScreenSpectateControlsMixin {
     @Shadow private long normalSpectateChangedAt;
 
     @Redirect(method = "drawReportCard", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/MineZeroClientState;allDead()Z"),
+            target = "Lcom/bl4ues/scpclassifieddirective/client/MineZeroClientState;allDead()Z"),
             remap = false)
     private boolean scpClassifiedDirective$hideSeparateRollbackVote() {
         return false;

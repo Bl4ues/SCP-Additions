@@ -24,7 +24,7 @@ public abstract class CustomMainMenuSettingsMixin {
      * our custom class/methods, support both runtime names explicitly.
      */
     @Inject(method = "render", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            target = "Lcom/bl4ues/scpclassifieddirective/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
             require = 0)
     private void scpClassifiedDirective$renderSettingsMapped(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick,
@@ -33,7 +33,7 @@ public abstract class CustomMainMenuSettingsMixin {
     }
 
     @Inject(method = "m_88315_", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            target = "Lcom/bl4ues/scpclassifieddirective/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
             require = 0)
     private void scpClassifiedDirective$renderSettingsSrg(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick,

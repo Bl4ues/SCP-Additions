@@ -64,7 +64,7 @@ public abstract class CustomMainMenuPlayPanelsMixin {
 
     /* See CustomMainMenuSettingsMixin for why both mapped and SRG names are used. */
     @Inject(method = "render", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            target = "Lcom/bl4ues/scpclassifieddirective/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
             require = 0)
     private void scpClassifiedDirective$renderPlayPanelsMapped(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick,
@@ -73,7 +73,7 @@ public abstract class CustomMainMenuPlayPanelsMixin {
     }
 
     @Inject(method = "m_88315_", at = @At(value = "INVOKE",
-            target = "Lnet/mcreator/scpadditions/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
+            target = "Lcom/bl4ues/scpclassifieddirective/client/CustomMainMenuScreen;drawTransition(Lnet/minecraft/client/gui/GuiGraphics;J)V"),
             require = 0)
     private void scpClassifiedDirective$renderPlayPanelsSrg(GuiGraphics graphics,
             int mouseX, int mouseY, float partialTick,

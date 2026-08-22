@@ -6,11 +6,9 @@ SCP: Classified Directive (formerly SCP Additions) is an SCP survival-horror and
 
 ## Links
 
-- [Download source snapshot](https://api.github.com/repos/Bl4ues/SCP-Additions/zipball/master)
 - [Download on Modrinth](https://modrinth.com/mod/scp-additions)
 - [Download on CurseForge](https://www.curseforge.com/minecraft/mc-mods/scp-additions)
 - [Documentation Wiki](https://github.com/Bl4ues/SCP-Additions/wiki)
-- [Wiki source mirror](docs/wiki/Home.md)
 - [Changelog](CHANGELOG.md)
 - [Issue tracker](https://github.com/Bl4ues/SCP-Additions/issues)
 - [Roadmap](https://trello.com/b/UFdqpaC8/scp-additions-roadmap)

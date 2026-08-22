@@ -14,6 +14,7 @@ import net.minecraft.core.registries.Registries;
 
 import net.mcreator.scpadditions.ScpAdditionsMod;
 import net.mcreator.scpadditions.scp012.Scp012Module;
+import net.mcreator.scpadditions.scp1576.Scp1576Module;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,7 @@ public class ScpAdditionsModTabs {
         stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_914_OUTPUT_DOOR.get()));
         stacks.add(new ItemStack(Scp131Items.SCP_939_SPAWN_EGG.get()));
         stacks.add(new ItemStack(ScpAdditionsModBlocks.SCP_1176.get()));
+        stacks.add(new ItemStack(Scp1576Module.SCP_1576.get()));
         return stacks;
     }
 

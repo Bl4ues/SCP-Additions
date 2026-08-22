@@ -105,9 +105,9 @@ public final class Scp939ModelPolish {
             boolean stale = clock.lastTick == Integer.MIN_VALUE
                     || tick - clock.lastTick > 2;
             if (stale) {
-                // Begin from a stable three-leg support pose rather than starting
-                // a newly moving animal with two paws already high in swing.
-                clock.phase = 0.25F;
+                // Phase zero is a stable three-leg support pose and also matches
+                // the start of the underlying GeckoLib walk body's cycle.
+                clock.phase = 0.0F;
             }
 
             double dx = entity.getX() - entity.xo;
@@ -286,8 +286,8 @@ public final class Scp939ModelPolish {
 
     private static final class WalkClock {
         private int lastTick = Integer.MIN_VALUE;
-        private float phase = 0.25F;
-        private float phaseStart = 0.25F;
+        private float phase;
+        private float phaseStart;
         private float phaseAdvance;
     }
 }

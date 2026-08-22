@@ -31,6 +31,7 @@ jobs:
         run: |
           git fetch origin master
           git reset --hard origin/master
+          rm -f .github/rebrand-failure.txt
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -72,3 +73,16 @@ jobs:
 
       - name: Push rebrand to master
         run: git push origin HEAD:master
+
+      - name: Record failed run
+        if: failure()
+        run: |
+          git rebase --abort 2>/dev/null || true
+          git fetch origin master
+          git reset --hard origin/master
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf 'run_id=%s\nrun_url=%s/actions/runs/%s\n' "$GITHUB_RUN_ID" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > .github/rebrand-failure.txt
+          git add .github/rebrand-failure.txt
+          git commit -m "Record failed Classified Directive migration [skip ci]"
+          git push origin HEAD:master

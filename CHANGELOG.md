@@ -5,6 +5,7 @@
 ## Highlights
 - SCP-106
 - SCP-939
+- SCP-1576
 - Reworked SCP-079 facility control
 - Core Room Elevator
 - Reworked survival systems

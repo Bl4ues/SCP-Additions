@@ -5,7 +5,7 @@ license="Creative Commons Attribution-ShareAlike 3.0"
 [[mods]]
 modId="scp_classified_directive"
 version="${mod_version}"
-displayName="SCP: Classified Directive"
+displayName="SCP: Classified Directive (Formerly SCP Additions)"
 authors="Bl4ues"
 logoFile="logo.png"
 description='''

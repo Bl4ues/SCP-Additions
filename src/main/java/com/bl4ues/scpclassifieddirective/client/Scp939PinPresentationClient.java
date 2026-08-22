@@ -22,7 +22,7 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
 public final class Scp939PinPresentationClient {
     private static final double PIN_SEARCH_RANGE = 3.25D;
-    private static final double EXPECTED_PIN_FORWARD = -0.18D;
+    private static final double EXPECTED_PIN_FORWARD = 0.62D;
     private static final double REMOTE_PIN_TOLERANCE_SQR = 0.90D * 0.90D;
 
     private Scp939PinPresentationClient() {
@@ -77,15 +77,16 @@ public final class Scp939PinPresentationClient {
 
     public static Vec3 cameraPosition(Scp939Entity predator) {
         Vec3 forward = horizontalForward(predator);
-        // Keep the first-person viewpoint on the floor beneath the front half of
-        // the predator instead of floating out beyond its paws.
-        return predator.position().add(forward.scale(0.08D))
+        // Restore the floor-level viewpoint in front of the maul rather than
+        // placing the camera behind the head target, which made the presentation
+        // read inverted from first person.
+        return predator.position().add(forward.scale(0.74D))
                 .add(0.0D, 0.075D, 0.0D);
     }
 
     public static Vec3 headTarget(Scp939Entity predator) {
         Vec3 forward = horizontalForward(predator);
-        return predator.position().add(forward.scale(0.45D))
+        return predator.position().add(forward.scale(0.50D))
                 .add(0.0D, 0.94D, 0.0D);
     }
 

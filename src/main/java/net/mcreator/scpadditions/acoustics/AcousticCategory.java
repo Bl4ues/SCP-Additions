@@ -9,7 +9,7 @@ package net.mcreator.scpadditions.acoustics;
  */
 public enum AcousticCategory {
     FOOTSTEP(10.0F, 0.55F),
-    SPRINT(16.0F, 0.90F),
+    SPRINT(20.0F, 1.00F),
     JUMP(12.0F, 0.75F),
     LAND(16.0F, 1.00F),
     DOOR(18.0F, 1.00F),

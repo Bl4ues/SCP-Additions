@@ -53,13 +53,13 @@ public final class Scp939PinPresentationClient {
         event.setRoll(0.0F);
     }
 
-    /** Keep the sleeping-style victim just above the block surface. */
+    /** Seat the sleeping-style victim on the block surface without burying it. */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         Player player = event.getEntity();
         if (!isPinnedVictim(player)) return;
         PoseStack pose = event.getPoseStack();
-        pose.translate(0.0D, 0.07D, 0.0D);
+        pose.translate(0.0D, -0.06D, 0.0D);
     }
 
     public static Scp939Entity findPinning939(Player player) {

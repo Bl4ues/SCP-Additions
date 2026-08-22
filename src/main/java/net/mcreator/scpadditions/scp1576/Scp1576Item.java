@@ -1,11 +1,14 @@
 package net.mcreator.scpadditions.scp1576;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -115,6 +118,25 @@ public final class Scp1576Item extends Item implements GeoItem {
             public @NotNull BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (renderer == null) renderer = new Scp1576ItemRenderer();
                 return renderer;
+            }
+
+            @Override
+            public boolean applyForgeHandTransform(PoseStack poseStack,
+                    LocalPlayer player, HumanoidArm arm, ItemStack itemInHand,
+                    float partialTick, float equipProcess, float swingProcess) {
+                if (!player.isUsingItem()
+                        || !player.getUseItem().is(Scp1576Module.SCP_1576.get())) {
+                    return false;
+                }
+
+                InteractionHand usedHand = player.getUsedItemHand();
+                HumanoidArm usedArm = usedHand == InteractionHand.MAIN_HAND
+                        ? player.getMainArm() : player.getMainArm().getOpposite();
+                if (arm != usedArm) return false;
+
+                int side = arm == HumanoidArm.RIGHT ? 1 : -1;
+                poseStack.translate(side * 0.56F, -0.52F, -0.72F);
+                return true;
             }
         });
     }

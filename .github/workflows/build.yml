@@ -40,6 +40,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: scp-additions-${{ github.sha }}
+          name: scp-classified-directive-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error

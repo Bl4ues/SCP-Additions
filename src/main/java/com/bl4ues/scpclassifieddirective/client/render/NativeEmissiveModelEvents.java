@@ -60,18 +60,18 @@ public final class NativeEmissiveModelEvents {
     private static final String TEXTURE_MANIFEST =
             "/assets/scp_classified_directive/native_emissive_textures.txt";
     private static final RenderType BLOCK_OVERLAY_TYPE = RenderType.cutout();
-    private static final RenderType ITEM_OVERLAY_TYPE = Sheets.cutoutBlockSheet();
     private static final ChunkRenderTypeSet BLOCK_OVERLAY_TYPES =
             ChunkRenderTypeSet.of(BLOCK_OVERLAY_TYPE);
     private static final IQuadTransformer FULL_BRIGHT =
             QuadTransformers.applyingColor(0xFFFFFFFF)
                     .andThen(QuadTransformers.settingMaxEmissivity());
 
-    private static final Set<String> OWNED_MODEL_NAMESPACES = Set.of(
-            ScpClassifiedDirectiveMod.MODID,
-            "scp_keycards",
-            "scp_classified_directive",
-            "scp_classified_directive");
+    // All former in-project model namespaces were consolidated during the
+    // Classified Directive rebrand. Keeping only the live namespace prevents
+    // duplicate Set.of entries and avoids treating unrelated model namespaces
+    // as owned by this renderer.
+    private static final Set<String> OWNED_MODEL_NAMESPACES =
+            Set.of(ScpClassifiedDirectiveMod.MODID);
     private static final Set<ResourceLocation> EMISSIVE_BASE_TEXTURES =
             loadEmissiveTextureManifest();
 
@@ -117,6 +117,16 @@ public final class NativeEmissiveModelEvents {
                     "Unable to read native emissive texture manifest",
                     exception);
         }
+    }
+
+    /**
+     * Sheets initializes registry-backed materials. Resolving it in a static
+     * field here makes Forge load Sheets while automatic event subscribers are
+     * still being discovered, before those registries are ready. Resolve the
+     * item render type lazily instead, when an item model is actually rendered.
+     */
+    private static RenderType itemOverlayType() {
+        return Sheets.cutoutBlockSheet();
     }
 
     private static final class NativeEmissiveBakedModel
@@ -270,7 +280,7 @@ public final class NativeEmissiveModelEvents {
         @Override
         public List<RenderType> getRenderTypes(ItemStack stack,
                 boolean fabulous) {
-            return List.of(ITEM_OVERLAY_TYPE);
+            return List.of(itemOverlayType());
         }
 
         @Override

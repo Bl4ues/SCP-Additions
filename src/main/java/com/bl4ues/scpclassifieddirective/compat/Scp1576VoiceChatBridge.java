@@ -26,9 +26,10 @@ import java.util.UUID;
 
 /**
  * Relays dead-player microphones from active SCP-1576 sources. Speech is
- * band-limited, mildly saturated, quantized, and re-encoded to reproduce the
- * narrow mechanical character of an old phonograph rather than just becoming
- * quieter proximity chat.
+ * band-limited and softly saturated, then given subtle unstable timbre,
+ * flutter and brief signal losses. The active SCP-1576 sound already supplies
+ * the audible surface/static bed, so the voice filter deliberately adds no
+ * extra hiss of its own.
  */
 public final class Scp1576VoiceChatBridge {
     private static final Object CODEC_LOCK = new Object();
@@ -158,7 +159,7 @@ public final class Scp1576VoiceChatBridge {
                 return decoder == null ? null : decoder.decode(opus);
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.debug(
-                        "SCP-1576 could not decode one voice frame; forwarding it without the vintage filter",
+                        "SCP-1576 could not decode one voice frame; forwarding it without the spectral filter",
                         exception);
                 return null;
             }
@@ -241,10 +242,17 @@ public final class Scp1576VoiceChatBridge {
     }
 
     private static final class FilterChannel {
+        private static final int DELAY_SIZE = 2048;
         private final OpusEncoder encoder;
+        private final short[] spectralDelay = new short[DELAY_SIZE];
         private double lowPass;
         private double rumble;
-        private int noiseState = 0x1576A11;
+        private long sampleClock;
+        private int delayIndex;
+        private int glitchState = 0x1576A11;
+        private int dropoutRemaining;
+        private double dropoutDepth = 1.0D;
+        private double dropoutEnvelope = 1.0D;
 
         private FilterChannel(OpusEncoder encoder) {
             this.encoder = encoder;
@@ -252,23 +260,75 @@ public final class Scp1576VoiceChatBridge {
 
         private short[] filter(short[] input, float gain) {
             short[] output = new short[input.length];
+
+            // Roughly once per second at normal 20 ms voice frames, create a
+            // very short loss of intelligibility rather than a full mute. It is
+            // smoothed in and out so the interruption feels like a failing
+            // anomalous transmission, not packet loss or digital clicking.
+            if (dropoutRemaining <= 0 && nextGlitchInt(50) == 0) {
+                dropoutRemaining = 240 + nextGlitchInt(720);
+                dropoutDepth = 0.22D + nextGlitchInt(34) / 100.0D;
+            }
+
             for (int i = 0; i < input.length; i++) {
                 double sample = input[i];
 
-                lowPass += 0.31D * (sample - lowPass);
-                rumble += 0.033D * (lowPass - rumble);
+                // Slowly move the spectral window. No noise is added here: the
+                // communicator's authored active sound already owns the hiss.
+                double timbre = 0.235D
+                        + Math.sin(sampleClock * 0.00019D) * 0.055D
+                        + Math.sin(sampleClock * 0.000047D) * 0.025D;
+                timbre = Mth.clamp(timbre, 0.145D, 0.325D);
+                lowPass += timbre * (sample - lowPass);
+                rumble += 0.026D * (lowPass - rumble);
                 double band = lowPass - rumble;
 
-                double saturated = Math.tanh(band / 9200.0D) * 11200.0D;
-                noiseState = noiseState * 1664525 + 1013904223;
-                double surface = ((noiseState >>> 24) - 128) * 1.35D;
-                double quantized = Math.rint((saturated + surface) / 48.0D)
-                        * 48.0D;
-                int value = Mth.clamp((int) Math.round(quantized * gain),
+                // A tiny, slowly changing delayed copy produces shifting comb
+                // coloration. The result is a subtle second "presence" in the
+                // voice rather than an obvious echo effect.
+                int delaySamples = 245 + (int) Math.round(
+                        (Math.sin(sampleClock * 0.000083D) + 1.0D) * 62.0D);
+                int readIndex = delayIndex - delaySamples;
+                if (readIndex < 0) readIndex += DELAY_SIZE;
+                double delayed = spectralDelay[readIndex];
+                spectralDelay[delayIndex] = (short) Mth.clamp(
+                        (int) Math.round(band), Short.MIN_VALUE, Short.MAX_VALUE);
+                delayIndex = (delayIndex + 1) % DELAY_SIZE;
+
+                double ghostMix = 0.075D
+                        + (Math.sin(sampleClock * 0.000121D) + 1.0D) * 0.025D;
+                double colored = band + delayed * ghostMix;
+                double saturated = Math.tanh(colored / 8600.0D) * 11900.0D;
+
+                // Gentle amplitude flutter changes the apparent timbre and
+                // mechanical stability without obscuring ordinary speech.
+                double flutter = 0.965D
+                        + Math.sin(sampleClock * 0.00037D) * 0.018D
+                        + Math.sin(sampleClock * 0.00111D) * 0.010D;
+
+                double dropoutTarget = dropoutRemaining > 0
+                        ? dropoutDepth : 1.0D;
+                double response = dropoutTarget < dropoutEnvelope
+                        ? 0.24D : 0.065D;
+                dropoutEnvelope += response
+                        * (dropoutTarget - dropoutEnvelope);
+                if (dropoutRemaining > 0) dropoutRemaining--;
+
+                // Mild resolution loss keeps the voice materially different
+                // from normal proximity chat without introducing white noise.
+                double quantized = Math.rint(saturated / 28.0D) * 28.0D;
+                int value = Mth.clamp((int) Math.round(quantized * flutter
+                                * dropoutEnvelope * gain),
                         Short.MIN_VALUE, Short.MAX_VALUE);
                 output[i] = (short) value;
+                sampleClock++;
             }
             return output;
+        }
+
+        private int nextGlitchInt(int bound) {
+            glitchState = glitchState * 1664525 + 1013904223;
+            return Integer.remainderUnsigned(glitchState, bound);
         }
 
         private void close() {

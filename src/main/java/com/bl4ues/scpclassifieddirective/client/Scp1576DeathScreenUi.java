@@ -18,7 +18,8 @@ import java.util.UUID;
 /** Adds active SCP-1576 hosts above the existing dead-call portrait rail. */
 public final class Scp1576DeathScreenUi {
     private static final ResourceLocation SCP1576_ICON = new ResourceLocation(
-            "scp_classified_directive", "textures/item/scp1576.png");
+            "scp_classified_directive", "textures/gui/scp1576_icon.png");
+    private static final int SCP1576_ICON_TEXTURE_SIZE = 32;
     private static final int HEAD_MIN_SIZE = 18;
     private static final int HEAD_MAX_SIZE = 30;
     private static final int HEAD_GAP = 6;
@@ -105,7 +106,9 @@ public final class Scp1576DeathScreenUi {
         int iconX = x - iconSize - 4;
         int iconY = y + (size - iconSize) / 2;
         graphics.blit(SCP1576_ICON, iconX, iconY, iconSize, iconSize,
-                0.0F, 0.0F, 64, 64, 64, 64);
+                0.0F, 0.0F,
+                SCP1576_ICON_TEXTURE_SIZE, SCP1576_ICON_TEXTURE_SIZE,
+                SCP1576_ICON_TEXTURE_SIZE, SCP1576_ICON_TEXTURE_SIZE);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
     }

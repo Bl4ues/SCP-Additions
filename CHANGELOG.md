@@ -2,8 +2,6 @@
 
 # SCP: Classified Directive 4.0.0 — In Development
 
-> **Formerly SCP Additions.**
-
 ## Highlights
 - SCP: Classified Directive rebrand (formerly SCP Additions)
 - SCP-106
@@ -26,7 +24,7 @@
 
 - Rebranded the project as **SCP: Classified Directive** (formerly **SCP Additions**) to reflect its expanded scope;
 - Migrated the public mod ID and registry namespace from the legacy ID to `scp_classified_directive`;
-- Consolidated the former Unity blocks, UBlocks, and inventory resource namespaces into `scp_classified_directive`;
+- Consolidated the former resource namespaces into `scp_classified_directive`;
 - Added Forge missing-mapping migration so legacy registered world content resolves to the new namespace;
 - Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;
 - Legacy configuration files now migrate embedded SCP resource identifiers to the unified namespace while preserving user customizations;
@@ -48,35 +46,27 @@
 
 ## SCP-939
 
-- Added SCP-939 as a new roaming predator with its completed GeckoLib model, texture, animations, spawn egg, localization, renderer, and entity registration;
+- Added SCP-939 as a new roaming threat;
 - SCP-939 is functionally blind and does not use ordinary visual target tracking for long-range pursuit; instead, it follows a shared acoustic-stimulus system that records sound evidence and drives `IDLE`, `HEARD_SOUND`, `INVESTIGATE`, `SEARCH`, `CONFIRMED_HUNT`, and `LOST_SEARCH` awareness states;
 - Player movement, sprinting, jumping and landing, facility doors and buttons, block and interaction noises, breathing, forced gasps, and compatible voice-chat speech can create acoustic evidence with different intensity and range;
 - SCP-939 can investigate the last known location of a sound, search around stale evidence, accelerate into a committed hunt when evidence becomes strong enough, and return to wandering when it loses the trail;
-- Added short-range physical prey detection for attacks without giving SCP-939 supernatural knowledge of a player's current position through walls;
 - Added a close-range bite attack and a committed pounce attack that physically launches SCP-939 toward prey;
-- Successful pounces knock the victim prone and pin them beneath SCP-939, synchronizing the restrained player and predator so other players can see the attack in progress;
+- Successful pounces knock the victim prone and pin them beneath SCP-939;
 - Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue;
-- Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim and forcing SCP-939 into its kicked-off recovery behavior;
-- Added a dedicated breath reserve, independent from vanilla underwater air, which becomes relevant while SCP-939 is nearby;
+- Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim;
+- Added a dedicated breath reserve which becomes relevant while SCP-939 is nearby;
 - Added a rebindable **Hold Breath** control and HUD meter; holding breath suppresses normal breathing acoustic stimuli until the reserve is exhausted, at which point the player is forced to gasp loudly and temporarily cannot continue holding their breath;
-- Added natural SCP-939 encounters that attempt to place it near a Survival player while outside direct sight, then keep it roaming around the encounter area until the encounter becomes quiet enough to despawn;
-- Added the `939spawn` gamerule, SCP-939 support in the shared roamer scheduler, force-spawn/despawn commands, and the Debug Tools roamer timer display;
-- Added optional Simple Voice Chat mimicry: consenting players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position; fragments expire automatically and are cleared when consent is revoked or the player disconnects;
-- Added `/scp939 mimicry allow`, `/scp939 mimicry deny`, and `/scp939 mimicry status` session controls for explicit voice-mimicry consent.
+- Added optional Simple Voice Chat mimicry: players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position; fragments expire automatically and are cleared when consent is revoked or the player disconnects;
+- Added `/scp939 mimicry allow`, `/scp939 mimicry deny`, and `/scp939 mimicry status` session controls.
 
 ## SCP-1576
 
-- Added SCP-1576, **Edisonian Afterlife Communicator**, as a GeckoLib Usable item with dedicated model, texture, item display transforms, and idle/winding animations;
+- Added SCP-1576 as a new Usable object;
 - Holding the normal use control winds SCP-1576 for four seconds, while releasing the control early immediately cancels the winding attempt;
-- Smoothed the first-person winding presentation so beginning use no longer applies the normal vanilla usable-item dip before the authored winding animation;
-- Sneaking and using SCP-1576 on a supported surface now places that exact communicator into the world in its authored default pose, with horizontal rotation only and its model north facing back toward the placing player;
-- Placed SCP-1576 instances expose an integrated **Take / SCP-1576** contextual interaction and preserve their exact item NBT, active-session state, and cooldown when placed or recovered;
-- Completing the wind-up starts a two-second acquisition period followed by 30 seconds of communication with dead players, then places that SCP-1576 instance on a two-minute cooldown;
-- With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them without exposing the normal dead-only voice channel;
-- Relayed voices are filtered and re-encoded with a narrow, aged phonograph-like character instead of sounding like ordinary proximity voice chat;
-- The active communication source follows the SCP-1576 itself when it changes hands, is moved through SCP Inventory, is dropped into the world, is placed as its physical block form, or is placed in supported inventories and containers;
-- Active SCP-1576 sessions emit acoustic evidence from the communicator's physical position, allowing hearing-based systems such as SCP-939 to react to the voices it reproduces;
-- Added the **Afterlife Communicator** achievement, awarded only after an active SCP-1576 actually relays a dead player's voice to a living player.
+- Sneaking and using SCP-1576 on a supported surface now places the object into the world;
+- Completing the wind-up starts 30 seconds of communication with dead players, then places that SCP-1576 instance on a two-minute cooldown;
+- With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them;
+- Active SCP-1576 sessions emit acoustic evidence from the communicator's physical position, allowing hearing-based systems such as SCP-939 to react to the voices it reproduces.
 
 ## SCP-330
 
@@ -123,6 +113,7 @@
 
 - Added **From the Trenches** for surviving an SCP-106 hunt;
 - Added **Concrete and Rebar** for surviving an activated SCP-173 roamer encounter;
+- Added **Afterlife Communicator** for players who use SCP-1576 to speak with dead players.
 - Added the hidden **Eyes on me** achievement for witnessing SCP-131 stop to observe SCP-173;
 - Added the hidden **What?** achievement for having SCP-714 prevent SCP-012 from taking hold;
 - Reworked the Tesla Gate and SCP-330 achievements into non-lethal interaction goals, keeping the full achievement set obtainable in Hardcore runs;

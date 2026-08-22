@@ -49,6 +49,32 @@ public final class DefaultContextInteractions {
               }
             }
             """;
+    private static final String SCP1576_TAKE_RULE = """
+            {
+              "type": "block",
+              "id": "scp_additions:scp_1576_placed",
+              "interactionId": "take_scp_1576",
+              "range": 2.5,
+              "priority": 85,
+              "useItem": "hand",
+              "icon": "hand",
+              "text": {
+                "action": "Take",
+                "nameMode": "manual",
+                "name": "SCP-1576",
+                "showAction": true,
+                "showName": true
+              },
+              "anchor": {
+                "position": [0.5, 0.35, 0.5],
+                "rotateWith": "none"
+              },
+              "input": {
+                "allowE": true,
+                "allowRightClick": true
+              }
+            }
+            """;
 
     private DefaultContextInteractions() {
     }
@@ -69,9 +95,8 @@ public final class DefaultContextInteractions {
     }
 
     /**
-     * Some integrated interactions belong to runtime-only entities rather than
-     * the old standalone SCP Inventory template. Add them here so existing user
-     * configs receive the new default without being rewritten or reset.
+     * Runtime defaults are layered over old external configs so newly integrated
+     * interactions appear without resetting a user's configuration file.
      */
     private static String withRuntimeDefaults(String raw) {
         try {
@@ -85,21 +110,31 @@ public final class DefaultContextInteractions {
                 root.add("interactions", interactions);
             }
 
-            boolean exists = false;
+            boolean corpseExists = false;
+            boolean scp1576Exists = false;
             for (JsonElement element : interactions) {
                 if (!element.isJsonObject()) continue;
                 JsonObject object = element.getAsJsonObject();
-                if ("entity".equalsIgnoreCase(string(object, "type"))
-                        && "scp_additions:player_corpse".equals(
-                        string(object, "id"))
-                        && "search_body".equals(string(object,
-                        "interactionId"))) {
-                    exists = true;
-                    break;
+                String type = string(object, "type");
+                String id = string(object, "id");
+                String interactionId = string(object, "interactionId");
+                if ("entity".equalsIgnoreCase(type)
+                        && "scp_additions:player_corpse".equals(id)
+                        && "search_body".equals(interactionId)) {
+                    corpseExists = true;
+                }
+                if ("block".equalsIgnoreCase(type)
+                        && "scp_additions:scp_1576_placed".equals(id)
+                        && "take_scp_1576".equals(interactionId)) {
+                    scp1576Exists = true;
                 }
             }
-            if (!exists) {
+            if (!corpseExists) {
                 interactions.add(JsonParser.parseString(CORPSE_SEARCH_RULE)
+                        .getAsJsonObject());
+            }
+            if (!scp1576Exists) {
+                interactions.add(JsonParser.parseString(SCP1576_TAKE_RULE)
                         .getAsJsonObject());
             }
             return root.toString();

@@ -21,7 +21,9 @@ Project: **SCP: Classified Directive**
 Author: **Bl4ues**  
 Repository: https://github.com/Bl4ues/SCP-Additions
 
-SCP Unity is the main visual and mechanical inspiration for the project. Special thanks to [SCP: Overtime](https://modrinth.com/mod/scp-overtime) for inspiring the original creation of SCP: Classified Directive. Various facility assets were adapted from or inspired by SCP Unity-related blocks in its 1.16.5 version.
+
+SCP Unity is the main visual and mechanical inspiration for the project.
+Special thanks to [SCP: Overtime](https://modrinth.com/mod/scp-overtime) for inspiring the original creation of SCP: Classified Directive. Various facility assets were adapted from or inspired by SCP Unity-related blocks in its 1.16.5 version.
 
 The following font files are redistributed with SCP: Classified Directive and remain under their respective licenses; they are **not** relicensed under the project's Creative Commons Attribution-ShareAlike 3.0 license.
 

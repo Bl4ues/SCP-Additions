@@ -22,7 +22,7 @@
 
 ## SCP: Classified Directive rebrand
 
-- Rebranded the project as **SCP: Classified Directive** (formerly **SCP Additions**) to reflect its expanded scope;
+- Rebranded the project as **SCP: Classified Directive** (formerly **SCP Additions**);
 - Migrated the public mod ID and registry namespace from the legacy ID to `scp_classified_directive`;
 - Consolidated the former resource namespaces into `scp_classified_directive`;
 - Added Forge missing-mapping migration so legacy registered world content resolves to the new namespace;

@@ -20,19 +20,25 @@ public abstract class Scp939ModelPolishMixin {
                 (Scp939Model<?>) (Object) this, entity);
     }
 
+    /**
+     * Disable the old world-space foot servo. The replacement gait is applied
+     * immediately before the model's own locomotion transition blend instead.
+     */
     @Inject(method = "applyWalkFootLocking", at = @At("HEAD"), cancellable = true)
-    private void scpadditions$replaceWalkFootLocking(Scp939Entity entity,
+    private void scpadditions$disableOldWalkFootLocking(Scp939Entity entity,
             CallbackInfo ci) {
         ci.cancel();
-        Scp939ModelPolish.applyWalkFootLocking(
-                (Scp939Model<?>) (Object) this, entity);
     }
 
-    @Inject(method = "applyLocomotionBlend", at = @At("HEAD"), cancellable = true)
-    private void scpadditions$replaceLocomotionBlend(Scp939Entity entity,
+    /**
+     * Apply the canine gait first, then deliberately allow Scp939Model's original
+     * locomotion blend to continue. The previous mixin cancelled this method,
+     * accidentally removing the walk/idle/listen transition smoothing entirely.
+     */
+    @Inject(method = "applyLocomotionBlend", at = @At("HEAD"))
+    private void scpadditions$applyWalkBeforeLocomotionBlend(Scp939Entity entity,
             AnimationState<?> animationState, CallbackInfo ci) {
-        ci.cancel();
-        Scp939ModelPolish.applyLocomotionBlend(
+        Scp939ModelPolish.applyWalkGait(
                 (Scp939Model<?>) (Object) this, entity, animationState);
     }
 }

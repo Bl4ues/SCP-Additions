@@ -2,10 +2,17 @@ package net.mcreator.scpadditions.scp1576;
 
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.mcreator.scpadditions.client.Scp1576ItemRenderer;
@@ -22,9 +29,11 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** GeckoLib-backed physical item for SCP-1576. */
+/** Hand-wound SCP-1576 item. */
 public final class Scp1576Item extends Item implements GeoItem {
+    private static final String CONTROLLER = "main";
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
+    private static final RawAnimation WINDING = RawAnimation.begin().thenPlay("winding");
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public Scp1576Item() {
@@ -45,6 +54,59 @@ public final class Scp1576Item extends Item implements GeoItem {
     }
 
     @Override
+    public int getUseDuration(ItemStack stack) {
+        return Scp1576Manager.WIND_TICKS;
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.NONE;
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player,
+            InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!Scp1576Manager.canStart(stack)) {
+            return InteractionResultHolder.fail(stack);
+        }
+
+        if (level instanceof ServerLevel serverLevel
+                && player instanceof ServerPlayer serverPlayer) {
+            if (!Scp1576Manager.beginWinding(serverPlayer, hand, stack)) {
+                return InteractionResultHolder.fail(stack);
+            }
+            triggerAnim(serverPlayer, GeoItem.getOrAssignId(stack, serverLevel),
+                    CONTROLLER, "winding");
+        }
+
+        player.startUsingItem(hand);
+        return InteractionResultHolder.consume(stack);
+    }
+
+    @Override
+    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity,
+            int timeLeft) {
+        if (level instanceof ServerLevel serverLevel
+                && entity instanceof ServerPlayer player) {
+            if (Scp1576Manager.cancelWinding(player)) {
+                triggerAnim(player, GeoItem.getOrAssignId(stack, serverLevel),
+                        CONTROLLER, "idle");
+            }
+        }
+        super.releaseUsing(stack, level, entity, timeLeft);
+    }
+
+    @Override
+    public ItemStack finishUsingItem(ItemStack stack, Level level,
+            LivingEntity entity) {
+        if (entity instanceof ServerPlayer player) {
+            Scp1576Manager.completeWinding(player, stack);
+        }
+        return stack;
+    }
+
+    @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private Scp1576ItemRenderer renderer;
@@ -59,10 +121,11 @@ public final class Scp1576Item extends Item implements GeoItem {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 0, state -> {
+        controllers.add(new AnimationController<>(this, CONTROLLER, 0, state -> {
             state.getController().setAnimation(IDLE);
             return PlayState.CONTINUE;
-        }));
+        }).triggerableAnim("winding", WINDING)
+                .triggerableAnim("idle", IDLE));
     }
 
     @Override

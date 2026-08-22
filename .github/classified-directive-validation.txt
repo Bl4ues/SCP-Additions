@@ -1,3 +1,0 @@
-status=success
-validated_sha=7696b933ba80f3030de04b13cfc42f6df71d2d54
-run_id=32575657258

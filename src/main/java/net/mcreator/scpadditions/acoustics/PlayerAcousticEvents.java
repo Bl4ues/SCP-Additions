@@ -85,13 +85,17 @@ public final class PlayerAcousticEvents {
         if (player.onGround() && horizontalDistance > 0.005D
                 && horizontalDistance < 2.0D) {
             state.stepDistance += horizontalDistance;
-            double stride = player.isSprinting() ? 0.90D
+            // A sprinting player is a continuous stream of loud footfalls to a
+            // predator whose primary sense is sound. A 0.90-block evidence gap
+            // left the 939 steering toward old nodes between footsteps and made
+            // a straight sprint look strangely difficult to follow.
+            double stride = player.isSprinting() ? 0.58D
                     : player.isCrouching() ? 0.75D : 0.70D;
             if (state.stepDistance >= stride) {
                 state.stepDistance %= stride;
                 AcousticCategory category = player.isSprinting()
                         ? AcousticCategory.SPRINT : AcousticCategory.FOOTSTEP;
-                float intensity = player.isSprinting() ? 1.00F
+                float intensity = player.isSprinting() ? 1.05F
                         : player.isCrouching() ? 0.12F : 0.55F;
                 AcousticStimulusSystem.emit(player.serverLevel(), current,
                         category, intensity, player);

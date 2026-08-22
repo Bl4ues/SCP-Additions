@@ -131,10 +131,26 @@ public final class Scp1576Manager {
         player.addEffect(new MobEffectInstance(
                 Scp1576Module.SCP_1576_EFFECT.get(), ACTIVE_TICKS, 0,
                 false, false, false));
-        ScpAdvancementAwards.award(player, ADVANCEMENT);
         Scp1576Network.sendAll(packet(active,
                 Scp1576StatePacket.ACTIVE_START, now));
         return true;
+    }
+
+    /**
+     * Awards the contact achievement only after a dead voice is actually routed
+     * through the communicator to at least one living voice-chat receiver.
+     */
+    public static void recordContact(MinecraftServer server, UUID sessionId) {
+        if (server == null || sessionId == null) return;
+        server.execute(() -> {
+            ActiveSession session = ACTIVE.get(sessionId);
+            if (session == null || session.contactAwarded) return;
+            session.contactAwarded = true;
+            ServerPlayer player = server.getPlayerList().getPlayer(session.hostId);
+            if (player != null) {
+                ScpAdvancementAwards.award(player, ADVANCEMENT);
+            }
+        });
     }
 
     /** Immutable snapshots consumed from the Simple Voice Chat packet thread. */
@@ -383,6 +399,7 @@ public final class Scp1576Manager {
         private final long startedAt;
         private final long activeUntil;
         private volatile Source source;
+        private boolean contactAwarded;
 
         private ActiveSession(UUID token, UUID hostId, String hostName,
                 long startedAt, long activeUntil, Source source) {

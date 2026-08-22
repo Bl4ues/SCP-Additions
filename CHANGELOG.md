@@ -49,6 +49,17 @@
 - Added optional Simple Voice Chat mimicry: consenting players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position; fragments expire automatically and are cleared when consent is revoked or the player disconnects;
 - Added `/scp939 mimicry allow`, `/scp939 mimicry deny`, and `/scp939 mimicry status` session controls for explicit voice-mimicry consent.
 
+## SCP-1576
+
+- Added SCP-1576, **Edisonian Afterlife Communicator**, as a GeckoLib Usable item with dedicated model, texture, item display transforms, and idle/winding animations;
+- Holding the normal use control winds SCP-1576 for four seconds, while releasing the control early immediately cancels the winding attempt;
+- Completing the wind-up starts a two-second acquisition period followed by 30 seconds of communication with dead players, then places that SCP-1576 instance on a two-minute cooldown;
+- With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them without exposing the normal dead-only voice channel;
+- Relayed voices are filtered and re-encoded with a narrow, aged phonograph-like character instead of sounding like ordinary proximity voice chat;
+- The active communication source follows the SCP-1576 itself when it changes hands, is moved through SCP Inventory, is dropped into the world, or is placed in supported inventories and containers;
+- Active SCP-1576 sessions emit acoustic evidence from the communicator's physical position, allowing hearing-based systems such as SCP-939 to react to the voices it reproduces;
+- Added the **Afterlife Communicator** achievement, awarded only after an active SCP-1576 actually relays a dead player's voice to a living player.
+
 ## SCP-330
 
 - Rebuilt SCP-330 as a GeckoLib block using a new bowl and candy model based on Unity's design;

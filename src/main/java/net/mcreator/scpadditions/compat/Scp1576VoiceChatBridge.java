@@ -90,7 +90,10 @@ public final class Scp1576VoiceChatBridge {
                 continue;
             }
 
-            sendToLivingReceivers(api, speaker.getServer(), source, packet);
+            if (sendToLivingReceivers(api, speaker.getServer(), source, packet)) {
+                Scp1576Manager.recordContact(speaker.getServer(),
+                        source.sessionId());
+            }
         }
     }
 
@@ -189,9 +192,10 @@ public final class Scp1576VoiceChatBridge {
         return fadeIn * fadeOut;
     }
 
-    private static void sendToLivingReceivers(VoicechatServerApi api,
+    private static boolean sendToLivingReceivers(VoicechatServerApi api,
             MinecraftServer server, Scp1576Manager.VoiceSource source,
             LocationalSoundPacket packet) {
+        boolean sent = false;
         for (ServerPlayer receiver : server.getPlayerList().getPlayers()) {
             if (!receiver.level().dimension().equals(source.dimension())
                     || DeathSpectateCoordinator.isDeadVoiceParticipant(receiver)) {
@@ -204,11 +208,13 @@ public final class Scp1576VoiceChatBridge {
             }
             try {
                 api.sendLocationalSoundPacketTo(connection, packet);
+                sent = true;
             } catch (RuntimeException | LinkageError exception) {
                 ScpAdditionsMod.LOGGER.debug(
                         "Could not send an SCP-1576 voice frame", exception);
             }
         }
+        return sent;
     }
 
     private static ServerPlayer minecraftPlayer(VoicechatConnection connection) {

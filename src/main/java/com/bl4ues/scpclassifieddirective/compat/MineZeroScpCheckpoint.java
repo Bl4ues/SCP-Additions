@@ -250,7 +250,7 @@ public final class MineZeroScpCheckpoint {
     private static boolean ownedPersistentKey(String key) {
         if (key == null) return false;
         return key.startsWith("scp_classified_directive")
-                || key.startsWith("scp_classified_directive")
+                || key.startsWith("scp_additions")
                 || key.equals("candy0") || key.equals("candy1")
                 || key.equals("candy2");
     }

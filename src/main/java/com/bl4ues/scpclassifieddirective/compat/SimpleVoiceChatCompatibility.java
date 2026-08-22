@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  */
 @ForgeVoicechatPlugin
 public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
-    private static final String PLUGIN_ID = "scp_additions_death_voice";
+    private static final String PLUGIN_ID = "scp_classified_directive_death_voice";
     private static final int MIN_API_MAJOR = 2;
     private static final int MIN_API_MINOR = 6;
     private static final int MIN_API_PATCH = 20;

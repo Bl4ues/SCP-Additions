@@ -1,9 +1,13 @@
 package net.mcreator.scpadditions.mixin;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.mcreator.scpadditions.entity.Scp939Entity;
 import net.mcreator.scpadditions.scp939.Scp939AwarenessState;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,16 +17,17 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
+import java.util.UUID;
+
 /**
- * Keeps SCP-939 locomotion tied to actual distance travelled instead of a
- * second, independent animation clock.
+ * Keeps SCP-939 locomotion tied to actual distance travelled and gives a
+ * confirmed acoustic pursuit the responsiveness expected from a large predator.
  *
- * <p>For a quadruped this matters more than it does for a biped: when playback
- * is slower than translation every stance paw visibly skates backwards, and
- * when a heavily filtered playback speed catches up late the whole animal looks
- * as if it is trembling through gear changes. The authored walk/run cycles are
- * therefore scaled from world-space displacement with only a small amount of
- * filtering for pathfinding/network noise.</p>
+ * <p>The chase helpers deliberately do not turn SCP-939 into a sighted mob. Its
+ * long-range destination still comes from the acoustic brain. The only live
+ * player sampling below happens after the prey has already entered the short
+ * physical-detection range and triggered a pounce, where it is used to stop the
+ * seven-tick wind-up from aiming at an obsolete position.</p>
  */
 @Mixin(value = Scp939Entity.class, remap = false)
 public abstract class Scp939AnimationControllerMixin {
@@ -47,12 +52,19 @@ public abstract class Scp939AnimationControllerMixin {
     // not movement-speed limits.
     @Unique private static final double SCPADDITIONS_WALK_REFERENCE = 0.090D;
     @Unique private static final double SCPADDITIONS_RUN_REFERENCE = 0.210D;
+    @Unique private static final double SCPADDITIONS_CONFIRMED_HUNT_SPEED = 1.62D;
+    @Unique private static final double SCPADDITIONS_LOST_HUNT_SPEED = 1.40D;
+    @Unique private static final double SCPADDITIONS_MAX_POUNCE_LEAD = 2.40D;
+
+    @Shadow private boolean pounceLaunched;
+    @Shadow private Vec3 pounceTargetPosition;
 
     @Unique private int scpadditions$movementHoldTicks;
     @Unique private int scpadditions$lastMovementSampleTick = Integer.MIN_VALUE;
     @Unique private int scpadditions$lastPlaybackSampleTick = Integer.MIN_VALUE;
     @Unique private double scpadditions$smoothedDistance;
     @Unique private double scpadditions$smoothedPlayback = 1.0D;
+    @Unique private UUID scpadditions$pounceTargetId;
 
     @Inject(method = "registerControllers", at = @At("HEAD"), cancellable = true)
     private void scpadditions$replace939AnimationControllers(
@@ -167,13 +179,113 @@ public abstract class Scp939AnimationControllerMixin {
                         running ? 2.60D : 2.45D);
             }
 
-            // A small blend prevents audible/visible single-tick spikes, but it
-            // intentionally catches up quickly so feet do not skate while the
-            // body has already accelerated.
+            // A small blend prevents visible single-tick spikes, but intentionally
+            // catches up quickly so stance paws do not skate while the body has
+            // already accelerated.
             scpadditions$smoothedPlayback +=
                     (target - scpadditions$smoothedPlayback) * 0.58D;
         }
         return scpadditions$smoothedPlayback;
+    }
+
+    /**
+     * A confirmed hunt receives much denser replanning than investigate/search.
+     * The destination is still only the acoustic brain's evidenced/predicted
+     * position; this simply stops the navigator from chasing an eight-tick-old
+     * node while a loud player is already somewhere else.
+     */
+    @Inject(method = "moveToKnown", at = @At("HEAD"), cancellable = true,
+            remap = false)
+    private void scpadditions$drivePredatoryChase(Vec3 known, double ignoredSpeed,
+            CallbackInfo ci) {
+        Scp939Entity entity = (Scp939Entity) (Object) this;
+        Scp939AwarenessState awareness = entity.getAwarenessState();
+        boolean confirmed = awareness == Scp939AwarenessState.CONFIRMED_HUNT;
+        boolean lost = awareness == Scp939AwarenessState.LOST_SEARCH;
+        if (!confirmed && !lost) return;
+
+        ci.cancel();
+        if (known == null) return;
+        int interval = confirmed ? 2 : 3;
+        double speed = confirmed ? SCPADDITIONS_CONFIRMED_HUNT_SPEED
+                : SCPADDITIONS_LOST_HUNT_SPEED;
+        if (entity.getNavigation().isDone() || entity.tickCount % interval == 0) {
+            entity.getNavigation().moveTo(known.x, known.y, known.z, speed);
+        }
+    }
+
+    /** Remember the physically detected prey only for the pounce wind-up. */
+    @Inject(method = "startPounce", at = @At("TAIL"), remap = false)
+    private void scpadditions$rememberPouncePrey(ServerPlayer target,
+            CallbackInfo ci) {
+        scpadditions$pounceTargetId = target == null ? null : target.getUUID();
+    }
+
+    /**
+     * Refresh the launch solution while SCP-939 coils to jump. Without this the
+     * seven-tick wind-up aims at the place where a running target used to be,
+     * which is why the predator could repeatedly leap beside its prey.
+     */
+    @Inject(method = "tickActionTimer", at = @At("HEAD"), remap = false)
+    private void scpadditions$leadMovingPounceTarget(CallbackInfo ci) {
+        Scp939Entity entity = (Scp939Entity) (Object) this;
+        if (entity.getAction() != Scp939Entity.ACTION_POUNCE
+                || pounceLaunched || scpadditions$pounceTargetId == null
+                || !(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        ServerPlayer prey = level.getServer().getPlayerList()
+                .getPlayer(scpadditions$pounceTargetId);
+        if (prey == null || !prey.isAlive() || prey.isCreative()
+                || prey.isSpectator() || prey.level() != level) {
+            return;
+        }
+
+        Vec3 base = prey.position().add(0.0D,
+                prey.getBbHeight() * 0.30D, 0.0D);
+        Vec3 delta = base.subtract(entity.position());
+        double distance = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+        double launchSpeed = Mth.clamp(distance * 0.22D, 0.90D, 1.42D);
+        double leadTicks = Mth.clamp(distance / Math.max(0.01D, launchSpeed)
+                + 0.75D, 1.5D, 6.0D);
+
+        Vec3 velocity = prey.getDeltaMovement();
+        Vec3 lead = new Vec3(velocity.x * leadTicks, 0.0D,
+                velocity.z * leadTicks);
+        double leadDistance = lead.horizontalDistance();
+        if (leadDistance > SCPADDITIONS_MAX_POUNCE_LEAD) {
+            lead = lead.scale(SCPADDITIONS_MAX_POUNCE_LEAD / leadDistance);
+        }
+        pounceTargetPosition = base.add(lead);
+    }
+
+    /**
+     * Let the body turn decisively during a hunt without reintroducing the old
+     * angular-velocity accumulator that caused visible oscillation. The turn is
+     * a pure bounded interpolation each tick, so a path correction cannot leave
+     * stored rotational momentum behind.
+     */
+    @Inject(method = "smoothLocomotionRotation", at = @At("HEAD"),
+            cancellable = true, remap = false)
+    private void scpadditions$predatoryTurnRate(CallbackInfo ci) {
+        Scp939Entity entity = (Scp939Entity) (Object) this;
+        float desired = entity.getYRot();
+        float previous = entity.yRotO;
+        float error = Mth.wrapDegrees(desired - previous);
+        byte action = entity.getAction();
+        Scp939AwarenessState awareness = entity.getAwarenessState();
+
+        float maximumTurn = action == Scp939Entity.ACTION_POUNCE ? 24.0F
+                : action == Scp939Entity.ACTION_BITE ? 18.0F
+                : awareness == Scp939AwarenessState.CONFIRMED_HUNT ? 20.0F
+                : awareness == Scp939AwarenessState.LOST_SEARCH ? 15.0F
+                : 9.0F;
+        float yaw = previous + Mth.clamp(error, -maximumTurn, maximumTurn);
+        entity.setYRot(yaw);
+        entity.yBodyRot = Mth.rotLerp(0.58F, entity.yBodyRot, yaw);
+        entity.yHeadRot = Mth.rotLerp(0.70F, entity.yHeadRot, yaw);
+        ci.cancel();
     }
 
     @Unique

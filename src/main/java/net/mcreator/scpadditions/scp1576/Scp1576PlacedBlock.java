@@ -40,8 +40,13 @@ import javax.annotation.Nullable;
 /** Physical placed form of SCP-1576. The exact item stack remains inside it. */
 public final class Scp1576PlacedBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    private static final VoxelShape SHAPE = box(3.0D, 0.0D, 3.0D,
-            13.0D, 10.0D, 13.0D);
+
+    // Match the communicator's main wooden body rather than the horn, crank and
+    // other thin authored details. The model body is about 6.2 x 3.2 x 4.2 px.
+    private static final VoxelShape NORTH_SOUTH = box(4.9D, 0.0D, 5.9D,
+            11.1D, 3.25D, 10.1D);
+    private static final VoxelShape EAST_WEST = box(5.9D, 0.0D, 4.9D,
+            10.1D, 3.25D, 11.1D);
 
     public Scp1576PlacedBlock() {
         super(BlockBehaviour.Properties.of()
@@ -86,13 +91,18 @@ public final class Scp1576PlacedBlock extends BaseEntityBlock {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
             CollisionContext context) {
-        return SHAPE;
+        return bodyShape(state);
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return bodyShape(state);
+    }
+
+    private static VoxelShape bodyShape(BlockState state) {
+        return state.getValue(FACING).getAxis() == Direction.Axis.X
+                ? EAST_WEST : NORTH_SOUTH;
     }
 
     @Override

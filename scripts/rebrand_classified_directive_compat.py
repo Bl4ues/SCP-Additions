@@ -14,6 +14,19 @@ for path in list(JAVA.rglob('*.java')):
 for path in list(JAVA.rglob('*SCPAdditions*.java')):
     path.rename(path.with_name(path.name.replace('SCPAdditions', 'SCPClassifiedDirective')))
 
+# The SavedData filenames are part of existing world persistence, not public branding.
+# Keep their historical storage keys intentionally and document why they must not be
+# casually renamed by a later cleanup.
+variables = JAVA / 'network/ScpClassifiedDirectiveModVariables.java'
+variables_text = variables.read_text(encoding='utf-8')
+for literal in ('scp_additions_worldvars', 'scp_additions_mapvars'):
+    declaration = f'\t\tpublic static final String DATA_NAME = "{literal}";'
+    documented = ('\t\t// Legacy persistence key intentionally retained so existing worlds load their saved state.\n'
+                  + declaration)
+    if declaration in variables_text and documented not in variables_text:
+        variables_text = variables_text.replace(declaration, documented, 1)
+variables.write_text(variables_text, encoding='utf-8')
+
 # Runtime config migration must migrate the contents too. Merely copying a user's old
 # JSON would preserve paths such as scp_additions:item and make those custom rules fail
 # against the newly registered namespace.
@@ -37,7 +50,7 @@ MIXINS.write_text(json.dumps(mixins, indent=2) + '\n', encoding='utf-8')
 changelog = R / 'CHANGELOG.md'
 text = changelog.read_text(encoding='utf-8')
 needle = '- Added Forge missing-mapping migration so legacy registered world content resolves to the new namespace;\n'
-extra = '- Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;\n- Legacy configuration files now migrate embedded SCP resource identifiers to the unified namespace while preserving user customizations;\n'
+extra = '- Added serialized capability-key migration so existing SCP Inventory contents and legacy player variables survive the namespace change;\n- Legacy configuration files now migrate embedded SCP resource identifiers to the unified namespace while preserving user customizations;\n- Existing world SavedData storage keys remain recognized internally so SCP-294 and SCP-914 state survives the rebrand;\n'
 if 'serialized capability-key migration' not in text:
     text = text.replace(needle, needle + extra, 1)
 changelog.write_text(text, encoding='utf-8')

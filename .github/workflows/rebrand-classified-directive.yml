@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'scripts/rebrand_classified_directive.py'
+      - 'scripts/rebrand_classified_directive_compat.py'
       - '.github/workflows/rebrand-classified-directive.yml'
 
 permissions:
@@ -41,11 +42,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run migration
-        run: python3 scripts/rebrand_classified_directive.py
+        run: |
+          python3 scripts/rebrand_classified_directive.py
+          python3 scripts/rebrand_classified_directive_compat.py
 
       - name: Remove one-shot migration files
         run: |
           rm scripts/rebrand_classified_directive.py
+          rm scripts/rebrand_classified_directive_compat.py
           rm .github/workflows/rebrand-classified-directive.yml
 
       - name: Validate migrated build

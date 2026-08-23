@@ -31,11 +31,11 @@ public final class Scp939BreathSystem {
     private static final int BREATH_INTERVAL = 24;
     private static final int EXHAUSTED_LOCK_TICKS = 35;
 
-    // The breath mechanic is a close-range danger cue, not a permanent second
-    // oxygen meter whenever a 939 happens to exist in the same corridor wing.
-    // A small hysteresis prevents the HUD flickering at the edge of the radius.
-    private static final double ACTIVE_ENTER_RADIUS = 9.5D;
-    private static final double ACTIVE_EXIT_RADIUS = 11.0D;
+    // Breath holding is only relevant at true pass-by distance. A small exit
+    // hysteresis prevents the HUD flickering without turning a nearby 939 into
+    // a corridor-wide oxygen tax.
+    private static final double ACTIVE_ENTER_RADIUS = 2.5D;
+    private static final double ACTIVE_EXIT_RADIUS = 2.75D;
 
     private static final Map<UUID, State> STATES = new HashMap<>();
 
@@ -128,7 +128,8 @@ public final class Scp939BreathSystem {
         return !player.serverLevel().getEntitiesOfClass(Scp939Entity.class,
                 player.getBoundingBox().inflate(radius),
                 entity -> entity.isAlive() && !entity.isRemoved()
-                        && entity.distanceToSqr(player) <= radius * radius)
+                        && entity.distanceToSqr(player) <= radius * radius
+                        && player.hasLineOfSight(entity))
                 .isEmpty();
     }
 

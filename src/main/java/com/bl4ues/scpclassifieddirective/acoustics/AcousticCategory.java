@@ -17,7 +17,7 @@ public enum AcousticCategory {
     BLOCK(20.0F, 1.10F),
     INTERACTION(10.0F, 0.55F),
     VOICE(22.0F, 1.05F),
-    BREATH(4.5F, 0.35F),
+    BREATH(3.6F, 0.35F),
     GASP(16.0F, 1.25F),
     WEAPON(40.0F, 1.50F),
     OTHER(10.0F, 0.50F);

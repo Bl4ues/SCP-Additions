@@ -79,6 +79,11 @@
 - Reworked the two-candy limit into a persistent hand-loss state: after taking a third candy, players cannot open inventories, use items, break or interact with blocks, activate buttons, interact with entities, or use contextual interactions until death;
 - Removed the obsolete red and green candies, legacy candy procedures, textures, and model files.
 
+## SCP-714
+
+- Reworked SCP-714's stamina drawback so the ring no longer immediately empties or disables stamina; sprinting begins at normal stamina cost and progressively becomes more exhausting with exposure, reaching **2.5×** stamina drain at the most advanced pre-coma stage;
+- SCP-714 can now be placed on a supported floor with **Sneak + Use**, using a glass placement sound, and recovered through the integrated **Take / SCP-714** contextual interaction.
+
 ## SCP-173
 
 - Reduced SCP-173's rendered height to approximately two blocks;
@@ -263,6 +268,7 @@
 - Expanded the Contextual Interactions list into a merged catalog that visibly distinguishes **Integrated**, **Override**, and **Custom** rules, surfaces integrated defaults missing from older external configs, and shows each alternate interaction together with its required item.
 - Added an **Off-screen prompts** option to the contextual-interaction editor, allowing selected block prompts to remain available at the edge of the screen while behind the player;
 - Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
+- Added pickup feedback to contextual interactions whose action is exactly **Take**, so SCP-714, SCP-1576, and future item-recovery prompts use the custom pickup cue when **Custom Item Interaction Sounds** is enabled and the vanilla pickup cue when it is disabled;
 - Added a warning in the visual anchor editor when the selected block probably has no native right-click interaction.
 
 ## Configuration integration

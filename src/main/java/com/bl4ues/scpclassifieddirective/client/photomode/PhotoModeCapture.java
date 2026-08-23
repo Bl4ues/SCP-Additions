@@ -4,23 +4,13 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -38,10 +28,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Captures a clean, shader-composited world frame and derives an alpha matte
- * from isolated black/white render passes of the selected block/entity. RGB
- * therefore comes from the exact in-game frame rather than from a synthetic
- * studio render.
+ * Captures the exact shader-composited world frame and combines it with a
+ * shader-independent geometry matte for the selected block/entity.
  */
 public final class PhotoModeCapture {
     private static final DateTimeFormatter FILE_TIME =
@@ -67,14 +55,16 @@ public final class PhotoModeCapture {
     }
 
     public static int frozenWidth() {
-        return session == null || session.source == null ? 0 : session.source.getWidth();
+        return session == null || session.source == null
+                ? 0 : session.source.getWidth();
     }
 
     public static int frozenHeight() {
-        return session == null || session.source == null ? 0 : session.source.getHeight();
+        return session == null || session.source == null
+                ? 0 : session.source.getHeight();
     }
 
-    /** Called at the end of world rendering so selection/matte use the same camera. */
+    /** Called at the end of world rendering so picker and matte share a camera. */
     public static void recordWorldFrame(RenderLevelStageEvent event) {
         if (!PhotoModeFeature.isEnabled()
                 || event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
@@ -156,7 +146,7 @@ public final class PhotoModeCapture {
         }
 
         // The frozen texture is drawn by PhotoModeSelectionScreen. Suppressing
-        // the live HUD prevents one-frame flashes of crosshair/text beneath it.
+        // the live HUD prevents one-frame flashes beneath it.
         event.setCanceled(true);
     }
 
@@ -165,7 +155,8 @@ public final class PhotoModeCapture {
         Session current = session;
         Minecraft minecraft = Minecraft.getInstance();
         if (current == null || current.frame == null || minecraft.level == null
-                || minecraft.getCameraEntity() == null || guiWidth <= 0 || guiHeight <= 0) {
+                || minecraft.getCameraEntity() == null
+                || guiWidth <= 0 || guiHeight <= 0) {
             return null;
         }
 
@@ -175,7 +166,8 @@ public final class PhotoModeCapture {
 
         float projectionX = frame.projection.m00();
         float projectionY = frame.projection.m11();
-        if (Math.abs(projectionX) < 1.0E-6F || Math.abs(projectionY) < 1.0E-6F) {
+        if (Math.abs(projectionX) < 1.0E-6F
+                || Math.abs(projectionY) < 1.0E-6F) {
             return null;
         }
 
@@ -218,14 +210,14 @@ public final class PhotoModeCapture {
     }
 
     public static void cancel() {
-        cleanup(false);
+        cleanup();
     }
 
     private static void finish() {
-        cleanup(true);
+        cleanup();
     }
 
-    private static void cleanup(boolean successful) {
+    private static void cleanup() {
         Session old = session;
         session = null;
         if (old == null) {
@@ -246,7 +238,7 @@ public final class PhotoModeCapture {
 
     private static void fail(Component message) {
         Minecraft minecraft = Minecraft.getInstance();
-        cleanup(false);
+        cleanup();
         if (minecraft.player != null) {
             minecraft.player.displayClientMessage(message, false);
         }
@@ -255,7 +247,8 @@ public final class PhotoModeCapture {
     private static void saveSelectedObject(Session current, PhotoTarget target)
             throws IOException {
         Minecraft minecraft = Minecraft.getInstance();
-        if (current.frame == null || current.source == null || minecraft.level == null) {
+        if (current.frame == null || current.source == null
+                || minecraft.level == null) {
             throw new IOException("the frozen world frame is no longer available");
         }
 
@@ -267,7 +260,8 @@ public final class PhotoModeCapture {
                 Path directory = minecraft.gameDirectory.toPath()
                         .resolve("screenshots").resolve("photo_mode");
                 Files.createDirectories(directory);
-                String filename = "scp_photo_" + FILE_TIME.format(LocalDateTime.now()) + ".png";
+                String filename = "scp_photo_"
+                        + FILE_TIME.format(LocalDateTime.now()) + ".png";
                 Path path = directory.resolve(filename);
                 output.writeToFile(path);
 
@@ -284,180 +278,23 @@ public final class PhotoModeCapture {
     }
 
     /**
-     * Builds coverage without trusting framebuffer alpha. Solid block render
-     * types commonly leave alpha untouched, so an alpha-only matte can be empty
-     * even while RGB was rendered correctly. Instead render the same target over
-     * black and white. For normal source-over compositing:
-     *
-     * black = object * a
-     * white = object * a + white * (1-a)
-     *
-     * Therefore white-black measures background transmission and yields alpha.
+     * The old GPU isolation passes are intentionally gone. Oculus proved that a
+     * RenderType may route geometry into shader-owned g-buffers instead of the
+     * framebuffer Photo Mode binds. Capture the renderer's emitted vertices and
+     * rasterize the silhouette on CPU instead; RGB still comes from the frozen
+     * shader-composited source frame.
      */
     private static NativeImage renderMatte(PhotoTarget target, FrameSnapshot frame,
                                            int width, int height) throws IOException {
-        Minecraft minecraft = Minecraft.getInstance();
-        RenderTarget mainTarget = minecraft.getMainRenderTarget();
-        if (mainTarget.width != width || mainTarget.height != height) {
-            throw new IOException("the framebuffer size changed while Photo Mode was frozen");
-        }
-
-        NativeImage blackPass = renderIsolationPass(target, frame, 0.0F);
-        NativeImage whitePass = null;
-        try {
-            whitePass = renderIsolationPass(target, frame, 1.0F);
-            NativeImage matte = buildCoverageMatte(blackPass, whitePass);
-            if (!hasCoverage(matte)) {
-                Path debugDir = minecraft.gameDirectory.toPath()
-                        .resolve("screenshots").resolve("photo_mode").resolve("debug");
-                Files.createDirectories(debugDir);
-                String stamp = FILE_TIME.format(LocalDateTime.now());
-                blackPass.writeToFile(debugDir.resolve("matte_black_" + stamp + ".png"));
-                whitePass.writeToFile(debugDir.resolve("matte_white_" + stamp + ".png"));
-                matte.close();
-                throw new IOException("the selected object produced an empty RGB matte; "
-                        + "debug passes saved in screenshots/photo_mode/debug");
-            }
-            return matte;
-        } finally {
-            blackPass.close();
-            if (whitePass != null) {
-                whitePass.close();
-            }
-        }
-    }
-
-    private static NativeImage renderIsolationPass(PhotoTarget target,
-                                                   FrameSnapshot frame,
-                                                   float background) throws IOException {
-        Minecraft minecraft = Minecraft.getInstance();
-        RenderTarget mainTarget = minecraft.getMainRenderTarget();
-        mainTarget.bindWrite(true);
-        mainTarget.setClearColor(background, background, background, 1.0F);
-        mainTarget.clear(Minecraft.ON_OSX);
-
-        Matrix4f previousProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
-        RenderSystem.backupProjectionMatrix();
-        boolean shadowStateChanged = false;
-        try {
-            mainTarget.bindWrite(true);
-            RenderSystem.setProjectionMatrix(new Matrix4f(frame.projection),
-                    VertexSorting.DISTANCE_TO_ORIGIN);
-
-            PoseStack poseStack = new PoseStack();
-            poseStack.last().pose().set(frame.pose);
-            poseStack.last().normal().set(frame.normal);
-
-            LightTexture lightTexture = minecraft.gameRenderer.lightTexture();
-            lightTexture.turnOnLightLayer();
-            try {
-                MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
-                if (target instanceof EntityTarget entityTarget) {
-                    Entity entity = entityTarget.entity;
-                    if (!entity.isRemoved()) {
-                        EntityRenderDispatcher dispatcher = minecraft.getEntityRenderDispatcher();
-                        dispatcher.setRenderShadow(false);
-                        shadowStateChanged = true;
-
-                        double x = Mth.lerp(frame.partialTick, entity.xOld, entity.getX())
-                                - frame.cameraPosition.x;
-                        double y = Mth.lerp(frame.partialTick, entity.yOld, entity.getY())
-                                - frame.cameraPosition.y;
-                        double z = Mth.lerp(frame.partialTick, entity.zOld, entity.getZ())
-                                - frame.cameraPosition.z;
-                        float yaw = Mth.lerp(frame.partialTick, entity.yRotO, entity.getYRot());
-                        int packedLight = dispatcher.getPackedLightCoords(entity, frame.partialTick);
-                        dispatcher.render(entity, x, y, z, yaw, frame.partialTick,
-                                poseStack, buffers, packedLight);
-                    }
-                } else if (target instanceof BlockTarget blockTarget) {
-                    BlockPos pos = blockTarget.pos;
-                    BlockState state = minecraft.level.getBlockState(pos);
-                    if (!state.isAir()) {
-                        poseStack.pushPose();
-                        poseStack.translate(pos.getX() - frame.cameraPosition.x,
-                                pos.getY() - frame.cameraPosition.y,
-                                pos.getZ() - frame.cameraPosition.z);
-                        BlockRenderDispatcher blockRenderer = minecraft.getBlockRenderer();
-                        int packedLight = LevelRenderer.getLightColor(minecraft.level, state, pos);
-                        blockRenderer.renderSingleBlock(state, poseStack, buffers,
-                                packedLight, OverlayTexture.NO_OVERLAY);
-                        BlockEntity blockEntity = minecraft.level.getBlockEntity(pos);
-                        if (blockEntity != null) {
-                            minecraft.getBlockEntityRenderDispatcher().render(
-                                    blockEntity, frame.partialTick, poseStack, buffers);
-                        }
-                        poseStack.popPose();
-                    }
-                }
-                buffers.endBatch();
-            } finally {
-                lightTexture.turnOffLightLayer();
-            }
-        } finally {
-            if (shadowStateChanged) {
-                minecraft.getEntityRenderDispatcher().setRenderShadow(true);
-            }
-            mainTarget.bindWrite(true);
-            RenderSystem.restoreProjectionMatrix();
-            if (!RenderSystem.getProjectionMatrix().equals(previousProjection)) {
-                RenderSystem.setProjectionMatrix(previousProjection,
-                        VertexSorting.DISTANCE_TO_ORIGIN);
-            }
-        }
-
-        mainTarget.bindWrite(true);
-        return download(mainTarget);
-    }
-
-    private static NativeImage buildCoverageMatte(NativeImage blackPass,
-                                                  NativeImage whitePass)
-            throws IOException {
-        if (blackPass.getWidth() != whitePass.getWidth()
-                || blackPass.getHeight() != whitePass.getHeight()) {
-            throw new IOException("black and white matte passes have different dimensions");
-        }
-
-        int width = blackPass.getWidth();
-        int height = blackPass.getHeight();
-        NativeImage matte = new NativeImage(width, height, false);
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int black = blackPass.getPixelRGBA(x, y);
-                int white = whitePass.getPixelRGBA(x, y);
-
-                int d0 = Math.abs((white & 0xFF) - (black & 0xFF));
-                int d1 = Math.abs(((white >>> 8) & 0xFF) - ((black >>> 8) & 0xFF));
-                int d2 = Math.abs(((white >>> 16) & 0xFF) - ((black >>> 16) & 0xFF));
-                int transmission = (d0 + d1 + d2 + 1) / 3;
-                int alpha = Mth.clamp(255 - transmission, 0, 255);
-
-                // Small framebuffer/shader rounding differences on untouched
-                // background should remain fully transparent rather than form a halo.
-                if (alpha <= 3) {
-                    alpha = 0;
-                }
-                matte.setPixelRGBA(x, y, (alpha << 24) | 0x00FFFFFF);
-            }
-        }
-        return matte;
-    }
-
-    private static boolean hasCoverage(NativeImage matte) {
-        for (int y = 0; y < matte.getHeight(); y++) {
-            for (int x = 0; x < matte.getWidth(); x++) {
-                if (((matte.getPixelRGBA(x, y) >>> 24) & 0xFF) > 3) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return GeometryMatteRasterizer.render(target,
+                frame.pose, frame.normal, frame.projection,
+                frame.cameraPosition, frame.partialTick, width, height);
     }
 
     private static NativeImage compositeAndCrop(NativeImage source, NativeImage matte)
             throws IOException {
-        if (source.getWidth() != matte.getWidth() || source.getHeight() != matte.getHeight()) {
+        if (source.getWidth() != matte.getWidth()
+                || source.getHeight() != matte.getHeight()) {
             throw new IOException("source and matte dimensions differ");
         }
 
@@ -481,7 +318,7 @@ public final class PhotoModeCapture {
         }
 
         if (maxX < minX || maxY < minY) {
-            throw new IOException("the selected object produced an empty matte");
+            throw new IOException("the selected object produced an empty geometry matte");
         }
 
         minX = Math.max(0, minX - PhotoModeFeature.OUTPUT_PADDING);
@@ -489,7 +326,8 @@ public final class PhotoModeCapture {
         maxX = Math.min(width - 1, maxX + PhotoModeFeature.OUTPUT_PADDING);
         maxY = Math.min(height - 1, maxY + PhotoModeFeature.OUTPUT_PADDING);
 
-        NativeImage output = new NativeImage(maxX - minX + 1, maxY - minY + 1, false);
+        NativeImage output = new NativeImage(
+                maxX - minX + 1, maxY - minY + 1, false);
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 int matteAlpha = (matte.getPixelRGBA(x, y) >>> 24) & 0xFF;
@@ -511,7 +349,8 @@ public final class PhotoModeCapture {
     }
 
     private static NativeImage copyImage(NativeImage source) {
-        NativeImage copy = new NativeImage(source.getWidth(), source.getHeight(), false);
+        NativeImage copy = new NativeImage(
+                source.getWidth(), source.getHeight(), false);
         copy.copyFrom(source);
         return copy;
     }

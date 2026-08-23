@@ -21,6 +21,8 @@ import java.util.function.Predicate;
  * implementation details.
  */
 public final class StaminaBlockerAccess {
+    private static final ResourceLocation CANONICAL_SCP_714 =
+            new ResourceLocation("scp_classified_directive", "scp_714");
     private static final Set<ResourceLocation> CONFIGURED_ITEMS =
             new CopyOnWriteArraySet<>();
     private static final Set<ResourceLocation> RUNTIME_ITEMS =
@@ -64,13 +66,17 @@ public final class StaminaBlockerAccess {
             return false;
         }
 
-        // Consult the shared item-effect resolver first so intrinsic effects such
-        // as SCP-714 work for existing configs without requiring regeneration.
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        // SCP-714 now raises sprint cost progressively instead of zeroing the
+        // stamina bar. Ignore stale NO_STAMINA rules from pre-change configs.
+        if (CANONICAL_SCP_714.equals(id)) {
+            return false;
+        }
+
         if (ScpItemEffects.hasNoStaminaModifier(stack)) {
             return true;
         }
 
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id != null
                 && (CONFIGURED_ITEMS.contains(id)
                 || RUNTIME_ITEMS.contains(id));

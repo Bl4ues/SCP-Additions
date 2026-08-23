@@ -2,6 +2,8 @@ package com.bl4ues.scpclassifieddirective.vitals.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import com.bl4ues.scpclassifieddirective.client.Scp714ClientState;
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
 import com.bl4ues.scpclassifieddirective.vitals.StaminaBlockerAccess;
 import com.bl4ues.scpclassifieddirective.vitals.VitalsModule;
@@ -68,8 +70,12 @@ public final class PlayerVitalsClient {
 
         if (tryingToSprintWhileMoving) {
             if (stamina > 0.0F) {
+                float scp714Multiplier = 1.0F
+                        + (Scp714ExposureManager.MAX_STAMINA_DRAIN_MULTIPLIER - 1.0F)
+                        * Scp714ClientState.getTargetProgress();
                 float drain = STAMINA_DRAIN_PER_TICK
-                        * HazmatSuitAccess.getStaminaDrainMultiplier(player);
+                        * HazmatSuitAccess.getStaminaDrainMultiplier(player)
+                        * scp714Multiplier;
                 stamina = Math.max(0.0F, stamina - drain);
             }
             regenDelayTicks = REGEN_DELAY_TICKS;

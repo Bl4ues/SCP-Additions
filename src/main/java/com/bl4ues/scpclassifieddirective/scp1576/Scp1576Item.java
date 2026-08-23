@@ -170,10 +170,26 @@ public final class Scp1576Item extends Item implements GeoItem {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level,
             LivingEntity entity) {
-        if (entity instanceof ServerPlayer player) {
-            Scp1576Manager.completeWinding(player, stack);
+        if (level instanceof ServerLevel serverLevel
+                && entity instanceof ServerPlayer player
+                && Scp1576Manager.completeWinding(player, stack)) {
+            triggerAnim(player, GeoItem.getOrAssignId(stack, serverLevel),
+                    CONTROLLER, "idle");
         }
         return stack;
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack,
+            ItemStack newStack, boolean slotChanged) {
+        // Completing a wind-up writes the active/cooldown timestamps into the
+        // held stack. Forge normally interprets that NBT change as a newly
+        // equipped item and briefly tilts the hand. It is still the same 1576,
+        // so only a real slot change should be allowed to trigger re-equip.
+        if (!slotChanged && oldStack.is(this) && newStack.is(this)) {
+            return false;
+        }
+        return super.shouldCauseReequipAnimation(oldStack, newStack, slotChanged);
     }
 
     @Override

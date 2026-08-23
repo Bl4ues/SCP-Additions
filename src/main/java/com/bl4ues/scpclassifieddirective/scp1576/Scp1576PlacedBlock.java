@@ -4,7 +4,6 @@ import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpPickupRouter;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
-import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -156,7 +155,6 @@ public final class Scp1576PlacedBlock extends BaseEntityBlock {
                 ModNetwork.showInventoryFull(player);
                 return false;
             }
-            InventoryInteractionSoundFeedback.pickup(player);
             return true;
         }
 

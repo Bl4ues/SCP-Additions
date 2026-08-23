@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
 
 import java.util.HashMap;
@@ -97,7 +98,8 @@ public final class PlayerStaminaEvents {
         if (moving && sprinting) {
             if (stamina > 0.0F) {
                 float drain = STAMINA_DRAIN_PER_TICK
-                        * HazmatSuitAccess.getStaminaDrainMultiplier(player);
+                        * HazmatSuitAccess.getStaminaDrainMultiplier(player)
+                        * Scp714ExposureManager.getStaminaDrainMultiplier(player);
                 stamina = Math.max(0.0F, stamina - drain);
             }
             regenDelay = REGEN_DELAY_TICKS;

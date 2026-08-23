@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,7 +26,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix3f;
@@ -38,9 +38,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Captures a clean, shader-composited world frame and uses a second render only
- * as an alpha matte for the selected block/entity. RGB therefore comes from the
- * exact in-game frame rather than from a synthetic studio render.
+ * Captures a clean, shader-composited world frame and derives an alpha matte
+ * from isolated black/white render passes of the selected block/entity. RGB
+ * therefore comes from the exact in-game frame rather than from a synthetic
+ * studio render.
  */
 public final class PhotoModeCapture {
     private static final DateTimeFormatter FILE_TIME =
@@ -282,6 +283,17 @@ public final class PhotoModeCapture {
         }
     }
 
+    /**
+     * Builds coverage without trusting framebuffer alpha. Solid block render
+     * types commonly leave alpha untouched, so an alpha-only matte can be empty
+     * even while RGB was rendered correctly. Instead render the same target over
+     * black and white. For normal source-over compositing:
+     *
+     * black = object * a
+     * white = object * a + white * (1-a)
+     *
+     * Therefore white-black measures background transmission and yields alpha.
+     */
     private static NativeImage renderMatte(PhotoTarget target, FrameSnapshot frame,
                                            int width, int height) throws IOException {
         Minecraft minecraft = Minecraft.getInstance();
@@ -290,20 +302,38 @@ public final class PhotoModeCapture {
             throw new IOException("the framebuffer size changed while Photo Mode was frozen");
         }
 
-        /*
-         * Do not render the matte into a separate TextureTarget. Minecraft's
-         * RenderType output states (and Oculus' replacements for them) are free
-         * to rebind the main world framebuffer when a batch is flushed. That
-         * made perfectly valid block renders, notably SCP-294, land in the main
-         * target while the auxiliary matte target remained empty.
-         *
-         * The shader-composited source frame already lives safely in CPU memory,
-         * so use the main framebuffer itself as disposable matte storage. This is
-         * the target vanilla render types and Oculus expect. The next world frame
-         * recreates the display after Photo Mode closes.
-         */
+        NativeImage blackPass = renderIsolationPass(target, frame, 0.0F);
+        NativeImage whitePass = null;
+        try {
+            whitePass = renderIsolationPass(target, frame, 1.0F);
+            NativeImage matte = buildCoverageMatte(blackPass, whitePass);
+            if (!hasCoverage(matte)) {
+                Path debugDir = minecraft.gameDirectory.toPath()
+                        .resolve("screenshots").resolve("photo_mode").resolve("debug");
+                Files.createDirectories(debugDir);
+                String stamp = FILE_TIME.format(LocalDateTime.now());
+                blackPass.writeToFile(debugDir.resolve("matte_black_" + stamp + ".png"));
+                whitePass.writeToFile(debugDir.resolve("matte_white_" + stamp + ".png"));
+                matte.close();
+                throw new IOException("the selected object produced an empty RGB matte; "
+                        + "debug passes saved in screenshots/photo_mode/debug");
+            }
+            return matte;
+        } finally {
+            blackPass.close();
+            if (whitePass != null) {
+                whitePass.close();
+            }
+        }
+    }
+
+    private static NativeImage renderIsolationPass(PhotoTarget target,
+                                                   FrameSnapshot frame,
+                                                   float background) throws IOException {
+        Minecraft minecraft = Minecraft.getInstance();
+        RenderTarget mainTarget = minecraft.getMainRenderTarget();
         mainTarget.bindWrite(true);
-        mainTarget.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        mainTarget.setClearColor(background, background, background, 1.0F);
         mainTarget.clear(Minecraft.ON_OSX);
 
         Matrix4f previousProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
@@ -378,6 +408,51 @@ public final class PhotoModeCapture {
 
         mainTarget.bindWrite(true);
         return download(mainTarget);
+    }
+
+    private static NativeImage buildCoverageMatte(NativeImage blackPass,
+                                                  NativeImage whitePass)
+            throws IOException {
+        if (blackPass.getWidth() != whitePass.getWidth()
+                || blackPass.getHeight() != whitePass.getHeight()) {
+            throw new IOException("black and white matte passes have different dimensions");
+        }
+
+        int width = blackPass.getWidth();
+        int height = blackPass.getHeight();
+        NativeImage matte = new NativeImage(width, height, false);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int black = blackPass.getPixelRGBA(x, y);
+                int white = whitePass.getPixelRGBA(x, y);
+
+                int d0 = Math.abs((white & 0xFF) - (black & 0xFF));
+                int d1 = Math.abs(((white >>> 8) & 0xFF) - ((black >>> 8) & 0xFF));
+                int d2 = Math.abs(((white >>> 16) & 0xFF) - ((black >>> 16) & 0xFF));
+                int transmission = (d0 + d1 + d2 + 1) / 3;
+                int alpha = Mth.clamp(255 - transmission, 0, 255);
+
+                // Small framebuffer/shader rounding differences on untouched
+                // background should remain fully transparent rather than form a halo.
+                if (alpha <= 3) {
+                    alpha = 0;
+                }
+                matte.setPixelRGBA(x, y, (alpha << 24) | 0x00FFFFFF);
+            }
+        }
+        return matte;
+    }
+
+    private static boolean hasCoverage(NativeImage matte) {
+        for (int y = 0; y < matte.getHeight(); y++) {
+            for (int x = 0; x < matte.getWidth(); x++) {
+                if (((matte.getPixelRGBA(x, y) >>> 24) & 0xFF) > 3) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static NativeImage compositeAndCrop(NativeImage source, NativeImage matte)

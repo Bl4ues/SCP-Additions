@@ -57,8 +57,9 @@
 - Successful pounces knock the victim prone and pin them beneath SCP-939;
 - Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue;
 - Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim;
-- Added a dedicated breath reserve which becomes relevant while SCP-939 is nearby;
+- Added a dedicated breath reserve which becomes relevant only at immediate pass-by distance, entering at approximately 2.5 blocks with unobstructed line of sight and clearing around 2.75 blocks to prevent HUD flicker;
 - Added a rebindable **Hold Breath** control and HUD meter; holding breath suppresses normal breathing acoustic stimuli until the reserve is exhausted, at which point the player is forced to gasp loudly and temporarily cannot continue holding their breath;
+- Reduced ordinary breathing evidence to match the close-range Hold Breath encounter window while keeping the exhausted gasp intentionally loud and dangerous;
 - Added optional Simple Voice Chat mimicry: players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position; fragments expire automatically and are cleared when consent is revoked or the player disconnects;
 - Added `/scp939 mimicry allow`, `/scp939 mimicry deny`, and `/scp939 mimicry status` session controls.
 
@@ -172,6 +173,7 @@
 - Extended the Simple Voice Chat integration to SCP-939: living speech now produces acoustic evidence for its hearing system, while explicit session consent can additionally provide temporary in-memory voice fragments for SCP-939 mimicry without writing captured audio to disk;
 - Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP: Classified Directive death/spectate flow while using SCP: Classified Directive saves as MineZero checkpoints;
 - MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
+- With MineZero integration active, SCP-714's terminal coma becomes recoverable while another living player remains: the wearer is forced into an attackable sleeping state on the floor, and another living player can use the **Remove / SCP-714** contextual prompt to take the ring and wake them immediately; if the comatose wearer becomes the last living player, the coma becomes fatal normally;
 - Extended MineZero checkpoint snapshots with SCP: Classified Directive player capabilities, SCP Inventory state, persistent facility/SCP-079 data, and tracked SCP: Classified Directive block and BlockEntity changes so the mod's custom state rewinds with the world;
 - Added save-safety checks for MineZero-integrated sessions, preventing checkpoints while players are in active combat, dangerous damage/effect states, SCP-914 processing, SCP-330 hand-loss conditions, or an existing death session where saving could create a deterministic death loop;
 - MineZero's own automatic and alternate checkpoint paths are suppressed while the integration is active so checkpoints remain synchronized with the SCP: Classified Directive save system.

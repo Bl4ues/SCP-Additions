@@ -26,10 +26,10 @@ import java.util.UUID;
 
 /**
  * Relays dead-player microphones from active SCP-1576 sources. Speech is
- * band-limited and softly saturated, then given subtle unstable timbre,
- * flutter and brief signal losses. The active SCP-1576 sound already supplies
- * the audible surface/static bed, so the voice filter deliberately adds no
- * extra hiss of its own.
+ * band-limited and softly saturated, then given unstable timbre, flutter and
+ * conspicuous speaker-specific signal losses. The active SCP-1576 sound already
+ * supplies the audible surface/static bed, so the voice filter deliberately
+ * adds no extra hiss of its own.
  */
 public final class Scp1576VoiceChatBridge {
     private static final Object CODEC_LOCK = new Object();
@@ -172,7 +172,8 @@ public final class Scp1576VoiceChatBridge {
         synchronized (CODEC_LOCK) {
             try {
                 FilterChannel channel = CHANNELS.computeIfAbsent(key,
-                        ignored -> new FilterChannel(api.createEncoder()));
+                        ignored -> new FilterChannel(api.createEncoder(),
+                                filterSeed(key)));
                 if (channel.encoder == null) return null;
                 short[] filtered = channel.filter(decoded, voiceGain(source));
                 return channel.encoder.encode(filtered);
@@ -190,7 +191,7 @@ public final class Scp1576VoiceChatBridge {
                 0.0F, 1.0F);
         float fadeOut = Mth.clamp(source.remainingTicks() / 30.0F,
                 0.0F, 1.0F);
-        return fadeIn * fadeOut;
+        return 0.5F * fadeIn * fadeOut;
     }
 
     private static boolean sendToLivingReceivers(VoicechatServerApi api,
@@ -230,6 +231,13 @@ public final class Scp1576VoiceChatBridge {
                 .getBytes(StandardCharsets.UTF_8));
     }
 
+    private static int filterSeed(ChannelKey key) {
+        int seed = 0x1576A11;
+        seed = 31 * seed + key.sessionId().hashCode();
+        seed = 31 * seed + key.speakerId().hashCode();
+        return seed == 0 ? 0x1576A11 : seed;
+    }
+
     private static void close(OpusDecoder decoder) {
         if (decoder == null) return;
         try {
@@ -249,25 +257,32 @@ public final class Scp1576VoiceChatBridge {
         private double rumble;
         private long sampleClock;
         private int delayIndex;
-        private int glitchState = 0x1576A11;
+        private int glitchState;
         private int dropoutRemaining;
         private double dropoutDepth = 1.0D;
         private double dropoutEnvelope = 1.0D;
 
-        private FilterChannel(OpusEncoder encoder) {
+        private FilterChannel(OpusEncoder encoder, int glitchSeed) {
             this.encoder = encoder;
+            this.glitchState = glitchSeed;
+            this.sampleClock = Integer.toUnsignedLong(glitchSeed) % 2_000_000L;
         }
 
         private short[] filter(short[] input, float gain) {
             short[] output = new short[input.length];
 
-            // Roughly once per second at normal 20 ms voice frames, create a
-            // very short loss of intelligibility rather than a full mute. It is
-            // smoothed in and out so the interruption feels like a failing
-            // anomalous transmission, not packet loss or digital clicking.
-            if (dropoutRemaining <= 0 && nextGlitchInt(50) == 0) {
-                dropoutRemaining = 240 + nextGlitchInt(720);
-                dropoutDepth = 0.22D + nextGlitchInt(34) / 100.0D;
+            // Each dead speaker owns a separately seeded failure pattern. This
+            // keeps simultaneous voices from dropping out in lockstep and lets
+            // fragments of different speakers cut through one another.
+            if (dropoutRemaining <= 0 && nextGlitchInt(38) == 0) {
+                boolean hardDropout = nextGlitchInt(4) == 0;
+                if (hardDropout) {
+                    dropoutRemaining = 1440 + nextGlitchInt(3840);
+                    dropoutDepth = 0.0D;
+                } else {
+                    dropoutRemaining = 720 + nextGlitchInt(2400);
+                    dropoutDepth = 0.06D + nextGlitchInt(17) / 100.0D;
+                }
             }
 
             for (int i = 0; i < input.length; i++) {
@@ -300,8 +315,8 @@ public final class Scp1576VoiceChatBridge {
                 double colored = band + delayed * ghostMix;
                 double saturated = Math.tanh(colored / 8600.0D) * 11900.0D;
 
-                // Gentle amplitude flutter changes the apparent timbre and
-                // mechanical stability without obscuring ordinary speech.
+                // The modulation phase is also speaker-specific because the
+                // channel sample clock starts at a deterministic unique offset.
                 double flutter = 0.965D
                         + Math.sin(sampleClock * 0.00037D) * 0.018D
                         + Math.sin(sampleClock * 0.00111D) * 0.010D;

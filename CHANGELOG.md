@@ -67,7 +67,7 @@
 
 - Added SCP-1576 as a new Usable object;
 - Holding the normal use control winds SCP-1576 for four seconds, while releasing the control early immediately cancels the winding attempt;
-- Sneaking and using SCP-1576 on a supported surface now places the object into the world;
+- Sneaking and using SCP-1576 on a supported surface places the object on the ground;
 - Completing the wind-up starts 30 seconds of communication with dead players, then places that SCP-1576 instance on a two-minute cooldown;
 - With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them;
 - Active SCP-1576 sessions emit acoustic evidence from the communicator's physical position, allowing hearing-based systems such as SCP-939 to react to the voices it reproduces.
@@ -82,7 +82,7 @@
 ## SCP-714
 
 - Reworked SCP-714's stamina drawback so the ring no longer immediately empties or disables stamina; sprinting begins at normal stamina cost and progressively becomes more exhausting with exposure, reaching **2.5×** stamina drain at the most advanced pre-coma stage;
-- SCP-714 can now be placed on a supported floor with **Sneak + Use**, using a glass placement sound, and recovered through the integrated **Take / SCP-714** contextual interaction.
+- SCP-714 can now be placed on a supported floor with **Sneak + Use**.
 
 ## SCP-173
 

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.inventory.network;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
+import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.entity.AbstractScp131Entity;
@@ -165,6 +166,7 @@ public class ContextInteractPacket {
         }
         if (result.consumesAction()) {
             player.swing(hand, true);
+            playTakePickupSound(player, rule);
         }
     }
 
@@ -220,8 +222,16 @@ public class ContextInteractPacket {
         }
         if (result.consumesAction()) {
             player.swing(hand, true);
+            playTakePickupSound(player, rule);
             playDoorSoundForUser(player, level, pos, state, doorBefore,
                     wasOpen);
+        }
+    }
+
+    private static void playTakePickupSound(ServerPlayer player,
+            ContextInteractionRegistry.Rule rule) {
+        if (rule != null && "Take".equalsIgnoreCase(rule.action().trim())) {
+            InventoryInteractionSoundFeedback.pickup(player);
         }
     }
 

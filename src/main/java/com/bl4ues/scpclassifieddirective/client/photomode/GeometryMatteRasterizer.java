@@ -7,7 +7,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -55,27 +54,42 @@ final class GeometryMatteRasterizer {
             throw new IOException("the client world is no longer available");
         }
 
-        CoverageRasterizer rasterizer = new CoverageRasterizer(projection, width, height);
+        /*
+         * Do not seed this PoseStack with RenderLevelStageEvent's AFTER_LEVEL
+         * pose. By that stage the level renderer may already have unwound the
+         * camera transform, and shader pipelines are free to alter that state.
+         * The emitted vertices below are intentionally camera-relative world
+         * coordinates. CoverageRasterizer converts them to camera space from
+         * Camera's explicit look/up/left basis, the same basis used by picking.
+         */
+        var camera = minecraft.gameRenderer.getMainCamera();
+        Vec3 look = new Vec3(camera.getLookVector()).normalize();
+        Vec3 up = new Vec3(camera.getUpVector()).normalize();
+        Vec3 right = new Vec3(camera.getLeftVector()).scale(-1.0D).normalize();
+
+        CoverageRasterizer rasterizer = new CoverageRasterizer(
+                projection, right, up, look, width, height);
         MultiBufferSource buffers = renderType ->
                 new PrimitiveConsumer(renderType.mode(), rasterizer);
 
+        // Identity on purpose. Object placement is camera-relative below and
+        // camera orientation is applied once, in CoverageRasterizer.project().
         PoseStack poseStack = new PoseStack();
-        poseStack.last().pose().set(viewPose);
-        poseStack.last().normal().set(viewNormal);
 
         if (target instanceof PhotoModeCapture.EntityTarget entityTarget) {
             renderEntity(entityTarget.entity(), poseStack, buffers,
-                    cameraPosition, partialTick, rasterizer);
+                    cameraPosition, partialTick);
         } else if (target instanceof PhotoModeCapture.BlockTarget blockTarget) {
             renderBlock(blockTarget.pos(), poseStack, buffers,
-                    cameraPosition, partialTick, rasterizer);
+                    cameraPosition, partialTick);
         }
 
         if (rasterizer.emittedVertices == 0) {
             throw new IOException("the selected object's renderer emitted no geometry");
         }
         if (!rasterizer.hasCoverage()) {
-            throw new IOException("the selected object's geometry produced no on-screen coverage");
+            throw new IOException("the selected object's geometry produced no on-screen coverage ("
+                    + rasterizer.diagnostic() + ")");
         }
         return rasterizer.toImage();
     }
@@ -84,8 +98,7 @@ final class GeometryMatteRasterizer {
                                      PoseStack poseStack,
                                      MultiBufferSource buffers,
                                      Vec3 cameraPosition,
-                                     float partialTick,
-                                     CoverageRasterizer rasterizer) throws IOException {
+                                     float partialTick) throws IOException {
         if (entity == null || entity.isRemoved()) {
             throw new IOException("the selected entity is no longer available");
         }
@@ -115,8 +128,7 @@ final class GeometryMatteRasterizer {
                                     PoseStack poseStack,
                                     MultiBufferSource buffers,
                                     Vec3 cameraPosition,
-                                    float partialTick,
-                                    CoverageRasterizer rasterizer) throws IOException {
+                                    float partialTick) throws IOException {
         Minecraft minecraft = Minecraft.getInstance();
         BlockState state = minecraft.level.getBlockState(pos);
         if (state.isAir()) {
@@ -145,7 +157,7 @@ final class GeometryMatteRasterizer {
         }
     }
 
-    /** Receives already-transformed model/view vertices from Minecraft renderers. */
+    /** Receives already model-transformed, camera-relative world vertices. */
     private static final class PrimitiveConsumer implements VertexConsumer {
         private final VertexFormat.Mode mode;
         private final CoverageRasterizer rasterizer;
@@ -265,23 +277,43 @@ final class GeometryMatteRasterizer {
         };
 
         private final Matrix4f projection;
+        private final Vec3 right;
+        private final Vec3 up;
+        private final Vec3 look;
         private final int width;
         private final int height;
         private final byte[] sampleCoverage;
         private int emittedVertices;
+        private int projectedVertices;
+        private int behindVertices;
+        private float minScreenX = Float.POSITIVE_INFINITY;
+        private float minScreenY = Float.POSITIVE_INFINITY;
+        private float maxScreenX = Float.NEGATIVE_INFINITY;
+        private float maxScreenY = Float.NEGATIVE_INFINITY;
 
-        CoverageRasterizer(Matrix4f projection, int width, int height) {
+        CoverageRasterizer(Matrix4f projection, Vec3 right, Vec3 up, Vec3 look,
+                           int width, int height) {
             this.projection = new Matrix4f(projection);
+            this.right = right;
+            this.up = up;
+            this.look = look;
             this.width = width;
             this.height = height;
             this.sampleCoverage = new byte[width * height];
         }
 
         ProjectedVertex project(double x, double y, double z) {
+            // x/y/z arrive in camera-relative world axes. OpenGL camera space
+            // looks down -Z, so forward distance becomes negative view Z.
+            float viewX = (float) (x * right.x + y * right.y + z * right.z);
+            float viewY = (float) (x * up.x + y * up.y + z * up.z);
+            float viewZ = (float) -(x * look.x + y * look.y + z * look.z);
+
             Vector4f clip = projection.transform(new Vector4f(
-                    (float) x, (float) y, (float) z, 1.0F));
+                    viewX, viewY, viewZ, 1.0F));
             float w = clip.w();
             if (!Float.isFinite(w) || w <= 1.0E-5F) {
+                behindVertices++;
                 return ProjectedVertex.INVALID;
             }
 
@@ -293,6 +325,11 @@ final class GeometryMatteRasterizer {
 
             float screenX = (ndcX * 0.5F + 0.5F) * width;
             float screenY = (0.5F - ndcY * 0.5F) * height;
+            projectedVertices++;
+            minScreenX = Math.min(minScreenX, screenX);
+            minScreenY = Math.min(minScreenY, screenY);
+            maxScreenX = Math.max(maxScreenX, screenX);
+            maxScreenY = Math.max(maxScreenY, screenY);
             return new ProjectedVertex(screenX, screenY, true);
         }
 
@@ -356,6 +393,18 @@ final class GeometryMatteRasterizer {
                 }
             }
             return false;
+        }
+
+        String diagnostic() {
+            String bounds = projectedVertices == 0
+                    ? "none"
+                    : Math.round(minScreenX) + "," + Math.round(minScreenY)
+                    + ".." + Math.round(maxScreenX) + "," + Math.round(maxScreenY);
+            return "emitted=" + emittedVertices
+                    + ", projected=" + projectedVertices
+                    + ", behind=" + behindVertices
+                    + ", bounds=" + bounds
+                    + ", viewport=" + width + "x" + height;
         }
 
         NativeImage toImage() {

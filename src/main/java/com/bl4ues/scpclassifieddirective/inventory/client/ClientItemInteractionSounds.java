@@ -24,7 +24,19 @@ public final class ClientItemInteractionSounds {
     }
 
     public static void play(ItemInteractionSoundPacket.Cue cue) {
-        if (cue == null || !customSoundsEnabled()) return;
+        if (cue == null) return;
+
+        if (!customSoundsEnabled()) {
+            // Server-confirmed contextual Take interactions do not produce a
+            // vanilla ItemEntity pickup locally, so provide the normal cue here
+            // when the custom presentation preference is disabled.
+            if (cue == ItemInteractionSoundPacket.Cue.PICKUP) {
+                Minecraft.getInstance().getSoundManager().play(
+                        SimpleSoundInstance.forUI(SoundEvents.ITEM_PICKUP,
+                                1.0F, 1.0F));
+            }
+            return;
+        }
 
         armVanillaSuppression(cue);
         SoundEvent sound = switch (cue) {

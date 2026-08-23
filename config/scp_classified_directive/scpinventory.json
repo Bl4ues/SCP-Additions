@@ -181,7 +181,6 @@
     {
       "id": "scp_classified_directive:scp_714",
       "effects": [
-        "NO_STAMINA",
         "SCP_714_PROTECTION"
       ]
     },

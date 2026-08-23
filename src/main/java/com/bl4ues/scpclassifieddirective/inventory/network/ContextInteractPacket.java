@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.inventory.network;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.entity.AbstractScp131Entity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
@@ -119,6 +120,15 @@ public class ContextInteractPacket {
         if (!(player.level() instanceof ServerLevel level)) return;
         Entity entity = level.getEntity(entityId);
         if (entity == null || !entity.isAlive()) return;
+
+        if (Scp714ExposureManager.REMOVE_INTERACTION_KEY.equals(interactionKey)
+                && entity instanceof ServerPlayer victim) {
+            if (Scp714ExposureManager.tryRemoveFromComa(player, victim)) {
+                player.swing(InteractionHand.MAIN_HAND, true);
+            }
+            return;
+        }
+
         if (entity instanceof AbstractScp131Entity scp131
                 && scp131.isFollowingPlayer(player)
                 && (interactionKey == null

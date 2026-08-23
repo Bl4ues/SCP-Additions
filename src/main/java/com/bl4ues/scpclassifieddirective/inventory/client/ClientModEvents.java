@@ -16,10 +16,19 @@ public final class ClientModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("scp_inventory_pickup_prompt",
+        event.registerAboveAll("scp_714_coma_prompt",
                 (gui, graphics, partialTick, width, height) -> {
                     if (gui.getMinecraft().screen == null
                             && !Scp939ClientState.pinned()) {
+                        Scp714ComaPromptClient.render(graphics, width, height,
+                                partialTick);
+                    }
+                });
+        event.registerAboveAll("scp_inventory_pickup_prompt",
+                (gui, graphics, partialTick, width, height) -> {
+                    if (gui.getMinecraft().screen == null
+                            && !Scp939ClientState.pinned()
+                            && !Scp714ComaPromptClient.blocksInteractionLayer()) {
                         PickupPromptClient.render(graphics, width, height,
                                 partialTick);
                     }
@@ -27,7 +36,8 @@ public final class ClientModEvents {
         event.registerAboveAll("scp_inventory_context_prompt",
                 (gui, graphics, partialTick, width, height) -> {
                     if (gui.getMinecraft().screen == null
-                            && !Scp939ClientState.pinned()) {
+                            && !Scp939ClientState.pinned()
+                            && !Scp714ComaPromptClient.blocksInteractionLayer()) {
                         ContextPromptClient.render(graphics, width, height,
                                 partialTick);
                     }

@@ -20,13 +20,19 @@ public final class ClientGameplayEvents {
         InventoryModuleRuntimeState.clearServerState();
         ScpInventoryConfig.clearServerSnapshot();
         ContextInteractionRegistry.clearServerSnapshot();
+        Scp714ComaPromptClient.clearClientState();
     }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            PickupPromptClient.clientTick();
-            ContextPromptClient.clientTick();
+            Scp714ComaPromptClient.clientTick();
+            if (!Scp714ComaPromptClient.blocksInteractionLayer()) {
+                PickupPromptClient.clientTick();
+                ContextPromptClient.clientTick();
+            } else {
+                ContextPromptClient.clear();
+            }
             StatusEffectTimelineClient.clientTick();
             Scp1176MusicClient.clientTick();
         }

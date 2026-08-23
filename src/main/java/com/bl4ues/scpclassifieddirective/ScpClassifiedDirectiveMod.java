@@ -89,6 +89,7 @@ public class ScpClassifiedDirectiveMod {
         ScpClassifiedDirectiveModBlockEntities.REGISTRY.register(bus);
         ScpClassifiedDirectiveModItems.REGISTRY.register(bus);
         Scp714Items.REGISTRY.register(bus);
+        Scp714Items.BLOCKS.register(bus);
         Scp012Module.register(bus);
         Scp1576Module.register(bus);
         UnifiedReaderItems.REGISTRY.register(bus);

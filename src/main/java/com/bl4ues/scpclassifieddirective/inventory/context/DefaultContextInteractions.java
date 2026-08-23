@@ -49,6 +49,32 @@ public final class DefaultContextInteractions {
               }
             }
             """;
+    private static final String SCP714_TAKE_RULE = """
+            {
+              "type": "block",
+              "id": "scp_classified_directive:scp_714_placed",
+              "interactionId": "take_scp_714",
+              "range": 2.5,
+              "priority": 85,
+              "useItem": "hand",
+              "icon": "hand",
+              "text": {
+                "action": "Take",
+                "nameMode": "manual",
+                "name": "SCP-714",
+                "showAction": true,
+                "showName": true
+              },
+              "anchor": {
+                "position": [0.5, 0.08, 0.5],
+                "rotateWith": "none"
+              },
+              "input": {
+                "allowE": true,
+                "allowRightClick": true
+              }
+            }
+            """;
     private static final String SCP1576_TAKE_RULE = """
             {
               "type": "block",
@@ -111,6 +137,7 @@ public final class DefaultContextInteractions {
             }
 
             boolean corpseExists = false;
+            boolean scp714Exists = false;
             boolean scp1576Exists = false;
             for (JsonElement element : interactions) {
                 if (!element.isJsonObject()) continue;
@@ -124,6 +151,11 @@ public final class DefaultContextInteractions {
                     corpseExists = true;
                 }
                 if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_714_placed".equals(id)
+                        && "take_scp_714".equals(interactionId)) {
+                    scp714Exists = true;
+                }
+                if ("block".equalsIgnoreCase(type)
                         && "scp_classified_directive:scp_1576_placed".equals(id)
                         && "take_scp_1576".equals(interactionId)) {
                     scp1576Exists = true;
@@ -131,6 +163,10 @@ public final class DefaultContextInteractions {
             }
             if (!corpseExists) {
                 interactions.add(JsonParser.parseString(CORPSE_SEARCH_RULE)
+                        .getAsJsonObject());
+            }
+            if (!scp714Exists) {
+                interactions.add(JsonParser.parseString(SCP714_TAKE_RULE)
                         .getAsJsonObject());
             }
             if (!scp1576Exists) {

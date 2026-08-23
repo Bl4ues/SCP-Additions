@@ -39,6 +39,7 @@ public final class Scp714ExposureManager {
     public static final int COMA_GRACE_TICKS = 5 * 20;
     public static final int DEATH_TICKS =
             FADE_DURATION_TICKS + COMA_GRACE_TICKS;
+    public static final float MAX_STAMINA_DRAIN_MULTIPLIER = 2.5F;
 
     private static final int TIRED_WARNING_TICKS = 90 * 20;
     private static final int SLEEP_WARNING_TICKS = 110 * 20;
@@ -323,6 +324,14 @@ public final class Scp714ExposureManager {
     public static float getExposureProgress(ServerPlayer player) {
         return Mth.clamp(getExposureTicks(player)
                 / (float) FADE_DURATION_TICKS, 0.0F, 1.0F);
+    }
+
+    public static float getStaminaDrainMultiplier(ServerPlayer player) {
+        if (player == null || !Scp714ProtectionAccess.isProtected(player)) {
+            return 1.0F;
+        }
+        return Mth.lerp(getExposureProgress(player), 1.0F,
+                MAX_STAMINA_DRAIN_MULTIPLIER);
     }
 
     public static double getMovementMultiplier(ServerPlayer player) {

@@ -138,13 +138,17 @@ public final class ScpItemEffects {
             return false;
         }
 
-        // SCP-714's core effects are intrinsic, so existing player configs do
-        // not need to be regenerated before the new item works. JSON effects
-        // remain available for compatibility items and future integrations.
-        if (CANONICAL_SCP_714.equals(stackId)
-                && (effect == ItemEffect.NO_STAMINA
-                || effect == ItemEffect.SCP_714_PROTECTION)) {
-            return true;
+        // SCP-714's protection remains intrinsic, but its stamina penalty is
+        // progression-driven instead of a NO_STAMINA blocker. Explicitly ignore
+        // legacy/configured NO_STAMINA entries for the canonical item so old
+        // player configs pick up the new behavior without regeneration.
+        if (CANONICAL_SCP_714.equals(stackId)) {
+            if (effect == ItemEffect.SCP_714_PROTECTION) {
+                return true;
+            }
+            if (effect == ItemEffect.NO_STAMINA) {
+                return false;
+            }
         }
 
         for (String rawRule : ScpInventoryConfig.itemEffects()) {

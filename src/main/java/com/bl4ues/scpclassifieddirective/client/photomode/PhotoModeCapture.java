@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.client.photomode;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
@@ -75,12 +76,11 @@ public final class PhotoModeCapture {
             return;
         }
 
-        Matrix4f pose = new Matrix4f(event.getPoseStack());
-        Matrix3f normal = new Matrix3f(pose).invert().transpose();
+        PoseStack.Pose pose = event.getPoseStack().last();
         var camera = event.getCamera();
         lastWorldFrame = new FrameSnapshot(
-                pose,
-                normal,
+                new Matrix4f(pose.pose()),
+                new Matrix3f(pose.normal()),
                 new Matrix4f(event.getProjectionMatrix()),
                 camera.getPosition(),
                 new Vec3(camera.getLookVector()),

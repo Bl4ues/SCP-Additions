@@ -348,7 +348,7 @@ public final class Scp714ExposureManager {
     }
 
     @SubscribeEvent
-    public static void onSwapHands(LivingSwapItemsEvent event) {
+    public static void onSwapHands(LivingSwapItemsEvent.Hands event) {
         if (event.getEntity() instanceof ServerPlayer player
                 && isControlsLocked(player)) {
             event.setCanceled(true);

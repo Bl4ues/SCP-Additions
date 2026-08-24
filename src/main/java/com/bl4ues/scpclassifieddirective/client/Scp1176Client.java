@@ -13,7 +13,12 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoQuad;
+import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
@@ -28,6 +33,12 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
  * corpse and sarcophagus walls remain stable behind the honey. The glyph pass
  * preserves their authored alpha instead of forcing them through cutout, and
  * the honey remains the final translucent layer.
+ *
+ * The authored honey cube is flat (zero Y thickness). Bedrock/GeckoLib still
+ * creates both its UP and DOWN quads at exactly the same position, which makes
+ * the two oppositely-lit translucent faces z-fight. During the honey pass we
+ * therefore submit only the authored UP face and discard every degenerate or
+ * downward face before it reaches the vertex buffer.
  */
 public final class Scp1176Client {
     private static final float HONEY_ALPHA = 0.72F;
@@ -122,6 +133,7 @@ public final class Scp1176Client {
 
     private static final class Renderer extends GeoBlockRenderer<Scp1176BlockEntity> {
         private final Model scpModel;
+        private boolean renderingHoney;
 
         private Renderer(BlockEntityRendererProvider.Context context) {
             this(new Model());
@@ -161,6 +173,7 @@ public final class Scp1176Client {
                         MultiBufferSource bufferSource, VertexConsumer buffer,
                         float partialTick, int packedLight, int packedOverlay) {
                     scpModel.prepareHoneyPass();
+                    renderingHoney = true;
                     try {
                         RenderType honey = RenderType.entityTranslucent(
                                 Model.TEXTURE, true);
@@ -170,10 +183,33 @@ public final class Scp1176Client {
                                 packedLight, packedOverlay,
                                 1.0F, 1.0F, 1.0F, HONEY_ALPHA);
                     } finally {
+                        renderingHoney = false;
                         scpModel.prepareOpaquePass();
                     }
                 }
             });
+        }
+
+        @Override
+        public void createVerticesOfQuad(GeoQuad quad, Matrix4f poseState,
+                Vector3f normal, VertexConsumer buffer, int packedLight,
+                int packedOverlay, float red, float green, float blue,
+                float alpha) {
+            // bb_main is a zero-height cube. Only its local UP quad is the
+            // physical honey surface; DOWN is coplanar and the side quads are
+            // degenerate. Testing the authored/local normal keeps this correct
+            // even after the block has been rotated by its facing.
+            if (renderingHoney && quad.normal().y() < 0.5F) return;
+
+            for (GeoVertex vertex : quad.vertices()) {
+                Vector3f position = vertex.position();
+                Vector4f transformed = poseState.transform(new Vector4f(
+                        position.x(), position.y(), position.z(), 1.0F));
+                buffer.vertex(transformed.x(), transformed.y(), transformed.z(),
+                        red, green, blue, alpha, vertex.texU(), vertex.texV(),
+                        packedOverlay, packedLight,
+                        normal.x(), normal.y(), normal.z());
+            }
         }
 
         @Override

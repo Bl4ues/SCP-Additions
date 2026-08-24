@@ -12,6 +12,9 @@ public final class Scp1176ItemGeoModel extends GeoModel<Scp1176BlockItem> {
             ScpClassifiedDirectiveMod.MODID, "geo/block/scp1176.geo.json");
     static final ResourceLocation TEXTURE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "textures/block/scp1176.png");
+    static final ResourceLocation HONEY_TEXTURE = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID,
+            "textures/block/scp1176_honey.png");
     private static final ResourceLocation ANIMATION = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID,
             "animations/block/scp1176.animation.json");
@@ -57,7 +60,8 @@ public final class Scp1176ItemGeoModel extends GeoModel<Scp1176BlockItem> {
         setBoneVisible("lid", false);
         setBoneVisible("2", false);
         setBoneVisible("faucet", false);
-        setBoneVisible("bone", false);
+        // The renderer filters this bone down to its triangular pictogram cube.
+        setBoneVisible("bone", true);
     }
 
     void showHoneyGeometry() {

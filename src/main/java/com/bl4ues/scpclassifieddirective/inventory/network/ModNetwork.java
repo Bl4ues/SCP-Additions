@@ -12,7 +12,7 @@ import com.bl4ues.scpclassifieddirective.config.ui.ConfigCenterNetwork;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "19";
+    private static final String PROTOCOL_VERSION = "20";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -51,14 +51,10 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, ContextConfigReloadPacket.class, ContextConfigReloadPacket::encode, ContextConfigReloadPacket::decode, ContextConfigReloadPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigDeletePacket.class, ContextConfigDeletePacket::encode, ContextConfigDeletePacket::decode, ContextConfigDeletePacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigOpenRequestPacket.class, ItemConfigOpenRequestPacket::encode, ItemConfigOpenRequestPacket::decode, ItemConfigOpenRequestPacket::handle);
-        CHANNEL.registerMessage(id++, ItemConfigOpenPacket.class, ItemConfigOpenPacket::encode, ItemConfigOpenPacket::decode, ItemConfigOpenPacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigSavePacket.class, ItemConfigSavePacket::encode, ItemConfigSavePacket::decode, ItemConfigSavePacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigReloadPacket.class, ItemConfigReloadPacket::encode, ItemConfigReloadPacket::decode, ItemConfigReloadPacket::handle);
         CHANNEL.registerMessage(id++, ItemConfigDeletePacket.class, ItemConfigDeletePacket::encode, ItemConfigDeletePacket::decode, ItemConfigDeletePacket::handle);
         CHANNEL.registerMessage(id++, ServerConfigSyncPacket.class, ServerConfigSyncPacket::encode, ServerConfigSyncPacket::decode, ServerConfigSyncPacket::handle);
-        CHANNEL.registerMessage(id++, CraftingStateSyncPacket.class, CraftingStateSyncPacket::encode, CraftingStateSyncPacket::decode, CraftingStateSyncPacket::handle);
-        CHANNEL.registerMessage(id++, RequestCraftingStatePacket.class, RequestCraftingStatePacket::encode, RequestCraftingStatePacket::decode, RequestCraftingStatePacket::handle);
-        CHANNEL.registerMessage(id++, CraftingActionPacket.class, CraftingActionPacket::encode, CraftingActionPacket::decode, CraftingActionPacket::handle);
         ConfigCenterNetwork.register(CHANNEL, id);
     }
 

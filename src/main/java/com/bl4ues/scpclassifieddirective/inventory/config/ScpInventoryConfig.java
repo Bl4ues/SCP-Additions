@@ -40,7 +40,8 @@ public final class ScpInventoryConfig {
             "minecraft:goat_horn|USABLE",
             "minecraft:ender_pearl|USABLE",
             "minecraft:snowball|USABLE",
-            "minecraft:egg|USABLE"
+            "minecraft:egg|USABLE",
+            "scp_classified_directive:scp_572|WEAPON"
     );
 
     private static final List<String> DEFAULT_ITEM_EFFECTS = List.of(

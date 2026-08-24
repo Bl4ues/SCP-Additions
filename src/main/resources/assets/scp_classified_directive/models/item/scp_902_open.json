@@ -1,22 +1,107 @@
 {
-  "parent": "scp_classified_directive:block/scp_902_open",
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    32,
+    32
+  ],
   "display": {
-    "thirdperson": {
+    "thirdperson_righthand": {
       "rotation": [
-        10,
-        -45,
-        170
+        0,
+        -180,
+        0
       ],
       "translation": [
         0,
-        1.5,
-        -2.75
+        -1.5,
+        0
       ],
       "scale": [
-        0.375,
-        0.375,
-        0.375
+        1.54,
+        1.54,
+        1.54
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        -180,
+        0
+      ],
+      "translation": [
+        0,
+        -1.5,
+        0
+      ],
+      "scale": [
+        1.54,
+        1.54,
+        1.54
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        21,
+        154,
+        0
+      ],
+      "scale": [
+        2.19,
+        2.19,
+        2.19
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        21,
+        154,
+        0
+      ],
+      "scale": [
+        2.19,
+        2.19,
+        2.19
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        -7.25,
+        0
+      ],
+      "scale": [
+        2.79,
+        2.79,
+        2.79
+      ]
+    },
+    "gui": {
+      "rotation": [
+        26,
+        -152,
+        0
+      ],
+      "translation": [
+        0,
+        -3,
+        0
+      ],
+      "scale": [
+        4,
+        4,
+        4
+      ]
+    },
+    "head": {
+      "translation": [
+        0,
+        6,
+        0
       ]
     }
+  },
+  "textures": {
+    "particle": "scp_classified_directive:block/scp902"
   }
 }

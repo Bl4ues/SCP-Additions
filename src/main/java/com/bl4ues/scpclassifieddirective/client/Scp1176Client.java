@@ -3,6 +3,8 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp1176BlockEntity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -11,11 +13,25 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-/** Client renderer for SCP-1176 and its translucent honey/decal texture areas. */
+/**
+ * Client renderer for SCP-1176.
+ *
+ * The sarcophagus, corpse, lid, faucet and side container are rendered in a
+ * normal depth-writing cutout pass. The honey surface is then rendered alone
+ * in a final translucent pass. Keeping the entire model out of the translucent
+ * queue prevents the corpse and inner walls from disappearing at camera-angle
+ * dependent sort boundaries.
+ */
 public final class Scp1176Client {
+    private static final float HONEY_ALPHA = 0.72F;
+
     private Scp1176Client() {
     }
 
@@ -56,21 +72,80 @@ public final class Scp1176Client {
         public ResourceLocation getAnimationResource(Scp1176BlockEntity animatable) {
             return ANIMATION;
         }
+
+        @Override
+        public void setCustomAnimations(Scp1176BlockEntity animatable,
+                long instanceId,
+                AnimationState<Scp1176BlockEntity> animationState) {
+            super.setCustomAnimations(animatable, instanceId, animationState);
+            prepareOpaquePass();
+        }
+
+        private void prepareOpaquePass() {
+            setHidden("bb_main", true);
+            setHidden("sarc", false);
+            setHidden("1176", false);
+            setHidden("lid", false);
+            setHidden("2", false);
+            setHidden("faucet", false);
+            setHidden("bone", false);
+        }
+
+        private void prepareHoneyPass() {
+            setHidden("bb_main", false);
+            setHidden("sarc", true);
+            setHidden("1176", true);
+            setHidden("lid", true);
+            setHidden("2", true);
+            setHidden("faucet", true);
+            setHidden("bone", true);
+        }
+
+        private void setHidden(String name, boolean hidden) {
+            CoreGeoBone bone = getAnimationProcessor().getBone(name);
+            if (bone != null) bone.setHidden(hidden);
+        }
     }
 
     private static final class Renderer extends GeoBlockRenderer<Scp1176BlockEntity> {
+        private final Model scpModel;
+
         private Renderer(BlockEntityRendererProvider.Context context) {
-            super(new Model());
+            this(new Model());
+        }
+
+        private Renderer(Model model) {
+            super(model);
+            this.scpModel = model;
+
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        Scp1176BlockEntity animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight, int packedOverlay) {
+                    scpModel.prepareHoneyPass();
+                    try {
+                        RenderType honey = RenderType.entityTranslucent(
+                                Model.TEXTURE, true);
+                        getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                                animatable, honey,
+                                bufferSource.getBuffer(honey), partialTick,
+                                packedLight, packedOverlay,
+                                1.0F, 1.0F, 1.0F, HONEY_ALPHA);
+                    } finally {
+                        scpModel.prepareOpaquePass();
+                    }
+                }
+            });
         }
 
         @Override
         public RenderType getRenderType(Scp1176BlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            // Full alpha blending is required for the honey surface and the
-            // transparent side artwork. Keeping this in the translucent pass
-            // prevents transparent texels from behaving like opaque geometry.
-            return RenderType.entityTranslucent(texture, true);
+            return RenderType.entityCutoutNoCull(texture);
         }
 
         @Override

@@ -37,32 +37,37 @@ public final class MainMenuBrandingClient {
             graphics.blit(LOGO, left, top, logoWidth, logoHeight,
                     0.0F, 0.0F, 960, 832, 960, 832);
             RenderSystem.disableBlend();
-            // Keep the wordmark visually attached to the logo instead of
-            // leaving the large gap used by the previous single-size title.
             titleX += logoWidth + 5;
         }
 
         boolean compact = screen.height < 420;
-        float scpScale = compact ? 2.80F : 4.25F;
-        float directiveScale = compact ? 2.25F : 3.25F;
-        float versionScale = compact ? 1.25F : 1.85F;
-        int titleY = top - 1;
+        float scpScale = compact ? 3.20F : 5.20F;
+        float directiveBaseScale = compact ? 2.05F : 3.15F;
+        float versionScale = compact ? 1.45F : 2.12F;
+        int titleY = top + (compact ? 4 : 9);
 
         Component scp = ScpFonts.montserrat("SCP:");
         drawScaledText(graphics, font, scp,
                 titleX, titleY, scpScale, TEXT);
 
         float scpWidth = font.width(scp) * scpScale;
-        drawScaledText(graphics, font,
-                ScpFonts.montserrat("CLASSIFIED DIRECTIVE"),
-                titleX + scpWidth + 5.0F, titleY,
+        Component directive = ScpFonts.montserrat("CLASSIFIED DIRECTIVE");
+        float directiveX = titleX + scpWidth + (compact ? 4.0F : 6.0F);
+        float remainingWidth = Math.max(1.0F, screen.width - directiveX - 22.0F);
+        float directiveScale = Math.min(directiveBaseScale,
+                remainingWidth / Math.max(1.0F, font.width(directive)));
+        directiveScale = Math.max(compact ? 1.55F : 2.20F, directiveScale);
+        drawScaledText(graphics, font, directive,
+                directiveX, titleY + (compact ? 2.0F : 4.0F),
                 directiveScale, TEXT);
 
         int versionY = titleY
-                + Math.round(font.lineHeight * scpScale) + 7;
+                + Math.round(font.lineHeight * scpScale)
+                + (compact ? 8 : 12);
         drawScaledText(graphics, font,
                 ScpFonts.titillium("VERSION " + modVersion()),
-                titleX, versionY, versionScale, ACCENT_BRIGHT);
+                titleX + (compact ? 1.0F : 3.0F), versionY,
+                versionScale, ACCENT_BRIGHT);
     }
 
     /** Always follows the version declared by the loaded mod metadata. */

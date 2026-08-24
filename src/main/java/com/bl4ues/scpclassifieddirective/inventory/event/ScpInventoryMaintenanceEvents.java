@@ -53,6 +53,12 @@ public final class ScpInventoryMaintenanceEvents {
             return false;
         }
 
+        ItemStack requested = inventory.getInventoryItem(sourceSlot);
+        if (!requested.isEmpty()
+                && ScpItemClassifier.getType(requested) == ScpItemType.PLACEABLE) {
+            return false;
+        }
+
         ItemStack alreadyActive = inventory.getActiveUsable();
         if (!alreadyActive.isEmpty()) {
             int activeSlot = syncActiveUsableMirror(player, inventory, alreadyActive, -1);
@@ -103,7 +109,8 @@ public final class ScpInventoryMaintenanceEvents {
     }
 
     public static void trackUsableSession(ServerPlayer player, int hotbarSlot, ItemStack stack, int sourceSlot) {
-        if (player == null || hotbarSlot < VANILLA_HOTBAR_START || hotbarSlot >= VANILLA_HOTBAR_END_EXCLUSIVE || stack == null || stack.isEmpty()) {
+        if (player == null || hotbarSlot < VANILLA_HOTBAR_START || hotbarSlot >= VANILLA_HOTBAR_END_EXCLUSIVE || stack == null || stack.isEmpty()
+                || ScpItemClassifier.getType(stack) == ScpItemType.PLACEABLE) {
             return;
         }
 
@@ -247,7 +254,8 @@ public final class ScpInventoryMaintenanceEvents {
         int end = Math.min(VANILLA_MAIN_END_EXCLUSIVE, vanillaInventory.items.size());
         for (int i = VANILLA_HOTBAR_START; i < end; i++) {
             ItemStack stack = vanillaInventory.items.get(i);
-            if (stack.isEmpty()) {
+            if (stack.isEmpty()
+                    || ScpItemClassifier.getType(stack) == ScpItemType.PLACEABLE) {
                 continue;
             }
             if (ScpPickupRouter.isUsableSession(stack)
@@ -369,7 +377,8 @@ public final class ScpInventoryMaintenanceEvents {
             return;
         }
 
-        if (ScpPickupRouter.isUsableSession(tossedStack)) {
+        if (ScpPickupRouter.isUsableSession(tossedStack)
+                && ScpItemClassifier.getType(tossedStack) != ScpItemType.PLACEABLE) {
             ItemStack cleanedToss = cleanForExternalWorld(tossedStack);
             event.getEntity().setItem(cleanedToss);
             clearUsableSession(player);
@@ -490,6 +499,9 @@ public final class ScpInventoryMaintenanceEvents {
 
         ItemStack normalizedMirror = normalizeSingle(mirror);
         if (!isSameSingleItem(normalizedMirror, activeUsable)) {
+            if (ScpItemClassifier.getType(mirror) == ScpItemType.PLACEABLE) {
+                return rearmTrackedUsableInHotbar(player, inventory, -1);
+            }
             inventory.setActiveUsable(normalizedMirror);
             ACTIVE_USABLE_STACKS.put(id, normalizedMirror);
             return true;

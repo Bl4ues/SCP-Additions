@@ -20,6 +20,9 @@ public final class ScpClassifiedDirectiveModParticleTypes {
     public static final RegistryObject<SimpleParticleType> SCP_106_PORTAL = REGISTRY.register(
             "scp_106_portal", () -> new SimpleParticleType(false));
 
+    public static final RegistryObject<SimpleParticleType> DAMAGE_SPLATTER = REGISTRY.register(
+            "damage_splatter", () -> new SimpleParticleType(false));
+
     private ScpClassifiedDirectiveModParticleTypes() {
     }
 }

@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.client;
 
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -13,11 +15,8 @@ import java.util.Deque;
 
 /**
  * Applies the resolution-independent virtual canvas to every mod-owned screen.
- *
- * Forge posts screen render/input events before calling the Screen methods. We
- * therefore dispatch the Screen method ourselves with already-normalized event
- * coordinates and cancel only Forge's duplicate call. Other event listeners keep
- * seeing the same Pre/Post lifecycle, just in virtual coordinates.
+ * Forge's outer draw boundary owns the transform, while this event layer handles
+ * virtual dimensions and input dispatch.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -32,16 +31,26 @@ public final class ResponsiveUiScaleEvents {
         ResponsiveUiScale.applyVirtualSize(event.getScreen());
     }
 
-    /** Keep the scale active through the whole screen and all Render.Post UI. */
-    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
-    public static void onRenderBegin(ScreenEvent.Render.Pre event) {
-        if (!ResponsiveUiScale.manages(event.getScreen())) return;
+    /** Called by the ForgeHooksClient mixin before any screen render event fires. */
+    public static void beginRender(Screen screen, GuiGraphics graphics) {
+        if (!ResponsiveUiScale.manages(screen) || graphics == null) return;
         ResponsiveUiScale.Context context = ResponsiveUiScale.current();
-        event.getScreen().width = context.virtualWidth();
-        event.getScreen().height = context.virtualHeight();
-        ResponsiveUiScale.push(event.getGuiGraphics(), context);
-        RENDER_FRAMES.push(new RenderFrame(event.getScreen(),
-                event.getGuiGraphics()));
+        screen.width = context.virtualWidth();
+        screen.height = context.virtualHeight();
+        ResponsiveUiScale.push(graphics, context);
+        RENDER_FRAMES.push(new RenderFrame(screen, graphics));
+    }
+
+    /** Called after Forge has finished every Render.Post listener for the screen. */
+    public static void endRender(Screen screen, GuiGraphics graphics) {
+        if (!ResponsiveUiScale.manages(screen) || graphics == null) return;
+        RenderFrame frame = RENDER_FRAMES.peek();
+        if (frame == null || frame.screen() != screen
+                || frame.graphics() != graphics) {
+            return;
+        }
+        RENDER_FRAMES.pop();
+        ResponsiveUiScale.pop(graphics);
     }
 
     /**
@@ -57,15 +66,6 @@ public final class ResponsiveUiScaleEvents {
         event.getScreen().renderWithTooltip(event.getGuiGraphics(),
                 event.getMouseX(), event.getMouseY(), event.getPartialTick());
         event.setCanceled(true);
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onRenderEnd(ScreenEvent.Render.Post event) {
-        if (!ResponsiveUiScale.manages(event.getScreen())) return;
-        RenderFrame frame = RENDER_FRAMES.peek();
-        if (frame == null || frame.screen() != event.getScreen()) return;
-        RENDER_FRAMES.pop();
-        ResponsiveUiScale.pop(frame.graphics());
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
@@ -131,7 +131,6 @@ public final class ResponsiveUiScaleEvents {
         event.setCanceled(true);
     }
 
-    private record RenderFrame(net.minecraft.client.gui.screens.Screen screen,
-            net.minecraft.client.gui.GuiGraphics graphics) {
+    private record RenderFrame(Screen screen, GuiGraphics graphics) {
     }
 }

@@ -158,6 +158,9 @@ abstract class Scp902BlockBase extends BaseEntityBlock
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
             CollisionContext context) {
         boolean open = state.is(ScpClassifiedDirectiveModBlocks.SCP_902_OPEN.get());
+        if (!open && level.getBlockEntity(pos) instanceof Scp902BlockEntity box) {
+            open = box.phase() != Scp902BlockEntity.Phase.CLOSED;
+        }
         return switch (state.getValue(FACING)) {
             case SOUTH -> open ? OPEN_SOUTH : CLOSED_SOUTH;
             case EAST -> open ? OPEN_EAST : CLOSED_EAST;

@@ -136,6 +136,20 @@ public final class DefaultContextInteractions {
                 root.add("interactions", interactions);
             }
 
+            // SCP-426 no longer has a direct interaction. Strip any historical
+            // bundled rule before this JSON is used as the integrated layer.
+            // User-authored rules in the external config remain untouched.
+            for (int i = interactions.size() - 1; i >= 0; i--) {
+                JsonElement element = interactions.get(i);
+                if (!element.isJsonObject()) continue;
+                JsonObject object = element.getAsJsonObject();
+                if ("block".equalsIgnoreCase(string(object, "type"))
+                        && "scp_classified_directive:scp_426".equals(
+                                string(object, "id"))) {
+                    interactions.remove(i);
+                }
+            }
+
             boolean corpseExists = false;
             boolean scp714Exists = false;
             boolean scp1576Exists = false;

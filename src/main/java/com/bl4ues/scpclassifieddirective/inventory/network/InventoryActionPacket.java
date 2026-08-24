@@ -143,7 +143,7 @@ public class InventoryActionPacket {
     }
 
     private static void useUsableSlot(ServerPlayer player, IScpInventory inventory, int slot) {
-        ScpInventoryMaintenanceEvents.activateUsableSession(player, inventory, slot);
+        MainUseActionPacket.activateUsableHotbarSession(player, inventory, slot);
     }
 
     private static void routeUseRemainder(ServerPlayer player, IScpInventory inventory, ItemStack remainder) {

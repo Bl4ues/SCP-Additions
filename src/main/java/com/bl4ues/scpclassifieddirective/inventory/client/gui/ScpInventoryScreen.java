@@ -664,7 +664,8 @@ public class ScpInventoryScreen extends Screen {
             return true;
         }
         String itemType = inventory.getItemType(index);
-        if ("Consumable".equals(itemType) || "Usable".equals(itemType)) {
+        if ("Consumable".equals(itemType) || "Usable".equals(itemType)
+                || "Placeable".equals(itemType)) {
             ClientInventoryBridge.perform(index, InventoryActionPacket.ACTION_USE);
             return true;
         }

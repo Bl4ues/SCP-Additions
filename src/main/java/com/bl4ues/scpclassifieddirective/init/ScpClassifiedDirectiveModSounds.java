@@ -83,6 +83,7 @@ public class ScpClassifiedDirectiveModSounds {
 	public static final RegistryObject<SoundEvent> SCP012_BLEED_3 = REGISTRY.register("scp012_bleed_3", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp012_bleed_3")));
 	public static final RegistryObject<SoundEvent> SCP012_ON_MOUNT_GOLGOTHA = REGISTRY.register("scp012_on_mount_golgotha", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp012_on_mount_golgotha")));
 	public static final RegistryObject<SoundEvent> PLAYER_HURT = REGISTRY.register("player_hurt", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "player_hurt")));
+	public static final RegistryObject<SoundEvent> DAMAGE_SPLATTER = REGISTRY.register("damage_splatter", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "damage_splatter")));
 	public static final RegistryObject<SoundEvent> LAMP_LOOP = REGISTRY.register("lamp_loop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "lamp_loop")));
 	public static final RegistryObject<SoundEvent> LAMP_ON = REGISTRY.register("lamp_on", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "lamp_on")));
 	public static final RegistryObject<SoundEvent> LAMP_OFF = REGISTRY.register("lamp_off", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "lamp_off")));

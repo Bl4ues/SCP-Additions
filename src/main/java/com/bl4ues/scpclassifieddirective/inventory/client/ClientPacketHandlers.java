@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
 
 public final class ClientPacketHandlers {
 
@@ -55,8 +54,6 @@ public final class ClientPacketHandlers {
                 ? ScpItemType.MISCELLANEOUS
                 : ScpItemClassifier.getType(activeStack);
         boolean placeable = type == ScpItemType.PLACEABLE;
-        boolean shouldClientApply = placeable
-                || shouldClientApplyUsableHotbarCopy(activeStack);
 
         if (hotbarSlot >= 0 && hotbarSlot < 9 && !activeStack.isEmpty()) {
             activeStack.setCount(1);
@@ -67,9 +64,12 @@ public final class ClientPacketHandlers {
                 UsableHotbarSessionClient.start(hotbarSlot, sourceSlot,
                         activeStack);
             }
-            if (shouldClientApply) {
-                applyHotbarItem(hotbarSlot, activeStack);
-            }
+
+            // The server remains authoritative, but the client also applies and
+            // selects the mirror immediately. Waiting for a later vanilla slot
+            // sync allowed the inventory screen to close while the previously
+            // selected PLACEABLE remained visibly in hand.
+            applyHotbarItem(hotbarSlot, activeStack);
         }
 
         minecraft.setScreen(null);
@@ -80,8 +80,7 @@ public final class ClientPacketHandlers {
                 }
             });
         }
-        if (shouldClientApply && hotbarSlot >= 0 && hotbarSlot < 9
-                && !activeStack.isEmpty()) {
+        if (hotbarSlot >= 0 && hotbarSlot < 9 && !activeStack.isEmpty()) {
             minecraft.execute(() -> applyHotbarItem(hotbarSlot, activeStack));
         }
 
@@ -91,11 +90,6 @@ public final class ClientPacketHandlers {
             prompt = ScpFonts.roboto(prompt);
         }
         minecraft.player.displayClientMessage(prompt, true);
-    }
-
-    private static boolean shouldClientApplyUsableHotbarCopy(ItemStack stack) {
-        return stack != null && !stack.isEmpty()
-                && stack.getUseAnimation() == UseAnim.SPYGLASS;
     }
 
     private static void applyHotbarItem(int hotbarSlot, ItemStack stack) {

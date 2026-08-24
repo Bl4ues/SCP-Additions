@@ -156,6 +156,11 @@ public final class DefaultContextInteractions {
                         && ("scp_classified_directive:scp_902_closed".equals(id)
                         || "scp_classified_directive:scp_902_open".equals(id))) {
                     setAnchor(object, 0.418D, 0.052D, 0.5D);
+                    continue;
+                }
+                if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_1176".equals(id)) {
+                    normalizeScp1176(object);
                 }
             }
 
@@ -203,6 +208,49 @@ public final class DefaultContextInteractions {
                     exception);
             return raw;
         }
+    }
+
+    private static void normalizeScp1176(JsonObject object) {
+        setAnchor(object, 0.233D, 0.252D, -0.702D);
+
+        JsonObject text;
+        if (object.has("text") && object.get("text").isJsonObject()) {
+            text = object.getAsJsonObject("text");
+        } else {
+            text = new JsonObject();
+            object.add("text", text);
+        }
+        text.addProperty("action", "Ingest");
+        text.addProperty("nameMode", "manual");
+        text.addProperty("name", "SCP-1176-1");
+        text.addProperty("showAction", true);
+        text.addProperty("showName", true);
+
+        JsonArray variants;
+        if (object.has("variants") && object.get("variants").isJsonArray()) {
+            variants = object.getAsJsonArray("variants");
+        } else {
+            variants = new JsonArray();
+            object.add("variants", variants);
+        }
+        for (JsonElement element : variants) {
+            if (element.isJsonObject()
+                    && "take_scp_1176_honey".equals(
+                    string(element.getAsJsonObject(), "interactionId"))) {
+                return;
+            }
+        }
+
+        JsonObject take = new JsonObject();
+        take.addProperty("interactionId", "take_scp_1176_honey");
+        take.addProperty("priority", 45);
+        JsonObject takeText = new JsonObject();
+        takeText.addProperty("action", "Take");
+        take.add("text", takeText);
+        JsonObject input = new JsonObject();
+        input.addProperty("requiredItem", "minecraft:glass_bottle");
+        take.add("input", input);
+        variants.add(take);
     }
 
     private static void setAnchor(JsonObject object, double x, double y,

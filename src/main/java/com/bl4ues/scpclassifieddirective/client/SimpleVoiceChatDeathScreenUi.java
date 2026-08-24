@@ -42,6 +42,9 @@ public final class SimpleVoiceChatDeathScreenUi {
     private static final int HEAD_MIN_SIZE = 18;
     private static final int HEAD_MAX_SIZE = 30;
     private static final int HEAD_GAP = 6;
+    private static final int DETACHED_MARGIN = 16;
+    private static final int DETACHED_ICON_RESERVE = 18;
+    private static final int DETACHED_MIC_GAP = 8;
     private static final int DEAD_CALL_IDLE_ALPHA = 92;
     private static final int DEAD_CALL_MUTED_ALPHA = 58;
     private static final int MUTED_RED = 0xFFD45C62;
@@ -62,6 +65,16 @@ public final class SimpleVoiceChatDeathScreenUi {
                 && SimpleVoiceChatCompatibilityClientState.enabled();
     }
 
+    /**
+     * The MineZero feed is deliberately removed after its team-wipe static sting,
+     * but the dead call itself still exists. Keep its controls alive independently
+     * once the final living personnel target is gone.
+     */
+    public static boolean detachedVisible(ScpDeathScreen screen) {
+        return visible() && screen != null && MineZeroClientState.allDead()
+                && !MineZeroSpectateClient.active();
+    }
+
     public static void render(ScpDeathScreen screen, GuiGraphics graphics,
             int mouseX, int mouseY, float alpha) {
         if (!visible() || screen == null || graphics == null
@@ -75,6 +88,22 @@ public final class SimpleVoiceChatDeathScreenUi {
     }
 
     /**
+     * Renders the same dead-call hierarchy after a team wipe, migrating it from
+     * the removed personnel-feed rail into the lower-left corner while the death
+     * report recenters. The local mute control remains the lowest element.
+     */
+    public static void renderDetached(ScpDeathScreen screen, GuiGraphics graphics,
+            int mouseX, int mouseY, float alpha) {
+        if (!detachedVisible(screen) || graphics == null || alpha <= 0.001F) {
+            return;
+        }
+        DetachedLayout layout = detachedLayout(screen);
+        if (layout == null) return;
+        renderDetachedRoster(graphics, layout, mouseX, mouseY, alpha);
+        renderOwnMicrophoneAt(graphics, layout.micX(), layout.micY(), alpha);
+    }
+
+    /**
      * Handles the microphone button before the personnel feed consumes the same
      * click as a camera drag.
      */
@@ -84,6 +113,21 @@ public final class SimpleVoiceChatDeathScreenUi {
         Bounds feed = feed(screen);
         int x = feed.left + 8;
         int y = feed.bottom - MIC_BOX_SIZE - 8;
+        if (mouseX < x || mouseX >= x + MIC_BOX_SIZE
+                || mouseY < y || mouseY >= y + MIC_BOX_SIZE) {
+            return false;
+        }
+        toggleLocalMute();
+        return true;
+    }
+
+    public static boolean handleDetachedMousePressed(ScpDeathScreen screen,
+            double mouseX, double mouseY) {
+        if (!detachedVisible(screen)) return false;
+        DetachedLayout layout = detachedLayout(screen);
+        if (layout == null) return false;
+        int x = layout.micX();
+        int y = layout.micY();
         if (mouseX < x || mouseX >= x + MIC_BOX_SIZE
                 || mouseY < y || mouseY >= y + MIC_BOX_SIZE) {
             return false;
@@ -164,6 +208,62 @@ public final class SimpleVoiceChatDeathScreenUi {
         }
     }
 
+    private static void renderDetachedRoster(GuiGraphics graphics,
+            DetachedLayout layout, int mouseX, int mouseY, float uiAlpha) {
+        List<DeathVoiceRosterPacket.Participant> roster = orderedRoster();
+        if (roster.isEmpty()) return;
+
+        int count = Math.min(layout.maxVisible(), roster.size());
+        String hoveredName = null;
+        for (int i = 0; i < count; i++) {
+            DeathVoiceRosterPacket.Participant participant = roster.get(i);
+            int y = layout.deadBaseY()
+                    - i * (layout.headSize() + HEAD_GAP);
+            if (y < layout.top()) break;
+
+            boolean muted = isParticipantMuted(participant.id());
+            boolean talking = !muted && isParticipantTalking(participant.id());
+            float portraitBrightness = talking ? 1.0F
+                    : muted ? DEAD_CALL_MUTED_ALPHA / 255.0F
+                    : DEAD_CALL_IDLE_ALPHA / 255.0F;
+
+            graphics.fill(layout.headX() - 2, y - 2,
+                    layout.headX() + layout.headSize() + 2,
+                    y + layout.headSize() + 2,
+                    withAlpha(talking ? TALKING_BORDER : IDLE_BORDER, uiAlpha));
+            graphics.fill(layout.headX() - 1, y - 1,
+                    layout.headX() + layout.headSize() + 1,
+                    y + layout.headSize() + 1,
+                    withAlpha(0xC006090C, uiAlpha));
+
+            HeadTexture texture = headTexture(participant);
+            renderHead(graphics, texture, layout.headX(), y,
+                    layout.headSize(), uiAlpha);
+            if (portraitBrightness < 0.999F) {
+                graphics.fill(layout.headX(), y,
+                        layout.headX() + layout.headSize(),
+                        y + layout.headSize(),
+                        withAlpha(0xFF06090C,
+                                (1.0F - portraitBrightness) * uiAlpha));
+            }
+            if (muted) {
+                drawMuteSlash(graphics, layout.headX(), y,
+                        layout.headSize(), uiAlpha);
+            }
+            if (mouseX >= layout.headX() - 2
+                    && mouseX < layout.headX() + layout.headSize() + 2
+                    && mouseY >= y - 2
+                    && mouseY < y + layout.headSize() + 2) {
+                hoveredName = participant.name();
+            }
+        }
+
+        if (hoveredName != null && !hoveredName.isBlank()) {
+            graphics.renderTooltip(Minecraft.getInstance().font,
+                    Component.literal(hoveredName), mouseX, mouseY);
+        }
+    }
+
     private static List<DeathVoiceRosterPacket.Participant> orderedRoster() {
         List<DeathVoiceRosterPacket.Participant> source =
                 DeathVoiceRosterClient.participants();
@@ -190,14 +290,18 @@ public final class SimpleVoiceChatDeathScreenUi {
 
     private static void renderOwnMicrophone(GuiGraphics graphics,
             Bounds feed, float uiAlpha) {
+        renderOwnMicrophoneAt(graphics, feed.left + 8,
+                feed.bottom - MIC_BOX_SIZE - 8, uiAlpha);
+    }
+
+    private static void renderOwnMicrophoneAt(GuiGraphics graphics,
+            int x, int y, float uiAlpha) {
         boolean muted = localMuted() || localVoiceUnavailable();
         boolean whispering = !muted && localWhispering();
         boolean talking = !muted && localTalking();
         ResourceLocation icon = muted ? MICROPHONE_OFF
                 : whispering ? MICROPHONE_WHISPER : MICROPHONE;
 
-        int x = feed.left + 8;
-        int y = feed.bottom - MIC_BOX_SIZE - 8;
         int border = muted ? MUTED_RED
                 : talking ? TALKING_BORDER : 0x9A596169;
         graphics.fill(x, y, x + MIC_BOX_SIZE, y + MIC_BOX_SIZE,
@@ -484,6 +588,48 @@ public final class SimpleVoiceChatDeathScreenUi {
                 exception);
     }
 
+    static DetachedLayout detachedLayout(ScpDeathScreen screen) {
+        if (screen == null) return null;
+        Bounds feed = feed(screen);
+        int cardRight = finalCardRight(screen);
+        int railWidth = feed.left - cardRight;
+        int headSize = railWidth >= HEAD_MIN_SIZE + 16
+                ? Mth.clamp(railWidth - 18, HEAD_MIN_SIZE, HEAD_MAX_SIZE)
+                : HEAD_MAX_SIZE;
+
+        int feedHeadX = feed.left - headSize - 9;
+        if (feedHeadX < cardRight + 7) {
+            feedHeadX = cardRight + Math.max(5,
+                    (railWidth - headSize) / 2);
+        }
+        int feedDeadBaseY = feed.bottom - headSize - 7;
+        int feedMicX = feed.left + 8;
+        int feedMicY = feed.bottom - MIC_BOX_SIZE - 8;
+
+        int cornerHeadX = DETACHED_MARGIN + DETACHED_ICON_RESERVE;
+        int cornerMicX = cornerHeadX + (headSize - MIC_BOX_SIZE) / 2;
+        int cornerMicY = screen.height - DETACHED_MARGIN - MIC_BOX_SIZE;
+        int cornerDeadBaseY = cornerMicY - DETACHED_MIC_GAP - headSize;
+
+        // The death report uses this same 520 ms transition when it returns from
+        // the spectate layout to center, so the call rail physically travels with
+        // that layout change instead of teleporting to its fallback corner.
+        float transition = Mth.clamp(
+                1.0F - MineZeroClientState.spectateLayoutProgress(),
+                0.0F, 1.0F);
+        int headX = Mth.lerpInt(transition, feedHeadX, cornerHeadX);
+        int deadBaseY = Mth.lerpInt(transition,
+                feedDeadBaseY, cornerDeadBaseY);
+        int micX = Mth.lerpInt(transition, feedMicX, cornerMicX);
+        int micY = Mth.lerpInt(transition, feedMicY, cornerMicY);
+        int top = Mth.lerpInt(transition, feed.top, DETACHED_MARGIN);
+        int maxVisible = Math.max(1,
+                (Math.max(0, deadBaseY - top) + HEAD_GAP)
+                        / (headSize + HEAD_GAP) + 1);
+        return new DetachedLayout(headX, deadBaseY, headSize, top,
+                micX, micY, maxVisible);
+    }
+
     private static int finalCardRight(ScpDeathScreen screen) {
         int cardWidth = screen.width < 700
                 ? Mth.clamp(Math.round(screen.width * 0.52F), 320, 410)
@@ -506,6 +652,10 @@ public final class SimpleVoiceChatDeathScreenUi {
         int result = Mth.clamp(Math.round(source
                 * Mth.clamp(alpha, 0.0F, 1.0F)), 0, 255);
         return result << 24 | color & 0x00FFFFFF;
+    }
+
+    static record DetachedLayout(int headX, int deadBaseY, int headSize,
+            int top, int micX, int micY, int maxVisible) {
     }
 
     private record Bounds(int left, int top, int right, int bottom) {

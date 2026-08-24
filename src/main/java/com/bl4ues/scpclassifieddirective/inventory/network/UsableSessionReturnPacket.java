@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.inventory.network;
 
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.inventory.event.ScpInventoryMaintenanceEvents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,7 +29,7 @@ public class UsableSessionReturnPacket {
         ctx.get().enqueueWork(() -> {
             if (!ScpClassifiedDirectiveModulesConfig.get().inventory.enabled) return;
             ServerPlayer player = ctx.get().getSender();
-            if (player == null) {
+            if (player == null || Scp714ExposureManager.isControlsLocked(player)) {
                 return;
             }
             ScpInventoryMaintenanceEvents.returnTrackedUsableSession(player, msg.hotbarSlot);

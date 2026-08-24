@@ -64,7 +64,7 @@ public class MainUseActionPacket {
 
                 ScpItemType type = ScpItemClassifier.getType(stack);
                 if (type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE) {
-                    activateHotbarSession(player, inventory, msg.slot, stack);
+                    activateHotbarSession(player, inventory, msg.slot);
                     return;
                 }
 
@@ -80,7 +80,7 @@ public class MainUseActionPacket {
                     }
 
                     if (isVanillaConsumable(stack)) consume(player, inventory, msg.slot, stack);
-                    else activateHotbarSession(player, inventory, msg.slot, stack);
+                    else activateHotbarSession(player, inventory, msg.slot);
                     ModNetwork.syncTo(player, inventory);
                 }
             });
@@ -89,17 +89,16 @@ public class MainUseActionPacket {
     }
 
     /**
-     * A hotbar category is intentionally singular. Selecting another stack of
-     * the same category therefore means replacement, not "re-select whatever was
-     * already active". Return the old authoritative stack first, then start the
-     * requested session so the incoming item owns the hotbar mirror.
+     * The controlled usable/placeable hotbar session is singular. Selecting any
+     * other controlled item therefore replaces the current session, regardless
+     * of whether the two items share the same classifier type. Return the old
+     * authoritative stack first so its source bookkeeping stays intact, then
+     * activate the newly requested stack.
      */
     private static void activateHotbarSession(ServerPlayer player,
-            IScpInventory inventory, int sourceSlot, ItemStack requestedStack) {
+            IScpInventory inventory, int sourceSlot) {
         ItemStack activeStack = inventory.getActiveUsable();
-        if (!activeStack.isEmpty()
-                && ScpItemClassifier.getType(activeStack)
-                == ScpItemClassifier.getType(requestedStack)) {
+        if (!activeStack.isEmpty()) {
             int activeHotbarSlot = findTrackedHotbarSlot(player);
             if (activeHotbarSlot >= 0) {
                 ScpInventoryMaintenanceEvents.returnTrackedUsableSession(

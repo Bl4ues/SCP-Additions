@@ -29,13 +29,13 @@ The following font files are redistributed with SCP: Classified Directive and re
 
 | Font | Use in the mod | Copyright and design credit | License |
 |---|---|---|---|
-| Roboto Regular 2.001047 | SCP Inventory interface text | Copyright 2015 Google Inc.; designed by Christian Robertson | [Apache License 2.0](https://github.com/googlefonts/roboto-2/blob/main/LICENSE) |
-| Montserrat Regular 7.200 | SCP Inventory interface headings and labels | Copyright 2011 The Montserrat Project Authors; originally designed by Julieta Ulanovsky | [SIL Open Font License 1.1](https://github.com/JulietaUla/Montserrat/blob/master/OFL.txt) |
+| Roboto Regular 2.001047 | Interface text | Copyright 2015 Google Inc.; designed by Christian Robertson | [Apache License 2.0](https://github.com/googlefonts/roboto-2/blob/main/LICENSE) |
+| Montserrat Regular 7.200 | Interface headings and labels | Copyright 2011 The Montserrat Project Authors; originally designed by Julieta Ulanovsky | [SIL Open Font License 1.1](https://github.com/JulietaUla/Montserrat/blob/master/OFL.txt) |
 | Titillium Web Regular | Core Room elevator arrival display | Copyright 2009–2011 Accademia di Belle Arti di Urbino and the Titillium Web project authors | [SIL Open Font License 1.1](https://github.com/google/fonts/blob/main/ofl/titilliumweb/OFL.txt) |
 | Liberation Sans Bold 1.04 | Core Room Sign text | Digitized data © 2007 Ascender Corporation; designed by Steve Matteson; Liberation is a trademark of Red Hat, Inc. | [GNU GPL v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) with the [Liberation Fonts exceptions](https://github.com/liberationfonts/liberation-sans-narrow/blob/master/License.txt) |
 | Anonymous Pro Regular 1.003 | Door Sign text | Copyright © 2009 Mark Simonson; Reserved Font Name: Anonymous Pro | [SIL Open Font License 1.1](https://www.marksimonson.com/fonts/view/anonymous/) |
 | Jura Variable 5.106 | Door Sign numbers | Copyright 2019 The Jura Project Authors; designed by Daniel Johnson, Alexei Vanyashin, and Mirko Velimirovic | [SIL Open Font License 1.1](https://github.com/ossobuffo/jura/blob/master/OFL.txt) |
-| Noto Sans Bold | Editable SCP Sign Support text | Copyright 2018 The Noto Project Authors | [SIL Open Font License 1.1](https://github.com/notofonts/noto-fonts/blob/main/LICENSE) |
+| Noto Sans Bold | Facility Signs text | Copyright 2018 The Noto Project Authors | [SIL Open Font License 1.1](https://github.com/notofonts/noto-fonts/blob/main/LICENSE) |
 
 Copyright notices and license metadata embedded in the font files have been preserved. Distributions and forks that include these fonts must retain the applicable notices and license terms. Modified versions may also be subject to reserved-font-name and source-distribution requirements stated in their respective licenses.
 

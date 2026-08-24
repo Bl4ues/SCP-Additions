@@ -1,5 +1,9 @@
 package com.bl4ues.scpclassifieddirective.vitals.client;
 
+import com.bl4ues.scpclassifieddirective.client.Scp572ClientEffects;
+import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModMobEffects;
+import com.bl4ues.scpclassifieddirective.vitals.VitalsModule;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -7,9 +11,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffects;
-import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModMobEffects;
-import com.bl4ues.scpclassifieddirective.vitals.VitalsModule;
 
 /** SCP Inventory's lower-left health and stamina HUD, with independent toggles. */
 public final class PlayerVitalsOverlay {
@@ -72,11 +73,14 @@ public final class PlayerVitalsOverlay {
         if (VitalsModule.healthHudEnabled()) {
             drawIcon(graphics, HEALTH_ICON, ICON_X, rowY - 4);
 
-            float health = Math.max(0.0F, player.getHealth());
+            boolean scp572Delusion = Scp572ClientEffects.isHeldBy(player);
             float maxHealth = Math.max(1.0F, player.getMaxHealth());
+            float health = scp572Delusion
+                    ? maxHealth
+                    : Math.max(0.0F, player.getHealth());
             float healthRatio = Math.max(0.0F, Math.min(1.0F, health / maxHealth));
-            boolean withered = player.hasEffect(MobEffects.WITHER);
-            boolean bleeding = player.hasEffect(
+            boolean withered = !scp572Delusion && player.hasEffect(MobEffects.WITHER);
+            boolean bleeding = !scp572Delusion && player.hasEffect(
                     ScpClassifiedDirectiveModMobEffects.BLEEDING.get());
             int healthColor = withered
                     ? WITHER_HEALTH_RIGHT
@@ -87,7 +91,8 @@ public final class PlayerVitalsOverlay {
 
             drawBar(graphics, BAR_X, rowY, BAR_WIDTH, BAR_HEIGHT,
                     healthRatio, healthDark, healthColor,
-                    PlayerVitalsClient.getDamageFlashAlpha());
+                    scp572Delusion ? 0.0F
+                            : PlayerVitalsClient.getDamageFlashAlpha());
 
             Component healthText = Component.literal(
                     Math.round(health) + "/" + Math.round(maxHealth))

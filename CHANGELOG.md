@@ -75,7 +75,7 @@
 
 ## SCP-330
 
-- Rebuilt SCP-330 as a GeckoLib block using a new bowl and candy model based on Unity's design;
+- Rebuilt SCP-330 using a new bowl and candy model based on Unity's design;
 - Reduced its candy selection to blue, pink, and yellow, removed the former potion buffs, and increased nutrition and saturation while adding a small direct heal;
 - Reworked the two-candy limit into a persistent hand-loss state: after taking a third candy, players cannot open inventories, use items, break or interact with blocks, activate buttons, interact with entities, or use contextual interactions until death;
 - Removed the obsolete red and green candies, legacy candy procedures, textures, and model files.
@@ -106,7 +106,7 @@
 
 ## Legacy SCP visual refresh
 
-- Refreshed several older SCP models and presentation details that no longer matched the visual quality of newer content, including SCP-426, SCP-902-A, and SCP-1176, with updated 3D/GeckoLib presentation, item rendering, PBR/translucency handling, model-matched bounds, and contextual prompt placement.
+- Refreshed several older SCP models that no longer matched the newer content, including SCP-426, SCP-902-A, and SCP-1176.
 
 ## SCP-079
 

@@ -117,8 +117,7 @@ public final class DamageFeedbackClient {
         String namespace = id.getNamespace();
         String path = id.getPath();
         boolean vanillaHurt = "minecraft".equals(namespace)
-                && (path.startsWith("entity.player.hurt")
-                || path.startsWith("entity.player.death"));
+                && path.startsWith("entity.player.hurt");
         boolean customHurt = ScpClassifiedDirectiveMod.MODID.equals(namespace)
                 && ("player_hurt".equals(path)
                 || "voice_profile_b_hurt".equals(path));
@@ -224,9 +223,14 @@ public final class DamageFeedbackClient {
             BlockState state = level.getBlockState(mutable);
             if (state.isAir()) continue;
             VoxelShape collision = state.getCollisionShape(level, mutable);
-            if (!collision.isEmpty() && Block.isShapeFullBlock(collision)) {
+            if (collision.isEmpty()) continue;
+            if (Block.isShapeFullBlock(collision)) {
                 return mutable.immutable();
             }
+            // A slab, stair, carpet or other partial collision shape is the
+            // actual surface. Do not tunnel through it to paint the full block
+            // hidden underneath.
+            return null;
         }
         return null;
     }

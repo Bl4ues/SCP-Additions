@@ -54,6 +54,7 @@
 - Player movement, sprinting, jumping and landing, facility doors and buttons, block and interaction noises, breathing, forced gasps, and compatible voice-chat speech can create acoustic evidence with different intensity and range;
 - SCP-939 can investigate the last known location of a sound, search around stale evidence, accelerate into a committed hunt when evidence becomes strong enough, and return to wandering when it loses the trail;
 - Added a close-range bite attack and a committed pounce attack that physically launches SCP-939 toward prey;
+- Successful SCP-939 attacks now have a one-in-three chance to inflict **Bleeding**, turning otherwise survivable injuries into persistent blood loss until the victim is healed;
 - Successful pounces knock the victim prone and pin them beneath SCP-939;
 - Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue;
 - Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim;
@@ -204,6 +205,7 @@
 - Replaced hunger-based natural healing with delayed regeneration: one health point every six seconds after 15 seconds without damage;
 - Saturation now reduces the regeneration delay to five seconds and restores the normal four-second interval, while Hunger prevents natural regeneration;
 - Made the custom health module hide both the vanilla heart display and armor bar while its replacement HUD is active;
+- Reworked **Bleeding** into a reusable persistent injury instead of an SCP-012-specific damage loop: blood-loss pulses occur at irregular intervals, vary in severity, continue until death or actual healing, and can now be applied by other authored attacks.
 
 ## Facility construction
 
@@ -263,7 +265,9 @@
 - Added a drowning vocal that begins with suffocation damage and fades out smoothly as breathing recovers;
 - Added a default-disabled module that removes vanilla attack, critical, and sweep impact sounds against non-player mobs;
 - Added a default-enabled module that suppresses Minecraft's ambient soundtrack without blocking SCP: Classified Directive' contextual music;
-- Added a default-enabled main menu soundtrack across the title screen and other menus until a world is opened.
+- Added a default-enabled main menu soundtrack across the title screen and other menus until a world is opened;
+- Added a default-enabled client-side **Contextual Damage Feedback** preference: direct hits retain the normal hurt sound and camera reaction, while continuous damage such as Wither, Poison, and Bleeding reduces health without replaying the direct-hit sound or shaking the view;
+- Added temporary ground splatters for damage feedback, using randomized scale and rotation, smooth ten-second fading, positional splatter audio with slight pitch variation, full-block-only placement, smaller pools for continuous damage, progressively larger pools for Bleeding as health falls, no blood for Poison, and dark blood coloration for Wither.
 
 ## Contextual interactions
 

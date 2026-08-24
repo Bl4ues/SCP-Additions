@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -26,7 +27,7 @@ public final class MainMenuWhatsNewPanelClient {
     private static final int PANEL = 0xC70B0E12;
     private static final int TRACK = 0x553A4049;
 
-    private static final int HEADER_HEIGHT = 54;
+    private static final int HEADER_HEIGHT = 38;
     private static final int ROW_HEIGHT = 19;
 
     // Keep this list aligned with CHANGELOG.md -> SCP: Classified Directive 4.0.0 -> Highlights.
@@ -66,11 +67,16 @@ public final class MainMenuWhatsNewPanelClient {
         graphics.fill(panel.x, panel.y,
                 panel.x + panel.width, panel.y + 2, ACCENT);
 
+        float headerScale = 1.10F;
         drawScaledText(graphics, font, ScpFonts.montserrat("WHAT'S NEW"),
-                panel.x + 15, panel.y + 13, 1.04F, TEXT);
-        drawScaledText(graphics, font,
-                ScpFonts.titillium("VERSION " + majorVersion()),
-                panel.x + 15, panel.y + 29, 0.96F, ACCENT_BRIGHT);
+                panel.x + 15, panel.y + 13, headerScale, TEXT);
+
+        Component version = ScpFonts.titillium(majorVersion());
+        float versionScale = 1.12F;
+        float versionWidth = font.width(version) * versionScale;
+        drawScaledText(graphics, font, version,
+                panel.x + panel.width - 15 - versionWidth,
+                panel.y + 13, versionScale, ACCENT_BRIGHT);
 
         int visibleRows = visibleRows(panel);
         int maxOffset = Math.max(0, HIGHLIGHTS.size() - visibleRows);
@@ -186,8 +192,7 @@ public final class MainMenuWhatsNewPanelClient {
     }
 
     private static void drawScaledText(GuiGraphics graphics, Font font,
-            net.minecraft.network.chat.Component text,
-            float x, float y, float scale, int color) {
+            Component text, float x, float y, float scale, int color) {
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);

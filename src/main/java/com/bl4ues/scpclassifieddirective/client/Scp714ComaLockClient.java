@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -66,6 +67,14 @@ public final class Scp714ComaLockClient {
         }
 
         applyLock(player);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+        if (!isLocked()) return;
+        event.setYaw(lockedYaw);
+        event.setPitch(Mth.clamp(lockedPitch, -90.0F, 90.0F));
+        event.setRoll(0.0F);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

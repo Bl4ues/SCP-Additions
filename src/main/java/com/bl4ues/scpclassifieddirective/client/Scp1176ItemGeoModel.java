@@ -40,6 +40,7 @@ public final class Scp1176ItemGeoModel extends GeoModel<Scp1176BlockItem> {
 
     void showSolidGeometry() {
         setBoneVisible("bb_main", false);
+        setBoneVisible("glyphs", false);
         setBoneVisible("sarc", true);
         setBoneVisible("1176", true);
         setBoneVisible("lid", true);
@@ -48,8 +49,20 @@ public final class Scp1176ItemGeoModel extends GeoModel<Scp1176BlockItem> {
         setBoneVisible("bone", true);
     }
 
+    void showGlyphGeometry() {
+        setBoneVisible("bb_main", false);
+        setBoneVisible("glyphs", true);
+        setBoneVisible("sarc", false);
+        setBoneVisible("1176", false);
+        setBoneVisible("lid", false);
+        setBoneVisible("2", false);
+        setBoneVisible("faucet", false);
+        setBoneVisible("bone", false);
+    }
+
     void showHoneyGeometry() {
         setBoneVisible("bb_main", true);
+        setBoneVisible("glyphs", false);
         setBoneVisible("sarc", false);
         setBoneVisible("1176", false);
         setBoneVisible("lid", false);

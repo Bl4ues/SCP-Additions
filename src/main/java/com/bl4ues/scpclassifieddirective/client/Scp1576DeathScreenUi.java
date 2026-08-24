@@ -57,11 +57,44 @@ public final class Scp1576DeathScreenUi {
                 DeathVoiceRosterClient.participants().size());
         int y = feed.bottom - headSize - 7
                 - deadVisible * (headSize + HEAD_GAP) - HOST_EXTRA_GAP;
+        renderHosts(graphics, activeHosts, headX, y, headSize, feed.top,
+                mouseX, mouseY, alpha);
+    }
 
+    /**
+     * Keeps active communicator hosts above the dead-call roster after MineZero
+     * removes the personnel feed on a team wipe.
+     */
+    public static void renderDetached(ScpDeathScreen screen,
+            GuiGraphics graphics, int mouseX, int mouseY, float alpha) {
+        if (screen == null || graphics == null || alpha <= 0.001F
+                || !SimpleVoiceChatDeathScreenUi.detachedVisible(screen)) {
+            return;
+        }
+        List<Scp1576ClientState.SessionState> activeHosts = activeHosts();
+        if (activeHosts.isEmpty()) return;
+
+        SimpleVoiceChatDeathScreenUi.DetachedLayout layout =
+                SimpleVoiceChatDeathScreenUi.detachedLayout(screen);
+        if (layout == null) return;
+        int deadVisible = Math.min(layout.maxVisible(),
+                DeathVoiceRosterClient.participants().size());
+        int y = layout.deadBaseY()
+                - deadVisible * (layout.headSize() + HEAD_GAP)
+                - HOST_EXTRA_GAP;
+        renderHosts(graphics, activeHosts, layout.headX(), y,
+                layout.headSize(), layout.top(), mouseX, mouseY, alpha);
+    }
+
+    private static void renderHosts(GuiGraphics graphics,
+            List<Scp1576ClientState.SessionState> activeHosts,
+            int headX, int startY, int headSize, int top,
+            int mouseX, int mouseY, float alpha) {
         Minecraft minecraft = Minecraft.getInstance();
         String hovered = null;
+        int y = startY;
         for (Scp1576ClientState.SessionState state : activeHosts) {
-            if (y < feed.top) break;
+            if (y < top) break;
             renderHost(graphics, minecraft, state, headX, y, headSize, alpha);
             if (mouseX >= headX - 2 && mouseX < headX + headSize + 2
                     && mouseY >= y - 2 && mouseY < y + headSize + 2) {

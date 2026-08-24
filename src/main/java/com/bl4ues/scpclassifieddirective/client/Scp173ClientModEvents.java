@@ -104,5 +104,8 @@ public final class Scp173ClientModEvents {
         event.registerSpriteSet(
                 ScpClassifiedDirectiveModParticleTypes.SCP_106_PORTAL.get(),
                 Scp106PortalParticle.Provider::new);
+        event.registerSpriteSet(
+                ScpClassifiedDirectiveModParticleTypes.DAMAGE_SPLATTER.get(),
+                DamageSplatterParticle.Provider::new);
     }
 }

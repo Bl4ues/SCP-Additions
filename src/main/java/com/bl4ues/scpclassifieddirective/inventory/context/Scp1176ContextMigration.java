@@ -19,8 +19,6 @@ import java.nio.file.Path;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class Scp1176ContextMigration {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG = Path.of("config", "scp_classified_directive",
-            "context_interactions.json");
     private static final double[] OLD_ANCHOR = {0.872D, 0.219D, -0.725D};
     private static final double[] FAUCET_ANCHOR = {0.233D, 0.252D, -0.702D};
 
@@ -33,10 +31,13 @@ public final class Scp1176ContextMigration {
     }
 
     private static void migrateIfNeeded() {
-        if (!Files.isRegularFile(CONFIG)) return;
-
         try {
-            JsonElement parsed = JsonParser.parseString(Files.readString(CONFIG));
+            // Ensure first-time installs also receive the new defaults instead
+            // of copying the historical bundled rule after this event has run.
+            Path config = ContextConfigManager.ensureConfigFile().toPath();
+            if (!Files.isRegularFile(config)) return;
+
+            JsonElement parsed = JsonParser.parseString(Files.readString(config));
             if (!parsed.isJsonObject()) return;
             JsonObject root = parsed.getAsJsonObject();
             if (!root.has("interactions")
@@ -54,7 +55,7 @@ public final class Scp1176ContextMigration {
             }
 
             if (changed) {
-                ConfigFilePersistence.writeWithBackup(CONFIG,
+                ConfigFilePersistence.writeWithBackup(config,
                         GSON.toJson(root) + System.lineSeparator());
                 ContextInteractionRegistry.reloadFromDisk();
                 ScpClassifiedDirectiveMod.LOGGER.info(

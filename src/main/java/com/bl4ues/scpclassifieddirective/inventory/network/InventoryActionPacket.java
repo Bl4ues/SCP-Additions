@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.inventory.network;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpclassifieddirective.inventory.event.PlaceableHotbarSessionEvents;
 import com.bl4ues.scpclassifieddirective.inventory.event.ScpInventoryMaintenanceEvents;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
@@ -101,8 +102,12 @@ public class InventoryActionPacket {
             consumeSlot(player, inventory, slot, stack);
             return;
         }
-
-        if (type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE) {
+        if (type == ScpItemType.PLACEABLE) {
+            PlaceableHotbarSessionEvents.activatePlaceableSession(player,
+                    inventory, slot);
+            return;
+        }
+        if (type == ScpItemType.USABLE) {
             useUsableSlot(player, inventory, slot);
         }
     }

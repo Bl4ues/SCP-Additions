@@ -963,6 +963,25 @@
       }
     ]
   },
+  "damage_splatter": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:splatter_1",
+        "stream": false,
+        "volume": 1.0
+      },
+      {
+        "name": "scp_classified_directive:splatter_2",
+        "stream": false,
+        "volume": 1.0
+      },
+      {
+        "name": "scp_classified_directive:splatter_3",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
   "lamp_loop": {
     "subtitle": "subtitles.scp_classified_directive.lamp_loop",
     "sounds": [

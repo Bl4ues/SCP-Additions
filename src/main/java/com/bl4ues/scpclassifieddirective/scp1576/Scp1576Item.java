@@ -45,6 +45,7 @@ import java.util.function.Consumer;
 /** Hand-wound SCP-1576 item. */
 public final class Scp1576Item extends Item implements GeoItem {
     private static final String CONTROLLER = "main";
+    private static final long POST_WIND_HAND_SETTLE_NANOS = 400_000_000L;
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation WINDING = RawAnimation.begin().thenPlay("winding");
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -182,11 +183,10 @@ public final class Scp1576Item extends Item implements GeoItem {
     @Override
     public boolean shouldCauseReequipAnimation(ItemStack oldStack,
             ItemStack newStack, boolean slotChanged) {
-        // Completing a wind-up writes the active/cooldown timestamps into the
-        // held stack. Forge normally interprets that NBT change as a newly
-        // equipped item and briefly tilts the hand. It is still the same 1576,
-        // so only a real slot change should be allowed to trigger re-equip.
-        if (!slotChanged && oldStack.is(this) && newStack.is(this)) {
+        // Completing a wind-up can update both NBT and the SCP Inventory mirror.
+        // Neither is a real hand replacement. If both rendered stacks are 1576,
+        // never let Forge manufacture a tiny re-equip dip during that transition.
+        if (oldStack.is(this) && newStack.is(this)) {
             return false;
         }
         return super.shouldCauseReequipAnimation(oldStack, newStack, slotChanged);
@@ -196,6 +196,8 @@ public final class Scp1576Item extends Item implements GeoItem {
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private Scp1576ItemRenderer renderer;
+            private long rightHandHoldUntil;
+            private long leftHandHoldUntil;
 
             @Override
             public @NotNull BlockEntityWithoutLevelRenderer getCustomRenderer() {
@@ -207,19 +209,47 @@ public final class Scp1576Item extends Item implements GeoItem {
             public boolean applyForgeHandTransform(PoseStack poseStack,
                     LocalPlayer player, HumanoidArm arm, ItemStack itemInHand,
                     float partialTick, float equipProcess, float swingProcess) {
-                if (!player.isUsingItem()
-                        || !player.getUseItem().is(Scp1576Module.SCP_1576.get())) {
+                if (!itemInHand.is(Scp1576Module.SCP_1576.get())) {
                     return false;
                 }
 
-                InteractionHand usedHand = player.getUsedItemHand();
-                HumanoidArm usedArm = usedHand == InteractionHand.MAIN_HAND
-                        ? player.getMainArm() : player.getMainArm().getOpposite();
-                if (arm != usedArm) return false;
+                boolean windingThisArm = false;
+                if (player.isUsingItem()
+                        && player.getUseItem().is(Scp1576Module.SCP_1576.get())) {
+                    InteractionHand usedHand = player.getUsedItemHand();
+                    HumanoidArm usedArm = usedHand == InteractionHand.MAIN_HAND
+                            ? player.getMainArm()
+                            : player.getMainArm().getOpposite();
+                    windingThisArm = arm == usedArm;
+                }
 
+                long now = System.nanoTime();
+                if (windingThisArm) {
+                    setHoldUntil(arm, now + POST_WIND_HAND_SETTLE_NANOS);
+                } else if (now >= getHoldUntil(arm)) {
+                    return false;
+                }
+
+                // Keep exactly the fully-raised neutral transform for a short
+                // settling window after use finishes. By the time vanilla takes
+                // the transform back, its equip/swing interpolation has already
+                // settled and there is no one-frame 'item swap' tilt.
                 int side = arm == HumanoidArm.RIGHT ? 1 : -1;
                 poseStack.translate(side * 0.56F, -0.52F, -0.72F);
                 return true;
+            }
+
+            private long getHoldUntil(HumanoidArm arm) {
+                return arm == HumanoidArm.RIGHT
+                        ? rightHandHoldUntil : leftHandHoldUntil;
+            }
+
+            private void setHoldUntil(HumanoidArm arm, long value) {
+                if (arm == HumanoidArm.RIGHT) {
+                    rightHandHoldUntil = value;
+                } else {
+                    leftHandHoldUntil = value;
+                }
             }
         });
     }

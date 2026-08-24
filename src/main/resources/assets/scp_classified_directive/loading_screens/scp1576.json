@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp1576",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp1576_loading.png",
+  "left_title": "SCP-1576",
+  "left_subtitle": "EUCLID",
+  "right_label": "THREAT LEVEL",
+  "right_value": "LOW",
+  "description": "SCP-1576 is a black wooden box, with mechanical portions attached to its interior and exterior. The interior portions are composed primarily of brass gears and cylindrical glass tubes. SCP-1576 can cause subjects to hear the voices of deceased relatives or friends.",
+  "description_anchor": "center",
+  "weight": 1.0
+}

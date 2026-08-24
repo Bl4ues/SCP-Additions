@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp939",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp939_loading.png",
+  "left_title": "SCP-939",
+  "left_subtitle": "KETER",
+  "right_label": "THREAT LEVEL",
+  "right_value": "HIGH",
+  "description": "SCP-939 are endothermic pack-based predators with translucent red skin, owing to a compound chemically similar to hemoglobin. SCP-939's primary method of luring prey is the imitation of human speech in the voices of prior victims. How SCP-939 acquire voices is not currently understood; specimens have been documented imitating victims despite never hearing the victim speak.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

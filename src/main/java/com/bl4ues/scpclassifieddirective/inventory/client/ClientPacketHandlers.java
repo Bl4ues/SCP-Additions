@@ -2,6 +2,8 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpclassifieddirective.inventory.config.InventoryModuleRuntimeState;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,9 +26,6 @@ public final class ClientPacketHandlers {
         InventoryFullOverlay.show(minecraft.player != null && minecraft.player.isCreative());
     }
 
-
-
-
     public static void syncInventory(CompoundTag inventoryTag) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || inventoryTag == null) {
@@ -38,24 +37,41 @@ public final class ClientPacketHandlers {
         });
     }
 
-    public static void activateUsableItem(int hotbarSlot, boolean continuousUse, ItemStack stack) {
+    public static void activateUsableItem(int hotbarSlot, boolean continuousUse,
+            ItemStack stack) {
         activateUsableItem(hotbarSlot, -1, continuousUse, stack);
     }
 
-    public static void activateUsableItem(int hotbarSlot, int sourceSlot, boolean continuousUse, ItemStack stack) {
+    public static void activateUsableItem(int hotbarSlot, int sourceSlot,
+            boolean continuousUse, ItemStack stack) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
+        if (minecraft.player == null || minecraft.player.isCreative()
+                || minecraft.player.isSpectator()) {
             return;
         }
-        ItemStack usableStack = stack == null ? ItemStack.EMPTY : stack.copy();
-        boolean shouldClientApply = shouldClientApplyUsableHotbarCopy(usableStack);
-        if (hotbarSlot >= 0 && hotbarSlot < 9 && !usableStack.isEmpty()) {
-            usableStack.setCount(1);
-            UsableHotbarSessionClient.start(hotbarSlot, sourceSlot, usableStack);
+
+        ItemStack activeStack = stack == null ? ItemStack.EMPTY : stack.copy();
+        ScpItemType type = activeStack.isEmpty()
+                ? ScpItemType.MISCELLANEOUS
+                : ScpItemClassifier.getType(activeStack);
+        boolean placeable = type == ScpItemType.PLACEABLE;
+        boolean shouldClientApply = placeable
+                || shouldClientApplyUsableHotbarCopy(activeStack);
+
+        if (hotbarSlot >= 0 && hotbarSlot < 9 && !activeStack.isEmpty()) {
+            activeStack.setCount(1);
+            if (placeable) {
+                PlaceableHotbarSessionClient.start(hotbarSlot, sourceSlot,
+                        activeStack);
+            } else {
+                UsableHotbarSessionClient.start(hotbarSlot, sourceSlot,
+                        activeStack);
+            }
             if (shouldClientApply) {
-                applyUsableHotbarItem(hotbarSlot, usableStack);
+                applyHotbarItem(hotbarSlot, activeStack);
             }
         }
+
         minecraft.setScreen(null);
         if (sourceSlot >= 0) {
             minecraft.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inventory -> {
@@ -64,10 +80,13 @@ public final class ClientPacketHandlers {
                 }
             });
         }
-        if (shouldClientApply && hotbarSlot >= 0 && hotbarSlot < 9 && !usableStack.isEmpty()) {
-            minecraft.execute(() -> applyUsableHotbarItem(hotbarSlot, usableStack));
+        if (shouldClientApply && hotbarSlot >= 0 && hotbarSlot < 9
+                && !activeStack.isEmpty()) {
+            minecraft.execute(() -> applyHotbarItem(hotbarSlot, activeStack));
         }
-        Component prompt = Component.literal("Right click to use");
+
+        Component prompt = Component.literal(placeable
+                ? "Right click to place" : "Right click to use");
         if (InventoryModuleRuntimeState.actionBarsRobotoForClient()) {
             prompt = ScpFonts.roboto(prompt);
         }
@@ -75,25 +94,30 @@ public final class ClientPacketHandlers {
     }
 
     private static boolean shouldClientApplyUsableHotbarCopy(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && stack.getUseAnimation() == UseAnim.SPYGLASS;
+        return stack != null && !stack.isEmpty()
+                && stack.getUseAnimation() == UseAnim.SPYGLASS;
     }
 
-    private static void applyUsableHotbarItem(int hotbarSlot, ItemStack stack) {
+    private static void applyHotbarItem(int hotbarSlot, ItemStack stack) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
+        if (minecraft.player == null || minecraft.player.isCreative()
+                || minecraft.player.isSpectator()) {
             return;
         }
-        if (hotbarSlot < 0 || hotbarSlot >= 9 || hotbarSlot >= minecraft.player.getInventory().items.size() || stack == null || stack.isEmpty()) {
+        if (hotbarSlot < 0 || hotbarSlot >= 9
+                || hotbarSlot >= minecraft.player.getInventory().items.size()
+                || stack == null || stack.isEmpty()) {
             return;
         }
-        ItemStack usableStack = stack.copy();
-        usableStack.setCount(1);
+        ItemStack activeStack = stack.copy();
+        activeStack.setCount(1);
         Inventory inventory = minecraft.player.getInventory();
-        inventory.setItem(hotbarSlot, usableStack.copy());
+        inventory.setItem(hotbarSlot, activeStack.copy());
         inventory.selected = hotbarSlot;
         inventory.setChanged();
         if (minecraft.player.connection != null) {
-            minecraft.player.connection.send(new ServerboundSetCarriedItemPacket(hotbarSlot));
+            minecraft.player.connection.send(
+                    new ServerboundSetCarriedItemPacket(hotbarSlot));
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
+import com.bl4ues.scpclassifieddirective.inventory.network.CraftingActionPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.DocumentActionPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.EquipmentActionPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.InventoryActionPacket;
@@ -8,6 +9,8 @@ import com.bl4ues.scpclassifieddirective.inventory.network.InventoryMovePacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.KeyActionPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.MainUseActionPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
+import com.bl4ues.scpclassifieddirective.inventory.network.RequestCraftingStatePacket;
+import net.minecraft.resources.ResourceLocation;
 
 public final class ClientInventoryBridge {
 
@@ -36,6 +39,43 @@ public final class ClientInventoryBridge {
     public static void performEquipment(ScpEquipmentSlot slot, String name) {
         if (slot == null) return;
         ModNetwork.CHANNEL.sendToServer(new EquipmentActionPacket(slot.name(), name));
+    }
+
+    public static void requestCraftingState() {
+        ModNetwork.CHANNEL.sendToServer(new RequestCraftingStatePacket());
+    }
+
+    public static void moveMainToCraftingGrid(int sourceIndex, int gridSlot) {
+        sendCrafting(CraftingActionPacket.MOVE_MAIN_TO_GRID,
+                sourceIndex, gridSlot, null);
+    }
+
+    public static void moveCraftingGridToMain(int gridSlot, int targetIndex) {
+        sendCrafting(CraftingActionPacket.MOVE_GRID_TO_MAIN,
+                gridSlot, targetIndex, null);
+    }
+
+    public static void moveCraftingGridToGrid(int sourceSlot, int targetSlot) {
+        sendCrafting(CraftingActionPacket.MOVE_GRID_TO_GRID,
+                sourceSlot, targetSlot, null);
+    }
+
+    public static void autoFillCraftingRecipe(ResourceLocation recipeId) {
+        sendCrafting(CraftingActionPacket.AUTO_FILL, -1, -1, recipeId);
+    }
+
+    public static void craftPortableGrid() {
+        sendCrafting(CraftingActionPacket.CRAFT, -1, -1, null);
+    }
+
+    public static void togglePinnedCraftingRecipe(ResourceLocation recipeId) {
+        sendCrafting(CraftingActionPacket.TOGGLE_PIN, -1, -1, recipeId);
+    }
+
+    private static void sendCrafting(int action, int source, int target,
+                                     ResourceLocation recipeId) {
+        ModNetwork.CHANNEL.sendToServer(new CraftingActionPacket(
+                action, source, target, recipeId));
     }
 
     public static void moveMainToMain(int sourceIndex, int targetIndex) {

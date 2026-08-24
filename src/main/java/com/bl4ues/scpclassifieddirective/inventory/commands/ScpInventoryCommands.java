@@ -3,8 +3,6 @@ package com.bl4ues.scpclassifieddirective.inventory.commands;
 import com.bl4ues.scpclassifieddirective.inventory.ScpInventoryMod;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
-import com.bl4ues.scpclassifieddirective.inventory.crafting.ScpCraftingService;
-import com.bl4ues.scpclassifieddirective.inventory.crafting.ScpCraftingState;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.commands.CommandSourceStack;
@@ -89,12 +87,8 @@ public class ScpInventoryCommands {
             ModNetwork.syncTo(player, inventory);
         });
 
-        ScpCraftingState.Data crafting = new ScpCraftingState.Data();
-        ScpCraftingState.save(player, crafting);
-        ScpCraftingService.syncState(player, crafting);
-
         player.sendSystemMessage(Component.literal(
-                "SCP Inventory reset. Items, equipment, Crafting data, and max main slots were restored."
+                "SCP Inventory reset. Items, equipment, and max main slots were restored."
         ));
         return 1;
     }

@@ -79,6 +79,13 @@
 - Reworked the two-candy limit into a persistent hand-loss state: after taking a third candy, players cannot open inventories, use items, break or interact with blocks, activate buttons, interact with entities, or use contextual interactions until death;
 - Removed the obsolete red and green candies, legacy candy procedures, textures, and model files.
 
+## SCP-572
+
+- Reworked SCP-572 as a physically poor weapon that deals only 2 damage at full charge and attacks slowly, replacing the former self-damage-on-swing behavior;
+- SCP-572 now falsifies its apparent strength to the holder: its client tooltip reports **25 Attack Damage** and **4 Attack Speed**, and the local attack cooldown follows that apparent speed while the server keeps the real weak and slow values;
+- While SCP-572 is held, both the vanilla heart display and the custom health HUD remain visually full, local damage flashes and hurt-camera feedback are suppressed, and the holder's vanilla or configured hurt voice is muted without hiding the real damage from the server or other players;
+- SCP-572 is now non-stackable, has no durability, and survives fire and lava as an item entity.
+
 ## SCP-714
 
 - Reworked SCP-714's stamina drawback so the ring no longer immediately empties or disables stamina; sprinting begins at normal stamina cost and progressively becomes more exhausting with exposure, reaching **2.5×** stamina drain at the most advanced pre-coma stage;

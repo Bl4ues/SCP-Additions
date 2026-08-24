@@ -1,13 +1,14 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
+import com.bl4ues.scpclassifieddirective.client.MineZeroRestoreVisualClient;
+import com.bl4ues.scpclassifieddirective.client.ResponsiveUiScale;
+import com.bl4ues.scpclassifieddirective.client.SaveGameClientState;
+import com.bl4ues.scpclassifieddirective.client.Scp939ClientState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.bl4ues.scpclassifieddirective.client.MineZeroRestoreVisualClient;
-import com.bl4ues.scpclassifieddirective.client.SaveGameClientState;
-import com.bl4ues.scpclassifieddirective.client.Scp939ClientState;
 
 @Mod.EventBusSubscriber(modid = "scp_classified_directive", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -20,8 +21,11 @@ public final class ClientModEvents {
                 (gui, graphics, partialTick, width, height) -> {
                     if (gui.getMinecraft().screen == null
                             && !Scp939ClientState.pinned()) {
-                        Scp714ComaPromptClient.render(graphics, width, height,
-                                partialTick);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        Scp714ComaPromptClient.render(graphics,
+                                                virtualWidth, virtualHeight,
+                                                partialTick));
                     }
                 });
         event.registerAboveAll("scp_inventory_pickup_prompt",
@@ -29,8 +33,11 @@ public final class ClientModEvents {
                     if (gui.getMinecraft().screen == null
                             && !Scp939ClientState.pinned()
                             && !Scp714ComaPromptClient.blocksInteractionLayer()) {
-                        PickupPromptClient.render(graphics, width, height,
-                                partialTick);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        PickupPromptClient.render(graphics,
+                                                virtualWidth, virtualHeight,
+                                                partialTick));
                     }
                 });
         event.registerAboveAll("scp_inventory_context_prompt",
@@ -38,27 +45,38 @@ public final class ClientModEvents {
                     if (gui.getMinecraft().screen == null
                             && !Scp939ClientState.pinned()
                             && !Scp714ComaPromptClient.blocksInteractionLayer()) {
-                        ContextPromptClient.render(graphics, width, height,
-                                partialTick);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        ContextPromptClient.render(graphics,
+                                                virtualWidth, virtualHeight,
+                                                partialTick));
                     }
                 });
         event.registerAboveAll("scp_inventory_full_notice",
                 (gui, graphics, partialTick, width, height) -> {
                     if (!Scp939ClientState.pinned()) {
-                        InventoryFullOverlay.render(graphics);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        InventoryFullOverlay.render(graphics));
                     }
                 });
         event.registerAboveAll("scp_save_notice",
                 (gui, graphics, partialTick, width, height) -> {
                     if (!Scp939ClientState.pinned()) {
-                        SaveGameClientState.render(graphics, width, height);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        SaveGameClientState.render(graphics,
+                                                virtualWidth, virtualHeight));
                     }
                 });
         event.registerAboveAll("scp_restore_transition",
                 (gui, graphics, partialTick, width, height) -> {
                     if (!Scp939ClientState.pinned()) {
-                        MineZeroRestoreVisualClient.render(graphics,
-                                width, height);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        MineZeroRestoreVisualClient.render(
+                                                graphics, virtualWidth,
+                                                virtualHeight));
                     }
                 });
     }

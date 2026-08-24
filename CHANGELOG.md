@@ -54,7 +54,7 @@
 - Player movement, sprinting, jumping and landing, facility doors and buttons, block and interaction noises, breathing, forced gasps, and compatible voice-chat speech can create acoustic evidence with different intensity and range;
 - SCP-939 can investigate the last known location of a sound, search around stale evidence, accelerate into a committed hunt when evidence becomes strong enough, and return to wandering when it loses the trail;
 - Added a close-range bite attack and a committed pounce attack that physically launches SCP-939 toward prey;
-- Successful SCP-939 attacks now have a one-in-three chance to inflict **Bleeding**, turning otherwise survivable injuries into persistent blood loss until the victim is healed;
+- Successful SCP-939 attacks have a one-in-three chance to inflict **Bleeding**, turning otherwise survivable injuries into persistent blood loss until the victim is healed;
 - Successful pounces knock the victim prone and pin them beneath SCP-939;
 - Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue;
 - Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim;

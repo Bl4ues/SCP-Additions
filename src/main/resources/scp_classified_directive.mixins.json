@@ -6,7 +6,6 @@
   "refmap": "scp_classified_directive.refmap.json",
   "plugin": "com.bl4ues.scpclassifieddirective.mixin.ScpClassifiedDirectiveMixinPlugin",
   "mixins": [
-    "CraftingGridDropMixin",
     "FacilityDiagnosticsActionbarMixin",
     "DecontaminationCheckpointSaveMixin",
     "ServerPlayerSaveTrackingMixin",

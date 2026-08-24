@@ -1,10 +1,11 @@
 package com.bl4ues.scpclassifieddirective.item;
 
-import com.bl4ues.scpclassifieddirective.block.Scp902ClosedBlock;
 import com.bl4ues.scpclassifieddirective.client.Scp902ItemRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +19,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-/** GeckoLib item renderer for either legacy SCP-902 block-state item id. */
+/** GeckoLib item renderer for either legacy SCP-902-A block-state item id. */
 public final class Scp902BlockItem extends BlockItem implements GeoItem {
     private static final RawAnimation CLOSED = RawAnimation.begin().thenLoop("closed");
     private static final RawAnimation OPEN = RawAnimation.begin().thenLoop("open");
@@ -35,6 +36,11 @@ public final class Scp902BlockItem extends BlockItem implements GeoItem {
 
     public boolean isOpenModel() {
         return open;
+    }
+
+    @Override
+    public Component getName(ItemStack stack) {
+        return Component.literal("SCP-902-A");
     }
 
     @Override

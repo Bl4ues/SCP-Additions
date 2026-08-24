@@ -28,7 +28,7 @@ public class ScpClassifiedDirectiveModItems {
 	public static final RegistryObject<Item> SCP_330 = block(ScpClassifiedDirectiveModBlocks.SCP_330);
 	public static final RegistryObject<Item> SCP_426 = block(ScpClassifiedDirectiveModBlocks.SCP_426);
 	public static final RegistryObject<Item> SCP_572 = REGISTRY.register("scp_572", () -> new SCP572Item());
-	public static final RegistryObject<Item> SCP_902_CLOSED = block(ScpClassifiedDirectiveModBlocks.SCP_902_CLOSED);
+	public static final RegistryObject<Item> SCP_902_CLOSED = REGISTRY.register("scp_902_closed", () -> new Scp902BlockItem(ScpClassifiedDirectiveModBlocks.SCP_902_CLOSED.get(), false));
 	public static final RegistryObject<Item> SCP_914BLOCK = block(ScpClassifiedDirectiveModBlocks.SCP_914BLOCK);
 	public static final RegistryObject<Item> SCP_914CLOCKWORKS = block(ScpClassifiedDirectiveModBlocks.SCP_914CLOCKWORKS);
 	public static final RegistryObject<Item> SCP_914BODY = block(ScpClassifiedDirectiveModBlocks.SCP_914BODY);
@@ -80,7 +80,7 @@ public class ScpClassifiedDirectiveModItems {
 	public static final RegistryObject<Item> TESLA_TERMINAL_BLOCK = block(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK);
 	public static final RegistryObject<Item> SCP_079OFF = block(ScpClassifiedDirectiveModBlocks.SCP_079OFF);
 	public static final RegistryObject<Item> SCP_079CONTROL = block(ScpClassifiedDirectiveModBlocks.SCP_079CONTROL);
-	public static final RegistryObject<Item> SCP_902_OPEN = block(ScpClassifiedDirectiveModBlocks.SCP_902_OPEN);
+	public static final RegistryObject<Item> SCP_902_OPEN = REGISTRY.register("scp_902_open", () -> new Scp902BlockItem(ScpClassifiedDirectiveModBlocks.SCP_902_OPEN.get(), true));
 	public static final RegistryObject<Item> BUTTON_RON = block(ScpClassifiedDirectiveModBlocks.BUTTON_RON);
 	public static final RegistryObject<Item> BUTTON_LON = block(ScpClassifiedDirectiveModBlocks.BUTTON_LON);
 	public static final RegistryObject<Item> SCP_914DIAL_ROUGH = block(ScpClassifiedDirectiveModBlocks.SCP_914DIAL_ROUGH);

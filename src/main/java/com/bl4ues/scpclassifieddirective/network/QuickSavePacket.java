@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.network;
 
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -24,6 +25,7 @@ public final class QuickSavePacket {
         ServerPlayer player = context.getSender();
         context.enqueueWork(() -> {
             if (player == null || !player.isAlive() || player.isSpectator()
+                    || Scp714ExposureManager.isControlsLocked(player)
                     || !SaveDifficultyPolicy.allowsQuickSave(
                             player.serverLevel().getDifficulty())) {
                 return;

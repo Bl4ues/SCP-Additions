@@ -2,7 +2,6 @@ package com.bl4ues.scpclassifieddirective.block;
 
 import com.bl4ues.scpclassifieddirective.block.entity.Scp902BlockEntity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -38,16 +37,17 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 
-/** Shared GeckoLib-backed behavior for the legacy closed/open SCP-902 ids. */
+/** Shared GeckoLib-backed behavior for the legacy closed/open SCP-902-A ids. */
 abstract class Scp902BlockBase extends BaseEntityBlock
         implements SimpleWaterloggedBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     /*
-     * These bounds follow the authored GeckoLib geometry instead of the old
-     * placeholder footprint. The open form includes the translated lid, which
-     * extends the model farther along its local X axis.
+     * Selection and collision deliberately remain the closed-box footprint in
+     * every animation phase. The moving lid is visual only; expanding the shape
+     * while open made the tiny box feel inconsistent and produced an oversized
+     * outline as the legacy open block state took over.
      */
     private static final VoxelShape CLOSED_NORTH =
             Block.box(3.825D, 0.0D, 7.0D, 9.55D, 1.65D, 9.0D);
@@ -57,15 +57,6 @@ abstract class Scp902BlockBase extends BaseEntityBlock
             Block.box(7.0D, 0.0D, 3.825D, 9.0D, 1.65D, 9.55D);
     private static final VoxelShape CLOSED_WEST =
             Block.box(7.0D, 0.0D, 6.45D, 9.0D, 1.65D, 12.175D);
-
-    private static final VoxelShape OPEN_NORTH =
-            Block.box(3.825D, 0.0D, 7.0D, 11.85D, 1.65D, 9.0D);
-    private static final VoxelShape OPEN_SOUTH =
-            Block.box(4.15D, 0.0D, 7.0D, 12.175D, 1.65D, 9.0D);
-    private static final VoxelShape OPEN_EAST =
-            Block.box(7.0D, 0.0D, 3.825D, 9.0D, 1.65D, 11.85D);
-    private static final VoxelShape OPEN_WEST =
-            Block.box(7.0D, 0.0D, 4.15D, 9.0D, 1.65D, 12.175D);
 
     protected Scp902BlockBase() {
         super(BlockBehaviour.Properties.of()
@@ -157,15 +148,11 @@ abstract class Scp902BlockBase extends BaseEntityBlock
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
             CollisionContext context) {
-        boolean open = state.is(ScpClassifiedDirectiveModBlocks.SCP_902_OPEN.get());
-        if (!open && level.getBlockEntity(pos) instanceof Scp902BlockEntity box) {
-            open = box.phase() != Scp902BlockEntity.Phase.CLOSED;
-        }
         return switch (state.getValue(FACING)) {
-            case SOUTH -> open ? OPEN_SOUTH : CLOSED_SOUTH;
-            case EAST -> open ? OPEN_EAST : CLOSED_EAST;
-            case WEST -> open ? OPEN_WEST : CLOSED_WEST;
-            default -> open ? OPEN_NORTH : CLOSED_NORTH;
+            case SOUTH -> CLOSED_SOUTH;
+            case EAST -> CLOSED_EAST;
+            case WEST -> CLOSED_WEST;
+            default -> CLOSED_NORTH;
         };
     }
 

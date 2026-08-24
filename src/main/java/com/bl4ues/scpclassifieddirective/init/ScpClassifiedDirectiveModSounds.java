@@ -37,9 +37,13 @@ public class ScpClassifiedDirectiveModSounds {
 	public static final RegistryObject<SoundEvent> CANDY = REGISTRY.register("candy", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "candy")));
 	public static final RegistryObject<SoundEvent> SCP330DEATH = REGISTRY.register("scp330death", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp330death")));
 	public static final RegistryObject<SoundEvent> SCP1176 = REGISTRY.register("scp1176", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp1176")));
-	public static final RegistryObject<SoundEvent> SCP902 = REGISTRY.register("scp902", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp902")));
-	public static final RegistryObject<SoundEvent> SCP902CLOSING = REGISTRY.register("scp902closing", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp902closing")));
-	public static final RegistryObject<SoundEvent> SCP902OPENING = REGISTRY.register("scp902opening", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp902opening")));
+	// SCP-902 is intentionally local and positional. A fixed range prevents the
+	// replacement ticking/open/close samples from carrying through an entire
+	// facility while level.playSound still provides normal 3D directionality.
+	private static final float SCP902_SOUND_RANGE = 12.0F;
+	public static final RegistryObject<SoundEvent> SCP902 = REGISTRY.register("scp902", () -> SoundEvent.createFixedRangeEvent(new ResourceLocation("scp_classified_directive", "scp902"), SCP902_SOUND_RANGE));
+	public static final RegistryObject<SoundEvent> SCP902CLOSING = REGISTRY.register("scp902closing", () -> SoundEvent.createFixedRangeEvent(new ResourceLocation("scp_classified_directive", "scp902closing"), SCP902_SOUND_RANGE));
+	public static final RegistryObject<SoundEvent> SCP902OPENING = REGISTRY.register("scp902opening", () -> SoundEvent.createFixedRangeEvent(new ResourceLocation("scp_classified_directive", "scp902opening"), SCP902_SOUND_RANGE));
 	public static final RegistryObject<SoundEvent> SCP079_2 = REGISTRY.register("scp079_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp079_2")));
 	public static final RegistryObject<SoundEvent> BUTTON = REGISTRY.register("button", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "button")));
 	public static final RegistryObject<SoundEvent> SCP914DOORCLOSE = REGISTRY.register("scp914doorclose", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "scp914doorclose")));

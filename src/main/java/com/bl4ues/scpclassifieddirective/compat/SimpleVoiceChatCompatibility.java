@@ -29,6 +29,7 @@ import net.minecraftforge.fml.ModList;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.acoustics.AcousticStimulusSystem;
 import com.bl4ues.scpclassifieddirective.death.DeathSpectateCoordinator;
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.scp939.Scp939MimicryHooks;
 
 import java.nio.charset.StandardCharsets;
@@ -191,6 +192,15 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
         }
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
         if (sender == null) return;
+
+        // A MineZero SCP-714 coma removes player agency completely. Cancel the
+        // microphone at the earliest routing point so an unconscious player
+        // cannot speak through proximity/groups, feed dead spectators, create
+        // SCP-939 acoustic evidence, or contribute new mimicry samples.
+        if (Scp714ExposureManager.isComatose(sender)) {
+            event.cancel();
+            return;
+        }
 
         VoicechatServerApi api = event.getVoicechat();
         if (api != null) {

@@ -74,11 +74,10 @@ public final class SimpleVoiceChatHudBridge {
                 && VitalsModule.anyHudEnabled();
     }
 
-    /** Draws the same 16px Simple Voice Chat icon at the SCP vitals anchor. */
+    /** Draws the same 16px Simple Voice Chat icon at the responsive SCP vitals anchor. */
     public static void renderRelocatedHudIcon(GuiGraphics graphics,
             ResourceLocation texture) {
-        Minecraft minecraft = Minecraft.getInstance();
-        int screenHeight = minecraft.getWindow().getGuiScaledHeight();
+        int screenHeight = ResponsiveUiScale.current().virtualHeight();
         int x = VITALS_BAR_X + VITALS_BAR_WIDTH + VOICE_ICON_GAP;
         int y = voiceIconY(screenHeight);
         float scale = voiceChatHudScale();

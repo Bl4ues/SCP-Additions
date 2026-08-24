@@ -30,6 +30,28 @@ public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem>
                     BakedGeoModel bakedModel, RenderType renderType,
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
+                scpModel.showGlyphGeometry();
+                try {
+                    RenderType glyphs = RenderType.entityTranslucent(
+                            Scp1176ItemGeoModel.TEXTURE, true);
+                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                            animatable, glyphs,
+                            bufferSource.getBuffer(glyphs), partialTick,
+                            packedLight, packedOverlay,
+                            1.0F, 1.0F, 1.0F, 1.0F);
+                } finally {
+                    scpModel.showSolidGeometry();
+                }
+            }
+        });
+
+        addRenderLayer(new GeoRenderLayer<>(this) {
+            @Override
+            public void render(PoseStack poseStack,
+                    Scp1176BlockItem animatable,
+                    BakedGeoModel bakedModel, RenderType renderType,
+                    MultiBufferSource bufferSource, VertexConsumer buffer,
+                    float partialTick, int packedLight, int packedOverlay) {
                 scpModel.showHoneyGeometry();
                 try {
                     RenderType honey = RenderType.entityTranslucent(

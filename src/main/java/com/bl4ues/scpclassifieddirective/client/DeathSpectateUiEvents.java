@@ -19,6 +19,8 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class DeathSpectateUiEvents {
+    /** Moves the detached rail from the obsolete 1576-icon reserve to a 20px margin. */
+    private static final int DETACHED_VOICE_X_SHIFT = -14;
     private static boolean draggingFeed;
 
     private DeathSpectateUiEvents() {
@@ -34,7 +36,9 @@ public final class DeathSpectateUiEvents {
         MineZeroSpectateClient.updateForRender(event.getPartialTick());
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    // NORMAL keeps this inside ResponsiveUiScaleEvents' Render.Post scale. The
+    // scale is popped at LOWEST only after all death-screen presentation layers.
+    @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onRenderPost(ScreenEvent.Render.Post event) {
         if (!(event.getScreen() instanceof ScpDeathScreen screen)) {
             return;
@@ -47,13 +51,18 @@ public final class DeathSpectateUiEvents {
 
         var graphics = event.getGuiGraphics();
         if (!feedActive) {
-            // The team-wipe sting has finished and the live personnel viewport is
-            // gone. The dead call remains usable, so move its hierarchy with the
-            // report-card recenter transition instead of deleting the UI.
-            SimpleVoiceChatDeathScreenUi.renderDetached(screen, graphics,
-                    event.getMouseX(), event.getMouseY(), 1.0F);
-            Scp1576DeathScreenUi.renderDetached(screen, graphics,
-                    event.getMouseX(), event.getMouseY(), 1.0F);
+            // A detached 1576 host cannot exist here: this state starts only when
+            // living personnel reaches zero. Keep only the dead-call hierarchy,
+            // inset comfortably from the lower-left corner.
+            graphics.pose().pushPose();
+            try {
+                graphics.pose().translate(DETACHED_VOICE_X_SHIFT, 0.0F, 0.0F);
+                SimpleVoiceChatDeathScreenUi.renderDetached(screen, graphics,
+                        event.getMouseX() - DETACHED_VOICE_X_SHIFT,
+                        event.getMouseY(), 1.0F);
+            } finally {
+                graphics.pose().popPose();
+            }
             return;
         }
 
@@ -129,7 +138,8 @@ public final class DeathSpectateUiEvents {
 
         if (!feedActive) {
             if (SimpleVoiceChatDeathScreenUi.handleDetachedMousePressed(screen,
-                    event.getMouseX(), event.getMouseY())) {
+                    event.getMouseX() - DETACHED_VOICE_X_SHIFT,
+                    event.getMouseY())) {
                 draggingFeed = false;
                 event.setCanceled(true);
             }

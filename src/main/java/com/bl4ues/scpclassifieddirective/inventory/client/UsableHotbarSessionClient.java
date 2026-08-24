@@ -55,7 +55,20 @@ public final class UsableHotbarSessionClient {
     }
 
     public static void filterActiveSourceSlot(IScpInventory inventory) {
-        if (inventory == null || activeSlot < 0 || activeSourceSlot < 0 || activeStack.isEmpty()) {
+        if (inventory == null || activeSlot < 0) {
+            return;
+        }
+
+        // A server sync with no authoritative active item means this client-side
+        // mirror/session is finished. Clear it immediately instead of allowing a
+        // stale local session to recreate the just-stowed item on the next tick.
+        if (inventory.getActiveUsable().isEmpty()) {
+            clearClientSessionCopy();
+            clear();
+            return;
+        }
+
+        if (activeSourceSlot < 0 || activeStack.isEmpty()) {
             return;
         }
 
@@ -81,6 +94,20 @@ public final class UsableHotbarSessionClient {
 
         clearClientSessionCopy();
         clear();
+    }
+
+    /**
+     * Stows the currently selected controlled hotbar session and clears the
+     * client mirror immediately. Returning only the server packet left the local
+     * session armed long enough to recreate a ghost copy after the authoritative
+     * stack had already gone back to the SCP Inventory.
+     */
+    public static boolean returnSelectedSession(int selectedSlot) {
+        if (activeSlot < 0 || selectedSlot != activeSlot) {
+            return false;
+        }
+        sendReturn();
+        return true;
     }
 
     @SubscribeEvent

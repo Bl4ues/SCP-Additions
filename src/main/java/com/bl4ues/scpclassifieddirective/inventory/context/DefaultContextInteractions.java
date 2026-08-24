@@ -211,7 +211,10 @@ public final class DefaultContextInteractions {
     }
 
     private static void normalizeScp1176(JsonObject object) {
-        setAnchor(object, 0.233D, 0.252D, -0.702D);
+        // GeckoLib's authored model faces the contextual rotation opposite to
+        // the raw model X axis, so the faucet's model-space X needs mirroring
+        // around the block center for the world-space prompt to land on it.
+        setAnchor(object, 0.767D, 0.252D, -0.702D);
 
         JsonObject text;
         if (object.has("text") && object.get("text").isJsonObject()) {

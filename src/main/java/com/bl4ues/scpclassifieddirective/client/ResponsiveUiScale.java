@@ -5,6 +5,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.util.Mth;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 /**
  * Keeps SCP: Classified Directive interfaces at the same physical proportions
  * regardless of Minecraft's GUI-scale setting.
@@ -21,6 +24,8 @@ public final class ResponsiveUiScale {
 
     private static final String MOD_PACKAGE =
             "com.bl4ues.scpclassifieddirective.";
+    private static final ThreadLocal<Deque<Context>> ACTIVE =
+            ThreadLocal.withInitial(ArrayDeque::new);
 
     private ResponsiveUiScale() {
     }
@@ -68,11 +73,36 @@ public final class ResponsiveUiScale {
         if (graphics == null || context == null) return;
         graphics.pose().pushPose();
         graphics.pose().scale(context.scale(), context.scale(), 1.0F);
+        ACTIVE.get().addLast(context);
     }
 
     public static void pop(GuiGraphics graphics) {
         if (graphics == null) return;
+        Deque<Context> stack = ACTIVE.get();
+        if (!stack.isEmpty()) stack.removeLast();
+        if (stack.isEmpty()) ACTIVE.remove();
         graphics.pose().popPose();
+    }
+
+    /** Product of responsive transforms currently applied to GuiGraphics. */
+    public static float activeScale() {
+        Deque<Context> stack = ACTIVE.get();
+        if (stack.isEmpty()) return 1.0F;
+        float scale = 1.0F;
+        for (Context context : stack) scale *= context.scale();
+        return Float.isFinite(scale) && scale > 0.0F ? scale : 1.0F;
+    }
+
+    public static int scissorFloor(int coordinate) {
+        float scale = activeScale();
+        return Math.abs(scale - 1.0F) < 0.0001F
+                ? coordinate : Mth.floor(coordinate * scale);
+    }
+
+    public static int scissorCeil(int coordinate) {
+        float scale = activeScale();
+        return Math.abs(scale - 1.0F) < 0.0001F
+                ? coordinate : Mth.ceil(coordinate * scale);
     }
 
     /**

@@ -41,6 +41,7 @@
     "client.ResponsiveScreenMouseInputMixin",
     "client.ResponsiveScreenMouseDragMixin",
     "client.ResponsiveGuiScissorMixin",
+    "client.CodexPanelResponsiveMixin",
     "client.AbstractContainerScreenAccessor",
     "client.AbstractWidgetSoundMixin",
     "client.StyleFontMixin",

@@ -19,7 +19,7 @@ public final class Scp902ClosedBlock extends Scp902BlockBase {
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.literal("The Final Countdown"));
+        tooltip.add(Component.literal("The Anticipation is Killing Me"));
     }
 
     @Override

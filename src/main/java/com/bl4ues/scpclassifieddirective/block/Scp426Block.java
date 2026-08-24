@@ -1,17 +1,12 @@
 package com.bl4ues.scpclassifieddirective.block;
 
-import com.bl4ues.scpclassifieddirective.procedures.Scp426OnBlockRightClickedProcedure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -28,7 +23,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -40,8 +34,6 @@ public class Scp426Block extends Block implements SimpleWaterloggedBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-    // Exact envelope of the authored model, including the two 22.5 degree
-    // sloped top pieces. Blockstate rotations happen around the block center.
     private static final VoxelShape NORTH_SHAPE =
             box(5.5D, 0.0D, 3.4D, 10.5D, 5.252D, 12.5D);
     private static final VoxelShape SOUTH_SHAPE =
@@ -151,13 +143,5 @@ public class Scp426Block extends Block implements SimpleWaterloggedBlock {
         List<ItemStack> dropsOriginal = super.getDrops(state, builder);
         if (!dropsOriginal.isEmpty()) return dropsOriginal;
         return Collections.singletonList(new ItemStack(this));
-    }
-
-    @Override
-    public InteractionResult use(BlockState blockstate, Level world, BlockPos pos,
-            Player entity, InteractionHand hand, BlockHitResult hit) {
-        super.use(blockstate, world, pos, entity, hand, hit);
-        Scp426OnBlockRightClickedProcedure.execute(entity);
-        return InteractionResult.SUCCESS;
     }
 }

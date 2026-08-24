@@ -64,6 +64,7 @@ public final class Scp902ContextAnchorMigration {
             if (changed) {
                 ConfigFilePersistence.writeWithBackup(CONFIG,
                         GSON.toJson(root) + System.lineSeparator());
+                ContextInteractionRegistry.reloadFromDisk();
                 ScpClassifiedDirectiveMod.LOGGER.info(
                         "Migrated legacy SCP-902 contextual interaction anchors");
             }

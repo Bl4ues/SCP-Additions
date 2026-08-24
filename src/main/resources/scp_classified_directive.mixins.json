@@ -40,6 +40,7 @@
     "client.ResponsiveScreenRenderEventMixin",
     "client.ResponsiveScreenMouseInputMixin",
     "client.ResponsiveScreenMouseDragMixin",
+    "client.ResponsiveGuiScissorMixin",
     "client.AbstractContainerScreenAccessor",
     "client.AbstractWidgetSoundMixin",
     "client.StyleFontMixin",

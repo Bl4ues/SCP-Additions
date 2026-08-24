@@ -17,6 +17,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.cache.object.GeoCube;
 import software.bernie.geckolib.cache.object.GeoQuad;
 import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
@@ -28,20 +30,16 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /**
  * Client renderer for SCP-1176.
  *
- * Solid geometry, translucent wall glyphs and the honey surface are deliberately
- * kept in separate render passes. The solid pass writes normal depth so the
- * corpse and sarcophagus walls remain stable behind the honey. The glyph pass
- * preserves their authored alpha instead of forcing them through cutout, and
- * the honey remains the final translucent layer.
- *
- * The authored honey cube is flat (zero Y thickness). Bedrock/GeckoLib still
- * creates both its UP and DOWN quads at exactly the same position, which makes
- * the two oppositely-lit translucent faces z-fight. During the honey pass we
- * therefore submit only the authored UP face and discard every degenerate or
- * downward face before it reaches the vertex buffer.
+ * Solid geometry, translucent wall markings and the honey surface are kept in
+ * separate render passes. The honey pass deliberately binds a texture alias
+ * that has no LabPBR sidecars. The ordinary SCP-1176 texture still has its
+ * authored normal/specular maps for the sarcophagus, but shader packs can no
+ * longer interpret those unrelated PBR pixels as height/specular data on the
+ * transparent honey surface.
  */
 public final class Scp1176Client {
     private static final float HONEY_ALPHA = 0.72F;
+    private static final int CANISTER_PICTOGRAM_CUBE = 1;
 
     private Scp1176Client() {
     }
@@ -65,6 +63,9 @@ public final class Scp1176Client {
                 ScpClassifiedDirectiveMod.MODID, "geo/block/scp1176.geo.json");
         private static final ResourceLocation TEXTURE = new ResourceLocation(
                 ScpClassifiedDirectiveMod.MODID, "textures/block/scp1176.png");
+        private static final ResourceLocation HONEY_TEXTURE = new ResourceLocation(
+                ScpClassifiedDirectiveMod.MODID,
+                "textures/block/scp1176_honey.png");
         private static final ResourceLocation ANIMATION = new ResourceLocation(
                 ScpClassifiedDirectiveMod.MODID,
                 "animations/block/scp1176.animation.json");
@@ -111,7 +112,10 @@ public final class Scp1176Client {
             setHidden("lid", true);
             setHidden("2", true);
             setHidden("faucet", true);
-            setHidden("bone", true);
+            // The green canister body lives in this same authored bone. The
+            // renderer filters it so only its second cube, the triangular
+            // pictogram plane, participates in this translucent pass.
+            setHidden("bone", false);
         }
 
         private void prepareHoneyPass() {
@@ -133,6 +137,7 @@ public final class Scp1176Client {
 
     private static final class Renderer extends GeoBlockRenderer<Scp1176BlockEntity> {
         private final Model scpModel;
+        private boolean renderingGlyphLayer;
         private boolean renderingHoney;
 
         private Renderer(BlockEntityRendererProvider.Context context) {
@@ -151,6 +156,7 @@ public final class Scp1176Client {
                         MultiBufferSource bufferSource, VertexConsumer buffer,
                         float partialTick, int packedLight, int packedOverlay) {
                     scpModel.prepareGlyphPass();
+                    renderingGlyphLayer = true;
                     try {
                         RenderType glyphs = RenderType.entityTranslucent(
                                 Model.TEXTURE, true);
@@ -160,6 +166,7 @@ public final class Scp1176Client {
                                 packedLight, packedOverlay,
                                 1.0F, 1.0F, 1.0F, 1.0F);
                     } finally {
+                        renderingGlyphLayer = false;
                         scpModel.prepareOpaquePass();
                     }
                 }
@@ -176,7 +183,7 @@ public final class Scp1176Client {
                     renderingHoney = true;
                     try {
                         RenderType honey = RenderType.entityTranslucent(
-                                Model.TEXTURE, true);
+                                Model.HONEY_TEXTURE, true);
                         getRenderer().reRender(bakedModel, poseStack, bufferSource,
                                 animatable, honey,
                                 bufferSource.getBuffer(honey), partialTick,
@@ -188,6 +195,30 @@ public final class Scp1176Client {
                     }
                 }
             });
+        }
+
+        @Override
+        public void renderCubesOfBone(PoseStack poseStack, GeoBone bone,
+                VertexConsumer buffer, int packedLight, int packedOverlay,
+                float red, float green, float blue, float alpha) {
+            if (!"bone".equals(bone.getName()) || bone.isHidden()) {
+                super.renderCubesOfBone(poseStack, bone, buffer, packedLight,
+                        packedOverlay, red, green, blue, alpha);
+                return;
+            }
+
+            // The second cube in the authored canister bone is the zero-depth
+            // warning pictogram. Keep it out of the opaque pass and render it
+            // with the same alpha-preserving pass as the wall glyphs.
+            for (int index = 0; index < bone.getCubes().size(); index++) {
+                boolean pictogram = index == CANISTER_PICTOGRAM_CUBE;
+                if (pictogram != renderingGlyphLayer) continue;
+                GeoCube cube = bone.getCubes().get(index);
+                poseStack.pushPose();
+                renderCube(poseStack, cube, buffer, packedLight, packedOverlay,
+                        red, green, blue, alpha);
+                poseStack.popPose();
+            }
         }
 
         @Override

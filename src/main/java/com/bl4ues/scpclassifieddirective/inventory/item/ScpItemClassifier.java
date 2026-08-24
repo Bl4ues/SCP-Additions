@@ -40,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ScpItemClassifier {
     private static final ResourceLocation CANONICAL_SCP_CLASSIFIED_DIRECTIVE_COIN =
             new ResourceLocation("scp_classified_directive", "coin");
+    private static final ResourceLocation CANONICAL_SCP_572 =
+            new ResourceLocation("scp_classified_directive", "scp_572");
     private static final TagKey<Item> AUTO_WEAPON = itemTag("auto_weapon");
     private static final TagKey<Item> AUTO_USABLE = itemTag("auto_usable");
     private static final TagKey<Item> AUTO_MISCELLANEOUS = itemTag("auto_miscellaneous");
@@ -68,6 +70,10 @@ public final class ScpItemClassifier {
             ScpItemType type = configuredType.get();
             return type == ScpItemType.COIN
                     ? ScpItemType.MISCELLANEOUS : type;
+        }
+        if (CANONICAL_SCP_572.equals(
+                BuiltInRegistries.ITEM.getKey(stack.getItem()))) {
+            return ScpItemType.WEAPON;
         }
         if (stack.is(AUTO_MISCELLANEOUS)) return ScpItemType.MISCELLANEOUS;
         if (stack.is(AUTO_WEAPON)) return ScpItemType.WEAPON;

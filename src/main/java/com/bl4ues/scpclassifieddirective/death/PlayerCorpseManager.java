@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.compat.MineZeroDeathCoordinator;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
+import com.bl4ues.scpclassifieddirective.inventory.event.PlaceableHotbarSessionEvents;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -15,6 +16,8 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class PlayerCorpseManager {
+    private static final int VANILLA_HOTBAR_SIZE = 9;
+
     private PlayerCorpseManager() {
     }
 
@@ -37,7 +40,27 @@ public final class PlayerCorpseManager {
         // in the level. A failed entity spawn must never become an item-deletion
         // mechanism.
         if (player.serverLevel().addFreshEntity(corpse)) {
+            // PLACEABLE sessions own their real stack in the vanilla hotbar rather
+            // than ActiveUsable. Return it to the canonical SCP Inventory before
+            // corpse capture, otherwise the mirror-cleanup clearContent() would
+            // discard the active block instead of putting it in the body.
+            stowActivePlaceable(player);
             corpse.captureInventoryFrom(player);
+        }
+    }
+
+    private static void stowActivePlaceable(ServerPlayer player) {
+        if (player == null || !ScpClassifiedDirectiveModulesConfig.get().inventory.enabled) {
+            return;
+        }
+        int end = Math.min(VANILLA_HOTBAR_SIZE,
+                player.getInventory().items.size());
+        for (int slot = 0; slot < end; slot++) {
+            if (!PlaceableHotbarSessionEvents.isTrackedPlaceableSlot(player, slot)) {
+                continue;
+            }
+            PlaceableHotbarSessionEvents.returnTrackedPlaceableSession(player, slot);
+            return;
         }
     }
 }

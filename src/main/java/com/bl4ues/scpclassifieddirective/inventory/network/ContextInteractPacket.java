@@ -89,7 +89,8 @@ public class ContextInteractPacket {
             Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (!ScpClassifiedDirectiveModulesConfig.customInteractionsEnabledFor(player)
+            if (player == null || Scp714ExposureManager.isControlsLocked(player)
+                    || !ScpClassifiedDirectiveModulesConfig.customInteractionsEnabledFor(player)
                     || Scp330Hands.isDisabled(player)) {
                 return;
             }

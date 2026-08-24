@@ -139,14 +139,23 @@ public final class DefaultContextInteractions {
             // SCP-426 no longer has a direct interaction. Strip any historical
             // bundled rule before this JSON is used as the integrated layer.
             // User-authored rules in the external config remain untouched.
+            // SCP-902-A keeps the same interaction anchor whether its lid is
+            // open or closed, matching the fixed closed-box selection shape.
             for (int i = interactions.size() - 1; i >= 0; i--) {
                 JsonElement element = interactions.get(i);
                 if (!element.isJsonObject()) continue;
                 JsonObject object = element.getAsJsonObject();
-                if ("block".equalsIgnoreCase(string(object, "type"))
-                        && "scp_classified_directive:scp_426".equals(
-                                string(object, "id"))) {
+                String type = string(object, "type");
+                String id = string(object, "id");
+                if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_426".equals(id)) {
                     interactions.remove(i);
+                    continue;
+                }
+                if ("block".equalsIgnoreCase(type)
+                        && ("scp_classified_directive:scp_902_closed".equals(id)
+                        || "scp_classified_directive:scp_902_open".equals(id))) {
+                    setAnchor(object, 0.418D, 0.052D, 0.5D);
                 }
             }
 
@@ -194,6 +203,23 @@ public final class DefaultContextInteractions {
                     exception);
             return raw;
         }
+    }
+
+    private static void setAnchor(JsonObject object, double x, double y,
+            double z) {
+        JsonObject anchor;
+        if (object.has("anchor") && object.get("anchor").isJsonObject()) {
+            anchor = object.getAsJsonObject("anchor");
+        } else {
+            anchor = new JsonObject();
+            object.add("anchor", anchor);
+        }
+        JsonArray position = new JsonArray();
+        position.add(x);
+        position.add(y);
+        position.add(z);
+        anchor.add("position", position);
+        anchor.addProperty("rotateWith", "auto");
     }
 
     private static String string(JsonObject object, String key) {

@@ -101,20 +101,27 @@ public class MainUseActionPacket {
      * USABLE has one slot of its own. Replacing that slot must never evict a
      * PLACEABLE entry, because the custom hotbar intentionally allows one item
      * from each transient category to coexist.
+     *
+     * Package-private so InventoryActionPacket uses the exact same replacement
+     * path instead of maintaining a subtly different second implementation.
      */
-    private static void activateUsableHotbarSession(ServerPlayer player,
+    static void activateUsableHotbarSession(ServerPlayer player,
             IScpInventory inventory, int sourceSlot) {
         ItemStack activeStack = inventory.getActiveUsable();
         if (!activeStack.isEmpty()) {
             int activeHotbarSlot = findTrackedUsableHotbarSlot(player,
                     activeStack);
             if (activeHotbarSlot >= 0) {
-                // Reconstruct tracking if a reconnect/server reload preserved the
-                // mirror but not the in-memory bookkeeping map.
-                ScpInventoryMaintenanceEvents.trackUsableSession(player,
-                        activeHotbarSlot, activeStack, -1);
-                ScpInventoryMaintenanceEvents.returnTrackedUsableSession(
-                        player, activeHotbarSlot);
+                // Preserve normal source-slot bookkeeping when the in-memory
+                // session still exists. Only reconstruct it after reconnect or
+                // reload when the original tracking map is actually gone.
+                if (!ScpInventoryMaintenanceEvents.returnTrackedUsableSession(
+                        player, activeHotbarSlot)) {
+                    ScpInventoryMaintenanceEvents.trackUsableSession(player,
+                            activeHotbarSlot, activeStack, -1);
+                    ScpInventoryMaintenanceEvents.returnTrackedUsableSession(
+                            player, activeHotbarSlot);
+                }
             } else {
                 // No mirror survived. Do not let a stale ActiveUsable block the
                 // newly requested item forever; return it to SCP Inventory first.

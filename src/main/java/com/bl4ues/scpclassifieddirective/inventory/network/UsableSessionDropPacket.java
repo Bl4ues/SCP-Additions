@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.inventory.network;
 
+import com.bl4ues.scpclassifieddirective.inventory.event.PlaceableHotbarSessionEvents;
 import com.bl4ues.scpclassifieddirective.inventory.event.ScpInventoryMaintenanceEvents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,7 +32,12 @@ public class UsableSessionDropPacket {
             if (player == null) {
                 return;
             }
-            ScpInventoryMaintenanceEvents.dropTrackedUsableSession(player, msg.hotbarSlot);
+            if (PlaceableHotbarSessionEvents.dropTrackedPlaceableSession(
+                    player, msg.hotbarSlot)) {
+                return;
+            }
+            ScpInventoryMaintenanceEvents.dropTrackedUsableSession(
+                    player, msg.hotbarSlot);
         });
         ctx.get().setPacketHandled(true);
     }

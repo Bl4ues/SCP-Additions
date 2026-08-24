@@ -23,6 +23,8 @@ import java.util.function.Supplier;
 
 public class MainUseActionPacket {
 
+    private static final int VANILLA_HOTBAR_SIZE = 9;
+
     private final int slot;
 
     public MainUseActionPacket(int slot) {
@@ -62,7 +64,7 @@ public class MainUseActionPacket {
 
                 ScpItemType type = ScpItemClassifier.getType(stack);
                 if (type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE) {
-                    ScpInventoryMaintenanceEvents.activateUsableSession(player, inventory, msg.slot);
+                    activateHotbarSession(player, inventory, msg.slot, stack);
                     return;
                 }
 
@@ -78,12 +80,48 @@ public class MainUseActionPacket {
                     }
 
                     if (isVanillaConsumable(stack)) consume(player, inventory, msg.slot, stack);
-                    else ScpInventoryMaintenanceEvents.activateUsableSession(player, inventory, msg.slot);
+                    else activateHotbarSession(player, inventory, msg.slot, stack);
                     ModNetwork.syncTo(player, inventory);
                 }
             });
         });
         ctx.get().setPacketHandled(true);
+    }
+
+    /**
+     * A hotbar category is intentionally singular. Selecting another stack of
+     * the same category therefore means replacement, not "re-select whatever was
+     * already active". Return the old authoritative stack first, then start the
+     * requested session so the incoming item owns the hotbar mirror.
+     */
+    private static void activateHotbarSession(ServerPlayer player,
+            IScpInventory inventory, int sourceSlot, ItemStack requestedStack) {
+        ItemStack activeStack = inventory.getActiveUsable();
+        if (!activeStack.isEmpty()
+                && ScpItemClassifier.getType(activeStack)
+                == ScpItemClassifier.getType(requestedStack)) {
+            int activeHotbarSlot = findTrackedHotbarSlot(player);
+            if (activeHotbarSlot >= 0) {
+                ScpInventoryMaintenanceEvents.returnTrackedUsableSession(
+                        player, activeHotbarSlot);
+            }
+        }
+
+        ScpInventoryMaintenanceEvents.activateUsableSession(
+                player, inventory, sourceSlot);
+    }
+
+    private static int findTrackedHotbarSlot(ServerPlayer player) {
+        if (player == null) return -1;
+        int end = Math.min(VANILLA_HOTBAR_SIZE,
+                player.getInventory().items.size());
+        for (int slot = 0; slot < end; slot++) {
+            if (ScpPickupRouter.isUsableSession(
+                    player.getInventory().items.get(slot))) {
+                return slot;
+            }
+        }
+        return -1;
     }
 
     private static boolean isVanillaConsumable(ItemStack stack) {

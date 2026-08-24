@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.inventory.network;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpclassifieddirective.inventory.event.PlaceableHotbarSessionEvents;
 import com.bl4ues.scpclassifieddirective.inventory.event.ScpInventoryMaintenanceEvents;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemType;
@@ -63,8 +64,13 @@ public class MainUseActionPacket {
                 }
 
                 ScpItemType type = ScpItemClassifier.getType(stack);
-                if (type == ScpItemType.USABLE || type == ScpItemType.PLACEABLE) {
-                    activateHotbarSession(player, inventory, msg.slot);
+                if (type == ScpItemType.PLACEABLE) {
+                    PlaceableHotbarSessionEvents.activatePlaceableSession(
+                            player, inventory, msg.slot);
+                    return;
+                }
+                if (type == ScpItemType.USABLE) {
+                    activateUsableHotbarSession(player, inventory, msg.slot);
                     return;
                 }
 
@@ -79,8 +85,11 @@ public class MainUseActionPacket {
                         return;
                     }
 
-                    if (isVanillaConsumable(stack)) consume(player, inventory, msg.slot, stack);
-                    else activateHotbarSession(player, inventory, msg.slot);
+                    if (isVanillaConsumable(stack)) {
+                        consume(player, inventory, msg.slot, stack);
+                    } else {
+                        activateUsableHotbarSession(player, inventory, msg.slot);
+                    }
                     ModNetwork.syncTo(player, inventory);
                 }
             });
@@ -89,20 +98,28 @@ public class MainUseActionPacket {
     }
 
     /**
-     * The controlled usable/placeable hotbar session is singular. Selecting any
-     * other controlled item therefore replaces the current session, regardless
-     * of whether the two items share the same classifier type. Return the old
-     * authoritative stack first so its source bookkeeping stays intact, then
-     * activate the newly requested stack.
+     * USABLE has one slot of its own. Replacing that slot must never evict a
+     * PLACEABLE entry, because the custom hotbar intentionally allows one item
+     * from each transient category to coexist.
      */
-    private static void activateHotbarSession(ServerPlayer player,
+    private static void activateUsableHotbarSession(ServerPlayer player,
             IScpInventory inventory, int sourceSlot) {
         ItemStack activeStack = inventory.getActiveUsable();
         if (!activeStack.isEmpty()) {
-            int activeHotbarSlot = findTrackedHotbarSlot(player);
+            int activeHotbarSlot = findTrackedUsableHotbarSlot(player,
+                    activeStack);
             if (activeHotbarSlot >= 0) {
+                // Reconstruct tracking if a reconnect/server reload preserved the
+                // mirror but not the in-memory bookkeeping map.
+                ScpInventoryMaintenanceEvents.trackUsableSession(player,
+                        activeHotbarSlot, activeStack, -1);
                 ScpInventoryMaintenanceEvents.returnTrackedUsableSession(
                         player, activeHotbarSlot);
+            } else {
+                // No mirror survived. Do not let a stale ActiveUsable block the
+                // newly requested item forever; return it to SCP Inventory first.
+                ItemStack stale = inventory.extractActiveUsable();
+                restoreOrDrop(player, inventory, stale);
             }
         }
 
@@ -110,26 +127,60 @@ public class MainUseActionPacket {
                 player, inventory, sourceSlot);
     }
 
-    private static int findTrackedHotbarSlot(ServerPlayer player) {
+    private static int findTrackedUsableHotbarSlot(ServerPlayer player,
+            ItemStack expected) {
         if (player == null) return -1;
         int end = Math.min(VANILLA_HOTBAR_SIZE,
                 player.getInventory().items.size());
         for (int slot = 0; slot < end; slot++) {
-            if (ScpPickupRouter.isUsableSession(
-                    player.getInventory().items.get(slot))) {
+            ItemStack candidate = player.getInventory().items.get(slot);
+            if (candidate.isEmpty()
+                    || ScpItemClassifier.getType(candidate) == ScpItemType.PLACEABLE) {
+                continue;
+            }
+            if (ScpPickupRouter.isUsableSession(candidate)
+                    || isSameSessionItem(candidate, expected)) {
                 return slot;
             }
         }
         return -1;
     }
 
-    private static boolean isVanillaConsumable(ItemStack stack) {
-        UseAnim animation = stack.getUseAnimation();
-        return stack.isEdible() || animation == UseAnim.EAT || animation == UseAnim.DRINK;
+    private static boolean isSameSessionItem(ItemStack left, ItemStack right) {
+        if (left == null || left.isEmpty() || right == null || right.isEmpty()) {
+            return false;
+        }
+        ItemStack normalizedLeft = left.copy();
+        ItemStack normalizedRight = right.copy();
+        normalizedLeft.setCount(1);
+        normalizedRight.setCount(1);
+        ScpPickupRouter.stripUsableSession(normalizedLeft);
+        ScpPickupRouter.stripUsableSession(normalizedRight);
+        ScpPickupRouter.stripNoMergeMarker(normalizedLeft);
+        ScpPickupRouter.stripNoMergeMarker(normalizedRight);
+        return ItemStack.isSameItemSameTags(normalizedLeft, normalizedRight);
     }
 
-    private static void consume(ServerPlayer player, IScpInventory inventory, int slot, ItemStack stack) {
+    private static void restoreOrDrop(ServerPlayer player,
+            IScpInventory inventory, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        ItemStack restored = stack.copy();
+        restored.setCount(1);
+        ScpPickupRouter.stripUsableSession(restored);
+        ScpPickupRouter.stripNoMergeMarker(restored);
+        if (!inventory.addInventoryItem(restored)) {
+            player.drop(restored, false);
+        }
+    }
+
+    private static boolean isVanillaConsumable(ItemStack stack) {
         UseAnim animation = stack.getUseAnimation();
+        return stack.isEdible() || animation == UseAnim.EAT
+                || animation == UseAnim.DRINK;
+    }
+
+    private static void consume(ServerPlayer player, IScpInventory inventory,
+            int slot, ItemStack stack) {
         ItemStack usedStack = stack.copy();
         usedStack.setCount(1);
         ScpPickupRouter.stripNoMergeMarker(usedStack);
@@ -140,12 +191,14 @@ public class MainUseActionPacket {
         HungerSystemEvents.healFromFood(player, usedStack);
         ItemStack result = usedStack.finishUsingItem(player.level(), player);
         stack.shrink(1);
-        inventory.setInventoryItem(slot, stack.isEmpty() ? ItemStack.EMPTY : stack);
+        inventory.setInventoryItem(slot,
+                stack.isEmpty() ? ItemStack.EMPTY : stack);
 
         if (!result.isEmpty()) routeUseRemainder(player, inventory, result);
     }
 
-    private static void routeUseRemainder(ServerPlayer player, IScpInventory inventory, ItemStack remainder) {
+    private static void routeUseRemainder(ServerPlayer player,
+            IScpInventory inventory, ItemStack remainder) {
         ItemStack leftover = remainder.copy();
         ScpPickupRouter.stripNoMergeMarker(leftover);
         int accepted = ScpPickupRouter.accept(inventory, player, leftover);

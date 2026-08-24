@@ -7,9 +7,11 @@ import net.minecraft.client.gui.components.toasts.AdvancementToast;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastComponent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.util.Mth;
 import com.bl4ues.scpclassifieddirective.client.AdvancementToastHudCoordination;
 import com.bl4ues.scpclassifieddirective.client.ClientModulePreferences;
 import com.bl4ues.scpclassifieddirective.client.CustomAdvancementToastClient;
+import com.bl4ues.scpclassifieddirective.client.ResponsiveUiScale;
 import com.bl4ues.scpclassifieddirective.sound.AchievementSounds;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Implements;
@@ -47,8 +49,15 @@ public abstract class AdvancementToastMixin {
         }
 
         AdvancementToastHudCoordination.markRendered();
-        Toast.Visibility visibility = CustomAdvancementToastClient.render(
-                graphics, toastComponent, display, age);
+        ResponsiveUiScale.Context context = ResponsiveUiScale.current();
+        ResponsiveUiScale.push(graphics, context);
+        Toast.Visibility visibility;
+        try {
+            visibility = CustomAdvancementToastClient.render(
+                    graphics, toastComponent, display, age);
+        } finally {
+            ResponsiveUiScale.pop(graphics);
+        }
         if (!scpClassifiedDirective$showSoundSuppressed) {
             scpClassifiedDirective$showSoundSuppressed = true;
             CustomAdvancementToastClient
@@ -63,18 +72,19 @@ public abstract class AdvancementToastMixin {
     }
 
     /**
-     * Soft-implements Toast#width so Mixin's annotation processor remaps the
-     * inherited default method name into production instead of merging a
-     * development-only literal `width` method into AdvancementToast.
+     * ToastComponent uses this width to anchor the card against the right edge.
+     * Match it to the visual transform so GUI scale cannot move or crop the card.
      */
     public int scpToast$width() {
-        return ClientModulePreferences.customAdvancementToastsEnabled()
-                ? CustomAdvancementToastClient.WIDTH : 160;
+        if (!ClientModulePreferences.customAdvancementToastsEnabled()) return 160;
+        return Math.max(1, Mth.ceil(CustomAdvancementToastClient.WIDTH
+                * ResponsiveUiScale.current().scale()));
     }
 
-    /** Same mapping-safe override strategy as scpToast$width(). */
+    /** Same responsive slot sizing as scpToast$width(). */
     public int scpToast$height() {
-        return ClientModulePreferences.customAdvancementToastsEnabled()
-                ? CustomAdvancementToastClient.HEIGHT : 32;
+        if (!ClientModulePreferences.customAdvancementToastsEnabled()) return 32;
+        return Math.max(1, Mth.ceil(CustomAdvancementToastClient.HEIGHT
+                * ResponsiveUiScale.current().scale()));
     }
 }

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.inventory.client.Keybinds;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
@@ -130,6 +131,18 @@ public final class Scp714ComaLockClient {
         for (KeyMapping hotbar : minecraft.options.keyHotbarSlots) {
             lockKey(hotbar);
         }
+
+        // Drain SCP: Classified Directive gameplay mappings too. The server also
+        // rejects authoritative item actions, so a late or forged packet cannot
+        // turn a coma into an inventory-management minigame.
+        lockKey(Keybinds.OPEN_SCP_INVENTORY);
+        lockKey(Keybinds.CONTEXT_INTERACT);
+        lockKey(Keybinds.CONTEXT_CONFIG_SELECT);
+        lockKey(Keybinds.STOW_HELD_ITEM);
+        lockKey(Keybinds.QUICK_SAVE);
+        lockKey(Scp173Keybinds.BLINK);
+        lockKey(Scp131Keybinds.DISMISS);
+        lockKey(Scp939Keybinds.HOLD_BREATH);
     }
 
     private static void lockKey(KeyMapping mapping) {

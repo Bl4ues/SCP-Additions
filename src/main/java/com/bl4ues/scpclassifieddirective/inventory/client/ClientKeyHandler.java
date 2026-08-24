@@ -66,7 +66,13 @@ public class ClientKeyHandler {
             return;
         }
 
-        ModNetwork.CHANNEL.sendToServer(new UsableSessionReturnPacket(
-                player.getInventory().selected));
+        int selectedSlot = player.getInventory().selected;
+        if (UsableHotbarSessionClient.returnSelectedSession(selectedSlot)) {
+            return;
+        }
+
+        // Fallback for a server-tracked session that the client has not learned
+        // about yet, for example immediately after joining or a late sync.
+        ModNetwork.CHANNEL.sendToServer(new UsableSessionReturnPacket(selectedSlot));
     }
 }

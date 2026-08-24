@@ -16,9 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Migrates only the obsolete bundled SCP-902 anchors. User-customized anchors
- * are left alone because the old coordinates must match exactly before a rule
- * is changed.
+ * Migrates obsolete bundled SCP-902-A contextual defaults while preserving
+ * user-customized anchors and labels.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class Scp902ContextAnchorMigration {
@@ -56,8 +55,10 @@ public final class Scp902ContextAnchorMigration {
                 String id = string(rule, "id");
                 if ("scp_classified_directive:scp_902_closed".equals(id)) {
                     changed |= migrateAnchor(rule, OLD_CLOSED, NEW_CLOSED);
+                    changed |= migrateDefaultName(rule);
                 } else if ("scp_classified_directive:scp_902_open".equals(id)) {
                     changed |= migrateAnchor(rule, OLD_OPEN, NEW_OPEN);
+                    changed |= migrateDefaultName(rule);
                 }
             }
 
@@ -66,11 +67,11 @@ public final class Scp902ContextAnchorMigration {
                         GSON.toJson(root) + System.lineSeparator());
                 ContextInteractionRegistry.reloadFromDisk();
                 ScpClassifiedDirectiveMod.LOGGER.info(
-                        "Migrated legacy SCP-902 contextual interaction anchors");
+                        "Migrated legacy SCP-902-A contextual interaction defaults");
             }
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
-                    "Could not migrate legacy SCP-902 contextual interaction anchors",
+                    "Could not migrate legacy SCP-902-A contextual interaction defaults",
                     exception);
         }
     }
@@ -99,6 +100,14 @@ public final class Scp902ContextAnchorMigration {
         replacement.add(newValue[2]);
         anchor.add("position", replacement);
         anchor.addProperty("rotateWith", "auto");
+        return true;
+    }
+
+    private static boolean migrateDefaultName(JsonObject rule) {
+        if (!rule.has("text") || !rule.get("text").isJsonObject()) return false;
+        JsonObject text = rule.getAsJsonObject("text");
+        if (!"SCP-902".equals(string(text, "name"))) return false;
+        text.addProperty("name", "SCP-902-A");
         return true;
     }
 

@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.event.entity.living.LivingSwapItemsEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -49,6 +50,9 @@ public final class Scp714ExposureManager {
     private static final String COMA_TAG = "Scp714Comatose";
     private static final String COMA_X_TAG = "Scp714ComaX";
     private static final String COMA_Z_TAG = "Scp714ComaZ";
+    private static final String COMA_YAW_TAG = "Scp714ComaYaw";
+    private static final String COMA_PITCH_TAG = "Scp714ComaPitch";
+    private static final String COMA_SELECTED_TAG = "Scp714ComaSelected";
     public static final String REMOVE_INTERACTION_KEY =
             "scp714_remove_from_coma";
     private static final ResourceKey<DamageType> COMA_DAMAGE_TYPE =
@@ -124,10 +128,11 @@ public final class Scp714ExposureManager {
             applyFatalComa(player);
             return;
         }
-        if (!Scp714ProtectionAccess.isProtected(player)) {
-            clear(player, true);
-            return;
-        }
+        // Once the coma starts it is a state of the victim, not a live check of
+        // whether their client still reports SCP-714 in the expected slot. The
+        // only legitimate recovery path is tryRemoveFromComa(), invoked by a
+        // different living player. This prevents self-rescue through inventory
+        // clicks, offhand swaps or stale mirror state.
         if (!hasOtherLivingPlayer(player)) {
             applyFatalComa(player);
             return;
@@ -147,6 +152,9 @@ public final class Scp714ExposureManager {
         data.putBoolean(COMA_TAG, true);
         data.putDouble(COMA_X_TAG, player.getX());
         data.putDouble(COMA_Z_TAG, player.getZ());
+        data.putFloat(COMA_YAW_TAG, player.getYRot());
+        data.putFloat(COMA_PITCH_TAG, player.getXRot());
+        data.putInt(COMA_SELECTED_TAG, player.getInventory().selected);
         setExposureTicks(player, DEATH_TICKS);
         maintainComaPose(player);
         sync(player, DEATH_TICKS, true);
@@ -158,12 +166,28 @@ public final class Scp714ExposureManager {
                 : player.getX();
         double z = data.contains(COMA_Z_TAG) ? data.getDouble(COMA_Z_TAG)
                 : player.getZ();
+        float yaw = data.contains(COMA_YAW_TAG) ? data.getFloat(COMA_YAW_TAG)
+                : player.getYRot();
+        float pitch = data.contains(COMA_PITCH_TAG) ? data.getFloat(COMA_PITCH_TAG)
+                : player.getXRot();
+        int selected = data.contains(COMA_SELECTED_TAG)
+                ? data.getInt(COMA_SELECTED_TAG)
+                : player.getInventory().selected;
         if (!data.contains(COMA_X_TAG)) data.putDouble(COMA_X_TAG, x);
         if (!data.contains(COMA_Z_TAG)) data.putDouble(COMA_Z_TAG, z);
+        if (!data.contains(COMA_YAW_TAG)) data.putFloat(COMA_YAW_TAG, yaw);
+        if (!data.contains(COMA_PITCH_TAG)) data.putFloat(COMA_PITCH_TAG, pitch);
+        if (!data.contains(COMA_SELECTED_TAG)) {
+            data.putInt(COMA_SELECTED_TAG, selected);
+        }
 
         Vec3 motion = player.getDeltaMovement();
         player.setPos(x, player.getY(), z);
         player.setDeltaMovement(0.0D, Math.min(0.0D, motion.y), 0.0D);
+        player.setYRot(yaw);
+        player.setXRot(Mth.clamp(pitch, -90.0F, 90.0F));
+        player.setYHeadRot(yaw);
+        player.getInventory().selected = Mth.clamp(selected, 0, 8);
         player.setSprinting(false);
         player.setShiftKeyDown(false);
         player.xxa = 0.0F;
@@ -174,6 +198,12 @@ public final class Scp714ExposureManager {
 
     public static boolean isComatose(ServerPlayer player) {
         return player != null && player.getPersistentData().getBoolean(COMA_TAG);
+    }
+
+    /** True while SCP-714 has removed all normal player agency. */
+    public static boolean isControlsLocked(ServerPlayer player) {
+        return player != null && (isComatose(player)
+                || getExposureTicks(player) >= FADE_DURATION_TICKS);
     }
 
     public static boolean tryRemoveFromComa(ServerPlayer rescuer,
@@ -237,6 +267,16 @@ public final class Scp714ExposureManager {
                     return;
                 }
             }
+            // Defensive fallback for old/stale clients that managed to move the
+            // ring out of its equipment slot before the coma lock was applied.
+            for (int i = 0; i < inventory.getMaxMainSlots(); i++) {
+                ItemStack stack = inventory.getInventoryItem(i);
+                if (stack.is(Scp714Items.SCP_714.get())) {
+                    extracted[0] = inventory.extractInventoryItem(i);
+                    ModNetwork.syncTo(player, inventory);
+                    return;
+                }
+            }
         });
         if (!extracted[0].isEmpty()) {
             return extracted[0];
@@ -247,6 +287,16 @@ public final class Scp714ExposureManager {
             if (stack.is(Scp714Items.SCP_714.get())) {
                 ItemStack result = stack.copy();
                 player.setItemSlot(slot, ItemStack.EMPTY);
+                return result;
+            }
+        }
+
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.is(Scp714Items.SCP_714.get())) {
+                ItemStack result = stack.copy();
+                player.getInventory().setItem(i, ItemStack.EMPTY);
+                player.getInventory().setChanged();
                 return result;
             }
         }
@@ -276,7 +326,7 @@ public final class Scp714ExposureManager {
     @SubscribeEvent
     public static void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getEntity() instanceof ServerPlayer player
-                && isComatose(player)) {
+                && isControlsLocked(player)) {
             event.setCanceled(true);
         }
     }
@@ -284,7 +334,7 @@ public final class Scp714ExposureManager {
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         if (event.getEntity() instanceof ServerPlayer player
-                && isComatose(player)) {
+                && isControlsLocked(player)) {
             event.setCanceled(true);
         }
     }
@@ -292,7 +342,15 @@ public final class Scp714ExposureManager {
     @SubscribeEvent
     public static void onItemToss(ItemTossEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player
-                && isComatose(player)) {
+                && isControlsLocked(player)) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSwapHands(LivingSwapItemsEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player
+                && isControlsLocked(player)) {
             event.setCanceled(true);
         }
     }
@@ -343,9 +401,9 @@ public final class Scp714ExposureManager {
     }
 
     public static boolean isImmobilized(ServerPlayer player) {
-        return player != null
-                && Scp714ProtectionAccess.isProtected(player)
-                && getExposureTicks(player) >= FADE_DURATION_TICKS;
+        return player != null && (isComatose(player)
+                || Scp714ProtectionAccess.isProtected(player)
+                && getExposureTicks(player) >= FADE_DURATION_TICKS);
     }
 
     private static void setExposureTicks(ServerPlayer player, int ticks) {
@@ -376,6 +434,9 @@ public final class Scp714ExposureManager {
         data.remove(COMA_TAG);
         data.remove(COMA_X_TAG);
         data.remove(COMA_Z_TAG);
+        data.remove(COMA_YAW_TAG);
+        data.remove(COMA_PITCH_TAG);
+        data.remove(COMA_SELECTED_TAG);
         if (wasComatose && player.getPose() == Pose.SLEEPING) {
             player.setPose(Pose.STANDING);
             player.hurtMarked = true;

@@ -84,6 +84,12 @@ public final class ResponsiveUiScale {
         graphics.pose().popPose();
     }
 
+    /** Innermost responsive canvas currently owning GuiGraphics, if any. */
+    public static Context activeContext() {
+        Deque<Context> stack = ACTIVE.get();
+        return stack.isEmpty() ? null : stack.peekLast();
+    }
+
     /** Product of responsive transforms currently applied to GuiGraphics. */
     public static float activeScale() {
         Deque<Context> stack = ACTIVE.get();

@@ -36,6 +36,7 @@
     "client.DeathScreenInvoker",
     "client.DeathScreenDimensionTransferMixin",
     "client.ScpDeathScreenLiveFeedMixin",
+    "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",
     "client.ResponsiveScreenMouseInputMixin",
     "client.ResponsiveScreenMouseDragMixin",

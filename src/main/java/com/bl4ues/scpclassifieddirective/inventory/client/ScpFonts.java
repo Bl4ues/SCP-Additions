@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class ScpFonts {
     public static final ResourceLocation ROBOTO = new ResourceLocation(ScpInventoryMod.MODID, "roboto");
     public static final ResourceLocation MONTSERRAT = new ResourceLocation(ScpInventoryMod.MODID, "montserrat");
+    public static final ResourceLocation MONTSERRAT_TITLE = new ResourceLocation(ScpInventoryMod.MODID, "montserrat_title");
     public static final ResourceLocation TITILLIUM = new ResourceLocation(ScpInventoryMod.MODID, "titillium");
 
     private ScpFonts() {
@@ -23,6 +24,10 @@ public final class ScpFonts {
 
     public static MutableComponent montserrat(String text) {
         return Component.literal(text == null ? "" : text).withStyle(style -> style.withFont(MONTSERRAT));
+    }
+
+    public static MutableComponent montserratTitle(String text) {
+        return Component.literal(text == null ? "" : text).withStyle(style -> style.withFont(MONTSERRAT_TITLE));
     }
 
     public static MutableComponent titillium(String text) {

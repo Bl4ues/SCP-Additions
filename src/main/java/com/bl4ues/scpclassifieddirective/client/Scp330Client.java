@@ -3,9 +3,10 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.inventory.client.gui.ScpInventoryScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.block.Scp330Block;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp330BlockEntity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
 import com.bl4ues.scpclassifieddirective.scp330.Scp330Hands;
@@ -18,21 +19,23 @@ import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
+/** Client rendering and input guards for SCP-330. */
+@Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class Scp330Client {
     private Scp330Client() {
     }
 
-    @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
-            bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static final class Registration {
-        private Registration() {
-        }
-
-        @SubscribeEvent
-        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerBlockEntityRenderer(ScpClassifiedDirectiveModBlockEntities.SCP_330.get(),
-                    context -> new Renderer());
-        }
+    /**
+     * Register directly from the top-level MOD-bus subscriber. Keeping this in
+     * the same conventional shape as the other working block-entity renderers
+     * avoids relying on discovery of an otherwise isolated nested subscriber.
+     */
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(
+                ScpClassifiedDirectiveModBlockEntities.SCP_330.get(),
+                context -> new Renderer());
     }
 
     @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
@@ -85,6 +88,18 @@ public final class Scp330Client {
     private static final class Renderer extends GeoBlockRenderer<Scp330BlockEntity> {
         private Renderer() {
             super(new Model());
+        }
+
+        @Override
+        public RenderType getRenderType(Scp330BlockEntity animatable,
+                ResourceLocation texture, MultiBufferSource bufferSource,
+                float partialTick) {
+            return RenderType.entityCutoutNoCull(texture);
+        }
+
+        @Override
+        public boolean shouldRenderOffScreen(Scp330BlockEntity blockEntity) {
+            return true;
         }
     }
 }

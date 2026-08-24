@@ -18,6 +18,14 @@ public final class MainMenuBrandingClient {
     private static final int TEXT = 0xFFF5F6F7;
     private static final int ACCENT_BRIGHT = 0xFFE3C865;
 
+    /*
+     * The title uses a dedicated 32 px TTF provider rather than magnifying the
+     * normal 11 px UI face by five times. Keep these scales comparatively low:
+     * the apparent size is intentionally almost unchanged, while the source
+     * glyph raster is substantially denser and therefore stays clean.
+     */
+    private static final float TITLE_LAYOUT_CAP_HEIGHT = 26.0F;
+
     private MainMenuBrandingClient() {
     }
 
@@ -41,28 +49,32 @@ public final class MainMenuBrandingClient {
         }
 
         boolean compact = screen.height < 420;
-        float scpScale = compact ? 3.20F : 5.20F;
-        float directiveBaseScale = compact ? 2.05F : 3.15F;
+        float scpScale = compact ? 1.10F : 1.80F;
+        float directiveBaseScale = compact ? 0.72F : 1.10F;
         float versionScale = compact ? 1.45F : 2.12F;
         int titleY = top + (compact ? 4 : 9);
 
-        Component scp = ScpFonts.montserrat("SCP:");
+        Component scp = ScpFonts.montserratTitle("SCP:");
         drawScaledText(graphics, font, scp,
                 titleX, titleY, scpScale, TEXT);
 
         float scpWidth = font.width(scp) * scpScale;
-        Component directive = ScpFonts.montserrat("CLASSIFIED DIRECTIVE");
+        Component directive = ScpFonts.montserratTitle("CLASSIFIED DIRECTIVE");
         float directiveX = titleX + scpWidth + (compact ? 4.0F : 6.0F);
         float remainingWidth = Math.max(1.0F, screen.width - directiveX - 22.0F);
         float directiveScale = Math.min(directiveBaseScale,
                 remainingWidth / Math.max(1.0F, font.width(directive)));
-        directiveScale = Math.max(compact ? 1.55F : 2.20F, directiveScale);
+        directiveScale = Math.max(compact ? 0.54F : 0.78F, directiveScale);
+
+        // Align the smaller wordmark by its lower visual edge, not its top.
+        // Montserrat's cap-height makes a small fixed correction more stable
+        // here than using Minecraft's global 9 px Font.lineHeight.
+        float directiveY = titleY + (compact ? 7.0F : 14.0F);
         drawScaledText(graphics, font, directive,
-                directiveX, titleY + (compact ? 2.0F : 4.0F),
-                directiveScale, TEXT);
+                directiveX, directiveY, directiveScale, TEXT);
 
         int versionY = titleY
-                + Math.round(font.lineHeight * scpScale)
+                + Math.round(TITLE_LAYOUT_CAP_HEIGHT * scpScale)
                 + (compact ? 8 : 12);
         drawScaledText(graphics, font,
                 ScpFonts.titillium("VERSION " + modVersion()),

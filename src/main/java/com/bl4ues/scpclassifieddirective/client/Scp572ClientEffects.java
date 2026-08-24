@@ -52,7 +52,7 @@ public final class Scp572ClientEffects {
             "fbe4ef38-b55f-4aa3-8b69-e3f0cc75f572");
     private static final AttributeModifier APPARENT_BALANCE =
             new AttributeModifier(APPARENT_BALANCE_UUID,
-                    "SCP-572 apparent balance", 100.0D,
+                    "SCP-572 apparent balance", 3.0D,
                     AttributeModifier.Operation.ADDITION);
 
     private static LocalPlayer spoofedHealthPlayer;
@@ -71,9 +71,10 @@ public final class Scp572ClientEffects {
     }
 
     /**
-     * Make the local attack-strength calculation believe the katana is
-     * exceptionally well balanced, while also erasing the local hurt timer that
-     * drives Minecraft's damage camera tilt and hurt rendering.
+     * Make the local attack-strength calculation believe the katana has the
+     * same 4.0 attack speed reported by its false tooltip, while also erasing
+     * the local hurt timer that drives Minecraft's damage camera tilt and hurt
+     * rendering.
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onClientTick(TickEvent.ClientTickEvent event) {

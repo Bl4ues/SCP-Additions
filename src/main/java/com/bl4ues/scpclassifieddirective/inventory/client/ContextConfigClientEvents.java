@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
+import com.bl4ues.scpclassifieddirective.client.ResponsiveUiScale;
 import com.bl4ues.scpclassifieddirective.inventory.ScpInventoryMod;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.network.ContextConfigSelectPacket;
@@ -119,8 +120,15 @@ public final class ContextConfigClientEvents {
                 return ItemStack.EMPTY;
             }
 
-            double mouseX = mc.mouseHandler.xpos() * (double) mc.getWindow().getGuiScaledWidth() / (double) mc.getWindow().getScreenWidth();
-            double mouseY = mc.mouseHandler.ypos() * (double) mc.getWindow().getGuiScaledHeight() / (double) mc.getWindow().getScreenHeight();
+            ResponsiveUiScale.Context responsive = ResponsiveUiScale.current();
+            double actualMouseX = mc.mouseHandler.xpos()
+                    * (double) mc.getWindow().getGuiScaledWidth()
+                    / (double) mc.getWindow().getScreenWidth();
+            double actualMouseY = mc.mouseHandler.ypos()
+                    * (double) mc.getWindow().getGuiScaledHeight()
+                    / (double) mc.getWindow().getScreenHeight();
+            double mouseX = responsive.virtualX(actualMouseX);
+            double mouseY = responsive.virtualY(actualMouseY);
             Method getClickedIndex = itemList.getClass().getMethod("getClickedIndex", double.class, double.class);
             Object clicked = getClickedIndex.invoke(itemList, mouseX, mouseY);
             if (!(clicked instanceof Integer index) || index < 0) {

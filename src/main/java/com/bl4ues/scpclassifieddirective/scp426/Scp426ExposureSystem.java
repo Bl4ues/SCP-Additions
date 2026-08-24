@@ -157,7 +157,10 @@ public final class Scp426ExposureSystem {
                 continue;
             }
 
-            Vec3 center = Vec3.atCenterOf(pos);
+            // The authored toaster is only ~0.33 blocks tall. A vanilla block
+            // center ray (Y + 0.5) would pass over it, so target its actual body.
+            Vec3 center = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.16D,
+                    pos.getZ() + 0.5D);
             if (eye.distanceToSqr(center) > MAX_DISTANCE_SQR) continue;
 
             BlockHitResult hit = level.clip(new ClipContext(eye, center,
@@ -273,9 +276,6 @@ public final class Scp426ExposureSystem {
         long lastBreak = data.getLong(LAST_BREAK_KEY);
         long lastPickup = data.getLong(LAST_PICKUP_KEY);
 
-        // A freshly broken block is normally picked up almost immediately. Do
-        // not replace its break thought with another action-bar line in the same
-        // moment; later pickups still get their own response.
         if (now - lastBreak <= 40L || now - lastPickup <= 40L) return;
 
         data.putLong(LAST_PICKUP_KEY, now);

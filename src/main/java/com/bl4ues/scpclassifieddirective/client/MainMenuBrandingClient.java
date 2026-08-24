@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.fml.ModList;
 
-/** Draws the enlarged SCP: Classified Directive title branding. */
+/** Draws the SCP: Classified Directive title branding. */
 public final class MainMenuBrandingClient {
     private static final ResourceLocation LOGO = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "textures/screens/logo.png");
@@ -37,22 +37,35 @@ public final class MainMenuBrandingClient {
             graphics.blit(LOGO, left, top, logoWidth, logoHeight,
                     0.0F, 0.0F, 960, 832, 960, 832);
             RenderSystem.disableBlend();
-            titleX += logoWidth + 22;
+            // Keep the wordmark visually attached to the logo instead of
+            // leaving the large gap used by the previous single-size title.
+            titleX += logoWidth + 5;
         }
 
-        float titleScale = screen.height < 420 ? 2.10F : 3.15F;
-        int titleY = top + 2;
-        drawScaledText(graphics, font,
-                ScpFonts.montserrat("SCP: CLASSIFIED DIRECTIVE"),
-                titleX, titleY, titleScale, TEXT);
+        boolean compact = screen.height < 420;
+        float scpScale = compact ? 2.80F : 4.25F;
+        float directiveScale = compact ? 2.25F : 3.25F;
+        float versionScale = compact ? 1.25F : 1.85F;
+        int titleY = top - 1;
 
-        float versionScale = screen.height < 420 ? 1.08F : 1.48F;
-        int versionY = top + Math.round(17.0F * titleScale) + 4;
+        Component scp = ScpFonts.montserrat("SCP:");
+        drawScaledText(graphics, font, scp,
+                titleX, titleY, scpScale, TEXT);
+
+        float scpWidth = font.width(scp) * scpScale;
+        drawScaledText(graphics, font,
+                ScpFonts.montserrat("CLASSIFIED DIRECTIVE"),
+                titleX + scpWidth + 5.0F, titleY,
+                directiveScale, TEXT);
+
+        int versionY = titleY
+                + Math.round(font.lineHeight * scpScale) + 7;
         drawScaledText(graphics, font,
                 ScpFonts.titillium("VERSION " + modVersion()),
                 titleX, versionY, versionScale, ACCENT_BRIGHT);
     }
 
+    /** Always follows the version declared by the loaded mod metadata. */
     private static String modVersion() {
         return ModList.get().getModContainerById(ScpClassifiedDirectiveMod.MODID)
                 .map(container -> container.getModInfo().getVersion().toString())

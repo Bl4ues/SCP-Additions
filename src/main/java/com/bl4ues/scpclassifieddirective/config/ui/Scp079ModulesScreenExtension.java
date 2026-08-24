@@ -98,6 +98,9 @@ public final class Scp079ModulesScreenExtension {
             new Row("audio", "replace_player_hurt_sounds",
                     "Replace Player Hurt Sounds",
                     "Replaces vanilla player damage sounds with the SCP: Classified Directive voice set.", true),
+            new Row("vitals", "contextual_damage_feedback",
+                    "Contextual Damage Feedback",
+                    "Keeps hurt reactions for direct hits, quiets continuous damage, and adds fading positional splatters.", true),
             new Row("audio", "mute_non_player_hit_sounds",
                     "Remove Non-Player Hit Sounds",
                     "Mutes vanilla attack, critical, and sweep impacts against non-player mobs.", false)

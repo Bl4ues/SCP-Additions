@@ -39,7 +39,7 @@ public final class ClientModulePreferences {
             "hud.disable_experience_bar", "hud.custom_oxygen_bar",
             "hud.action_bars_roboto", "hud.disable_text_drop_shadows",
             "hud.facility_chat_interface", "hud.hide_damage_indicator_particles",
-            "vitals.custom_health_enabled",
+            "vitals.custom_health_enabled", "vitals.contextual_damage_feedback",
             "ui.custom_main_menu", "ui.custom_pause_menu",
             "ui.custom_loading_screen", "ui.custom_advancement_toasts",
             "audio.enter_sound_enabled", "audio.save_game_sound_enabled",
@@ -112,6 +112,8 @@ public final class ClientModulePreferences {
 
         JsonObject vitals = object(modules, "vitals");
         next.vitals.customHealthEnabled = bool(vitals, "custom_health_enabled", next.vitals.customHealthEnabled);
+        next.vitals.contextualDamageFeedback = bool(vitals,
+                "contextual_damage_feedback", next.vitals.contextualDamageFeedback);
 
         JsonObject ui = object(modules, "ui");
         next.ui.customMainMenu = bool(ui, "custom_main_menu", next.ui.customMainMenu);
@@ -172,7 +174,10 @@ public final class ClientModulePreferences {
         hud.addProperty("hide_damage_indicator_particles",
                 value.hud.hideDamageIndicatorParticles);
 
-        object(modules, "vitals").addProperty("custom_health_enabled", value.vitals.customHealthEnabled);
+        JsonObject vitals = object(modules, "vitals");
+        vitals.addProperty("custom_health_enabled", value.vitals.customHealthEnabled);
+        vitals.addProperty("contextual_damage_feedback",
+                value.vitals.contextualDamageFeedback);
 
         JsonObject ui = object(modules, "ui");
         ui.addProperty("custom_main_menu", value.ui.customMainMenu);
@@ -236,6 +241,7 @@ public final class ClientModulePreferences {
     public static boolean disableTextDropShadows() { return current.hud.disableTextDropShadows; }
     public static boolean facilityChatInterfaceEnabled() { return current.hud.facilityChatInterface; }
     public static boolean hideDamageIndicatorParticles() { return current.hud.hideDamageIndicatorParticles; }
+    public static boolean contextualDamageFeedbackEnabled() { return current.vitals.contextualDamageFeedback; }
     public static boolean reduceRestoreMotion() { return current.accessibility.reduceRestoreMotion; }
 
     private static synchronized void write() throws IOException {
@@ -333,7 +339,10 @@ public final class ClientModulePreferences {
         private boolean hideDamageIndicatorParticles = true;
     }
 
-    private static final class Vitals { private boolean customHealthEnabled = true; }
+    private static final class Vitals {
+        private boolean customHealthEnabled = true;
+        private boolean contextualDamageFeedback = true;
+    }
 
     private static final class Ui {
         private boolean customMainMenu = true;

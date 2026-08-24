@@ -6,10 +6,13 @@ import com.bl4ues.scpclassifieddirective.vitals.VitalsModule;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -17,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -39,6 +43,11 @@ import java.util.UUID;
 public final class Scp572ClientEffects {
     private static final double APPARENT_ATTACK_DAMAGE = 25.0D;
     private static final double APPARENT_ATTACK_SPEED = 4.0D;
+    private static final double LOCAL_PLAYER_SOUND_RADIUS_SQ = 9.0D;
+    private static final String VANILLA_HURT_PREFIX = "entity.player.hurt";
+    private static final String VANILLA_DEATH_PREFIX = "entity.player.death";
+    private static final String CUSTOM_HURT_A = "player_hurt";
+    private static final String CUSTOM_HURT_B = "voice_profile_b_hurt";
     private static final UUID APPARENT_BALANCE_UUID = UUID.fromString(
             "fbe4ef38-b55f-4aa3-8b69-e3f0cc75f572");
     private static final AttributeModifier APPARENT_BALANCE =
@@ -122,6 +131,34 @@ public final class Scp572ClientEffects {
     }
 
     /**
+     * Remove both vanilla and configurable replacement hurt sounds only for the
+     * affected local player. Nearby players remain perfectly audible.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onPlaySound(PlaySoundEvent event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (!isHeldBy(player)) return;
+
+        SoundInstance sound = event.getOriginalSound();
+        if (sound == null || !isLocalPlayerSound(sound, player)) return;
+
+        ResourceLocation location = sound.getLocation();
+        if (location == null) return;
+
+        String namespace = location.getNamespace();
+        String path = location.getPath();
+        boolean vanillaDamage = "minecraft".equals(namespace)
+                && (path.startsWith(VANILLA_HURT_PREFIX)
+                || path.startsWith(VANILLA_DEATH_PREFIX));
+        boolean customDamage = ScpClassifiedDirectiveMod.MODID.equals(namespace)
+                && (CUSTOM_HURT_A.equals(path) || CUSTOM_HURT_B.equals(path));
+
+        if (vanillaDamage || customDamage) {
+            event.setSound(null);
+        }
+    }
+
+    /**
      * The real attribute modifiers still exist on the stack so the server can
      * calculate combat normally. Only the completed client tooltip is edited.
      */
@@ -162,7 +199,7 @@ public final class Scp572ClientEffects {
     }
 
     private static Component apparentAttributeLine(double value,
-            net.minecraft.world.entity.ai.attributes.Attribute attribute) {
+            Attribute attribute) {
         return Component.translatable("attribute.modifier.equals.0",
                 ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(value),
                 Component.translatable(attribute.getDescriptionId()))
@@ -186,6 +223,15 @@ public final class Scp572ClientEffects {
             return translated.getKey();
         }
         return "";
+    }
+
+    private static boolean isLocalPlayerSound(SoundInstance sound,
+            LocalPlayer player) {
+        if (sound.isRelative()) return true;
+        double dx = sound.getX() - player.getX();
+        double dy = sound.getY() - player.getY();
+        double dz = sound.getZ() - player.getZ();
+        return dx * dx + dy * dy + dz * dz <= LOCAL_PLAYER_SOUND_RADIUS_SQ;
     }
 
     private static void restoreVanillaHealthSpoof() {

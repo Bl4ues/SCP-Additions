@@ -20,7 +20,8 @@ import java.nio.file.Path;
 public final class Scp1176ContextMigration {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final double[] OLD_ANCHOR = {0.872D, 0.219D, -0.725D};
-    private static final double[] FAUCET_ANCHOR = {0.233D, 0.252D, -0.702D};
+    private static final double[] PREVIOUS_FAUCET_ANCHOR = {0.233D, 0.252D, -0.702D};
+    private static final double[] FAUCET_ANCHOR = {0.767D, 0.252D, -0.702D};
 
     private Scp1176ContextMigration() {
     }
@@ -78,11 +79,10 @@ public final class Scp1176ContextMigration {
         }
         JsonArray position = anchor.getAsJsonArray("position");
         if (position.size() < 3) return false;
-        for (int i = 0; i < 3; i++) {
-            if (Math.abs(position.get(i).getAsDouble() - OLD_ANCHOR[i])
-                    > 0.000001D) {
-                return false;
-            }
+
+        if (!matches(position, OLD_ANCHOR)
+                && !matches(position, PREVIOUS_FAUCET_ANCHOR)) {
+            return false;
         }
 
         JsonArray replacement = new JsonArray();
@@ -91,6 +91,16 @@ public final class Scp1176ContextMigration {
         replacement.add(FAUCET_ANCHOR[2]);
         anchor.add("position", replacement);
         anchor.addProperty("rotateWith", "auto");
+        return true;
+    }
+
+    private static boolean matches(JsonArray position, double[] expected) {
+        for (int i = 0; i < 3; i++) {
+            if (Math.abs(position.get(i).getAsDouble() - expected[i])
+                    > 0.000001D) {
+                return false;
+            }
+        }
         return true;
     }
 

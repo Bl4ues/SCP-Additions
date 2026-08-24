@@ -10,6 +10,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.cache.object.GeoCube;
 import software.bernie.geckolib.cache.object.GeoQuad;
 import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -18,7 +20,9 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /** Item renderer preserving the authored Blockbench display transforms. */
 public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem> {
     private static final float HONEY_ALPHA = 0.72F;
+    private static final int CANISTER_PICTOGRAM_CUBE = 1;
     private final Scp1176ItemGeoModel scpModel;
+    private boolean renderingGlyphLayer;
     private boolean renderingHoney;
 
     public Scp1176ItemRenderer() {
@@ -37,6 +41,7 @@ public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem>
                     MultiBufferSource bufferSource, VertexConsumer buffer,
                     float partialTick, int packedLight, int packedOverlay) {
                 scpModel.showGlyphGeometry();
+                renderingGlyphLayer = true;
                 try {
                     RenderType glyphs = RenderType.entityTranslucent(
                             Scp1176ItemGeoModel.TEXTURE, true);
@@ -46,6 +51,7 @@ public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem>
                             packedLight, packedOverlay,
                             1.0F, 1.0F, 1.0F, 1.0F);
                 } finally {
+                    renderingGlyphLayer = false;
                     scpModel.showSolidGeometry();
                 }
             }
@@ -62,7 +68,7 @@ public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem>
                 renderingHoney = true;
                 try {
                     RenderType honey = RenderType.entityTranslucent(
-                            Scp1176ItemGeoModel.TEXTURE, true);
+                            Scp1176ItemGeoModel.HONEY_TEXTURE, true);
                     getRenderer().reRender(bakedModel, poseStack, bufferSource,
                             animatable, honey,
                             bufferSource.getBuffer(honey), partialTick,
@@ -74,6 +80,27 @@ public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem>
                 }
             }
         });
+    }
+
+    @Override
+    public void renderCubesOfBone(PoseStack poseStack, GeoBone bone,
+            VertexConsumer buffer, int packedLight, int packedOverlay,
+            float red, float green, float blue, float alpha) {
+        if (!"bone".equals(bone.getName()) || bone.isHidden()) {
+            super.renderCubesOfBone(poseStack, bone, buffer, packedLight,
+                    packedOverlay, red, green, blue, alpha);
+            return;
+        }
+
+        for (int index = 0; index < bone.getCubes().size(); index++) {
+            boolean pictogram = index == CANISTER_PICTOGRAM_CUBE;
+            if (pictogram != renderingGlyphLayer) continue;
+            GeoCube cube = bone.getCubes().get(index);
+            poseStack.pushPose();
+            renderCube(poseStack, cube, buffer, packedLight, packedOverlay,
+                    red, green, blue, alpha);
+            poseStack.popPose();
+        }
     }
 
     @Override

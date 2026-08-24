@@ -81,12 +81,17 @@ public final class Scp714ExposureManager {
             return;
         }
 
-        if (!Scp714ProtectionAccess.isProtected(player)) {
+        int previousTicks = getExposureTicks(player);
+        // Before the blackout, taking SCP-714 off normally cancels the buildup.
+        // Once the player has crossed into the fully black, immobilized state,
+        // however, the condition is authoritative. A stale mirror or a client
+        // inventory trick must not let the victim wake themselves back up.
+        if (previousTicks < FADE_DURATION_TICKS
+                && !Scp714ProtectionAccess.isProtected(player)) {
             clear(player, true);
             return;
         }
 
-        int previousTicks = getExposureTicks(player);
         int exposureTicks = Math.min(DEATH_TICKS, previousTicks + 1);
         setExposureTicks(player, exposureTicks);
 
@@ -402,8 +407,7 @@ public final class Scp714ExposureManager {
 
     public static boolean isImmobilized(ServerPlayer player) {
         return player != null && (isComatose(player)
-                || Scp714ProtectionAccess.isProtected(player)
-                && getExposureTicks(player) >= FADE_DURATION_TICKS);
+                || getExposureTicks(player) >= FADE_DURATION_TICKS);
     }
 
     private static void setExposureTicks(ServerPlayer player, int ticks) {

@@ -23,11 +23,11 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /**
  * Client renderer for SCP-1176.
  *
- * The sarcophagus, corpse, lid, faucet and side container are rendered in a
- * normal depth-writing cutout pass. The honey surface is then rendered alone
- * in a final translucent pass. Keeping the entire model out of the translucent
- * queue prevents the corpse and inner walls from disappearing at camera-angle
- * dependent sort boundaries.
+ * Solid geometry, translucent wall glyphs and the honey surface are deliberately
+ * kept in separate render passes. The solid pass writes normal depth so the
+ * corpse and sarcophagus walls remain stable behind the honey. The glyph pass
+ * preserves their authored alpha instead of forcing them through cutout, and
+ * the honey remains the final translucent layer.
  */
 public final class Scp1176Client {
     private static final float HONEY_ALPHA = 0.72F;
@@ -83,6 +83,7 @@ public final class Scp1176Client {
 
         private void prepareOpaquePass() {
             setHidden("bb_main", true);
+            setHidden("glyphs", true);
             setHidden("sarc", false);
             setHidden("1176", false);
             setHidden("lid", false);
@@ -91,8 +92,20 @@ public final class Scp1176Client {
             setHidden("bone", false);
         }
 
+        private void prepareGlyphPass() {
+            setHidden("bb_main", true);
+            setHidden("glyphs", false);
+            setHidden("sarc", true);
+            setHidden("1176", true);
+            setHidden("lid", true);
+            setHidden("2", true);
+            setHidden("faucet", true);
+            setHidden("bone", true);
+        }
+
         private void prepareHoneyPass() {
             setHidden("bb_main", false);
+            setHidden("glyphs", true);
             setHidden("sarc", true);
             setHidden("1176", true);
             setHidden("lid", true);
@@ -117,6 +130,28 @@ public final class Scp1176Client {
         private Renderer(Model model) {
             super(model);
             this.scpModel = model;
+
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        Scp1176BlockEntity animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight, int packedOverlay) {
+                    scpModel.prepareGlyphPass();
+                    try {
+                        RenderType glyphs = RenderType.entityTranslucent(
+                                Model.TEXTURE, true);
+                        getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                                animatable, glyphs,
+                                bufferSource.getBuffer(glyphs), partialTick,
+                                packedLight, packedOverlay,
+                                1.0F, 1.0F, 1.0F, 1.0F);
+                    } finally {
+                        scpModel.prepareOpaquePass();
+                    }
+                }
+            });
 
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override

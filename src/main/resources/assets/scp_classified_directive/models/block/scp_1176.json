@@ -1,9 +1,1 @@
-{
-  "parent": "scp_classified_directive:custom/scp1176",
-  "textures": {
-    "all": "scp_classified_directive:block/scp1176",
-    "particle": "scp_classified_directive:block/scp1176",
-    "4": "scp_classified_directive:block/scp1176"
-  },
-  "render_type": "translucent"
-}
+{"parent":"builtin/entity","textures":{"particle":"scp_classified_directive:block/scp1176"}}

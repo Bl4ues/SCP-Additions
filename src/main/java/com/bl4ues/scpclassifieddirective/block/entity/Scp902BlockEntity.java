@@ -104,7 +104,7 @@ public final class Scp902BlockEntity extends BlockEntity implements GeoBlockEnti
         if (++box.tickSoundTicks >= TICK_SOUND_INTERVAL) {
             box.tickSoundTicks = 0;
             box.playSound(ScpClassifiedDirectiveModSounds.SCP902.get());
-            box.showNearbyTickThoughts();
+            box.showNearbyHeartbeatThoughts();
         }
 
         if (!box.isTransitioning()) return;
@@ -167,17 +167,17 @@ public final class Scp902BlockEntity extends BlockEntity implements GeoBlockEnti
                 thoughts[level.random.nextInt(thoughts.length)]), true);
     }
 
-    private void showNearbyTickThoughts() {
+    private void showNearbyHeartbeatThoughts() {
         if (level == null || level.isClientSide) return;
         AABB area = new AABB(worldPosition).inflate(2.5D);
         for (Player player : level.getEntitiesOfClass(Player.class, area,
                 Player::isAlive)) {
             if (level.random.nextFloat() >= 0.04F) continue;
             String[] thoughts = {
-                    "What is this sound?",
-                    "Where is this ticking coming from?",
-                    "What's inside this box?",
-                    "Where is the noise coming from?"
+                    "Is that... a heartbeat?",
+                    "Why can I hear a heartbeat?",
+                    "Whose heartbeat is that?",
+                    "What's inside this box?"
             };
             player.displayClientMessage(Component.literal(
                     thoughts[level.random.nextInt(thoughts.length)]), true);

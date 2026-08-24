@@ -67,6 +67,9 @@ public class ClientKeyHandler {
         }
 
         int selectedSlot = player.getInventory().selected;
+        if (PlaceableHotbarSessionClient.returnSelectedSession(selectedSlot)) {
+            return;
+        }
         if (UsableHotbarSessionClient.returnSelectedSession(selectedSlot)) {
             return;
         }

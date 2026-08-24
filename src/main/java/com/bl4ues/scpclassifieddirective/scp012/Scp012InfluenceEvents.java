@@ -8,7 +8,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -24,8 +23,8 @@ import com.bl4ues.scpclassifieddirective.effect.Scp714ProtectionAccess;
 import com.bl4ues.scpclassifieddirective.facility.Scp079DecisionLog;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ProcessingManager;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModMobEffects;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
+import com.bl4ues.scpclassifieddirective.vitals.BleedingManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +40,6 @@ public final class Scp012InfluenceEvents {
     private static final double DAMAGE_RADIUS = 1.25D;
     private static final int FATAL_CONTACT_TICKS = 15 * 20;
     private static final double SCP_012_BOX_OPEN_COST = 12.0D;
-    private static final String BLEEDING_TAG = "ScpClassifiedDirectiveScp012Bleeding";
 
     private static final Map<UUID, ContactState> CONTACT_STATES = new HashMap<>();
     private static final Map<UUID, BlockPos> ACTIVE_TARGETS = new HashMap<>();
@@ -224,20 +222,13 @@ public final class Scp012InfluenceEvents {
                         "You tear open your left wrist and start writing "
                                 + "on the composition with your blood."), true);
             }
-            if (state.damageTaken >= maxHealth * 0.40F) applyBleeding(player);
+            if (state.damageTaken >= maxHealth * 0.40F) {
+                BleedingManager.apply(player);
+            }
         }
 
         return Mth.clamp(state.ticks / (float) FATAL_CONTACT_TICKS,
                 0.0F, 1.0F);
-    }
-
-    private static void applyBleeding(ServerPlayer player) {
-        player.getPersistentData().putBoolean(BLEEDING_TAG, true);
-        if (!player.hasEffect(ScpClassifiedDirectiveModMobEffects.BLEEDING.get())) {
-            player.addEffect(new MobEffectInstance(
-                    ScpClassifiedDirectiveModMobEffects.BLEEDING.get(),
-                    Integer.MAX_VALUE, 0, false, false, true));
-        }
     }
 
     private static void sync(ServerPlayer player, BlockPos target,

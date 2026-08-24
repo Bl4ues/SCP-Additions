@@ -25,8 +25,9 @@ public final class MainMenuWhatsNewPanelClient {
     private static final int PANEL = 0xC70B0E12;
     private static final int TRACK = 0x553A4049;
 
-    private static final int HEADER_HEIGHT = 32;
-    private static final int ROW_HEIGHT = 19;
+    private static final int HEADER_HEIGHT = 30;
+    private static final int ROW_HEIGHT = 17;
+    private static final int BOTTOM_PADDING = 4;
 
     // Keep this list aligned with CHANGELOG.md -> SCP: Classified Directive 4.0.0 -> Highlights.
     private static final List<String> HIGHLIGHTS = List.of(
@@ -66,7 +67,7 @@ public final class MainMenuWhatsNewPanelClient {
                 panel.x + panel.width, panel.y + 2, ACCENT);
 
         drawScaledText(graphics, font, ScpFonts.montserrat("WHAT'S NEW"),
-                panel.x + 15, panel.y + 11, 1.10F, TEXT);
+                panel.x + 15, panel.y + 10, 1.10F, TEXT);
 
         int visibleRows = visibleRows(panel);
         int maxOffset = Math.max(0, HIGHLIGHTS.size() - visibleRows);
@@ -76,7 +77,7 @@ public final class MainMenuWhatsNewPanelClient {
         }
 
         int listTop = panel.y + HEADER_HEIGHT;
-        int listBottom = panel.y + panel.height - 9;
+        int listBottom = panel.y + panel.height - BOTTOM_PADDING;
         int textWidth = panel.width - 52;
 
         graphics.enableScissor(panel.x + 10, listTop - 1,
@@ -130,7 +131,7 @@ public final class MainMenuWhatsNewPanelClient {
             int visibleRows, int offset, int maxOffset) {
         int trackX = panel.x + panel.width - 8;
         int trackTop = panel.y + HEADER_HEIGHT;
-        int trackBottom = panel.y + panel.height - 10;
+        int trackBottom = panel.y + panel.height - BOTTOM_PADDING - 1;
         int trackHeight = Math.max(8, trackBottom - trackTop);
 
         graphics.fill(trackX, trackTop, trackX + 2, trackBottom, TRACK);
@@ -145,7 +146,8 @@ public final class MainMenuWhatsNewPanelClient {
     }
 
     private static int visibleRows(Panel panel) {
-        return Math.max(1, (panel.height - HEADER_HEIGHT - 9) / ROW_HEIGHT);
+        return Math.max(1,
+                (panel.height - HEADER_HEIGHT - BOTTOM_PADDING) / ROW_HEIGHT);
     }
 
     private static Panel panel(CustomMainMenuScreen screen) {

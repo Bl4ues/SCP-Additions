@@ -26,9 +26,9 @@ public final class Scp902ContextAnchorMigration {
             "context_interactions.json");
 
     private static final double[] OLD_CLOSED = {0.531D, 0.468D, 0.25D};
-    private static final double[] NEW_CLOSED = {0.418D, 0.052D, 0.5D};
-    private static final double[] OLD_OPEN = {0.491D, 0.65D, 0.812D};
-    private static final double[] NEW_OPEN = {0.49D, 0.052D, 0.5D};
+    private static final double[] CLOSED_CENTER = {0.418D, 0.052D, 0.5D};
+    private static final double[] LEGACY_OPEN = {0.491D, 0.65D, 0.812D};
+    private static final double[] PREVIOUS_OPEN_CENTER = {0.49D, 0.052D, 0.5D};
 
     private Scp902ContextAnchorMigration() {
     }
@@ -54,10 +54,12 @@ public final class Scp902ContextAnchorMigration {
                 JsonObject rule = element.getAsJsonObject();
                 String id = string(rule, "id");
                 if ("scp_classified_directive:scp_902_closed".equals(id)) {
-                    changed |= migrateAnchor(rule, OLD_CLOSED, NEW_CLOSED);
+                    changed |= migrateAnchor(rule, OLD_CLOSED, CLOSED_CENTER);
                     changed |= migrateDefaultName(rule);
                 } else if ("scp_classified_directive:scp_902_open".equals(id)) {
-                    changed |= migrateAnchor(rule, OLD_OPEN, NEW_OPEN);
+                    changed |= migrateAnchor(rule, LEGACY_OPEN, CLOSED_CENTER);
+                    changed |= migrateAnchor(rule, PREVIOUS_OPEN_CENTER,
+                            CLOSED_CENTER);
                     changed |= migrateDefaultName(rule);
                 }
             }

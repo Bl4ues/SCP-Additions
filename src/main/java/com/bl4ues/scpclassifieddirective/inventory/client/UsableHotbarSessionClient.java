@@ -286,28 +286,36 @@ public final class UsableHotbarSessionClient {
 
         ItemStack expected = activeStack == null ? ItemStack.EMPTY : activeStack.copy();
         ItemStack active = player.getInventory().items.get(activeSlot);
-        boolean removedExpectedCopy = !active.isEmpty() && !expected.isEmpty() && isSameMutableUsableItem(active, expected);
-        player.getInventory().setItem(activeSlot, ItemStack.EMPTY);
+        boolean changed = false;
 
-        if (!removedExpectedCopy && !expected.isEmpty()) {
+        if (!active.isEmpty() && !expected.isEmpty()
+                && isSameMutableUsableItem(active, expected)) {
+            player.getInventory().setItem(activeSlot, ItemStack.EMPTY);
+            changed = true;
+        } else if (!expected.isEmpty()) {
+            // If synchronization moved the mirror, only remove another stack
+            // that is explicitly tagged as a usable-session mirror. Never erase
+            // an unrelated real item merely because it shares the same Item.
             int end = Math.min(36, player.getInventory().items.size());
             for (int i = 0; i < end; i++) {
                 if (i == activeSlot) {
                     continue;
                 }
                 ItemStack stack = player.getInventory().items.get(i);
-                if (stack.isEmpty() || !isSameMutableUsableItem(stack, expected)) {
+                if (stack.isEmpty()
+                        || !ScpPickupRouter.isUsableSession(stack)
+                        || !isSameMutableUsableItem(stack, expected)) {
                     continue;
                 }
-                stack.shrink(1);
-                if (stack.isEmpty()) {
-                    player.getInventory().items.set(i, ItemStack.EMPTY);
-                }
+                player.getInventory().items.set(i, ItemStack.EMPTY);
+                changed = true;
                 break;
             }
         }
 
-        player.getInventory().setChanged();
+        if (changed) {
+            player.getInventory().setChanged();
+        }
     }
 
     private static boolean isSameMutableUsableItem(ItemStack left, ItemStack right) {

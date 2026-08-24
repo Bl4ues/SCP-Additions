@@ -1,12 +1,18 @@
 package com.bl4ues.scpclassifieddirective.death;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.compat.MineZeroDeathCoordinator;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
-import com.bl4ues.scpclassifieddirective.inventory.event.PlaceableHotbarSessionEvents;
+import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
+import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemType;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpPickupRouter;
+import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,25 +47,49 @@ public final class PlayerCorpseManager {
         // mechanism.
         if (player.serverLevel().addFreshEntity(corpse)) {
             // PLACEABLE sessions own their real stack in the vanilla hotbar rather
-            // than ActiveUsable. Return it to the canonical SCP Inventory before
-            // corpse capture, otherwise the mirror-cleanup clearContent() would
-            // discard the active block instead of putting it in the body.
-            stowActivePlaceable(player);
+            // than ActiveUsable. Move that canonical stack back into SCP storage
+            // before corpse capture. This path deliberately works for MineZero's
+            // already-spectating logical dead player too.
+            stowActivePlaceableForCapture(player);
             corpse.captureInventoryFrom(player);
         }
     }
 
-    private static void stowActivePlaceable(ServerPlayer player) {
+    private static void stowActivePlaceableForCapture(ServerPlayer player) {
         if (player == null || !ScpClassifiedDirectiveModulesConfig.get().inventory.enabled) {
             return;
         }
+
+        IScpInventory scp = player.getCapability(ScpInventoryCapability.INSTANCE)
+                .resolve().orElse(null);
+        if (scp == null) return;
+
         int end = Math.min(VANILLA_HOTBAR_SIZE,
                 player.getInventory().items.size());
         for (int slot = 0; slot < end; slot++) {
-            if (!PlaceableHotbarSessionEvents.isTrackedPlaceableSlot(player, slot)) {
+            ItemStack stack = player.getInventory().items.get(slot);
+            if (stack.isEmpty()
+                    || !ScpPickupRouter.isUsableSession(stack)
+                    || ScpItemClassifier.getType(stack) != ScpItemType.PLACEABLE) {
                 continue;
             }
-            PlaceableHotbarSessionEvents.returnTrackedPlaceableSession(player, slot);
+
+            ItemStack restored = stack.copy();
+            restored.setCount(1);
+            ScpPickupRouter.stripUsableSession(restored);
+            ScpPickupRouter.stripNoMergeMarker(restored);
+            ScpPickupRouter.stripCoinMirror(restored);
+            ScpPickupRouter.stripHarmfulMirror(restored);
+
+            player.getInventory().items.set(slot, ItemStack.EMPTY);
+            player.getInventory().setChanged();
+            if (!scp.addInventoryItem(restored)) {
+                // The active placeable normally guarantees one vacant SCP slot
+                // because it was extracted from that inventory. If another system
+                // filled it in the meantime, dropping is still safer than deletion.
+                player.drop(restored, false);
+            }
+            ModNetwork.syncTo(player, scp);
             return;
         }
     }

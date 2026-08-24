@@ -18,7 +18,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,7 +26,10 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class Scp426ExposureSystem {
-    private static final int SAMPLE_TICKS = 80;
+    // The environment is sampled every two seconds. Exposure is deliberately
+    // not a per-tick system; this keeps the toaster's passive behavior cheap
+    // while making the visual achievement reasonably responsive.
+    private static final int SAMPLE_TICKS = 40;
     private static final int HORIZONTAL_RADIUS = 7;
     private static final int VERTICAL_RADIUS = 4;
     private static final double MAX_DISTANCE_SQR = 64.0D;
@@ -264,10 +267,9 @@ public final class Scp426ExposureSystem {
     }
 
     @SubscribeEvent
-    public static void onItemPickup(EntityItemPickupEvent event) {
+    public static void onItemPickup(PlayerEvent.ItemPickupEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!event.getItem().getItem().is(
-                ScpClassifiedDirectiveModBlocks.SCP_426.get().asItem())) {
+        if (!event.getStack().is(ScpClassifiedDirectiveModBlocks.SCP_426.get().asItem())) {
             return;
         }
 
@@ -276,6 +278,9 @@ public final class Scp426ExposureSystem {
         long lastBreak = data.getLong(LAST_BREAK_KEY);
         long lastPickup = data.getLong(LAST_PICKUP_KEY);
 
+        // A freshly broken block is normally picked up immediately. Preserve
+        // the break thought instead of replacing it with another action-bar
+        // line. Later, genuinely completed pickups still get their own response.
         if (now - lastBreak <= 40L || now - lastPickup <= 40L) return;
 
         data.putLong(LAST_PICKUP_KEY, now);

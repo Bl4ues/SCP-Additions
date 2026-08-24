@@ -30,7 +30,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Locale;
 
-/** Server-authoritative open/close animation and ticking state for SCP-902. */
+/** Server-authoritative open/close animation and ticking state for SCP-902-A. */
 public final class Scp902BlockEntity extends BlockEntity implements GeoBlockEntity {
     public enum Phase {
         CLOSED,
@@ -81,7 +81,7 @@ public final class Scp902BlockEntity extends BlockEntity implements GeoBlockEnti
         if (phase == Phase.CLOSED) {
             phase = Phase.OPENING;
             transitionTicks = 0;
-            playSound(ScpClassifiedDirectiveModSounds.SCP902OPENING.get());
+            playSound(ScpClassifiedDirectiveModSounds.SCP902OPENING.get(), 0.5F);
             awardAchievement(player);
             showOpeningThought(player);
             markUpdated();
@@ -90,7 +90,7 @@ public final class Scp902BlockEntity extends BlockEntity implements GeoBlockEnti
         if (phase == Phase.OPEN) {
             phase = Phase.CLOSING;
             transitionTicks = 0;
-            playSound(ScpClassifiedDirectiveModSounds.SCP902CLOSING.get());
+            playSound(ScpClassifiedDirectiveModSounds.SCP902CLOSING.get(), 0.5F);
             markUpdated();
             return InteractionResult.CONSUME;
         }
@@ -135,9 +135,13 @@ public final class Scp902BlockEntity extends BlockEntity implements GeoBlockEnti
     }
 
     private void playSound(SoundEvent sound) {
+        playSound(sound, 1.0F);
+    }
+
+    private void playSound(SoundEvent sound, float volume) {
         if (level == null || level.isClientSide || sound == null) return;
         level.playSound(null, worldPosition, sound, SoundSource.BLOCKS,
-                1.0F, 1.0F);
+                volume, 1.0F);
     }
 
     private void awardAchievement(Player player) {

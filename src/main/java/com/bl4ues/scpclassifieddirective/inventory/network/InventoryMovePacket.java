@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.inventory.network;
 
+import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
@@ -61,6 +62,11 @@ public class InventoryMovePacket {
             if (!ScpClassifiedDirectiveModulesConfig.get().inventory.enabled) return;
             ServerPlayer player = ctx.get().getSender();
             if (player == null) {
+                return;
+            }
+            if (Scp714ExposureManager.isControlsLocked(player)) {
+                player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(
+                        inventory -> ModNetwork.syncTo(player, inventory));
                 return;
             }
 

@@ -36,15 +36,30 @@ public final class DeathSpectateUiEvents {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderPost(ScreenEvent.Render.Post event) {
-        if (!(event.getScreen() instanceof ScpDeathScreen screen)
-                || !MineZeroSpectateClient.active()) {
+        if (!(event.getScreen() instanceof ScpDeathScreen screen)) {
+            return;
+        }
+
+        boolean feedActive = MineZeroSpectateClient.active();
+        boolean detachedVoice =
+                SimpleVoiceChatDeathScreenUi.detachedVisible(screen);
+        if (!feedActive && !detachedVoice) return;
+
+        var graphics = event.getGuiGraphics();
+        if (!feedActive) {
+            // The team-wipe sting has finished and the live personnel viewport is
+            // gone. The dead call remains usable, so move its hierarchy with the
+            // report-card recenter transition instead of deleting the UI.
+            SimpleVoiceChatDeathScreenUi.renderDetached(screen, graphics,
+                    event.getMouseX(), event.getMouseY(), 1.0F);
+            Scp1576DeathScreenUi.renderDetached(screen, graphics,
+                    event.getMouseX(), event.getMouseY(), 1.0F);
             return;
         }
 
         float cover = MineZeroSpectateClient.switchOcclusion();
         boolean lost = MineZeroSpectateClient.connectionLost();
         Bounds feed = feed(screen);
-        var graphics = event.getGuiGraphics();
 
         if (cover > 0.001F || lost) {
             int a = Mth.clamp(Math.round(255.0F
@@ -102,9 +117,22 @@ public final class DeathSpectateUiEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
         if (event.getButton() != 0
-                || !(event.getScreen() instanceof ScpDeathScreen screen)
-                || !MineZeroSpectateClient.active()
-                || MineZeroSpectateClient.connectionLost()) {
+                || !(event.getScreen() instanceof ScpDeathScreen screen)) {
+            return;
+        }
+
+        boolean feedActive = MineZeroSpectateClient.active();
+        boolean detachedVoice =
+                SimpleVoiceChatDeathScreenUi.detachedVisible(screen);
+        if (!feedActive && !detachedVoice) return;
+        if (feedActive && MineZeroSpectateClient.connectionLost()) return;
+
+        if (!feedActive) {
+            if (SimpleVoiceChatDeathScreenUi.handleDetachedMousePressed(screen,
+                    event.getMouseX(), event.getMouseY())) {
+                draggingFeed = false;
+                event.setCanceled(true);
+            }
             return;
         }
 

@@ -9,7 +9,6 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
@@ -23,11 +22,10 @@ import java.util.WeakHashMap;
 public final class MainMenuWhatsNewPanelClient {
     private static final int TEXT = 0xFFF5F6F7;
     private static final int ACCENT = 0xFFC99B18;
-    private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int PANEL = 0xC70B0E12;
     private static final int TRACK = 0x553A4049;
 
-    private static final int HEADER_HEIGHT = 38;
+    private static final int HEADER_HEIGHT = 32;
     private static final int ROW_HEIGHT = 19;
 
     // Keep this list aligned with CHANGELOG.md -> SCP: Classified Directive 4.0.0 -> Highlights.
@@ -67,16 +65,8 @@ public final class MainMenuWhatsNewPanelClient {
         graphics.fill(panel.x, panel.y,
                 panel.x + panel.width, panel.y + 2, ACCENT);
 
-        float headerScale = 1.10F;
         drawScaledText(graphics, font, ScpFonts.montserrat("WHAT'S NEW"),
-                panel.x + 15, panel.y + 13, headerScale, TEXT);
-
-        Component version = ScpFonts.titillium(majorVersion());
-        float versionScale = 1.12F;
-        float versionWidth = font.width(version) * versionScale;
-        drawScaledText(graphics, font, version,
-                panel.x + panel.width - 15 - versionWidth,
-                panel.y + 13, versionScale, ACCENT_BRIGHT);
+                panel.x + 15, panel.y + 11, 1.10F, TEXT);
 
         int visibleRows = visibleRows(panel);
         int maxOffset = Math.max(0, HIGHLIGHTS.size() - visibleRows);
@@ -166,14 +156,6 @@ public final class MainMenuWhatsNewPanelClient {
         int y = screen.height - height
                 - Math.max(26, Math.round(screen.height * 0.055F));
         return new Panel(x, y, width, height);
-    }
-
-    private static String majorVersion() {
-        String version = ModList.get().getModContainerById(ScpClassifiedDirectiveMod.MODID)
-                .map(container -> container.getModInfo().getVersion().toString())
-                .orElse("4.0.0");
-        String[] parts = version.split("\\.");
-        return parts.length >= 2 ? parts[0] + "." + parts[1] : version;
     }
 
     private static String compactToWidth(Font font, String text, int maxWidth) {

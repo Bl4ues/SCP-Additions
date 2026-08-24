@@ -39,7 +39,7 @@ public class ScpClassifiedDirectiveModItems {
 	public static final RegistryObject<Item> SCP_914_INTAKE_DOOR = block(ScpClassifiedDirectiveModBlocks.SCP_914_INTAKE_DOOR);
 	public static final RegistryObject<Item> SCP_914_OUTPUT_DOOR = block(ScpClassifiedDirectiveModBlocks.SCP_914_OUTPUT_DOOR);
 	public static final RegistryObject<Item> SCP_914_ASSEMBLY_KIT = REGISTRY.register("scp_914_assembly_kit", () -> new Scp914AssemblyKitItem());
-	public static final RegistryObject<Item> SCP_1176 = block(ScpClassifiedDirectiveModBlocks.SCP_1176);
+	public static final RegistryObject<Item> SCP_1176 = REGISTRY.register("scp_1176", () -> new Scp1176BlockItem(ScpClassifiedDirectiveModBlocks.SCP_1176.get()));
 	public static final RegistryObject<Item> SCP_330_BLUE_CANDY = REGISTRY.register("scp_330_blue_candy", Scp330CandyItem::new);
 	public static final RegistryObject<Item> SCP_330_PINK_CANDY = REGISTRY.register("scp_330_pink_candy", Scp330CandyItem::new);
 	public static final RegistryObject<Item> SCP_330_YELLOW_CANDY = REGISTRY.register("scp_330_yellow_candy", Scp330CandyItem::new);

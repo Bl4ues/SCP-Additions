@@ -47,11 +47,17 @@ public final class CustomCrosshairOverlay {
                 * sequenceOpacity;
         if (alpha <= 0.001F) return;
 
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        int height = minecraft.getWindow().getGuiScaledHeight();
+        GuiGraphics graphics = event.getGuiGraphics();
+        int actualWidth = minecraft.getWindow().getGuiScaledWidth();
+        int actualHeight = minecraft.getWindow().getGuiScaledHeight();
+        ResponsiveUiScale.renderHud(graphics, actualWidth, actualHeight,
+                (width, height) -> renderResponsive(graphics, width, height, alpha));
+    }
+
+    private static void renderResponsive(GuiGraphics graphics, int width,
+            int height, float alpha) {
         int x = (width - RENDER_SIZE) / 2;
         int y = (height - RENDER_SIZE) / 2;
-        GuiGraphics graphics = event.getGuiGraphics();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();

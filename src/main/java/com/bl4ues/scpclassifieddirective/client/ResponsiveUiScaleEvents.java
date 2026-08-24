@@ -75,9 +75,10 @@ public final class ResponsiveUiScaleEvents {
         }
         boolean handled = event.getScreen().mouseClicked(event.getMouseX(),
                 event.getMouseY(), event.getButton());
+        ResponsiveUiScale.Context context = ResponsiveUiScale.current();
         MinecraftForge.EVENT_BUS.post(new ScreenEvent.MouseButtonPressed.Post(
-                event.getScreen(), event.getMouseX(), event.getMouseY(),
-                event.getButton(), handled));
+                event.getScreen(), event.getMouseX() * context.scale(),
+                event.getMouseY() * context.scale(), event.getButton(), handled));
         event.setCanceled(true);
     }
 
@@ -88,9 +89,10 @@ public final class ResponsiveUiScaleEvents {
         }
         boolean handled = event.getScreen().mouseReleased(event.getMouseX(),
                 event.getMouseY(), event.getButton());
+        ResponsiveUiScale.Context context = ResponsiveUiScale.current();
         MinecraftForge.EVENT_BUS.post(new ScreenEvent.MouseButtonReleased.Post(
-                event.getScreen(), event.getMouseX(), event.getMouseY(),
-                event.getButton(), handled));
+                event.getScreen(), event.getMouseX() * context.scale(),
+                event.getMouseY() * context.scale(), event.getButton(), handled));
         event.setCanceled(true);
     }
 
@@ -103,9 +105,12 @@ public final class ResponsiveUiScaleEvents {
                 event.getMouseY(), event.getMouseButton(), event.getDragX(),
                 event.getDragY());
         if (!handled) {
+            ResponsiveUiScale.Context context = ResponsiveUiScale.current();
             MinecraftForge.EVENT_BUS.post(new ScreenEvent.MouseDragged.Post(
-                    event.getScreen(), event.getMouseX(), event.getMouseY(),
-                    event.getMouseButton(), event.getDragX(), event.getDragY()));
+                    event.getScreen(), event.getMouseX() * context.scale(),
+                    event.getMouseY() * context.scale(), event.getMouseButton(),
+                    event.getDragX() * context.scale(),
+                    event.getDragY() * context.scale()));
         }
         event.setCanceled(true);
     }
@@ -118,9 +123,10 @@ public final class ResponsiveUiScaleEvents {
         boolean handled = event.getScreen().mouseScrolled(event.getMouseX(),
                 event.getMouseY(), event.getScrollDelta());
         if (!handled) {
+            ResponsiveUiScale.Context context = ResponsiveUiScale.current();
             MinecraftForge.EVENT_BUS.post(new ScreenEvent.MouseScrolled.Post(
-                    event.getScreen(), event.getMouseX(), event.getMouseY(),
-                    event.getScrollDelta()));
+                    event.getScreen(), event.getMouseX() * context.scale(),
+                    event.getMouseY() * context.scale(), event.getScrollDelta()));
         }
         event.setCanceled(true);
     }

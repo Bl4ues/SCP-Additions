@@ -1,5 +1,8 @@
 package com.bl4ues.scpclassifieddirective.client;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModParticleTypes;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
@@ -7,9 +10,6 @@ import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModParticleTypes;
 
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -19,45 +19,60 @@ public final class Scp173ClientModEvents {
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
-        // Screen-space view effects are composed below every HUD layer. The
-        // blink vignette is rendered first so worn-item overlays such as the
-        // Hazmat visor remain above it; future equipped-item overlays should
-        // follow the same ordering rule. SCP-714 fatigue and SCP-012 influence
-        // preserve their existing order relative to the visor.
         event.registerBelowAll("player_view_effects_overlay",
-                (gui, graphics, partialTick, width, height) -> {
-                    BlinkClient.renderVignette(graphics, width, height);
-                    HazmatVisorOverlay.render(graphics, width, height);
-                    Scp714VignetteOverlay.render(graphics, width, height,
-                            partialTick);
-                    Scp012SubliminalOverlay.render(graphics, width, height,
-                            partialTick);
-                });
+                (gui, graphics, partialTick, width, height) ->
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) -> {
+                                    BlinkClient.renderVignette(graphics,
+                                            virtualWidth, virtualHeight);
+                                    HazmatVisorOverlay.render(graphics,
+                                            virtualWidth, virtualHeight);
+                                    Scp714VignetteOverlay.render(graphics,
+                                            virtualWidth, virtualHeight,
+                                            partialTick);
+                                    Scp012SubliminalOverlay.render(graphics,
+                                            virtualWidth, virtualHeight,
+                                            partialTick);
+                                }));
         event.registerAboveAll("scp_1176_honey_vignette_overlay",
                 (gui, graphics, partialTick, width, height) ->
-                        Scp1176HoneyVignette.render(graphics, width, height,
-                                partialTick));
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        Scp1176HoneyVignette.render(graphics,
+                                                virtualWidth, virtualHeight,
+                                                partialTick)));
         event.registerAboveAll("blink_blackout_overlay",
                 (gui, graphics, partialTick, width, height) ->
-                        BlinkClient.renderBlackout(graphics, width, height));
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        BlinkClient.renderBlackout(graphics,
+                                                virtualWidth, virtualHeight)));
         event.registerAboveAll("equipment_progress_overlay",
                 (gui, graphics, partialTick, width, height) -> {
                     if (!Scp939ClientState.pinned()) {
-                        EquipmentProgressOverlay.render(graphics, width, height,
-                                partialTick);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        EquipmentProgressOverlay.render(graphics,
+                                                virtualWidth, virtualHeight,
+                                                partialTick));
                     }
                 });
         event.registerAboveAll("blink_meter_overlay",
                 (gui, graphics, partialTick, width, height) -> {
                     if (!Scp939ClientState.pinned()) {
-                        BlinkClient.renderHud(graphics, width, height,
-                                partialTick);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        BlinkClient.renderHud(graphics,
+                                                virtualWidth, virtualHeight,
+                                                partialTick));
                     }
                 });
         event.registerAboveAll("scp_131_notice_overlay",
                 (gui, graphics, partialTick, width, height) -> {
                     if (!Scp939ClientState.pinned()) {
-                        Scp131NoticeOverlay.render(graphics);
+                        ResponsiveUiScale.renderHud(graphics, width, height,
+                                (virtualWidth, virtualHeight) ->
+                                        Scp131NoticeOverlay.render(graphics));
                     }
                 });
     }

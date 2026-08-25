@@ -600,7 +600,7 @@ public final class ObjectContainmentUnitModule {
                 private ObjectContainmentUnitClient.ItemRenderer renderer;
 
                 @Override
-                public @NotNull net.minecraft.client.renderer.blockentity.BlockEntityWithoutLevelRenderer
+                public @NotNull net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
                         getCustomRenderer() {
                     if (renderer == null) {
                         renderer = new ObjectContainmentUnitClient.ItemRenderer();

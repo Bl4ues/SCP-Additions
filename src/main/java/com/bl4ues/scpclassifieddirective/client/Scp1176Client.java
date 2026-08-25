@@ -38,6 +38,8 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
  * renderer may safely use the glyph-only alias because it follows a different
  * rendering path.
  */
+@Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class Scp1176Client {
     private static final float HONEY_ALPHA = 0.72F;
     private static final int CANISTER_PICTOGRAM_CUBE = 1;
@@ -45,18 +47,11 @@ public final class Scp1176Client {
     private Scp1176Client() {
     }
 
-    @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
-            bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static final class Registration {
-        private Registration() {
-        }
-
-        @SubscribeEvent
-        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerBlockEntityRenderer(
-                    ScpClassifiedDirectiveModBlockEntities.SCP_1176.get(),
-                    Renderer::new);
-        }
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(
+                ScpClassifiedDirectiveModBlockEntities.SCP_1176.get(),
+                Renderer::new);
     }
 
     private static final class Model extends GeoModel<Scp1176BlockEntity> {

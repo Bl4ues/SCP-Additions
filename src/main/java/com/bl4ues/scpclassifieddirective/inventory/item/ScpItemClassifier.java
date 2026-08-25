@@ -38,10 +38,9 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ScpItemClassifier {
+    private static final String MOD_NAMESPACE = "scp_classified_directive";
     private static final ResourceLocation CANONICAL_SCP_CLASSIFIED_DIRECTIVE_COIN =
-            new ResourceLocation("scp_classified_directive", "coin");
-    private static final ResourceLocation CANONICAL_SCP_572 =
-            new ResourceLocation("scp_classified_directive", "scp_572");
+            new ResourceLocation(MOD_NAMESPACE, "coin");
     private static final TagKey<Item> AUTO_WEAPON = itemTag("auto_weapon");
     private static final TagKey<Item> AUTO_USABLE = itemTag("auto_usable");
     private static final TagKey<Item> AUTO_MISCELLANEOUS = itemTag("auto_miscellaneous");
@@ -71,13 +70,15 @@ public final class ScpItemClassifier {
             return type == ScpItemType.COIN
                     ? ScpItemType.MISCELLANEOUS : type;
         }
-        if (isCanonicalKeycard(stack)) {
-            return ScpItemType.KEY;
+
+        ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        Optional<ScpItemType> builtInType = getBuiltInConfiguredType(stackId);
+        if (builtInType.isPresent()) {
+            ScpItemType type = builtInType.get();
+            return type == ScpItemType.COIN
+                    ? ScpItemType.MISCELLANEOUS : type;
         }
-        if (CANONICAL_SCP_572.equals(
-                BuiltInRegistries.ITEM.getKey(stack.getItem()))) {
-            return ScpItemType.WEAPON;
-        }
+
         if (stack.is(AUTO_MISCELLANEOUS)) return ScpItemType.MISCELLANEOUS;
         if (stack.is(AUTO_WEAPON)) return ScpItemType.WEAPON;
         if (stack.is(AUTO_USABLE)) return ScpItemType.USABLE;
@@ -90,6 +91,30 @@ public final class ScpItemClassifier {
         if (isDefaultWeapon(stack)) return ScpItemType.WEAPON;
         if (isDefaultUsable(stack)) return ScpItemType.USABLE;
         return ScpItemType.MISCELLANEOUS;
+    }
+
+    /**
+     * Canonical categories that cannot be inferred reliably from vanilla item
+     * classes alone. Explicit user rules remain authoritative because getType
+     * checks the external configuration before consulting this table.
+     */
+    public static Optional<ScpItemType> getBuiltInConfiguredType(
+            ResourceLocation itemId) {
+        if (itemId == null || !MOD_NAMESPACE.equals(itemId.getNamespace())) {
+            return Optional.empty();
+        }
+        return switch (itemId.getPath()) {
+            case "level_1_keycard", "level_2_keycard", "level_3_keycard",
+                    "level_4_keycard", "level_5_keycard", "level_6_keycard",
+                    "security_credentials" -> Optional.of(ScpItemType.KEY);
+            case "scp_572" -> Optional.of(ScpItemType.WEAPON);
+            case "scp_714" -> Optional.of(ScpItemType.ACCESSORY_HAND);
+            case "screwdriver", "scp_1576", "hazmat_suit" ->
+                    Optional.of(ScpItemType.USABLE);
+            case "scp_914_assembly_kit" -> Optional.of(ScpItemType.PLACEABLE);
+            case "coin" -> Optional.of(ScpItemType.COIN);
+            default -> Optional.empty();
+        };
     }
 
     public static Optional<ScpEquipmentSlot> getEquipmentSlot(ItemStack stack) {
@@ -293,20 +318,6 @@ public final class ScpItemClassifier {
         return Optional.empty();
     }
 
-    private static boolean isCanonicalKeycard(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (id == null || !"scp_classified_directive".equals(id.getNamespace())) {
-            return false;
-        }
-        return switch (id.getPath()) {
-            case "level_1_keycard", "level_2_keycard", "level_3_keycard",
-                    "level_4_keycard", "level_5_keycard", "level_6_keycard",
-                    "security_credentials" -> true;
-            default -> false;
-        };
-    }
-
     private static boolean isCanonicalScpClassifiedDirectiveCoin(ItemStack stack) {
         return stack != null && !stack.isEmpty()
                 && CANONICAL_SCP_CLASSIFIED_DIRECTIVE_COIN.equals(
@@ -339,7 +350,7 @@ public final class ScpItemClassifier {
 
     private static TagKey<Item> itemTag(String path) {
         return TagKey.create(Registries.ITEM,
-                new ResourceLocation("scp_classified_directive", path));
+                new ResourceLocation(MOD_NAMESPACE, path));
     }
 
     private record ConfiguredItemRule(ResourceLocation itemId,

@@ -9,13 +9,16 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
+import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -59,6 +62,15 @@ public final class AreaUnderConstructionSignModule {
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
+        ObjectContainmentUnitModule.register(bus);
+    }
+
+    @SubscribeEvent
+    public static void addObjectContainmentUnit(
+            BuildCreativeModeTabContentsEvent event) {
+        if (event.getTab() == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
+            event.accept(ObjectContainmentUnitModule.ITEM.get());
+        }
     }
 
     /** Curated sections with retired/duplicate entries removed. */
@@ -74,6 +86,10 @@ public final class AreaUnderConstructionSignModule {
                     continue;
                 }
                 addUnique(items, stack);
+                if (stack.is(UnifiedReaderItems.KEYCARD_READER.get())) {
+                    addUnique(items,
+                            new ItemStack(ObjectContainmentUnitModule.ITEM.get()));
+                }
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     items));

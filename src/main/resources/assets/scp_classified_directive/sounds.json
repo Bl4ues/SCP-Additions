@@ -441,7 +441,7 @@
       {
         "name": "scp_classified_directive:accessdenied",
         "stream": false,
-        "volume": 3
+        "volume": 1
       }
     ]
   },

@@ -355,10 +355,12 @@ public final class ContextInteractionRegistry {
             double readerY = 13.28094476D / 16.0D;
             double readerZ = 0.5D + 0.90481263D / 16.0D;
 
-            // Center of the glass case after its authored -97.5 degree open
-            // rotation around the case bone pivot [-7, 16, 0].
-            double openLidX = 0.6847788D;
-            double openLidY = 0.5254534D;
+            // GeckoLib's Bedrock-space transform flips the apparent Z-bone
+            // rotation relative to a naive authored-coordinate calculation.
+            // This point is the outer corner of the case when fully open, so
+            // the Close prompt stays physically attached to the far-left lid.
+            double openLidX = 1.64242028D;
+            double openLidY = 1.80550565D;
             double openLidZ = 0.5D;
 
             registered += addIntegratedRule(configuredIdentities,
@@ -377,7 +379,7 @@ public final class ContextInteractionRegistry {
                     new InteractionIdentity("block", unitId.toString(),
                             "close_object_containment_unit"),
                     new Rule(Kind.BLOCK, unitId, unit, null,
-                            "close_object_containment_unit", 2.75D, 95,
+                            "close_object_containment_unit", 2.75D, -50,
                             "Close", "Object Containment Unit",
                             true, true, false,
                             openLidX, openLidY, openLidZ,

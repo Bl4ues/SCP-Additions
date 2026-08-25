@@ -348,12 +348,12 @@ public final class ContextInteractionRegistry {
             ResourceLocation screwdriver = new ResourceLocation(
                     ScpClassifiedDirectiveMod.MODID, "screwdriver");
 
-            // GeckoLib mirrors the authored model X axis when it is rendered in
-            // world space. This is the same transform used by the corrected
-            // SCP-1176 faucet anchor: localX = 0.5 - modelX / 16.
-            double readerX = 0.5D - 7.15D / 16.0D;
-            double readerY = 13.875D / 16.0D;
-            double readerZ = 0.5D + 0.1D / 16.0D;
+            // Use the center of the actual rotated reader geometry, not merely
+            // the bone pivot. GeckoLib mirrors the authored X axis in world
+            // space, matching the SCP-1176 anchor transform.
+            double readerX = 0.5D - 9.625D / 16.0D;
+            double readerY = 13.28094476D / 16.0D;
+            double readerZ = 0.5D + 0.90481263D / 16.0D;
 
             // Center of the glass case after its authored -97.5 degree open
             // rotation around the case bone pivot [-7, 16, 0].
@@ -810,6 +810,13 @@ public final class ContextInteractionRegistry {
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state, Player player) {
             if (ObjectContainmentUnitModule.isProtectedContent(level, pos)) {
+                return false;
+            }
+            if (block == ObjectContainmentUnitModule.UNIT.get()
+                    && "close_object_containment_unit".equals(interactionKey)
+                    && player != null
+                    && (!player.getMainHandItem().isEmpty()
+                    || !player.getOffhandItem().isEmpty())) {
                 return false;
             }
             if (block != null && "document_holder".equals(id.getPath())

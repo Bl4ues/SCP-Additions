@@ -76,9 +76,23 @@ public final class BleedingManager {
             clear(player, true);
             return;
         }
+
+        /*
+         * The MobEffect is also intentionally usable through vanilla commands.
+         * Previously /effect give only painted the HUD icon red: the irregular
+         * damage state lived behind a separate persistent flag that commands
+         * never set. Treat a present Bleeding effect as a real wound and adopt
+         * it into the same manager used by SCP-012/SCP-939.
+         */
         if (!player.getPersistentData().getBoolean(BLEEDING_TAG)) {
-            STATES.remove(player.getUUID());
-            return;
+            if (player.hasEffect(ScpClassifiedDirectiveModMobEffects.BLEEDING.get())) {
+                player.getPersistentData().putBoolean(BLEEDING_TAG, true);
+                STATES.computeIfAbsent(player.getUUID(), ignored ->
+                        new BleedState(initialDelay(player)));
+            } else {
+                STATES.remove(player.getUUID());
+                return;
+            }
         }
 
         ensureEffect(player);

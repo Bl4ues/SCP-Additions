@@ -104,9 +104,10 @@
 - SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally;
 - SCP-131 instances now dismiss their player's follower group when they begin watching SCP-173, matching the manual dismiss action.
 
-## Legacy SCP visual refresh
+## Legacy remakes
 
-- Refreshed several older SCP models that no longer matched the newer content, including SCP-426, SCP-902-A, and SCP-1176.
+- Remade several older SCP models that no longer matched the newer content, including SCP-426, SCP-902-A, and SCP-1176;
+- Remade Keycard textures.
 
 ## SCP-079
 

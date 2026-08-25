@@ -1,7 +1,7 @@
 {
   "parent": "scp_classified_directive:custom/keycard5",
   "textures": {
-    "0": "scp_classified_directive:block/tx5",
-    "particle": "scp_classified_directive:block/tx5"
+    "0": "scp_classified_directive:item/tx5",
+    "particle": "scp_classified_directive:item/tx5"
   }
 }

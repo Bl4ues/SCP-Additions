@@ -24,6 +24,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.DocumentHolderBlockEntity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityLargePropStructure;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPropPartBlock;
+import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
@@ -182,6 +183,8 @@ public final class ContextInteractionRegistry {
         }
 
         integratedCount += registerElevatorRules(configuredIdentities);
+        integratedCount += registerObjectContainmentUnitRules(
+                configuredIdentities);
         integratedCount += registerNativeScrewdriverRules(configuredIdentities);
         loaded = true;
         ScpClassifiedDirectiveMod.LOGGER.info(
@@ -329,6 +332,74 @@ public final class ContextInteractionRegistry {
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.error(
                     "Failed to register Core Room elevator interactions",
+                    exception);
+        }
+        return registered;
+    }
+
+    private static int registerObjectContainmentUnitRules(
+            Set<InteractionIdentity> configuredIdentities) {
+        int registered = 0;
+        try {
+            ResourceLocation unitId = new ResourceLocation(
+                    ScpClassifiedDirectiveMod.MODID,
+                    "object_containment_unit");
+            Block unit = ObjectContainmentUnitModule.UNIT.get();
+            ResourceLocation screwdriver = new ResourceLocation(
+                    ScpClassifiedDirectiveMod.MODID, "screwdriver");
+
+            // GeckoLib mirrors the authored model X axis when it is rendered in
+            // world space. This is the same transform used by the corrected
+            // SCP-1176 faucet anchor: localX = 0.5 - modelX / 16.
+            double readerX = 0.5D - 7.15D / 16.0D;
+            double readerY = 13.875D / 16.0D;
+            double readerZ = 0.5D + 0.1D / 16.0D;
+
+            // Center of the glass case after its authored -97.5 degree open
+            // rotation around the case bone pivot [-7, 16, 0].
+            double openLidX = 0.6847788D;
+            double openLidY = 0.5254534D;
+            double openLidZ = 0.5D;
+
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", unitId.toString(),
+                            "open_object_containment_unit"),
+                    new Rule(Kind.BLOCK, unitId, unit, null,
+                            "open_object_containment_unit", 2.75D, 90,
+                            "Open", "Object Containment Unit",
+                            true, true, false,
+                            readerX, readerY, readerZ,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "player", "card", "card", null, 1.0D, false));
+
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", unitId.toString(),
+                            "close_object_containment_unit"),
+                    new Rule(Kind.BLOCK, unitId, unit, null,
+                            "close_object_containment_unit", 2.75D, 95,
+                            "Close", "Object Containment Unit",
+                            true, true, false,
+                            openLidX, openLidY, openLidZ,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "player", "hand", "hand", null, 1.0D, false));
+
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", unitId.toString(),
+                            "configure_object_containment_unit"),
+                    new Rule(Kind.BLOCK, unitId, unit, null,
+                            "configure_object_containment_unit", 2.75D, 130,
+                            "Configure", "Object Containment Unit",
+                            true, true, false,
+                            readerX, readerY, readerZ,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "player", "screwdriver", "screwdriver",
+                            screwdriver, 1.0D, false));
+        } catch (Exception exception) {
+            ScpClassifiedDirectiveMod.LOGGER.error(
+                    "Failed to register Object Containment Unit interactions",
                     exception);
         }
         return registered;
@@ -738,6 +809,9 @@ public final class ContextInteractionRegistry {
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state, Player player) {
+            if (ObjectContainmentUnitModule.isProtectedContent(level, pos)) {
+                return false;
+            }
             if (block != null && "document_holder".equals(id.getPath())
                     && ScpClassifiedDirectiveMod.MODID.equals(id.getNamespace())) {
                 if (!(level.getBlockEntity(pos)
@@ -751,6 +825,26 @@ public final class ContextInteractionRegistry {
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state) {
+            if (ObjectContainmentUnitModule.isProtectedContent(level, pos)) {
+                return false;
+            }
+            if (block == ObjectContainmentUnitModule.UNIT.get()) {
+                if (!(level.getBlockEntity(pos)
+                        instanceof ObjectContainmentUnitModule.UnitBlockEntity unit)) {
+                    return false;
+                }
+                return switch (interactionKey) {
+                    case "open_object_containment_unit" ->
+                            unit.phase()
+                                    == ObjectContainmentUnitModule.UnitBlockEntity.Phase.CLOSED;
+                    case "close_object_containment_unit" ->
+                            unit.phase()
+                                    == ObjectContainmentUnitModule.UnitBlockEntity.Phase.OPEN;
+                    case "configure_object_containment_unit" ->
+                            !unit.isTransitioning();
+                    default -> true;
+                };
+            }
             if (block == CoreRoomElevatorModule.STATION.get()
                     && interactionKey.startsWith("elevator_station_")) {
                 ElevatorFoundation.TravelDirection direction =

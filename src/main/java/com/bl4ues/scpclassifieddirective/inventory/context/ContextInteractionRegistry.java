@@ -357,24 +357,19 @@ public final class ContextInteractionRegistry {
             double readerY = 13.28094476D / 16.0D;
             double readerZ = 0.5D + 0.90481263D / 16.0D;
 
-            // The opened case is a broad rotated panel, not a tiny button. Use
-            // several points across its authored footprint so looking anywhere
-            // along the lid can select Close. SCPs inside still keep a slightly
-            // higher priority and therefore win when the player actually aims at
-            // the contained object rather than the glass around it.
-            double[][] openLidAnchors = {
-                    {1.02D, 1.02D, 0.5D},
-                    {1.48D, 0.95D, 0.5D},
-                    {1.30D, 1.40D, 0.5D},
-                    {1.10D, 1.80D, 0.5D},
-                    {1.55D, 1.78D, 0.5D}
-            };
+            // One interaction point represents the opened lid. It sits near the
+            // inner visual center of the glass panel; Close gets a hard aim
+            // threshold, so it wins decisively while the crosshair is on the lid
+            // and disappears once the aim moves back onto contained objects.
+            double openLidX = 1.12D;
+            double openLidY = 1.38D;
+            double openLidZ = 0.5D;
 
             registered += addIntegratedRule(configuredIdentities,
                     new InteractionIdentity("block", unitId.toString(),
                             "open_object_containment_unit"),
                     new Rule(Kind.BLOCK, unitId, unit, null,
-                            "open_object_containment_unit", 2.0D, 90,
+                            "open_object_containment_unit", 1.75D, 90,
                             "Open", "Object Containment Unit",
                             true, true, false,
                             readerX, readerY, readerZ,
@@ -382,28 +377,23 @@ public final class ContextInteractionRegistry {
                             RotationMode.HORIZONTAL_FACING, true, true,
                             "player", "card", "card", null, 1.0D, false));
 
-            InteractionIdentity closeIdentity = new InteractionIdentity(
-                    "block", unitId.toString(),
-                    "close_object_containment_unit");
-            for (double[] anchor : openLidAnchors) {
-                registered += addIntegratedRule(configuredIdentities,
-                        closeIdentity,
-                        new Rule(Kind.BLOCK, unitId, unit, null,
-                                "close_object_containment_unit", 2.0D, 80,
-                                "Close", "Object Containment Unit",
-                                true, true, false,
-                                anchor[0], anchor[1], anchor[2],
-                                0.0D, 0.0D, 0.0D,
-                                RotationMode.HORIZONTAL_FACING, true, true,
-                                "player", "hand", "hand", null, 1.0D,
-                                false));
-            }
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", unitId.toString(),
+                            "close_object_containment_unit"),
+                    new Rule(Kind.BLOCK, unitId, unit, null,
+                            "close_object_containment_unit", 1.75D, 120,
+                            "Close", "Object Containment Unit",
+                            true, true, false,
+                            openLidX, openLidY, openLidZ,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "player", "hand", "hand", null, 1.0D, false));
 
             registered += addIntegratedRule(configuredIdentities,
                     new InteractionIdentity("block", unitId.toString(),
                             "configure_object_containment_unit"),
                     new Rule(Kind.BLOCK, unitId, unit, null,
-                            "configure_object_containment_unit", 2.0D, 130,
+                            "configure_object_containment_unit", 1.75D, 130,
                             "Configure", "Object Containment Unit",
                             true, true, false,
                             readerX, readerY, readerZ,
@@ -833,7 +823,8 @@ public final class ContextInteractionRegistry {
         public double promptScale() { return promptScale; }
         public boolean allowOffscreen() { return allowOffscreen; }
         public boolean requiresPreciseAim() {
-            return interactionKey.startsWith("elevator_station_")
+            return "close_object_containment_unit".equals(interactionKey)
+                    || interactionKey.startsWith("elevator_station_")
                     || interactionKey.startsWith("elevator_carriage_");
         }
 

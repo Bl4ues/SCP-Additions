@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.block;
 
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
+import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.init.Scp714Items;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
@@ -58,6 +59,9 @@ public final class Scp714PlacedBlock extends HorizontalDirectionalBlock {
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         BlockPos below = pos.below();
+        if (level.getBlockState(below).is(ObjectContainmentUnitModule.UNIT.get())) {
+            return true;
+        }
         return level.getBlockState(below).isFaceSturdy(level, below, Direction.UP);
     }
 

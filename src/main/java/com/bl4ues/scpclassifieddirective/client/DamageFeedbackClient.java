@@ -208,7 +208,7 @@ public final class DamageFeedbackClient {
                     0.14D + missing * 0.07D);
         }
         return new SplatterStyle(BLOOD_COLOR,
-                0.48D + missing * 0.18D);
+                0.24D + missing * 0.09D);
     }
 
     private static BlockPos findFullBlockBelow(ClientLevel level,

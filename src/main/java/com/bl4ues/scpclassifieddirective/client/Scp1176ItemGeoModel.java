@@ -12,6 +12,9 @@ public final class Scp1176ItemGeoModel extends GeoModel<Scp1176BlockItem> {
             ScpClassifiedDirectiveMod.MODID, "geo/block/scp1176.geo.json");
     static final ResourceLocation TEXTURE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "textures/block/scp1176.png");
+    static final ResourceLocation GLYPH_TEXTURE = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID,
+            "textures/block/scp1176_glyphs.png");
     static final ResourceLocation HONEY_TEXTURE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID,
             "textures/block/scp1176_honey.png");

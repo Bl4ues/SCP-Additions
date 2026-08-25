@@ -24,7 +24,12 @@ public final class KeycardReaderHelper {
 			return;
 		}
 
-		setReaderState(world, BlockPos.containing(x, y, z), highestKeycardLevel(player) >= requiredLevel ? acceptBlock.get().defaultBlockState() : wrongBlock.get().defaultBlockState());
+		int keycardLevel = highestKeycardLevel(player);
+		if (keycardLevel <= 0) {
+			return;
+		}
+
+		setReaderState(world, BlockPos.containing(x, y, z), keycardLevel >= requiredLevel ? acceptBlock.get().defaultBlockState() : wrongBlock.get().defaultBlockState());
 	}
 
 	private static int highestKeycardLevel(Player player) {

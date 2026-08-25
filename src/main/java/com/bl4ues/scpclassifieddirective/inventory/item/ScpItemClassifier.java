@@ -71,6 +71,9 @@ public final class ScpItemClassifier {
             return type == ScpItemType.COIN
                     ? ScpItemType.MISCELLANEOUS : type;
         }
+        if (isCanonicalKeycard(stack)) {
+            return ScpItemType.KEY;
+        }
         if (CANONICAL_SCP_572.equals(
                 BuiltInRegistries.ITEM.getKey(stack.getItem()))) {
             return ScpItemType.WEAPON;
@@ -288,6 +291,20 @@ public final class ScpItemClassifier {
             }
         }
         return Optional.empty();
+    }
+
+    private static boolean isCanonicalKeycard(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (id == null || !"scp_classified_directive".equals(id.getNamespace())) {
+            return false;
+        }
+        return switch (id.getPath()) {
+            case "level_1_keycard", "level_2_keycard", "level_3_keycard",
+                    "level_4_keycard", "level_5_keycard", "level_6_keycard",
+                    "security_credentials" -> true;
+            default -> false;
+        };
     }
 
     private static boolean isCanonicalScpClassifiedDirectiveCoin(ItemStack stack) {

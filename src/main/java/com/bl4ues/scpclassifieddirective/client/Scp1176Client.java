@@ -31,11 +31,11 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
  * Client renderer for SCP-1176.
  *
  * Solid geometry, translucent wall markings and the honey surface are kept in
- * separate render passes. The honey pass deliberately binds a texture alias
- * that has no LabPBR sidecars. The ordinary SCP-1176 texture still has its
- * authored normal/specular maps for the sarcophagus, but shader packs can no
- * longer interpret those unrelated PBR pixels as height/specular data on the
- * transparent honey surface.
+ * separate render passes. Honey and markings use texture aliases so shader
+ * packs only discover PBR sidecars where they are intentional: the sarcophagus
+ * keeps its authored PBR, honey has dedicated liquid PBR, while glyphs and the
+ * canister pictogram preserve alpha without inheriting accidental glow/specular
+ * values from the main atlas.
  */
 public final class Scp1176Client {
     private static final float HONEY_ALPHA = 0.72F;
@@ -63,6 +63,9 @@ public final class Scp1176Client {
                 ScpClassifiedDirectiveMod.MODID, "geo/block/scp1176.geo.json");
         private static final ResourceLocation TEXTURE = new ResourceLocation(
                 ScpClassifiedDirectiveMod.MODID, "textures/block/scp1176.png");
+        private static final ResourceLocation GLYPH_TEXTURE = new ResourceLocation(
+                ScpClassifiedDirectiveMod.MODID,
+                "textures/block/scp1176_glyphs.png");
         private static final ResourceLocation HONEY_TEXTURE = new ResourceLocation(
                 ScpClassifiedDirectiveMod.MODID,
                 "textures/block/scp1176_honey.png");
@@ -159,7 +162,7 @@ public final class Scp1176Client {
                     renderingGlyphLayer = true;
                     try {
                         RenderType glyphs = RenderType.entityTranslucent(
-                                Model.TEXTURE, true);
+                                Model.GLYPH_TEXTURE, true);
                         getRenderer().reRender(bakedModel, poseStack, bufferSource,
                                 animatable, glyphs,
                                 bufferSource.getBuffer(glyphs), partialTick,

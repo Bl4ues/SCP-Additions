@@ -7,12 +7,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
 
@@ -32,6 +34,48 @@ public final class KeycardReaderInteractionEvents {
         return tryHandleInteraction(player, pos, false, false);
     }
 
+    /**
+     * Returns the configurable authorization level for either a wall reader or
+     * another device that deliberately reuses the reader configuration UI.
+     */
+    public static int configurableLevel(Level level, BlockPos pos) {
+        if (level == null || pos == null) return 0;
+
+        KeycardReaderLevels.ReaderDescriptor descriptor =
+                KeycardReaderLevels.describe(level.getBlockState(pos));
+        if (descriptor != null) return descriptor.level();
+
+        if (level.getBlockEntity(pos)
+                instanceof ObjectContainmentUnitModule.UnitBlockEntity unit) {
+            return unit.requiredLevel();
+        }
+        return 0;
+    }
+
+    /** Applies a level without replacing devices that store it in block-entity data. */
+    public static boolean applyConfigurableLevel(Level level, BlockPos pos,
+            int requestedLevel) {
+        if (level == null || pos == null || requestedLevel < 1
+                || requestedLevel > 6) {
+            return false;
+        }
+
+        KeycardReaderLevels.ReaderDescriptor descriptor =
+                KeycardReaderLevels.describe(level.getBlockState(pos));
+        if (descriptor != null) {
+            return descriptor.level() == requestedLevel
+                    || KeycardReaderLevels.replaceLevel(level, pos,
+                            requestedLevel);
+        }
+
+        if (level.getBlockEntity(pos)
+                instanceof ObjectContainmentUnitModule.UnitBlockEntity unit) {
+            unit.setRequiredLevel(requestedLevel);
+            return true;
+        }
+        return false;
+    }
+
     public static boolean tryHandleInteraction(ServerPlayer player, BlockPos pos,
             boolean shiftDown, boolean controlDown) {
         if (player == null || pos == null) {
@@ -43,31 +87,31 @@ public final class KeycardReaderInteractionEvents {
             return false;
         }
 
-        KeycardReaderLevels.ReaderDescriptor descriptor = KeycardReaderLevels.describe(
-                player.level().getBlockState(pos));
-        if (descriptor == null) {
+        int currentLevel = configurableLevel(player.level(), pos);
+        if (currentLevel == 0) {
             return false;
         }
 
         if (controlDown) {
-            int savedLevel = screwdriver.hasTag() ? screwdriver.getTag().getInt(SAVED_LEVEL_TAG) : 0;
+            int savedLevel = screwdriver.hasTag()
+                    ? screwdriver.getTag().getInt(SAVED_LEVEL_TAG) : 0;
             if (savedLevel < 1 || savedLevel > 6) {
                 player.displayClientMessage(Component.translatable(
                         "message.scp_classified_directive.keycard_reader_no_saved_level")
                         .withStyle(ChatFormatting.RED), true);
-            } else if (descriptor.level() == savedLevel
-                    || KeycardReaderLevels.replaceLevel(player.level(), pos, savedLevel)) {
+            } else if (currentLevel == savedLevel
+                    || applyConfigurableLevel(player.level(), pos, savedLevel)) {
                 player.displayClientMessage(Component.translatable(
                         "message.scp_classified_directive.keycard_reader_level_applied", savedLevel)
                         .withStyle(ChatFormatting.GREEN), true);
             }
         } else if (shiftDown) {
-            screwdriver.getOrCreateTag().putInt(SAVED_LEVEL_TAG, descriptor.level());
+            screwdriver.getOrCreateTag().putInt(SAVED_LEVEL_TAG, currentLevel);
             player.displayClientMessage(Component.translatable(
-                    "message.scp_classified_directive.keycard_reader_level_copied", descriptor.level())
+                    "message.scp_classified_directive.keycard_reader_level_copied", currentLevel)
                     .withStyle(ChatFormatting.GREEN), true);
         } else {
-            ScpEntityNetwork.openKeycardReaderScreen(player, pos, descriptor.level());
+            ScpEntityNetwork.openKeycardReaderScreen(player, pos, currentLevel);
         }
         return true;
     }
@@ -86,9 +130,7 @@ public final class KeycardReaderInteractionEvents {
             return;
         }
 
-        KeycardReaderLevels.ReaderDescriptor descriptor = KeycardReaderLevels.describe(
-                event.getLevel().getBlockState(event.getPos()));
-        if (descriptor == null) {
+        if (configurableLevel(event.getLevel(), event.getPos()) == 0) {
             return;
         }
 

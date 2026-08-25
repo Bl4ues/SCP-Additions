@@ -1,6 +1,8 @@
 package com.bl4ues.scpclassifieddirective.inventory.config;
 
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpConsumableType;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
+import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemType;
 import com.bl4ues.scpclassifieddirective.inventory.network.ItemConfigOpenPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.google.gson.Gson;
@@ -40,7 +42,7 @@ public final class ItemConfigManager {
         String type = findItemType(root, idText);
         boolean existing = type != null;
         if (type == null) {
-            type = "MISCELLANEOUS";
+            type = inferDefaultItemType(idText);
         }
         String consumableType = findConsumableType(root, idText);
         if (consumableType.isBlank()) consumableType = inferConsumableType(idText);
@@ -230,6 +232,19 @@ public final class ItemConfigManager {
         } catch (Exception ignored) {
         }
         return "";
+    }
+
+    private static String inferDefaultItemType(String idText) {
+        ResourceLocation id = ResourceLocation.tryParse(idText);
+        if (id == null) return ScpItemType.MISCELLANEOUS.name();
+
+        return ScpItemClassifier.getBuiltInConfiguredType(id)
+                .map(ScpItemType::name)
+                .orElseGet(() -> BuiltInRegistries.ITEM.getOptional(id)
+                        .map(ItemStack::new)
+                        .map(ScpItemClassifier::getType)
+                        .map(ScpItemType::name)
+                        .orElse(ScpItemType.MISCELLANEOUS.name()));
     }
 
     private static String inferConsumableType(String idText) {

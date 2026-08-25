@@ -1,10 +1,11 @@
 package com.bl4ues.scpclassifieddirective.scp1576;
 
+import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
+import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpPickupRouter;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
-import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -74,6 +75,9 @@ public final class Scp1576PlacedBlock extends BaseEntityBlock {
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         BlockPos below = pos.below();
+        if (level.getBlockState(below).is(ObjectContainmentUnitModule.UNIT.get())) {
+            return true;
+        }
         return level.getBlockState(below).isFaceSturdy(level, below, Direction.UP);
     }
 

@@ -44,19 +44,14 @@ abstract class Scp902BlockBase extends BaseEntityBlock
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     /*
-     * Selection and collision deliberately remain the closed-box footprint in
-     * every animation phase. The moving lid is visual only; expanding the shape
-     * while open made the tiny box feel inconsistent and produced an oversized
-     * outline as the legacy open block state took over.
+     * Match only the small closed wooden body. The animated lid and the authored
+     * side-folded piece are visual geometry and must never enlarge the selection
+     * or collision footprint.
      */
-    private static final VoxelShape CLOSED_NORTH =
-            Block.box(3.825D, 0.0D, 7.0D, 9.55D, 1.65D, 9.0D);
-    private static final VoxelShape CLOSED_SOUTH =
-            Block.box(6.45D, 0.0D, 7.0D, 12.175D, 1.65D, 9.0D);
-    private static final VoxelShape CLOSED_EAST =
-            Block.box(7.0D, 0.0D, 3.825D, 9.0D, 1.65D, 9.55D);
-    private static final VoxelShape CLOSED_WEST =
-            Block.box(7.0D, 0.0D, 6.45D, 9.0D, 1.65D, 12.175D);
+    private static final VoxelShape CLOSED_NORTH_SOUTH =
+            Block.box(6.4D, 0.0D, 7.0D, 9.6D, 1.5D, 9.0D);
+    private static final VoxelShape CLOSED_EAST_WEST =
+            Block.box(7.0D, 0.0D, 6.4D, 9.0D, 1.5D, 9.6D);
 
     protected Scp902BlockBase() {
         super(BlockBehaviour.Properties.of()
@@ -148,12 +143,8 @@ abstract class Scp902BlockBase extends BaseEntityBlock
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
             CollisionContext context) {
-        return switch (state.getValue(FACING)) {
-            case SOUTH -> CLOSED_SOUTH;
-            case EAST -> CLOSED_EAST;
-            case WEST -> CLOSED_WEST;
-            default -> CLOSED_NORTH;
-        };
+        return state.getValue(FACING).getAxis() == Direction.Axis.X
+                ? CLOSED_EAST_WEST : CLOSED_NORTH_SOUTH;
     }
 
     @Override

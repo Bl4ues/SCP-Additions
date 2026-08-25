@@ -163,7 +163,7 @@ public final class ObjectContainmentUnitModule {
                 box(6.0D, 4.0D, 6.0D, 10.0D, 12.0D, 10.0D),
                 box(5.0D, 12.0D, 4.0D, 11.0D, 15.0D, 12.0D),
                 box(1.0D, 15.0D, 1.0D, 15.0D, 16.0D, 15.0D),
-                box(15.5D, 12.5D, 5.5D, 20.0D, 15.0D, 11.0D))
+                box(-4.0D, 12.5D, 5.5D, 0.5D, 15.0D, 11.0D))
                 .optimize();
         private static final VoxelShape CLOSED_NORTH = Shapes.or(
                 BODY_NORTH, box(1.0D, 16.0D, 1.0D, 15.0D, 25.75D, 15.0D))
@@ -255,6 +255,14 @@ public final class ObjectContainmentUnitModule {
             }
 
             if (!(level.getBlockEntity(pos) instanceof UnitBlockEntity unit)) {
+                return InteractionResult.PASS;
+            }
+            // An open unit acts as a placement surface whenever either hand is
+            // occupied. Returning PASS lets BlockItems and authored placeable
+            // SCP items use the containment cell above instead of closing the lid.
+            if (unit.isOpenForAccess()
+                    && (!player.getMainHandItem().isEmpty()
+                    || !player.getOffhandItem().isEmpty())) {
                 return InteractionResult.PASS;
             }
             return unit.handleUse(player);
@@ -445,6 +453,9 @@ public final class ObjectContainmentUnitModule {
             }
 
             int keycardLevel = highestKeycardLevel(player);
+            if (keycardLevel <= 0) {
+                return InteractionResult.PASS;
+            }
             boolean accepted = keycardLevel >= requiredLevel;
             playReaderSound(accepted);
             if (accepted) startOpening();

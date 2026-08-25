@@ -1,0 +1,56 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "closed": {
+      "loop": true
+    },
+    "opening": {
+      "animation_length": 1.25,
+      "bones": {
+        "case": {
+          "rotation": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "1.25": {
+              "vector": [0, 0, -97.5],
+              "easing": "easeOutBack"
+            }
+          }
+        }
+      }
+    },
+    "open": {
+      "loop": true,
+      "bones": {
+        "case": {
+          "rotation": {
+            "vector": [0, 0, -97.5],
+            "easing": "easeOutBack"
+          }
+        }
+      }
+    },
+    "closing": {
+      "animation_length": 1.25,
+      "bones": {
+        "case": {
+          "rotation": {
+            "0.0": {
+              "post": {
+                "vector": [0, 0, -97.5]
+              },
+              "lerp_mode": "catmullrom"
+            },
+            "1.25": {
+              "post": {
+                "vector": [0, 0, 0]
+              },
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}

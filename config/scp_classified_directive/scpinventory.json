@@ -45,6 +45,18 @@
       "type": "USABLE"
     },
     {
+      "id": "scp_classified_directive:scp_914_assembly_kit",
+      "type": "PLACEABLE"
+    },
+    {
+      "id": "scp_classified_directive:scp_1576",
+      "type": "USABLE"
+    },
+    {
+      "id": "scp_classified_directive:hazmat_suit",
+      "type": "USABLE"
+    },
+    {
       "id": "encyclopedia_of_common_diseases:encyclopedia_of_common_diseases",
       "type": "USABLE"
     },

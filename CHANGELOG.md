@@ -216,7 +216,7 @@
 
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
-- Added the **Object Containment Unit**, an animated keycard-secured containment pedestal with configurable Level 1–6 access, Screwdriver setup, contextual reader and lid interactions, dedicated opening/closing audio, and protected contained-block interactions while closed;
+- Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added a construction preview for Core Room elevators: holding a Floor Station or Pulley displays a vertical green/red particle guide for valid range and obstruction checks, while structural beams are generated only after a valid Pulley closes the column and are removed when that connection becomes invalid;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;

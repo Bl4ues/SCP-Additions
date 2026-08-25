@@ -1,0 +1,17 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [128, 128],
+  "display": {
+    "thirdperson_righthand": {"translation": [0, -0.75, 0], "scale": [0.26, 0.26, 0.26]},
+    "thirdperson_lefthand": {"translation": [0, -0.75, 0], "scale": [0.26, 0.26, 0.26]},
+    "firstperson_righthand": {"rotation": [0, 113, 0], "translation": [2, -1.5, 0], "scale": [0.35, 0.35, 0.35]},
+    "firstperson_lefthand": {"rotation": [0, 113, 0], "translation": [2, -1.5, 0], "scale": [0.35, 0.35, 0.35]},
+    "ground": {"scale": [0.36, 0.36, 0.36]},
+    "gui": {"rotation": [12, -153, 0], "translation": [0, -8.25, 0], "scale": [0.59, 0.59, 0.59]},
+    "fixed": {"translation": [0, -12.75, 0]}
+  },
+  "textures": {
+    "particle": "scp_classified_directive:block/containment_stand"
+  }
+}

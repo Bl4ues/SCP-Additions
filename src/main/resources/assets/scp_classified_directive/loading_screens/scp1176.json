@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp1176",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp1176_loading.png",
+  "left_title": "SCP-1176",
+  "left_subtitle": "EUCLID",
+  "right_label": "THREAT LEVEL",
+  "right_value": "LOW",
+  "description": "SCP-1176 is the mummified corpse of a human male assumed to have been of Arabian ancestry and to have died in the 10th-11th century AD. In the place of all bodily fluids that would be found in a living human being, SCP-1176 contains a fluid of viscous consistency and golden color, designated SCP-1176-1. Testing of SCP-1176-1 has found it to be chemically identical to clover honey produced by the Anatolian honey bee.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp426",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp426_loading.png",
+  "left_title": "SCP-426",
+  "left_subtitle": "EUCLID",
+  "right_label": "THREAT LEVEL",
+  "right_value": "LOW",
+  "description": "I am an ordinary toaster, able to toast bread when supplied with electricity. However, when any human being mentions me, they inadvertently refer to me in the first person. When in my continuous presence for over two months, individuals begin to identify themselves as a toaster. Unless forcibly restrained, these people will ultimately harm themselves in their attempts to emulate my standard functions.",
+  "description_anchor": "left",
+  "weight": 1.0
+}

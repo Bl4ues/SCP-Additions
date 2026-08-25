@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp902",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp902_loading.png",
+  "left_title": "SCP-902",
+  "left_subtitle": "KETER",
+  "right_label": "THREAT LEVEL",
+  "right_value": "UNKNOWN",
+  "description": "SCP-902 is a destructive object, entity or future cognitohazard held inside a box labeled SCP-902, a wooden box with a sliding lid measuring 12 cm by 18 cm, and 9 cm deep. When SCP-902-A is closed, an audible heartbeat manifests. Individuals exposed to the recording are afflicted with an awareness of SCP-902.",
+  "description_anchor": "center",
+  "weight": 1.0
+}

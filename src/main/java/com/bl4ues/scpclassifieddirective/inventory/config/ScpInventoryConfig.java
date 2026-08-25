@@ -47,6 +47,7 @@ public final class ScpInventoryConfig {
             "scp_classified_directive:screwdriver|USABLE",
             "scp_classified_directive:scp_914_assembly_kit|PLACEABLE",
             "scp_classified_directive:scp_1576|USABLE",
+            "scp_classified_directive:hazmat_suit|USABLE",
             "minecraft:arrow|AMMO",
             "minecraft:spectral_arrow|AMMO",
             "minecraft:tipped_arrow|AMMO",
@@ -67,7 +68,7 @@ public final class ScpInventoryConfig {
     );
 
     private static final List<String> DEFAULT_ITEM_EFFECTS = List.of(
-            "minecraft:leather|NO_STAMINA"
+            "scp_classified_directive:scp_714|SCP_714_PROTECTION"
     );
 
     private static final List<String> DEFAULT_HIDDEN_STATUS_EFFECTS = List.of(

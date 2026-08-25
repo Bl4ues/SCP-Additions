@@ -30,6 +30,8 @@ import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorGeome
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorManager;
 import com.bl4ues.scpclassifieddirective.facility.elevator.ElevatorFoundation;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
+import com.bl4ues.scpclassifieddirective.integration.PlayerItemAccess;
 
 import java.io.File;
 import java.io.FileReader;
@@ -355,19 +357,24 @@ public final class ContextInteractionRegistry {
             double readerY = 13.28094476D / 16.0D;
             double readerZ = 0.5D + 0.90481263D / 16.0D;
 
-            // Keep the prompt on the opened glass lid, but closer to its visual
-            // center than the extreme outside corner. This makes looking at the
-            // lid itself select Close naturally without stealing focus from a
-            // contained SCP, whose Take interaction keeps the higher priority.
-            double openLidX = 1.3550D;
-            double openLidY = 1.4750D;
-            double openLidZ = 0.5D;
+            // The opened case is a broad rotated panel, not a tiny button. Use
+            // several points across its authored footprint so looking anywhere
+            // along the lid can select Close. SCPs inside still keep a slightly
+            // higher priority and therefore win when the player actually aims at
+            // the contained object rather than the glass around it.
+            double[][] openLidAnchors = {
+                    {1.02D, 1.02D, 0.5D},
+                    {1.48D, 0.95D, 0.5D},
+                    {1.30D, 1.40D, 0.5D},
+                    {1.10D, 1.80D, 0.5D},
+                    {1.55D, 1.78D, 0.5D}
+            };
 
             registered += addIntegratedRule(configuredIdentities,
                     new InteractionIdentity("block", unitId.toString(),
                             "open_object_containment_unit"),
                     new Rule(Kind.BLOCK, unitId, unit, null,
-                            "open_object_containment_unit", 2.75D, 90,
+                            "open_object_containment_unit", 2.0D, 90,
                             "Open", "Object Containment Unit",
                             true, true, false,
                             readerX, readerY, readerZ,
@@ -375,23 +382,28 @@ public final class ContextInteractionRegistry {
                             RotationMode.HORIZONTAL_FACING, true, true,
                             "player", "card", "card", null, 1.0D, false));
 
-            registered += addIntegratedRule(configuredIdentities,
-                    new InteractionIdentity("block", unitId.toString(),
-                            "close_object_containment_unit"),
-                    new Rule(Kind.BLOCK, unitId, unit, null,
-                            "close_object_containment_unit", 2.75D, 25,
-                            "Close", "Object Containment Unit",
-                            true, true, false,
-                            openLidX, openLidY, openLidZ,
-                            0.0D, 0.0D, 0.0D,
-                            RotationMode.HORIZONTAL_FACING, true, true,
-                            "player", "hand", "hand", null, 1.0D, false));
+            InteractionIdentity closeIdentity = new InteractionIdentity(
+                    "block", unitId.toString(),
+                    "close_object_containment_unit");
+            for (double[] anchor : openLidAnchors) {
+                registered += addIntegratedRule(configuredIdentities,
+                        closeIdentity,
+                        new Rule(Kind.BLOCK, unitId, unit, null,
+                                "close_object_containment_unit", 2.0D, 80,
+                                "Close", "Object Containment Unit",
+                                true, true, false,
+                                anchor[0], anchor[1], anchor[2],
+                                0.0D, 0.0D, 0.0D,
+                                RotationMode.HORIZONTAL_FACING, true, true,
+                                "player", "hand", "hand", null, 1.0D,
+                                false));
+            }
 
             registered += addIntegratedRule(configuredIdentities,
                     new InteractionIdentity("block", unitId.toString(),
                             "configure_object_containment_unit"),
                     new Rule(Kind.BLOCK, unitId, unit, null,
-                            "configure_object_containment_unit", 2.75D, 130,
+                            "configure_object_containment_unit", 2.0D, 130,
                             "Configure", "Object Containment Unit",
                             true, true, false,
                             readerX, readerY, readerZ,
@@ -669,6 +681,16 @@ public final class ContextInteractionRegistry {
         return value;
     }
 
+    private static boolean hasReaderKeycard(Player player) {
+        return PlayerItemAccess.has(player, stack ->
+                stack.is(ScpClassifiedDirectiveModItems.LEVEL_1_KEYCARD.get())
+                || stack.is(ScpClassifiedDirectiveModItems.LEVEL_2_KEYCARD.get())
+                || stack.is(ScpClassifiedDirectiveModItems.LEVEL_3_KEYCARD.get())
+                || stack.is(ScpClassifiedDirectiveModItems.LEVEL_4_KEYCARD.get())
+                || stack.is(ScpClassifiedDirectiveModItems.LEVEL_5_KEYCARD.get())
+                || stack.is(ScpClassifiedDirectiveModItems.LEVEL_6_KEYCARD.get()));
+    }
+
     private record InteractionIdentity(String type, String id,
             String interactionKey) {
     }
@@ -786,7 +808,13 @@ public final class ContextInteractionRegistry {
 
         public InteractionHand matchingHand(Player player) {
             if (player == null) return null;
-            if (requiredItem == null) return InteractionHand.MAIN_HAND;
+            if (requiredItem == null) {
+                if ("card".equalsIgnoreCase(useItem)
+                        && !hasReaderKeycard(player)) {
+                    return null;
+                }
+                return InteractionHand.MAIN_HAND;
+            }
             Item required = ForgeRegistries.ITEMS.getValue(requiredItem);
             if (required == null) return null;
             if (player.getMainHandItem().is(required)) {

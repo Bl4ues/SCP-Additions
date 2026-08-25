@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
-import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
+import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents;
 
 import java.util.function.Supplier;
 
@@ -47,7 +47,8 @@ public final class KeycardReaderSetLevelPacket {
                 return;
             }
 
-            KeycardReaderLevels.replaceLevel(player.level(), message.pos, message.level);
+            KeycardReaderInteractionEvents.applyConfigurableLevel(
+                    player.level(), message.pos, message.level);
         });
         context.setPacketHandled(true);
     }

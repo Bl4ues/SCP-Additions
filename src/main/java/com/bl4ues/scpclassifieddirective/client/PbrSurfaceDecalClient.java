@@ -186,7 +186,8 @@ public final class PbrSurfaceDecalClient {
                 float remaining = 1.0F - age;
                 float fade = Mth.clamp(remaining / 0.32F, 0.0F, 1.0F);
                 float alpha = decal.maxAlpha * fade;
-                float ticksOld = Math.max(0.0F, now - decal.spawnTick);
+                float ticksOld = (float) Math.max(0L,
+                        now - decal.spawnTick);
                 float size = decal.baseSize + ticksOld * 0.00055F;
 
                 renderQuad(poseStack, corrosionConsumer, camera,

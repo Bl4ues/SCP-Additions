@@ -44,7 +44,7 @@ public final class Scp1176ItemRenderer extends GeoItemRenderer<Scp1176BlockItem>
                 renderingGlyphLayer = true;
                 try {
                     RenderType glyphs = RenderType.entityTranslucent(
-                            Scp1176ItemGeoModel.TEXTURE, true);
+                            Scp1176ItemGeoModel.GLYPH_TEXTURE, true);
                     getRenderer().reRender(bakedModel, poseStack, bufferSource,
                             animatable, glyphs,
                             bufferSource.getBuffer(glyphs), partialTick,

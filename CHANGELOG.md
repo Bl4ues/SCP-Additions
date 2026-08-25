@@ -292,7 +292,7 @@
 
 - Added update-safe integrated defaults for SCP-914 recipes involving SCP: Classified Directive content, allowing new bundled transformations to appear in existing installations without resetting `914recipes.json` while keeping configured recipes and fragments authoritative;
 - Applied the same layered-default system to contextual interactions, automatically exposing new bundled block and entity interactions to existing installations while preserving explicit overrides;
-- Added explicit tombstone support through `\"enabled\": false`: matching SCP-914 recipe IDs and contextual interaction identities can suppress an integrated default without deleting or rewriting bundled data.
+- Added explicit tombstone support through `"enabled": false`: matching SCP-914 recipe IDs and contextual interaction identities can suppress an integrated default without deleting or rewriting bundled data.
 
 ## Accessibility
 

@@ -27,21 +27,43 @@ public final class ScpInventoryConfig {
     private static final File CONFIG_FILE = new File("config/scp_classified_directive/scp_classified_directive.json");
     private static final String BUNDLED_CONFIG = "config/scp_classified_directive/scp_classified_directive.json";
 
+    /**
+     * Integrated item rules are the stable baseline for categories that cannot
+     * be inferred reliably from vanilla item classes. External JSON rules are
+     * merged over these by item id, so an explicit user category always wins
+     * while older configs automatically receive defaults introduced later.
+     */
     private static final List<String> DEFAULT_ITEM_RULES = List.of(
-            "minecraft:flint|COIN",
+            "scp_classified_directive:level_1_keycard|KEY",
+            "scp_classified_directive:level_2_keycard|KEY",
+            "scp_classified_directive:level_3_keycard|KEY",
+            "scp_classified_directive:level_4_keycard|KEY",
+            "scp_classified_directive:level_5_keycard|KEY",
+            "scp_classified_directive:level_6_keycard|KEY",
+            "scp_classified_directive:security_credentials|KEY",
+            "scp_classified_directive:coin|COIN",
+            "scp_classified_directive:scp_572|WEAPON",
+            "scp_classified_directive:scp_714|ACCESSORYHAND",
+            "scp_classified_directive:screwdriver|USABLE",
+            "scp_classified_directive:scp_914_assembly_kit|PLACEABLE",
+            "scp_classified_directive:scp_1576|USABLE",
             "minecraft:arrow|AMMO",
-            "minecraft:leather|ACCESSORYHAND",
-            "minecraft:clock|ACCESSORY",
-            "minecraft:fishing_rod|USABLE",
-            "minecraft:spyglass|USABLE",
+            "minecraft:spectral_arrow|AMMO",
+            "minecraft:tipped_arrow|AMMO",
             "minecraft:bow|WEAPON",
             "minecraft:crossbow|WEAPON",
+            "minecraft:trident|WEAPON",
+            "minecraft:fishing_rod|USABLE",
+            "minecraft:spyglass|USABLE",
             "minecraft:shield|USABLE",
             "minecraft:goat_horn|USABLE",
             "minecraft:ender_pearl|USABLE",
             "minecraft:snowball|USABLE",
             "minecraft:egg|USABLE",
-            "scp_classified_directive:scp_572|WEAPON"
+            "minecraft:writable_book|USABLE",
+            "minecraft:flint_and_steel|USABLE",
+            "minecraft:shears|USABLE",
+            "minecraft:brush|USABLE"
     );
 
     private static final List<String> DEFAULT_ITEM_EFFECTS = List.of(
@@ -184,7 +206,8 @@ public final class ScpInventoryConfig {
 
             JsonObject root = JsonParser.parseReader(new FileReader(CONFIG_FILE)).getAsJsonObject();
             if (root.has("item_rules")) {
-                itemRules = Collections.unmodifiableList(parseItemRules(root.get("item_rules")));
+                itemRules = Collections.unmodifiableList(mergeItemRules(
+                        DEFAULT_ITEM_RULES, parseItemRules(root.get("item_rules"))));
             }
             if (root.has("item_effects")) {
                 itemEffects = Collections.unmodifiableList(parseItemEffects(root.get("item_effects")));
@@ -203,6 +226,26 @@ public final class ScpInventoryConfig {
         }
 
         loaded = true;
+    }
+
+    private static List<String> mergeItemRules(List<String> defaults,
+            List<String> configured) {
+        Map<String, String> merged = new LinkedHashMap<>();
+        for (String rule : defaults) {
+            String id = itemRuleId(rule);
+            if (!id.isBlank()) merged.put(id, rule);
+        }
+        for (String rule : configured) {
+            String id = itemRuleId(rule);
+            if (!id.isBlank()) merged.put(id, rule);
+        }
+        return new ArrayList<>(merged.values());
+    }
+
+    private static String itemRuleId(String rule) {
+        if (rule == null || rule.isBlank()) return "";
+        String[] parts = rule.split("\\|", 2);
+        return parts.length > 0 ? parts[0].trim() : "";
     }
 
     private static List<String> parseItemRules(JsonElement element) {

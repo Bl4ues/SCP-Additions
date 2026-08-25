@@ -35,6 +35,7 @@ public class ScpClassifiedDirectiveModScreens {
 			ItemBlockRenderTypes.setRenderLayer(ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE_2.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE_3.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE_4.get(), RenderType.cutout());
+			ItemBlockRenderTypes.setRenderLayer(Scp714Items.SCP_714_PLACED.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(CoreRoomElevatorModule.FLOOR.get(), RenderType.translucent());
 		});
 	}

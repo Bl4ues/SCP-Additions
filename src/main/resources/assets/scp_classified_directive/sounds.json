@@ -1379,6 +1379,24 @@
       }
     ]
   },
+  "object_containment_unit_open": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:cont_unit_open",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "object_containment_unit_close": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:cont_unit_close",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
   "stone_drag": {
     "subtitle": "subtitles.scp_classified_directive.stone_drag",
     "sounds": [

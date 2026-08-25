@@ -1,8 +1,10 @@
 package com.bl4ues.scpclassifieddirective.item;
 
-import com.bl4ues.scpclassifieddirective.init.Scp714Items;
 import com.bl4ues.scpclassifieddirective.block.Scp714PlacedBlock;
+import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
+import com.bl4ues.scpclassifieddirective.init.Scp714Items;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
@@ -37,12 +39,23 @@ public final class Scp714Item extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-        if (player == null || !player.isShiftKeyDown()) {
+        if (player == null) {
             return InteractionResult.PASS;
         }
 
         Level level = context.getLevel();
-        BlockPos placePos = context.getClickedPos().relative(context.getClickedFace());
+        BlockPos clickedPos = context.getClickedPos();
+        boolean containmentPlacement = context.getClickedFace() == Direction.UP
+                && level.getBlockState(clickedPos).is(
+                        ObjectContainmentUnitModule.UNIT.get())
+                && level.getBlockEntity(clickedPos)
+                        instanceof ObjectContainmentUnitModule.UnitBlockEntity unit
+                && unit.isOpenForAccess();
+        if (!player.isShiftKeyDown() && !containmentPlacement) {
+            return InteractionResult.PASS;
+        }
+
+        BlockPos placePos = clickedPos.relative(context.getClickedFace());
         if (!level.getBlockState(placePos).isAir()) {
             return InteractionResult.FAIL;
         }

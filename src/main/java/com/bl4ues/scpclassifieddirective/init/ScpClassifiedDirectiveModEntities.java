@@ -75,7 +75,9 @@ public class ScpClassifiedDirectiveModEntities {
 
     @SubscribeEvent
     public static void createAttributes(EntityAttributeCreationEvent event) {
-        event.put(SCP_106.get(), Scp106Entity.createAttributes().build());
+        event.put(SCP_106.get(), Scp106Entity.createAttributes()
+                .add(Attributes.MAX_HEALTH, 250.0D)
+                .build());
         event.put(SCP_131_A.get(), AbstractScp131Entity.createAttributes().build());
         event.put(SCP_131_B.get(), AbstractScp131Entity.createAttributes().build());
         event.put(SCP_173.get(), Scp173Entity.createAttributes()
@@ -83,7 +85,9 @@ public class ScpClassifiedDirectiveModEntities {
                 .add(Attributes.ARMOR_TOUGHNESS, 40.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
                 .build());
-        event.put(SCP_939.get(), Scp939Entity.createAttributes().build());
+        event.put(SCP_939.get(), Scp939Entity.createAttributes()
+                .add(Attributes.MAX_HEALTH, 50.0D)
+                .build());
         event.put(ROOMBA.get(), RoombaEntity.createAttributes().build());
         event.put(PLAYER_CORPSE.get(), PlayerCorpseEntity.createAttributes().build());
     }

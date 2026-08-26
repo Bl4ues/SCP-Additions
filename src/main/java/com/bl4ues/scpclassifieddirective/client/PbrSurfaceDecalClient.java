@@ -46,8 +46,12 @@ public final class PbrSurfaceDecalClient {
             ScpClassifiedDirectiveMod.MODID,
             "textures/particle/scp_106_puddle.png");
 
+    // Do not use the view-dependent Z-offset render type here. Shader packs can
+    // turn that camera-relative bias into visible shaking at grazing angles.
+    // The decals instead use an ordinary no-cull pass plus a real world-space
+    // separation from the supporting surface.
     private static final RenderType BLOOD_RENDER_TYPE =
-            RenderType.entityCutoutNoCullZOffset(BLOOD_TEXTURE, false);
+            RenderType.entityCutoutNoCull(BLOOD_TEXTURE, false);
     private static final RenderType CORROSION_RENDER_TYPE =
             RenderType.entityTranslucent(CORROSION_TEXTURE, true);
 
@@ -57,16 +61,16 @@ public final class PbrSurfaceDecalClient {
     private static final float CORROSION_MAX_ALPHA = 0.84F;
     private static final float PORTAL_MAX_ALPHA = 0.82F;
 
-    // These are intentional world-space separations, not cosmetic floating.
-    // 1/32 block is enough to survive shader depth precision at grazing angles
-    // while still reading visually as liquid sitting directly on the surface.
-    private static final double BLOOD_SURFACE_LIFT = 0.032D;
-    private static final double CORROSION_SURFACE_LIFT = 0.032D;
-    private static final double CORROSION_LAYER_STEP = 0.006D;
-    // Portal spawn positions are already surface-offset server-side. This extra
-    // lift replaces the old particle renderer's own 0.055 block offset.
-    private static final double PORTAL_SURFACE_LIFT = 0.040D;
-    private static final double PORTAL_LAYER_STEP = 0.010D;
+    // Roughly one texture pixel of physical separation is intentionally used.
+    // 1/32 block was still close enough for shader depth precision to alternate
+    // between the floor and the decal as the camera angle changed.
+    private static final double BLOOD_SURFACE_LIFT = 0.0675D;
+    private static final double CORROSION_SURFACE_LIFT = 0.0675D;
+    private static final double CORROSION_LAYER_STEP = 0.0125D;
+    // Portal spawn positions are already surface-offset server-side. Keep the
+    // named-texture PBR pass similarly clear of the supporting plane.
+    private static final double PORTAL_SURFACE_LIFT = 0.0725D;
+    private static final double PORTAL_LAYER_STEP = 0.014D;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
 
     private static final List<SurfaceDecal> DECALS = new ArrayList<>();
@@ -533,8 +537,8 @@ public final class PbrSurfaceDecalClient {
             this.rotation = rotation;
             this.firstLobeAngle = firstLobeAngle;
             this.secondLobeAngle = secondLobeAngle;
-            this.firstLobeDistance = firstLobeDistance;
-            this.secondLobeDistance = secondLobeDistance;
+            this.firstLobeDistance = firstDistance;
+            this.secondLobeDistance = secondDistance;
             this.lifetime = lifetime;
             this.spawnTick = spawnTick;
         }

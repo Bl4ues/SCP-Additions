@@ -9,9 +9,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -148,9 +150,15 @@ public final class Scp330Hands {
     }
 
     private static DamageSource damageSource(LivingEntity entity) {
-        return new DamageSource(entity.level().registryAccess()
-                .registryOrThrow(Registries.DAMAGE_TYPE)
-                .getHolderOrThrow(DAMAGE_TYPE)) {
+        var damageRegistry = entity.level().registryAccess()
+                .registryOrThrow(Registries.DAMAGE_TYPE);
+        var genericType = damageRegistry.getHolderOrThrow(DamageTypes.GENERIC);
+        return new DamageSource(damageRegistry.getHolderOrThrow(DAMAGE_TYPE)) {
+            @Override
+            public boolean is(TagKey<DamageType> tag) {
+                return super.is(tag) || genericType.is(tag);
+            }
+
             @Override
             public Component getLocalizedDeathMessage(LivingEntity victim) {
                 return Component.translatable("death.attack.scp330",

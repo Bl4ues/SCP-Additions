@@ -3,7 +3,6 @@ package com.bl4ues.scpclassifieddirective.procedures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,10 +16,7 @@ import com.bl4ues.scpclassifieddirective.entity.Scp106Entity;
 import com.bl4ues.scpclassifieddirective.event.Scp106AudioEvents;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 public final class TeslaGatePulseHelper {
@@ -34,34 +30,12 @@ public final class TeslaGatePulseHelper {
      * Visual electricity is client-side and deliberately not emitted here.
      */
     public static void damageAt(LevelAccessor world, BlockPos pos) {
-        damageAt(world, pos, List.of());
-    }
-
-    /**
-     * Applies the pulse to entities currently crossing the arc and to entities
-     * remembered crossing it while this exact charge was arming. Kept as a
-     * compatibility overload while the gate controller transitions away from
-     * delayed charge-crossing damage.
-     */
-    public static void damageAt(LevelAccessor world, BlockPos pos,
-            Collection<UUID> rememberedCrossers) {
         AABB lethalVolume = TeslaGateVolume.lethalArcAt(world, pos);
-        LinkedHashSet<LivingEntity> entities = new LinkedHashSet<>(
-                world.getEntitiesOfClass(
-                        LivingEntity.class,
-                        TeslaGateVolume.motionCandidates(lethalVolume),
-                        entity -> TeslaGateVolume.intersectsOrCrossed(entity,
-                                lethalVolume)));
-
-        if (world instanceof ServerLevel server && rememberedCrossers != null) {
-            for (UUID uuid : rememberedCrossers) {
-                if (server.getEntity(uuid) instanceof LivingEntity living
-                        && living.isAlive()) {
-                    entities.add(living);
-                }
-            }
-        }
-
+        List<LivingEntity> entities = world.getEntitiesOfClass(
+                LivingEntity.class,
+                TeslaGateVolume.motionCandidates(lethalVolume),
+                entity -> TeslaGateVolume.intersectsOrCrossed(entity,
+                        lethalVolume));
         for (LivingEntity living : entities) {
             damageEntity(living);
         }

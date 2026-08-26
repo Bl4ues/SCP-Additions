@@ -120,7 +120,7 @@
       {
         "name": "scp_classified_directive:tesla_loop",
         "stream": false,
-        "volume": 1.0
+        "volume": 2
       }
     ]
   },

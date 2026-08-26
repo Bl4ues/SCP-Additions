@@ -31,9 +31,13 @@ public final class TeslaArcParticle extends TextureSheetParticle {
         this.initialSize = 0.043F + this.random.nextFloat() * 0.020F;
         this.quadSize = initialSize;
 
-        float whiteBias = 0.80F + this.random.nextFloat() * 0.18F;
-        this.rCol = 0.62F + whiteBias * 0.36F;
-        this.gCol = 0.82F + whiteBias * 0.18F;
+        // Keep a saturated electric-blue base so shader bloom can push the
+        // overlapping core toward blue-white without bleaching the whole bolt
+        // into plain white. Slight per-particle variation prevents a flat neon
+        // strip while preserving the SCP: Unity-like cold-blue appearance.
+        float variation = this.random.nextFloat();
+        this.rCol = 0.24F + variation * 0.10F;
+        this.gCol = 0.58F + variation * 0.12F;
         this.bCol = 1.0F;
         this.initialAlpha = 0.88F + this.random.nextFloat() * 0.12F;
         this.alpha = initialAlpha;

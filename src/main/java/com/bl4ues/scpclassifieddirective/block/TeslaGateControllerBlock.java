@@ -77,7 +77,9 @@ public abstract class TeslaGateControllerBlock extends BaseEntityBlock
                 ? createTickerHelper(type,
                         ScpClassifiedDirectiveModBlockEntities.TESLA_GATE.get(),
                         TeslaGateBlockEntity::clientTick)
-                : null;
+                : createTickerHelper(type,
+                        ScpClassifiedDirectiveModBlockEntities.TESLA_GATE.get(),
+                        TeslaGateBlockEntity::serverTick);
     }
 
     @Override
@@ -94,7 +96,6 @@ public abstract class TeslaGateControllerBlock extends BaseEntityBlock
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        // Local physical collision comes from the invisible structure blocks.
         return Shapes.empty();
     }
 

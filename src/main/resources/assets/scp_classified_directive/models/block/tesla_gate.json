@@ -1,10 +1,111 @@
 {
-  "parent": "scp_classified_directive:custom/teslagateinactive",
-  "textures": {
-    "all": "scp_classified_directive:block/tesla",
-    "particle": "scp_classified_directive:block/tesla",
-    "3": "scp_classified_directive:block/warning",
-    "4": "scp_classified_directive:block/teslagate2"
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    256,
+    256
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "scale": [
+        0.07,
+        0.07,
+        0.07
+      ]
+    },
+    "thirdperson_lefthand": {
+      "scale": [
+        0.07,
+        0.07,
+        0.07
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -32,
+        0
+      ],
+      "translation": [
+        1.25,
+        0,
+        0
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        -32,
+        0
+      ],
+      "translation": [
+        1.25,
+        0,
+        0
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ]
+    },
+    "ground": {
+      "scale": [
+        0.14,
+        0.14,
+        0.14
+      ]
+    },
+    "gui": {
+      "rotation": [
+        20,
+        34,
+        0
+      ],
+      "translation": [
+        3.5,
+        -6.25,
+        0
+      ],
+      "scale": [
+        0.23,
+        0.23,
+        0.23
+      ]
+    },
+    "head": {
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "fixed": {
+      "translation": [
+        3.5,
+        -6.75,
+        0
+      ],
+      "scale": [
+        0.22,
+        0.22,
+        0.22
+      ]
+    },
+    "on_shelf": {
+      "scale": [
+        0.18,
+        0.18,
+        0.18
+      ]
+    }
   },
-  "render_type": "translucent"
+  "textures": {
+    "particle": "scp_classified_directive:block/tesla_gate"
+  }
 }

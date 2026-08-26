@@ -147,6 +147,7 @@ public final class Scp106SpawnEvents {
 
         scp106.moveTo(placement.position().x, placement.position().y,
                 placement.position().z, placement.yaw(), 0.0F);
+        scp106.setHealth(scp106.getMaxHealth());
         scp106.beginNaturalEncounter(player, placement.emergence());
         return level.addFreshEntity(scp106) ? scp106 : null;
     }

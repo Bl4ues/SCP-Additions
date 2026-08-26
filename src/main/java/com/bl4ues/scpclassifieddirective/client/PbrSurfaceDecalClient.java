@@ -31,9 +31,12 @@ import java.util.List;
  * ordinary named textures instead of the particle atlas.
  *
  * <p>The particle atlas does not expose per-sprite LabPBR sidecars in the same
- * way block/entity texture bindings do. Drawing these short-lived floor quads
- * through entityTranslucent gives shader packs a concrete base texture path,
- * allowing splatter_s and scp_106_puddle_n/_s to participate normally.</p>
+ * way block/entity texture bindings do. These decals therefore use entity
+ * render types with a concrete base texture path so shader packs can discover
+ * splatter_s and scp_106_puddle_n/_s normally. Blood deliberately uses the
+ * cutout + z-offset entity path: it stays anchored to the supporting surface,
+ * avoids translucent depth sorting against the floor, and clips the soft alpha
+ * fringe instead of letting shader bloom turn that fringe into a bright halo.</p>
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -46,13 +49,17 @@ public final class PbrSurfaceDecalClient {
             "textures/particle/scp_106_puddle.png");
 
     private static final RenderType BLOOD_RENDER_TYPE =
-            RenderType.entityTranslucent(BLOOD_TEXTURE, true);
+            RenderType.entityCutoutNoCullZOffset(BLOOD_TEXTURE, false);
     private static final RenderType CORROSION_RENDER_TYPE =
             RenderType.entityTranslucent(CORROSION_TEXTURE, true);
 
     private static final int BLOOD_LIFETIME_TICKS = 10 * 20;
     private static final float BLOOD_MAX_ALPHA = 0.90F;
     private static final float BLOOD_FADE_PORTION = 0.30F;
+    // The damage sampler already places the anchor fractionally above the
+    // support block. Keep an additional renderer-local lift so shader depth
+    // precision can never make the decal fight the floor while the camera moves.
+    private static final double BLOOD_SURFACE_LIFT = 0.010D;
     private static final float CORROSION_MAX_ALPHA = 0.84F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
 
@@ -174,7 +181,7 @@ public final class PbrSurfaceDecalClient {
                         0.0F, 1.0F);
                 fade = fade * fade * (3.0F - 2.0F * fade);
                 renderQuad(poseStack, bloodConsumer, camera,
-                        decal.x, decal.y, decal.z,
+                        decal.x, decal.y + BLOOD_SURFACE_LIFT, decal.z,
                         decal.baseSize * 1.16F, decal.baseSize * 0.92F,
                         decal.rotation, decal.color,
                         BLOOD_MAX_ALPHA * fade, light);

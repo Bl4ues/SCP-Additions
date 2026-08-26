@@ -25,12 +25,8 @@ public class TeslaGateUpdateTickProcedure {
     public static boolean execute(LevelAccessor world, double x, double y,
             double z) {
         BlockPos gatePos = BlockPos.containing(x, y, z);
-        if (!Scp079FacilityAccessManager.isAuxiliaryPowerOnline(world)) {
-            return false;
-        }
-        if (FacilityStructureBreakGuard.isBeingMined(world, gatePos)) {
-            return false;
-        }
+        if (!Scp079FacilityAccessManager.isAuxiliaryPowerOnline(world)) return false;
+        if (FacilityStructureBreakGuard.isBeingMined(world, gatePos)) return false;
 
         boolean manualOverride = world.getLevelData().getGameRules()
                 .getBoolean(ScpClassifiedDirectiveModGameRules.TESLAGATEMANUALOVERRIDE);
@@ -43,36 +39,26 @@ public class TeslaGateUpdateTickProcedure {
                     .set(true, level.getServer());
             teslaGateOn = true;
         }
-        if (!teslaGateOn && !manualOverride) {
-            return false;
-        }
+        if (!teslaGateOn && !manualOverride) return false;
 
         int activationDelay = manualOverride ? 1 : 5;
         ResourceLocation activationSound = new ResourceLocation(
-                "scp_classified_directive", manualOverride
-                ? "overcharge" : "teslaactivate");
+                "scp_classified_directive", manualOverride ? "overcharge" : "teslaactivate");
         float activationVolume = manualOverride ? 2.0F : 1.0F;
 
-        AABB detectionVolume = TeslaGateVolume.at(x, y, z);
+        AABB detectionVolume = TeslaGateVolume.sensorAt(world, gatePos);
         List<LivingEntity> occupants = world.getEntitiesOfClass(
-                LivingEntity.class,
-                TeslaGateVolume.motionCandidates(detectionVolume),
-                entity -> TeslaGateVolume.intersectsOrCrossed(entity,
-                        detectionVolume));
-        if (occupants.isEmpty()) {
-            return false;
-        }
+                LivingEntity.class, TeslaGateVolume.motionCandidates(detectionVolume),
+                entity -> TeslaGateVolume.intersectsOrCrossed(entity, detectionVolume));
+        if (occupants.isEmpty()) return false;
 
         AABB lethalVolume = TeslaGateVolume.lethalArcAt(world, gatePos);
         List<LivingEntity> lethalOccupants = occupants.stream()
-                .filter(entity -> TeslaGateVolume.intersectsOrCrossed(entity,
-                        lethalVolume))
+                .filter(entity -> TeslaGateVolume.intersectsOrCrossed(entity, lethalVolume))
                 .toList();
         if (world instanceof ServerLevel server
                 && Scp079TeslaSuppression.shouldSuppress(server, gatePos,
-                occupants, lethalOccupants, manualOverride)) {
-            return false;
-        }
+                occupants, lethalOccupants, manualOverride)) return false;
 
         if (world instanceof ServerLevel server
                 && occupants.stream().anyMatch(ServerPlayer.class::isInstance)) {

@@ -9,53 +9,51 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/** Separate Tesla Gate sensing and visible-arc discharge footprints. */
+/** Sensor and discharge volumes for the wider, floor-anchored Tesla Gate. */
 public final class TeslaGateVolume {
-    private static final double ARC_SIDE_MIN = -6.0D / 16.0D;
-    private static final double ARC_SIDE_MAX = 22.0D / 16.0D;
-    private static final double ARC_Y_MIN = -15.0D / 16.0D;
-    private static final double ARC_Y_MAX = 27.0D / 16.0D;
-    private static final double ARC_DEPTH_MIN = 0.0D;
-    private static final double ARC_DEPTH_MAX = 1.0D;
+    private static final double SENSOR_HALF_DEPTH = 1.5D; // three blocks deep
+    private static final double ARC_HALF_DEPTH = 0.5D;    // one block thick
+    private static final double ARC_HALF_WIDTH = 1.10D;
+    private static final double Y_MIN = 0.05D;
+    private static final double Y_MAX = 3.65D;
     private static final double MOTION_QUERY_MARGIN = 2.0D;
 
     private TeslaGateVolume() {
     }
 
-    /** Broad 3x3x3 sensor used only to decide when the gate should activate. */
-    public static AABB at(double x, double y, double z) {
-        BlockPos controller = BlockPos.containing(x, y, z);
-        return new AABB(controller).inflate(1.0D);
+    public static AABB sensorAt(LevelAccessor world, BlockPos controller) {
+        return oriented(controller, facing(world, controller), SENSOR_HALF_DEPTH);
     }
 
-    /**
-     * Exact bounds of the model's shock element. Damage is limited to the
-     * visible opening and rotates with the gate while the broad sensor remains
-     * unchanged.
-     */
     public static AABB lethalArcAt(LevelAccessor world, BlockPos controller) {
-        BlockState state = world.getBlockState(controller);
-        Direction facing = state.hasProperty(HorizontalDirectionalBlock.FACING)
-                ? state.getValue(HorizontalDirectionalBlock.FACING)
-                : Direction.NORTH;
-        return lethalArcAt(controller, facing);
+        return oriented(controller, facing(world, controller), ARC_HALF_DEPTH);
     }
 
     static AABB lethalArcAt(BlockPos controller, Direction facing) {
-        double minY = controller.getY() + ARC_Y_MIN;
-        double maxY = controller.getY() + ARC_Y_MAX;
+        return oriented(controller, facing, ARC_HALF_DEPTH);
+    }
+
+    private static Direction facing(LevelAccessor world, BlockPos controller) {
+        BlockState state = world.getBlockState(controller);
+        return state.hasProperty(HorizontalDirectionalBlock.FACING)
+                ? state.getValue(HorizontalDirectionalBlock.FACING)
+                : Direction.NORTH;
+    }
+
+    private static AABB oriented(BlockPos controller, Direction facing,
+            double halfDepth) {
+        double centerX = controller.getX() + 0.5D;
+        double centerZ = controller.getZ() + 0.5D;
+        double minY = controller.getY() + Y_MIN;
+        double maxY = controller.getY() + Y_MAX;
         if (facing.getAxis() == Direction.Axis.X) {
-            return new AABB(
-                    controller.getX() + ARC_DEPTH_MIN, minY,
-                    controller.getZ() + ARC_SIDE_MIN,
-                    controller.getX() + ARC_DEPTH_MAX, maxY,
-                    controller.getZ() + ARC_SIDE_MAX);
+            return new AABB(centerX - halfDepth, minY,
+                    centerZ - ARC_HALF_WIDTH, centerX + halfDepth, maxY,
+                    centerZ + ARC_HALF_WIDTH);
         }
-        return new AABB(
-                controller.getX() + ARC_SIDE_MIN, minY,
-                controller.getZ() + ARC_DEPTH_MIN,
-                controller.getX() + ARC_SIDE_MAX, maxY,
-                controller.getZ() + ARC_DEPTH_MAX);
+        return new AABB(centerX - ARC_HALF_WIDTH, minY,
+                centerZ - halfDepth, centerX + ARC_HALF_WIDTH, maxY,
+                centerZ + halfDepth);
     }
 
     public static AABB motionCandidates(AABB volume) {
@@ -70,18 +68,12 @@ public final class TeslaGateVolume {
     public static boolean intersectsOrCrossed(Entity entity, AABB volume) {
         if (!entity.isAlive()) return false;
         if (entity.getBoundingBox().intersects(volume)) return true;
-
         double halfWidth = Math.max(0.01D, entity.getBbWidth() * 0.5D);
         double halfHeight = Math.max(0.01D, entity.getBbHeight() * 0.5D);
-        AABB centerPathTarget = volume.inflate(halfWidth, halfHeight,
-                halfWidth);
-        Vec3 previousCenter = new Vec3(entity.xo,
-                entity.yo + halfHeight, entity.zo);
-        Vec3 currentCenter = new Vec3(entity.getX(),
-                entity.getY() + halfHeight, entity.getZ());
-        return centerPathTarget.contains(previousCenter)
-                || centerPathTarget.contains(currentCenter)
-                || centerPathTarget.clip(previousCenter, currentCenter)
-                .isPresent();
+        AABB target = volume.inflate(halfWidth, halfHeight, halfWidth);
+        Vec3 previous = new Vec3(entity.xo, entity.yo + halfHeight, entity.zo);
+        Vec3 current = new Vec3(entity.getX(), entity.getY() + halfHeight, entity.getZ());
+        return target.contains(previous) || target.contains(current)
+                || target.clip(previous, current).isPresent();
     }
 }

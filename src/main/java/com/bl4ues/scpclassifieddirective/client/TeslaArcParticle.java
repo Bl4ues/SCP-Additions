@@ -9,31 +9,33 @@ import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
 
 /**
- * Short-lived, full-bright particle used as a point along procedural Tesla arcs.
- * The line shape itself is produced by TeslaGateElectricity spawning these along
- * randomized polyline segments, so the particle can remain deliberately cheap.
+ * Tiny full-bright samples used to draw a procedural Tesla bolt. The generator
+ * places them densely enough that neighboring quads overlap into a continuous
+ * line, so individual particles deliberately do not drift like sparks.
  */
 public final class TeslaArcParticle extends TextureSheetParticle {
     private final float initialAlpha;
+    private final float initialSize;
 
     private TeslaArcParticle(ClientLevel level, double x, double y, double z,
             double velocityX, double velocityY, double velocityZ,
             SpriteSet sprites) {
         super(level, x, y, z, velocityX, velocityY, velocityZ);
-        this.xd = velocityX * 0.08D;
-        this.yd = velocityY * 0.08D;
-        this.zd = velocityZ * 0.08D;
+        this.xd = 0.0D;
+        this.yd = 0.0D;
+        this.zd = 0.0D;
         this.gravity = 0.0F;
-        this.friction = 0.72F;
+        this.friction = 1.0F;
         this.hasPhysics = false;
-        this.lifetime = 3 + this.random.nextInt(3);
-        this.quadSize = 0.055F + this.random.nextFloat() * 0.035F;
+        this.lifetime = 2 + this.random.nextInt(2);
+        this.initialSize = 0.043F + this.random.nextFloat() * 0.020F;
+        this.quadSize = initialSize;
 
-        float whiteBias = 0.72F + this.random.nextFloat() * 0.20F;
-        this.rCol = 0.45F + whiteBias * 0.45F;
-        this.gCol = 0.78F + whiteBias * 0.20F;
+        float whiteBias = 0.80F + this.random.nextFloat() * 0.18F;
+        this.rCol = 0.62F + whiteBias * 0.36F;
+        this.gCol = 0.82F + whiteBias * 0.18F;
         this.bCol = 1.0F;
-        this.initialAlpha = 0.78F + this.random.nextFloat() * 0.20F;
+        this.initialAlpha = 0.88F + this.random.nextFloat() * 0.12F;
         this.alpha = initialAlpha;
         pickSprite(sprites);
     }
@@ -44,7 +46,10 @@ public final class TeslaArcParticle extends TextureSheetParticle {
         if (removed) return;
         float life = age / (float) Math.max(1, lifetime);
         alpha = initialAlpha * (1.0F - life * life);
-        quadSize *= 0.94F;
+        quadSize = initialSize * (1.0F - life * 0.18F);
+        xd = 0.0D;
+        yd = 0.0D;
+        zd = 0.0D;
     }
 
     @Override

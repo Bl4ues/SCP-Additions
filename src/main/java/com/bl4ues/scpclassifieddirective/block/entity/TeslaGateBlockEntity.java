@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.block.entity;
 
+import com.bl4ues.scpclassifieddirective.client.TeslaGateAudioClient;
 import com.bl4ues.scpclassifieddirective.client.TeslaGateElectricity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
@@ -125,6 +126,7 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
 
     public static void clientTick(Level level, BlockPos pos, BlockState state,
             TeslaGateBlockEntity blockEntity) {
+        TeslaGateAudioClient.ensureLoop(level, pos, blockEntity);
         TeslaGateElectricity.clientTick(level, pos, state, blockEntity);
     }
 

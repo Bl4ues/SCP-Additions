@@ -11,8 +11,11 @@ import net.minecraft.world.phys.Vec3;
 
 /** Sensor and discharge volumes for the wider, floor-anchored Tesla Gate. */
 public final class TeslaGateVolume {
-    private static final double SENSOR_HALF_DEPTH = 1.5D; // three blocks deep
-    private static final double ARC_HALF_DEPTH = 0.5D;    // one block thick
+    // The old three-block-deep sensor let a sprinting player cross the lethal
+    // plane before the alarm's fixed discharge cue completed. The physical arc
+    // stays one block thick; only the warning/arming volume reaches farther out.
+    private static final double SENSOR_HALF_DEPTH = 2.75D; // 5.5 blocks deep
+    private static final double ARC_HALF_DEPTH = 0.5D;     // one block thick
     private static final double ARC_HALF_WIDTH = 1.10D;
     private static final double Y_MIN = 0.05D;
     private static final double Y_MAX = 3.65D;

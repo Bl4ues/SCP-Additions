@@ -31,15 +31,14 @@ public final class TeslaArcParticle extends TextureSheetParticle {
         this.initialSize = 0.043F + this.random.nextFloat() * 0.020F;
         this.quadSize = initialSize;
 
-        // Pale blue-white core with enough saturation left in the edges for
-        // shader bloom to resemble the cold electrical glow in the references.
-        // The previous pass was too dark/cyan; this intentionally lifts both
-        // luminance and the red/green channels without returning to plain white.
+        // Saturated electric blue with a slight violet pull. Shader bloom can
+        // still create the hot blue-white core, but the source itself remains
+        // strongly coloured instead of washing out to pale cyan/white.
         float variation = this.random.nextFloat();
-        this.rCol = 0.50F + variation * 0.08F;
-        this.gCol = 0.76F + variation * 0.10F;
+        this.rCol = 0.34F + variation * 0.07F;
+        this.gCol = 0.43F + variation * 0.07F;
         this.bCol = 1.0F;
-        this.initialAlpha = 0.97F + this.random.nextFloat() * 0.03F;
+        this.initialAlpha = 0.99F;
         this.alpha = initialAlpha;
         pickSprite(sprites);
     }

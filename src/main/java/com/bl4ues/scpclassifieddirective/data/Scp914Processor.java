@@ -230,7 +230,7 @@ public final class Scp914Processor {
         AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
         if (!progress.isDone()) {
             for (String criterion : progress.getRemainingCriteria()) {
-                player.getAdvancements().award(criterion);
+                player.getAdvancements().award(advancement, criterion);
             }
         }
     }

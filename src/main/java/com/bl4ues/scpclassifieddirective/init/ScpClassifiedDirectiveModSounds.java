@@ -19,6 +19,10 @@ public class ScpClassifiedDirectiveModSounds {
 	public static final RegistryObject<SoundEvent> OVERCHARGE = REGISTRY.register("overcharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "overcharge")));
 	public static final RegistryObject<SoundEvent> TESLAREADY = REGISTRY.register("teslaready", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "teslaready")));
 	public static final RegistryObject<SoundEvent> TESLARECHARGE = REGISTRY.register("teslarecharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "teslarecharge")));
+	public static final RegistryObject<SoundEvent> TESLA_ALARM = REGISTRY.register("tesla_alarm", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "tesla_alarm")));
+	public static final RegistryObject<SoundEvent> TESLA_DISCHARGE = REGISTRY.register("tesla_discharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "tesla_discharge")));
+	public static final RegistryObject<SoundEvent> TESLA_OVERRIDE_DISCHARGE = REGISTRY.register("tesla_override_discharge", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "tesla_override_discharge")));
+	public static final RegistryObject<SoundEvent> TESLA_LOOP = REGISTRY.register("tesla_loop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "tesla_loop")));
 	public static final RegistryObject<SoundEvent> CLICK = REGISTRY.register("click", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "click")));
 	public static final RegistryObject<SoundEvent> CLICK_1 = REGISTRY.register("click_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "click_1")));
 	public static final RegistryObject<SoundEvent> CLICK_2 = REGISTRY.register("click_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "click_2")));

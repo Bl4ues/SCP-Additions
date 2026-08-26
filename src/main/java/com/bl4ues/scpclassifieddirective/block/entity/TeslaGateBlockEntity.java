@@ -36,10 +36,10 @@ import java.util.List;
  */
 public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockEntity {
     public static final int DISCHARGE_TICK = 25; // normal discharge at 1.25 s
-    public static final int OVERRIDE_DISCHARGE_TICK = DISCHARGE_TICK + 20; // manual override +1 s
+    public static final int OVERRIDE_DISCHARGE_TICK = DISCHARGE_TICK + 10; // manual override +0.5 s
     public static final int NORMAL_SOUND_START_TICK = 10; // +0.75 s = normal discharge tick
     public static final int NORMAL_SEQUENCE_TICKS = 80;
-    public static final int OVERRIDE_SEQUENCE_TICKS = 130;
+    public static final int OVERRIDE_SEQUENCE_TICKS = 110;
 
     public enum Sequence {
         IDLE(0), NORMAL(1), OVERRIDE(2);

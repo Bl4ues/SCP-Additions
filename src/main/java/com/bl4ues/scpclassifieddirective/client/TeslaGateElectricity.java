@@ -53,6 +53,8 @@ public final class TeslaGateElectricity {
         float jitter = 0.16F;
         float branchChance = 0.0F;
         boolean override = sequence == TeslaGateBlockEntity.Sequence.OVERRIDE;
+        boolean overrideDischarged = override
+                && elapsed >= TeslaGateBlockEntity.OVERRIDE_DISCHARGE_TICK;
 
         if (sequence == TeslaGateBlockEntity.Sequence.IDLE) {
             if (approach <= 0.0F) return;
@@ -84,21 +86,33 @@ public final class TeslaGateElectricity {
                 branchChance = 0.18F + 0.20F * strength;
             }
         } else if (override) {
-            float strength = overrideStrength(elapsed);
-            if (strength <= 0.0F) {
-                if (random.nextFloat() < 0.22F) arcs = 1;
+            if (!overrideDischarged) {
+                float charge = Mth.clamp(elapsed
+                        / (float) TeslaGateBlockEntity.OVERRIDE_DISCHARGE_TICK,
+                        0.0F, 1.0F);
+                if (random.nextFloat() < 0.08F + charge * 0.44F) {
+                    arcs = 1 + (charge > 0.82F
+                            && random.nextFloat() < 0.28F ? 1 : 0);
+                }
+                jitter = 0.11F + charge * 0.10F;
+                branchChance = 0.08F + charge * 0.15F;
             } else {
-                arcs = Math.min(OVERRIDE_MAX_ARCS,
-                        Math.max(2, Math.round(1.0F
-                                + strength * (OVERRIDE_MAX_ARCS - 1))));
+                float strength = overrideStrength(elapsed);
+                if (strength <= 0.0F) {
+                    if (random.nextFloat() < 0.22F) arcs = 1;
+                } else {
+                    arcs = Math.min(OVERRIDE_MAX_ARCS,
+                            Math.max(2, Math.round(1.0F
+                                    + strength * (OVERRIDE_MAX_ARCS - 1))));
+                }
+                jitter = 0.25F + 0.08F * strength;
+                branchChance = 0.38F + 0.30F * strength;
             }
-            jitter = 0.25F + 0.08F * strength;
-            branchChance = 0.38F + 0.30F * strength;
         }
 
         for (int i = 0; i < arcs; i++) {
             spawnFrameArc(level, pos, state, random, jitter, branchChance,
-                    override);
+                    overrideDischarged);
         }
     }
 
@@ -119,9 +133,12 @@ public final class TeslaGateElectricity {
     }
 
     private static float overrideStrength(long elapsed) {
-        if (elapsed <= 80L) return 1.0F;
-        if (elapsed >= 100L) return 0.0F;
-        return 1.0F - (elapsed - 80L) / 20.0F;
+        // Manual override discharge was moved one second later to match the
+        // uploaded audio transient. Preserve the same post-shot envelope by
+        // shifting the strong and fade windows forward by the same 20 ticks.
+        if (elapsed <= 100L) return 1.0F;
+        if (elapsed >= 120L) return 0.0F;
+        return 1.0F - (elapsed - 100L) / 20.0F;
     }
 
     private static void spawnFrameArc(Level level, BlockPos pos,

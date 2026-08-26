@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -32,9 +33,9 @@ import java.util.List;
  * <p>The particle atlas does not expose per-sprite LabPBR sidecars in the same
  * way named entity textures do. These decals therefore render through concrete
  * texture paths so splatter_s and scp_106_puddle_n/_s remain available to
- * shader packs. Every flat stain is deliberately lifted from the support plane
- * by a small but real world-space distance; relying on nearly-coplanar polygon
- * offset was not stable with shaders at grazing camera angles.</p>
+ * shader packs. The geometry stays essentially coplanar with its supporting
+ * surface; a raster depth bias resolves z-fighting without physically lifting
+ * the stain into a camera-visible second plane.</p>
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -46,10 +47,9 @@ public final class PbrSurfaceDecalClient {
             ScpClassifiedDirectiveMod.MODID,
             "textures/particle/scp_106_puddle.png");
 
-    // Do not use the view-dependent Z-offset render type here. Shader packs can
-    // turn that camera-relative bias into visible shaking at grazing angles.
-    // The decals instead use an ordinary no-cull pass plus a real world-space
-    // separation from the supporting surface.
+    // Keep ordinary entity render types so shader packs can resolve the named
+    // LabPBR sidecars. Depth separation is handled when the batch is flushed,
+    // not by VIEW_OFFSET_Z_LAYERING and not by visibly floating the vertices.
     private static final RenderType BLOOD_RENDER_TYPE =
             RenderType.entityCutoutNoCull(BLOOD_TEXTURE, false);
     private static final RenderType CORROSION_RENDER_TYPE =
@@ -61,16 +61,20 @@ public final class PbrSurfaceDecalClient {
     private static final float CORROSION_MAX_ALPHA = 0.84F;
     private static final float PORTAL_MAX_ALPHA = 0.82F;
 
-    // Roughly one texture pixel of physical separation is intentionally used.
-    // 1/32 block was still close enough for shader depth precision to alternate
-    // between the floor and the decal as the camera angle changed.
-    private static final double BLOOD_SURFACE_LIFT = 0.0675D;
-    private static final double CORROSION_SURFACE_LIFT = 0.0675D;
-    private static final double CORROSION_LAYER_STEP = 0.0125D;
-    // Portal spawn positions are already surface-offset server-side. Keep the
-    // named-texture PBR pass similarly clear of the supporting plane.
-    private static final double PORTAL_SURFACE_LIFT = 0.0725D;
-    private static final double PORTAL_LAYER_STEP = 0.014D;
+    // Blood packets are already authored 0.003 block above a full support
+    // surface. SCP-106 trail/ranged packets retain a historical +0.025 anchor;
+    // remove that renderer-only clearance before drawing the PBR decal.
+    private static final double CORROSION_PACKET_LIFT = 0.025D;
+    private static final double SURFACE_EPSILON = 1.0D / 4096.0D;
+    private static final double CORROSION_LAYER_STEP = 1.0D / 8192.0D;
+    private static final double PORTAL_SURFACE_LIFT = 1.0D / 2048.0D;
+    private static final double PORTAL_LAYER_STEP = 1.0D / 8192.0D;
+
+    // Same fixed-function bias used by Minecraft's polygon-offset layering.
+    // Unlike view-space Z scaling it changes only rasterized depth, so camera
+    // motion cannot create geometric parallax between a decal and the floor.
+    private static final float DEPTH_BIAS_FACTOR = -1.0F;
+    private static final float DEPTH_BIAS_UNITS = -10.0F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
 
     private static final List<SurfaceDecal> DECALS = new ArrayList<>();
@@ -113,9 +117,10 @@ public final class PbrSurfaceDecalClient {
         int green = Math.round((0.030F + random.nextFloat() * 0.030F) * 255.0F);
         int blue = Math.round((0.012F + random.nextFloat() * 0.018F) * 255.0F);
         int color = (red << 16) | (green << 8) | blue;
+        double surfaceY = y - CORROSION_PACKET_LIFT;
 
         synchronized (DECALS) {
-            DECALS.add(SurfaceDecal.corrosion(x, y, z, baseSize,
+            DECALS.add(SurfaceDecal.corrosion(x, surfaceY, z, baseSize,
                     CORROSION_MAX_ALPHA * safeOpacity, color, rotation,
                     firstAngle, secondAngle, firstDistance, secondDistance,
                     lifetime, level.getGameTime()));
@@ -243,7 +248,7 @@ public final class PbrSurfaceDecalClient {
                         0.0F, 1.0F);
                 fade = fade * fade * (3.0F - 2.0F * fade);
                 renderFloorQuad(poseStack, bloodConsumer, camera,
-                        decal.x, decal.y + BLOOD_SURFACE_LIFT, decal.z,
+                        decal.x, decal.y + SURFACE_EPSILON, decal.z,
                         decal.baseSize * 1.16F, decal.baseSize * 0.92F,
                         decal.rotation, decal.color,
                         BLOOD_MAX_ALPHA * fade, light);
@@ -258,7 +263,7 @@ public final class PbrSurfaceDecalClient {
                 float ticksOld = (float) Math.max(0L,
                         now - decal.spawnTick);
                 float size = decal.baseSize + ticksOld * 0.00055F;
-                double baseY = decal.y + CORROSION_SURFACE_LIFT;
+                double baseY = decal.y + SURFACE_EPSILON;
 
                 renderFloorQuad(poseStack, corrosionConsumer, camera,
                         decal.x, baseY, decal.z,
@@ -339,8 +344,20 @@ public final class PbrSurfaceDecalClient {
             renderedCorrosion = true;
         }
 
-        if (renderedBlood) buffers.endBatch(BLOOD_RENDER_TYPE);
-        if (renderedCorrosion) buffers.endBatch(CORROSION_RENDER_TYPE);
+        if (renderedBlood) flushDecalBatch(buffers, BLOOD_RENDER_TYPE);
+        if (renderedCorrosion) flushDecalBatch(buffers, CORROSION_RENDER_TYPE);
+    }
+
+    private static void flushDecalBatch(MultiBufferSource.BufferSource buffers,
+            RenderType renderType) {
+        RenderSystem.enablePolygonOffset();
+        RenderSystem.polygonOffset(DEPTH_BIAS_FACTOR, DEPTH_BIAS_UNITS);
+        try {
+            buffers.endBatch(renderType);
+        } finally {
+            RenderSystem.polygonOffset(0.0F, 0.0F);
+            RenderSystem.disablePolygonOffset();
+        }
     }
 
     private static double distanceSquared(double x, double y, double z,

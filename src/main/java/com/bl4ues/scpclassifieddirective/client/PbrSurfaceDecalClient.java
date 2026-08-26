@@ -27,16 +27,14 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Small client-side world decal renderer for flat liquid stains that need
- * ordinary named textures instead of the particle atlas.
+ * Client-side named-texture renderer for blood and SCP-106 surface stains.
  *
  * <p>The particle atlas does not expose per-sprite LabPBR sidecars in the same
- * way block/entity texture bindings do. These decals therefore use entity
- * render types with a concrete base texture path so shader packs can discover
- * splatter_s and scp_106_puddle_n/_s normally. Blood deliberately uses the
- * cutout + z-offset entity path: it stays anchored to the supporting surface,
- * avoids translucent depth sorting against the floor, and clips the soft alpha
- * fringe instead of letting shader bloom turn that fringe into a bright halo.</p>
+ * way named entity textures do. These decals therefore render through concrete
+ * texture paths so splatter_s and scp_106_puddle_n/_s remain available to
+ * shader packs. Every flat stain is deliberately lifted from the support plane
+ * by a small but real world-space distance; relying on nearly-coplanar polygon
+ * offset was not stable with shaders at grazing camera angles.</p>
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -56,14 +54,23 @@ public final class PbrSurfaceDecalClient {
     private static final int BLOOD_LIFETIME_TICKS = 10 * 20;
     private static final float BLOOD_MAX_ALPHA = 0.90F;
     private static final float BLOOD_FADE_PORTION = 0.30F;
-    // The damage sampler already places the anchor fractionally above the
-    // support block. Keep an additional renderer-local lift so shader depth
-    // precision can never make the decal fight the floor while the camera moves.
-    private static final double BLOOD_SURFACE_LIFT = 0.010D;
     private static final float CORROSION_MAX_ALPHA = 0.84F;
+    private static final float PORTAL_MAX_ALPHA = 0.82F;
+
+    // These are intentional world-space separations, not cosmetic floating.
+    // 1/32 block is enough to survive shader depth precision at grazing angles
+    // while still reading visually as liquid sitting directly on the surface.
+    private static final double BLOOD_SURFACE_LIFT = 0.032D;
+    private static final double CORROSION_SURFACE_LIFT = 0.032D;
+    private static final double CORROSION_LAYER_STEP = 0.006D;
+    // Portal spawn positions are already surface-offset server-side. This extra
+    // lift replaces the old particle renderer's own 0.055 block offset.
+    private static final double PORTAL_SURFACE_LIFT = 0.040D;
+    private static final double PORTAL_LAYER_STEP = 0.010D;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
 
     private static final List<SurfaceDecal> DECALS = new ArrayList<>();
+    private static final List<PortalDecal> PORTALS = new ArrayList<>();
     private static ClientLevel trackedLevel;
 
     private PbrSurfaceDecalClient() {
@@ -111,6 +118,50 @@ public final class PbrSurfaceDecalClient {
         }
     }
 
+    /**
+     * Adds one of SCP-106's large phase/emergence puddles using the same named
+     * texture and LabPBR sidecars as the smaller corrosion trail.
+     */
+    public static void addPortal(ClientLevel level, double x, double y, double z,
+            double normalX, double normalY, double normalZ) {
+        if (level == null) return;
+        ensureLevel(level);
+
+        RandomSource random = level.random;
+        Vec3 requestedNormal = new Vec3(normalX, normalY, normalZ);
+        double normalStrength = requestedNormal.length();
+        boolean transientSurface = normalStrength > 0.0001D
+                && normalStrength < 0.75D;
+        Vec3 normal = requestedNormal.lengthSqr() < 0.0001D
+                ? new Vec3(0.0D, 1.0D, 0.0D)
+                : requestedNormal.normalize();
+        int lifetime = transientSurface
+                ? 30 + random.nextInt(17)
+                : 90 + random.nextInt(41);
+        float baseSize = transientSurface
+                ? 0.58F + random.nextFloat() * 0.18F
+                : 0.95F + random.nextFloat() * 0.25F;
+        int fadeInTicks = transientSurface ? 6 : 10;
+        float rotation = random.nextFloat() * ((float) Math.PI * 2.0F);
+        float lobeAngleA = rotation + 1.05F + random.nextFloat() * 0.45F;
+        float lobeAngleB = rotation + 2.85F + random.nextFloat() * 0.55F;
+        float lobeAngleC = rotation + 4.75F + random.nextFloat() * 0.50F;
+        float lobeDistanceA = 0.48F + random.nextFloat() * 0.18F;
+        float lobeDistanceB = 0.52F + random.nextFloat() * 0.20F;
+        float lobeDistanceC = 0.44F + random.nextFloat() * 0.18F;
+        int brightness = Math.round((0.86F + random.nextFloat() * 0.12F)
+                * 255.0F);
+        int color = (brightness << 16) | (brightness << 8) | brightness;
+
+        synchronized (DECALS) {
+            PORTALS.add(new PortalDecal(x, y, z, normal, baseSize,
+                    fadeInTicks, rotation,
+                    lobeAngleA, lobeAngleB, lobeAngleC,
+                    lobeDistanceA, lobeDistanceB, lobeDistanceC,
+                    color, lifetime, level.getGameTime()));
+        }
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -129,6 +180,13 @@ public final class PbrSurfaceDecalClient {
                     iterator.remove();
                 }
             }
+            Iterator<PortalDecal> portalIterator = PORTALS.iterator();
+            while (portalIterator.hasNext()) {
+                PortalDecal portal = portalIterator.next();
+                if (now - portal.spawnTick >= portal.lifetime) {
+                    portalIterator.remove();
+                }
+            }
         }
     }
 
@@ -144,9 +202,11 @@ public final class PbrSurfaceDecalClient {
         ensureLevel(level);
 
         List<SurfaceDecal> snapshot;
+        List<PortalDecal> portalSnapshot;
         synchronized (DECALS) {
-            if (DECALS.isEmpty()) return;
+            if (DECALS.isEmpty() && PORTALS.isEmpty()) return;
             snapshot = List.copyOf(DECALS);
+            portalSnapshot = List.copyOf(PORTALS);
         }
 
         Vec3 camera = event.getCamera().getPosition();
@@ -160,10 +220,8 @@ public final class PbrSurfaceDecalClient {
         boolean renderedCorrosion = false;
 
         for (SurfaceDecal decal : snapshot) {
-            double dx = decal.x - camera.x;
-            double dy = decal.y - camera.y;
-            double dz = decal.z - camera.z;
-            if (dx * dx + dy * dy + dz * dz > MAX_RENDER_DISTANCE_SQ) {
+            if (distanceSquared(decal.x, decal.y, decal.z, camera)
+                    > MAX_RENDER_DISTANCE_SQ) {
                 continue;
             }
 
@@ -180,7 +238,7 @@ public final class PbrSurfaceDecalClient {
                 float fade = Mth.clamp(remaining / BLOOD_FADE_PORTION,
                         0.0F, 1.0F);
                 fade = fade * fade * (3.0F - 2.0F * fade);
-                renderQuad(poseStack, bloodConsumer, camera,
+                renderFloorQuad(poseStack, bloodConsumer, camera,
                         decal.x, decal.y + BLOOD_SURFACE_LIFT, decal.z,
                         decal.baseSize * 1.16F, decal.baseSize * 0.92F,
                         decal.rotation, decal.color,
@@ -196,24 +254,25 @@ public final class PbrSurfaceDecalClient {
                 float ticksOld = (float) Math.max(0L,
                         now - decal.spawnTick);
                 float size = decal.baseSize + ticksOld * 0.00055F;
+                double baseY = decal.y + CORROSION_SURFACE_LIFT;
 
-                renderQuad(poseStack, corrosionConsumer, camera,
-                        decal.x, decal.y, decal.z,
+                renderFloorQuad(poseStack, corrosionConsumer, camera,
+                        decal.x, baseY, decal.z,
                         size * 1.22F, size * 0.82F,
                         decal.rotation, decal.color, alpha, light);
-                renderQuad(poseStack, corrosionConsumer, camera,
+                renderFloorQuad(poseStack, corrosionConsumer, camera,
                         decal.x + Mth.cos(decal.firstLobeAngle)
                                 * size * decal.firstLobeDistance,
-                        decal.y + 0.0004D,
+                        baseY + CORROSION_LAYER_STEP,
                         decal.z + Mth.sin(decal.firstLobeAngle)
                                 * size * decal.firstLobeDistance,
                         size * 0.76F, size * 0.57F,
                         decal.rotation + 0.68F, decal.color,
                         alpha * 0.92F, light);
-                renderQuad(poseStack, corrosionConsumer, camera,
+                renderFloorQuad(poseStack, corrosionConsumer, camera,
                         decal.x + Mth.cos(decal.secondLobeAngle)
                                 * size * decal.secondLobeDistance,
-                        decal.y + 0.0008D,
+                        baseY + CORROSION_LAYER_STEP * 2.0D,
                         decal.z + Mth.sin(decal.secondLobeAngle)
                                 * size * decal.secondLobeDistance,
                         size * 0.63F, size * 0.50F,
@@ -223,12 +282,74 @@ public final class PbrSurfaceDecalClient {
             }
         }
 
+        for (PortalDecal portal : portalSnapshot) {
+            if (distanceSquared(portal.x, portal.y, portal.z, camera)
+                    > MAX_RENDER_DISTANCE_SQ) {
+                continue;
+            }
+            if (corrosionConsumer == null) {
+                corrosionConsumer = buffers.getBuffer(CORROSION_RENDER_TYPE);
+            }
+
+            float ticksOld = (float) Math.max(0L, now - portal.spawnTick);
+            float age = Mth.clamp(ticksOld / portal.lifetime, 0.0F, 1.0F);
+            float remaining = 1.0F - age;
+            float fadeOut = Mth.clamp(remaining / 0.28F, 0.0F, 1.0F);
+            float appear = Mth.clamp(ticksOld / portal.fadeInTicks,
+                    0.0F, 1.0F);
+            float smoothAppear = appear * appear * (3.0F - 2.0F * appear);
+            float alpha = PORTAL_MAX_ALPHA * smoothAppear * fadeOut;
+            float size = portal.baseSize
+                    * (0.18F + 0.82F * smoothAppear)
+                    + ticksOld * 0.0009F;
+            int light = LevelRenderer.getLightColor(level,
+                    BlockPos.containing(portal.x, portal.y, portal.z));
+            Vec3 center = new Vec3(portal.x, portal.y, portal.z)
+                    .add(portal.normal.scale(PORTAL_SURFACE_LIFT));
+            Vec3[] basis = surfaceBasis(portal.normal);
+            Vec3 planeU = basis[0];
+            Vec3 planeV = basis[1];
+
+            renderOrientedQuad(poseStack, corrosionConsumer, camera,
+                    center, portal.normal, planeU, planeV,
+                    size * 1.35F, size * 0.82F, portal.rotation,
+                    portal.color, alpha, light);
+            renderPortalLobe(poseStack, corrosionConsumer, camera,
+                    center, portal.normal, planeU, planeV, size,
+                    portal.lobeAngleA, portal.lobeDistanceA,
+                    0.82F, 0.58F, portal.rotation + 0.57F,
+                    portal.color, alpha * 0.95F, light,
+                    PORTAL_LAYER_STEP);
+            renderPortalLobe(poseStack, corrosionConsumer, camera,
+                    center, portal.normal, planeU, planeV, size,
+                    portal.lobeAngleB, portal.lobeDistanceB,
+                    0.76F, 0.52F, portal.rotation - 0.71F,
+                    portal.color, alpha * 0.90F, light,
+                    PORTAL_LAYER_STEP * 2.0D);
+            renderPortalLobe(poseStack, corrosionConsumer, camera,
+                    center, portal.normal, planeU, planeV, size,
+                    portal.lobeAngleC, portal.lobeDistanceC,
+                    0.68F, 0.48F, portal.rotation + 1.08F,
+                    portal.color, alpha * 0.86F, light,
+                    PORTAL_LAYER_STEP * 3.0D);
+            renderedCorrosion = true;
+        }
+
         if (renderedBlood) buffers.endBatch(BLOOD_RENDER_TYPE);
         if (renderedCorrosion) buffers.endBatch(CORROSION_RENDER_TYPE);
     }
 
-    private static void renderQuad(PoseStack poseStack, VertexConsumer consumer,
-            Vec3 camera, double worldX, double worldY, double worldZ,
+    private static double distanceSquared(double x, double y, double z,
+            Vec3 camera) {
+        double dx = x - camera.x;
+        double dy = y - camera.y;
+        double dz = z - camera.z;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    private static void renderFloorQuad(PoseStack poseStack,
+            VertexConsumer consumer, Vec3 camera,
+            double worldX, double worldY, double worldZ,
             float radiusX, float radiusZ, float rotation, int packedColor,
             float alpha, int packedLight) {
         poseStack.pushPose();
@@ -255,26 +376,107 @@ public final class PbrSurfaceDecalClient {
         int blue = packedColor & 0xFF;
         int alphaByte = Mth.clamp(Math.round(alpha * 255.0F), 0, 255);
 
-        vertex(consumer, matrix, normal, x0, z0,
-                1.0F, 1.0F, red, green, blue, alphaByte, packedLight);
-        vertex(consumer, matrix, normal, x1, z1,
-                1.0F, 0.0F, red, green, blue, alphaByte, packedLight);
-        vertex(consumer, matrix, normal, x2, z2,
-                0.0F, 0.0F, red, green, blue, alphaByte, packedLight);
-        vertex(consumer, matrix, normal, x3, z3,
-                0.0F, 1.0F, red, green, blue, alphaByte, packedLight);
+        vertex(consumer, matrix, normal, x0, 0.0F, z0,
+                1.0F, 1.0F, red, green, blue, alphaByte, packedLight,
+                0.0F, 1.0F, 0.0F);
+        vertex(consumer, matrix, normal, x1, 0.0F, z1,
+                1.0F, 0.0F, red, green, blue, alphaByte, packedLight,
+                0.0F, 1.0F, 0.0F);
+        vertex(consumer, matrix, normal, x2, 0.0F, z2,
+                0.0F, 0.0F, red, green, blue, alphaByte, packedLight,
+                0.0F, 1.0F, 0.0F);
+        vertex(consumer, matrix, normal, x3, 0.0F, z3,
+                0.0F, 1.0F, red, green, blue, alphaByte, packedLight,
+                0.0F, 1.0F, 0.0F);
         poseStack.popPose();
     }
 
+    private static void renderPortalLobe(PoseStack poseStack,
+            VertexConsumer consumer, Vec3 camera, Vec3 center,
+            Vec3 surfaceNormal, Vec3 planeU, Vec3 planeV,
+            float size, float angle, float distance,
+            float scaleU, float scaleV, float rotation,
+            int packedColor, float alpha, int packedLight,
+            double layerOffset) {
+        Vec3 offset = rotatedAxis(angle, planeU, planeV)
+                .scale(size * distance)
+                .add(surfaceNormal.scale(layerOffset));
+        renderOrientedQuad(poseStack, consumer, camera,
+                center.add(offset), surfaceNormal, planeU, planeV,
+                size * scaleU, size * scaleV, rotation,
+                packedColor, alpha, packedLight);
+    }
+
+    private static void renderOrientedQuad(PoseStack poseStack,
+            VertexConsumer consumer, Vec3 camera, Vec3 worldCenter,
+            Vec3 surfaceNormal, Vec3 planeU, Vec3 planeV,
+            float radiusU, float radiusV, float rotation,
+            int packedColor, float alpha, int packedLight) {
+        poseStack.pushPose();
+        poseStack.translate(worldCenter.x - camera.x,
+                worldCenter.y - camera.y, worldCenter.z - camera.z);
+        PoseStack.Pose pose = poseStack.last();
+        Matrix4f matrix = pose.pose();
+        Matrix3f normalMatrix = pose.normal();
+
+        Vec3 u = rotatedAxis(rotation, planeU, planeV).scale(radiusU);
+        Vec3 v = rotatedAxis(rotation + ((float) Math.PI * 0.5F),
+                planeU, planeV).scale(radiusV);
+        Vec3 corner0 = u.scale(-1.0D).subtract(v);
+        Vec3 corner1 = u.scale(-1.0D).add(v);
+        Vec3 corner2 = u.add(v);
+        Vec3 corner3 = u.subtract(v);
+
+        int red = (packedColor >> 16) & 0xFF;
+        int green = (packedColor >> 8) & 0xFF;
+        int blue = packedColor & 0xFF;
+        int alphaByte = Mth.clamp(Math.round(alpha * 255.0F), 0, 255);
+        float nx = (float) surfaceNormal.x;
+        float ny = (float) surfaceNormal.y;
+        float nz = (float) surfaceNormal.z;
+
+        vertex(consumer, matrix, normalMatrix,
+                (float) corner0.x, (float) corner0.y, (float) corner0.z,
+                1.0F, 1.0F, red, green, blue, alphaByte, packedLight,
+                nx, ny, nz);
+        vertex(consumer, matrix, normalMatrix,
+                (float) corner1.x, (float) corner1.y, (float) corner1.z,
+                1.0F, 0.0F, red, green, blue, alphaByte, packedLight,
+                nx, ny, nz);
+        vertex(consumer, matrix, normalMatrix,
+                (float) corner2.x, (float) corner2.y, (float) corner2.z,
+                0.0F, 0.0F, red, green, blue, alphaByte, packedLight,
+                nx, ny, nz);
+        vertex(consumer, matrix, normalMatrix,
+                (float) corner3.x, (float) corner3.y, (float) corner3.z,
+                0.0F, 1.0F, red, green, blue, alphaByte, packedLight,
+                nx, ny, nz);
+        poseStack.popPose();
+    }
+
+    private static Vec3[] surfaceBasis(Vec3 normal) {
+        Vec3 reference = Math.abs(normal.y) > 0.82D
+                ? new Vec3(1.0D, 0.0D, 0.0D)
+                : new Vec3(0.0D, 1.0D, 0.0D);
+        Vec3 planeV = normal.cross(reference).normalize();
+        Vec3 planeU = planeV.cross(normal).normalize();
+        return new Vec3[] { planeU, planeV };
+    }
+
+    private static Vec3 rotatedAxis(float angle, Vec3 u, Vec3 v) {
+        return u.scale(Mth.cos(angle)).add(v.scale(Mth.sin(angle)));
+    }
+
     private static void vertex(VertexConsumer consumer, Matrix4f matrix,
-            Matrix3f normal, float x, float z, float u, float v,
-            int red, int green, int blue, int alpha, int packedLight) {
-        consumer.vertex(matrix, x, 0.0F, z)
+            Matrix3f normal, float x, float y, float z, float u, float v,
+            int red, int green, int blue, int alpha, int packedLight,
+            float normalX, float normalY, float normalZ) {
+        consumer.vertex(matrix, x, y, z)
                 .color(red, green, blue, alpha)
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(packedLight)
-                .normal(normal, 0.0F, 1.0F, 0.0F)
+                .normal(normal, normalX, normalY, normalZ)
                 .endVertex();
     }
 
@@ -282,6 +484,7 @@ public final class PbrSurfaceDecalClient {
         if (trackedLevel == level) return;
         synchronized (DECALS) {
             DECALS.clear();
+            PORTALS.clear();
             trackedLevel = level;
         }
     }
@@ -289,6 +492,7 @@ public final class PbrSurfaceDecalClient {
     private static void clear() {
         synchronized (DECALS) {
             DECALS.clear();
+            PORTALS.clear();
             trackedLevel = null;
         }
     }
@@ -352,6 +556,49 @@ public final class PbrSurfaceDecalClient {
                     maxAlpha, color, rotation,
                     firstAngle, secondAngle, firstDistance, secondDistance,
                     lifetime, spawnTick);
+        }
+    }
+
+    private static final class PortalDecal {
+        private final double x;
+        private final double y;
+        private final double z;
+        private final Vec3 normal;
+        private final float baseSize;
+        private final int fadeInTicks;
+        private final float rotation;
+        private final float lobeAngleA;
+        private final float lobeAngleB;
+        private final float lobeAngleC;
+        private final float lobeDistanceA;
+        private final float lobeDistanceB;
+        private final float lobeDistanceC;
+        private final int color;
+        private final int lifetime;
+        private final long spawnTick;
+
+        private PortalDecal(double x, double y, double z, Vec3 normal,
+                float baseSize, int fadeInTicks, float rotation,
+                float lobeAngleA, float lobeAngleB, float lobeAngleC,
+                float lobeDistanceA, float lobeDistanceB,
+                float lobeDistanceC, int color, int lifetime,
+                long spawnTick) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.normal = normal;
+            this.baseSize = baseSize;
+            this.fadeInTicks = fadeInTicks;
+            this.rotation = rotation;
+            this.lobeAngleA = lobeAngleA;
+            this.lobeAngleB = lobeAngleB;
+            this.lobeAngleC = lobeAngleC;
+            this.lobeDistanceA = lobeDistanceA;
+            this.lobeDistanceB = lobeDistanceB;
+            this.lobeDistanceC = lobeDistanceC;
+            this.color = color;
+            this.lifetime = lifetime;
+            this.spawnTick = spawnTick;
         }
     }
 }

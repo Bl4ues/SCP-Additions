@@ -28,10 +28,7 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * GeckoLib host and authoritative timing controller for the replacement Tesla Gate.
@@ -39,7 +36,10 @@ import java.util.UUID;
  */
 public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockEntity {
     public static final int DISCHARGE_TICK = 25; // normal discharge at 1.25 s
-    public static final int OVERRIDE_DISCHARGE_TICK = DISCHARGE_TICK + 10; // manual override +0.5 s
+    // Manual override used to begin 10 ticks after the normal impact. Pull only
+    // its activation forward by roughly one third of a second; the sequence end
+    // remains untouched so the discharge still dies with the existing sound.
+    public static final int OVERRIDE_DISCHARGE_TICK = DISCHARGE_TICK + 3;
     public static final int NORMAL_SOUND_START_TICK = 10; // +0.75 s = normal discharge tick
     public static final int NORMAL_SEQUENCE_TICKS = 80;
     public static final int OVERRIDE_SEQUENCE_TICKS = 110;
@@ -67,7 +67,6 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
     }
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-    private final Set<UUID> armedCrossers = new HashSet<>();
     private Sequence sequence = Sequence.IDLE;
     private long sequenceStartGameTime;
     private boolean powered;
@@ -95,27 +94,27 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
 
         long elapsed = gate.sequenceElapsedTicks();
         if (gate.sequence == Sequence.NORMAL) {
-            if (elapsed <= DISCHARGE_TICK) {
-                gate.rememberLethalCrossers(level, pos);
+            // Crossing the physical arc during wind-up is lethal at the gate,
+            // not several blocks later when the scheduled pulse finally lands.
+            if (elapsed < DISCHARGE_TICK) {
+                gate.damageWindupCrossers(server, pos);
             }
             if (elapsed == NORMAL_SOUND_START_TICK) {
                 level.playSound(null, pos, ScpClassifiedDirectiveModSounds.TESLA_DISCHARGE.get(),
                         SoundSource.HOSTILE, 1.55F, 1.0F);
             }
             if (elapsed == DISCHARGE_TICK) {
-                TeslaGatePulseHelper.damageAt(level, pos, gate.armedCrossers);
-                gate.armedCrossers.clear();
+                TeslaGatePulseHelper.damageAt(level, pos);
             }
             if (elapsed >= NORMAL_SEQUENCE_TICKS) gate.setSequence(Sequence.IDLE);
             return;
         }
         if (gate.sequence == Sequence.OVERRIDE) {
-            if (elapsed <= OVERRIDE_DISCHARGE_TICK) {
-                gate.rememberLethalCrossers(level, pos);
+            if (elapsed < OVERRIDE_DISCHARGE_TICK) {
+                gate.damageWindupCrossers(server, pos);
             }
             if (elapsed == OVERRIDE_DISCHARGE_TICK) {
-                TeslaGatePulseHelper.damageAt(level, pos, gate.armedCrossers);
-                gate.armedCrossers.clear();
+                TeslaGatePulseHelper.damageAt(level, pos);
             }
             if (elapsed >= OVERRIDE_SEQUENCE_TICKS) gate.setSequence(Sequence.IDLE);
             return;
@@ -147,19 +146,18 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
         TeslaGateElectricity.clientTick(level, pos, state, blockEntity);
     }
 
-    private void rememberLethalCrossers(Level level, BlockPos pos) {
+    private void damageWindupCrossers(ServerLevel level, BlockPos pos) {
         AABB lethal = TeslaGateVolume.lethalArcAt(level, pos);
-        List<LivingEntity> crossers = level.getEntitiesOfClass(
-                LivingEntity.class, TeslaGateVolume.motionCandidates(lethal),
-                entity -> TeslaGateVolume.intersectsOrCrossed(entity, lethal));
-        for (LivingEntity living : crossers) {
-            armedCrossers.add(living.getUUID());
+        List<ServerPlayer> crossers = level.getEntitiesOfClass(
+                ServerPlayer.class, TeslaGateVolume.motionCandidates(lethal),
+                player -> TeslaGateVolume.intersectsOrCrossed(player, lethal));
+        for (ServerPlayer player : crossers) {
+            TeslaGatePulseHelper.damageEntity(player);
         }
     }
 
     private void beginSequence(Sequence next) {
         if (level == null || level.isClientSide || next == Sequence.IDLE) return;
-        armedCrossers.clear();
         setSequence(next);
         level.playSound(null, worldPosition, ScpClassifiedDirectiveModSounds.TESLA_ALARM.get(),
                 SoundSource.HOSTILE, next == Sequence.OVERRIDE ? 1.8F : 1.25F, 1.0F);
@@ -174,7 +172,6 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
         if (level == null) return;
         sequence = next;
         sequenceStartGameTime = level.getGameTime();
-        if (next == Sequence.IDLE) armedCrossers.clear();
         sync();
     }
 

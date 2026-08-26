@@ -1,8 +1,11 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.data.Scp914Processor;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModParticleTypes;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
+import com.bl4ues.scpclassifieddirective.scp012.Scp012Damage;
+import com.bl4ues.scpclassifieddirective.scp330.Scp330Hands;
 import com.bl4ues.scpclassifieddirective.vitals.BleedingDamage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -39,7 +42,6 @@ import java.util.UUID;
 public final class DamageFeedbackClient {
     private static final float HEALTH_EPSILON = 1.0E-3F;
     private static final int BLOOD_COLOR = 0x880808;
-    private static final int WITHER_COLOR = 0x2B0606;
     private static final int SCP_1079_COLOR = 0xF5A2E4;
     private static final double TWO_PI = Math.PI * 2.0D;
     private static final double LOCAL_SOUND_RADIUS_SQ = 1.0D;
@@ -180,35 +182,57 @@ public final class DamageFeedbackClient {
 
     private static SplatterStyle styleFor(LocalPlayer player,
             DamageSource source, boolean continuous) {
-        if (source != null && source.is(DamageTypes.MAGIC)
-                && player.hasEffect(MobEffects.POISON)) {
-            return null;
-        }
+        if (source == null) return null;
 
         float maxHealth = Math.max(1.0F, player.getMaxHealth());
         float healthRatio = Mth.clamp(player.getHealth() / maxHealth,
                 0.0F, 1.0F);
         float missing = 1.0F - healthRatio;
 
-        if (source != null && source.is(BleedingDamage.TYPE)) {
-            return new SplatterStyle(BLOOD_COLOR,
-                    0.22D + missing * 0.34D);
-        }
-        if (source != null && source.is(SCP_1079_DAMAGE)) {
+        if (source.is(SCP_1079_DAMAGE)) {
             return new SplatterStyle(SCP_1079_COLOR,
                     continuous ? 0.16D + missing * 0.08D
                             : 0.50D + missing * 0.16D);
         }
-        if (source != null && source.is(DamageTypes.WITHER)) {
-            return new SplatterStyle(WITHER_COLOR,
-                    0.15D + missing * 0.08D);
-        }
-        if (continuous) {
+        if (source.is(BleedingDamage.TYPE)) {
             return new SplatterStyle(BLOOD_COLOR,
-                    0.14D + missing * 0.07D);
+                    0.22D + missing * 0.34D);
         }
+        if (!causesVisibleBlood(source)) return null;
+
         return new SplatterStyle(BLOOD_COLOR,
                 0.24D + missing * 0.09D);
+    }
+
+    /**
+     * Blood is reserved for damage mechanisms that plausibly tear, puncture or
+     * violently traumatize tissue. Energy, heat, suffocation, poison, magic and
+     * unknown generic damage deliberately stay clean unless given an explicit
+     * authored damage type above.
+     */
+    private static boolean causesVisibleBlood(DamageSource source) {
+        return source.is(Scp012Damage.TYPE)
+                || source.is(Scp330Hands.DAMAGE_TYPE)
+                || source.is(Scp914Processor.DAMAGE_TYPE)
+                || source.is(DamageTypes.MOB_ATTACK)
+                || source.is(DamageTypes.MOB_ATTACK_NO_AGGRO)
+                || source.is(DamageTypes.PLAYER_ATTACK)
+                || source.is(DamageTypes.ARROW)
+                || source.is(DamageTypes.TRIDENT)
+                || source.is(DamageTypes.CACTUS)
+                || source.is(DamageTypes.SWEET_BERRY_BUSH)
+                || source.is(DamageTypes.STALAGMITE)
+                || source.is(DamageTypes.FALLING_STALACTITE)
+                || source.is(DamageTypes.THORNS)
+                || source.is(DamageTypes.STING)
+                || source.is(DamageTypes.FALL)
+                || source.is(DamageTypes.FLY_INTO_WALL)
+                || source.is(DamageTypes.FALLING_BLOCK)
+                || source.is(DamageTypes.FALLING_ANVIL)
+                || source.is(DamageTypes.EXPLOSION)
+                || source.is(DamageTypes.PLAYER_EXPLOSION)
+                || source.is(DamageTypes.FIREWORKS)
+                || source.is(DamageTypes.BAD_RESPAWN_POINT);
     }
 
     private static BlockPos findFullBlockBelow(ClientLevel level,

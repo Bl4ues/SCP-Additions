@@ -35,10 +35,11 @@ import java.util.List;
  * Audio, damage and client electricity all derive from the same sequence clock.
  */
 public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockEntity {
-    public static final int DISCHARGE_TICK = 25; // tesla_alarm reaches 1.25 s
-    public static final int NORMAL_SOUND_START_TICK = 10; // +0.75 s = discharge tick
+    public static final int DISCHARGE_TICK = 25; // normal discharge at 1.25 s
+    public static final int OVERRIDE_DISCHARGE_TICK = DISCHARGE_TICK + 20; // manual override +1 s
+    public static final int NORMAL_SOUND_START_TICK = 10; // +0.75 s = normal discharge tick
     public static final int NORMAL_SEQUENCE_TICKS = 80;
-    public static final int OVERRIDE_SEQUENCE_TICKS = 110;
+    public static final int OVERRIDE_SEQUENCE_TICKS = 130;
 
     public enum Sequence {
         IDLE(0), NORMAL(1), OVERRIDE(2);
@@ -99,7 +100,9 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
             return;
         }
         if (gate.sequence == Sequence.OVERRIDE) {
-            if (elapsed == DISCHARGE_TICK) TeslaGatePulseHelper.damageAt(level, pos);
+            if (elapsed == OVERRIDE_DISCHARGE_TICK) {
+                TeslaGatePulseHelper.damageAt(level, pos);
+            }
             if (elapsed >= OVERRIDE_SEQUENCE_TICKS) gate.setSequence(Sequence.IDLE);
             return;
         }
@@ -178,10 +181,14 @@ public final class TeslaGateBlockEntity extends BlockEntity implements GeoBlockE
     public float getRecoveryFactor() {
         if (sequence == Sequence.IDLE) return powered ? 1.0F : 0.0F;
         long elapsed = sequenceElapsedTicks();
-        if (elapsed < DISCHARGE_TICK) return 1.0F;
-        int end = sequence == Sequence.OVERRIDE ? OVERRIDE_SEQUENCE_TICKS : NORMAL_SEQUENCE_TICKS;
+        int dischargeTick = sequence == Sequence.OVERRIDE
+                ? OVERRIDE_DISCHARGE_TICK : DISCHARGE_TICK;
+        if (elapsed < dischargeTick) return 1.0F;
+        int end = sequence == Sequence.OVERRIDE
+                ? OVERRIDE_SEQUENCE_TICKS : NORMAL_SEQUENCE_TICKS;
         return Math.min(1.0F, Math.max(0.04F,
-                (elapsed - DISCHARGE_TICK) / (float) Math.max(1, end - DISCHARGE_TICK)));
+                (elapsed - dischargeTick)
+                        / (float) Math.max(1, end - dischargeTick)));
     }
 
     @Override

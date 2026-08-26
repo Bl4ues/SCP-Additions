@@ -14,8 +14,11 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Client-side procedural electrical arcs for the replacement Tesla Gate.
- * No animated electricity textures are used: each visible bolt is a cheap
- * polyline assembled from short-lived full-bright particles.
+ *
+ * Each bolt is generated as one coherent jagged polyline spanning the lethal
+ * opening, then densely sampled with short-lived full-bright particles. This
+ * keeps the effect crisp and continuous instead of turning the discharge into
+ * a handful of unrelated glowing dots.
  */
 public final class TeslaGateElectricity {
     private static final double ACTIVE_VIEW_RANGE = 18.0D;
@@ -23,6 +26,9 @@ public final class TeslaGateElectricity {
     private static final double FRAME_HALF_WIDTH = 1.08D;
     private static final double FRAME_MIN_Y = 0.28D;
     private static final double FRAME_MAX_Y = 3.48D;
+    private static final double FRAME_HALF_DEPTH = 0.31D;
+    private static final double NORMAL_SAMPLE_SPACING = 0.075D;
+    private static final double OVERRIDE_SAMPLE_SPACING = 0.060D;
     private static final int NORMAL_MAX_ARCS = 3;
     private static final int OVERRIDE_MAX_ARCS = 5;
 
@@ -46,45 +52,52 @@ public final class TeslaGateElectricity {
         int arcs = 0;
         float jitter = 0.16F;
         float branchChance = 0.0F;
+        boolean override = sequence == TeslaGateBlockEntity.Sequence.OVERRIDE;
 
         if (sequence == TeslaGateBlockEntity.Sequence.IDLE) {
             if (approach <= 0.0F) return;
-            // A powered gate starts to crackle as something approaches the
-            // sensor, without changing the authoritative trigger threshold.
-            float chance = 0.025F + approach * approach * 0.28F;
+
+            // Sparse warning crackles only when something approaches the sensor.
+            float chance = 0.018F + approach * approach * 0.20F;
             if (random.nextFloat() < chance) arcs = 1;
-            jitter = 0.09F + approach * 0.09F;
-            branchChance = 0.08F + approach * 0.12F;
+            jitter = 0.08F + approach * 0.07F;
+            branchChance = 0.05F + approach * 0.10F;
         } else if (sequence == TeslaGateBlockEntity.Sequence.NORMAL) {
             if (elapsed < TeslaGateBlockEntity.DISCHARGE_TICK) {
                 float charge = Mth.clamp(elapsed
                         / (float) TeslaGateBlockEntity.DISCHARGE_TICK, 0.0F, 1.0F);
-                if (random.nextFloat() < 0.18F + charge * 0.62F) {
-                    arcs = 1 + (charge > 0.72F && random.nextBoolean() ? 1 : 0);
+                if (random.nextFloat() < 0.10F + charge * 0.52F) {
+                    arcs = 1 + (charge > 0.78F && random.nextFloat() < 0.35F ? 1 : 0);
                 }
-                jitter = 0.13F + charge * 0.11F;
-                branchChance = 0.14F + charge * 0.18F;
+                jitter = 0.11F + charge * 0.09F;
+                branchChance = 0.08F + charge * 0.16F;
             } else {
                 float strength = normalDischargeStrength(elapsed);
                 arcs = Math.min(NORMAL_MAX_ARCS,
                         Math.max(0, Math.round(strength * NORMAL_MAX_ARCS)));
-                if (arcs == 0 && strength > 0.08F && random.nextFloat() < strength) arcs = 1;
-                jitter = 0.22F;
-                branchChance = 0.28F * strength;
+                if (arcs == 0 && strength > 0.08F
+                        && random.nextFloat() < strength) {
+                    arcs = 1;
+                }
+                jitter = 0.18F + strength * 0.05F;
+                branchChance = 0.18F + 0.20F * strength;
             }
-        } else if (sequence == TeslaGateBlockEntity.Sequence.OVERRIDE) {
+        } else if (override) {
             float strength = overrideStrength(elapsed);
-            arcs = Math.min(OVERRIDE_MAX_ARCS,
-                    Math.max(1, Math.round(1.0F + strength * (OVERRIDE_MAX_ARCS - 1))));
-            // Override should look substantially less civilized than a normal
-            // discharge, but still has a hard particle budget per gate/tick.
-            jitter = 0.28F + 0.08F * strength;
-            branchChance = 0.42F + 0.28F * strength;
+            if (strength <= 0.0F) {
+                if (random.nextFloat() < 0.22F) arcs = 1;
+            } else {
+                arcs = Math.min(OVERRIDE_MAX_ARCS,
+                        Math.max(2, Math.round(1.0F
+                                + strength * (OVERRIDE_MAX_ARCS - 1))));
+            }
+            jitter = 0.25F + 0.08F * strength;
+            branchChance = 0.38F + 0.30F * strength;
         }
 
         for (int i = 0; i < arcs; i++) {
             spawnFrameArc(level, pos, state, random, jitter, branchChance,
-                    sequence == TeslaGateBlockEntity.Sequence.OVERRIDE);
+                    override);
         }
     }
 
@@ -96,8 +109,6 @@ public final class TeslaGateElectricity {
         Vec3 center = Vec3.atBottomCenterOf(pos).add(0.0D, 1.7D, 0.0D);
         Vec3 delta = player.position().subtract(center);
 
-        // Sensor is three blocks deep and about 2.2 blocks wide. Distance is
-        // measured outside that volume, so approach=1 when entering it.
         double forward = Math.abs(delta.x * facing.getStepX()
                 + delta.z * facing.getStepZ());
         Direction right = facing.getClockWise();
@@ -107,65 +118,105 @@ public final class TeslaGateElectricity {
         double outsideLateral = Math.max(0.0D, lateral - FRAME_HALF_WIDTH);
         double distance = Math.sqrt(outsideForward * outsideForward
                 + outsideLateral * outsideLateral);
-        return Mth.clamp((float) (1.0D - distance / APPROACH_RANGE), 0.0F, 1.0F);
+        return Mth.clamp((float) (1.0D - distance / APPROACH_RANGE),
+                0.0F, 1.0F);
     }
 
     private static float normalDischargeStrength(long elapsed) {
-        // Normal sample stays at full energy until 1.75 s after its t=10 start,
-        // then fades through 2.80 s. Absolute sequence ticks: 25..45..66.
         if (elapsed <= 45L) return 1.0F;
         if (elapsed >= 66L) return 0.0F;
         return 1.0F - (elapsed - 45L) / 21.0F;
     }
 
     private static float overrideStrength(long elapsed) {
-        // Override sample is forceful through 4 s, then drops rapidly by 5 s.
         if (elapsed <= 80L) return 1.0F;
         if (elapsed >= 100L) return 0.0F;
         return 1.0F - (elapsed - 80L) / 20.0F;
     }
 
-    private static void spawnFrameArc(Level level, BlockPos pos, BlockState state,
-            RandomSource random, float jitter, float branchChance,
-            boolean override) {
+    private static void spawnFrameArc(Level level, BlockPos pos,
+            BlockState state, RandomSource random, float jitter,
+            float branchChance, boolean override) {
         Direction facing = state.hasProperty(HorizontalDirectionalBlock.FACING)
                 ? state.getValue(HorizontalDirectionalBlock.FACING)
                 : Direction.NORTH;
         Direction right = facing.getClockWise();
         Vec3 center = Vec3.atLowerCornerOf(pos).add(0.5D, 0.0D, 0.5D);
 
-        double startY = Mth.lerp(random.nextDouble(), FRAME_MIN_Y, FRAME_MAX_Y);
-        double endY = Mth.lerp(random.nextDouble(), FRAME_MIN_Y, FRAME_MAX_Y);
-        double depthA = (random.nextDouble() - 0.5D) * 0.62D;
-        double depthB = (random.nextDouble() - 0.5D) * 0.62D;
+        // Both ends stay attached to opposite sides of the physical gate. Their
+        // independent heights make each discharge cross the opening differently.
+        double startY = randomFrameY(random);
+        double endY = randomFrameY(random);
+        double depthA = randomDepth(random, FRAME_HALF_DEPTH);
+        double depthB = randomDepth(random, FRAME_HALF_DEPTH);
         boolean flip = random.nextBoolean();
         double startSide = flip ? -FRAME_HALF_WIDTH : FRAME_HALF_WIDTH;
         double endSide = -startSide;
 
-        Vec3 start = basisPoint(center, right, facing, startSide, startY, depthA);
-        Vec3 end = basisPoint(center, right, facing, endSide, endY, depthB);
-        int nodes = override ? 7 : 6;
+        Vec3 start = basisPoint(center, right, facing,
+                startSide, startY, depthA);
+        Vec3 end = basisPoint(center, right, facing,
+                endSide, endY, depthB);
+        int nodes = override ? 9 : 7;
         Vec3[] points = jaggedPolyline(start, end, right, facing, random,
                 nodes, jitter);
-        emitPolyline(level, points, override ? 2 : 1);
+        emitPolyline(level, points,
+                override ? OVERRIDE_SAMPLE_SPACING : NORMAL_SAMPLE_SPACING);
 
         if (random.nextFloat() < branchChance) {
-            int branchIndex = 1 + random.nextInt(Math.max(1, points.length - 2));
-            Vec3 branchStart = points[branchIndex];
-            double side = (random.nextBoolean() ? -1.0D : 1.0D)
-                    * (0.22D + random.nextDouble() * 0.62D);
-            double branchY = Mth.clamp(branchStart.y + (random.nextDouble() - 0.5D)
-                    * (override ? 1.45D : 0.85D),
-                    pos.getY() + FRAME_MIN_Y, pos.getY() + FRAME_MAX_Y);
-            double branchDepth = (random.nextDouble() - 0.5D)
-                    * (override ? 1.05D : 0.65D);
-            Vec3 branchEnd = branchStart
-                    .add(right.getStepX() * side, 0.0D, right.getStepZ() * side)
-                    .add(facing.getStepX() * branchDepth, branchY - branchStart.y,
-                            facing.getStepZ() * branchDepth);
-            emitPolyline(level, jaggedPolyline(branchStart, branchEnd, right,
-                    facing, random, override ? 5 : 4, jitter * 0.72F), 1);
+            spawnBranch(level, pos, center, right, facing, points, random,
+                    jitter, override);
         }
+        if (override && random.nextFloat() < branchChance * 0.58F) {
+            spawnBranch(level, pos, center, right, facing, points, random,
+                    jitter * 0.88F, true);
+        }
+    }
+
+    private static void spawnBranch(Level level, BlockPos pos, Vec3 center,
+            Direction right, Direction facing, Vec3[] source,
+            RandomSource random, float jitter, boolean override) {
+        int branchIndex = 1 + random.nextInt(Math.max(1, source.length - 2));
+        Vec3 branchStart = source[branchIndex];
+
+        // Branches terminate on the frame instead of stopping in mid-air. The
+        // chosen rail is whichever side is reached by a short secondary fork.
+        double localSide = localCoordinate(branchStart, center, right);
+        double targetSide;
+        if (Math.abs(localSide) > FRAME_HALF_WIDTH * 0.50D) {
+            targetSide = Math.copySign(FRAME_HALF_WIDTH, localSide);
+        } else {
+            targetSide = random.nextBoolean()
+                    ? -FRAME_HALF_WIDTH : FRAME_HALF_WIDTH;
+        }
+        double targetY = Mth.clamp(branchStart.y
+                        + (random.nextDouble() - 0.5D)
+                        * (override ? 1.25D : 0.78D),
+                pos.getY() + FRAME_MIN_Y,
+                pos.getY() + FRAME_MAX_Y);
+        double targetDepth = randomDepth(random,
+                override ? FRAME_HALF_DEPTH * 1.35D : FRAME_HALF_DEPTH);
+        Vec3 branchEnd = basisPoint(center, right, facing, targetSide,
+                targetY - pos.getY(), targetDepth);
+
+        Vec3[] branch = jaggedPolyline(branchStart, branchEnd, right, facing,
+                random, override ? 6 : 5, jitter * 0.66F);
+        emitPolyline(level, branch,
+                override ? OVERRIDE_SAMPLE_SPACING : NORMAL_SAMPLE_SPACING);
+    }
+
+    private static double randomFrameY(RandomSource random) {
+        return Mth.lerp(random.nextDouble(), FRAME_MIN_Y, FRAME_MAX_Y);
+    }
+
+    private static double randomDepth(RandomSource random, double halfDepth) {
+        return (random.nextDouble() * 2.0D - 1.0D) * halfDepth;
+    }
+
+    private static double localCoordinate(Vec3 point, Vec3 center,
+            Direction axis) {
+        return (point.x - center.x) * axis.getStepX()
+                + (point.z - center.z) * axis.getStepZ();
     }
 
     private static Vec3 basisPoint(Vec3 center, Direction right,
@@ -186,9 +237,13 @@ public final class TeslaGateElectricity {
         for (int i = 1; i < nodes - 1; i++) {
             double t = i / (double) (nodes - 1);
             Vec3 base = start.lerp(end, t);
-            double lateral = (random.nextDouble() - 0.5D) * jitter * 2.0D;
-            double vertical = (random.nextDouble() - 0.5D) * jitter * 2.25D;
-            double depth = (random.nextDouble() - 0.5D) * jitter * 1.45D;
+            double envelope = Math.sin(Math.PI * t);
+            double lateral = (random.nextDouble() - 0.5D)
+                    * jitter * 2.0D * envelope;
+            double vertical = (random.nextDouble() - 0.5D)
+                    * jitter * 2.15D * envelope;
+            double depth = (random.nextDouble() - 0.5D)
+                    * jitter * 1.35D * envelope;
             points[i] = base.add(right.getStepX() * lateral,
                     vertical,
                     right.getStepZ() * lateral)
@@ -199,17 +254,19 @@ public final class TeslaGateElectricity {
     }
 
     private static void emitPolyline(Level level, Vec3[] points,
-            int samplesPerSegment) {
+            double spacing) {
         for (int i = 0; i < points.length - 1; i++) {
             Vec3 a = points[i];
             Vec3 b = points[i + 1];
-            int samples = Math.max(1, samplesPerSegment);
-            for (int sample = 0; sample <= samples; sample++) {
+            double length = a.distanceTo(b);
+            int samples = Math.max(2, Mth.ceil(length / spacing));
+            int first = i == 0 ? 0 : 1;
+            for (int sample = first; sample <= samples; sample++) {
                 double t = sample / (double) samples;
                 Vec3 p = a.lerp(b, t);
-                Vec3 motion = b.subtract(a).normalize().scale(0.02D);
-                level.addParticle(ScpClassifiedDirectiveModParticleTypes.TESLA_ARC.get(),
-                        p.x, p.y, p.z, motion.x, motion.y, motion.z);
+                level.addParticle(
+                        ScpClassifiedDirectiveModParticleTypes.TESLA_ARC.get(),
+                        p.x, p.y, p.z, 0.0D, 0.0D, 0.0D);
             }
         }
     }

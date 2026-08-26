@@ -537,8 +537,8 @@ public final class PbrSurfaceDecalClient {
             this.rotation = rotation;
             this.firstLobeAngle = firstLobeAngle;
             this.secondLobeAngle = secondLobeAngle;
-            this.firstLobeDistance = firstDistance;
-            this.secondLobeDistance = secondDistance;
+            this.firstLobeDistance = firstLobeDistance;
+            this.secondLobeDistance = secondLobeDistance;
             this.lifetime = lifetime;
             this.spawnTick = spawnTick;
         }

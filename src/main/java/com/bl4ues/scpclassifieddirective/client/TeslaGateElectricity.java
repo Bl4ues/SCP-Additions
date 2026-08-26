@@ -133,12 +133,11 @@ public final class TeslaGateElectricity {
     }
 
     private static float overrideStrength(long elapsed) {
-        // Manual override discharge was moved one second later to match the
-        // uploaded audio transient. Preserve the same post-shot envelope by
-        // shifting the strong and fade windows forward by the same 20 ticks.
-        if (elapsed <= 100L) return 1.0F;
-        if (elapsed >= 120L) return 0.0F;
-        return 1.0F - (elapsed - 100L) / 20.0F;
+        // Keep the original manual-override ending. Only the impact instant was
+        // retimed; the strong phase and fade still finish at the old timestamps.
+        if (elapsed <= 80L) return 1.0F;
+        if (elapsed >= 100L) return 0.0F;
+        return 1.0F - (elapsed - 80L) / 20.0F;
     }
 
     private static void spawnFrameArc(Level level, BlockPos pos,

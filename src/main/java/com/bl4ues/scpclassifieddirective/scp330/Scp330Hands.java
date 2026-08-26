@@ -4,12 +4,14 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,6 +30,9 @@ import java.util.UUID;
 
 /** Authoritative SCP-330 candy limit and hand-loss state. */
 public final class Scp330Hands {
+    public static final ResourceKey<DamageType> DAMAGE_TYPE = ResourceKey.create(
+            Registries.DAMAGE_TYPE,
+            new ResourceLocation(ScpClassifiedDirectiveMod.MODID, "scp330"));
     public static final String DISABLED_TAG = "scp_classified_directive.scp330_hands_lost";
     private static final String COUNT_TAG = "scp_classified_directive.scp330_candies_taken";
     private static final int DEATH_DELAY_TICKS = 140;
@@ -145,7 +150,7 @@ public final class Scp330Hands {
     private static DamageSource damageSource(LivingEntity entity) {
         return new DamageSource(entity.level().registryAccess()
                 .registryOrThrow(Registries.DAMAGE_TYPE)
-                .getHolderOrThrow(DamageTypes.GENERIC)) {
+                .getHolderOrThrow(DAMAGE_TYPE)) {
             @Override
             public Component getLocalizedDeathMessage(LivingEntity victim) {
                 return Component.translatable("death.attack.scp330",

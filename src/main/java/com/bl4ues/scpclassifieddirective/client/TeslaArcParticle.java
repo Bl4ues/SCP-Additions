@@ -31,15 +31,15 @@ public final class TeslaArcParticle extends TextureSheetParticle {
         this.initialSize = 0.043F + this.random.nextFloat() * 0.020F;
         this.quadSize = initialSize;
 
-        // Keep a saturated electric-blue base so shader bloom can push the
-        // overlapping core toward blue-white without bleaching the whole bolt
-        // into plain white. Slight per-particle variation prevents a flat neon
-        // strip while preserving the SCP: Unity-like cold-blue appearance.
+        // Pale blue-white core with enough saturation left in the edges for
+        // shader bloom to resemble the cold electrical glow in the references.
+        // The previous pass was too dark/cyan; this intentionally lifts both
+        // luminance and the red/green channels without returning to plain white.
         float variation = this.random.nextFloat();
-        this.rCol = 0.24F + variation * 0.10F;
-        this.gCol = 0.58F + variation * 0.12F;
+        this.rCol = 0.50F + variation * 0.08F;
+        this.gCol = 0.76F + variation * 0.10F;
         this.bCol = 1.0F;
-        this.initialAlpha = 0.88F + this.random.nextFloat() * 0.12F;
+        this.initialAlpha = 0.97F + this.random.nextFloat() * 0.03F;
         this.alpha = initialAlpha;
         pickSprite(sprites);
     }

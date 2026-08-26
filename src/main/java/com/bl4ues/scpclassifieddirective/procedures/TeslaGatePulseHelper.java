@@ -39,9 +39,9 @@ public final class TeslaGatePulseHelper {
 
     /**
      * Applies the pulse to entities currently crossing the arc and to entities
-     * remembered crossing it while this exact charge was arming. A runner can
-     * therefore not outrun the scheduled pulse after committing through the
-     * live gate; backing out before the arc plane remains the intended juke.
+     * remembered crossing it while this exact charge was arming. Kept as a
+     * compatibility overload while the gate controller transitions away from
+     * delayed charge-crossing damage.
      */
     public static void damageAt(LevelAccessor world, BlockPos pos,
             Collection<UUID> rememberedCrossers) {
@@ -63,45 +63,55 @@ public final class TeslaGatePulseHelper {
         }
 
         for (LivingEntity living : entities) {
-            if (living instanceof Scp106Entity scp106) {
-                Scp106AudioEvents.stopChaseFor(scp106);
-                scp106.onTeslaGateHit();
-                continue;
-            }
-
-            living.hurt(new DamageSource(living.level().registryAccess()
-                    .registryOrThrow(Registries.DAMAGE_TYPE)
-                    .getHolderOrThrow(DamageTypes.GENERIC)) {
-                @Override
-                public Component getLocalizedDeathMessage(
-                        LivingEntity messageEntity) {
-                    String translateKey = "death.attack.teslagate";
-                    if (this.getEntity() == null
-                            && this.getDirectEntity() == null) {
-                        return messageEntity.getKillCredit() != null
-                                ? Component.translatable(
-                                        translateKey + ".player",
-                                        messageEntity.getDisplayName(),
-                                        messageEntity.getKillCredit().getDisplayName())
-                                : Component.translatable(translateKey,
-                                        messageEntity.getDisplayName());
-                    }
-                    Component component = this.getEntity() == null
-                            ? this.getDirectEntity().getDisplayName()
-                            : this.getEntity().getDisplayName();
-                    ItemStack itemStack = ItemStack.EMPTY;
-                    if (this.getEntity() instanceof LivingEntity sourceLiving) {
-                        itemStack = sourceLiving.getMainHandItem();
-                    }
-                    return !itemStack.isEmpty() && itemStack.hasCustomHoverName()
-                            ? Component.translatable(translateKey + ".item",
-                                    messageEntity.getDisplayName(), component,
-                                    itemStack.getDisplayName())
-                            : Component.translatable(translateKey,
-                                    messageEntity.getDisplayName(), component);
-                }
-            }, LETHAL_DAMAGE);
+            damageEntity(living);
         }
+    }
+
+    /**
+     * Applies the Tesla Gate's authoritative hit to one entity immediately.
+     * SCP-106 keeps its special repel/encounter behavior instead of receiving
+     * ordinary lethal damage.
+     */
+    public static void damageEntity(LivingEntity living) {
+        if (living == null || !living.isAlive()) return;
+        if (living instanceof Scp106Entity scp106) {
+            Scp106AudioEvents.stopChaseFor(scp106);
+            scp106.onTeslaGateHit();
+            return;
+        }
+
+        living.hurt(new DamageSource(living.level().registryAccess()
+                .registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(DamageTypes.GENERIC)) {
+            @Override
+            public Component getLocalizedDeathMessage(
+                    LivingEntity messageEntity) {
+                String translateKey = "death.attack.teslagate";
+                if (this.getEntity() == null
+                        && this.getDirectEntity() == null) {
+                    return messageEntity.getKillCredit() != null
+                            ? Component.translatable(
+                                    translateKey + ".player",
+                                    messageEntity.getDisplayName(),
+                                    messageEntity.getKillCredit().getDisplayName())
+                            : Component.translatable(translateKey,
+                                    messageEntity.getDisplayName());
+                }
+                Component component = this.getEntity() == null
+                        ? this.getDirectEntity().getDisplayName()
+                        : this.getEntity().getDisplayName();
+                ItemStack itemStack = ItemStack.EMPTY;
+                if (this.getEntity() instanceof LivingEntity sourceLiving) {
+                    itemStack = sourceLiving.getMainHandItem();
+                }
+                return !itemStack.isEmpty() && itemStack.hasCustomHoverName()
+                        ? Component.translatable(translateKey + ".item",
+                                messageEntity.getDisplayName(), component,
+                                itemStack.getDisplayName())
+                        : Component.translatable(translateKey,
+                                messageEntity.getDisplayName(), component);
+            }
+        }, LETHAL_DAMAGE);
     }
 
     /** Legacy transient-state bridge retained for old worlds until the old state

@@ -88,6 +88,42 @@
       }
     ]
   },
+  "tesla_alarm": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:tesla_alarm",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "tesla_discharge": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:tesla_discharge",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "tesla_override_discharge": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:tesla_override_discharge",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "tesla_loop": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:tesla_loop",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
   "click": {
     "subtitle": "subtitles.click",
     "sounds": [

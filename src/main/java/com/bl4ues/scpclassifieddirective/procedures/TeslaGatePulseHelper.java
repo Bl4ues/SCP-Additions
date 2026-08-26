@@ -3,8 +3,10 @@ package com.bl4ues.scpclassifieddirective.procedures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelAccessor;
@@ -20,6 +22,10 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public final class TeslaGatePulseHelper {
+    public static final ResourceKey<DamageType> DAMAGE_TYPE = ResourceKey.create(
+            Registries.DAMAGE_TYPE,
+            new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
+                    "tesla_gate"));
     private static final float LETHAL_DAMAGE = 200.0F;
 
     private TeslaGatePulseHelper() {
@@ -56,7 +62,7 @@ public final class TeslaGatePulseHelper {
 
         living.hurt(new DamageSource(living.level().registryAccess()
                 .registryOrThrow(Registries.DAMAGE_TYPE)
-                .getHolderOrThrow(DamageTypes.GENERIC)) {
+                .getHolderOrThrow(DAMAGE_TYPE)) {
             @Override
             public Component getLocalizedDeathMessage(
                     LivingEntity messageEntity) {

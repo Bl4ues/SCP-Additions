@@ -69,7 +69,10 @@ public final class TeslaGateElectricity {
             if (elapsed < TeslaGateBlockEntity.DISCHARGE_TICK) {
                 float charge = Mth.clamp(elapsed
                         / (float) TeslaGateBlockEntity.DISCHARGE_TICK, 0.0F, 1.0F);
-                if (random.nextFloat() < 0.10F + charge * 0.52F) {
+                // The alarm can now arm farther out, but loose/pre-charge arcs
+                // still obey the requested four-block visual approach range.
+                if (approach > 0.0F
+                        && random.nextFloat() < 0.10F + charge * 0.52F) {
                     arcs = 1 + (charge > 0.78F && random.nextFloat() < 0.35F ? 1 : 0);
                 }
                 jitter = 0.11F + charge * 0.09F;
@@ -90,7 +93,8 @@ public final class TeslaGateElectricity {
                 float charge = Mth.clamp(elapsed
                         / (float) TeslaGateBlockEntity.OVERRIDE_DISCHARGE_TICK,
                         0.0F, 1.0F);
-                if (random.nextFloat() < 0.08F + charge * 0.44F) {
+                if (approach > 0.0F
+                        && random.nextFloat() < 0.08F + charge * 0.44F) {
                     arcs = 1 + (charge > 0.82F
                             && random.nextFloat() < 0.28F ? 1 : 0);
                 }

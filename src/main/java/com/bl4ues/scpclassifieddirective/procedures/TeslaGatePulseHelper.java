@@ -1,10 +1,8 @@
 package com.bl4ues.scpclassifieddirective.procedures;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,20 +25,11 @@ public final class TeslaGatePulseHelper {
     private TeslaGatePulseHelper() {
     }
 
-    public static void pulseAndTransition(LevelAccessor world, double x, double y,
-            double z, Supplier<? extends Block> expectedBlock,
-            Supplier<? extends Block> nextBlock) {
-        BlockPos pos = BlockPos.containing(x, y, z);
-        if (world.getBlockState(pos).getBlock() != expectedBlock.get()) {
-            return;
-        }
-
-        boolean manualOverride = world.getLevelData().getGameRules()
-                .getBoolean(ScpClassifiedDirectiveModGameRules.TESLAGATEMANUALOVERRIDE);
-        if (manualOverride) {
-            emitOverrideParticles(world, x, y, z);
-        }
-
+    /**
+     * Applies one Tesla Gate discharge to the one-block-thick arc volume.
+     * Visual electricity is client-side and deliberately not emitted here.
+     */
+    public static void damageAt(LevelAccessor world, BlockPos pos) {
         AABB lethalVolume = TeslaGateVolume.lethalArcAt(world, pos);
         List<LivingEntity> entities = world.getEntitiesOfClass(
                 LivingEntity.class,
@@ -86,24 +75,22 @@ public final class TeslaGatePulseHelper {
                                     messageEntity.getDisplayName(), component);
                 }
             }, LETHAL_DAMAGE);
-
         }
+    }
 
+    /** Legacy transient-state bridge retained for old worlds until the old state
+     * blocks are removed. New gates use TeslaGateBlockEntity's timed sequence. */
+    public static void pulseAndTransition(LevelAccessor world, double x, double y,
+            double z, Supplier<? extends Block> expectedBlock,
+            Supplier<? extends Block> nextBlock) {
+        BlockPos pos = BlockPos.containing(x, y, z);
+        if (world.getBlockState(pos).getBlock() != expectedBlock.get()) return;
+
+        damageAt(world, pos);
+        boolean manualOverride = world.getLevelData().getGameRules()
+                .getBoolean(ScpClassifiedDirectiveModGameRules.TESLAGATEMANUALOVERRIDE);
         ScpClassifiedDirectiveMod.queueServerWork(manualOverride ? 1 : 3,
                 () -> TeslaGateTransitionHelper.transitionIfCurrent(
                         world, x, y, z, expectedBlock, nextBlock));
-    }
-
-    private static void emitOverrideParticles(LevelAccessor world,
-            double x, double y, double z) {
-        if (!(world instanceof ServerLevel serverLevel)) {
-            return;
-        }
-        serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                x + 0.5D, y + 1.05D, z + 0.5D,
-                8, 0.45D, 0.55D, 0.45D, 0.03D);
-        serverLevel.sendParticles(ParticleTypes.SMOKE,
-                x + 0.5D, y + 0.95D, z + 0.5D,
-                2, 0.35D, 0.30D, 0.35D, 0.01D);
     }
 }

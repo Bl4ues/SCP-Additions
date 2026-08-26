@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class TeslaGateElectricity {
     private static final double ACTIVE_VIEW_RANGE = 18.0D;
-    private static final double APPROACH_RANGE = 5.0D;
+    private static final double APPROACH_RANGE = 4.0D;
     private static final double FRAME_HALF_WIDTH = 1.08D;
     private static final double FRAME_MIN_Y = 0.28D;
     private static final double FRAME_MAX_Y = 3.48D;
@@ -47,7 +47,7 @@ public final class TeslaGateElectricity {
         RandomSource random = level.random;
         TeslaGateBlockEntity.Sequence sequence = gate.getSequence();
         long elapsed = gate.sequenceElapsedTicks();
-        float approach = approachFactor(player, pos, state);
+        float approach = approachFactor(player, pos);
 
         int arcs = 0;
         float jitter = 0.16F;
@@ -57,7 +57,8 @@ public final class TeslaGateElectricity {
         if (sequence == TeslaGateBlockEntity.Sequence.IDLE) {
             if (approach <= 0.0F) return;
 
-            // Sparse warning crackles only when something approaches the sensor.
+            // Sparse warning crackles only once the player is within four
+            // horizontal blocks of the controller block's center.
             float chance = 0.018F + approach * approach * 0.20F;
             if (random.nextFloat() < chance) arcs = 1;
             jitter = 0.08F + approach * 0.07F;
@@ -101,23 +102,12 @@ public final class TeslaGateElectricity {
         }
     }
 
-    private static float approachFactor(Player player, BlockPos pos,
-            BlockState state) {
-        Direction facing = state.hasProperty(HorizontalDirectionalBlock.FACING)
-                ? state.getValue(HorizontalDirectionalBlock.FACING)
-                : Direction.NORTH;
-        Vec3 center = Vec3.atBottomCenterOf(pos).add(0.0D, 1.7D, 0.0D);
-        Vec3 delta = player.position().subtract(center);
-
-        double forward = Math.abs(delta.x * facing.getStepX()
-                + delta.z * facing.getStepZ());
-        Direction right = facing.getClockWise();
-        double lateral = Math.abs(delta.x * right.getStepX()
-                + delta.z * right.getStepZ());
-        double outsideForward = Math.max(0.0D, forward - 1.5D);
-        double outsideLateral = Math.max(0.0D, lateral - FRAME_HALF_WIDTH);
-        double distance = Math.sqrt(outsideForward * outsideForward
-                + outsideLateral * outsideLateral);
+    private static float approachFactor(Player player, BlockPos pos) {
+        double centerX = pos.getX() + 0.5D;
+        double centerZ = pos.getZ() + 0.5D;
+        double dx = player.getX() - centerX;
+        double dz = player.getZ() - centerZ;
+        double distance = Math.sqrt(dx * dx + dz * dz);
         return Mth.clamp((float) (1.0D - distance / APPROACH_RANGE),
                 0.0F, 1.0F);
     }

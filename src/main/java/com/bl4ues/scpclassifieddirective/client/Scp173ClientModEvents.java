@@ -107,5 +107,8 @@ public final class Scp173ClientModEvents {
         event.registerSpriteSet(
                 ScpClassifiedDirectiveModParticleTypes.DAMAGE_SPLATTER.get(),
                 DamageSplatterParticle.Provider::new);
+        event.registerSpriteSet(
+                ScpClassifiedDirectiveModParticleTypes.TESLA_ARC.get(),
+                TeslaArcParticle.Provider::new);
     }
 }

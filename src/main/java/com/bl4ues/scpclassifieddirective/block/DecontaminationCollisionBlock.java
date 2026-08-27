@@ -5,11 +5,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
@@ -33,6 +35,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,6 +47,14 @@ public final class DecontaminationCollisionBlock extends Block
     public static final IntegerProperty HEIGHT = IntegerProperty.create("height", 0, 4);
     public static final IntegerProperty FORWARD = IntegerProperty.create("forward", 1, 5);
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+
+    // Exact floor-grille bounds from the authored vent 2/3 cubes.
+    private static final double VENT_MIN_X = -12.0D;
+    private static final double VENT_MAX_X = 12.0D;
+    private static final double VENT_2_MIN_Z = 14.1D;
+    private static final double VENT_2_MAX_Z = 38.1D;
+    private static final double VENT_3_MIN_Z = 57.95D;
+    private static final double VENT_3_MAX_Z = 81.95D;
 
     public DecontaminationCollisionBlock() {
         super(BlockBehaviour.Properties.of()
@@ -122,6 +133,37 @@ public final class DecontaminationCollisionBlock extends Block
                 decodeSide(state.getValue(SIDE)),
                 decodeHeight(state.getValue(HEIGHT)),
                 state.getValue(FORWARD));
+    }
+
+    @Override
+    public SoundType getSoundType(BlockState state, LevelReader level,
+            BlockPos pos, @Nullable Entity entity) {
+        // Keep the existing structural floor sound everywhere else. The two
+        // authored 24x24 floor grilles get a sharper metallic copper step so
+        // sound follows the visible vent geometry rather than whole block rows.
+        if (entity != null && decodeHeight(state.getValue(HEIGHT)) == -1
+                && isStandingOnFloorVent(state, pos, entity)) {
+            return SoundType.COPPER;
+        }
+        return super.getSoundType(state, level, pos, entity);
+    }
+
+    private static boolean isStandingOnFloorVent(BlockState state, BlockPos pos,
+            Entity entity) {
+        BlockPos controller = DecontaminationStructure.controllerPosition(pos, state);
+        BlockPos origin = DecontaminationStructure.structureOrigin(controller);
+        Direction facing = state.getValue(FACING);
+        Direction right = facing.getClockWise();
+        Direction forward = facing.getOpposite();
+
+        double dx = entity.getX() - (origin.getX() + 0.5D);
+        double dz = entity.getZ() - (origin.getZ() + 0.5D);
+        double modelX = (dx * right.getStepX() + dz * right.getStepZ()) * 16.0D;
+        double modelZ = (dx * forward.getStepX() + dz * forward.getStepZ()) * 16.0D;
+
+        if (modelX < VENT_MIN_X || modelX > VENT_MAX_X) return false;
+        return (modelZ >= VENT_2_MIN_Z && modelZ <= VENT_2_MAX_Z)
+                || (modelZ >= VENT_3_MIN_Z && modelZ <= VENT_3_MAX_Z);
     }
 
     /**

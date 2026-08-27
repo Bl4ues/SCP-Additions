@@ -11,6 +11,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.Block;
 
+import com.bl4ues.scpclassifieddirective.block.entity.DecontaminationBlockEntity;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294StockingBlockEntity;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294OutOfRangeBlockEntity;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
@@ -30,6 +31,8 @@ public class ScpClassifiedDirectiveModBlockEntities {
 			ScpClassifiedDirectiveModBlocks.TESLA_GATE.get(), ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE.get(),
 			ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE_2.get(), ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE_3.get(),
 			ScpClassifiedDirectiveModBlocks.TESLA_ACTIVE_4.get(), ScpClassifiedDirectiveModBlocks.TESLA_RECHARGE.get()).build(null));
+	public static final RegistryObject<BlockEntityType<DecontaminationBlockEntity>> DECONTAMINATION = REGISTRY.register("decontamination", () -> BlockEntityType.Builder.of(DecontaminationBlockEntity::new,
+			ScpClassifiedDirectiveModBlocks.DECON_OPEN.get(), ScpClassifiedDirectiveModBlocks.DECON_CLOSED.get(), ScpClassifiedDirectiveModBlocks.DECON_OPEN_RELOAD.get()).build(null));
 	public static final RegistryObject<BlockEntityType<SystemTerminalBlockEntity>> SCP_079_SYSTEM_CONTROL = REGISTRY.register("scp_079_system_control", () -> BlockEntityType.Builder.of(SystemTerminalBlockEntity::new, ScpClassifiedDirectiveModBlocks.SCP_079_SYSTEM_CONTROL.get()).build(null));
 	public static final RegistryObject<BlockEntityType<?>> SCP_294 = register("scp_294", ScpClassifiedDirectiveModBlocks.SCP_294, Scp294BlockEntity::new);
 	public static final RegistryObject<BlockEntityType<?>> SCP_294_OUT_OF_RANGE = register("scp_294_out_of_range", ScpClassifiedDirectiveModBlocks.SCP_294_OUT_OF_RANGE, Scp294OutOfRangeBlockEntity::new);

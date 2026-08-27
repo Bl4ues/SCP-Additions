@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -27,7 +29,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
 import java.util.Collections;
 import java.util.List;
@@ -205,6 +206,13 @@ public final class HeavyDoorPowerRelay {
         }
 
         private static boolean hasExternalPower(Level level, BlockPos relayPos) {
+            BlockPos doorPos = relayPos.below();
+            BlockState doorState = level.getBlockState(doorPos);
+            if (DecontaminationStructure.isOwnedDoor(level, doorPos, doorState)) {
+                return DecontaminationStructure.shouldOwnedDoorBeOpen(level,
+                        doorPos);
+            }
+
             return probe(level, relayPos, relayPos)
                     || probe(level, relayPos.above(), relayPos);
         }

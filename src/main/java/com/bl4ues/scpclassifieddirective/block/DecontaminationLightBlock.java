@@ -25,6 +25,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public final class DecontaminationLightBlock extends Block {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    private static final VoxelShape CEILING_SHAPE = Block.box(
+            0.0D, -8.0D, 0.0D, 16.0D, 0.0D, 16.0D);
 
     public DecontaminationLightBlock() {
         super(BlockBehaviour.Properties.of()
@@ -55,13 +57,28 @@ public final class DecontaminationLightBlock extends Block {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return Shapes.block();
+        // This cell replaces the centre ceiling helper, so it must provide the
+        // same half-block-down roof collision instead of a full invisible cube.
+        return CEILING_SHAPE;
     }
 
     @Override
     public VoxelShape getVisualShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
         return Shapes.empty();
+    }
+
+    @Override
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter level,
+            BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        // The block is physically part of the roof but must not swallow its own
+        // level-10 emission before it reaches the chamber below.
+        return 0;
     }
 
     @Override

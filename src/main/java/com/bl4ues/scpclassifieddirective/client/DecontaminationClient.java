@@ -91,18 +91,22 @@ public final class DecontaminationClient {
         }
 
         @Override
-        public void render(DecontaminationBlockEntity animatable,
-                float partialTick, PoseStack poseStack,
-                MultiBufferSource bufferSource, int packedLight,
-                int packedOverlay) {
-            // The persistent controller is stored one block above the authored
-            // doorway origin so the BLACK_DOOR can own the public placement
-            // cell. Render the complete GeckoLib model from that logical origin.
-            poseStack.pushPose();
-            poseStack.translate(0.0D, -1.0D, 0.0D);
-            super.render(animatable, partialTick, poseStack, bufferSource,
-                    packedLight, packedOverlay);
-            poseStack.popPose();
+        public void preRender(PoseStack poseStack,
+                DecontaminationBlockEntity animatable,
+                BakedGeoModel bakedModel, MultiBufferSource bufferSource,
+                VertexConsumer buffer, boolean isReRender, float partialTick,
+                int packedLight, int packedOverlay, float red, float green,
+                float blue, float alpha) {
+            // The BlockEntity is deliberately stored one block above the
+            // entrance doorway. Apply the authored doorway origin once to the
+            // complete GeckoLib render pass. Re-renders such as the emissive
+            // glowmask inherit that transformed pose and must not shift again.
+            if (!isReRender) {
+                poseStack.translate(0.0D, -1.0D, 0.0D);
+            }
+            super.preRender(poseStack, animatable, bakedModel, bufferSource,
+                    buffer, isReRender, partialTick, packedLight, packedOverlay,
+                    red, green, blue, alpha);
         }
 
         @Override

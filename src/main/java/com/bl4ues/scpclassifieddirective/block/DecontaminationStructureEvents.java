@@ -1,18 +1,16 @@
 package com.bl4ues.scpclassifieddirective.block;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
+import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
-import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
 
-/**
- * Makes every visible or invisible checkpoint part behave as one structure.
- */
+/** Makes controller, helpers and both BLACK_DOOR endpoints one breakable structure. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DecontaminationStructureEvents {
@@ -25,23 +23,33 @@ public final class DecontaminationStructureEvents {
             return;
         }
 
+        BlockPos pos = event.getPos();
         BlockState state = event.getState();
+
         if (state.getBlock() == DecontaminationStructureBlocks.collision()) {
-            BlockPos controllerPos = DecontaminationStructure
-                    .controllerPosition(event.getPos(), state);
             event.setCanceled(true);
-            DecontaminationCheckpointController.forget(level, controllerPos);
-            FacilityStructureBreakGuard.clear(level, controllerPos);
-            DecontaminationStructure.destroyFromCollision(level,
-                    event.getPos(), state, !event.getPlayer().isCreative());
+            DecontaminationStructure.destroyFromCollision(level, pos, state,
+                    !event.getPlayer().isCreative());
+            return;
+        }
+
+        if (DecontaminationStructure.isOwnedDoor(level, pos, state)) {
+            BlockPos controllerPos = DecontaminationStructure.controllerForDoor(
+                    level, pos, state);
+            event.setCanceled(true);
+            if (controllerPos != null) {
+                DecontaminationCheckpointController.forget(level, controllerPos);
+                FacilityStructureBreakGuard.clear(level, controllerPos);
+            }
+            DecontaminationStructure.destroyFromDoor(level, pos, state,
+                    !event.getPlayer().isCreative());
             return;
         }
 
         if (DecontaminationStructure.isController(state)) {
-            DecontaminationStructure.removeCollisionParts(level,
-                    event.getPos(), state);
-            DecontaminationCheckpointController.forget(level, event.getPos());
-            FacilityStructureBreakGuard.clear(level, event.getPos());
+            DecontaminationStructure.removeStructureParts(level, pos, state);
+            DecontaminationCheckpointController.forget(level, pos);
+            FacilityStructureBreakGuard.clear(level, pos);
         }
     }
 }

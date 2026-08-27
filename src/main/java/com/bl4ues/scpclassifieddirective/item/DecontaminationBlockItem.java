@@ -34,18 +34,17 @@ public final class DecontaminationBlockItem extends BlockItem implements GeoItem
 
     @Override
     public InteractionResult place(BlockPlaceContext context) {
-        // BlockPlaceContext#getClickedPos() is already the actual placement
-        // cell (it resolves the clicked face when the clicked block is not
-        // replaceable). The controller belongs in this exact cell. The model's
-        // authored floor is one block below it and therefore legitimately
-        // collides with an existing floor instead of silently lifting the whole
-        // checkpoint upward.
-        BlockPos controllerPos = context.getClickedPos();
+        // The public placement cell is the base of the entrance door. The
+        // actual controller is kept one block above it so the BLACK_DOOR can
+        // own the clicked cell. Structure coordinates deliberately use the
+        // controller's block below as their logical origin.
+        BlockPos placementPos = context.getClickedPos();
+        BlockPos controllerPos = placementPos.above();
         Direction facing = context.getHorizontalDirection().getOpposite();
         if (DecontaminationStructure.hasPlacementSupport(
                 context.getLevel(), controllerPos, facing)) {
             List<BlockPos> blockers = DecontaminationStructure.collectObstructions(
-                    context.getLevel(), controllerPos, facing, controllerPos);
+                    context.getLevel(), controllerPos, facing, placementPos);
             if (!blockers.isEmpty()) {
                 StructurePlacementFeedback.reportBlocked(context, blockers);
                 return InteractionResult.FAIL;

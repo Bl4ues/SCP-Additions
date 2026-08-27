@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.block;
 import com.bl4ues.scpclassifieddirective.block.entity.DecontaminationBlockEntity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
+import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
 import net.minecraft.core.BlockPos;
@@ -28,7 +29,7 @@ import java.util.Set;
 public final class DecontaminationStructure {
     /** Entrance at 0, five chamber cells at 1..5, exit at 6. */
     public static final int EXIT_FORWARD = 6;
-    /** 4.75 seconds after the decontamination sequence begins. */
+    /** 4.75 seconds after gas/audio begin. */
     public static final int DOOR_RELEASE_TICK = 95;
     private static final int FIRST_INTERIOR_FORWARD = 1;
     private static final int LAST_INTERIOR_FORWARD = 5;
@@ -36,6 +37,15 @@ public final class DecontaminationStructure {
     private static final int LIGHT_HEIGHT = 3;
 
     private DecontaminationStructure() {
+    }
+
+    /**
+     * The actual controller block lives one block above the entrance doorway so
+     * the BLACK_DOOR can occupy the public placement cell. Every authored model,
+     * collision and interaction coordinate is based on this logical origin.
+     */
+    public static BlockPos structureOrigin(BlockPos controllerPos) {
+        return controllerPos.below();
     }
 
     public static boolean hasPlacementSupport(Level level,
@@ -59,18 +69,19 @@ public final class DecontaminationStructure {
     }
 
     /**
-     * Checks the whole authored visual envelope, not only the helper blocks.
-     * Interior cells are deliberately not reserved after placement, so map
-     * builders can still add content to the chamber later.
+     * Checks the complete authored envelope before placement. Only the chamber
+     * floor intentionally intersects a normal flat surface: those blocks must
+     * be removed because the checkpoint supplies its own solid floor. The
+     * blocks below either BLACK_DOOR remain ordinary supports and are never
+     * considered part of the replaceable footprint.
      */
     public static List<BlockPos> collectObstructions(Level level,
             BlockPos controllerPos, Direction facing,
             @Nullable BlockPos allowedOccupiedPos) {
         Set<BlockPos> blockers = new LinkedHashSet<>();
 
-        // The GeckoLib body occupies the five chamber cells. Its sloped roof
-        // reaches into height 4 even though collision uses a simple height-3
-        // rectangular ceiling, so placement reserves that visual clearance too.
+        // Five chamber cells, including the embedded floor at height -1 and
+        // visual roof clearance through height 4.
         for (int forward = FIRST_INTERIOR_FORWARD;
                 forward <= LAST_INTERIOR_FORWARD; forward++) {
             for (int height = -1; height <= 4; height++) {
@@ -81,15 +92,19 @@ public final class DecontaminationStructure {
             }
         }
 
-        // Door side cells stay completely free so pre-existing or later walls
-        // can meet the checkpoint. Only the two-block-tall centerline occupied
-        // by each heavy BLACK_DOOR is required to be clear.
-        for (int height = -1; height <= 0; height++) {
-            addBlockerIfOccupied(level, controllerPos, facing,
-                    0, height, 0, allowedOccupiedPos, blockers);
-            addBlockerIfOccupied(level, controllerPos, facing,
-                    0, height, EXIT_FORWARD, allowedOccupiedPos, blockers);
-        }
+        // Entrance/exit BLACK_DOOR blocks themselves sit at the placement Y.
+        // Their support blocks below are deliberately NOT checked here.
+        addBlockerIfOccupied(level, controllerPos, facing,
+                0, 0, 0, allowedOccupiedPos, blockers);
+        addBlockerIfOccupied(level, controllerPos, facing,
+                0, 0, EXIT_FORWARD, allowedOccupiedPos, blockers);
+
+        // The hidden controller occupies the upper half of the entrance door.
+        // The normal heavy-door relay occupies the same upper cell at the exit.
+        addBlockerIfOccupied(level, controllerPos, facing,
+                0, 1, 0, allowedOccupiedPos, blockers);
+        addBlockerIfOccupied(level, controllerPos, facing,
+                0, 1, EXIT_FORWARD, allowedOccupiedPos, blockers);
 
         return List.copyOf(blockers);
     }
@@ -266,7 +281,7 @@ public final class DecontaminationStructure {
         FacilityStructureBreakGuard.clear(level, controllerPos);
         removeStructureParts(level, controllerPos, controllerState);
         if (dropCheckpoint) {
-            Block.popResource(level, controllerPos,
+            Block.popResource(level, structureOrigin(controllerPos),
                     new ItemStack(ScpClassifiedDirectiveModBlocks.DECON_OPEN.get()));
         }
         clearBlock(level, controllerPos, controllerState);
@@ -308,27 +323,17 @@ public final class DecontaminationStructure {
         return (side == -1 || side == 1) && height >= 0 && height <= 2;
     }
 
-    /** The center floor cells at both chamber ends power the owned doors. */
+    /**
+     * Kept for compatibility with the collision helper. Door power no longer
+     * comes from floor cells because the floor is one block below the doors.
+     */
     public static boolean isDoorPowerPart(BlockState state) {
-        if (state.getBlock() != DecontaminationStructureBlocks.collision()) {
-            return false;
-        }
-        return DecontaminationCollisionBlock.decodeSide(
-                state.getValue(DecontaminationCollisionBlock.SIDE)) == 0
-                && DecontaminationCollisionBlock.decodeHeight(
-                state.getValue(DecontaminationCollisionBlock.HEIGHT)) == -1
-                && (state.getValue(DecontaminationCollisionBlock.FORWARD)
-                == FIRST_INTERIOR_FORWARD
-                || state.getValue(DecontaminationCollisionBlock.FORWARD)
-                == LAST_INTERIOR_FORWARD);
+        return false;
     }
 
     public static int ownedDoorPowerSignal(BlockGetter level, BlockPos partPos,
             BlockState partState) {
-        if (!isDoorPowerPart(partState)
-                || !isValidCollisionPart(level, partPos, partState)) return 0;
-        BlockPos controllerPos = controllerPosition(partPos, partState);
-        return shouldPowerOwnedDoors(level, controllerPos) ? 15 : 0;
+        return 0;
     }
 
     public static boolean shouldPowerOwnedDoors(BlockGetter level,
@@ -353,17 +358,19 @@ public final class DecontaminationStructure {
         int forward = partState.getValue(DecontaminationCollisionBlock.FORWARD);
         Direction right = facing.getClockWise();
         Direction forwardDirection = facing.getOpposite();
-        return partPos.offset(
+        BlockPos origin = partPos.offset(
                 -right.getStepX() * side - forwardDirection.getStepX() * forward,
                 -height,
                 -right.getStepZ() * side - forwardDirection.getStepZ() * forward);
+        return origin.above();
     }
 
     public static BlockPos partPosition(BlockPos controllerPos, Direction facing,
             int side, int height, int forward) {
+        BlockPos origin = structureOrigin(controllerPos);
         Direction right = facing.getClockWise();
         Direction forwardDirection = facing.getOpposite();
-        return controllerPos.offset(
+        return origin.offset(
                 right.getStepX() * side + forwardDirection.getStepX() * forward,
                 height,
                 right.getStepZ() * side + forwardDirection.getStepZ() * forward);
@@ -371,12 +378,12 @@ public final class DecontaminationStructure {
 
     public static BlockPos entranceDoorPosition(BlockPos controllerPos,
             Direction facing) {
-        return partPosition(controllerPos, facing, 0, -1, 0);
+        return partPosition(controllerPos, facing, 0, 0, 0);
     }
 
     public static BlockPos exitDoorPosition(BlockPos controllerPos,
             Direction facing) {
-        return partPosition(controllerPos, facing, 0, -1, EXIT_FORWARD);
+        return partPosition(controllerPos, facing, 0, 0, EXIT_FORWARD);
     }
 
     public static BlockPos lightPosition(BlockPos controllerPos,
@@ -389,8 +396,9 @@ public final class DecontaminationStructure {
             BlockState lightState) {
         Direction facing = lightState.getValue(DecontaminationLightBlock.FACING);
         Direction forward = facing.getOpposite();
-        return lightPos.offset(-forward.getStepX() * LIGHT_FORWARD,
+        BlockPos origin = lightPos.offset(-forward.getStepX() * LIGHT_FORWARD,
                 -LIGHT_HEIGHT, -forward.getStepZ() * LIGHT_FORWARD);
+        return origin.above();
     }
 
     public static boolean isValidLight(BlockGetter level, BlockPos lightPos,
@@ -440,19 +448,21 @@ public final class DecontaminationStructure {
         return controller != null && shouldPowerOwnedDoors(level, controller);
     }
 
-    /** Refreshes the two hidden floor relays and the actual BLACK_DOOR ticks. */
+    /** Refreshes the controller signal, exit relay and both BLACK_DOOR ticks. */
     public static void nudgeOwnedDoors(Level level, BlockPos controllerPos,
             Direction facing) {
-        for (int forward : new int[]{FIRST_INTERIOR_FORWARD,
-                LAST_INTERIOR_FORWARD}) {
-            BlockPos powerPos = partPosition(controllerPos, facing,
-                    0, -1, forward);
-            BlockState powerState = level.getBlockState(powerPos);
-            if (powerState.getBlock()
-                    == DecontaminationStructureBlocks.collision()) {
-                level.updateNeighborsAt(powerPos, powerState.getBlock());
-            }
+        BlockState controllerState = level.getBlockState(controllerPos);
+        if (isController(controllerState)) {
+            level.updateNeighborsAt(controllerPos, controllerState.getBlock());
         }
+
+        BlockPos exitRelay = exitDoorPosition(controllerPos, facing).above();
+        BlockState relayState = level.getBlockState(exitRelay);
+        if (relayState.is(HeavyDoorPowerRelay.RELAY.get())) {
+            level.scheduleTick(exitRelay, relayState.getBlock(), 1);
+            level.updateNeighborsAt(exitRelay, relayState.getBlock());
+        }
+
         nudgeDoor(level, entranceDoorPosition(controllerPos, facing));
         nudgeDoor(level, exitDoorPosition(controllerPos, facing));
     }
@@ -482,13 +492,14 @@ public final class DecontaminationStructure {
     /** Converts Blockbench/GeckoLib local model units to oriented world space. */
     public static Vec3 modelPointToWorld(BlockPos controllerPos,
             Direction facing, double modelX, double modelY, double modelZ) {
+        BlockPos origin = structureOrigin(controllerPos);
         Direction right = facing.getClockWise();
         Direction forward = facing.getOpposite();
-        double x = controllerPos.getX() + 0.5D
+        double x = origin.getX() + 0.5D
                 + right.getStepX() * modelX / 16.0D
                 + forward.getStepX() * modelZ / 16.0D;
-        double y = controllerPos.getY() + modelY / 16.0D;
-        double z = controllerPos.getZ() + 0.5D
+        double y = origin.getY() + modelY / 16.0D;
+        double z = origin.getZ() + 0.5D
                 + right.getStepZ() * modelX / 16.0D
                 + forward.getStepZ() * modelZ / 16.0D;
         return new Vec3(x, y, z);
@@ -528,7 +539,14 @@ public final class DecontaminationStructure {
             BlockPos doorPos) {
         BlockState state = level.getBlockState(doorPos);
         BlockPos owner = controllerForDoor(level, doorPos, state);
-        if (controllerPos.equals(owner)) clearBlock(level, doorPos, state);
+        if (!controllerPos.equals(owner)) return;
+
+        BlockPos relayPos = doorPos.above();
+        BlockState relayState = level.getBlockState(relayPos);
+        if (relayState.is(HeavyDoorPowerRelay.RELAY.get())) {
+            clearBlock(level, relayPos, relayState);
+        }
+        clearBlock(level, doorPos, state);
     }
 
     private static void nudgeDoor(Level level, BlockPos doorPos) {

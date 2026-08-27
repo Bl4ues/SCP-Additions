@@ -76,16 +76,24 @@ public final class DecontaminationLightBlock extends Block {
 
     @Override
     public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
-        // The block is physically part of the roof but must not swallow its own
-        // level-10 emission before it reaches the chamber below.
         return 0;
+    }
+
+    private static void refreshLight(Level level, BlockPos pos) {
+        // The light is inserted after the collision shell. Explicitly asking
+        // the light engine to revisit the source and the chamber-facing cell
+        // prevents shaders/client relight timing from leaving the source dark
+        // until some unrelated neighbour update happens.
+        level.getLightEngine().checkBlock(pos);
+        level.getLightEngine().checkBlock(pos.below());
     }
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos,
             BlockState oldState, boolean moving) {
         super.onPlace(state, level, pos, oldState, moving);
-        if (!level.isClientSide) level.scheduleTick(pos, this, 40);
+        refreshLight(level, pos);
+        if (!level.isClientSide) level.scheduleTick(pos, this, 20);
     }
 
     @Override
@@ -95,6 +103,7 @@ public final class DecontaminationLightBlock extends Block {
             DecontaminationStructure.clearBlock(level, pos, state);
             return;
         }
+        refreshLight(level, pos);
         level.scheduleTick(pos, this, 40);
     }
 }

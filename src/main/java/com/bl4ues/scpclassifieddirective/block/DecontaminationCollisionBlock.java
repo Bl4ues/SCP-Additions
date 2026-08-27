@@ -62,7 +62,9 @@ public final class DecontaminationCollisionBlock extends Block
     }
 
     public static int encodeSide(int side) {
-        if (side < -1 || side > 1) throw new IllegalArgumentException("side=" + side);
+        if (side < -1 || side > 1) {
+            throw new IllegalArgumentException("side=" + side);
+        }
         return side + 1;
     }
 
@@ -71,7 +73,9 @@ public final class DecontaminationCollisionBlock extends Block
     }
 
     public static int encodeHeight(int height) {
-        if (height < -1 || height > 3) throw new IllegalArgumentException("height=" + height);
+        if (height < -1 || height > 3) {
+            throw new IllegalArgumentException("height=" + height);
+        }
         return height + 1;
     }
 
@@ -80,7 +84,8 @@ public final class DecontaminationCollisionBlock extends Block
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(
+            StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, SIDE, HEIGHT, FORWARD, WATERLOGGED);
     }
 
@@ -119,6 +124,22 @@ public final class DecontaminationCollisionBlock extends Block
                 state.getValue(FORWARD));
     }
 
+    /**
+     * The center floor helper immediately inside each endpoint doubles as the
+     * checkpoint's invisible redstone relay. No extra side placeholder is
+     * required, so map builders retain the wall cells beside both doors.
+     */
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return DecontaminationStructure.isDoorPowerPart(state);
+    }
+
+    @Override
+    public int getSignal(BlockState state, BlockGetter level, BlockPos pos,
+            Direction direction) {
+        return DecontaminationStructure.ownedDoorPowerSignal(level, pos, state);
+    }
+
     @Override
     public boolean propagatesSkylightDown(BlockState state, BlockGetter level,
             BlockPos pos) {
@@ -141,14 +162,17 @@ public final class DecontaminationCollisionBlock extends Block
             BlockState neighbor, LevelAccessor level, BlockPos pos,
             BlockPos neighborPos) {
         if (state.getValue(WATERLOGGED)) {
-            level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            level.scheduleTick(pos, Fluids.WATER,
+                    Fluids.WATER.getTickDelay(level));
         }
-        return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
+        return super.updateShape(state, direction, neighbor, level, pos,
+                neighborPos);
     }
 
     @Override
     public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        return state.setValue(FACING,
+                rotation.rotate(state.getValue(FACING)));
     }
 
     @Override

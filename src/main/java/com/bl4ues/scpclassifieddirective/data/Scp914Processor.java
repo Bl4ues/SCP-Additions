@@ -7,12 +7,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -43,6 +46,10 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class Scp914Processor {
+    public static final ResourceKey<DamageType> DAMAGE_TYPE = ResourceKey.create(
+            Registries.DAMAGE_TYPE,
+            new ResourceLocation(ScpClassifiedDirectiveMod.MODID, "scp914"));
+
     private Scp914Processor() {
     }
 
@@ -194,9 +201,15 @@ public final class Scp914Processor {
     }
 
     private static void hurtWithMessage(ServerPlayer player, float amount, String translationKey) {
-        DamageSource source = new DamageSource(player.level().registryAccess()
-                .registryOrThrow(Registries.DAMAGE_TYPE)
-                .getHolderOrThrow(DamageTypes.GENERIC)) {
+        var damageRegistry = player.level().registryAccess()
+                .registryOrThrow(Registries.DAMAGE_TYPE);
+        var genericType = damageRegistry.getHolderOrThrow(DamageTypes.GENERIC);
+        DamageSource source = new DamageSource(damageRegistry.getHolderOrThrow(DAMAGE_TYPE)) {
+            @Override
+            public boolean is(TagKey<DamageType> tag) {
+                return super.is(tag) || genericType.is(tag);
+            }
+
             @Override
             public Component getLocalizedDeathMessage(LivingEntity entity) {
                 return Component.translatable("death.attack." + translationKey,

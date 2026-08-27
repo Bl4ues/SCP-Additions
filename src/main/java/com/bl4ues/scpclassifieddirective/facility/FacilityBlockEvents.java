@@ -1,7 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -14,9 +13,11 @@ import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
 /**
- * Break-time cleanup for facility multiblocks and manually assembled Unity
- * button pairs. Right-side, authored left-side and legacy reflected variants
- * are equivalent here.
+ * Break-time cleanup for facility multiblocks.
+ *
+ * Door buttons are deliberately excluded from ownership cleanup. Opposite
+ * panels may synchronize interaction/state, but each panel remains an
+ * independently placed block and breaking one must never remove the other.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilityBlockEvents {
@@ -63,47 +64,6 @@ public final class FacilityBlockEvents {
             if (level.getBlockState(lower).is(FacilityModule.WALLLIGHT.get())) {
                 level.destroyBlock(lower, false);
             }
-            return;
         }
-
-        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return;
-        }
-
-        boolean locked = isLockedButton(block);
-        boolean functional = isFunctionalButton(block);
-        if (!locked && !functional) {
-            return;
-        }
-
-        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        BlockPos counterpartPos = event.getPos().relative(facing.getOpposite(), 2);
-        BlockState counterpartState = level.getBlockState(counterpartPos);
-        Block counterpart = counterpartState.getBlock();
-
-        boolean correctlyFacing = counterpartState.hasProperty(HorizontalDirectionalBlock.FACING)
-                && counterpartState.getValue(HorizontalDirectionalBlock.FACING) == facing.getOpposite();
-        boolean matchingCounterpart = correctlyFacing && (locked
-                ? isLockedButton(counterpart)
-                : isFunctionalButton(counterpart));
-
-        if (matchingCounterpart) {
-            level.destroyBlock(counterpartPos, false);
-        }
-    }
-
-    private static boolean isLockedButton(Block block) {
-        return block == FacilityModule.BUTTON_LOCKED.get()
-                || LeftDoorButtons.isLocked(block)
-                || MirroredDoorButtons.isLocked(block);
-    }
-
-    private static boolean isFunctionalButton(Block block) {
-        return block == FacilityModule.BUTTON_CLOSED.get()
-                || block == FacilityModule.BUTTON_OPENING.get()
-                || block == FacilityModule.BUTTON_OPEN.get()
-                || block == FacilityModule.BUTTON_CLOSING.get()
-                || LeftDoorButtons.isFunctional(block)
-                || MirroredDoorButtons.isFunctional(block);
     }
 }

@@ -1,5 +1,10 @@
 package com.bl4ues.scpclassifieddirective.block;
 
+import com.bl4ues.scpclassifieddirective.block.entity.DecontaminationBlockEntity;
+import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
+import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
@@ -9,13 +14,18 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -29,30 +39,21 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
-import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Common controller behavior for all visual states of a decontamination
- * checkpoint. Collision outside the controller cell is delegated to invisible
- * structure parts.
- */
-public abstract class AbstractDecontaminationBlock extends Block
+/** Shared GeckoLib controller behavior for all legacy visual state IDs. */
+public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
         implements SimpleWaterloggedBlock {
-    public static final DirectionProperty FACING =
-            HorizontalDirectionalBlock.FACING;
-    public static final BooleanProperty WATERLOGGED =
-            BlockStateProperties.WATERLOGGED;
+    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     protected AbstractDecontaminationBlock() {
         super(BlockBehaviour.Properties.of()
                 .sound(SoundType.METAL)
                 .strength(20.0F, 30.0F)
-                .lightLevel(state -> 6)
                 .requiresCorrectToolForDrops()
                 .noOcclusion()
                 .isRedstoneConductor((state, level, pos) -> false));
@@ -71,6 +72,26 @@ public abstract class AbstractDecontaminationBlock extends Block
             BlockPos pos, BlockState oldState, boolean moving) {
     }
 
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new DecontaminationBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
+            BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null : createTickerHelper(type,
+                ScpClassifiedDirectiveModBlockEntities.DECONTAMINATION.get(),
+                DecontaminationBlockEntity::serverTick);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
     @Override
     protected void createBlockStateDefinition(
             StateDefinition.Builder<Block, BlockState> builder) {
@@ -83,18 +104,18 @@ public abstract class AbstractDecontaminationBlock extends Block
         return Shapes.empty();
     }
 
+    /** The visible body is large; this local cell remains its break target. */
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return DecontaminationShapeHelper.localShape(
-                state.getValue(FACING), isClosedState(), 0, 0, 0);
+        return DecontaminationShapeHelper.controllerSelectionShape();
     }
 
+    /** Physical collision belongs to the owned floor/wall/ceiling helpers. */
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return DecontaminationShapeHelper.localShape(
-                state.getValue(FACING), isClosedState(), 0, 0, 0);
+        return Shapes.empty();
     }
 
     @Override
@@ -102,9 +123,8 @@ public abstract class AbstractDecontaminationBlock extends Block
         BlockPos placementPos = context.getClickedPos();
         BlockPos controllerPos = placementPos.above();
         Direction facing = context.getHorizontalDirection().getOpposite();
-        if (!context.getLevel().getBlockState(placementPos.below())
-                .isFaceSturdy(context.getLevel(), placementPos.below(),
-                        Direction.UP)
+        if (!DecontaminationStructure.hasPlacementSupport(
+                context.getLevel(), controllerPos, facing)
                 || !DecontaminationStructure.canPlace(context.getLevel(),
                 controllerPos, facing, placementPos)) {
             return null;
@@ -112,7 +132,7 @@ public abstract class AbstractDecontaminationBlock extends Block
         return defaultBlockState()
                 .setValue(FACING, facing)
                 .setValue(WATERLOGGED, context.getLevel()
-                        .getFluidState(placementPos).getType() == Fluids.WATER);
+                        .getFluidState(controllerPos).getType() == Fluids.WATER);
     }
 
     @Override
@@ -152,8 +172,7 @@ public abstract class AbstractDecontaminationBlock extends Block
     }
 
     @Override
-    public int getLightBlock(BlockState state, BlockGetter level,
-            BlockPos pos) {
+    public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
         return 0;
     }
 
@@ -166,11 +185,9 @@ public abstract class AbstractDecontaminationBlock extends Block
     @Override
     public boolean canHarvestBlock(BlockState state, BlockGetter level,
             BlockPos pos, Player player) {
-        if (player.getInventory().getSelected().getItem()
-                instanceof PickaxeItem pickaxe) {
-            return pickaxe.getTier().getLevel() >= 1;
-        }
-        return false;
+        return player.getInventory().getSelected().getItem()
+                instanceof PickaxeItem pickaxe
+                && pickaxe.getTier().getLevel() >= 1;
     }
 
     @Override
@@ -193,11 +210,19 @@ public abstract class AbstractDecontaminationBlock extends Block
         }
 
         super.onPlace(state, level, pos, oldState, moving);
-        if (!level.isClientSide) {
-            DecontaminationStructure.ensureCollisionParts(level, pos,
-                    state.getValue(FACING));
-            controllerPlaced(state, level, pos, oldState, moving);
+        if (level.isClientSide) return;
+
+        Direction facing = state.getValue(FACING);
+        if (!DecontaminationStructure.isController(oldState)) {
+            if (!DecontaminationStructure.placeStructure(level, pos, facing)) {
+                DecontaminationStructure.removeStructureParts(level, pos, state);
+                DecontaminationStructure.clearBlock(level, pos, state);
+                return;
+            }
+        } else {
+            DecontaminationStructure.ensureStructure(level, pos, facing);
         }
+        controllerPlaced(state, level, pos, oldState, moving);
     }
 
     @Override
@@ -205,7 +230,7 @@ public abstract class AbstractDecontaminationBlock extends Block
             BlockState newState, boolean moving) {
         if (!level.isClientSide
                 && !DecontaminationStructure.isController(newState)) {
-            DecontaminationStructure.removeCollisionParts(level, pos, state);
+            DecontaminationStructure.removeStructureParts(level, pos, state);
             DecontaminationCheckpointController.forget(level, pos);
             FacilityStructureBreakGuard.clear(level, pos);
         }
@@ -215,17 +240,20 @@ public abstract class AbstractDecontaminationBlock extends Block
     protected final void ensureStructure(Level level, BlockPos pos,
             BlockState state) {
         if (!level.isClientSide) {
-            DecontaminationStructure.ensureCollisionParts(level, pos,
+            DecontaminationStructure.ensureStructure(level, pos,
                     state.getValue(FACING));
         }
     }
 
+    /**
+     * The authored model extends one block below its controller, so the public
+     * item is placed at floor level and the actual GeckoLib controller is moved
+     * one block upward. This preserves the established placement convention.
+     */
     private boolean tryRaiseOnPlacement(BlockState state, Level level,
             BlockPos pos, BlockState oldState, boolean moving) {
-        if (moving || level.isClientSide || oldState.getBlock() == this
-                || level.getBlockState(pos.below()).getBlock() == this
-                || !level.getBlockState(pos.below()).isFaceSturdy(level,
-                pos.below(), Direction.UP)) {
+        if (moving || level.isClientSide
+                || DecontaminationStructure.isController(oldState)) {
             return false;
         }
 
@@ -235,17 +263,13 @@ public abstract class AbstractDecontaminationBlock extends Block
             return false;
         }
 
-        level.setBlock(raisedPos, state, Block.UPDATE_ALL);
-        level.setBlock(pos, state.getValue(WATERLOGGED)
-                ? Blocks.WATER.defaultBlockState()
-                : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        if (!DecontaminationStructure.placeCollisionParts(level, raisedPos,
-                facing)) {
-            BlockState raisedState = level.getBlockState(raisedPos);
-            DecontaminationStructure.removeCollisionParts(level, raisedPos,
-                    raisedState);
-            DecontaminationStructure.clearBlock(level, raisedPos, raisedState);
-        }
-        return true;
+        BlockState replacement = oldState.getFluidState().isEmpty()
+                ? Blocks.AIR.defaultBlockState()
+                : oldState.getFluidState().createLegacyBlock();
+        level.setBlock(pos, replacement, Block.UPDATE_ALL);
+
+        BlockState raisedState = state.setValue(WATERLOGGED,
+                level.getFluidState(raisedPos).getType() == Fluids.WATER);
+        return level.setBlock(raisedPos, raisedState, Block.UPDATE_ALL);
     }
 }

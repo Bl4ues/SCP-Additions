@@ -32,7 +32,11 @@ public final class DecontaminationBlockEntity extends BlockEntity
     private final AnimatableInstanceCache animationCache =
             GeckoLibUtil.createInstanceCache(this);
     private boolean active;
-    private long sequenceStartGameTime;
+    private long activeStartGameTime;
+    private boolean animationStarted;
+    private long animationStartGameTime;
+    private boolean effectsStarted;
+    private long effectsStartGameTime;
 
     public DecontaminationBlockEntity(BlockPos pos, BlockState state) {
         super(ScpClassifiedDirectiveModBlockEntities.DECONTAMINATION.get(), pos, state);
@@ -71,7 +75,7 @@ public final class DecontaminationBlockEntity extends BlockEntity
                         state.getValue(HorizontalDirectionalBlock.FACING));
             }
             DecontaminationCheckpointController.tickActiveSequence(level, pos,
-                    state, blockEntity, blockEntity.sequenceElapsedTicks());
+                    state, blockEntity, blockEntity.activeElapsedTicks());
             return;
         }
 
@@ -86,7 +90,32 @@ public final class DecontaminationBlockEntity extends BlockEntity
     public boolean beginSequence() {
         if (level == null || level.isClientSide || active) return false;
         active = true;
-        sequenceStartGameTime = level.getGameTime();
+        activeStartGameTime = level.getGameTime();
+        animationStarted = false;
+        animationStartGameTime = 0L;
+        effectsStarted = false;
+        effectsStartGameTime = 0L;
+        sync();
+        return true;
+    }
+
+    public boolean startAnimation() {
+        if (level == null || level.isClientSide || !active || animationStarted) {
+            return false;
+        }
+        animationStarted = true;
+        animationStartGameTime = level.getGameTime();
+        sync();
+        return true;
+    }
+
+    public boolean startEffects() {
+        if (level == null || level.isClientSide || !active
+                || !animationStarted || effectsStarted) {
+            return false;
+        }
+        effectsStarted = true;
+        effectsStartGameTime = level.getGameTime();
         sync();
         return true;
     }
@@ -94,6 +123,11 @@ public final class DecontaminationBlockEntity extends BlockEntity
     public boolean clearSequence() {
         if (!active) return false;
         active = false;
+        activeStartGameTime = 0L;
+        animationStarted = false;
+        animationStartGameTime = 0L;
+        effectsStarted = false;
+        effectsStartGameTime = 0L;
         sync();
         return true;
     }
@@ -102,9 +136,33 @@ public final class DecontaminationBlockEntity extends BlockEntity
         return active;
     }
 
+    public boolean hasAnimationStarted() {
+        return animationStarted;
+    }
+
+    public boolean hasEffectsStarted() {
+        return effectsStarted;
+    }
+
+    public long activeElapsedTicks() {
+        return level == null || !active ? 0L
+                : Math.max(0L, level.getGameTime() - activeStartGameTime);
+    }
+
+    public long animationElapsedTicks() {
+        return level == null || !animationStarted ? -1L
+                : Math.max(0L, level.getGameTime() - animationStartGameTime);
+    }
+
+    /**
+     * Elapsed ticks of the audible/visible decontamination phase. This clock is
+     * deliberately zero while the doors are closing and while the GeckoLib
+     * animation performs its half-second lead-in. DecontaminationStructure uses
+     * it to decide when the hidden redstone relays may reopen the doors.
+     */
     public long sequenceElapsedTicks() {
-        return level == null ? 0L
-                : Math.max(0L, level.getGameTime() - sequenceStartGameTime);
+        return level == null || !effectsStarted ? 0L
+                : Math.max(0L, level.getGameTime() - effectsStartGameTime);
     }
 
     private void sync() {
@@ -119,14 +177,22 @@ public final class DecontaminationBlockEntity extends BlockEntity
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putBoolean("DecontaminationActive", active);
-        tag.putLong("DecontaminationStart", sequenceStartGameTime);
+        tag.putLong("DecontaminationStart", activeStartGameTime);
+        tag.putBoolean("DecontaminationAnimationStarted", animationStarted);
+        tag.putLong("DecontaminationAnimationStart", animationStartGameTime);
+        tag.putBoolean("DecontaminationEffectsStarted", effectsStarted);
+        tag.putLong("DecontaminationEffectsStart", effectsStartGameTime);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         active = tag.getBoolean("DecontaminationActive");
-        sequenceStartGameTime = tag.getLong("DecontaminationStart");
+        activeStartGameTime = tag.getLong("DecontaminationStart");
+        animationStarted = tag.getBoolean("DecontaminationAnimationStarted");
+        animationStartGameTime = tag.getLong("DecontaminationAnimationStart");
+        effectsStarted = tag.getBoolean("DecontaminationEffectsStarted");
+        effectsStartGameTime = tag.getLong("DecontaminationEffectsStart");
     }
 
     @Override
@@ -156,7 +222,7 @@ public final class DecontaminationBlockEntity extends BlockEntity
     public void registerControllers(
             AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "decontamination", 0,
-                state -> state.setAndContinue(active
+                state -> state.setAndContinue(active && animationStarted
                         ? DECONTAMINATION : IDLE)));
     }
 

@@ -19,14 +19,12 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Invisible level-10 light source embedded in the checkpoint ceiling. Keeping
- * it as a named mod block gives shader packs a stable block id for future
- * colored-light treatment instead of relying on Minecraft's generic light block.
+ * Invisible level-10 light source embedded just below the checkpoint ceiling.
+ * Keeping it as a named mod block gives shader packs a stable block id for
+ * future colored-light treatment instead of relying on Minecraft's light block.
  */
 public final class DecontaminationLightBlock extends Block {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    private static final VoxelShape CEILING_SHAPE = Block.box(
-            0.0D, -8.0D, 0.0D, 16.0D, 0.0D, 16.0D);
 
     public DecontaminationLightBlock() {
         super(BlockBehaviour.Properties.of()
@@ -57,9 +55,7 @@ public final class DecontaminationLightBlock extends Block {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        // This cell replaces the centre ceiling helper, so it must provide the
-        // same half-block-down roof collision instead of a full invisible cube.
-        return CEILING_SHAPE;
+        return Shapes.empty();
     }
 
     @Override
@@ -80,12 +76,10 @@ public final class DecontaminationLightBlock extends Block {
     }
 
     private static void refreshLight(Level level, BlockPos pos) {
-        // The light is inserted after the collision shell. Explicitly asking
-        // the light engine to revisit the source and the chamber-facing cell
-        // prevents shaders/client relight timing from leaving the source dark
-        // until some unrelated neighbour update happens.
         level.getLightEngine().checkBlock(pos);
-        level.getLightEngine().checkBlock(pos.below());
+        for (Direction direction : Direction.values()) {
+            level.getLightEngine().checkBlock(pos.relative(direction));
+        }
     }
 
     @Override

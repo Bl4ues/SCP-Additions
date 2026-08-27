@@ -6,4 +6,9 @@ public class DeconOpenBlock extends AbstractDecontaminationBlock {
     protected boolean isClosedState() {
         return false;
     }
+
+    @Override
+    protected boolean raisesOnInitialPlacement() {
+        return true;
+    }
 }

@@ -37,7 +37,7 @@ public final class DecontaminationGasParticle extends TextureSheetParticle {
     @Override
     public void tick() {
         super.tick();
-        if (this.removed) return;
+        if (this.age >= this.lifetime) return;
         this.setSpriteFromAge(sprites);
         float progress = Mth.clamp(this.age / (float) this.lifetime,
                 0.0F, 1.0F);

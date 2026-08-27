@@ -11,29 +11,48 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 /** Placement, validation and teardown for the replacement Tesla Gate shell. */
 public final class TeslaGateStructure {
     private TeslaGateStructure() {
     }
 
-    public static boolean canPlace(Level level, BlockPos controllerPos, Direction facing) {
-        if (!level.getWorldBorder().isWithinBounds(controllerPos)
-                || !level.getBlockState(controllerPos).canBeReplaced()) return false;
-        for (TeslaGateCollisionBlock.Part part : TeslaGateCollisionBlock.Part.values()) {
-            BlockPos partPos = partPosition(controllerPos, facing, part);
-            if (!level.getWorldBorder().isWithinBounds(partPos)
-                    || !level.getBlockState(partPos).canBeReplaced()) return false;
-        }
-        return true;
+    public static boolean canPlace(Level level, BlockPos controllerPos,
+            Direction facing) {
+        return collectObstructions(level, controllerPos, facing).isEmpty();
     }
 
-    public static boolean placeCollisionParts(Level level, BlockPos controllerPos,
-            Direction facing) {
-        for (TeslaGateCollisionBlock.Part part : TeslaGateCollisionBlock.Part.values()) {
+    /** Same footprint used by placement, exposed for reusable failure overlays. */
+    public static List<BlockPos> collectObstructions(Level level,
+            BlockPos controllerPos, Direction facing) {
+        Set<BlockPos> blockers = new LinkedHashSet<>();
+        if (!level.getWorldBorder().isWithinBounds(controllerPos)
+                || !level.getBlockState(controllerPos).canBeReplaced()) {
+            blockers.add(controllerPos.immutable());
+        }
+        for (TeslaGateCollisionBlock.Part part
+                : TeslaGateCollisionBlock.Part.values()) {
+            BlockPos partPos = partPosition(controllerPos, facing, part);
+            if (!level.getWorldBorder().isWithinBounds(partPos)
+                    || !level.getBlockState(partPos).canBeReplaced()) {
+                blockers.add(partPos.immutable());
+            }
+        }
+        return List.copyOf(blockers);
+    }
+
+    public static boolean placeCollisionParts(Level level,
+            BlockPos controllerPos, Direction facing) {
+        for (TeslaGateCollisionBlock.Part part
+                : TeslaGateCollisionBlock.Part.values()) {
             BlockPos partPos = partPosition(controllerPos, facing, part);
             if (!level.getBlockState(partPos).canBeReplaced()) return false;
         }
-        for (TeslaGateCollisionBlock.Part part : TeslaGateCollisionBlock.Part.values()) {
+        for (TeslaGateCollisionBlock.Part part
+                : TeslaGateCollisionBlock.Part.values()) {
             BlockPos partPos = partPosition(controllerPos, facing, part);
             level.setBlock(partPos, collisionState(level, partPos, facing, part),
                     Block.UPDATE_ALL);
@@ -41,31 +60,38 @@ public final class TeslaGateStructure {
         return true;
     }
 
-    public static void ensureCollisionParts(Level level, BlockPos controllerPos,
-            Direction facing) {
+    public static void ensureCollisionParts(Level level,
+            BlockPos controllerPos, Direction facing) {
         if (!isController(level.getBlockState(controllerPos))) return;
-        for (TeslaGateCollisionBlock.Part part : TeslaGateCollisionBlock.Part.values()) {
+        for (TeslaGateCollisionBlock.Part part
+                : TeslaGateCollisionBlock.Part.values()) {
             BlockPos partPos = partPosition(controllerPos, facing, part);
             BlockState current = level.getBlockState(partPos);
             if (current.getBlock() == TeslaGateStructureBlocks.collision()
                     && current.getValue(TeslaGateCollisionBlock.FACING) == facing
-                    && current.getValue(TeslaGateCollisionBlock.PART) == part) continue;
+                    && current.getValue(TeslaGateCollisionBlock.PART) == part) {
+                continue;
+            }
             if (current.canBeReplaced()) {
-                level.setBlock(partPos, collisionState(level, partPos, facing, part),
+                level.setBlock(partPos,
+                        collisionState(level, partPos, facing, part),
                         Block.UPDATE_ALL);
             }
         }
     }
 
-    public static void removeCollisionParts(Level level, BlockPos controllerPos,
-            BlockState controllerState) {
+    public static void removeCollisionParts(Level level,
+            BlockPos controllerPos, BlockState controllerState) {
         if (!controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) return;
-        Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-        for (TeslaGateCollisionBlock.Part part : TeslaGateCollisionBlock.Part.values()) {
+        Direction facing = controllerState.getValue(
+                HorizontalDirectionalBlock.FACING);
+        for (TeslaGateCollisionBlock.Part part
+                : TeslaGateCollisionBlock.Part.values()) {
             BlockPos partPos = partPosition(controllerPos, facing, part);
             BlockState partState = level.getBlockState(partPos);
             if (partState.getBlock() == TeslaGateStructureBlocks.collision()
-                    && controllerPosition(partPos, partState).equals(controllerPos)) {
+                    && controllerPosition(partPos, partState)
+                    .equals(controllerPos)) {
                 clearBlock(level, partPos, partState);
             }
         }
@@ -89,34 +115,45 @@ public final class TeslaGateStructure {
 
     public static boolean isValidCollisionPart(Level level, BlockPos partPos,
             BlockState partState) {
-        if (partState.getBlock() != TeslaGateStructureBlocks.collision()) return false;
+        if (partState.getBlock() != TeslaGateStructureBlocks.collision()) {
+            return false;
+        }
         BlockPos controllerPos = controllerPosition(partPos, partState);
         BlockState controllerState = level.getBlockState(controllerPos);
         if (!isController(controllerState)
-                || !controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) return false;
+                || !controllerState.hasProperty(
+                HorizontalDirectionalBlock.FACING)) return false;
         Direction facing = partState.getValue(TeslaGateCollisionBlock.FACING);
-        return controllerState.getValue(HorizontalDirectionalBlock.FACING) == facing
+        return controllerState.getValue(HorizontalDirectionalBlock.FACING)
+                == facing
                 && partPosition(controllerPos, facing,
-                partState.getValue(TeslaGateCollisionBlock.PART)).equals(partPos);
+                partState.getValue(TeslaGateCollisionBlock.PART))
+                .equals(partPos);
     }
 
-    public static BlockPos partPosition(BlockPos controllerPos, Direction facing,
-            TeslaGateCollisionBlock.Part part) {
+    public static BlockPos partPosition(BlockPos controllerPos,
+            Direction facing, TeslaGateCollisionBlock.Part part) {
         Direction right = facing.getClockWise();
         return controllerPos.offset(
-                right.getStepX() * part.sideOffset() + facing.getStepX() * part.forwardOffset(),
+                right.getStepX() * part.sideOffset()
+                        + facing.getStepX() * part.forwardOffset(),
                 part.yOffset(),
-                right.getStepZ() * part.sideOffset() + facing.getStepZ() * part.forwardOffset());
+                right.getStepZ() * part.sideOffset()
+                        + facing.getStepZ() * part.forwardOffset());
     }
 
-    public static BlockPos controllerPosition(BlockPos partPos, BlockState partState) {
+    public static BlockPos controllerPosition(BlockPos partPos,
+            BlockState partState) {
         Direction facing = partState.getValue(TeslaGateCollisionBlock.FACING);
-        TeslaGateCollisionBlock.Part part = partState.getValue(TeslaGateCollisionBlock.PART);
+        TeslaGateCollisionBlock.Part part = partState.getValue(
+                TeslaGateCollisionBlock.PART);
         Direction right = facing.getClockWise();
         return partPos.offset(
-                -right.getStepX() * part.sideOffset() - facing.getStepX() * part.forwardOffset(),
+                -right.getStepX() * part.sideOffset()
+                        - facing.getStepX() * part.forwardOffset(),
                 -part.yOffset(),
-                -right.getStepZ() * part.sideOffset() - facing.getStepZ() * part.forwardOffset());
+                -right.getStepZ() * part.sideOffset()
+                        - facing.getStepZ() * part.forwardOffset());
     }
 
     public static boolean isController(BlockState state) {
@@ -136,8 +173,8 @@ public final class TeslaGateStructure {
         level.setBlock(pos, replacement, Block.UPDATE_ALL);
     }
 
-    private static BlockState collisionState(Level level, BlockPos pos, Direction facing,
-            TeslaGateCollisionBlock.Part part) {
+    private static BlockState collisionState(Level level, BlockPos pos,
+            Direction facing, TeslaGateCollisionBlock.Part part) {
         return TeslaGateStructureBlocks.collision().defaultBlockState()
                 .setValue(TeslaGateCollisionBlock.FACING, facing)
                 .setValue(TeslaGateCollisionBlock.PART, part)

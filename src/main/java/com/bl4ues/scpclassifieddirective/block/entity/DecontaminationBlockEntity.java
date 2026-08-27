@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.block.entity;
 
+import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
@@ -8,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -42,18 +44,32 @@ public final class DecontaminationBlockEntity extends BlockEntity
 
         // Legacy transient states remain registered for world compatibility,
         // but the rebuilt checkpoint keeps its live state in this BlockEntity.
-        if (!blockEntity.active && state.is(ScpClassifiedDirectiveModBlocks.DECON_CLOSED.get())) {
+        if (!blockEntity.active
+                && state.is(ScpClassifiedDirectiveModBlocks.DECON_CLOSED.get())) {
             DecontaminationCheckpointController.beginClosed(level,
                     pos.getX(), pos.getY(), pos.getZ());
             return;
         }
-        if (!blockEntity.active && state.is(ScpClassifiedDirectiveModBlocks.DECON_OPEN_RELOAD.get())) {
+        if (!blockEntity.active
+                && state.is(ScpClassifiedDirectiveModBlocks.DECON_OPEN_RELOAD.get())) {
             DecontaminationCheckpointController.finishReload(level,
                     pos.getX(), pos.getY(), pos.getZ());
             return;
         }
 
+        long scanPhase = level.getGameTime()
+                + pos.getX() * 31L + pos.getY() * 17L + pos.getZ() * 13L;
+
         if (blockEntity.active) {
+            // MineZero rewinds world/BlockEntity state independently from
+            // transient neighbor notifications. Reasserting the two relay
+            // edges every five ticks makes restored doors converge to the
+            // restored sequence immediately, whether they should close or open.
+            if (scanPhase % 5L == 0L
+                    && state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                DecontaminationStructure.nudgeOwnedDoors(level, pos,
+                        state.getValue(HorizontalDirectionalBlock.FACING));
+            }
             DecontaminationCheckpointController.tickActiveSequence(level, pos,
                     state, blockEntity, blockEntity.sequenceElapsedTicks());
             return;
@@ -61,8 +77,6 @@ public final class DecontaminationBlockEntity extends BlockEntity
 
         // Stagger idle scans between checkpoints instead of scheduling transient
         // block ticks. This survives MineZero/world-time restores cleanly.
-        long scanPhase = level.getGameTime()
-                + pos.getX() * 31L + pos.getY() * 17L + pos.getZ() * 13L;
         if (scanPhase % 5L == 0L) {
             DecontaminationCheckpointController.scanOpen(level,
                     pos.getX(), pos.getY(), pos.getZ());

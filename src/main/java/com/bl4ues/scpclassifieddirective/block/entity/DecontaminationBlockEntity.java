@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.block.entity;
 
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.procedures.DecontaminationCheckpointController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -37,22 +38,50 @@ public final class DecontaminationBlockEntity extends BlockEntity
 
     public static void serverTick(Level level, BlockPos pos, BlockState state,
             DecontaminationBlockEntity blockEntity) {
-        if (!blockEntity.active) return;
-        DecontaminationCheckpointController.tickActiveSequence(level, pos, state,
-                blockEntity, blockEntity.sequenceElapsedTicks());
+        if (level.isClientSide) return;
+
+        // Legacy transient states remain registered for world compatibility,
+        // but the rebuilt checkpoint keeps its live state in this BlockEntity.
+        if (!blockEntity.active && state.is(ScpClassifiedDirectiveModBlocks.DECON_CLOSED.get())) {
+            DecontaminationCheckpointController.beginClosed(level,
+                    pos.getX(), pos.getY(), pos.getZ());
+            return;
+        }
+        if (!blockEntity.active && state.is(ScpClassifiedDirectiveModBlocks.DECON_OPEN_RELOAD.get())) {
+            DecontaminationCheckpointController.finishReload(level,
+                    pos.getX(), pos.getY(), pos.getZ());
+            return;
+        }
+
+        if (blockEntity.active) {
+            DecontaminationCheckpointController.tickActiveSequence(level, pos,
+                    state, blockEntity, blockEntity.sequenceElapsedTicks());
+            return;
+        }
+
+        // Stagger idle scans between checkpoints instead of scheduling transient
+        // block ticks. This survives MineZero/world-time restores cleanly.
+        long scanPhase = level.getGameTime()
+                + pos.getX() * 31L + pos.getY() * 17L + pos.getZ() * 13L;
+        if (scanPhase % 5L == 0L) {
+            DecontaminationCheckpointController.scanOpen(level,
+                    pos.getX(), pos.getY(), pos.getZ());
+        }
     }
 
-    public void beginSequence() {
-        if (level == null || level.isClientSide) return;
+    public boolean beginSequence() {
+        if (level == null || level.isClientSide || active) return false;
         active = true;
         sequenceStartGameTime = level.getGameTime();
         sync();
+        return true;
     }
 
-    public void clearSequence() {
-        if (!active) return;
+    public boolean clearSequence() {
+        if (!active) return false;
         active = false;
         sync();
+        return true;
     }
 
     public boolean isActive() {

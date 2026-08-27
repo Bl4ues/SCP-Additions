@@ -29,17 +29,13 @@
 						"0.0": {
 							"vector": [0, 0, 0]
 						},
-						"3.0": {
-							"vector": [0, -810, 0],
-							"easing": "easeInQuart"
-						},
-						"4.25": {
-							"vector": [0, -1800, 0],
-							"easing": "linear"
+						"4.0": {
+							"vector": [0, -1080, 0],
+							"easing": "easeInCubic"
 						},
 						"6.5417": {
-							"vector": [0, -2520, 0],
-							"easing": "easeOutExpo"
+							"vector": [0, -1800, 0],
+							"easing": "easeOutCubic"
 						}
 					}
 				},
@@ -48,17 +44,13 @@
 						"0.0": {
 							"vector": [0, 0, 0]
 						},
-						"3.0": {
-							"vector": [0, -810, 0],
-							"easing": "easeInQuart"
-						},
-						"4.25": {
-							"vector": [0, -1800, 0],
-							"easing": "linear"
+						"4.0": {
+							"vector": [0, -1080, 0],
+							"easing": "easeInCubic"
 						},
 						"6.5417": {
-							"vector": [0, -2520, 0],
-							"easing": "easeOutExpo"
+							"vector": [0, -1800, 0],
+							"easing": "easeOutCubic"
 						}
 					}
 				}

@@ -23,7 +23,6 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class DecontaminationClient {
     private static final int FULL_BRIGHT = 0xF000F0;
-    private static final int GLOW_PASSES = 3;
     private static final ResourceLocation GLOWMASK = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID,
             "textures/block/decontamination_glowmask.png");
@@ -70,6 +69,10 @@ public final class DecontaminationClient {
         private Renderer() {
             super(new Model());
 
+            // Keep the base geometry on the same two-sided translucent path
+            // that correctly renders the authored zero-thickness window and
+            // thin painted details. Only the authored mask is re-rendered as
+            // emissive; do not change the base pass to fix shader artifacts.
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override
                 public void render(PoseStack poseStack,
@@ -78,19 +81,11 @@ public final class DecontaminationClient {
                         MultiBufferSource bufferSource, VertexConsumer buffer,
                         float partialTick, int packedLight, int packedOverlay) {
                     RenderType emissive = RenderType.eyes(GLOWMASK);
-                    VertexConsumer emissiveBuffer = bufferSource.getBuffer(emissive);
-
-                    // The authored mask is intentionally a dark red. One
-                    // full-bright pass makes it illumination-independent but
-                    // can still remain below shader bloom thresholds. Repeating
-                    // the additive eyes pass increases only the masked pixels,
-                    // leaving the window and the rest of the body untouched.
-                    for (int pass = 0; pass < GLOW_PASSES; pass++) {
-                        getRenderer().reRender(bakedModel, poseStack, bufferSource,
-                                animatable, emissive, emissiveBuffer, partialTick,
-                                FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                                1.0F, 1.0F, 1.0F, 1.0F);
-                    }
+                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                            animatable, emissive,
+                            bufferSource.getBuffer(emissive), partialTick,
+                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                            1.0F, 1.0F, 1.0F, 1.0F);
                 }
             });
         }
@@ -114,10 +109,7 @@ public final class DecontaminationClient {
         public RenderType getRenderType(DecontaminationBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            // Cull backfaces on the large zero-thickness window plane. The old
-            // no-cull translucent pass rendered both sides and could double the
-            // shader/specular response into bright white patches.
-            return RenderType.entityTranslucentCull(texture);
+            return RenderType.entityTranslucent(texture, true);
         }
 
         @Override

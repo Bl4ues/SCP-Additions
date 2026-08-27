@@ -27,10 +27,17 @@ public final class DecontaminationShapeHelper {
             return Shapes.empty();
         }
 
-        // The authored floor is a fully solid 3x5 platform. The roof collision
-        // intentionally stays a simple solid rectangle, as requested, instead
-        // of reproducing every slope in the visual mesh.
-        if (height == -1 || height == 3) return Shapes.block();
+        // The authored floor is a fully solid 3x5 platform.
+        if (height == -1) return Shapes.block();
+
+        // Ceiling helpers live in the block row at Y + 3 for clean ownership,
+        // while the visible roof begins around Y + 2.5. Extend the collision
+        // half a block downward instead of leaving a jump-sized void between
+        // the walkable chamber and the physical ceiling.
+        if (height == 3) {
+            return Block.box(0.0D, -8.0D, 0.0D,
+                    16.0D, 0.0D, 16.0D);
+        }
 
         // Side helpers occupy the OUTER edge of their host cells. The previous
         // implementation used the inner edge, collapsing the walkable chamber

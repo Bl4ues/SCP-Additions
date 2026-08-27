@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
@@ -49,6 +50,10 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
+    /** Prevents the relocation setBlock from recursively relocating again. */
+    private static final ThreadLocal<Boolean> RELOCATING =
+            ThreadLocal.withInitial(() -> false);
+
     protected AbstractDecontaminationBlock() {
         super(BlockBehaviour.Properties.of()
                 .sound(SoundType.METAL)
@@ -62,6 +67,10 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
     }
 
     protected abstract boolean isClosedState();
+
+    protected boolean raisesOnInitialPlacement() {
+        return false;
+    }
 
     protected void controllerPlaced(BlockState state, Level level,
             BlockPos pos, BlockState oldState, boolean moving) {
@@ -113,23 +122,37 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
         return Shapes.empty();
     }
 
+    /**
+     * The controller sits directly above the entrance BLACK_DOOR and doubles
+     * as its synthetic redstone source. The exit door uses the normal heavy
+     * door relay, which recognizes Decontamination ownership separately.
+     */
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getSignal(BlockState state, BlockGetter level, BlockPos pos,
+            Direction direction) {
+        return DecontaminationStructure.shouldPowerOwnedDoors(level, pos) ? 15 : 0;
+    }
+
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // BlockPlaceContext already resolves the actual target cell. The
-        // controller stays there; the authored floor lives one block below and
-        // must be cleared rather than causing the structure to auto-raise.
-        BlockPos controllerPos = context.getClickedPos();
+        BlockPos placementPos = context.getClickedPos();
+        BlockPos controllerPos = placementPos.above();
         Direction facing = context.getHorizontalDirection().getOpposite();
         if (!DecontaminationStructure.hasPlacementSupport(
                 context.getLevel(), controllerPos, facing)
                 || !DecontaminationStructure.canPlace(context.getLevel(),
-                controllerPos, facing, controllerPos)) {
+                controllerPos, facing, placementPos)) {
             return null;
         }
         return defaultBlockState()
                 .setValue(FACING, facing)
                 .setValue(WATERLOGGED, context.getLevel()
-                        .getFluidState(controllerPos).getType() == Fluids.WATER);
+                        .getFluidState(placementPos).getType() == Fluids.WATER);
     }
 
     @Override
@@ -200,6 +223,14 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos,
             BlockState oldState, boolean moving) {
+        if (raisesOnInitialPlacement()
+                && !Boolean.TRUE.equals(RELOCATING.get())
+                && !DecontaminationStructure.isController(oldState)
+                && relocateControllerAboveEntrance(state, level, pos,
+                        oldState, moving)) {
+            return;
+        }
+
         super.onPlace(state, level, pos, oldState, moving);
         if (level.isClientSide) return;
 
@@ -233,6 +264,39 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
         if (!level.isClientSide) {
             DecontaminationStructure.ensureStructure(level, pos,
                     state.getValue(FACING));
+        }
+    }
+
+    /**
+     * BlockItem must initially place the public block in the clicked cell. Move
+     * that temporary controller one block upward, then let the recursive
+     * onPlace at the final location create the real structure. The guard keeps
+     * that second setBlock from climbing again.
+     */
+    private boolean relocateControllerAboveEntrance(BlockState state, Level level,
+            BlockPos pos, BlockState oldState, boolean moving) {
+        if (moving || level.isClientSide) return false;
+
+        Direction facing = state.getValue(FACING);
+        BlockPos raisedPos = pos.above();
+        if (!level.getBlockState(raisedPos).canBeReplaced()
+                || !DecontaminationStructure.canPlace(level, raisedPos,
+                facing, pos)) {
+            return false;
+        }
+
+        BlockState replacement = oldState.getFluidState().isEmpty()
+                ? Blocks.AIR.defaultBlockState()
+                : oldState.getFluidState().createLegacyBlock();
+        level.setBlock(pos, replacement, Block.UPDATE_ALL);
+
+        BlockState raisedState = state.setValue(WATERLOGGED,
+                level.getFluidState(raisedPos).getType() == Fluids.WATER);
+        RELOCATING.set(true);
+        try {
+            return level.setBlock(raisedPos, raisedState, Block.UPDATE_ALL);
+        } finally {
+            RELOCATING.set(false);
         }
     }
 }

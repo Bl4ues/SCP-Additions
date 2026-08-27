@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.procedures;
 import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.block.entity.DecontaminationBlockEntity;
 import com.bl4ues.scpclassifieddirective.effect.EyeProtectionAccess;
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
@@ -33,11 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Server-authoritative sequence for the rebuilt GeckoLib checkpoint. */
 public final class DecontaminationCheckpointController {
-    /** 2.75 seconds: visible vapor begins to weaken. */
+    /** GeckoLib animation gets a half-second visual lead before gas/audio. */
+    public static final int ANIMATION_EFFECTS_DELAY_TICKS = 10;
+    /** 2.75 seconds after gas/audio start: visible vapor begins to weaken. */
     public static final int SMOKE_FADE_START_TICK = 55;
     /** New vapor stops at 4.75 seconds; short-lived remnants die by 5.25 s. */
     public static final int SMOKE_EMISSION_END_TICK = 95;
-    /** 5.25 seconds: no decontamination vapor should remain. */
+    /** 5.25 seconds after gas/audio start: no vapor should remain. */
     public static final int SMOKE_COMPLETE_TICK = 105;
     /** Full authored GeckoLib animation is 6.5417 seconds. */
     public static final int SEQUENCE_END_TICK = 131;
@@ -83,7 +86,7 @@ public final class DecontaminationCheckpointController {
 
         LATCHED_UNTIL_EXIT.add(key);
         if (!blockEntity.beginSequence()) return;
-        beginSequenceEffects(level, pos, state, players);
+        beginDoorClosure(level, pos, state);
     }
 
     /** Compatibility entry point for old transient DECON_CLOSED world states. */
@@ -97,50 +100,63 @@ public final class DecontaminationCheckpointController {
 
         CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
         LATCHED_UNTIL_EXIT.add(key);
-        beginSequenceEffects(level, pos, state, playersInside(level, pos, state));
+        beginDoorClosure(level, pos, state);
     }
 
-    private static void beginSequenceEffects(ServerLevel level, BlockPos pos,
-            BlockState state, List<ServerPlayer> players) {
-        Direction facing = facing(state);
-        DecontaminationStructure.nudgeOwnedDoors(level, pos, facing);
-
-        Vec3 soundPosition = DecontaminationStructure.chamberBox(pos, facing)
-                .getCenter();
-        level.playSound(null, soundPosition.x, soundPosition.y, soundPosition.z,
-                ScpClassifiedDirectiveModSounds.DECONTAMINATION.get(),
-                SoundSource.BLOCKS, 1.15F, 1.0F);
-
-        for (ServerPlayer player : players) {
-            decontaminate(level, player);
-        }
-        emitVentSmoke(level, pos, state, 0L);
+    private static void beginDoorClosure(ServerLevel level, BlockPos pos,
+            BlockState state) {
+        DecontaminationStructure.nudgeOwnedDoors(level, pos, facing(state));
     }
 
     public static void tickActiveSequence(Level world, BlockPos pos,
             BlockState state, DecontaminationBlockEntity blockEntity,
-            long elapsedTicks) {
+            long activeElapsedTicks) {
         if (!(world instanceof ServerLevel level) || !blockEntity.isActive()) return;
         if (FacilityStructureBreakGuard.isBeingMined(level, pos)) return;
 
-        if (elapsedTicks < SMOKE_EMISSION_END_TICK
-                && elapsedTicks % PARTICLE_INTERVAL_TICKS == 0L) {
-            emitVentSmoke(level, pos, state, elapsedTicks);
+        Direction facing = facing(state);
+
+        // Do not guess the heavy-door animation duration. Wait until both owned
+        // BLACK_DOOR blocks have actually reached their fully-closed endpoint.
+        if (!blockEntity.hasAnimationStarted()) {
+            if (ownedDoorsFullyClosed(level, pos, facing)) {
+                blockEntity.startAnimation();
+            }
+            return;
         }
 
-        // Reassert the synthetic power occasionally after release as well as at
-        // the exact 4.75-second boundary. This makes MineZero/chunk restores
-        // converge even when the restored clock resumes between two ticks.
-        if (elapsedTicks >= DecontaminationStructure.DOOR_RELEASE_TICK
-                && (elapsedTicks == DecontaminationStructure.DOOR_RELEASE_TICK
-                || elapsedTicks % 5L == 0L)) {
-            DecontaminationStructure.nudgeOwnedDoors(level, pos, facing(state));
+        long animationElapsed = blockEntity.animationElapsedTicks();
+
+        // The model begins moving as soon as the doors finish closing. Audio,
+        // player effects and vapor deliberately enter half a second later.
+        if (!blockEntity.hasEffectsStarted()
+                && animationElapsed >= ANIMATION_EFFECTS_DELAY_TICKS) {
+            if (blockEntity.startEffects()) {
+                beginTimedEffects(level, pos, state);
+            }
         }
 
-        if (elapsedTicks < SEQUENCE_END_TICK) return;
+        if (blockEntity.hasEffectsStarted()) {
+            long processElapsed = blockEntity.sequenceElapsedTicks();
+
+            if (processElapsed < SMOKE_EMISSION_END_TICK
+                    && processElapsed % PARTICLE_INTERVAL_TICKS == 0L) {
+                emitVentSmoke(level, pos, state, processElapsed);
+            }
+
+            // Door release remains 4.75 seconds after gas/audio start, not
+            // after the player merely entered the checkpoint.
+            if (processElapsed >= DecontaminationStructure.DOOR_RELEASE_TICK
+                    && (processElapsed == DecontaminationStructure.DOOR_RELEASE_TICK
+                    || processElapsed % 5L == 0L)) {
+                DecontaminationStructure.nudgeOwnedDoors(level, pos, facing);
+            }
+        }
+
+        if (animationElapsed < SEQUENCE_END_TICK) return;
 
         blockEntity.clearSequence();
-        DecontaminationStructure.nudgeOwnedDoors(level, pos, facing(state));
+        DecontaminationStructure.nudgeOwnedDoors(level, pos, facing);
 
         // Old worlds may still contain one of the transient controller blocks.
         // Normalize it only after the authored animation has completed.
@@ -148,6 +164,30 @@ public final class DecontaminationCheckpointController {
             level.setBlock(pos, copyCommonState(
                     ScpClassifiedDirectiveModBlocks.DECON_OPEN.get()
                             .defaultBlockState(), state), 3);
+        }
+    }
+
+    private static boolean ownedDoorsFullyClosed(ServerLevel level,
+            BlockPos controllerPos, Direction facing) {
+        return level.getBlockState(DecontaminationStructure.entranceDoorPosition(
+                        controllerPos, facing)).getBlock()
+                == FacilityModule.BLACK_DOOR.closed().get()
+                && level.getBlockState(DecontaminationStructure.exitDoorPosition(
+                        controllerPos, facing)).getBlock()
+                == FacilityModule.BLACK_DOOR.closed().get();
+    }
+
+    private static void beginTimedEffects(ServerLevel level, BlockPos pos,
+            BlockState state) {
+        Direction facing = facing(state);
+        Vec3 soundPosition = DecontaminationStructure.chamberBox(pos, facing)
+                .getCenter();
+        level.playSound(null, soundPosition.x, soundPosition.y, soundPosition.z,
+                ScpClassifiedDirectiveModSounds.DECONTAMINATION.get(),
+                SoundSource.BLOCKS, 1.15F, 1.0F);
+
+        for (ServerPlayer player : playersInside(level, pos, state)) {
+            decontaminate(level, player);
         }
     }
 

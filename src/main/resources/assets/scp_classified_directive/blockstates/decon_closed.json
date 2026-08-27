@@ -1,19 +1,9 @@
 {
-  "variants": {
-    "facing=north": {
-      "model": "scp_classified_directive:block/decon_closed"
-    },
-    "facing=east": {
-      "model": "scp_classified_directive:block/decon_closed",
-      "y": 90
-    },
-    "facing=south": {
-      "model": "scp_classified_directive:block/decon_closed",
-      "y": 180
-    },
-    "facing=west": {
-      "model": "scp_classified_directive:block/decon_closed",
-      "y": 270
+  "multipart": [
+    {
+      "apply": {
+        "model": "scp_classified_directive:block/decontamination_empty"
+      }
     }
-  }
+  ]
 }

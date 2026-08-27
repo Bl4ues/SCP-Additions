@@ -263,11 +263,18 @@ public final class DecontaminationCheckpointController {
 
     private static List<ServerPlayer> playersInside(ServerLevel level,
             BlockPos pos, BlockState state) {
-        AABB chamber = DecontaminationStructure.chamberBox(pos, facing(state));
-        return level.getEntitiesOfClass(ServerPlayer.class, chamber,
+        AABB authored = DecontaminationStructure.chamberBox(pos, facing(state));
+        // Keep the horizontal trigger exactly on the chamber interior, but make
+        // vertical presence tolerant enough that jumping never counts as an
+        // exit/re-entry. Using the player's whole bounding box also avoids the
+        // old one-tick gap caused by testing only its centre point.
+        AABB presence = new AABB(authored.minX, authored.minY - 0.25D,
+                authored.minZ, authored.maxX, authored.maxY + 1.25D,
+                authored.maxZ);
+        return level.getEntitiesOfClass(ServerPlayer.class, presence,
                 player -> player.isAlive() && !player.isRemoved()
                         && !player.isSpectator()
-                        && chamber.contains(player.getBoundingBox().getCenter()));
+                        && presence.intersects(player.getBoundingBox()));
     }
 
     private static void emitVentSmoke(ServerLevel level, BlockPos pos,

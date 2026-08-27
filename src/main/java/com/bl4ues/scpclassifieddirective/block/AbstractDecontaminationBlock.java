@@ -16,7 +16,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
@@ -63,10 +62,6 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
     }
 
     protected abstract boolean isClosedState();
-
-    protected boolean raisesOnInitialPlacement() {
-        return false;
-    }
 
     protected void controllerPlaced(BlockState state, Level level,
             BlockPos pos, BlockState oldState, boolean moving) {
@@ -120,13 +115,15 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        BlockPos placementPos = context.getClickedPos();
-        BlockPos controllerPos = placementPos.above();
+        // BlockPlaceContext already resolves the actual target cell. The
+        // controller stays there; the authored floor lives one block below and
+        // must be cleared rather than causing the structure to auto-raise.
+        BlockPos controllerPos = context.getClickedPos();
         Direction facing = context.getHorizontalDirection().getOpposite();
         if (!DecontaminationStructure.hasPlacementSupport(
                 context.getLevel(), controllerPos, facing)
                 || !DecontaminationStructure.canPlace(context.getLevel(),
-                controllerPos, facing, placementPos)) {
+                controllerPos, facing, controllerPos)) {
             return null;
         }
         return defaultBlockState()
@@ -203,12 +200,6 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos,
             BlockState oldState, boolean moving) {
-        if (raisesOnInitialPlacement()
-                && !DecontaminationStructure.isController(oldState)
-                && tryRaiseOnPlacement(state, level, pos, oldState, moving)) {
-            return;
-        }
-
         super.onPlace(state, level, pos, oldState, moving);
         if (level.isClientSide) return;
 
@@ -243,33 +234,5 @@ public abstract class AbstractDecontaminationBlock extends BaseEntityBlock
             DecontaminationStructure.ensureStructure(level, pos,
                     state.getValue(FACING));
         }
-    }
-
-    /**
-     * The authored model extends one block below its controller, so the public
-     * item is placed at floor level and the actual GeckoLib controller is moved
-     * one block upward. This preserves the established placement convention.
-     */
-    private boolean tryRaiseOnPlacement(BlockState state, Level level,
-            BlockPos pos, BlockState oldState, boolean moving) {
-        if (moving || level.isClientSide
-                || DecontaminationStructure.isController(oldState)) {
-            return false;
-        }
-
-        Direction facing = state.getValue(FACING);
-        BlockPos raisedPos = pos.above();
-        if (!DecontaminationStructure.canPlace(level, raisedPos, facing, pos)) {
-            return false;
-        }
-
-        BlockState replacement = oldState.getFluidState().isEmpty()
-                ? Blocks.AIR.defaultBlockState()
-                : oldState.getFluidState().createLegacyBlock();
-        level.setBlock(pos, replacement, Block.UPDATE_ALL);
-
-        BlockState raisedState = state.setValue(WATERLOGGED,
-                level.getFluidState(raisedPos).getType() == Fluids.WATER);
-        return level.setBlock(raisedPos, raisedState, Block.UPDATE_ALL);
     }
 }

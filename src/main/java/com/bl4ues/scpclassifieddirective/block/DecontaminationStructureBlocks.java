@@ -24,15 +24,13 @@ public final class DecontaminationStructureBlocks {
 
     @SubscribeEvent
     public static void registerBlocks(RegisterEvent event) {
-        event.register(ForgeRegistries.Keys.BLOCKS, helper -> {
-            helper.register(COLLISION_ID, () -> {
-                collision = new DecontaminationCollisionBlock();
-                return collision;
-            });
-            helper.register(LIGHT_ID, () -> {
-                light = new DecontaminationLightBlock();
-                return light;
-            });
+        event.register(ForgeRegistries.Keys.BLOCKS, COLLISION_ID, () -> {
+            collision = new DecontaminationCollisionBlock();
+            return collision;
+        });
+        event.register(ForgeRegistries.Keys.BLOCKS, LIGHT_ID, () -> {
+            light = new DecontaminationLightBlock();
+            return light;
         });
     }
 

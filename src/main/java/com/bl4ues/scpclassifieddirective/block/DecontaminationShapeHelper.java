@@ -18,7 +18,13 @@ public final class DecontaminationShapeHelper {
     }
 
     public static VoxelShape controllerSelectionShape() {
-        return Shapes.block();
+        // The hidden controller lives directly above the entrance BLACK_DOOR.
+        // Giving that invisible anchor a full-block selection shape exposed an
+        // annoying cube over the doorway even though it has no physical
+        // collision. The authored floor/wall/ceiling helpers and both doors are
+        // already valid break targets for the complete multiblock, so the
+        // controller itself does not need a visible/selectable voxel.
+        return Shapes.empty();
     }
 
     public static VoxelShape localShape(Direction facing, int side,

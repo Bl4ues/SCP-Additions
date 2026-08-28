@@ -1,0 +1,74 @@
+// Generates the Decontamination GeckoLib glowmask from the authoritative base
+// texture before the common emissive-material pipeline runs. Keeping the mask
+// derived from the model's lamp UVs prevents unrelated translucent geometry
+// (especially the observation window) from ever entering the emissive pass.
+gradle.afterProject { evaluatedProject, state ->
+    if (state.failure != null) {
+        return
+    }
+
+    def resourceTask = evaluatedProject.tasks.findByName('processResources')
+    if (resourceTask == null) {
+        return
+    }
+
+    resourceTask.doLast {
+        File textureDir = evaluatedProject.file(
+                "${evaluatedProject.buildDir}/resources/main/assets/scp_classified_directive/textures/block")
+        File baseFile = new File(textureDir, 'decontamination.png')
+        if (!baseFile.isFile()) {
+            return
+        }
+
+        def baseImage = javax.imageio.ImageIO.read(baseFile)
+        if (baseImage == null) {
+            throw new GradleException("Unable to read Decontamination base texture: ${baseFile}")
+        }
+
+        // The updated GeckoLib model uses a 512x512 UV atlas while the authored
+        // material is 1024x1024. The two red indicator strips on vent 2/vent 3
+        // therefore resolve to this 2x-scaled pixel region in decontamination.png.
+        final int minX = 634
+        final int maxX = 667
+        final int minY = 568
+        final int maxY = 571
+        if (baseImage.width <= maxX || baseImage.height <= maxY) {
+            throw new GradleException(
+                    "Decontamination texture is too small for lamp UVs: ${baseImage.width}x${baseImage.height}")
+        }
+
+        def mask = new java.awt.image.BufferedImage(
+                baseImage.width,
+                baseImage.height,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        int copiedPixels = 0
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                int pixel = baseImage.getRGB(x, y)
+                int alpha = (pixel >>> 24) & 0xFF
+                int red = (pixel >>> 16) & 0xFF
+                int green = (pixel >>> 8) & 0xFF
+
+                // Only the authored red lamp pixels are emissive. Dark trim and
+                // transparent texels in the same UV rectangle remain RGBA 0.
+                if (alpha > 0 && red > 100 && red > green * 2) {
+                    mask.setRGB(x, y,
+                            (0xFF000000 as int) | (pixel & 0x00FFFFFF))
+                    copiedPixels++
+                }
+            }
+        }
+
+        if (copiedPixels != 112) {
+            evaluatedProject.logger.warn(
+                    "Decontamination glowmask expected 112 lamp pixels but generated ${copiedPixels}; check the lamp UVs/material")
+        }
+
+        File glowmaskFile = new File(textureDir, 'decontamination_glowmask.png')
+        File emissiveFile = new File(textureDir, 'decontamination_e.png')
+        glowmaskFile.parentFile.mkdirs()
+        javax.imageio.ImageIO.write(mask, 'png', glowmaskFile)
+        javax.imageio.ImageIO.write(mask, 'png', emissiveFile)
+    }
+}

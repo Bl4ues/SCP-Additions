@@ -1,7 +1,7 @@
-// Generates the Decontamination GeckoLib glowmask from the authoritative base
-// texture before the common emissive-material pipeline runs. Keeping the mask
-// derived from the model's lamp UVs prevents unrelated translucent geometry
-// (especially the observation window) from ever entering the emissive pass.
+// Generates the Decontamination GeckoLib glowmask from the authoritative
+// authored mask footprint before the common emissive-material pipeline runs.
+// Do not infer emissive pixels from material colour: the floor vent texture
+// contains warm/yellow grille paint that must never become emissive.
 gradle.afterProject { evaluatedProject, state ->
     if (state.failure != null) {
         return
@@ -24,83 +24,70 @@ gradle.afterProject { evaluatedProject, state ->
         if (baseImage == null) {
             throw new GradleException("Unable to read Decontamination base texture: ${baseFile}")
         }
-
-        // The GeckoLib model uses a 512x512 UV atlas while the authored material
-        // is 1024x1024. Keep the mask tied to the exact 2x-scaled UV islands that
-        // contain actual red light artwork:
-        //   - the two upper indicator bars on vent 2 / vent 3; and
-        //   - the red lamps visible beneath both floor vent grilles.
-        def lampRegions = [
-                [name: 'upper indicators', minX: 634, maxX: 667,
-                        minY: 568, maxY: 571, expected: 112],
-                [name: 'floor vent lamps', minX: 204, maxX: 395,
-                        minY: 582, maxY: 630, expected: 732]
-        ]
-
-        lampRegions.each { region ->
-            if (baseImage.width <= region.maxX || baseImage.height <= region.maxY) {
-                throw new GradleException(
-                        "Decontamination texture is too small for ${region.name} UVs: ${baseImage.width}x${baseImage.height}")
-            }
+        if (baseImage.width < 1024 || baseImage.height < 1024) {
+            throw new GradleException(
+                    "Decontamination texture is too small for authored glowmask coordinates: ${baseImage.width}x${baseImage.height}")
         }
+
+        // Exact non-transparent footprint from the original authored
+        // decontamination_glowmask.png. The model atlas is 512x512 while the
+        // material is authored at 1024x1024, so these are final texture pixels.
+        // Keeping this explicit prevents yellow grille/frame artwork from ever
+        // being promoted to emission just because it happens to be warm-coloured.
+        def authoredRuns = [
+                337: [[668, 670], [673, 678], [681, 683]],
+                338: [[668, 670], [673, 678], [681, 683]],
+                339: [[668, 670], [673, 678], [681, 683]],
+                341: [[668, 670], [673, 678], [681, 683]],
+                342: [[668, 670], [673, 678], [681, 683]],
+                343: [[668, 670], [673, 678], [681, 683]],
+                345: [[668, 670], [673, 678], [681, 683]],
+                346: [[659, 661], [663, 665], [667, 670], [673, 676], [678, 680], [682, 684]],
+                347: [[659, 661], [663, 665], [667, 670], [673, 676], [678, 680], [682, 684]],
+                348: [[659, 661], [663, 665], [667, 670], [673, 676], [678, 680], [682, 684]],
+                351: [[659, 661], [663, 665], [667, 670], [673, 676], [678, 680], [682, 684]],
+                352: [[659, 661], [663, 665], [667, 670], [673, 676], [678, 680], [682, 684]],
+                353: [[659, 661], [663, 665], [667, 670], [673, 676], [678, 680], [682, 684]],
+                568: [[634, 640], [643, 656], [659, 665]],
+                569: [[634, 640], [643, 656], [659, 665]],
+                570: [[634, 640], [643, 649], [652, 658], [661, 667]],
+                571: [[634, 640], [643, 649], [652, 658], [661, 667]]
+        ]
 
         def mask = new java.awt.image.BufferedImage(
                 baseImage.width,
                 baseImage.height,
                 java.awt.image.BufferedImage.TYPE_INT_ARGB)
 
-        // A saturated dark red can be technically full-bright while still
-        // falling below shader bloom thresholds. Use a warm high-luminance core
-        // comparable to the working Core Room Elevator Floor Station glowmask;
-        // the ordinary base pass still supplies the authored dark-red material.
-        final int emissiveRed = 255
-        final int emissiveGreen = 170
-        final int emissiveBlue = 110
+        // Preserve the authored footprint but raise luminance so the pixels
+        // reliably cross bloom thresholds used by BSL/Hysteria-class shaders.
+        // The normal base pass still provides the dark-red material colour.
         final int emissivePixel = (0xFF000000 as int)
-                | (emissiveRed << 16)
-                | (emissiveGreen << 8)
-                | emissiveBlue
+                | (255 << 16)
+                | (170 << 8)
+                | 110
 
-        int totalCopiedPixels = 0
-        lampRegions.each { region ->
-            int regionPixels = 0
-            for (int y = region.minY; y <= region.maxY; y++) {
-                for (int x = region.minX; x <= region.maxX; x++) {
-                    int pixel = baseImage.getRGB(x, y)
-                    int alpha = (pixel >>> 24) & 0xFF
-                    int red = (pixel >>> 16) & 0xFF
-                    int green = (pixel >>> 8) & 0xFF
-                    int blue = pixel & 0xFF
-
-                    // This predicate isolates the authored warm/red lamp paint
-                    // inside the known UV islands while rejecting dark trim,
-                    // grille metal and transparent texels.
-                    if (alpha > 0
-                            && red > 70
-                            && red > green + 20
-                            && red > blue * 3) {
-                        mask.setRGB(x, y, emissivePixel)
-                        regionPixels++
-                    }
+        int copiedPixels = 0
+        authoredRuns.each { y, runs ->
+            runs.each { run ->
+                for (int x = run[0]; x <= run[1]; x++) {
+                    mask.setRGB(x, y, emissivePixel)
+                    copiedPixels++
                 }
-            }
-
-            totalCopiedPixels += regionPixels
-            if (regionPixels != region.expected) {
-                evaluatedProject.logger.warn(
-                        "Decontamination glowmask expected ${region.expected} pixels for ${region.name} but generated ${regionPixels}; check the lamp UVs/material")
             }
         }
 
-        if (totalCopiedPixels != 844) {
-            evaluatedProject.logger.warn(
-                    "Decontamination glowmask expected 844 total lamp pixels but generated ${totalCopiedPixels}")
+        if (copiedPixels != 316) {
+            throw new GradleException(
+                    "Decontamination authored glowmask must contain exactly 316 pixels, generated ${copiedPixels}")
         }
 
         File glowmaskFile = new File(textureDir, 'decontamination_glowmask.png')
         File emissiveFile = new File(textureDir, 'decontamination_e.png')
         glowmaskFile.parentFile.mkdirs()
-        javax.imageio.ImageIO.write(mask, 'png', glowmaskFile)
-        javax.imageio.ImageIO.write(mask, 'png', emissiveFile)
+        if (!javax.imageio.ImageIO.write(mask, 'png', glowmaskFile)
+                || !javax.imageio.ImageIO.write(mask, 'png', emissiveFile)) {
+            throw new GradleException('Unable to encode Decontamination emissive textures')
+        }
     }
 }

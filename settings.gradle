@@ -18,5 +18,6 @@ plugins {
 
 // Keep resource-processing details out of the already crowded main build
 // script while still installing the hooks before the root project is evaluated.
+apply from: file('gradle/decontamination-glowmask.gradle')
 apply from: file('gradle/native-emissives.gradle')
 apply from: file('gradle/roomba-sound.gradle')

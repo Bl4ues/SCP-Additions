@@ -26,6 +26,13 @@ public class ScpClassifiedDirectiveModTabs {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB,
                     ScpClassifiedDirectiveMod.MODID);
 
+    private static final ResourceLocation FACILITY_TAB_ID = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID, "scp_unity_blocks");
+    private static final ResourceLocation ANOMALIES_TAB_ID = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID, "sc_padditions_sc_ps");
+    private static final ResourceLocation ITEMS_TAB_ID = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID, "scp_classified_directive");
+
     public static final RegistryObject<CreativeModeTab> SCP_CLASSIFIED_DIRECTIVE =
             REGISTRY.register("scp_classified_directive", () ->
                     CreativeModeTab.builder()
@@ -35,6 +42,7 @@ public class ScpClassifiedDirectiveModTabs {
                                     ScpClassifiedDirectiveModItems.SECURITY_CREDENTIALS.get()))
                             .displayItems((parameters, output) ->
                                     scpClassifiedDirectiveStacks().forEach(output::accept))
+                            .withTabsBefore(FACILITY_TAB_ID, ANOMALIES_TAB_ID)
                             .withSearchBar()
                             .hideTitle()
                             .build());
@@ -47,6 +55,8 @@ public class ScpClassifiedDirectiveModTabs {
                             .icon(() -> new ItemStack(Scp012Module.SCP_012_ITEM.get()))
                             .displayItems((parameters, output) ->
                                     anomalyTabStacks().forEach(output::accept))
+                            .withTabsBefore(FACILITY_TAB_ID)
+                            .withTabsAfter(ITEMS_TAB_ID)
                             .withSearchBar()
                             .hideTitle()
                             .build());

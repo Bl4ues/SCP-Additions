@@ -2,7 +2,7 @@
   "multipart": [
     {
       "apply": {
-        "model": "scp_classified_directive:block/decontamination_empty"
+        "model": "scp_classified_directive:block/decontamination_light_proxy"
       }
     }
   ]

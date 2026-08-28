@@ -11,6 +11,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
@@ -41,14 +42,18 @@ public class ScpClassifiedDirectiveModTabs {
     public static final RegistryObject<CreativeModeTab> SC_PADDITIONS_SC_PS =
             REGISTRY.register("sc_padditions_sc_ps", () ->
                     CreativeModeTab.builder()
-                            .title(Component.translatable(
-                                    "item_group.scp_classified_directive.sc_padditions_sc_ps"))
+                            .title(Component.literal(
+                                    "SCP: Classified Directive Anomalies"))
                             .icon(() -> new ItemStack(Scp012Module.SCP_012_ITEM.get()))
                             .displayItems((parameters, output) ->
-                                    scpStacks().forEach(output::accept))
+                                    anomalyTabStacks().forEach(output::accept))
                             .withSearchBar()
                             .hideTitle()
                             .build());
+
+    public record CreativeSection(ResourceLocation sprite,
+            List<ItemStack> items) {
+    }
 
     public static List<ItemStack> scpClassifiedDirectiveStacks() {
         List<ItemStack> stacks = new ArrayList<>();
@@ -98,6 +103,53 @@ public class ScpClassifiedDirectiveModTabs {
         stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_1176.get()));
         stacks.add(new ItemStack(Scp1576Module.SCP_1576.get()));
         return stacks;
+    }
+
+    /**
+     * Non-SCP anomalous objects belong here. Keeping this separate from the SCP
+     * list preserves the numeric SCP ordering while sharing one creative tab.
+     */
+    public static List<ItemStack> anomalousItemStacks() {
+        return List.of();
+    }
+
+    public static List<CreativeSection> anomalyCreativeSections() {
+        return List.of(
+                section("scptab", scpStacks()),
+                section("anomalousitemstab", anomalousItemStacks()));
+    }
+
+    /** Actual searchable items, without the visual spacer/header rows. */
+    public static List<ItemStack> anomalyTabStacks() {
+        List<ItemStack> stacks = new ArrayList<>();
+        for (CreativeSection section : anomalyCreativeSections()) {
+            section.items().forEach(stack -> stacks.add(stack.copy()));
+        }
+        return List.copyOf(stacks);
+    }
+
+    /**
+     * Mirrors the Facility tab layout: one empty nine-slot row is reserved for
+     * each graphical section header, followed by that section's real items.
+     */
+    public static List<ItemStack> anomalyCreativeTabDisplayStacks() {
+        List<ItemStack> display = new ArrayList<>();
+        for (CreativeSection section : anomalyCreativeSections()) {
+            for (int index = 0; index < 9; index++) {
+                display.add(ItemStack.EMPTY);
+            }
+            section.items().forEach(stack -> display.add(stack.copy()));
+            while (display.size() % 9 != 0) display.add(ItemStack.EMPTY);
+        }
+        return display;
+    }
+
+    private static CreativeSection section(String sprite,
+            List<ItemStack> items) {
+        return new CreativeSection(
+                new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
+                        "textures/gui/facility_sections/" + sprite + ".png"),
+                List.copyOf(items));
     }
 
     @SubscribeEvent

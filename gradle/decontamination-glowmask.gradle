@@ -25,44 +25,76 @@ gradle.afterProject { evaluatedProject, state ->
             throw new GradleException("Unable to read Decontamination base texture: ${baseFile}")
         }
 
-        // The updated GeckoLib model uses a 512x512 UV atlas while the authored
-        // material is 1024x1024. The two red indicator strips on vent 2/vent 3
-        // therefore resolve to this 2x-scaled pixel region in decontamination.png.
-        final int minX = 634
-        final int maxX = 667
-        final int minY = 568
-        final int maxY = 571
-        if (baseImage.width <= maxX || baseImage.height <= maxY) {
-            throw new GradleException(
-                    "Decontamination texture is too small for lamp UVs: ${baseImage.width}x${baseImage.height}")
+        // The GeckoLib model uses a 512x512 UV atlas while the authored material
+        // is 1024x1024. Keep the mask tied to the exact 2x-scaled UV islands that
+        // contain actual red light artwork:
+        //   - the two upper indicator bars on vent 2 / vent 3; and
+        //   - the red lamps visible beneath both floor vent grilles.
+        def lampRegions = [
+                [name: 'upper indicators', minX: 634, maxX: 667,
+                        minY: 568, maxY: 571, expected: 112],
+                [name: 'floor vent lamps', minX: 204, maxX: 395,
+                        minY: 582, maxY: 630, expected: 732]
+        ]
+
+        lampRegions.each { region ->
+            if (baseImage.width <= region.maxX || baseImage.height <= region.maxY) {
+                throw new GradleException(
+                        "Decontamination texture is too small for ${region.name} UVs: ${baseImage.width}x${baseImage.height}")
+            }
         }
 
         def mask = new java.awt.image.BufferedImage(
                 baseImage.width,
                 baseImage.height,
                 java.awt.image.BufferedImage.TYPE_INT_ARGB)
-        int copiedPixels = 0
 
-        for (int y = minY; y <= maxY; y++) {
-            for (int x = minX; x <= maxX; x++) {
-                int pixel = baseImage.getRGB(x, y)
-                int alpha = (pixel >>> 24) & 0xFF
-                int red = (pixel >>> 16) & 0xFF
-                int green = (pixel >>> 8) & 0xFF
+        // A saturated dark red can be technically full-bright while still
+        // falling below shader bloom thresholds. Use a warm high-luminance core
+        // comparable to the working Core Room Elevator Floor Station glowmask;
+        // the ordinary base pass still supplies the authored dark-red material.
+        final int emissiveRed = 255
+        final int emissiveGreen = 170
+        final int emissiveBlue = 110
+        final int emissivePixel = (0xFF000000 as int)
+                | (emissiveRed << 16)
+                | (emissiveGreen << 8)
+                | emissiveBlue
 
-                // Only the authored red lamp pixels are emissive. Dark trim and
-                // transparent texels in the same UV rectangle remain RGBA 0.
-                if (alpha > 0 && red > 100 && red > green * 2) {
-                    mask.setRGB(x, y,
-                            (0xFF000000 as int) | (pixel & 0x00FFFFFF))
-                    copiedPixels++
+        int totalCopiedPixels = 0
+        lampRegions.each { region ->
+            int regionPixels = 0
+            for (int y = region.minY; y <= region.maxY; y++) {
+                for (int x = region.minX; x <= region.maxX; x++) {
+                    int pixel = baseImage.getRGB(x, y)
+                    int alpha = (pixel >>> 24) & 0xFF
+                    int red = (pixel >>> 16) & 0xFF
+                    int green = (pixel >>> 8) & 0xFF
+                    int blue = pixel & 0xFF
+
+                    // This predicate isolates the authored warm/red lamp paint
+                    // inside the known UV islands while rejecting dark trim,
+                    // grille metal and transparent texels.
+                    if (alpha > 0
+                            && red > 70
+                            && red > green + 20
+                            && red > blue * 3) {
+                        mask.setRGB(x, y, emissivePixel)
+                        regionPixels++
+                    }
                 }
+            }
+
+            totalCopiedPixels += regionPixels
+            if (regionPixels != region.expected) {
+                evaluatedProject.logger.warn(
+                        "Decontamination glowmask expected ${region.expected} pixels for ${region.name} but generated ${regionPixels}; check the lamp UVs/material")
             }
         }
 
-        if (copiedPixels != 112) {
+        if (totalCopiedPixels != 844) {
             evaluatedProject.logger.warn(
-                    "Decontamination glowmask expected 112 lamp pixels but generated ${copiedPixels}; check the lamp UVs/material")
+                    "Decontamination glowmask expected 844 total lamp pixels but generated ${totalCopiedPixels}")
         }
 
         File glowmaskFile = new File(textureDir, 'decontamination_glowmask.png')

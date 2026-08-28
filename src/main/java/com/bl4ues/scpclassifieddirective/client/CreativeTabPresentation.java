@@ -35,10 +35,14 @@ public final class CreativeTabPresentation {
         if (!(event.getScreen() instanceof CreativeModeInventoryScreen screen)) return;
 
         updateTabIcons();
-        if (CreativeModeInventoryScreen.selectedTab ==
-                FacilityModule.SCP_FACILITY_BLOCKS.get()
-                && screen.searchBox.getValue().isEmpty()) {
-            ensureFacilitySectionLayout(screen);
+        CreativeModeTab selected = CreativeModeInventoryScreen.selectedTab;
+        if (screen.searchBox.getValue().isEmpty()) {
+            if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
+                ensureFacilitySectionLayout(screen);
+            } else if (selected ==
+                    ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()) {
+                ensureAnomalySectionLayout(screen);
+            }
         }
     }
 
@@ -51,9 +55,13 @@ public final class CreativeTabPresentation {
             renderShortTitle(screen, event.getGuiGraphics(), shortTitle(selected));
         }
 
-        if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()
-                && screen.searchBox.getValue().isEmpty()) {
-            renderFacilityHeaders(screen, event.getGuiGraphics());
+        if (screen.searchBox.getValue().isEmpty()) {
+            if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
+                renderFacilityHeaders(screen, event.getGuiGraphics());
+            } else if (selected ==
+                    ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()) {
+                renderAnomalyHeaders(screen, event.getGuiGraphics());
+            }
         }
     }
 
@@ -65,7 +73,7 @@ public final class CreativeTabPresentation {
         setIcon(ScpClassifiedDirectiveModTabs.SCP_CLASSIFIED_DIRECTIVE.get(),
                 ScpClassifiedDirectiveModTabs.scpClassifiedDirectiveStacks(), step);
         setIcon(ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get(),
-                ScpClassifiedDirectiveModTabs.scpStacks(), step);
+                ScpClassifiedDirectiveModTabs.anomalyTabStacks(), step);
         setIcon(FacilityModule.SCP_FACILITY_BLOCKS.get(),
                 AreaUnderConstructionSignModule.creativeTabIconStacks(), step);
     }
@@ -79,8 +87,18 @@ public final class CreativeTabPresentation {
 
     private static void ensureFacilitySectionLayout(
             CreativeModeInventoryScreen screen) {
-        List<ItemStack> layout =
-                AreaUnderConstructionSignModule.creativeTabDisplayStacks();
+        ensureSectionLayout(screen,
+                AreaUnderConstructionSignModule.creativeTabDisplayStacks());
+    }
+
+    private static void ensureAnomalySectionLayout(
+            CreativeModeInventoryScreen screen) {
+        ensureSectionLayout(screen,
+                ScpClassifiedDirectiveModTabs.anomalyCreativeTabDisplayStacks());
+    }
+
+    private static void ensureSectionLayout(
+            CreativeModeInventoryScreen screen, List<ItemStack> layout) {
         List<ItemStack> current = screen.getMenu().items;
         if (hasSectionLayout(current, layout.size())) return;
 
@@ -108,15 +126,36 @@ public final class CreativeTabPresentation {
         int top = screen.getGuiTop() + 17;
         for (FacilityModule.CreativeSection section :
                 AreaUnderConstructionSignModule.creativeSections()) {
-            int visibleRow = sectionRow - currentRow;
-            if (visibleRow >= 0 && visibleRow < 5) {
-                int y = top + visibleRow * HEADER_HEIGHT;
-                graphics.blit(section.sprite(), left, y, 0.0F, 0.0F,
-                        HEADER_WIDTH, HEADER_HEIGHT, HEADER_WIDTH,
-                        HEADER_HEIGHT);
-            }
+            renderHeader(graphics, section.sprite(), sectionRow, currentRow,
+                    left, top);
             sectionRow += 1 + (section.items().size() + 8) / 9;
         }
+    }
+
+    private static void renderAnomalyHeaders(
+            CreativeModeInventoryScreen screen, GuiGraphics graphics) {
+        int currentRow = rowIndexForScroll(screen.scrollOffs,
+                screen.getMenu().items.size());
+        int sectionRow = 0;
+        int left = screen.getGuiLeft() + 8;
+        int top = screen.getGuiTop() + 17;
+        for (ScpClassifiedDirectiveModTabs.CreativeSection section :
+                ScpClassifiedDirectiveModTabs.anomalyCreativeSections()) {
+            renderHeader(graphics, section.sprite(), sectionRow, currentRow,
+                    left, top);
+            sectionRow += 1 + (section.items().size() + 8) / 9;
+        }
+    }
+
+    private static void renderHeader(GuiGraphics graphics,
+            net.minecraft.resources.ResourceLocation sprite, int sectionRow,
+            int currentRow, int left, int top) {
+        int visibleRow = sectionRow - currentRow;
+        if (visibleRow < 0 || visibleRow >= 5) return;
+
+        int y = top + visibleRow * HEADER_HEIGHT;
+        graphics.blit(sprite, left, y, 0.0F, 0.0F,
+                HEADER_WIDTH, HEADER_HEIGHT, HEADER_WIDTH, HEADER_HEIGHT);
     }
 
     private static int rowIndexForScroll(float scroll, int itemCount) {
@@ -134,7 +173,7 @@ public final class CreativeTabPresentation {
 
     private static Component shortTitle(CreativeModeTab tab) {
         if (tab == ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()) {
-            return Component.translatable("item_group.scp_classified_directive.short_scps");
+            return Component.literal("Anomalies");
         }
         if (tab == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
             return Component.translatable("item_group.scp_classified_directive.short_blocks");

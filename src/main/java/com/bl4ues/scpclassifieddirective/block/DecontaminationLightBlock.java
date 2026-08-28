@@ -19,9 +19,10 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Invisible level-10 light source embedded in the checkpoint ceiling. Keeping
- * it as a named mod block gives shader packs a stable block id for future
- * colored-light treatment instead of relying on Minecraft's generic light block.
+ * Level-10 light source embedded in the checkpoint ceiling. It renders only a
+ * tiny proxy hidden inside the roof so shader packs that derive colored light
+ * from terrain vertices can identify this block without exposing a visible
+ * helper to the player.
  */
 public final class DecontaminationLightBlock extends Block {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -45,7 +46,7 @@ public final class DecontaminationLightBlock extends Block {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.INVISIBLE;
+        return RenderShape.MODEL;
     }
 
     @Override

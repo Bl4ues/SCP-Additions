@@ -1,0 +1,22 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "proxy": "minecraft:block/black_concrete",
+    "particle": "minecraft:block/black_concrete"
+  },
+  "elements": [
+    {
+      "from": [7.5, 0.0625, 7.5],
+      "to": [8.5, 0.3125, 8.5],
+      "shade": false,
+      "faces": {
+        "down": { "texture": "#proxy" },
+        "up": { "texture": "#proxy" },
+        "north": { "texture": "#proxy" },
+        "south": { "texture": "#proxy" },
+        "west": { "texture": "#proxy" },
+        "east": { "texture": "#proxy" }
+      }
+    }
+  ]
+}

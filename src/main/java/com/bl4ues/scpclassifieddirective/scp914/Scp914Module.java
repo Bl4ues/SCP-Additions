@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.Scp914Block;
 import com.bl4ues.scpclassifieddirective.block.Scp914PartBlock;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 import com.bl4ues.scpclassifieddirective.item.Scp914BlockItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -43,7 +44,11 @@ public final class Scp914Module {
             BLOCK_ENTITIES.register("scp_914", () -> BlockEntityType.Builder.of(
                     Scp914BlockEntity::new, SCP_914.get()).build(null));
 
-    public static final RegistryObject<SoundEvent> REFINING = sound("scp914refining");
+    // scp914refining already belongs to the generated global sound registry.
+    // Re-registering the same id here creates a duplicate Forge registry owner
+    // and crashes during registry freeze even though compileJava succeeds.
+    public static final RegistryObject<SoundEvent> REFINING =
+            ScpClassifiedDirectiveModSounds.SCP914REFINING;
     public static final RegistryObject<SoundEvent> WIND = sound("scp914wind");
     public static final RegistryObject<SoundEvent> CLOSE = sound("scp914close");
     public static final RegistryObject<SoundEvent> OPEN = sound("scp914open");

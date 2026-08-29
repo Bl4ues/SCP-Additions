@@ -1438,5 +1438,113 @@
     "sounds": [
       "scp_classified_directive:stone_drag"
     ]
+  },
+  "scp914wind": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914wind",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914close": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914close",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914open": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914open",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_1": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_1",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_2": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_2",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_3": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_3",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_4": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_4",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_5": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_5",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_6": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_6",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_7": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_7",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_8": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_8",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp914gear_9": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914gear_9",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

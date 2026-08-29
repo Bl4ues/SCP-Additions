@@ -20,6 +20,8 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class Scp914Client {
+    private static final double FLOOR_EPSILON = 0.1D / 16.0D;
+
     private Scp914Client() {
     }
 
@@ -51,6 +53,8 @@ public final class Scp914Client {
                 VertexConsumer buffer, boolean isReRender, float partialTick,
                 int packedLight, int packedOverlay, float red, float green,
                 float blue, float alpha) {
+            if (!isReRender) poseStack.translate(0.0D, FLOOR_EPSILON, 0.0D);
+
             float degrees = Scp914InteractionClient.renderDialAngle(animatable);
             float angle = (float) Math.toRadians(degrees);
             getGeoModel().getBone("grab_dial").ifPresent(bone -> bone.setRotZ(angle));

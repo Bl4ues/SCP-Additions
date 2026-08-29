@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.item;
 
 import com.bl4ues.scpclassifieddirective.client.Scp914ItemRenderer;
 import com.bl4ues.scpclassifieddirective.facility.StructurePlacementFeedback;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,19 +23,11 @@ import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 /** The only public placement item for SCP-914. */
 public final class Scp914BlockItem extends BlockItem implements GeoItem {
-    private static final int FORWARD_MIN = -3;
-    private static final int FORWARD_MAX = 2;
-    private static final int SIDE_MIN = -8;
-    private static final int SIDE_MAX = 7;
-    private static final int Y_MIN = 0;
-    private static final int Y_MAX = 2;
-
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
 
     public Scp914BlockItem(Block block) {
@@ -57,27 +50,13 @@ public final class Scp914BlockItem extends BlockItem implements GeoItem {
     public InteractionResult place(BlockPlaceContext context) {
         BlockPos origin = context.getClickedPos();
         Direction front = context.getHorizontalDirection().getOpposite();
-        List<BlockPos> blocked = collectObstructions(context.getLevel(), origin, front);
+        List<BlockPos> blocked = Scp914Structure.collectObstructions(
+                context.getLevel(), origin, front);
         if (!blocked.isEmpty()) {
             StructurePlacementFeedback.reportBlocked(context, blocked);
             return InteractionResult.FAIL;
         }
         return super.place(context);
-    }
-
-    private static List<BlockPos> collectObstructions(Level level, BlockPos origin, Direction front) {
-        Direction right = front.getClockWise();
-        List<BlockPos> blocked = new ArrayList<>();
-        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
-            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
-                for (int y = Y_MIN; y <= Y_MAX; y++) {
-                    BlockPos target = origin.relative(front, forward).relative(right, side).above(y);
-                    if (target.equals(origin)) continue;
-                    if (!level.getBlockState(target).canBeReplaced()) blocked.add(target.immutable());
-                }
-            }
-        }
-        return blocked;
     }
 
     @Override

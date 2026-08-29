@@ -36,7 +36,7 @@ public final class AdvancedCrouchController {
     private static final double COLLISION_EPSILON = 1.0E-5D;
     private static final float CROUCH_DOWN_STEP = 0.070F;
     private static final float STAND_UP_STEP = 0.050F;
-    private static final float CRAWL_DOWN_STEP = 0.155F;
+    private static final float CRAWL_DOWN_STEP = 0.105F;
     private static final float CRAWL_UP_STEP = 0.105F;
 
     private static final Map<Player, EyeState> EYE_STATES = new WeakHashMap<>();
@@ -83,8 +83,6 @@ public final class AdvancedCrouchController {
         EyeState state = EYE_STATES.get(player);
         if (state == null) return vanillaHeight;
 
-        // Only replace the three locomotion poses owned by this system. Sleeping,
-        // fall-flying and other special poses must retain their vanilla camera.
         if (requestedPose != Pose.STANDING && requestedPose != Pose.CROUCHING
                 && requestedPose != Pose.SWIMMING) {
             return vanillaHeight;
@@ -160,9 +158,6 @@ public final class AdvancedCrouchController {
     }
 
     private static void updateEyeState(Player player, boolean enabled) {
-        // The smooth eye height is presentation-only. Keeping the state entirely
-        // client-side prevents a fractional camera value from ever contaminating
-        // server collision or pose authority.
         if (!player.level().isClientSide) return;
 
         float vanillaTarget = eyeHeightFor(player.getPose());
@@ -184,9 +179,6 @@ public final class AdvancedCrouchController {
             state.height = approach(state.height, target, step);
         }
 
-        // Player#getStandingEyeHeight is sampled while dimensions are refreshed.
-        // Recalculate it for every interpolation step so the changing state is
-        // actually visible instead of only changing in memory.
         if (Math.abs(state.height - previous) > 1.0E-4F) {
             player.refreshDimensions();
         }

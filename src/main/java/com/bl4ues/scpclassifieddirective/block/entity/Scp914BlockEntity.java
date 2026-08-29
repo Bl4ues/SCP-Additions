@@ -1,6 +1,6 @@
 package com.bl4ues.scpclassifieddirective.block.entity;
 
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -37,7 +37,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     private Setting setting = Setting.ONE_TO_ONE;
 
     public Scp914BlockEntity(BlockPos pos, BlockState state) {
-        super(ScpClassifiedDirectiveModBlockEntities.SCP_914.get(), pos, state);
+        super(Scp914Module.SCP_914_BLOCK_ENTITY.get(), pos, state);
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, Scp914BlockEntity blockEntity) {
@@ -157,21 +157,12 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     }
 
     public enum Setting {
-        ROUGH(ROUGH_ANGLE),
-        COARSE(COARSE_ANGLE),
-        ONE_TO_ONE(ONE_TO_ONE_ANGLE),
-        FINE(FINE_ANGLE),
-        VERY_FINE(VERY_FINE_ANGLE);
+        ROUGH(ROUGH_ANGLE), COARSE(COARSE_ANGLE), ONE_TO_ONE(ONE_TO_ONE_ANGLE),
+        FINE(FINE_ANGLE), VERY_FINE(VERY_FINE_ANGLE);
 
         private final float angle;
-
-        Setting(float angle) {
-            this.angle = angle;
-        }
-
-        public float angle() {
-            return angle;
-        }
+        Setting(float angle) { this.angle = angle; }
+        public float angle() { return angle; }
 
         public static Setting nearest(float angle) {
             Setting nearest = ONE_TO_ONE;

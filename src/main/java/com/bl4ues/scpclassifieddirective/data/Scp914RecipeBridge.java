@@ -8,14 +8,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
- * Selects between explicit JSON recipes and inferred crafting behavior.
- * Explicit definitions win equal matches, while a more complete inferred
- * crafting recipe may take priority over an explicit recipe that accounts for
- * only a small part of the intake.
+ * Selects between explicit SCP-914 JSON definitions and the inferred server-side
+ * transformation engine. Explicit recipes remain authoritative on equal matches,
+ * while a generic transformation may win when it accounts for more of the
+ * physical intake.
  */
 public final class Scp914RecipeBridge {
     private Scp914RecipeBridge() {
@@ -28,16 +30,6 @@ public final class Scp914RecipeBridge {
             List<Entity> entities) {
         Optional<Scp914RecipeManager.RecipeMatch> selected =
                 selectForSetting(level, setting, itemEntities, entities);
-
-        // Very Fine may reuse a valid Fine transformation only when no explicit
-        // or inferred Very Fine transformation exists.
-        if (selected.isEmpty()
-                && setting == Scp914RecipeManager.Setting.VERY_FINE) {
-            selected = selectForSetting(level,
-                    Scp914RecipeManager.Setting.FINE,
-                    itemEntities, entities);
-        }
-
         return selected.map(match -> consumeCompleteIntake(match,
                 itemEntities));
     }
@@ -50,11 +42,9 @@ public final class Scp914RecipeBridge {
         Optional<Scp914RecipeManager.RecipeMatch> explicit =
                 Scp914RecipeManager.findRecipe(setting, itemEntities, entities);
 
-        // Inferred crafting transformations apply only to loose-item intakes.
-        if (entities != null && !entities.isEmpty()) return explicit;
-
         Optional<Scp914GenericRecipeResolver.GenericMatch> generic =
-                Scp914GenericRecipeResolver.find(level, setting, itemEntities);
+                Scp914GenericRecipeResolver.find(level, setting, itemEntities,
+                        entities);
         if (generic.isEmpty()) return explicit;
 
         Optional<Scp914RecipeManager.RecipeMatch> converted =
@@ -74,26 +64,44 @@ public final class Scp914RecipeBridge {
         if (genericComplete != explicitComplete) {
             return genericComplete ? converted : explicit;
         }
-        // Explicit JSON remains authoritative when both candidates account for
-        // the same amount of the intake.
+        // Hand-authored behavior wins ties. The inference layer is a safeguard,
+        // not a way to make administrators fight their own recipe file.
         return genericCount > explicitCount ? converted : explicit;
     }
 
     private static Optional<Scp914RecipeManager.RecipeMatch> convert(
             Scp914RecipeManager.Setting requestedSetting,
             Scp914GenericRecipeResolver.GenericMatch generic) {
-        List<Scp914RecipeManager.ItemOutput> outputs = new ArrayList<>();
+        List<Scp914RecipeManager.ItemOutput> itemOutputs = new ArrayList<>();
         for (ItemStack stack : generic.outputs()) {
             if (stack == null || stack.isEmpty()) continue;
             ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
             if (id == null) continue;
-            outputs.add(new Scp914RecipeManager.ItemOutput(id,
+            itemOutputs.add(new Scp914RecipeManager.ItemOutput(id,
                     stack.getCount()));
         }
-        if (outputs.isEmpty()) return Optional.empty();
+
+        Map<ResourceLocation, Integer> entityCounts = new LinkedHashMap<>();
+        for (ResourceLocation id : generic.entityOutputs()) {
+            if (id != null && ForgeRegistries.ENTITY_TYPES.containsKey(id)) {
+                entityCounts.merge(id, 1, Integer::sum);
+            }
+        }
+        List<Scp914RecipeManager.EntityOutput> entityOutputs = new ArrayList<>();
+        entityCounts.forEach((id, count) -> entityOutputs.add(
+                new Scp914RecipeManager.EntityOutput(id, count)));
+
+        // Rough/Coarse entity inference may intentionally have no synthetic item
+        // output: the entity itself is killed at the output chamber so its real
+        // loot table supplies the result.
+        if (itemOutputs.isEmpty() && entityOutputs.isEmpty()
+                && generic.entityUses().isEmpty()) {
+            return Optional.empty();
+        }
 
         ResourceLocation source = generic.sourceRecipe();
-        ResourceLocation syntheticId = new ResourceLocation("scp_classified_directive",
+        ResourceLocation syntheticId = new ResourceLocation(
+                "scp_classified_directive",
                 "inferred/" + requestedSetting.serializedName() + "/"
                         + source.getNamespace() + "/" + source.getPath());
         Scp914RecipeManager.RecipeDefinition definition =
@@ -102,14 +110,14 @@ public final class Scp914RecipeBridge {
                         requestedSetting,
                         List.of(),
                         List.of(),
-                        List.copyOf(outputs),
+                        List.copyOf(itemOutputs),
                         List.of(),
-                        List.of(),
+                        List.copyOf(entityOutputs),
                         1.0F,
                         false,
                         "");
         return Optional.of(new Scp914RecipeManager.RecipeMatch(
-                definition, generic.itemUses(), List.of()));
+                definition, generic.itemUses(), generic.entityUses()));
     }
 
     private static Scp914RecipeManager.RecipeMatch consumeCompleteIntake(

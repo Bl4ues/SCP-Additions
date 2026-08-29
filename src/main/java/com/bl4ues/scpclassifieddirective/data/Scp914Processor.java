@@ -139,12 +139,12 @@ public final class Scp914Processor {
     public static void applyRecipe(ServerLevel level, Vec3 outputCenter,
             Scp914RecipeManager.RecipeMatch match) {
         if (level.random.nextFloat() > match.recipe().chance()) {
-            consumeInputs(match);
+            consumeInputs(level, outputCenter, match);
             return;
         }
 
         ItemStack firstInputStack = match.firstInputStack();
-        consumeInputs(match);
+        consumeInputs(level, outputCenter, match);
 
         for (Scp914RecipeManager.ItemOutput output :
                 Scp914RecipeManager.rollItemOutputs(match.recipe(), level.random)) {
@@ -174,16 +174,56 @@ public final class Scp914Processor {
         }
     }
 
-    private static void consumeInputs(Scp914RecipeManager.RecipeMatch match) {
+    private static void consumeInputs(ServerLevel level, Vec3 outputCenter,
+            Scp914RecipeManager.RecipeMatch match) {
         for (Scp914RecipeManager.ItemUse itemUse : match.itemUses()) {
             ItemStack stack = itemUse.entity().getItem();
             stack.shrink(itemUse.count());
             if (stack.isEmpty()) itemUse.entity().discard();
             else itemUse.entity().setItem(stack);
         }
+
+        boolean destructiveEntityPass = isInferredDestructivePass(match);
         for (Scp914RecipeManager.EntityUse entityUse : match.entityUses()) {
-            if (entityUse.consume()) entityUse.entity().discard();
+            if (!entityUse.consume()) continue;
+            Entity entity = entityUse.entity();
+            if (entity == null || entity.isRemoved()) continue;
+            if (destructiveEntityPass) {
+                killEntityAtOutput(level, outputCenter, entity);
+            } else {
+                entity.discard();
+            }
         }
+    }
+
+    /**
+     * Rough and Coarse are material-recovery settings. For inferred entity
+     * inputs the entity is physically killed at the output chamber instead of
+     * simply being discarded, allowing its own loot table, Forge hooks and
+     * modded death behavior to determine the recovered drops.
+     */
+    private static void killEntityAtOutput(ServerLevel level, Vec3 outputCenter,
+            Entity entity) {
+        entity.teleportTo(outputCenter.x, outputCenter.y, outputCenter.z);
+        entity.setDeltaMovement(Vec3.ZERO);
+        if (entity instanceof LivingEntity living) {
+            living.setInvulnerable(false);
+            DamageSource source = level.damageSources().generic();
+            living.hurt(source, Float.MAX_VALUE);
+            if (living.isAlive() && !living.isRemoved()) living.kill();
+        } else {
+            entity.kill();
+        }
+    }
+
+    private static boolean isInferredDestructivePass(
+            Scp914RecipeManager.RecipeMatch match) {
+        ResourceLocation id = match.recipe().id();
+        if (id == null || !ScpClassifiedDirectiveMod.MODID.equals(
+                id.getNamespace())) return false;
+        String path = id.getPath();
+        return path.startsWith("inferred/rough/")
+                || path.startsWith("inferred/coarse/");
     }
 
     public static void consumeLooseItems(List<ItemEntity> items) {

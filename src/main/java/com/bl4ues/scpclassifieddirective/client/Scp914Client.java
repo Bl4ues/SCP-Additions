@@ -68,7 +68,7 @@ public final class Scp914Client {
         public RenderType getRenderType(Scp914BlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityCutoutNoCull(texture);
+            return RenderType.entityTranslucent(texture);
         }
 
         @Override

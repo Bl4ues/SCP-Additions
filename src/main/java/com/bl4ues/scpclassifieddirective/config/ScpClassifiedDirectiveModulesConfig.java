@@ -250,35 +250,30 @@ public final class ScpClassifiedDirectiveModulesConfig {
 
 	/** Server-owned advanced crouch and visual-perception framework settings. */
 	public static final class Stealth extends Toggle {
-		@SerializedName("standing_visibility")
-		public double standingVisibility = 1.0D;
+		public static final double STANDING_VISIBILITY = 1.0D;
+		public static final double CROUCHING_VISIBILITY = 0.60D;
+		public static final double CRAWLING_VISIBILITY = 0.30D;
+		public static final int MAX_ACQUIRE_DELAY_TICKS = 50;
+		public static final double DARKNESS_FLOOR = 0.18D;
+		public static final double MINIMUM_CLOSE_RANGE = 2.5D;
 
-		@SerializedName("crouching_visibility")
-		public double crouchingVisibility = 0.60D;
-
-		@SerializedName("crawling_visibility")
-		public double crawlingVisibility = 0.30D;
-
-		@SerializedName("max_acquire_delay_ticks")
-		public int maxAcquireDelayTicks = 50;
-
-		@SerializedName("darkness_floor")
-		public double darknessFloor = 0.18D;
-
-		@SerializedName("minimum_close_range")
-		public double minimumCloseRange = 2.5D;
+		public transient double standingVisibility = STANDING_VISIBILITY;
+		public transient double crouchingVisibility = CROUCHING_VISIBILITY;
+		public transient double crawlingVisibility = CRAWLING_VISIBILITY;
+		public transient int maxAcquireDelayTicks = MAX_ACQUIRE_DELAY_TICKS;
+		public transient double darknessFloor = DARKNESS_FLOOR;
+		public transient double minimumCloseRange = MINIMUM_CLOSE_RANGE;
 
 		@SerializedName("perception_rules")
 		public List<PerceptionRule> perceptionRules = defaultPerceptionRules();
 
 		private void normalize() {
-			standingVisibility = clamp(standingVisibility, 0.0D, 1.0D, 1.0D);
-			crouchingVisibility = clamp(crouchingVisibility, 0.0D, 1.0D, 0.60D);
-			crawlingVisibility = clamp(crawlingVisibility, 0.0D, 1.0D, 0.30D);
-			maxAcquireDelayTicks = Math.max(0, Math.min(20 * 30,
-					maxAcquireDelayTicks));
-			darknessFloor = clamp(darknessFloor, 0.0D, 1.0D, 0.18D);
-			minimumCloseRange = clamp(minimumCloseRange, 0.0D, 16.0D, 2.5D);
+			standingVisibility = STANDING_VISIBILITY;
+			crouchingVisibility = CROUCHING_VISIBILITY;
+			crawlingVisibility = CRAWLING_VISIBILITY;
+			maxAcquireDelayTicks = MAX_ACQUIRE_DELAY_TICKS;
+			darknessFloor = DARKNESS_FLOOR;
+			minimumCloseRange = MINIMUM_CLOSE_RANGE;
 			if (perceptionRules == null) perceptionRules = defaultPerceptionRules();
 			for (PerceptionRule rule : perceptionRules) {
 				if (rule != null) rule.normalize();

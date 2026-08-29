@@ -3,22 +3,34 @@ package com.bl4ues.scpclassifieddirective.scp914;
 import com.bl4ues.scpclassifieddirective.block.Scp914Block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Physical coordinates for the rebuilt SCP-914 model.
+ * Physical coordinates and multiblock footprint for the rebuilt SCP-914.
  *
  * <p>Blockbench/Gecko coordinates are authored around the center of the
  * controller block on X/Z and from the controller block floor on Y. Local
  * negative Z is the front/control side of the machine. The transform below is
- * shared by processing volumes, sounds and contextual-interaction anchors so
- * those systems cannot slowly drift apart as separate magic offsets.</p>
+ * shared by processing volumes, sounds, interaction anchors and structural
+ * cells so these systems cannot drift apart.</p>
  */
 public final class Scp914Structure {
     private Scp914Structure() {
     }
+
+    private static final int FORWARD_MIN = -3;
+    private static final int FORWARD_MAX = 2;
+    private static final int SIDE_MIN = -8;
+    private static final int SIDE_MAX = 7;
+    private static final int Y_MIN = 0;
+    private static final int Y_MAX = 2;
 
     // Centers of the usable chamber volumes, measured from the uploaded model.
     private static final double INTAKE_X = -4.80D;
@@ -106,5 +118,116 @@ public final class Scp914Structure {
         return new AABB(
                 Math.min(a.x, b.x), Math.min(a.y, b.y), Math.min(a.z, b.z),
                 Math.max(a.x, b.x), Math.max(a.y, b.y), Math.max(a.z, b.z));
+    }
+
+    /** Entire volume that must be unobstructed before the machine is placed. */
+    public static List<BlockPos> requiredCells(BlockPos origin, Direction front) {
+        List<BlockPos> result = new ArrayList<>();
+        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
+            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
+                for (int y = Y_MIN; y <= Y_MAX; y++) {
+                    result.add(gridCell(origin, front, side, y, forward));
+                }
+            }
+        }
+        return result;
+    }
+
+    public static List<BlockPos> collectObstructions(Level level, BlockPos origin,
+            Direction front) {
+        List<BlockPos> blocked = new ArrayList<>();
+        for (BlockPos target : requiredCells(origin, front)) {
+            if (target.equals(origin)) continue;
+            if (!level.getBlockState(target).canBeReplaced()) {
+                blocked.add(target.immutable());
+            }
+        }
+        return blocked;
+    }
+
+    /** Places hidden reservation/collision cells after the controller succeeds. */
+    public static void placeHelpers(Level level, BlockPos origin, Direction front) {
+        if (level.isClientSide) return;
+        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
+            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
+                for (int y = Y_MIN; y <= Y_MAX; y++) {
+                    BlockPos target = gridCell(origin, front, side, y, forward);
+                    if (target.equals(origin)) continue;
+                    if (!level.getBlockState(target).canBeReplaced()) continue;
+
+                    BlockState helper;
+                    if (isDoorLocal(side, y, forward)) {
+                        helper = Scp914Module.SCP_914_DOOR_COLLISION.get()
+                                .defaultBlockState();
+                    } else if (isSolidLocal(side, y, forward)) {
+                        helper = Scp914Module.SCP_914_COLLISION.get()
+                                .defaultBlockState();
+                    } else {
+                        helper = Scp914Module.SCP_914_RESERVATION.get()
+                                .defaultBlockState();
+                    }
+                    level.setBlock(target, helper, 3);
+                }
+            }
+        }
+    }
+
+    public static void clearHelpers(Level level, BlockPos origin, Direction front) {
+        if (level.isClientSide) return;
+        for (BlockPos target : requiredCells(origin, front)) {
+            if (target.equals(origin)) continue;
+            BlockState state = level.getBlockState(target);
+            if (state.is(Scp914Module.SCP_914_RESERVATION.get())
+                    || state.is(Scp914Module.SCP_914_COLLISION.get())
+                    || state.is(Scp914Module.SCP_914_DOOR_COLLISION.get())) {
+                level.setBlock(target, Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+    }
+
+    public static boolean isDoorCell(BlockPos origin, Direction front,
+            BlockPos candidate) {
+        return candidate.equals(gridCell(origin, front, -5, 0, 0))
+                || candidate.equals(gridCell(origin, front, -5, 1, 0))
+                || candidate.equals(gridCell(origin, front, 5, 0, 0))
+                || candidate.equals(gridCell(origin, front, 5, 1, 0));
+    }
+
+    private static boolean isDoorLocal(int side, int y, int forward) {
+        return (side == -5 || side == 5)
+                && forward == 0 && y <= 1;
+    }
+
+    /**
+     * Coarse collision follows the large body and chamber shells, while the
+     * remaining footprint is reservation-only. Chamber interiors and open door
+     * paths therefore remain traversable and usable for loose items/entities.
+     */
+    private static boolean isSolidLocal(int side, int y, int forward) {
+        if (side >= -3 && side <= 3 && forward >= -2 && forward <= 0) {
+            return true;
+        }
+        if (side >= -2 && side <= 2 && forward == 1 && y <= 1) {
+            return true;
+        }
+        return chamberWall(side, y, forward, -5)
+                || chamberWall(side, y, forward, 5);
+    }
+
+    private static boolean chamberWall(int side, int y, int forward, int center) {
+        if (Math.abs(side - center) == 1
+                && forward >= -3 && forward <= 0) {
+            return true;
+        }
+        if (side == center && forward == -3) return true;
+        return side == center && y == 2 && forward >= -2 && forward <= -1;
+    }
+
+    private static BlockPos gridCell(BlockPos origin, Direction front,
+            int side, int y, int forward) {
+        Direction localPositiveX = front.getCounterClockWise();
+        return origin.relative(front, forward)
+                .relative(localPositiveX, side)
+                .above(y);
     }
 }

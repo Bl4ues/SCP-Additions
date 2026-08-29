@@ -23,7 +23,7 @@ public final class Scp914ItemRenderer extends GeoItemRenderer<Scp914BlockItem> {
 
     private static final class Model extends GeoModel<Scp914BlockItem> {
         private static final ResourceLocation GEO = new ResourceLocation(
-                ScpClassifiedDirectiveMod.MODID, "geo/block/scp914.geo.json");
+                ScpClassifiedDirectiveMod.MODID, "geo/item/scp914.geo.json");
         private static final ResourceLocation TEXTURE = new ResourceLocation(
                 ScpClassifiedDirectiveMod.MODID, "textures/block/scp914.png");
         private static final ResourceLocation ANIMATION = new ResourceLocation(

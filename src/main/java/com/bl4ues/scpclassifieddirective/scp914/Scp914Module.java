@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.scp914;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.Scp914Block;
+import com.bl4ues.scpclassifieddirective.block.Scp914PartBlock;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.item.Scp914BlockItem;
 import net.minecraft.resources.ResourceLocation;
@@ -26,6 +27,16 @@ public final class Scp914Module {
             ForgeRegistries.SOUND_EVENTS, ScpClassifiedDirectiveMod.MODID);
 
     public static final RegistryObject<Block> SCP_914 = BLOCKS.register("scp_914", Scp914Block::new);
+    public static final RegistryObject<Block> SCP_914_RESERVATION = BLOCKS.register(
+            "scp_914_reservation",
+            () -> new Scp914PartBlock(Scp914PartBlock.Kind.RESERVATION));
+    public static final RegistryObject<Block> SCP_914_COLLISION = BLOCKS.register(
+            "scp_914_collision",
+            () -> new Scp914PartBlock(Scp914PartBlock.Kind.SOLID));
+    public static final RegistryObject<Block> SCP_914_DOOR_COLLISION = BLOCKS.register(
+            "scp_914_door_collision",
+            () -> new Scp914PartBlock(Scp914PartBlock.Kind.DOOR));
+
     public static final RegistryObject<Item> SCP_914_ITEM = ITEMS.register("scp_914",
             () -> new Scp914BlockItem(SCP_914.get()));
     public static final RegistryObject<BlockEntityType<Scp914BlockEntity>> SCP_914_BLOCK_ENTITY =

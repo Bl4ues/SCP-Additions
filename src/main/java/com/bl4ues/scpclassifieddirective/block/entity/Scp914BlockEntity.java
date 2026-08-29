@@ -69,9 +69,9 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
                 && elapsed >= DOOR_CLOSE_SOUND_TICK) {
             blockEntity.closeSoundPlayed = true;
             playAt(serverLevel, Scp914Structure.intakeDoorCenter(pos, front),
-                    Scp914Module.CLOSE.get(), 2.25F);
+                    Scp914Module.CLOSE.get(), 3.5F);
             playAt(serverLevel, Scp914Structure.outputDoorCenter(pos, front),
-                    Scp914Module.CLOSE.get(), 2.25F);
+                    Scp914Module.CLOSE.get(), 3.5F);
             blockEntity.sync();
         }
 

@@ -107,6 +107,7 @@ public final class Scp914PartBlock extends Block {
                 .noOcclusion()
                 .noLootTable();
         if (kind == Kind.RESERVATION) properties = properties.noCollission();
+        if (kind == Kind.DOOR) properties = properties.dynamicShape();
         return properties;
     }
 

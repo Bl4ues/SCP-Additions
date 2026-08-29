@@ -143,16 +143,16 @@ public final class Scp914PartBlock extends Block {
     }
 
     private static BlockBehaviour.Properties properties(Kind kind) {
-        BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
+        // Several SCP-914 helper roles intentionally resolve their shape from their
+        // position relative to the controller. Disable vanilla shape caching for all
+        // helper kinds so a full core cell can never leak its shape into a thin frame
+        // cell that happens to share the same block state role.
+        return BlockBehaviour.Properties.of()
                 .strength(6.0F, 1200.0F)
                 .sound(SoundType.METAL)
                 .noOcclusion()
-                .noLootTable();
-        // Reservation helpers normally expose an empty shape, but the existing
-        // reservations inside the central body are also used to complete its solid
-        // 3x3x3 core. Keep collision enabled and decide per cell below.
-        if (kind == Kind.DOOR) properties = properties.dynamicShape();
-        return properties;
+                .noLootTable()
+                .dynamicShape();
     }
 
     @Override

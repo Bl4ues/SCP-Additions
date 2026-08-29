@@ -34,6 +34,8 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     /** The only transition from open geometry to closed geometry: about 2.45 s. */
     public static final int DOOR_CLOSED_TICK = 49;
     public static final int PROCESS_AND_OPEN_TICK = 209;
+    /** Transform contents 1.5 s before opening so spawned outputs can settle unseen. */
+    public static final int PROCESS_TICK = PROCESS_AND_OPEN_TICK - 30;
     public static final float ROUGH_ANGLE = -90.0F;
     public static final float COARSE_ANGLE = -45.0F;
     public static final float ONE_TO_ONE_ANGLE = 0.0F;
@@ -75,7 +77,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
             blockEntity.sync();
         }
 
-        if (!blockEntity.cycleProcessed && elapsed >= PROCESS_AND_OPEN_TICK) {
+        if (!blockEntity.cycleProcessed && elapsed >= PROCESS_TICK) {
             blockEntity.cycleProcessed = true;
             Scp914CycleProcessor.process(serverLevel, pos, front,
                     blockEntity.recipeSetting());
@@ -111,8 +113,6 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         Direction front = Scp914Structure.facing(getBlockState());
         Vec3 center = Scp914Structure.machineSoundCenter(worldPosition, front);
         playAt(serverLevel, center, Scp914Module.WIND.get(), 1.5F);
-        // The machinery loop starts immediately and is intentionally audible across
-        // a large part of a facility, while still being spatialized at SCP-914.
         playAt(serverLevel, center, Scp914Module.REFINING.get(), 4.0F);
         sync();
         return true;
@@ -151,11 +151,6 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         return setting;
     }
 
-    /**
-     * Applies a throttled client drag update. Intermediate packets may only
-     * move the authoritative dial to 7.5 degree mechanical detents. A commit
-     * always locks the machine to one of the five official SCP-914 settings.
-     */
     public void applyDialNetworkUpdate(float requestedAngle, boolean commit) {
         if (!(level instanceof ServerLevel serverLevel) || refining) return;
 
@@ -274,13 +269,6 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
                 state -> state.setAndContinue(refining ? REFINING : IDLE)));
     }
 
-    /**
-     * GeoBlockEntity normally uses GeckoLib's render clock. That clock can advance
-     * while an integrated server is paused, allowing a one-shot animation to finish
-     * while SCP-914's authoritative cycle has not advanced at all. Driving the
-     * controller from Level game time keeps animation, collision and processing on
-     * the same pause-aware clock.
-     */
     @Override
     public double getTick(Object blockEntity) {
         return level == null ? 0.0D : level.getGameTime();

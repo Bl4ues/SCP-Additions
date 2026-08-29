@@ -1,0 +1,11 @@
+{
+  "id": "scp_classified_directive:scp914",
+  "texture": "scp_classified_directive:textures/screens/menu/loading_images/scp914_loading.png",
+  "left_title": "SCP-914",
+  "left_subtitle": "SAFE",
+  "right_label": "THREAT LEVEL",
+  "right_value": "VARIABLE",
+  "description": "SCP-914 is a large clockwork device weighing several tons and covering an area of eighteen square meters, consisting of screw drives, belts, pulleys, gears, springs and other clockwork. Two large booths are connected via copper tubes to the main body of SCP-914, labeled \"Intake\" and \"Output\" with a copper panel with a large knob with a small arrow attached between them.",
+  "description_anchor": "center",
+  "weight": 1.0
+}

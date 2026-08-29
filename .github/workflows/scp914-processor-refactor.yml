@@ -1,0 +1,43 @@
+name: SCP-914 Processor Refactor
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/scp914-processor-refactor.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Expose reusable SCP-914 transformation operations
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/data/Scp914Processor.java')
+          text = path.read_text()
+          replacements = {
+              'private static void processPlayer(': 'public static void processPlayer(',
+              'private static void applyRecipe(': 'public static void applyRecipe(',
+              'private static void consumeLooseItems(': 'public static void consumeLooseItems(',
+          }
+          for old, new in replacements.items():
+              if old not in text and new not in text:
+                  raise SystemExit(f'Missing expected marker: {old}')
+              text = text.replace(old, new)
+          path.write_text(text)
+      - name: Commit refactor
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/java/com/bl4ues/scpclassifieddirective/data/Scp914Processor.java
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Expose SCP-914 transformation operations"
+          git push origin HEAD:master

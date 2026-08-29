@@ -1,9 +1,0 @@
-{
-  "parent": "scp_classified_directive:custom/scp914block",
-  "textures": {
-    "all": "scp_classified_directive:block/scp914block",
-    "particle": "scp_classified_directive:block/scp914block",
-    "0": "scp_classified_directive:block/scp914block"
-  },
-  "render_type": "solid"
-}

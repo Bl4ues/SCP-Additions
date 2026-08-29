@@ -1,10 +1,10 @@
 package com.bl4ues.scpclassifieddirective.data;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -25,26 +25,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
 
-import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
-import com.bl4ues.scpclassifieddirective.network.ScpClassifiedDirectiveModVariables;
-
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+/** Reusable SCP-914 transformation operations for the rebuilt physical machine. */
 public final class Scp914Processor {
     public static final ResourceKey<DamageType> DAMAGE_TYPE = ResourceKey.create(
             Registries.DAMAGE_TYPE,
@@ -53,94 +39,9 @@ public final class Scp914Processor {
     private Scp914Processor() {
     }
 
-    public static void process(LevelAccessor world, double x, double y, double z, Entity user,
-                               Scp914RecipeManager.Setting setting) {
-        if (!(world instanceof ServerLevel level)) {
-            return;
-        }
-
-        BlockPos keyPos = BlockPos.containing(x, y, z);
-        Scp914RecipeManager.MachineConfig machineConfig = Scp914RecipeManager.machineConfig();
-        Direction front = getFacing(level, keyPos);
-        ProcessingContext context = createContext(level, keyPos, setting, machineConfig, front);
-
-        if (context.match().isEmpty() && context.players().isEmpty()) {
-            return;
-        }
-
-        closeDoorsImmediately(level, keyPos);
-        playSound(level, keyPos, "scp_classified_directive:scp914refining");
-        if (!context.players().isEmpty()) {
-            playSound(level, BlockPos.containing(context.intakeCenter()), "scp_classified_directive:scp914inside");
-        }
-        setRefining(world, true);
-
-        ScpClassifiedDirectiveMod.queueServerWork(machineConfig.startDelayTicks(), () -> {
-            if (context.match().isPresent()) {
-                applyRecipe(level, context.outputCenter(), context.match().get());
-            } else {
-                // A player makes this a valid cycle even when the loose items do
-                // not resolve to a recipe. Once the machine starts, everything in
-                // the intake belongs to SCP-914 and must not remain behind.
-                consumeLooseItems(context.itemInputs());
-            }
-            for (ServerPlayer player : context.players()) {
-                processPlayer(player, context.outputCenter(), setting);
-            }
-            ScpClassifiedDirectiveMod.queueServerWork(machineConfig.finishDelayTicks(), () -> setRefining(world, false));
-        });
-    }
-
-    private static ProcessingContext createContext(ServerLevel level, BlockPos keyPos,
-                                                   Scp914RecipeManager.Setting setting,
-                                                   Scp914RecipeManager.MachineConfig machineConfig,
-                                                   Direction front) {
-        Scp914RecipeManager.Offset intakeOffset = normalizeLegacyRangeOffset(machineConfig.intakeOffset());
-        Scp914RecipeManager.Offset outputOffset = normalizeLegacyRangeOffset(machineConfig.outputOffset());
-        Vec3 intakeCenter = centerOf(keyPos.offset(toWorldOffset(intakeOffset, front)));
-        Vec3 outputCenter = centerOf(keyPos.offset(toWorldOffset(outputOffset, front)));
-        AABB searchArea = new AABB(intakeCenter, intakeCenter).inflate(machineConfig.searchRadius());
-
-        List<ItemEntity> itemInputs = level.getEntitiesOfClass(ItemEntity.class, searchArea,
-                        item -> !item.isRemoved() && !item.getItem().isEmpty())
-                .stream()
-                .sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)))
-                .toList();
-
-        List<Entity> entityInputs = level.getEntitiesOfClass(Entity.class, searchArea,
-                        entity -> !(entity instanceof ItemEntity)
-                                && !(entity instanceof ServerPlayer)
-                                && !entity.isRemoved())
-                .stream()
-                .sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)))
-                .toList();
-
-        List<ServerPlayer> players = level.getEntitiesOfClass(ServerPlayer.class, searchArea,
-                        player -> !player.isRemoved() && player.isAlive())
-                .stream()
-                .sorted(Comparator.comparingDouble(entity -> entity.distanceToSqr(intakeCenter)))
-                .toList();
-
-        Optional<Scp914RecipeManager.RecipeMatch> match =
-                Scp914RecipeBridge.findRecipe(level, setting, itemInputs, entityInputs);
-        return new ProcessingContext(match, players, itemInputs, intakeCenter, outputCenter);
-    }
-
-    private static Scp914RecipeManager.Offset normalizeLegacyRangeOffset(Scp914RecipeManager.Offset offset) {
-        if (offset.x() == -4 && offset.y() == 0 && offset.z() == -3) {
-            return new Scp914RecipeManager.Offset(-5, 0, -3);
-        }
-        if (offset.x() == 4 && offset.y() == 0 && offset.z() == -3) {
-            return new Scp914RecipeManager.Offset(5, 0, -3);
-        }
-        return offset;
-    }
-
     public static void processPlayer(ServerPlayer player, Vec3 outputCenter,
-                                      Scp914RecipeManager.Setting setting) {
-        if (!isAvailable(player)) {
-            return;
-        }
+            Scp914RecipeManager.Setting setting) {
+        if (!isAvailable(player)) return;
 
         player.connection.teleport(outputCenter.x, outputCenter.y, outputCenter.z,
                 player.getYRot(), player.getXRot());
@@ -149,9 +50,7 @@ public final class Scp914Processor {
             case ROUGH -> {
                 hurtWithMessage(player, 18.0F, "scp914rough");
                 ScpClassifiedDirectiveMod.queueServerWork(10, () -> {
-                    if (isAvailable(player)) {
-                        hurtWithMessage(player, 50.0F, "scp914rough");
-                    }
+                    if (isAvailable(player)) hurtWithMessage(player, 50.0F, "scp914rough");
                 });
             }
             case COARSE -> {
@@ -159,9 +58,7 @@ public final class Scp914Processor {
                         200, 3, false, false));
                 hurtWithMessage(player, 18.0F, "scp914coarse");
                 ScpClassifiedDirectiveMod.queueServerWork(200, () -> {
-                    if (isAvailable(player)) {
-                        hurtWithMessage(player, 50.0F, "scp914coarse");
-                    }
+                    if (isAvailable(player)) hurtWithMessage(player, 50.0F, "scp914coarse");
                 });
             }
             case ONE_TO_ONE -> {
@@ -174,9 +71,7 @@ public final class Scp914Processor {
                 player.addEffect(new MobEffectInstance(MobEffects.JUMP,
                         200, 1, false, false));
                 ScpClassifiedDirectiveMod.queueServerWork(200, () -> {
-                    if (isAvailable(player)) {
-                        hurtWithMessage(player, 50.0F, "scp914fine");
-                    }
+                    if (isAvailable(player)) hurtWithMessage(player, 50.0F, "scp914fine");
                 });
             }
             case VERY_FINE -> {
@@ -187,9 +82,7 @@ public final class Scp914Processor {
                 player.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST,
                         300, 7, false, false));
                 ScpClassifiedDirectiveMod.queueServerWork(300, () -> {
-                    if (isAvailable(player)) {
-                        hurtWithMessage(player, 80.0F, "scp914veryfine");
-                    }
+                    if (isAvailable(player)) hurtWithMessage(player, 80.0F, "scp914veryfine");
                 });
             }
         }
@@ -200,11 +93,13 @@ public final class Scp914Processor {
                 && player.connection != null;
     }
 
-    private static void hurtWithMessage(ServerPlayer player, float amount, String translationKey) {
+    private static void hurtWithMessage(ServerPlayer player, float amount,
+            String translationKey) {
         var damageRegistry = player.level().registryAccess()
                 .registryOrThrow(Registries.DAMAGE_TYPE);
         var genericType = damageRegistry.getHolderOrThrow(DamageTypes.GENERIC);
-        DamageSource source = new DamageSource(damageRegistry.getHolderOrThrow(DAMAGE_TYPE)) {
+        DamageSource source = new DamageSource(
+                damageRegistry.getHolderOrThrow(DAMAGE_TYPE)) {
             @Override
             public boolean is(TagKey<DamageType> tag) {
                 return super.is(tag) || genericType.is(tag);
@@ -218,7 +113,8 @@ public final class Scp914Processor {
         };
         boolean wasAlive = player.isAlive();
         boolean damaged = player.hurt(source, amount);
-        if (damaged && wasAlive && player.isDeadOrDying() && !"scp914coarse".equals(translationKey)) {
+        if (damaged && wasAlive && player.isDeadOrDying()
+                && !"scp914coarse".equals(translationKey)) {
             player.level().playSound(null, player.blockPosition(),
                     ScpClassifiedDirectiveModSounds.SCP914DEATH.get(),
                     SoundSource.NEUTRAL, 1.0F, 1.0F);
@@ -227,15 +123,12 @@ public final class Scp914Processor {
 
     private static void awardMetamorphosisAdvancement(ServerPlayer player) {
         MinecraftServer server = player.getServer();
-        if (server == null) {
-            return;
-        }
+        if (server == null) return;
         Advancement advancement = server.getAdvancements().getAdvancement(
                 new ResourceLocation("scp_classified_directive", "scp_914_metamorphosis"));
-        if (advancement == null) {
-            return;
-        }
-        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
+        if (advancement == null) return;
+        AdvancementProgress progress = player.getAdvancements()
+                .getOrStartProgress(advancement);
         if (!progress.isDone()) {
             for (String criterion : progress.getRemainingCriteria()) {
                 player.getAdvancements().award(advancement, criterion);
@@ -244,7 +137,7 @@ public final class Scp914Processor {
     }
 
     public static void applyRecipe(ServerLevel level, Vec3 outputCenter,
-                                    Scp914RecipeManager.RecipeMatch match) {
+            Scp914RecipeManager.RecipeMatch match) {
         if (level.random.nextFloat() > match.recipe().chance()) {
             consumeInputs(match);
             return;
@@ -276,9 +169,7 @@ public final class Scp914Processor {
             for (int i = 0; i < output.count(); i++) {
                 Entity spawned = type.get().spawn(level,
                         BlockPos.containing(outputCenter), MobSpawnType.MOB_SUMMONED);
-                if (spawned != null) {
-                    spawned.setDeltaMovement(0, 0, 0);
-                }
+                if (spawned != null) spawned.setDeltaMovement(0, 0, 0);
             }
         }
     }
@@ -287,16 +178,11 @@ public final class Scp914Processor {
         for (Scp914RecipeManager.ItemUse itemUse : match.itemUses()) {
             ItemStack stack = itemUse.entity().getItem();
             stack.shrink(itemUse.count());
-            if (stack.isEmpty()) {
-                itemUse.entity().discard();
-            } else {
-                itemUse.entity().setItem(stack);
-            }
+            if (stack.isEmpty()) itemUse.entity().discard();
+            else itemUse.entity().setItem(stack);
         }
         for (Scp914RecipeManager.EntityUse entityUse : match.entityUses()) {
-            if (entityUse.consume()) {
-                entityUse.entity().discard();
-            }
+            if (entityUse.consume()) entityUse.entity().discard();
         }
     }
 
@@ -304,89 +190,5 @@ public final class Scp914Processor {
         for (ItemEntity item : items) {
             if (item != null && !item.isRemoved()) item.discard();
         }
-    }
-
-    private static void closeDoorsImmediately(ServerLevel level, BlockPos keyPos) {
-        boolean closedAnyDoor = false;
-        for (BlockPos pos : BlockPos.betweenClosed(
-                keyPos.offset(-8, -4, -8), keyPos.offset(8, 4, 8))) {
-            BlockPos target = pos.immutable();
-            BlockState state = level.getBlockState(target);
-            Block block = state.getBlock();
-            if (block == ScpClassifiedDirectiveModBlocks.SCP_914_INTAKE_DOOR.get()) {
-                level.setBlock(target, copyProperties(state,
-                        ScpClassifiedDirectiveModBlocks.SCP_914_INTAKE_DOOR_CLOSED.get()
-                                .defaultBlockState()), 3);
-                closedAnyDoor = true;
-            } else if (block == ScpClassifiedDirectiveModBlocks.SCP_914_OUTPUT_DOOR.get()) {
-                level.setBlock(target, copyProperties(state,
-                        ScpClassifiedDirectiveModBlocks.SCP_914_OUTPUT_DOOR_CLOSED.get()
-                                .defaultBlockState()), 3);
-                closedAnyDoor = true;
-            }
-        }
-
-        if (closedAnyDoor) {
-            playSound(level, keyPos, "scp_classified_directive:scp914doorclose");
-        }
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static BlockState copyProperties(BlockState from, BlockState to) {
-        BlockState result = to;
-        for (Map.Entry<Property<?>, Comparable<?>> entry : from.getValues().entrySet()) {
-            Property property = result.getBlock().getStateDefinition()
-                    .getProperty(entry.getKey().getName());
-            if (property != null) {
-                try {
-                    result = result.setValue((Property) property, (Comparable) entry.getValue());
-                } catch (Exception ignored) {
-                }
-            }
-        }
-        return result;
-    }
-
-    private static Direction getFacing(LevelAccessor world, BlockPos keyPos) {
-        BlockState state = world.getBlockState(keyPos);
-        if (state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return state.getValue(HorizontalDirectionalBlock.FACING);
-        }
-        return Direction.NORTH;
-    }
-
-    private static BlockPos toWorldOffset(Scp914RecipeManager.Offset offset,
-                                          Direction front) {
-        Direction rightFromViewer = front.getCounterClockWise();
-        Vec3i right = rightFromViewer.getNormal();
-        Vec3i forward = front.getNormal();
-        return new BlockPos(
-                right.getX() * offset.x() + forward.getX() * offset.z(),
-                offset.y(),
-                right.getZ() * offset.x() + forward.getZ() * offset.z());
-    }
-
-    private static Vec3 centerOf(BlockPos pos) {
-        return new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D,
-                pos.getZ() + 0.5D);
-    }
-
-    private static void setRefining(LevelAccessor world, boolean value) {
-        ScpClassifiedDirectiveModVariables.MapVariables.get(world).Scp914refining = value;
-        ScpClassifiedDirectiveModVariables.MapVariables.get(world).syncData(world);
-    }
-
-    private static void playSound(Level level, BlockPos pos, String soundId) {
-        ResourceLocation id = new ResourceLocation(soundId);
-        level.playSound(null, pos, ForgeRegistries.SOUND_EVENTS.getValue(id),
-                SoundSource.NEUTRAL, 1.0F, 1.0F);
-    }
-
-    private record ProcessingContext(
-            Optional<Scp914RecipeManager.RecipeMatch> match,
-            List<ServerPlayer> players,
-            List<ItemEntity> itemInputs,
-            Vec3 intakeCenter,
-            Vec3 outputCenter) {
     }
 }

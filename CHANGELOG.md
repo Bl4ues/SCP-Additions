@@ -73,6 +73,15 @@
 - With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them;
 - Active SCP-1576 sessions emit acoustic evidence from the communicator's physical position, allowing hearing-based systems such as SCP-939 to react to the voices it reproduces.
 
+## SCP-914
+
+- Completely rebuilt SCP-914 as a single large GeckoLib machine with hidden multiblock reservation and collision cells instead of the former collection of visible component blocks;
+- Added obstruction-aware placement for the full machine footprint, with blocked cells highlighted before placement;
+- Reworked the configuration dial into a physical contextual control that can be held and dragged directly on the placed model, with smooth client motion, mechanical detents, server-authoritative settings, gear feedback, and snap-to-setting release behavior;
+- Reworked the winding key into a physical contextual **Start** control anchored to the key itself;
+- Rebuilt the 15-second refining cycle around the new model animation, physical intake/output chamber volumes, door timing, machine audio, and the existing configurable SCP-914 transformation recipes;
+- Removed the obsolete SCP-914 assembly kit, component blocks, component items, GUI, generated procedures, models, textures, and contextual-interaction definitions.
+
 ## SCP-330
 
 - Rebuilt SCP-330 using a new bowl and candy model based on Unity's design;

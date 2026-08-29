@@ -14,7 +14,6 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 
 import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
-import com.bl4ues.scpclassifieddirective.client.gui.Scp914GuiScreen;
 import com.bl4ues.scpclassifieddirective.client.gui.Scp294GuiScreen;
 import com.bl4ues.scpclassifieddirective.client.gui.PlayerCorpseScreen;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
@@ -25,7 +24,6 @@ public class ScpClassifiedDirectiveModScreens {
 	public static void clientLoad(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
 			MenuScreens.register(ScpClassifiedDirectiveModMenus.TESLA_TERMINAL.get(), TeslaTerminalScreen::new);
-			MenuScreens.register(ScpClassifiedDirectiveModMenus.SCP_914_GUI.get(), Scp914GuiScreen::new);
 			MenuScreens.register(ScpClassifiedDirectiveModMenus.SCP_294_GUI.get(), Scp294GuiScreen::new);
 			MenuScreens.register(ScpClassifiedDirectiveModMenus.PLAYER_CORPSE.get(), PlayerCorpseScreen::new);
 

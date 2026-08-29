@@ -11,7 +11,7 @@ on:
       - master
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -20,6 +20,149 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Patch SCP-914 connector collision
+        if: github.ref == 'refs/heads/master'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/block/Scp914PartBlock.java')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''        if (role == Role.CONNECTOR_BACK) return connectorShape(level, pos, state);\n        if (isBodyRole(role) && isCentralCoreCell(level, pos, state)) {\n            return Shapes.block();\n        }\n        return staticShape(state, role);'''
+          new = '''        if (isConnectorRole(role)) return connectorShape(level, pos, state, role);\n        VoxelShape innerConnector = connectorInnerShape(level, pos, state);\n        if (!innerConnector.isEmpty()) return innerConnector;\n        if (isBodyRole(role) && isCentralCoreCell(level, pos, state)) {\n            return Shapes.block();\n        }\n        return staticShape(state, role);'''
+          if text.count(old) != 2:
+              raise SystemExit(f'expected 2 connector dispatch blocks, found {text.count(old)}')
+          text = text.replace(old, new)
+
+          replacement = r'''    private static boolean isConnectorRole(Role role) {
+        return role == Role.CONNECTOR_FRONT
+                || role == Role.CONNECTOR_FRONT_TOP
+                || role == Role.CONNECTOR_BACK
+                || role == Role.CONNECTOR_BACK_TOP;
+    }
+
+    private static VoxelShape connectorShape(BlockGetter level, BlockPos pos,
+            BlockState state, Role role) {
+        BlockPos controller = Scp914Structure.findController(level, pos, state);
+        if (controller == null) return Shapes.empty();
+        int y = pos.getY() - controller.getY();
+        if (y < 0 || y > 2) return Shapes.empty();
+
+        boolean frontPlane = role == Role.CONNECTOR_FRONT
+                || role == Role.CONNECTOR_FRONT_TOP;
+        double depthMin = frontPlane ? 0.5D : 1.5D;
+        double depthMax = frontPlane ? 2.5D : 3.5D;
+        double maxY = y == 2 ? 4.0D : 16.0D;
+        return connectorPlane(state.getValue(FACING), 0.0D, 16.0D,
+                depthMin, depthMax, maxY);
+    }
+
+    /**
+     * The authored connector grilles start at model X +/-26.75 and continue to
+     * the booth wall at +/-56. Their inner 13.25 px therefore live in the
+     * side +/-2 body helper while the remaining 16 px live in side +/-3.
+     * Replace the old body slab in these cells instead of unioning it, otherwise
+     * an invisible vertical plate remains in front of the visible grille.
+     */
+    private static VoxelShape connectorInnerShape(BlockGetter level, BlockPos pos,
+            BlockState state) {
+        BlockPos controller = Scp914Structure.findController(level, pos, state);
+        if (controller == null) return Shapes.empty();
+
+        Direction facing = state.getValue(FACING);
+        Direction localPositiveX = facing.getCounterClockWise();
+        int dx = pos.getX() - controller.getX();
+        int dz = pos.getZ() - controller.getZ();
+        int side = dx * localPositiveX.getStepX() + dz * localPositiveX.getStepZ();
+        int forward = dx * facing.getStepX() + dz * facing.getStepZ();
+        int y = pos.getY() - controller.getY();
+        if (Math.abs(side) != 2 || (forward != -1 && forward != -2)
+                || y < 0 || y > 2) {
+            return Shapes.empty();
+        }
+
+        double sideMin = side > 0 ? 2.75D : 0.0D;
+        double sideMax = side > 0 ? 16.0D : 13.25D;
+        double depthMin = forward == -1 ? 0.5D : 1.5D;
+        double depthMax = forward == -1 ? 2.5D : 3.5D;
+        double maxY = y == 2 ? 4.0D : 16.0D;
+        return connectorPlane(facing, sideMin, sideMax,
+                depthMin, depthMax, maxY);
+    }
+
+    /** Maps authored local X and local-back coordinates into a block-local box. */
+    private static VoxelShape connectorPlane(Direction facing,
+            double sideMin, double sideMax, double depthMin, double depthMax,
+            double maxY) {
+        double minX = 0.0D;
+        double maxX = 16.0D;
+        double minZ = 0.0D;
+        double maxZ = 16.0D;
+
+        Direction localPositiveX = facing.getCounterClockWise();
+        switch (localPositiveX) {
+            case EAST -> {
+                minX = sideMin;
+                maxX = sideMax;
+            }
+            case WEST -> {
+                minX = 16.0D - sideMax;
+                maxX = 16.0D - sideMin;
+            }
+            case SOUTH -> {
+                minZ = sideMin;
+                maxZ = sideMax;
+            }
+            case NORTH -> {
+                minZ = 16.0D - sideMax;
+                maxZ = 16.0D - sideMin;
+            }
+            default -> {
+            }
+        }
+
+        switch (facing) {
+            case NORTH -> {
+                minZ = depthMin;
+                maxZ = depthMax;
+            }
+            case SOUTH -> {
+                minZ = 16.0D - depthMax;
+                maxZ = 16.0D - depthMin;
+            }
+            case EAST -> {
+                minX = 16.0D - depthMax;
+                maxX = 16.0D - depthMin;
+            }
+            case WEST -> {
+                minX = depthMin;
+                maxX = depthMax;
+            }
+            default -> {
+            }
+        }
+        return Block.box(minX, 0.0D, minZ, maxX, maxY, maxZ);
+    }
+
+'''
+          pattern = re.compile(r'    private static VoxelShape connectorShape\(BlockGetter level, BlockPos pos,\n            BlockState state\) \{.*?\n    private static VoxelShape edgeSlab\(', re.S)
+          match = pattern.search(text)
+          if not match:
+              raise SystemExit('connector method block not found')
+          text = text[:match.start()] + replacement + '    private static VoxelShape edgeSlab(' + text[match.end():]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          if ! git diff --quiet -- src/main/java/com/bl4ues/scpclassifieddirective/block/Scp914PartBlock.java; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/main/java/com/bl4ues/scpclassifieddirective/block/Scp914PartBlock.java
+            git commit -m "Match SCP-914 connector grille collision"
+            git push origin HEAD:master
+          fi
 
       - name: Verify Classified Directive integrity
         run: python3 .github/scripts/verify_project_integrity.py

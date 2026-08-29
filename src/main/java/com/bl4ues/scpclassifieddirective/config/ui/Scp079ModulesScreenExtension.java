@@ -70,6 +70,9 @@ public final class Scp079ModulesScreenExtension {
                     "Hides hunger, makes food restore health, and uses damage-delay regeneration.", true),
             new Row("vitals", "horror_movement_enabled", "Survival-Horror Movement",
                     "Uses slower walking and committed sprinting.", true),
+            Row.serverEditor("stealth", "enabled", "Advanced Crouch & Stealth",
+                    "Smooth crouch/crawl movement and global visual-perception framework.", true,
+                    "Perception"),
             new Row("inventory", "enabled", "SCP Inventory",
                     "Enables the custom survival-horror inventory.", true),
             new Row("interactions", "enabled", "Contextual Interactions",
@@ -255,13 +258,29 @@ public final class Scp079ModulesScreenExtension {
     }
 
     private record Row(String group, String key, String label,
-                       String description, boolean fallback) {
+                       String description, boolean fallback,
+                       boolean serverOwned, String editorLabel) {
+        private Row(String group, String key, String label,
+                    String description, boolean fallback) {
+            this(group, key, label, description, fallback, false, null);
+        }
+
         private static Row section(String title) {
-            return new Row(null, null, title, "", false);
+            return new Row(null, null, title, "", false, false, null);
+        }
+
+        private static Row serverEditor(String group, String key, String label,
+                String description, boolean fallback, String editorLabel) {
+            return new Row(group, key, label, description, fallback,
+                    true, editorLabel);
         }
 
         private boolean isSection() {
             return group == null;
+        }
+
+        private boolean hasEditor() {
+            return editorLabel != null && !editorLabel.isBlank();
         }
     }
 
@@ -315,14 +334,35 @@ public final class Scp079ModulesScreenExtension {
                 Row row = rows.get(i);
                 if (row.isSection()) continue;
                 int rowY = contentY + (i - scroll) * ROW_HEIGHT;
-                Button button = Button.builder(ScpFonts.roboto(toggleLabel(row)),
-                        clicked -> {
-                            JsonObject group = object(working, row.group());
-                            group.addProperty(row.key(), !bool(group, row.key(),
-                                    row.fallback()));
-                            setLabel(clicked, toggleLabel(row));
-                        }).bounds(contentX, rowY, panelWidth - 32, 22).build();
-                register(button, toggleLabel(row));
+                if (row.hasEditor()) {
+                    int stateWidth = 92;
+                    int gap = 6;
+                    Button editor = Button.builder(ScpFonts.roboto(row.label()),
+                            clicked -> StealthConfigCenterEnhancements.openPerceptionEditor(
+                                    this, working))
+                            .bounds(contentX, rowY,
+                                    panelWidth - 32 - stateWidth - gap, 22).build();
+                    register(editor, row.label());
+
+                    Button state = Button.builder(ScpFonts.roboto(stateLabel(row)),
+                            clicked -> {
+                                JsonObject group = object(working, row.group());
+                                group.addProperty(row.key(), !bool(group, row.key(),
+                                        row.fallback()));
+                                setLabel(clicked, stateLabel(row));
+                            }).bounds(contentX + panelWidth - 32 - stateWidth,
+                                    rowY, stateWidth, 22).build();
+                    register(state, stateLabel(row));
+                } else {
+                    Button button = Button.builder(ScpFonts.roboto(toggleLabel(row)),
+                            clicked -> {
+                                JsonObject group = object(working, row.group());
+                                group.addProperty(row.key(), !bool(group, row.key(),
+                                        row.fallback()));
+                                setLabel(clicked, toggleLabel(row));
+                            }).bounds(contentX, rowY, panelWidth - 32, 22).build();
+                    register(button, toggleLabel(row));
+                }
             }
 
             int bottom = panelY + panelHeight - 30;
@@ -375,6 +415,11 @@ public final class Scp079ModulesScreenExtension {
         private String toggleLabel(Row row) {
             return row.label() + ": "
                     + (bool(object(working, row.group()), row.key(),
+                    row.fallback()) ? "ON" : "OFF");
+        }
+
+        private String stateLabel(Row row) {
+            return "State: " + (bool(object(working, row.group()), row.key(),
                     row.fallback()) ? "ON" : "OFF");
         }
 
@@ -447,9 +492,16 @@ public final class Scp079ModulesScreenExtension {
                     graphics.fill(lineX, rowY + 14,
                             panelX + panelWidth - 18, rowY + 15, BORDER);
                 } else {
+                    int descriptionMax = row.serverOwned() ? 62 : 80;
                     graphics.drawString(font,
-                            ScpFonts.roboto(compact(row.description(), 80)),
+                            ScpFonts.roboto(compact(row.description(), descriptionMax)),
                             panelX + 18, rowY + 24, MUTED, false);
+                    if (row.serverOwned()) {
+                        Component server = ScpFonts.roboto("SERVER-SIDE");
+                        graphics.drawString(font, server,
+                                panelX + panelWidth - 18 - font.width(server),
+                                rowY + 24, PALE_GOLD, false);
+                    }
                 }
             }
 

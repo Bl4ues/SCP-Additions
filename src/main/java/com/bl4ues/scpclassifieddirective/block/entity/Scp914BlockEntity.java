@@ -29,7 +29,10 @@ import javax.annotation.Nullable;
 /** Authoritative state and animation host for the rebuilt SCP-914. */
 public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEntity {
     public static final int REFINING_TICKS = 300;
+    /** Start scp914close so its 1.12 s impact lands at the actual door closure. */
     public static final int DOOR_CLOSE_SOUND_TICK = 27;
+    /** The only transition from open geometry to closed geometry: about 2.45 s. */
+    public static final int DOOR_CLOSED_TICK = 49;
     public static final int PROCESS_AND_OPEN_TICK = 209;
     public static final float ROUGH_ANGLE = -90.0F;
     public static final float COARSE_ANGLE = -45.0F;
@@ -49,7 +52,6 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     private boolean openSoundPlayed;
     private float dialAngle = ONE_TO_ONE_ANGLE;
     private Setting setting = Setting.ONE_TO_ONE;
-    private long lastGearSoundGameTime = Long.MIN_VALUE;
 
     public Scp914BlockEntity(BlockPos pos, BlockState state) {
         super(Scp914Module.SCP_914_BLOCK_ENTITY.get(), pos, state);
@@ -67,9 +69,9 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
                 && elapsed >= DOOR_CLOSE_SOUND_TICK) {
             blockEntity.closeSoundPlayed = true;
             playAt(serverLevel, Scp914Structure.intakeDoorCenter(pos, front),
-                    Scp914Module.CLOSE.get(), 1.25F);
+                    Scp914Module.CLOSE.get(), 2.25F);
             playAt(serverLevel, Scp914Structure.outputDoorCenter(pos, front),
-                    Scp914Module.CLOSE.get(), 1.25F);
+                    Scp914Module.CLOSE.get(), 2.25F);
             blockEntity.sync();
         }
 
@@ -83,9 +85,9 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         if (!blockEntity.openSoundPlayed && elapsed >= PROCESS_AND_OPEN_TICK) {
             blockEntity.openSoundPlayed = true;
             playAt(serverLevel, Scp914Structure.intakeDoorCenter(pos, front),
-                    Scp914Module.OPEN.get(), 1.25F);
+                    Scp914Module.OPEN.get(), 1.5F);
             playAt(serverLevel, Scp914Structure.outputDoorCenter(pos, front),
-                    Scp914Module.OPEN.get(), 1.25F);
+                    Scp914Module.OPEN.get(), 1.5F);
             blockEntity.sync();
         }
 
@@ -107,12 +109,11 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         cycleProcessed = false;
         openSoundPlayed = false;
         Direction front = Scp914Structure.facing(getBlockState());
-        playAt(serverLevel,
-                Scp914Structure.machineSoundCenter(worldPosition, front),
-                Scp914Module.WIND.get(), 1.15F);
-        playAt(serverLevel,
-                Scp914Structure.machineSoundCenter(worldPosition, front),
-                Scp914Module.REFINING.get(), 2.0F);
+        Vec3 center = Scp914Structure.machineSoundCenter(worldPosition, front);
+        playAt(serverLevel, center, Scp914Module.WIND.get(), 1.5F);
+        // The machinery loop starts immediately and is intentionally audible across
+        // a large part of a facility, while still being spatialized at SCP-914.
+        playAt(serverLevel, center, Scp914Module.REFINING.get(), 4.0F);
         sync();
         return true;
     }
@@ -172,16 +173,19 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
                     Math.min(VERY_FINE_ANGLE, targetAngle));
         }
 
-        boolean changed = Math.abs(targetAngle - dialAngle) > 0.001F;
+        float previousAngle = dialAngle;
+        boolean changed = Math.abs(targetAngle - previousAngle) > 0.001F;
         dialAngle = targetAngle;
-        long now = serverLevel.getGameTime();
-        if ((changed && now != lastGearSoundGameTime) || commit) {
-            lastGearSoundGameTime = now;
+        if (changed) {
+            int crossedDetents = Math.max(1, Math.round(
+                    Math.abs(targetAngle - previousAngle) / DIAL_DETENT_DEGREES));
             Direction front = Scp914Structure.facing(getBlockState());
-            playAt(serverLevel,
-                    Scp914Structure.dialAnchor(worldPosition, front),
-                    Scp914Module.gearSound(serverLevel.random.nextInt(9) + 1),
-                    commit ? 1.0F : 0.55F);
+            Vec3 dial = Scp914Structure.dialAnchor(worldPosition, front);
+            for (int i = 0; i < crossedDetents; i++) {
+                playAt(serverLevel, dial,
+                        Scp914Module.gearSound(serverLevel.random.nextInt(9) + 1),
+                        0.9F);
+            }
         }
         if (changed || commit) sync();
     }

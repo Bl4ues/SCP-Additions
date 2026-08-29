@@ -20,13 +20,6 @@ public final class Scp914Structure {
     private Scp914Structure() {
     }
 
-    private static final int FORWARD_MIN = -3;
-    private static final int FORWARD_MAX = 2;
-    private static final int SIDE_MIN = -8;
-    private static final int SIDE_MAX = 7;
-    private static final int Y_MIN = 0;
-    private static final int Y_MAX = 2;
-
     private static final double INTAKE_X = -4.80D;
     private static final double OUTPUT_X = 4.80D;
     private static final double CHAMBER_Y = 1.05D;
@@ -110,7 +103,7 @@ public final class Scp914Structure {
                 Math.max(a.x, b.x), Math.max(a.y, b.y), Math.max(a.z, b.z));
     }
 
-    /** Includes reservation volume plus the six floor cells below each cabin. */
+    /** Includes the stepped model footprint plus the six floor cells below each cabin. */
     public static List<BlockPos> requiredCells(BlockPos origin, Direction front) {
         List<BlockPos> result = new ArrayList<>();
         result.add(origin.immutable());
@@ -192,16 +185,19 @@ public final class Scp914Structure {
     private static List<PartPlacement> placements(BlockPos origin, Direction front) {
         Map<BlockPos, PartPlacement> result = new LinkedHashMap<>();
 
-        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
-            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
-                for (int y = Y_MIN; y <= Y_MAX; y++) {
-                    BlockPos pos = gridCell(origin, front, side, y, forward);
-                    if (!pos.equals(origin)) put(result, pos,
-                            Scp914PartBlock.Kind.RESERVATION,
-                            Scp914PartBlock.Role.RESERVED);
-                }
-            }
-        }
+        // Reserve only cells actually covered by the model. The previous implementation
+        // reserved one 16x6x3 cuboid, which made a large amount of visibly empty space
+        // unusable. The stair-step footprint follows the silhouette of the center body,
+        // both chambers and the two angled outer wings.
+        addReservationPrism(result, origin, front, -2, 2, -2, 0, 0, 2);
+        addReservationPrism(result, origin, front, -3, -3, -1, 0, 0, 2);
+        addReservationPrism(result, origin, front, 3, 3, -1, 0, 0, 2);
+        addReservationPrism(result, origin, front, -6, -4, -3, 0, 0, 2);
+        addReservationPrism(result, origin, front, 4, 6, -3, 0, 0, 2);
+        addReservationPrism(result, origin, front, -7, -7, -1, 1, 0, 2);
+        addReservationPrism(result, origin, front, 7, 7, -1, 1, 0, 2);
+        addReservationPrism(result, origin, front, -8, -8, 0, 2, 0, 2);
+        addReservationPrism(result, origin, front, 8, 8, 0, 2, 0, 2);
 
         for (int side = -2; side <= 2; side++) {
             for (int forward = -2; forward <= -1; forward++) {
@@ -222,6 +218,21 @@ public final class Scp914Structure {
         addCabin(result, origin, front, -5);
         addCabin(result, origin, front, 5);
         return List.copyOf(result.values());
+    }
+
+    private static void addReservationPrism(Map<BlockPos, PartPlacement> result,
+            BlockPos origin, Direction front, int sideMin, int sideMax,
+            int forwardMin, int forwardMax, int yMin, int yMax) {
+        for (int side = sideMin; side <= sideMax; side++) {
+            for (int forward = forwardMin; forward <= forwardMax; forward++) {
+                for (int y = yMin; y <= yMax; y++) {
+                    BlockPos pos = gridCell(origin, front, side, y, forward);
+                    if (!pos.equals(origin)) put(result, pos,
+                            Scp914PartBlock.Kind.RESERVATION,
+                            Scp914PartBlock.Role.RESERVED);
+                }
+            }
+        }
     }
 
     private static void addCabin(Map<BlockPos, PartPlacement> result,

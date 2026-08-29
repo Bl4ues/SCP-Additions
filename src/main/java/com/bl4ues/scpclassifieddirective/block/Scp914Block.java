@@ -31,14 +31,12 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-/** Single controller/render block for the rebuilt SCP-914. */
+/** Controller/render block for the rebuilt SCP-914 multiblock. */
 public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    private static final VoxelShape CONTROLLER_SHAPE = Shapes.block();
     private static final double WIND_KEY_USE_RADIUS_SQR = 0.22D * 0.22D;
 
     public Scp914Block() {
@@ -82,13 +80,13 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return CONTROLLER_SHAPE;
+        return Scp914PartBlock.frontSlab(state.getValue(FACING), 6.0D);
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return CONTROLLER_SHAPE;
+        return Scp914PartBlock.frontSlab(state.getValue(FACING), 6.0D);
     }
 
     @Override

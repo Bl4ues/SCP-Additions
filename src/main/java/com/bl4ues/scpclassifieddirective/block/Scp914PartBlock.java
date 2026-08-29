@@ -1,35 +1,43 @@
 package com.bl4ues.scpclassifieddirective.block;
 
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/** Invisible semantic structural cell used by the oversized SCP-914. */
+import java.util.Collections;
+import java.util.List;
+
+/** Invisible selectable structure/collision cell belonging to the large SCP-914. */
 public final class Scp914PartBlock extends Block {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<Role> ROLE = EnumProperty.create("role", Role.class);
 
-    private static final VoxelShape SIDE_X = Block.box(7.0D, 0.0D, 0.0D,
-            9.0D, 16.0D, 16.0D);
-    private static final VoxelShape SIDE_Z = Block.box(0.0D, 0.0D, 7.0D,
-            16.0D, 16.0D, 9.0D);
-    private static final VoxelShape ROOF = Block.box(0.0D, 7.0D, 0.0D,
+    private static final VoxelShape FULL = Shapes.block();
+    private static final VoxelShape BOTTOM_PLATE = Block.box(0.0D, 0.0D, 0.0D,
+            16.0D, 2.0D, 16.0D);
+    private static final VoxelShape ROOF_BAND = Block.box(0.0D, 7.0D, 0.0D,
             16.0D, 10.0D, 16.0D);
 
     public enum Kind {
@@ -38,51 +46,80 @@ public final class Scp914PartBlock extends Block {
         DOOR
     }
 
+    private enum DoorPose {
+        NONE,
+        CLOSED,
+        OPEN
+    }
+
     public enum Role implements StringRepresentable {
         RESERVED("reserved"),
-        BODY("body"),
+        FRAME("frame"),
         BODY_FRONT("body_front"),
-        FLOOR("floor"),
-        CABIN_SIDE("cabin_side"),
+        BODY_BACK("body_back"),
+        BODY_SIDE_NEG("body_side_neg"),
+        BODY_SIDE_POS("body_side_pos"),
+        BODY_FLOOR("body_floor"),
+        BODY_ROOF("body_roof"),
+        CABIN_SIDE_NEG("cabin_side_neg"),
+        CABIN_SIDE_POS("cabin_side_pos"),
         CABIN_BACK("cabin_back"),
         CABIN_ROOF("cabin_roof"),
-        DOOR_N6_LOWER("door_n6_lower", -6, 0),
-        DOOR_N5_LOWER("door_n5_lower", -5, 0),
-        DOOR_N4_LOWER("door_n4_lower", -4, 0),
-        DOOR_N6_UPPER("door_n6_upper", -6, 1),
-        DOOR_N5_UPPER("door_n5_upper", -5, 1),
-        DOOR_N4_UPPER("door_n4_upper", -4, 1),
-        DOOR_P4_LOWER("door_p4_lower", 4, 0),
-        DOOR_P5_LOWER("door_p5_lower", 5, 0),
-        DOOR_P6_LOWER("door_p6_lower", 6, 0),
-        DOOR_P4_UPPER("door_p4_upper", 4, 1),
-        DOOR_P5_UPPER("door_p5_upper", 5, 1),
-        DOOR_P6_UPPER("door_p6_upper", 6, 1);
+
+        DOOR_N6_LOWER("door_n6_lower", -6, 0, 0, DoorPose.CLOSED),
+        DOOR_N5_LOWER("door_n5_lower", -5, 0, 0, DoorPose.CLOSED),
+        DOOR_N4_LOWER("door_n4_lower", -4, 0, 0, DoorPose.CLOSED),
+        DOOR_N6_UPPER("door_n6_upper", -6, 1, 0, DoorPose.CLOSED),
+        DOOR_N5_UPPER("door_n5_upper", -5, 1, 0, DoorPose.CLOSED),
+        DOOR_N4_UPPER("door_n4_upper", -4, 1, 0, DoorPose.CLOSED),
+        DOOR_N6_TOP("door_n6_top", -6, 2, 0, DoorPose.CLOSED),
+        DOOR_N5_TOP("door_n5_top", -5, 2, 0, DoorPose.CLOSED),
+        DOOR_N4_TOP("door_n4_top", -4, 2, 0, DoorPose.CLOSED),
+
+        DOOR_P4_LOWER("door_p4_lower", 4, 0, 0, DoorPose.CLOSED),
+        DOOR_P5_LOWER("door_p5_lower", 5, 0, 0, DoorPose.CLOSED),
+        DOOR_P6_LOWER("door_p6_lower", 6, 0, 0, DoorPose.CLOSED),
+        DOOR_P4_UPPER("door_p4_upper", 4, 1, 0, DoorPose.CLOSED),
+        DOOR_P5_UPPER("door_p5_upper", 5, 1, 0, DoorPose.CLOSED),
+        DOOR_P6_UPPER("door_p6_upper", 6, 1, 0, DoorPose.CLOSED),
+        DOOR_P4_TOP("door_p4_top", 4, 2, 0, DoorPose.CLOSED),
+        DOOR_P5_TOP("door_p5_top", 5, 2, 0, DoorPose.CLOSED),
+        DOOR_P6_TOP("door_p6_top", 6, 2, 0, DoorPose.CLOSED),
+
+        DOOR_N_OPEN1_LOWER("door_n_o1_l", -6, 0, 1, DoorPose.OPEN),
+        DOOR_N_OPEN1_UPPER("door_n_o1_u", -6, 1, 1, DoorPose.OPEN),
+        DOOR_N_OPEN1_TOP("door_n_o1_t", -6, 2, 1, DoorPose.OPEN),
+        DOOR_N_OPEN2_LOWER("door_n_o2_l", -6, 0, 2, DoorPose.OPEN),
+        DOOR_N_OPEN2_UPPER("door_n_o2_u", -6, 1, 2, DoorPose.OPEN),
+        DOOR_N_OPEN2_TOP("door_n_o2_t", -6, 2, 2, DoorPose.OPEN),
+        DOOR_P_OPEN1_LOWER("door_p_o1_l", 6, 0, 1, DoorPose.OPEN),
+        DOOR_P_OPEN1_UPPER("door_p_o1_u", 6, 1, 1, DoorPose.OPEN),
+        DOOR_P_OPEN1_TOP("door_p_o1_t", 6, 2, 1, DoorPose.OPEN),
+        DOOR_P_OPEN2_LOWER("door_p_o2_l", 6, 0, 2, DoorPose.OPEN),
+        DOOR_P_OPEN2_UPPER("door_p_o2_u", 6, 1, 2, DoorPose.OPEN),
+        DOOR_P_OPEN2_TOP("door_p_o2_t", 6, 2, 2, DoorPose.OPEN);
 
         private final String serializedName;
         private final int doorSide;
         private final int doorY;
+        private final int doorForward;
+        private final DoorPose doorPose;
 
         Role(String serializedName) {
-            this(serializedName, Integer.MIN_VALUE, Integer.MIN_VALUE);
+            this(serializedName, 0, 0, 0, DoorPose.NONE);
         }
 
-        Role(String serializedName, int doorSide, int doorY) {
+        Role(String serializedName, int doorSide, int doorY,
+                int doorForward, DoorPose doorPose) {
             this.serializedName = serializedName;
             this.doorSide = doorSide;
             this.doorY = doorY;
+            this.doorForward = doorForward;
+            this.doorPose = doorPose;
         }
 
         public boolean isDoor() {
-            return doorSide != Integer.MIN_VALUE;
-        }
-
-        public int doorSide() {
-            return doorSide;
-        }
-
-        public int doorY() {
-            return doorY;
+            return doorPose != DoorPose.NONE;
         }
 
         @Override
@@ -103,7 +140,8 @@ public final class Scp914PartBlock extends Block {
 
     private static BlockBehaviour.Properties properties(Kind kind) {
         BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
-                .strength(-1.0F, 3600000.0F)
+                .strength(6.0F, 1200.0F)
+                .sound(SoundType.METAL)
                 .noOcclusion()
                 .noLootTable();
         if (kind == Kind.RESERVATION) properties = properties.noCollission();
@@ -138,7 +176,27 @@ public final class Scp914PartBlock extends Block {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return Shapes.empty();
+        Role role = state.getValue(ROLE);
+        if (kind == Kind.RESERVATION) {
+            return role == Role.FRAME ? FULL : Shapes.empty();
+        }
+        if (kind == Kind.DOOR) {
+            return doorActive(level, pos, state, role)
+                    ? doorShape(state, role) : Shapes.empty();
+        }
+        return staticShape(state, role);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
+        if (kind == Kind.RESERVATION) return Shapes.empty();
+        Role role = state.getValue(ROLE);
+        if (kind == Kind.DOOR) {
+            return doorActive(level, pos, state, role)
+                    ? doorShape(state, role) : Shapes.empty();
+        }
+        return staticShape(state, role);
     }
 
     @Override
@@ -148,60 +206,112 @@ public final class Scp914PartBlock extends Block {
     }
 
     @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+    public VoxelShape getVisualShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        if (kind == Kind.RESERVATION) return Shapes.empty();
-        Role role = state.getValue(ROLE);
-        if (kind == Kind.DOOR) {
-            return role.isDoor() && doorClosed(level, pos, state, role)
-                    ? frontPlane(state.getValue(FACING)) : Shapes.empty();
-        }
+        return Shapes.empty();
+    }
+
+    private static VoxelShape staticShape(BlockState state, Role role) {
+        Direction facing = state.getValue(FACING);
         return switch (role) {
-            case BODY -> Shapes.block();
-            case BODY_FRONT -> bodyFront(state.getValue(FACING));
-            case FLOOR -> Shapes.block();
-            case CABIN_SIDE -> sidePlane(state.getValue(FACING));
-            case CABIN_BACK -> frontPlane(state.getValue(FACING));
-            case CABIN_ROOF -> ROOF;
+            case BODY_FRONT -> frontSlab(facing, 6.0D);
+            case BODY_BACK -> edgeSlab(facing.getOpposite(), 3.0D);
+            case BODY_SIDE_NEG -> sideSlab(facing, false, 3.0D);
+            case BODY_SIDE_POS -> sideSlab(facing, true, 3.0D);
+            case BODY_FLOOR -> BOTTOM_PLATE;
+            case BODY_ROOF, CABIN_ROOF -> ROOF_BAND;
+            case CABIN_SIDE_NEG -> sideSlab(facing, false, 2.0D);
+            case CABIN_SIDE_POS -> sideSlab(facing, true, 2.0D);
+            case CABIN_BACK -> edgeSlab(facing.getOpposite(), 2.0D);
             default -> Shapes.empty();
         };
     }
 
-    private static VoxelShape sidePlane(Direction facing) {
-        return facing.getAxis() == Direction.Axis.Z ? SIDE_X : SIDE_Z;
+    public static VoxelShape frontSlab(Direction facing, double thickness) {
+        return edgeSlab(facing, thickness);
     }
 
-    private static VoxelShape frontPlane(Direction facing) {
-        return facing.getAxis() == Direction.Axis.Z ? SIDE_Z : SIDE_X;
+    private static VoxelShape sideSlab(Direction facing,
+            boolean positiveLocalX, double thickness) {
+        Direction localPositiveX = facing.getCounterClockWise();
+        Direction edge = positiveLocalX
+                ? localPositiveX : localPositiveX.getOpposite();
+        return edgeSlab(edge, thickness);
     }
 
-    private static VoxelShape bodyFront(Direction facing) {
-        return switch (facing) {
-            case NORTH -> Block.box(0.0D, 0.0D, 8.0D, 16.0D, 16.0D, 16.0D);
-            case SOUTH -> Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 8.0D);
-            case EAST -> Block.box(0.0D, 0.0D, 0.0D, 8.0D, 16.0D, 16.0D);
-            case WEST -> Block.box(8.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
-            default -> Shapes.block();
+    private static VoxelShape edgeSlab(Direction direction, double thickness) {
+        return switch (direction) {
+            case NORTH -> Block.box(0.0D, 0.0D, 0.0D,
+                    16.0D, 16.0D, thickness);
+            case SOUTH -> Block.box(0.0D, 0.0D, 16.0D - thickness,
+                    16.0D, 16.0D, 16.0D);
+            case EAST -> Block.box(16.0D - thickness, 0.0D, 0.0D,
+                    16.0D, 16.0D, 16.0D);
+            case WEST -> Block.box(0.0D, 0.0D, 0.0D,
+                    thickness, 16.0D, 16.0D);
+            default -> Shapes.empty();
         };
     }
 
-    private static boolean doorClosed(BlockGetter level, BlockPos partPos,
+    private static VoxelShape doorShape(BlockState state, Role role) {
+        double maxY = role.doorY == 2 ? 5.0D : 16.0D;
+        Direction facing = state.getValue(FACING);
+        if (role.doorPose == DoorPose.CLOSED) {
+            return edgeSlabWithHeight(facing, 3.0D, maxY);
+        }
+        return openDoorSlab(facing, maxY);
+    }
+
+    private static VoxelShape edgeSlabWithHeight(Direction direction,
+            double thickness, double maxY) {
+        return switch (direction) {
+            case NORTH -> Block.box(0.0D, 0.0D, 0.0D,
+                    16.0D, maxY, thickness);
+            case SOUTH -> Block.box(0.0D, 0.0D, 16.0D - thickness,
+                    16.0D, maxY, 16.0D);
+            case EAST -> Block.box(16.0D - thickness, 0.0D, 0.0D,
+                    16.0D, maxY, 16.0D);
+            case WEST -> Block.box(0.0D, 0.0D, 0.0D,
+                    thickness, maxY, 16.0D);
+            default -> Shapes.empty();
+        };
+    }
+
+    private static VoxelShape openDoorSlab(Direction facing, double maxY) {
+        return facing.getAxis() == Direction.Axis.Z
+                ? Block.box(6.0D, 0.0D, 0.0D, 10.0D, maxY, 16.0D)
+                : Block.box(0.0D, 0.0D, 6.0D, 16.0D, maxY, 10.0D);
+    }
+
+    private static boolean doorActive(BlockGetter level, BlockPos partPos,
             BlockState state, Role role) {
+        if (!role.isDoor()) return false;
         Direction facing = state.getValue(FACING);
         Direction localPositiveX = facing.getCounterClockWise();
         BlockPos controllerPos = partPos
-                .relative(localPositiveX, -role.doorSide())
-                .below(role.doorY());
+                .relative(localPositiveX, -role.doorSide)
+                .relative(facing, -role.doorForward)
+                .below(role.doorY);
         if (!(level.getBlockEntity(controllerPos)
-                instanceof Scp914BlockEntity machine)) {
-            return false;
-        }
-        if (Scp914Structure.facing(machine.getBlockState()) != facing) {
+                instanceof Scp914BlockEntity machine)
+                || Scp914Structure.facing(machine.getBlockState()) != facing) {
             return false;
         }
         long elapsed = machine.refiningElapsedTicks();
-        return machine.isRefining()
+        boolean closed = machine.isRefining()
                 && elapsed >= Scp914BlockEntity.DOOR_CLOSED_TICK
                 && elapsed < Scp914BlockEntity.PROCESS_AND_OPEN_TICK;
+        return role.doorPose == DoorPose.CLOSED ? closed : !closed;
+    }
+
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(BlockState state, HitResult target,
+            BlockGetter level, BlockPos pos, Player player) {
+        return new ItemStack(Scp914Module.SCP_914_ITEM.get());
     }
 }

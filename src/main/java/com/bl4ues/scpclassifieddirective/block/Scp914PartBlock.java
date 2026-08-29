@@ -63,6 +63,7 @@ public final class Scp914PartBlock extends Block {
         BODY_ROOF("body_roof"),
         CABIN_SIDE_NEG("cabin_side_neg"),
         CABIN_SIDE_POS("cabin_side_pos"),
+        CABIN_SIDE_CENTER("cabin_side_center"),
         CABIN_BACK("cabin_back"),
         CABIN_ROOF("cabin_roof"),
 
@@ -216,13 +217,13 @@ public final class Scp914PartBlock extends Block {
         return switch (role) {
             case BODY_FRONT -> frontSlab(facing, 6.0D);
             case BODY_BACK -> edgeSlab(facing.getOpposite(), 3.0D);
-            case BODY_SIDE_NEG -> sideSlab(facing, false, 3.0D);
-            case BODY_SIDE_POS -> sideSlab(facing, true, 3.0D);
+            case BODY_SIDE_NEG, BODY_SIDE_POS -> sideCenterSlab(facing, 3.0D);
             case BODY_FLOOR -> BOTTOM_PLATE;
             case BODY_ROOF, CABIN_ROOF -> ROOF_BAND;
             case CABIN_SIDE_NEG -> sideSlab(facing, false, 2.0D);
             case CABIN_SIDE_POS -> sideSlab(facing, true, 2.0D);
-            case CABIN_BACK -> edgeSlab(facing.getOpposite(), 2.0D);
+            case CABIN_SIDE_CENTER -> sideCenterSlab(facing, 2.0D);
+            case CABIN_BACK -> frontSlab(facing, 2.0D);
             default -> Shapes.empty();
         };
     }
@@ -237,6 +238,14 @@ public final class Scp914PartBlock extends Block {
         Direction edge = positiveLocalX
                 ? localPositiveX : localPositiveX.getOpposite();
         return edgeSlab(edge, thickness);
+    }
+
+    private static VoxelShape sideCenterSlab(Direction facing, double thickness) {
+        double min = 8.0D - thickness / 2.0D;
+        double max = 8.0D + thickness / 2.0D;
+        return facing.getAxis() == Direction.Axis.Z
+                ? Block.box(min, 0.0D, 0.0D, max, 16.0D, 16.0D)
+                : Block.box(0.0D, 0.0D, min, 16.0D, 16.0D, max);
     }
 
     private static VoxelShape edgeSlab(Direction direction, double thickness) {

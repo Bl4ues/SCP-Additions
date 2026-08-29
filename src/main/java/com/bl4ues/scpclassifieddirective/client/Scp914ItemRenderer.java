@@ -18,7 +18,7 @@ public final class Scp914ItemRenderer extends GeoItemRenderer<Scp914BlockItem> {
     public RenderType getRenderType(Scp914BlockItem animatable,
             ResourceLocation texture, MultiBufferSource bufferSource,
             float partialTick) {
-        return RenderType.entityCutoutNoCull(texture);
+        return RenderType.entityTranslucent(texture);
     }
 
     private static final class Model extends GeoModel<Scp914BlockItem> {

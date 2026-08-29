@@ -1,7 +1,6 @@
 package com.bl4ues.scpclassifieddirective.data;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
@@ -12,7 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
@@ -111,14 +109,7 @@ public final class Scp914Processor {
                         entity.getDisplayName());
             }
         };
-        boolean wasAlive = player.isAlive();
-        boolean damaged = player.hurt(source, amount);
-        if (damaged && wasAlive && player.isDeadOrDying()
-                && !"scp914coarse".equals(translationKey)) {
-            player.level().playSound(null, player.blockPosition(),
-                    ScpClassifiedDirectiveModSounds.SCP914DEATH.get(),
-                    SoundSource.NEUTRAL, 1.0F, 1.0F);
-        }
+        player.hurt(source, amount);
     }
 
     private static void awardMetamorphosisAdvancement(ServerPlayer player) {

@@ -115,7 +115,7 @@
 
 ## Legacy remakes
 
-- Remade several older SCP models that no longer matched the newer content, including SCP-426, SCP-902-A, and SCP-1176;
+- Remade several older SCP models that no longer matched the newer content, including SCP-426, SCP-902-A, SCP-914, and SCP-1176;
 - Remade Keycard textures.
 
 ## SCP-079

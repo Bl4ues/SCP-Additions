@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.block.entity;
 
+import com.bl4ues.scpclassifieddirective.data.Scp914RecipeManager;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914CycleProcessor;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 import net.minecraft.core.BlockPos;
@@ -28,7 +30,7 @@ import javax.annotation.Nullable;
 public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEntity {
     public static final int REFINING_TICKS = 300;
     public static final int DOOR_CLOSE_SOUND_TICK = 27;
-    public static final int DOOR_OPEN_SOUND_TICK = 209;
+    public static final int PROCESS_AND_OPEN_TICK = 209;
     public static final float ROUGH_ANGLE = -90.0F;
     public static final float COARSE_ANGLE = -45.0F;
     public static final float ONE_TO_ONE_ANGLE = 0.0F;
@@ -42,6 +44,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     private boolean refining;
     private long refiningStartGameTime;
     private boolean closeSoundPlayed;
+    private boolean cycleProcessed;
     private boolean openSoundPlayed;
     private float dialAngle = ONE_TO_ONE_ANGLE;
     private Setting setting = Setting.ONE_TO_ONE;
@@ -68,8 +71,14 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
             blockEntity.sync();
         }
 
-        if (!blockEntity.openSoundPlayed
-                && elapsed >= DOOR_OPEN_SOUND_TICK) {
+        if (!blockEntity.cycleProcessed && elapsed >= PROCESS_AND_OPEN_TICK) {
+            blockEntity.cycleProcessed = true;
+            Scp914CycleProcessor.process(serverLevel, pos, front,
+                    blockEntity.recipeSetting());
+            blockEntity.sync();
+        }
+
+        if (!blockEntity.openSoundPlayed && elapsed >= PROCESS_AND_OPEN_TICK) {
             blockEntity.openSoundPlayed = true;
             playAt(serverLevel, Scp914Structure.intakeDoorCenter(pos, front),
                     Scp914Module.OPEN.get(), 1.25F);
@@ -82,6 +91,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
             blockEntity.refining = false;
             blockEntity.refiningStartGameTime = 0L;
             blockEntity.closeSoundPlayed = false;
+            blockEntity.cycleProcessed = false;
             blockEntity.openSoundPlayed = false;
             blockEntity.sync();
         }
@@ -92,6 +102,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         refining = true;
         refiningStartGameTime = level.getGameTime();
         closeSoundPlayed = false;
+        cycleProcessed = false;
         openSoundPlayed = false;
         Direction front = Scp914Structure.facing(getBlockState());
         playAt(serverLevel,
@@ -108,6 +119,16 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
             SoundEvent sound, float volume) {
         level.playSound(null, position.x, position.y, position.z, sound,
                 SoundSource.BLOCKS, volume, 1.0F);
+    }
+
+    private Scp914RecipeManager.Setting recipeSetting() {
+        return switch (setting) {
+            case ROUGH -> Scp914RecipeManager.Setting.ROUGH;
+            case COARSE -> Scp914RecipeManager.Setting.COARSE;
+            case ONE_TO_ONE -> Scp914RecipeManager.Setting.ONE_TO_ONE;
+            case FINE -> Scp914RecipeManager.Setting.FINE;
+            case VERY_FINE -> Scp914RecipeManager.Setting.VERY_FINE;
+        };
     }
 
     public boolean isRefining() {
@@ -158,6 +179,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         tag.putBoolean("Scp914Refining", refining);
         tag.putLong("Scp914RefiningStart", refiningStartGameTime);
         tag.putBoolean("Scp914CloseSoundPlayed", closeSoundPlayed);
+        tag.putBoolean("Scp914CycleProcessed", cycleProcessed);
         tag.putBoolean("Scp914OpenSoundPlayed", openSoundPlayed);
         tag.putFloat("Scp914DialAngle", dialAngle);
         tag.putString("Scp914Setting", setting.name());
@@ -169,6 +191,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
         refining = tag.getBoolean("Scp914Refining");
         refiningStartGameTime = tag.getLong("Scp914RefiningStart");
         closeSoundPlayed = tag.getBoolean("Scp914CloseSoundPlayed");
+        cycleProcessed = tag.getBoolean("Scp914CycleProcessed");
         openSoundPlayed = tag.getBoolean("Scp914OpenSoundPlayed");
         dialAngle = tag.contains("Scp914DialAngle")
                 ? tag.getFloat("Scp914DialAngle") : ONE_TO_ONE_ANGLE;

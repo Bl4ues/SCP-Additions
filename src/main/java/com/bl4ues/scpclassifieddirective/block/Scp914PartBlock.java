@@ -183,6 +183,9 @@ public final class Scp914PartBlock extends Block {
         Role role = state.getValue(ROLE);
         if (kind == Kind.RESERVATION) return Shapes.empty();
         if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
+        if (role == Role.CONNECTOR_FRONT) {
+            return connectorShape(level, pos, state);
+        }
         return staticShape(state, role);
     }
 
@@ -192,6 +195,9 @@ public final class Scp914PartBlock extends Block {
         if (kind == Kind.RESERVATION) return Shapes.empty();
         Role role = state.getValue(ROLE);
         if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
+        if (role == Role.CONNECTOR_FRONT) {
+            return connectorShape(level, pos, state);
+        }
         return staticShape(state, role);
     }
 
@@ -210,12 +216,8 @@ public final class Scp914PartBlock extends Block {
     private static VoxelShape staticShape(BlockState state, Role role) {
         Direction facing = state.getValue(FACING);
         return switch (role) {
-            // The visible connector tube in the geo occupies model Z 13..21,
-            // i.e. pixels 5..13 inside the forward=-1 cell, and Y 22.75..30.75,
-            // i.e. pixels 6.75..14.75 inside Y=1. Older collision planes sat at
-            // Z 9.5/26.5 and made the player hit an invisible wall in front of it.
-            case CONNECTOR_FRONT -> connectorTube(facing);
-            case CONNECTOR_FRONT_TOP, CONNECTOR_BACK, CONNECTOR_BACK_TOP -> Shapes.empty();
+            case CONNECTOR_FRONT, CONNECTOR_FRONT_TOP,
+                    CONNECTOR_BACK, CONNECTOR_BACK_TOP -> Shapes.empty();
             case BODY_FRONT -> frontSlab(facing, 6.0D);
             case BODY_BACK -> edgeSlab(facing.getOpposite(), 3.0D);
             case BODY_SIDE_NEG, BODY_SIDE_POS -> sideCenterSlab(facing, 3.0D);
@@ -235,9 +237,6 @@ public final class Scp914PartBlock extends Block {
 
     private static VoxelShape sideSlab(Direction facing,
             boolean positiveModelX, double thickness) {
-        // GeckoLib/Blockbench X is mirrored relative to the helper-grid side axis
-        // used by this structure. BODY side collision is centered and hid this,
-        // while the inner booth wall ended up on the opposite edge of its cell.
         Direction gridPositiveX = facing.getCounterClockWise();
         Direction modelPositiveEdge = gridPositiveX.getOpposite();
         Direction edge = positiveModelX
@@ -253,7 +252,18 @@ public final class Scp914PartBlock extends Block {
                 : Block.box(0.0D, 0.0D, min, 16.0D, 16.0D, max);
     }
 
+    private static VoxelShape connectorShape(BlockGetter level, BlockPos pos,
+            BlockState state) {
+        BlockPos controller = Scp914Structure.findController(level, pos, state);
+        if (controller == null || pos.getY() != controller.getY() + 1) {
+            return Shapes.empty();
+        }
+        return connectorTube(state.getValue(FACING));
+    }
+
     private static VoxelShape connectorTube(Direction facing) {
+        // Geo cube: Z 13..21 and Y 22.75..30.75. In the forward=-1/Y=1
+        // helper cell those become exactly 5..13 Z pixels and 6.75..14.75 Y.
         return switch (facing) {
             case NORTH -> Block.box(0.0D, 6.75D, 5.0D,
                     16.0D, 14.75D, 13.0D);

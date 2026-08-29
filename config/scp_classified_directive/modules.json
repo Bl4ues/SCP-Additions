@@ -41,6 +41,62 @@
   "scp_173": {
     "enabled": true
   },
+  "stealth": {
+    "enabled": true,
+    "standing_visibility": 1.0,
+    "crouching_visibility": 0.6,
+    "crawling_visibility": 0.3,
+    "max_acquire_delay_ticks": 50,
+    "darkness_floor": 0.18,
+    "minimum_close_range": 2.5,
+    "perception_rules": [
+      {
+        "entity": "scp_classified_directive:scp_106",
+        "omniscient": true,
+        "blind": false,
+        "night_vision": false,
+        "visibility_multiplier": 1.0,
+        "range_multiplier": 1.0,
+        "acquire_delay_multiplier": 1.0
+      },
+      {
+        "entity": "scp_classified_directive:scp_939",
+        "omniscient": false,
+        "blind": true,
+        "night_vision": false,
+        "visibility_multiplier": 1.0,
+        "range_multiplier": 1.0,
+        "acquire_delay_multiplier": 1.0
+      },
+      {
+        "entity": "scp_classified_directive:scp_173",
+        "omniscient": false,
+        "blind": false,
+        "night_vision": false,
+        "visibility_multiplier": 1.35,
+        "range_multiplier": 1.0,
+        "acquire_delay_multiplier": 0.55
+      },
+      {
+        "entity": "minecraft:spider",
+        "omniscient": false,
+        "blind": false,
+        "night_vision": true,
+        "visibility_multiplier": 1.0,
+        "range_multiplier": 1.0,
+        "acquire_delay_multiplier": 1.0
+      },
+      {
+        "entity": "minecraft:cave_spider",
+        "omniscient": false,
+        "blind": false,
+        "night_vision": true,
+        "visibility_multiplier": 1.0,
+        "range_multiplier": 1.0,
+        "acquire_delay_multiplier": 1.0
+      }
+    ]
+  },
   "accessibility": {
     "reduce_scp_012_visual_effects": false
   },

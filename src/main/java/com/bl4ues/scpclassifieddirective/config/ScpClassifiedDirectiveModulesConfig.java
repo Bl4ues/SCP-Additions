@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class ScpClassifiedDirectiveModulesConfig {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -90,6 +92,8 @@ public final class ScpClassifiedDirectiveModulesConfig {
 		@SerializedName("scp_173")
 		public Toggle scp173 = new Toggle();
 
+		public Stealth stealth = new Stealth();
+
 		private static Root defaults() {
 			return new Root();
 		}
@@ -108,6 +112,8 @@ public final class ScpClassifiedDirectiveModulesConfig {
 			if (debug == null) debug = new Debug();
 			if (deathBodies == null) deathBodies = new Toggle();
 			if (scp173 == null) scp173 = new Toggle();
+			if (stealth == null) stealth = new Stealth();
+			stealth.normalize();
 			return this;
 		}
 	}
@@ -134,6 +140,12 @@ public final class ScpClassifiedDirectiveModulesConfig {
 	private static double clampUnit(double value) {
 		if (!Double.isFinite(value)) return 1.0D;
 		return Math.max(0.0D, Math.min(1.0D, value));
+	}
+
+	private static double clamp(double value, double minimum, double maximum,
+			double fallback) {
+		if (!Double.isFinite(value)) return fallback;
+		return Math.max(minimum, Math.min(maximum, value));
 	}
 
 	public static class Toggle {
@@ -234,5 +246,102 @@ public final class ScpClassifiedDirectiveModulesConfig {
 
 		@SerializedName("show_scp_spawn_timers_hud")
 		public boolean showScpSpawnTimersHud = false;
+	}
+
+	/** Server-owned advanced crouch and visual-perception framework settings. */
+	public static final class Stealth extends Toggle {
+		@SerializedName("standing_visibility")
+		public double standingVisibility = 1.0D;
+
+		@SerializedName("crouching_visibility")
+		public double crouchingVisibility = 0.60D;
+
+		@SerializedName("crawling_visibility")
+		public double crawlingVisibility = 0.30D;
+
+		@SerializedName("max_acquire_delay_ticks")
+		public int maxAcquireDelayTicks = 50;
+
+		@SerializedName("darkness_floor")
+		public double darknessFloor = 0.18D;
+
+		@SerializedName("minimum_close_range")
+		public double minimumCloseRange = 2.5D;
+
+		@SerializedName("perception_rules")
+		public List<PerceptionRule> perceptionRules = defaultPerceptionRules();
+
+		private void normalize() {
+			standingVisibility = clamp(standingVisibility, 0.0D, 1.0D, 1.0D);
+			crouchingVisibility = clamp(crouchingVisibility, 0.0D, 1.0D, 0.60D);
+			crawlingVisibility = clamp(crawlingVisibility, 0.0D, 1.0D, 0.30D);
+			maxAcquireDelayTicks = Math.max(0, Math.min(20 * 30,
+					maxAcquireDelayTicks));
+			darknessFloor = clamp(darknessFloor, 0.0D, 1.0D, 0.18D);
+			minimumCloseRange = clamp(minimumCloseRange, 0.0D, 16.0D, 2.5D);
+			if (perceptionRules == null) perceptionRules = defaultPerceptionRules();
+			for (PerceptionRule rule : perceptionRules) {
+				if (rule != null) rule.normalize();
+			}
+		}
+	}
+
+	/** One entity-specific override used by the generic perception service. */
+	public static final class PerceptionRule {
+		public String entity = "";
+		public boolean omniscient;
+		public boolean blind;
+
+		@SerializedName("night_vision")
+		public boolean nightVision;
+
+		@SerializedName("visibility_multiplier")
+		public double visibilityMultiplier = 1.0D;
+
+		@SerializedName("range_multiplier")
+		public double rangeMultiplier = 1.0D;
+
+		@SerializedName("acquire_delay_multiplier")
+		public double acquireDelayMultiplier = 1.0D;
+
+		public PerceptionRule() {
+		}
+
+		private PerceptionRule(String entity) {
+			this.entity = entity;
+		}
+
+		private void normalize() {
+			if (entity == null) entity = "";
+			entity = entity.trim();
+			visibilityMultiplier = clamp(visibilityMultiplier, 0.0D, 4.0D, 1.0D);
+			rangeMultiplier = clamp(rangeMultiplier, 0.0D, 4.0D, 1.0D);
+			acquireDelayMultiplier = clamp(acquireDelayMultiplier, 0.0D, 4.0D, 1.0D);
+		}
+	}
+
+	private static List<PerceptionRule> defaultPerceptionRules() {
+		List<PerceptionRule> rules = new ArrayList<>();
+		PerceptionRule scp106 = new PerceptionRule("scp_classified_directive:scp_106");
+		scp106.omniscient = true;
+		rules.add(scp106);
+
+		PerceptionRule scp939 = new PerceptionRule("scp_classified_directive:scp_939");
+		scp939.blind = true;
+		rules.add(scp939);
+
+		PerceptionRule scp173 = new PerceptionRule("scp_classified_directive:scp_173");
+		scp173.visibilityMultiplier = 1.35D;
+		scp173.acquireDelayMultiplier = 0.55D;
+		rules.add(scp173);
+
+		PerceptionRule spider = new PerceptionRule("minecraft:spider");
+		spider.nightVision = true;
+		rules.add(spider);
+
+		PerceptionRule caveSpider = new PerceptionRule("minecraft:cave_spider");
+		caveSpider.nightVision = true;
+		rules.add(caveSpider);
+		return rules;
 	}
 }

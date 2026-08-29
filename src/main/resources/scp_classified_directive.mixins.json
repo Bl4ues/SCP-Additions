@@ -73,7 +73,8 @@
     "client.SimpleVoiceChatHudIconMixin",
     "client.Scp939PinCameraMixin",
     "client.Scp939PinnedPlayerRotationMixin",
-    "client.Scp939ModelPolishMixin"
+    "client.Scp939ModelPolishMixin",
+    "client.PlayerSmoothCrouchMixin"
   ],
   "injectors": {
     "defaultRequire": 1

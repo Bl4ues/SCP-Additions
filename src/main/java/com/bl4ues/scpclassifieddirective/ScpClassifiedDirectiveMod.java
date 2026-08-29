@@ -36,6 +36,7 @@ import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.LeftDoorButtons;
 import com.bl4ues.scpclassifieddirective.facility.MirroredDoorButtons;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
+import com.bl4ues.scpclassifieddirective.network.StealthNetwork;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
 import com.bl4ues.scpclassifieddirective.scp1576.Scp1576Module;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
@@ -112,6 +113,7 @@ public class ScpClassifiedDirectiveMod {
         ScpClassifiedDirectiveModMobEffects.REGISTRY.register(bus);
         ScpClassifiedDirectiveModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();
+        StealthNetwork.register();
         com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork.register();
     }
 
@@ -130,7 +132,7 @@ public class ScpClassifiedDirectiveMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "24";
+    private static final String PROTOCOL_VERSION = "25";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),

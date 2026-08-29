@@ -185,7 +185,7 @@ public final class Scp914PartBlock extends Block {
         Role role = state.getValue(ROLE);
         if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
         if (kind == Kind.RESERVATION) return reservationShape(level, pos, state);
-        if (role == Role.CONNECTOR_BACK) return connectorShape(level, pos, state);
+        if (isConnectorRole(role)) return Shapes.block();
         if (isBodyRole(role) && isCentralCoreCell(level, pos, state)) {
             return Shapes.block();
         }
@@ -198,7 +198,7 @@ public final class Scp914PartBlock extends Block {
         Role role = state.getValue(ROLE);
         if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
         if (kind == Kind.RESERVATION) return reservationShape(level, pos, state);
-        if (role == Role.CONNECTOR_BACK) return connectorShape(level, pos, state);
+        if (isConnectorRole(role)) return Shapes.block();
         if (isBodyRole(role) && isCentralCoreCell(level, pos, state)) {
             return Shapes.block();
         }
@@ -220,6 +220,13 @@ public final class Scp914PartBlock extends Block {
     private static VoxelShape reservationShape(BlockGetter level, BlockPos pos,
             BlockState state) {
         return isCentralCoreCell(level, pos, state) ? Shapes.block() : Shapes.empty();
+    }
+
+    private static boolean isConnectorRole(Role role) {
+        return role == Role.CONNECTOR_FRONT
+                || role == Role.CONNECTOR_FRONT_TOP
+                || role == Role.CONNECTOR_BACK
+                || role == Role.CONNECTOR_BACK_TOP;
     }
 
     private static boolean isBodyRole(Role role) {
@@ -290,33 +297,6 @@ public final class Scp914PartBlock extends Block {
         return facing.getAxis() == Direction.Axis.Z
                 ? Block.box(min, 0.0D, 0.0D, max, 16.0D, 16.0D)
                 : Block.box(0.0D, 0.0D, min, 16.0D, 16.0D, max);
-    }
-
-    private static VoxelShape connectorShape(BlockGetter level, BlockPos pos,
-            BlockState state) {
-        // CONNECTOR_BACK exists at forward=-2 for Y=0 and Y=1. Those two
-        // helpers form the intentionally solid volume between the front and
-        // rear connector grilles. The top helper has CONNECTOR_BACK_TOP and
-        // therefore remains non-colliding.
-        return Scp914Structure.findController(level, pos, state) == null
-                ? Shapes.empty() : Shapes.block();
-    }
-
-    private static VoxelShape connectorTube(Direction facing) {
-        // Same authored tube shape as before, but it is now exposed by the
-        // CONNECTOR_BACK helper at forward=-2, moving the whole collision exactly
-        // one block back onto the physical grated connection.
-        return switch (facing) {
-            case NORTH -> Block.box(0.0D, 6.75D, 5.0D,
-                    16.0D, 14.75D, 13.0D);
-            case SOUTH -> Block.box(0.0D, 6.75D, 3.0D,
-                    16.0D, 14.75D, 11.0D);
-            case EAST -> Block.box(3.0D, 6.75D, 0.0D,
-                    11.0D, 14.75D, 16.0D);
-            case WEST -> Block.box(5.0D, 6.75D, 0.0D,
-                    13.0D, 14.75D, 16.0D);
-            default -> Shapes.empty();
-        };
     }
 
     private static VoxelShape edgeSlab(Direction direction, double thickness) {

@@ -178,19 +178,46 @@ public final class PerceptionFramework {
         return visibility(observer, target, ruleFor(observer), settings);
     }
 
+    /**
+     * Returns the target's observer-independent visual stealth value.
+     *
+     * <p>This is the scalar exposed to the local Debug Tools HUD: posture,
+     * ambient light, vanilla invisibility and absolute hiding overrides are
+     * included, while mob-specific senses are deliberately excluded because a
+     * player does not have one universal value relative to an omniscient,
+     * blind, or night-vision observer.</p>
+     */
+    public static double playerStealthValue(Player target) {
+        if (target == null) return 1.0D;
+        ScpClassifiedDirectiveModulesConfig.Stealth settings =
+                ScpClassifiedDirectiveModulesConfig.get().stealth;
+        if (target.level().isClientSide
+                && !AdvancedCrouchController.clientModuleEnabled()) {
+            return 1.0D;
+        }
+        if (!target.level().isClientSide && !settings.enabled) return 1.0D;
+
+        double value = postureVisibility(target, settings);
+        int light = Math.max(0, Math.min(15,
+                target.level().getMaxLocalRawBrightness(target.blockPosition())));
+        double normalizedLight = light / 15.0D;
+        double lightFactor = settings.darknessFloor
+                + (1.0D - settings.darknessFloor)
+                * Math.pow(normalizedLight, 0.65D);
+        value *= lightFactor;
+        if (target.isInvisible()) value *= 0.10D;
+
+        synchronized (VISIBILITY_OVERRIDES) {
+            Double override = VISIBILITY_OVERRIDES.get(target);
+            if (override != null) value = override;
+        }
+        return clamp01(value);
+    }
+
     private static double visibility(Mob observer, Player target,
             ScpClassifiedDirectiveModulesConfig.PerceptionRule rule,
             ScpClassifiedDirectiveModulesConfig.Stealth settings) {
-        double posture;
-        if (AdvancedCrouchController.isLowCrawling(target)) {
-            posture = settings.crawlingVisibility;
-        } else if (target.isCrouching()) {
-            posture = settings.crouchingVisibility;
-        } else {
-            posture = settings.standingVisibility;
-        }
-
-        double value = posture;
+        double value = postureVisibility(target, settings);
         boolean nightVision = rule != null && rule.nightVision;
         if (!nightVision) {
             int light = Math.max(0, Math.min(15,
@@ -217,6 +244,15 @@ public final class PerceptionFramework {
             }
         }
         return clamp01(value);
+    }
+
+    private static double postureVisibility(Player target,
+            ScpClassifiedDirectiveModulesConfig.Stealth settings) {
+        if (AdvancedCrouchController.isLowCrawling(target)) {
+            return settings.crawlingVisibility;
+        }
+        if (target.isCrouching()) return settings.crouchingVisibility;
+        return settings.standingVisibility;
     }
 
     public static ScpClassifiedDirectiveModulesConfig.PerceptionRule ruleFor(

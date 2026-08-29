@@ -118,6 +118,15 @@
 - Remade several older SCP models that no longer matched the newer content, including SCP-426, SCP-902-A, SCP-914, and SCP-1176;
 - Remade Keycard textures.
 
+## Stealth and movement
+
+- Added a default-enabled server-side **Advanced Crouch & Stealth** module that replaces instant first-person crouch height changes with smooth lowering and rising transitions while retaining Minecraft's canonical server-authoritative collision poses;
+- Crouching players now automatically enter Minecraft's low crawling pose when moving into spaces too short for the normal crouch hitbox, then transition back through crouching and standing as clearance becomes available;
+- Added a reusable visual-perception framework for hostile mobs: standing, crouching, and crawling expose configurable visibility values, while local light, distance, line of sight, sustained exposure, invisibility, and per-entity multipliers affect whether a player is acquired as a target;
+- Added entity-specific perception traits for **Omniscient**, **Blind**, and **Night Vision** behavior, with integrated defaults that leave SCP-106 unaffected by hiding, keep SCP-939's acoustic system authoritative instead of granting it visual detection, make hiding from SCP-173 less forgiving than hiding from ordinary mobs, and let spiders ignore darkness penalties;
+- Added public visibility overrides and modifier hooks so future hiding spots, smoke, equipment, and anomalous invisibility can participate in perception without replacing mob AI;
+- Added a dedicated **Stealth & Perception** Configuration Center editor for posture visibility, darkness behavior, close-range detection, acquisition delay, and addable per-entity sensory rules and multipliers.
+
 ## SCP-079
 
 - Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and a Auxiliary Power Unit;

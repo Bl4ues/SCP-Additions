@@ -136,7 +136,7 @@ public final class Scp914Processor {
         return offset;
     }
 
-    private static void processPlayer(ServerPlayer player, Vec3 outputCenter,
+    public static void processPlayer(ServerPlayer player, Vec3 outputCenter,
                                       Scp914RecipeManager.Setting setting) {
         if (!isAvailable(player)) {
             return;
@@ -243,7 +243,7 @@ public final class Scp914Processor {
         }
     }
 
-    private static void applyRecipe(ServerLevel level, Vec3 outputCenter,
+    public static void applyRecipe(ServerLevel level, Vec3 outputCenter,
                                     Scp914RecipeManager.RecipeMatch match) {
         if (level.random.nextFloat() > match.recipe().chance()) {
             consumeInputs(match);
@@ -300,7 +300,7 @@ public final class Scp914Processor {
         }
     }
 
-    private static void consumeLooseItems(List<ItemEntity> items) {
+    public static void consumeLooseItems(List<ItemEntity> items) {
         for (ItemEntity item : items) {
             if (item != null && !item.isRemoved()) item.discard();
         }

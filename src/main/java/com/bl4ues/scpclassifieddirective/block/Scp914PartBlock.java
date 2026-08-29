@@ -34,7 +34,6 @@ public final class Scp914PartBlock extends Block {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<Role> ROLE = EnumProperty.create("role", Role.class);
 
-    private static final VoxelShape FULL = Shapes.block();
     private static final VoxelShape BOTTOM_PLATE = Block.box(0.0D, 0.0D, 0.0D,
             16.0D, 2.0D, 16.0D);
     private static final VoxelShape ROOF_BAND = Block.box(0.0D, 7.0D, 0.0D,
@@ -55,6 +54,10 @@ public final class Scp914PartBlock extends Block {
     public enum Role implements StringRepresentable {
         RESERVED("reserved"),
         FRAME("frame"),
+        CONNECTOR_FRONT("connector_front"),
+        CONNECTOR_FRONT_TOP("connector_front_top"),
+        CONNECTOR_BACK("connector_back"),
+        CONNECTOR_BACK_TOP("connector_back_top"),
         BODY_FRONT("body_front"),
         BODY_BACK("body_back"),
         BODY_SIDE_NEG("body_side_neg"),
@@ -178,13 +181,8 @@ public final class Scp914PartBlock extends Block {
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
         Role role = state.getValue(ROLE);
-        if (kind == Kind.RESERVATION) {
-            return role == Role.FRAME ? FULL : Shapes.empty();
-        }
-        if (kind == Kind.DOOR) {
-            return doorActive(level, pos, state, role)
-                    ? doorShape(state, role) : Shapes.empty();
-        }
+        if (kind == Kind.RESERVATION) return Shapes.empty();
+        if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
         return staticShape(state, role);
     }
 
@@ -193,10 +191,7 @@ public final class Scp914PartBlock extends Block {
             BlockPos pos, CollisionContext context) {
         if (kind == Kind.RESERVATION) return Shapes.empty();
         Role role = state.getValue(ROLE);
-        if (kind == Kind.DOOR) {
-            return doorActive(level, pos, state, role)
-                    ? doorShape(state, role) : Shapes.empty();
-        }
+        if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
         return staticShape(state, role);
     }
 
@@ -215,6 +210,10 @@ public final class Scp914PartBlock extends Block {
     private static VoxelShape staticShape(BlockState state, Role role) {
         Direction facing = state.getValue(FACING);
         return switch (role) {
+            case CONNECTOR_FRONT -> insetFrontSlab(facing, 1.0D, 2.0D, 16.0D);
+            case CONNECTOR_FRONT_TOP -> insetFrontSlab(facing, 1.0D, 2.0D, 4.0D);
+            case CONNECTOR_BACK -> insetFrontSlab(facing, 2.0D, 3.0D, 16.0D);
+            case CONNECTOR_BACK_TOP -> insetFrontSlab(facing, 2.0D, 3.0D, 4.0D);
             case BODY_FRONT -> frontSlab(facing, 6.0D);
             case BODY_BACK -> edgeSlab(facing.getOpposite(), 3.0D);
             case BODY_SIDE_NEG, BODY_SIDE_POS -> sideCenterSlab(facing, 3.0D);
@@ -248,6 +247,21 @@ public final class Scp914PartBlock extends Block {
                 : Block.box(0.0D, 0.0D, min, 16.0D, 16.0D, max);
     }
 
+    private static VoxelShape insetFrontSlab(Direction facing,
+            double minInset, double maxInset, double maxY) {
+        return switch (facing) {
+            case NORTH -> Block.box(0.0D, 0.0D, minInset,
+                    16.0D, maxY, maxInset);
+            case SOUTH -> Block.box(0.0D, 0.0D, 16.0D - maxInset,
+                    16.0D, maxY, 16.0D - minInset);
+            case EAST -> Block.box(16.0D - maxInset, 0.0D, 0.0D,
+                    16.0D - minInset, maxY, 16.0D);
+            case WEST -> Block.box(minInset, 0.0D, 0.0D,
+                    maxInset, maxY, 16.0D);
+            default -> Shapes.empty();
+        };
+    }
+
     private static VoxelShape edgeSlab(Direction direction, double thickness) {
         return switch (direction) {
             case NORTH -> Block.box(0.0D, 0.0D, 0.0D,
@@ -262,13 +276,32 @@ public final class Scp914PartBlock extends Block {
         };
     }
 
-    private static VoxelShape doorShape(BlockState state, Role role) {
+    private static VoxelShape doorShape(BlockGetter level, BlockPos partPos,
+            BlockState state, Role role) {
+        if (!role.isDoor()) return Shapes.empty();
+        Scp914BlockEntity machine = doorMachine(level, partPos, state, role);
+        if (machine == null) return Shapes.empty();
+
+        boolean closed = isDoorClosed(machine);
         double maxY = role.doorY == 2 ? 5.0D : 16.0D;
         Direction facing = state.getValue(FACING);
-        if (role.doorPose == DoorPose.CLOSED) {
-            return edgeSlabWithHeight(facing, 3.0D, maxY);
+
+        if (role.doorPose == DoorPose.OPEN) {
+            return closed ? Shapes.empty() : openDoorSlab(facing, maxY);
         }
-        return openDoorSlab(facing, maxY);
+        if (closed) {
+            // The authored closed leaf sits against the booth threshold, in the
+            // rear half of forward=0. The previous shape used the front edge and
+            // was almost a full block too far toward the player.
+            return edgeSlabWithHeight(facing.getOpposite(), 5.0D, maxY);
+        }
+        if (Math.abs(role.doorSide) == 6) {
+            // forward=1/2 already describe the visible open leaf correctly. The
+            // hinge segment still occupies the front half of forward=0, which is
+            // what closes the gap that previously existed between leaf and booth.
+            return openDoorHingeSlab(facing, maxY);
+        }
+        return Shapes.empty();
     }
 
     private static VoxelShape edgeSlabWithHeight(Direction direction,
@@ -292,9 +325,22 @@ public final class Scp914PartBlock extends Block {
                 : Block.box(0.0D, 0.0D, 6.0D, 16.0D, maxY, 10.0D);
     }
 
-    private static boolean doorActive(BlockGetter level, BlockPos partPos,
-            BlockState state, Role role) {
-        if (!role.isDoor()) return false;
+    private static VoxelShape openDoorHingeSlab(Direction facing, double maxY) {
+        return switch (facing) {
+            case NORTH -> Block.box(6.0D, 0.0D, 0.0D,
+                    10.0D, maxY, 7.0D);
+            case SOUTH -> Block.box(6.0D, 0.0D, 9.0D,
+                    10.0D, maxY, 16.0D);
+            case EAST -> Block.box(9.0D, 0.0D, 6.0D,
+                    16.0D, maxY, 10.0D);
+            case WEST -> Block.box(0.0D, 0.0D, 6.0D,
+                    7.0D, maxY, 10.0D);
+            default -> Shapes.empty();
+        };
+    }
+
+    private static Scp914BlockEntity doorMachine(BlockGetter level,
+            BlockPos partPos, BlockState state, Role role) {
         Direction facing = state.getValue(FACING);
         Direction localPositiveX = facing.getCounterClockWise();
         BlockPos controllerPos = partPos
@@ -304,13 +350,16 @@ public final class Scp914PartBlock extends Block {
         if (!(level.getBlockEntity(controllerPos)
                 instanceof Scp914BlockEntity machine)
                 || Scp914Structure.facing(machine.getBlockState()) != facing) {
-            return false;
+            return null;
         }
+        return machine;
+    }
+
+    private static boolean isDoorClosed(Scp914BlockEntity machine) {
         long elapsed = machine.refiningElapsedTicks();
-        boolean closed = machine.isRefining()
+        return machine.isRefining()
                 && elapsed >= Scp914BlockEntity.DOOR_CLOSED_TICK
                 && elapsed < Scp914BlockEntity.PROCESS_AND_OPEN_TICK;
-        return role.doorPose == DoorPose.CLOSED ? closed : !closed;
     }
 
     @Override

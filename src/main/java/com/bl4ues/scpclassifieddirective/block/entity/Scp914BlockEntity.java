@@ -36,6 +36,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     public static final float ONE_TO_ONE_ANGLE = 0.0F;
     public static final float FINE_ANGLE = 45.0F;
     public static final float VERY_FINE_ANGLE = 90.0F;
+    public static final float DIAL_DETENT_DEGREES = 7.5F;
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation REFINING = RawAnimation.begin().thenPlay("refining");
@@ -48,6 +49,7 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
     private boolean openSoundPlayed;
     private float dialAngle = ONE_TO_ONE_ANGLE;
     private Setting setting = Setting.ONE_TO_ONE;
+    private long lastGearSoundGameTime = Long.MIN_VALUE;
 
     public Scp914BlockEntity(BlockPos pos, BlockState state) {
         super(Scp914Module.SCP_914_BLOCK_ENTITY.get(), pos, state);
@@ -146,6 +148,42 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
 
     public Setting getSetting() {
         return setting;
+    }
+
+    /**
+     * Applies a throttled client drag update. Intermediate packets may only
+     * move the authoritative dial to 7.5 degree mechanical detents. A commit
+     * always locks the machine to one of the five official SCP-914 settings.
+     */
+    public void applyDialNetworkUpdate(float requestedAngle, boolean commit) {
+        if (!(level instanceof ServerLevel serverLevel) || refining) return;
+
+        float clamped = Math.max(ROUGH_ANGLE,
+                Math.min(VERY_FINE_ANGLE, requestedAngle));
+        float targetAngle;
+        if (commit) {
+            Setting target = Setting.nearest(clamped);
+            setting = target;
+            targetAngle = target.angle();
+        } else {
+            targetAngle = Math.round(clamped / DIAL_DETENT_DEGREES)
+                    * DIAL_DETENT_DEGREES;
+            targetAngle = Math.max(ROUGH_ANGLE,
+                    Math.min(VERY_FINE_ANGLE, targetAngle));
+        }
+
+        boolean changed = Math.abs(targetAngle - dialAngle) > 0.001F;
+        dialAngle = targetAngle;
+        long now = serverLevel.getGameTime();
+        if ((changed && now != lastGearSoundGameTime) || commit) {
+            lastGearSoundGameTime = now;
+            Direction front = Scp914Structure.facing(getBlockState());
+            playAt(serverLevel,
+                    Scp914Structure.dialAnchor(worldPosition, front),
+                    Scp914Module.gearSound(serverLevel.random.nextInt(9) + 1),
+                    commit ? 1.0F : 0.55F);
+        }
+        if (changed || commit) sync();
     }
 
     public void setDialAngle(float angle, boolean commitSetting) {

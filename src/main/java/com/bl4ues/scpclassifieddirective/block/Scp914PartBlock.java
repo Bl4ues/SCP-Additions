@@ -210,10 +210,12 @@ public final class Scp914PartBlock extends Block {
     private static VoxelShape staticShape(BlockState state, Role role) {
         Direction facing = state.getValue(FACING);
         return switch (role) {
-            case CONNECTOR_FRONT -> insetFrontSlab(facing, 1.0D, 2.0D, 16.0D);
-            case CONNECTOR_FRONT_TOP -> insetFrontSlab(facing, 1.0D, 2.0D, 4.0D);
-            case CONNECTOR_BACK -> insetFrontSlab(facing, 2.0D, 3.0D, 16.0D);
-            case CONNECTOR_BACK_TOP -> insetFrontSlab(facing, 2.0D, 3.0D, 4.0D);
+            // The visible connector tube in the geo occupies model Z 13..21,
+            // i.e. pixels 5..13 inside the forward=-1 cell, and Y 22.75..30.75,
+            // i.e. pixels 6.75..14.75 inside Y=1. Older collision planes sat at
+            // Z 9.5/26.5 and made the player hit an invisible wall in front of it.
+            case CONNECTOR_FRONT -> connectorTube(facing);
+            case CONNECTOR_FRONT_TOP, CONNECTOR_BACK, CONNECTOR_BACK_TOP -> Shapes.empty();
             case BODY_FRONT -> frontSlab(facing, 6.0D);
             case BODY_BACK -> edgeSlab(facing.getOpposite(), 3.0D);
             case BODY_SIDE_NEG, BODY_SIDE_POS -> sideCenterSlab(facing, 3.0D);
@@ -232,10 +234,14 @@ public final class Scp914PartBlock extends Block {
     }
 
     private static VoxelShape sideSlab(Direction facing,
-            boolean positiveLocalX, double thickness) {
-        Direction localPositiveX = facing.getCounterClockWise();
-        Direction edge = positiveLocalX
-                ? localPositiveX : localPositiveX.getOpposite();
+            boolean positiveModelX, double thickness) {
+        // GeckoLib/Blockbench X is mirrored relative to the helper-grid side axis
+        // used by this structure. BODY side collision is centered and hid this,
+        // while the inner booth wall ended up on the opposite edge of its cell.
+        Direction gridPositiveX = facing.getCounterClockWise();
+        Direction modelPositiveEdge = gridPositiveX.getOpposite();
+        Direction edge = positiveModelX
+                ? modelPositiveEdge : modelPositiveEdge.getOpposite();
         return edgeSlab(edge, thickness);
     }
 
@@ -247,17 +253,16 @@ public final class Scp914PartBlock extends Block {
                 : Block.box(0.0D, 0.0D, min, 16.0D, 16.0D, max);
     }
 
-    private static VoxelShape insetFrontSlab(Direction facing,
-            double minInset, double maxInset, double maxY) {
+    private static VoxelShape connectorTube(Direction facing) {
         return switch (facing) {
-            case NORTH -> Block.box(0.0D, 0.0D, minInset,
-                    16.0D, maxY, maxInset);
-            case SOUTH -> Block.box(0.0D, 0.0D, 16.0D - maxInset,
-                    16.0D, maxY, 16.0D - minInset);
-            case EAST -> Block.box(16.0D - maxInset, 0.0D, 0.0D,
-                    16.0D - minInset, maxY, 16.0D);
-            case WEST -> Block.box(minInset, 0.0D, 0.0D,
-                    maxInset, maxY, 16.0D);
+            case NORTH -> Block.box(0.0D, 6.75D, 5.0D,
+                    16.0D, 14.75D, 13.0D);
+            case SOUTH -> Block.box(0.0D, 6.75D, 3.0D,
+                    16.0D, 14.75D, 11.0D);
+            case EAST -> Block.box(3.0D, 6.75D, 0.0D,
+                    11.0D, 14.75D, 16.0D);
+            case WEST -> Block.box(5.0D, 6.75D, 0.0D,
+                    13.0D, 14.75D, 16.0D);
             default -> Shapes.empty();
         };
     }
@@ -290,15 +295,9 @@ public final class Scp914PartBlock extends Block {
             return closed ? Shapes.empty() : openDoorSlab(facing, maxY);
         }
         if (closed) {
-            // The authored closed leaf sits against the booth threshold, in the
-            // rear half of forward=0. The previous shape used the front edge and
-            // was almost a full block too far toward the player.
             return edgeSlabWithHeight(facing.getOpposite(), 5.0D, maxY);
         }
         if (Math.abs(role.doorSide) == 6) {
-            // forward=1/2 already describe the visible open leaf correctly. The
-            // hinge segment still occupies the front half of forward=0, which is
-            // what closes the gap that previously existed between leaf and booth.
             return openDoorHingeSlab(facing, maxY);
         }
         return Shapes.empty();

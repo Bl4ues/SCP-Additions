@@ -263,9 +263,14 @@ public final class Scp914PartBlock extends Block {
         return switch (role) {
             case CONNECTOR_FRONT, CONNECTOR_FRONT_TOP,
                     CONNECTOR_BACK, CONNECTOR_BACK_TOP -> Shapes.empty();
-            case BODY_FRONT -> frontSlab(facing, 6.0D);
-            case BODY_BACK -> edgeSlab(facing.getOpposite(), 3.0D);
-            case BODY_SIDE_NEG, BODY_SIDE_POS -> sideCenterSlab(facing, 3.0D);
+            // side +/-2 is the inner half of each connector on already-placed
+            // SCP-914 structures. The center 3x3x3 is handled above, so BODY_FRONT
+            // reaching this switch is only the obsolete front slab and must vanish.
+            case BODY_FRONT -> Shapes.empty();
+            // BODY_BACK and BODY_SIDE_* at side +/-2 make up the connector column
+            // nearest the machine body. They must match the full blocks in the
+            // adjacent connector column instead of exposing thin legacy slabs.
+            case BODY_BACK, BODY_SIDE_NEG, BODY_SIDE_POS -> Shapes.block();
             case BODY_FLOOR -> BOTTOM_PLATE;
             case BODY_ROOF, CABIN_ROOF -> ROOF_BAND;
             case CABIN_SIDE_NEG -> sideSlab(facing, false, 2.0D);

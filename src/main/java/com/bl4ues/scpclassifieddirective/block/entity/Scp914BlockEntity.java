@@ -274,6 +274,18 @@ public final class Scp914BlockEntity extends BlockEntity implements GeoBlockEnti
                 state -> state.setAndContinue(refining ? REFINING : IDLE)));
     }
 
+    /**
+     * GeoBlockEntity normally uses GeckoLib's render clock. That clock can advance
+     * while an integrated server is paused, allowing a one-shot animation to finish
+     * while SCP-914's authoritative cycle has not advanced at all. Driving the
+     * controller from Level game time keeps animation, collision and processing on
+     * the same pause-aware clock.
+     */
+    @Override
+    public double getTick(Object blockEntity) {
+        return level == null ? 0.0D : level.getGameTime();
+    }
+
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return animationCache;

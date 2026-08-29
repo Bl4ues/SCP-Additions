@@ -38,6 +38,7 @@ import com.bl4ues.scpclassifieddirective.facility.MirroredDoorButtons;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
 import com.bl4ues.scpclassifieddirective.scp1576.Scp1576Module;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import com.bl4ues.scpclassifieddirective.sound.GameplaySounds;
 import com.bl4ues.scpclassifieddirective.sound.AchievementSounds;
 import com.bl4ues.scpclassifieddirective.vitals.StaminaItemEffectConfig;
@@ -92,6 +93,7 @@ public class ScpClassifiedDirectiveMod {
         Scp714Items.BLOCKS.register(bus);
         Scp012Module.register(bus);
         Scp1576Module.register(bus);
+        Scp914Module.register(bus);
         UnifiedReaderItems.REGISTRY.register(bus);
         Scp131Items.REGISTRY.register(bus);
         ScpClassifiedDirectiveModEntities.REGISTRY.register(bus);

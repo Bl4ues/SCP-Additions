@@ -46,7 +46,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, InventoryModuleStatePacket.class, InventoryModuleStatePacket::encode, InventoryModuleStatePacket::decode, InventoryModuleStatePacket::handle);
         CHANNEL.registerMessage(id++, ContextInteractPacket.class, ContextInteractPacket::encode, ContextInteractPacket::decode, ContextInteractPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSelectPacket.class, ContextConfigSelectPacket::encode, ContextConfigSelectPacket::decode, ContextConfigSelectPacket::handle);
-        CHANNEL.registerMessage(id++, ContextConfigOpenPacket.class, ContextConfigOpenPacket::encode, ContextConfigConfigOpenPacket::decode, ContextConfigOpenPacket::handle);
+        CHANNEL.registerMessage(id++, ContextConfigOpenPacket.class, ContextConfigOpenPacket::encode, ContextConfigOpenPacket::decode, ContextConfigOpenPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSavePacket.class, ContextConfigSavePacket::encode, ContextConfigSavePacket::decode, ContextConfigSavePacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigReloadPacket.class, ContextConfigReloadPacket::encode, ContextConfigReloadPacket::decode, ContextConfigReloadPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigDeletePacket.class, ContextConfigDeletePacket::encode, ContextConfigDeletePacket::decode, ContextConfigDeletePacket::handle);

@@ -4,7 +4,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
@@ -18,6 +17,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -26,11 +26,15 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
+import com.bl4ues.scpclassifieddirective.facility.StructurePlacementFeedback;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class Scp914AssemblyKitItem extends Item {
 	private static final Direction BASE_FRONT = Direction.WEST;
@@ -39,6 +43,20 @@ public class Scp914AssemblyKitItem extends Item {
 	private static final int ANCHOR_Z = 6;
 	private static final int PLAYER_CLEARANCE_OFFSET = 4;
 	private static final String STRUCTURE_RESOURCE = "/data/scp_classified_directive/structures/scp_914_full.nbt";
+
+	/*
+	 * The GeckoLib model reaches well beyond the legacy NBT blocks. These cells
+	 * reserve the complete working envelope, including the sweep of both doors
+	 * and the empty space the machine visibly occupies/needs while operating.
+	 * Coordinates are relative to the NBT anchor used by toWorld().
+	 */
+	private static final int RESERVED_DEPTH_MIN = -3;
+	private static final int RESERVED_DEPTH_MAX = 2;
+	private static final int RESERVED_SIDE_MIN = -8;
+	private static final int RESERVED_SIDE_MAX = 7;
+	private static final int RESERVED_Y_MIN = 0;
+	private static final int RESERVED_Y_MAX = 2;
+
 	private static StructureData cachedStructure;
 
 	public Scp914AssemblyKitItem() {
@@ -53,12 +71,29 @@ public class Scp914AssemblyKitItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
-		tooltip.add(Component.literal("Places SCP-914. Blocked space is marked red."));
+		tooltip.add(Component.literal("Places SCP-914. Blocked space is highlighted."));
 	}
 
 	@Override
 	public InteractionResult useOn(UseOnContext context) {
 		Level level = context.getLevel();
+		Player player = context.getPlayer();
+		Direction front = context.getHorizontalDirection();
+		BlockPos origin = context.getClickedPos().relative(context.getClickedFace()).relative(front, PLAYER_CLEARANCE_OFFSET);
+		StructureData structure = loadStructure();
+		if (structure == null) {
+			if (!level.isClientSide()) {
+				message(player, "Cannot assemble SCP-914: structure data failed to load.");
+			}
+			return InteractionResult.FAIL;
+		}
+
+		List<BlockPos> blocked = findBlockedPositions(level, origin, front, structure);
+		if (!blocked.isEmpty()) {
+			StructurePlacementFeedback.reportBlocked(new BlockPlaceContext(context), blocked);
+			return InteractionResult.FAIL;
+		}
+
 		if (level.isClientSide()) {
 			return InteractionResult.SUCCESS;
 		}
@@ -66,23 +101,7 @@ public class Scp914AssemblyKitItem extends Item {
 			return InteractionResult.FAIL;
 		}
 
-		Player player = context.getPlayer();
-		Direction front = context.getHorizontalDirection();
-		BlockPos origin = context.getClickedPos().relative(context.getClickedFace()).relative(front, PLAYER_CLEARANCE_OFFSET);
-		StructureData structure = loadStructure();
-		if (structure == null) {
-			message(player, "Cannot assemble SCP-914: structure data failed to load.");
-			return InteractionResult.FAIL;
-		}
-
 		int rotationSteps = rotationSteps(front);
-		List<BlockPos> blocked = findBlockedPositions(serverLevel, origin, front, structure);
-		if (!blocked.isEmpty()) {
-			highlightBlocked(serverLevel, blocked);
-			message(player, "Cannot assemble SCP-914: clear the highlighted area first.");
-			return InteractionResult.FAIL;
-		}
-
 		for (TemplateBlock block : structure.blocks()) {
 			BlockPos target = toWorld(origin, front, block.x(), block.y(), block.z());
 			serverLevel.setBlock(target, rotateBlockState(block.state(), rotationSteps), 3);
@@ -95,24 +114,31 @@ public class Scp914AssemblyKitItem extends Item {
 		return InteractionResult.SUCCESS;
 	}
 
-	private static List<BlockPos> findBlockedPositions(ServerLevel level, BlockPos origin, Direction front, StructureData structure) {
-		List<BlockPos> blocked = new ArrayList<>();
+	private static List<BlockPos> findBlockedPositions(Level level, BlockPos origin, Direction front, StructureData structure) {
+		Set<BlockPos> required = new LinkedHashSet<>();
+
 		for (TemplateBlock block : structure.blocks()) {
-			BlockPos target = toWorld(origin, front, block.x(), block.y(), block.z());
-			BlockState existing = level.getBlockState(target);
-			if (!existing.canBeReplaced()) {
-				blocked.add(target);
+			required.add(toWorld(origin, front, block.x(), block.y(), block.z()));
+		}
+
+		for (int depth = RESERVED_DEPTH_MIN; depth <= RESERVED_DEPTH_MAX; depth++) {
+			for (int side = RESERVED_SIDE_MIN; side <= RESERVED_SIDE_MAX; side++) {
+				for (int y = RESERVED_Y_MIN; y <= RESERVED_Y_MAX; y++) {
+					required.add(toWorld(origin, front,
+							ANCHOR_X + depth,
+							ANCHOR_Y + y,
+							ANCHOR_Z + side));
+				}
+			}
+		}
+
+		List<BlockPos> blocked = new ArrayList<>();
+		for (BlockPos target : required) {
+			if (!level.getBlockState(target).canBeReplaced()) {
+				blocked.add(target.immutable());
 			}
 		}
 		return blocked;
-	}
-
-	private static void highlightBlocked(ServerLevel level, List<BlockPos> blocked) {
-		int count = Math.min(96, blocked.size());
-		for (int i = 0; i < count; i++) {
-			BlockPos pos = blocked.get(i);
-			level.sendParticles(ParticleTypes.ANGRY_VILLAGER, pos.getX() + 0.5D, pos.getY() + 0.55D, pos.getZ() + 0.5D, 4, 0.28D, 0.28D, 0.28D, 0.0D);
-		}
 	}
 
 	private static StructureData loadStructure() {

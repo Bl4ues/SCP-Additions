@@ -1,4 +1,4 @@
-name: Finish SCP-914 Context Integration
+name: Finish SCP-914 Legacy Cleanup
 
 on:
   push:
@@ -9,23 +9,21 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: master
-      - name: Apply SCP-914 context patch
-        run: python .github/scripts/scp914_finish_context.py
-      - name: Commit contextual integration
+      - name: Remove obsolete SCP-914 implementation
+        run: python .github/scripts/scp914_cleanup_legacy.py
+      - name: Compile final implementation
+        run: ./gradlew compileJava --no-daemon
+      - name: Commit final SCP-914 cleanup
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/main/java/com/bl4ues/scpclassifieddirective/inventory/client/ContextPromptClient.java
-          git add src/main/java/com/bl4ues/scpclassifieddirective/inventory/context/ContextInteractionRegistry.java
-          git add src/main/java/com/bl4ues/scpclassifieddirective/inventory/context/DefaultContextInteractions.java
-          git add src/main/java/com/bl4ues/scpclassifieddirective/init/ScpClassifiedDirectiveModTabs.java
-          git add config/scp_classified_directive/context_interactions.json
+          git add -A
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Finish SCP-914 physical contextual interactions"
+          git commit -m "Remove legacy SCP-914 implementation"
           git push origin HEAD:master

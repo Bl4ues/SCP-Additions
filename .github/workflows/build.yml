@@ -11,7 +11,7 @@ on:
       - master
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -20,19 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Apply SCP-914 connector block fix
-        if: github.ref == 'refs/heads/master'
-        run: |
-          python3 -c 'from pathlib import Path; p=Path("src/main/java/com/bl4ues/scpclassifieddirective/block/Scp914PartBlock.java"); s=p.read_text(); old="    private static VoxelShape connectorShape(BlockGetter level, BlockPos pos,\n            BlockState state) {\n        BlockPos controller = Scp914Structure.findController(level, pos, state);\n        if (controller == null || pos.getY() != controller.getY() + 1) {\n            return Shapes.empty();\n        }\n        return connectorTube(state.getValue(FACING));\n    }"; new="    private static VoxelShape connectorShape(BlockGetter level, BlockPos pos,\n            BlockState state) {\n        // CONNECTOR_BACK exists at forward=-2 for Y=0 and Y=1. Those two\n        // helpers form the intentionally solid volume between the front and\n        // rear connector grilles. The top helper has CONNECTOR_BACK_TOP and\n        // therefore remains non-colliding.\n        return Scp914Structure.findController(level, pos, state) == null\n                ? Shapes.empty() : Shapes.block();\n    }"; p.write_text(s.replace(old,new)) if old in s else None'
-
-          if ! git diff --quiet -- src/main/java/com/bl4ues/scpclassifieddirective/block/Scp914PartBlock.java; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/main/java/com/bl4ues/scpclassifieddirective/block/Scp914PartBlock.java
-            git commit -m "Solidify SCP-914 connector grille volume"
-            git push origin HEAD:master
-          fi
 
       - name: Verify Classified Directive integrity
         run: python3 .github/scripts/verify_project_integrity.py

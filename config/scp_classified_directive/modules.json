@@ -43,12 +43,6 @@
   },
   "stealth": {
     "enabled": true,
-    "standing_visibility": 1.0,
-    "crouching_visibility": 0.6,
-    "crawling_visibility": 0.3,
-    "max_acquire_delay_ticks": 50,
-    "darkness_floor": 0.18,
-    "minimum_close_range": 2.5,
     "perception_rules": [
       {
         "entity": "scp_classified_directive:scp_106",

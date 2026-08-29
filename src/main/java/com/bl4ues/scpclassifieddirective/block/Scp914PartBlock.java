@@ -294,11 +294,12 @@ public final class Scp914PartBlock extends Block {
 
     private static VoxelShape connectorShape(BlockGetter level, BlockPos pos,
             BlockState state) {
-        BlockPos controller = Scp914Structure.findController(level, pos, state);
-        if (controller == null || pos.getY() != controller.getY() + 1) {
-            return Shapes.empty();
-        }
-        return connectorTube(state.getValue(FACING));
+        // CONNECTOR_BACK exists at forward=-2 for Y=0 and Y=1. Those two
+        // helpers form the intentionally solid volume between the front and
+        // rear connector grilles. The top helper has CONNECTOR_BACK_TOP and
+        // therefore remains non-colliding.
+        return Scp914Structure.findController(level, pos, state) == null
+                ? Shapes.empty() : Shapes.block();
     }
 
     private static VoxelShape connectorTube(Direction facing) {

@@ -160,24 +160,36 @@ public final class AdvancedCrouchController {
     }
 
     private static void updateEyeState(Player player, boolean enabled) {
+        // The smooth eye height is presentation-only. Keeping the state entirely
+        // client-side prevents a fractional camera value from ever contaminating
+        // server collision or pose authority.
+        if (!player.level().isClientSide) return;
+
         float vanillaTarget = eyeHeightFor(player.getPose());
         EyeState state = EYE_STATES.computeIfAbsent(player,
                 ignored -> new EyeState(vanillaTarget));
+        float previous = state.height;
         if (!enabled) {
             state.height = vanillaTarget;
-            return;
+        } else {
+            float target = vanillaTarget;
+            float step;
+            if (target < state.height) {
+                step = target <= CRAWLING_EYE_HEIGHT + 0.01F
+                        ? CRAWL_DOWN_STEP : CROUCH_DOWN_STEP;
+            } else {
+                step = state.height < CROUCHING_EYE_HEIGHT - 0.01F
+                        ? CRAWL_UP_STEP : STAND_UP_STEP;
+            }
+            state.height = approach(state.height, target, step);
         }
 
-        float target = vanillaTarget;
-        float step;
-        if (target < state.height) {
-            step = target <= CRAWLING_EYE_HEIGHT + 0.01F
-                    ? CRAWL_DOWN_STEP : CROUCH_DOWN_STEP;
-        } else {
-            step = state.height < CROUCHING_EYE_HEIGHT - 0.01F
-                    ? CRAWL_UP_STEP : STAND_UP_STEP;
+        // Player#getStandingEyeHeight is sampled while dimensions are refreshed.
+        // Recalculate it for every interpolation step so the changing state is
+        // actually visible instead of only changing in memory.
+        if (Math.abs(state.height - previous) > 1.0E-4F) {
+            player.refreshDimensions();
         }
-        state.height = approach(state.height, target, step);
     }
 
     private static float eyeHeightFor(Pose pose) {

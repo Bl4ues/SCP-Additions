@@ -4,6 +4,10 @@ import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
+import com.bl4ues.scpclassifieddirective.network.ScpClassifiedDirectiveModVariables;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.mojang.authlib.properties.Property;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -19,6 +23,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -35,7 +40,9 @@ import com.bl4ues.scpclassifieddirective.compat.MineZeroDeathCoordinator;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.world.inventory.PlayerCorpseMenu;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +61,10 @@ public final class PlayerCorpseEntity extends PathfinderMob
     private static final int EMPTY_DESPAWN_TICKS = 20 * 60;
     private static final int POSE_VARIANTS = 6;
     private static final int MIN_CONTAINER_SIZE = 9;
+    private static final EquipmentSlot[] VISUAL_ARMOR_SLOTS = {
+            EquipmentSlot.HEAD, EquipmentSlot.CHEST,
+            EquipmentSlot.LEGS, EquipmentSlot.FEET
+    };
 
     private static final EntityDataAccessor<Optional<UUID>> OWNER_ID =
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
@@ -70,14 +81,22 @@ public final class PlayerCorpseEntity extends PathfinderMob
     private static final EntityDataAccessor<Boolean> SETTLED =
             SynchedEntityData.defineId(PlayerCorpseEntity.class,
                     EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> CUSTOM_SKIN =
+            SynchedEntityData.defineId(PlayerCorpseEntity.class,
+                    EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Boolean> SLIM_MODEL =
+            SynchedEntityData.defineId(PlayerCorpseEntity.class,
+                    EntityDataSerializers.BOOLEAN);
 
-    private SimpleContainer inventory = new SimpleContainer(MIN_CONTAINER_SIZE);
+    private SimpleContainer inventory;
     private boolean scpInventoryMode;
+    private boolean inventoryDirty;
     private int emptyTicks;
 
     public PlayerCorpseEntity(EntityType<? extends PlayerCorpseEntity> type,
             Level level) {
         super(type, level);
+        bindInventory(new SimpleContainer(MIN_CONTAINER_SIZE));
         setPersistenceRequired();
         setNoAi(true);
         setMaxUpStep(0.0F);
@@ -105,6 +124,8 @@ public final class PlayerCorpseEntity extends PathfinderMob
         entityData.define(LOGICAL_DEATH, false);
         entityData.define(POSE_VARIANT, 0);
         entityData.define(SETTLED, false);
+        entityData.define(CUSTOM_SKIN, "");
+        entityData.define(SLIM_MODEL, false);
     }
 
     public void initializeFrom(ServerPlayer player, boolean logicalDeath) {
@@ -115,6 +136,8 @@ public final class PlayerCorpseEntity extends PathfinderMob
         entityData.set(LOGICAL_DEATH, logicalDeath);
         entityData.set(POSE_VARIANT, random.nextInt(POSE_VARIANTS));
         entityData.set(SETTLED, false);
+        entityData.set(CUSTOM_SKIN, snapshotCustomSkin(player));
+        entityData.set(SLIM_MODEL, resolveSlimModel(player));
         scpInventoryMode = ScpClassifiedDirectiveModulesConfig.get().inventory.enabled;
         emptyTicks = 0;
         setCustomName(Component.literal(name));
@@ -147,6 +170,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
     public void captureInventoryFrom(ServerPlayer player) {
         if (player == null || level().isClientSide) return;
 
+        clearVisualArmor();
         scpInventoryMode = ScpClassifiedDirectiveModulesConfig.get().inventory.enabled;
         boolean keepInventory = !logicalDeath()
                 && player.level().getGameRules()
@@ -175,7 +199,13 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 collect(captured, scp.getKeys());
                 collect(captured, scp.getDocuments());
                 for (ScpEquipmentSlot slot : ScpEquipmentSlot.values()) {
-                    collect(captured, scp.getEquipment(slot));
+                    EquipmentSlot visualSlot = visualArmorSlot(slot);
+                    if (visualSlot == null) {
+                        collect(captured, scp.getEquipment(slot));
+                    } else {
+                        collectEquippedArmor(captured, visualSlot,
+                                scp.getEquipment(slot));
+                    }
                 }
                 collect(captured, scp.getActiveUsable());
                 clearScpInventory(scp);
@@ -229,12 +259,42 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 + inventory.offhand.size();
     }
 
-    private static void collectVanilla(List<ItemStack> target,
+    private void collectVanilla(List<ItemStack> target,
             Inventory inventory) {
         if (inventory == null) return;
         collect(target, inventory.items);
-        collect(target, inventory.armor);
+        collectVanillaArmor(target, inventory, 0, EquipmentSlot.FEET);
+        collectVanillaArmor(target, inventory, 1, EquipmentSlot.LEGS);
+        collectVanillaArmor(target, inventory, 2, EquipmentSlot.CHEST);
+        collectVanillaArmor(target, inventory, 3, EquipmentSlot.HEAD);
         collect(target, inventory.offhand);
+    }
+
+    private void collectVanillaArmor(List<ItemStack> target,
+            Inventory inventory, int index, EquipmentSlot slot) {
+        if (index < 0 || index >= inventory.armor.size()) return;
+        collectEquippedArmor(target, slot, inventory.armor.get(index));
+    }
+
+    private static EquipmentSlot visualArmorSlot(ScpEquipmentSlot slot) {
+        if (slot == null) return null;
+        return switch (slot) {
+            case HEAD -> EquipmentSlot.HEAD;
+            case CHEST -> EquipmentSlot.CHEST;
+            case LEGS -> EquipmentSlot.LEGS;
+            case FEET -> EquipmentSlot.FEET;
+            default -> null;
+        };
+    }
+
+    private void collectEquippedArmor(List<ItemStack> target,
+            EquipmentSlot slot, ItemStack stack) {
+        if (target == null || slot == null || stack == null || stack.isEmpty()) {
+            return;
+        }
+        ItemStack copy = stack.copy();
+        target.add(copy);
+        setItemSlot(slot, copy.copy());
     }
 
     private static void collect(List<ItemStack> target,
@@ -259,7 +319,81 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 replacement.setItem(i, stacks.get(i).copy());
             }
         }
-        inventory = replacement;
+        bindInventory(replacement);
+    }
+
+    private void bindInventory(SimpleContainer replacement) {
+        inventory = replacement == null
+                ? new SimpleContainer(MIN_CONTAINER_SIZE) : replacement;
+        inventory.addListener(container -> {
+            if (!level().isClientSide) inventoryDirty = true;
+        });
+        inventoryDirty = true;
+    }
+
+    private void clearVisualArmor() {
+        for (EquipmentSlot slot : VISUAL_ARMOR_SLOTS) {
+            setItemSlot(slot, ItemStack.EMPTY);
+        }
+    }
+
+    private void syncVisualArmorFromInventory() {
+        if (level().isClientSide) return;
+        for (EquipmentSlot slot : VISUAL_ARMOR_SLOTS) {
+            ItemStack visual = getItemBySlot(slot);
+            if (!visual.isEmpty() && !containsMatchingStack(visual)) {
+                setItemSlot(slot, ItemStack.EMPTY);
+            }
+        }
+    }
+
+    private boolean containsMatchingStack(ItemStack wanted) {
+        if (wanted == null || wanted.isEmpty()) return false;
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stored = inventory.getItem(slot);
+            if (!stored.isEmpty()
+                    && ItemStack.isSameItemSameTags(stored, wanted)
+                    && stored.getCount() >= wanted.getCount()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String snapshotCustomSkin(ServerPlayer player) {
+        return player.getCapability(
+                        ScpClassifiedDirectiveModVariables.PLAYER_VARIABLES_CAPABILITY)
+                .map(variables -> variables.scp914Skin == null
+                        ? "" : variables.scp914Skin)
+                .orElse("");
+    }
+
+    private static boolean resolveSlimModel(ServerPlayer player) {
+        try {
+            for (Property property : player.getGameProfile().getProperties()
+                    .get("textures")) {
+                String json = new String(Base64.getDecoder()
+                        .decode(property.getValue()), StandardCharsets.UTF_8);
+                JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+                JsonObject textures = root.has("textures")
+                        && root.get("textures").isJsonObject()
+                        ? root.getAsJsonObject("textures") : null;
+                JsonObject skin = textures != null && textures.has("SKIN")
+                        && textures.get("SKIN").isJsonObject()
+                        ? textures.getAsJsonObject("SKIN") : null;
+                if (skin == null) continue;
+                JsonObject metadata = skin.has("metadata")
+                        && skin.get("metadata").isJsonObject()
+                        ? skin.getAsJsonObject("metadata") : null;
+                return metadata != null && metadata.has("model")
+                        && "slim".equalsIgnoreCase(
+                        metadata.get("model").getAsString());
+            }
+        } catch (RuntimeException ignored) {
+            // An invalid/incomplete profile should not be able to prevent a
+            // corpse from spawning. Classic is the safest rendering fallback.
+        }
+        return false;
     }
 
     public UUID ownerId() {
@@ -280,6 +414,14 @@ public final class PlayerCorpseEntity extends PathfinderMob
 
     public boolean settled() {
         return entityData.get(SETTLED);
+    }
+
+    public String customSkin() {
+        return entityData.get(CUSTOM_SKIN);
+    }
+
+    public boolean slimModel() {
+        return entityData.get(SLIM_MODEL);
     }
 
     public SimpleContainer container() {
@@ -356,6 +498,11 @@ public final class PlayerCorpseEntity extends PathfinderMob
             return;
         }
 
+        if (inventoryDirty) {
+            inventoryDirty = false;
+            syncVisualArmorFromInventory();
+        }
+
         if (!settled() && tickCount >= SETTLE_TICKS) {
             entityData.set(SETTLED, true);
             setDeltaMovement(Vec3.ZERO);
@@ -409,6 +556,8 @@ public final class PlayerCorpseEntity extends PathfinderMob
         tag.putBoolean("LogicalDeath", logicalDeath());
         tag.putInt("PoseVariant", poseVariant());
         tag.putBoolean("Settled", settled());
+        tag.putString("CustomSkin", customSkin());
+        tag.putBoolean("SlimModel", slimModel());
         tag.putBoolean("ScpInventoryMode", scpInventoryMode);
         tag.putInt("CorpseContainerSize", containerSize());
         tag.putInt("EmptyTicks", emptyTicks);
@@ -438,6 +587,9 @@ public final class PlayerCorpseEntity extends PathfinderMob
         // than theatrically collapsing again every time their chunk is opened.
         entityData.set(SETTLED,
                 !tag.contains("Settled") || tag.getBoolean("Settled"));
+        entityData.set(CUSTOM_SKIN, tag.getString("CustomSkin"));
+        entityData.set(SLIM_MODEL,
+                tag.contains("SlimModel") && tag.getBoolean("SlimModel"));
         scpInventoryMode = tag.getBoolean("ScpInventoryMode");
         emptyTicks = Math.max(0, tag.getInt("EmptyTicks"));
 
@@ -454,7 +606,7 @@ public final class PlayerCorpseEntity extends PathfinderMob
                 loaded.setItem(slot, ItemStack.of(itemTag));
             }
         }
-        inventory = loaded;
+        bindInventory(loaded);
 
         String name = ownerName();
         if (name != null && !name.isBlank()) {

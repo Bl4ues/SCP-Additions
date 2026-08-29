@@ -1,8 +1,13 @@
 package com.bl4ues.scpclassifieddirective.client;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.data.Scp914SkinManager;
+import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
@@ -10,11 +15,21 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.entity.layers.RenderLayerParent;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Renders a dead player as a low, inert body with a short fake-ragdoll fall. */
@@ -29,6 +44,9 @@ public final class PlayerCorpseRenderer extends
     private static final float[] FINAL_YAW_OFFSETS = {
             -8.0F, 6.0F, -3.0F, 10.0F, -11.0F, 3.0F
     };
+    private static final Map<String, ResourceLocation> CUSTOM_SKIN_TEXTURES =
+            new HashMap<>();
+    private static final Set<String> FAILED_CUSTOM_SKINS = new HashSet<>();
 
     private final CorpseModel defaultModel;
     private final CorpseModel slimModel;
@@ -39,6 +57,19 @@ public final class PlayerCorpseRenderer extends
         this.defaultModel = this.model;
         this.slimModel = new CorpseModel(
                 context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
+
+        addLayer(new CorpseArmorLayer(this,
+                new HumanoidModel<>(context.bakeLayer(
+                        ModelLayers.PLAYER_INNER_ARMOR)),
+                new HumanoidModel<>(context.bakeLayer(
+                        ModelLayers.PLAYER_OUTER_ARMOR)),
+                context.getModelManager(), false));
+        addLayer(new CorpseArmorLayer(this,
+                new HumanoidModel<>(context.bakeLayer(
+                        ModelLayers.PLAYER_SLIM_INNER_ARMOR)),
+                new HumanoidModel<>(context.bakeLayer(
+                        ModelLayers.PLAYER_SLIM_OUTER_ARMOR)),
+                context.getModelManager(), true));
     }
 
     @Override
@@ -87,6 +118,9 @@ public final class PlayerCorpseRenderer extends
 
     @Override
     public ResourceLocation getTextureLocation(PlayerCorpseEntity entity) {
+        ResourceLocation custom = customSkinTexture(entity.customSkin());
+        if (custom != null) return custom;
+
         UUID owner = entity.ownerId();
         PlayerInfo info = playerInfo(owner);
         if (info != null) return info.getSkinLocation();
@@ -94,7 +128,81 @@ public final class PlayerCorpseRenderer extends
         return DefaultPlayerSkin.getDefaultSkin(fallback);
     }
 
+    private static ResourceLocation customSkinTexture(String fileName) {
+        if (fileName == null || fileName.isBlank()) return null;
+        ResourceLocation cached = CUSTOM_SKIN_TEXTURES.get(fileName);
+        if (cached != null) return cached;
+        if (FAILED_CUSTOM_SKINS.contains(fileName)) return null;
+
+        Path path = Scp914SkinManager.resolveSkin(fileName);
+        if (path == null) {
+            FAILED_CUSTOM_SKINS.add(fileName);
+            return null;
+        }
+
+        NativeImage source = null;
+        try (InputStream stream = Files.newInputStream(path)) {
+            source = NativeImage.read(stream);
+            NativeImage prepared = preparePlayerSkin(source);
+            if (prepared == null) {
+                source.close();
+                FAILED_CUSTOM_SKINS.add(fileName);
+                ScpClassifiedDirectiveMod.LOGGER.warn(
+                        "SCP-914 corpse skin {} must be 64x64 or legacy 64x32",
+                        fileName);
+                return null;
+            }
+            if (prepared != source) source.close();
+
+            DynamicTexture texture = new DynamicTexture(prepared);
+            ResourceLocation location = Minecraft.getInstance()
+                    .getTextureManager().register(
+                            "scp_classified_directive_corpse_skin", texture);
+            CUSTOM_SKIN_TEXTURES.put(fileName, location);
+            return location;
+        } catch (Exception exception) {
+            if (source != null) {
+                try {
+                    source.close();
+                } catch (Exception ignored) {
+                }
+            }
+            FAILED_CUSTOM_SKINS.add(fileName);
+            ScpClassifiedDirectiveMod.LOGGER.warn(
+                    "Failed to load SCP-914 corpse skin {} from {}",
+                    fileName, path, exception);
+            return null;
+        }
+    }
+
+    private static NativeImage preparePlayerSkin(NativeImage source) {
+        if (source == null || source.getWidth() != 64) return null;
+        if (source.getHeight() == 64) return source;
+        if (source.getHeight() != 32) return null;
+
+        NativeImage converted = new NativeImage(64, 64, true);
+        converted.copyRect(source, 0, 0, 0, 0,
+                64, 32, false, false);
+
+        // Vanilla's legacy-skin expansion. Old 64x32 skins contain only the
+        // right arm/leg; mirror those regions into the modern left-side slots.
+        converted.copyRect(4, 16, 16, 32, 4, 4, true, false);
+        converted.copyRect(8, 16, 16, 32, 4, 4, true, false);
+        converted.copyRect(0, 20, 24, 32, 4, 12, true, false);
+        converted.copyRect(4, 20, 16, 32, 4, 12, true, false);
+        converted.copyRect(8, 20, 8, 32, 4, 12, true, false);
+        converted.copyRect(12, 20, 16, 32, 4, 12, true, false);
+        converted.copyRect(44, 16, -8, 32, 4, 4, true, false);
+        converted.copyRect(48, 16, -8, 32, 4, 4, true, false);
+        converted.copyRect(40, 20, 0, 32, 4, 12, true, false);
+        converted.copyRect(44, 20, -8, 32, 4, 12, true, false);
+        converted.copyRect(48, 20, -16, 32, 4, 12, true, false);
+        converted.copyRect(52, 20, -8, 32, 4, 12, true, false);
+        return converted;
+    }
+
     private static boolean isSlim(PlayerCorpseEntity entity) {
+        if (entity.slimModel()) return true;
         UUID owner = entity.ownerId();
         PlayerInfo info = playerInfo(owner);
         if (info != null) return "slim".equals(info.getModelName());
@@ -107,6 +215,31 @@ public final class PlayerCorpseRenderer extends
             return null;
         }
         return Minecraft.getInstance().getConnection().getPlayerInfo(owner);
+    }
+
+    private static final class CorpseArmorLayer extends HumanoidArmorLayer<
+            PlayerCorpseEntity, CorpseModel, HumanoidModel<PlayerCorpseEntity>> {
+        private final boolean slim;
+
+        private CorpseArmorLayer(
+                RenderLayerParent<PlayerCorpseEntity, CorpseModel> parent,
+                HumanoidModel<PlayerCorpseEntity> innerModel,
+                HumanoidModel<PlayerCorpseEntity> outerModel,
+                ModelManager modelManager, boolean slim) {
+            super(parent, innerModel, outerModel, modelManager);
+            this.slim = slim;
+        }
+
+        @Override
+        public void render(PoseStack poseStack, MultiBufferSource buffers,
+                int packedLight, PlayerCorpseEntity entity, float limbSwing,
+                float limbSwingAmount, float partialTick, float ageInTicks,
+                float netHeadYaw, float headPitch) {
+            if (isSlim(entity) != slim) return;
+            super.render(poseStack, buffers, packedLight, entity, limbSwing,
+                    limbSwingAmount, partialTick, ageInTicks, netHeadYaw,
+                    headPitch);
+        }
     }
 
     static final class CorpseModel extends PlayerModel<PlayerCorpseEntity> {

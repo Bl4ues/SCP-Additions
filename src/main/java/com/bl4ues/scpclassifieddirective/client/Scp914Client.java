@@ -2,7 +2,7 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -25,7 +25,7 @@ public final class Scp914Client {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(ScpClassifiedDirectiveModBlockEntities.SCP_914.get(),
+        event.registerBlockEntityRenderer(Scp914Module.SCP_914_BLOCK_ENTITY.get(),
                 context -> new Renderer());
     }
 
@@ -37,26 +37,13 @@ public final class Scp914Client {
         private static final ResourceLocation ANIMATION = new ResourceLocation(
                 ScpClassifiedDirectiveMod.MODID, "animations/block/scp914.animation.json");
 
-        @Override
-        public ResourceLocation getModelResource(Scp914BlockEntity animatable) {
-            return GEO;
-        }
-
-        @Override
-        public ResourceLocation getTextureResource(Scp914BlockEntity animatable) {
-            return TEXTURE;
-        }
-
-        @Override
-        public ResourceLocation getAnimationResource(Scp914BlockEntity animatable) {
-            return ANIMATION;
-        }
+        @Override public ResourceLocation getModelResource(Scp914BlockEntity animatable) { return GEO; }
+        @Override public ResourceLocation getTextureResource(Scp914BlockEntity animatable) { return TEXTURE; }
+        @Override public ResourceLocation getAnimationResource(Scp914BlockEntity animatable) { return ANIMATION; }
     }
 
     private static final class Renderer extends GeoBlockRenderer<Scp914BlockEntity> {
-        private Renderer() {
-            super(new Model());
-        }
+        private Renderer() { super(new Model()); }
 
         @Override
         public void preRender(PoseStack poseStack, Scp914BlockEntity animatable,
@@ -80,8 +67,6 @@ public final class Scp914Client {
         }
 
         @Override
-        public boolean shouldRenderOffScreen(Scp914BlockEntity blockEntity) {
-            return true;
-        }
+        public boolean shouldRenderOffScreen(Scp914BlockEntity blockEntity) { return true; }
     }
 }

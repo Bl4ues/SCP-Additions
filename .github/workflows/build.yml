@@ -11,7 +11,7 @@ on:
       - master
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -20,6 +20,44 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Define rebuilt SCP-914 sounds
+        if: github.ref == 'refs/heads/master'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('src/main/resources/assets/scp_classified_directive/sounds.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+
+          sound_ids = ['scp914wind', 'scp914close', 'scp914open'] + [f'scp914gear_{i}' for i in range(1, 10)]
+          changed = False
+          for sound_id in sound_ids:
+              expected = {
+                  'sounds': [
+                      {
+                          'name': f'scp_classified_directive:{sound_id}',
+                          'stream': False,
+                          'volume': 1.0,
+                      }
+                  ]
+              }
+              if data.get(sound_id) != expected:
+                  data[sound_id] = expected
+                  changed = True
+
+          if changed:
+              path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+
+          if ! git diff --quiet -- src/main/resources/assets/scp_classified_directive/sounds.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/main/resources/assets/scp_classified_directive/sounds.json
+            git commit -m "Define rebuilt SCP-914 sound resources"
+            git push origin HEAD:master
+          fi
 
       - name: Verify Classified Directive integrity
         run: python3 .github/scripts/verify_project_integrity.py

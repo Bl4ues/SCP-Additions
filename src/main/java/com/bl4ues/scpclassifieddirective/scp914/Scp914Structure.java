@@ -339,9 +339,23 @@ public final class Scp914Structure {
             BlockPos origin, Direction front, int side) {
         for (int forward = -2; forward <= 0; forward++) {
             for (int y = 0; y <= 2; y++) {
-                put(result, origin, front, side, y, forward,
-                        Scp914PartBlock.Kind.RESERVATION,
-                        Scp914PartBlock.Role.FRAME);
+                if (forward == -1) {
+                    put(result, origin, front, side, y, forward,
+                            Scp914PartBlock.Kind.SOLID,
+                            y == 2 ? Scp914PartBlock.Role.CONNECTOR_FRONT_TOP
+                                    : Scp914PartBlock.Role.CONNECTOR_FRONT);
+                } else if (forward == -2) {
+                    put(result, origin, front, side, y, forward,
+                            Scp914PartBlock.Kind.SOLID,
+                            y == 2 ? Scp914PartBlock.Role.CONNECTOR_BACK_TOP
+                                    : Scp914PartBlock.Role.CONNECTOR_BACK);
+                } else {
+                    // The forward cell is only reserved for authored thin details.
+                    // It must not expose the old one-block FRAME selection/collision.
+                    put(result, origin, front, side, y, forward,
+                            Scp914PartBlock.Kind.RESERVATION,
+                            Scp914PartBlock.Role.FRAME);
+                }
             }
         }
     }
@@ -350,15 +364,19 @@ public final class Scp914Structure {
             BlockPos origin, Direction front, int centerSide) {
         int negativeWall = centerSide - 1;
         int positiveWall = centerSide + 1;
+        Scp914PartBlock.Role negativeWallRole = centerSide < 0
+                ? Scp914PartBlock.Role.CABIN_SIDE_CENTER
+                : Scp914PartBlock.Role.CABIN_SIDE_NEG;
+        Scp914PartBlock.Role positiveWallRole = centerSide > 0
+                ? Scp914PartBlock.Role.CABIN_SIDE_CENTER
+                : Scp914PartBlock.Role.CABIN_SIDE_POS;
 
         for (int forward = -2; forward <= -1; forward++) {
             for (int y = 0; y <= 2; y++) {
                 put(result, origin, front, negativeWall, y, forward,
-                        Scp914PartBlock.Kind.SOLID,
-                        Scp914PartBlock.Role.CABIN_SIDE_NEG);
+                        Scp914PartBlock.Kind.SOLID, negativeWallRole);
                 put(result, origin, front, positiveWall, y, forward,
-                        Scp914PartBlock.Kind.SOLID,
-                        Scp914PartBlock.Role.CABIN_SIDE_POS);
+                        Scp914PartBlock.Kind.SOLID, positiveWallRole);
             }
             put(result, origin, front, centerSide, 2, forward,
                     Scp914PartBlock.Kind.SOLID,

@@ -1,0 +1,28 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "idle": {
+      "loop": true,
+      "bones": {"scp914": {"rotation": {"vector": [0, 0, 0]}}}
+    },
+    "refining": {
+      "animation_length": 15,
+      "bones": {
+        "output_door": {"rotation": {"0.4583": {"vector": [0,0,0]}, "2.4583": {"vector": [0,-105,0], "easing": "easeInCubic"}, "10.4583": {"vector": [0,-105,0]}, "13.5": {"vector": [0,0,0], "easing": "easeOutCubic"}}},
+        "wind_key": {"rotation": {"0.0": {"vector": [0,0,0]}, "0.5": {"vector": [0,0,90], "easing": "easeInQuint"}, "10.5": {"vector": [0,0,0]}}},
+        "intake_door": {"rotation": {"0.4583": {"vector": [0,0,0]}, "2.4583": {"vector": [0,105,0], "easing": "easeInCubic"}, "10.4583": {"vector": [0,105,0]}, "13.5": {"vector": [0,0,0], "easing": "easeOutCubic"}}},
+        "pole_1": {"rotation": {"0.4583": {"vector": [0,0,0]}, "15.0": {"vector": [0,-1440,0], "easing": "easeInOutCubic"}}},
+        "pole_2": {"rotation": {"0.4583": {"vector": [0,0,0]}, "15.0": {"vector": [0,0,1440], "easing": "easeInOutCubic"}}},
+        "pole_3": {"rotation": {"0.4583": {"vector": [0,0,0]}, "15.0": {"vector": [1440,0,0], "easing": "easeInOutCubic"}}},
+        "pole_4": {"rotation": {"0.4583": {"vector": [0,0,0]}, "15.0": {"vector": [-1440,0,0], "easing": "easeInOutCubic"}}},
+        "gear_1": {"rotation": {"0.4583": {"vector": [0,0,0]}, "10.4167": {"vector": [0,0,1080], "easing": "easeInQuad"}, "15.0": {"vector": [0,0,1440], "easing": "easeOutQuad"}}},
+        "gear_2": {"rotation": {"0.4167": {"vector": [0,0,0]}, "10.4167": {"vector": [0,0,-1080], "easing": "easeInQuad"}, "15.0": {"vector": [0,0,-1440], "easing": "easeOutQuad"}}},
+        "gear_3": {"rotation": {"0.4583": {"vector": [0,0,0]}, "13.3333": {"vector": [0,0,720], "easing": "easeInOutQuad"}}},
+        "gear_4": {"rotation": {"0.4167": {"vector": [0,0,0]}, "15.0": {"vector": [0,0,1800], "easing": "easeInOutCubic"}}},
+        "gear_5": {"rotation": {"0.375": {"vector": [0,0,0]}, "15.0": {"vector": [0,0,-720], "easing": "easeInOutCubic"}}},
+        "gear_6": {"rotation": {"0.5": {"vector": [0,0,0]}, "14.9583": {"vector": [0,0,1080], "easing": "easeInOutCubic"}}},
+        "gear_7": {"rotation": {"0.4583": {"vector": [0,0,0]}, "14.9583": {"vector": [0,0,-2160], "easing": "easeInOutCubic"}}}
+      }
+    }
+  }
+}

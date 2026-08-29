@@ -51,7 +51,8 @@ public final class Scp914Client {
                 VertexConsumer buffer, boolean isReRender, float partialTick,
                 int packedLight, int packedOverlay, float red, float green,
                 float blue, float alpha) {
-            float angle = (float) Math.toRadians(animatable.getDialAngle());
+            float degrees = Scp914InteractionClient.renderDialAngle(animatable);
+            float angle = (float) Math.toRadians(degrees);
             getGeoModel().getBone("grab_dial").ifPresent(bone -> bone.setRotZ(angle));
             getGeoModel().getBone("triangle_dial").ifPresent(bone -> bone.setRotZ(-angle));
             super.preRender(poseStack, animatable, bakedModel, bufferSource, buffer,

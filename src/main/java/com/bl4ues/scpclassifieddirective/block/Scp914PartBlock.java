@@ -148,7 +148,9 @@ public final class Scp914PartBlock extends Block {
                 .sound(SoundType.METAL)
                 .noOcclusion()
                 .noLootTable();
-        if (kind == Kind.RESERVATION) properties = properties.noCollission();
+        // Reservation helpers normally expose an empty shape, but the existing
+        // reservations inside the central body are also used to complete its solid
+        // 3x3x3 core. Keep collision enabled and decide per cell below.
         if (kind == Kind.DOOR) properties = properties.dynamicShape();
         return properties;
     }
@@ -181,10 +183,11 @@ public final class Scp914PartBlock extends Block {
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
         Role role = state.getValue(ROLE);
-        if (kind == Kind.RESERVATION) return Shapes.empty();
         if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
-        if (role == Role.CONNECTOR_FRONT) {
-            return connectorShape(level, pos, state);
+        if (kind == Kind.RESERVATION) return reservationShape(level, pos, state);
+        if (role == Role.CONNECTOR_BACK) return connectorShape(level, pos, state);
+        if (isBodyRole(role) && isCentralCoreCell(level, pos, state)) {
+            return Shapes.block();
         }
         return staticShape(state, role);
     }
@@ -192,11 +195,12 @@ public final class Scp914PartBlock extends Block {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        if (kind == Kind.RESERVATION) return Shapes.empty();
         Role role = state.getValue(ROLE);
         if (kind == Kind.DOOR) return doorShape(level, pos, state, role);
-        if (role == Role.CONNECTOR_FRONT) {
-            return connectorShape(level, pos, state);
+        if (kind == Kind.RESERVATION) return reservationShape(level, pos, state);
+        if (role == Role.CONNECTOR_BACK) return connectorShape(level, pos, state);
+        if (isBodyRole(role) && isCentralCoreCell(level, pos, state)) {
+            return Shapes.block();
         }
         return staticShape(state, role);
     }
@@ -211,6 +215,40 @@ public final class Scp914PartBlock extends Block {
     public VoxelShape getVisualShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
         return Shapes.empty();
+    }
+
+    private static VoxelShape reservationShape(BlockGetter level, BlockPos pos,
+            BlockState state) {
+        return isCentralCoreCell(level, pos, state) ? Shapes.block() : Shapes.empty();
+    }
+
+    private static boolean isBodyRole(Role role) {
+        return switch (role) {
+            case BODY_FRONT, BODY_BACK, BODY_SIDE_NEG, BODY_SIDE_POS,
+                    BODY_FLOOR, BODY_ROOF -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * The visually dense center of the machine is intentionally a solid 3x3x3
+     * collision volume: side -1..1, forward -2..0 and Y 0..2. The wider frame
+     * outside that core keeps its authored thin collision.
+     */
+    private static boolean isCentralCoreCell(BlockGetter level, BlockPos pos,
+            BlockState state) {
+        BlockPos controller = Scp914Structure.findController(level, pos, state);
+        if (controller == null) return false;
+
+        Direction facing = state.getValue(FACING);
+        Direction localPositiveX = facing.getCounterClockWise();
+        int dx = pos.getX() - controller.getX();
+        int dz = pos.getZ() - controller.getZ();
+        int side = dx * localPositiveX.getStepX() + dz * localPositiveX.getStepZ();
+        int forward = dx * facing.getStepX() + dz * facing.getStepZ();
+        int y = pos.getY() - controller.getY();
+        return Math.abs(side) <= 1 && forward >= -2 && forward <= 0
+                && y >= 0 && y <= 2;
     }
 
     private static VoxelShape staticShape(BlockState state, Role role) {
@@ -236,11 +274,13 @@ public final class Scp914PartBlock extends Block {
     }
 
     private static VoxelShape sideSlab(Direction facing,
-            boolean positiveModelX, double thickness) {
-        Direction gridPositiveX = facing.getCounterClockWise();
-        Direction modelPositiveEdge = gridPositiveX.getOpposite();
-        Direction edge = positiveModelX
-                ? modelPositiveEdge : modelPositiveEdge.getOpposite();
+            boolean positiveLocalX, double thickness) {
+        // Restore the inner booth walls to the edge they used before the previous
+        // global X mirror. The outer booth walls use CABIN_SIDE_CENTER and remain
+        // exactly where they are now.
+        Direction localPositiveX = facing.getCounterClockWise();
+        Direction edge = positiveLocalX
+                ? localPositiveX : localPositiveX.getOpposite();
         return edgeSlab(edge, thickness);
     }
 
@@ -262,8 +302,9 @@ public final class Scp914PartBlock extends Block {
     }
 
     private static VoxelShape connectorTube(Direction facing) {
-        // Geo cube: Z 13..21 and Y 22.75..30.75. In the forward=-1/Y=1
-        // helper cell those become exactly 5..13 Z pixels and 6.75..14.75 Y.
+        // Same authored tube shape as before, but it is now exposed by the
+        // CONNECTOR_BACK helper at forward=-2, moving the whole collision exactly
+        // one block back onto the physical grated connection.
         return switch (facing) {
             case NORTH -> Block.box(0.0D, 6.75D, 5.0D,
                     16.0D, 14.75D, 13.0D);

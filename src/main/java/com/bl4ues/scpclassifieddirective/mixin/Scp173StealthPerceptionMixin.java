@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Applies stealth acquisition to SCP-173's bespoke target/observation paths. */
 @Mixin(Scp173Entity.class)
 public abstract class Scp173StealthPerceptionMixin {
-    @Inject(method = "findObservingPlayer", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "findObservingPlayer", at = @At("RETURN"),
+            cancellable = true, remap = false)
     private void scpclassifieddirective$gateInitialObserver(
             CallbackInfoReturnable<Player> cir) {
         Player player = cir.getReturnValue();
@@ -25,7 +26,8 @@ public abstract class Scp173StealthPerceptionMixin {
         }
     }
 
-    @Inject(method = "findNearestTargetEntity", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "findNearestTargetEntity", at = @At("RETURN"),
+            cancellable = true, remap = false)
     private void scpclassifieddirective$gateStrategicTarget(
             CallbackInfoReturnable<LivingEntity> cir) {
         if (!(cir.getReturnValue() instanceof Player player)) return;
@@ -35,7 +37,8 @@ public abstract class Scp173StealthPerceptionMixin {
         }
     }
 
-    @Inject(method = "updateClientObservation", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "updateClientObservation", at = @At("HEAD"),
+            cancellable = true, remap = false)
     private void scpclassifieddirective$gateClientObservation(
             ServerPlayer player, boolean visible, CallbackInfo ci) {
         if (!visible || player == null) return;

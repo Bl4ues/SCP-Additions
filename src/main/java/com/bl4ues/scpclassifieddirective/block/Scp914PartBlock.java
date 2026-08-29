@@ -200,7 +200,7 @@ public final class Scp914PartBlock extends Block {
         }
         long elapsed = machine.refiningElapsedTicks();
         return machine.isRefining()
-                && elapsed >= Scp914BlockEntity.DOOR_CLOSE_SOUND_TICK
+                && elapsed >= Scp914BlockEntity.DOOR_CLOSED_TICK
                 && elapsed < Scp914BlockEntity.PROCESS_AND_OPEN_TICK;
     }
 }

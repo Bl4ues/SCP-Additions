@@ -2,8 +2,12 @@ package com.bl4ues.scpclassifieddirective.block;
 
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -22,6 +26,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -31,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private static final VoxelShape CONTROLLER_SHAPE = Shapes.block();
+    private static final double WIND_KEY_USE_RADIUS_SQR = 0.22D * 0.22D;
 
     public Scp914Block() {
         super(BlockBehaviour.Properties.of()
@@ -42,19 +49,22 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+    protected void createBlockStateDefinition(
+            StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
         builder.add(FACING);
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        return defaultBlockState().setValue(FACING,
+                context.getHorizontalDirection().getOpposite());
     }
 
     @Override
     public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        return state.setValue(FACING,
+                rotation.rotate(state.getValue(FACING)));
     }
 
     @Override
@@ -68,13 +78,32 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
         return CONTROLLER_SHAPE;
     }
 
     @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+            BlockPos pos, CollisionContext context) {
         return CONTROLLER_SHAPE;
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+            Player player, InteractionHand hand, BlockHitResult hit) {
+        Vec3 windKey = Scp914Structure.windKeyAnchor(pos,
+                state.getValue(FACING));
+        if (hit.getLocation().distanceToSqr(windKey)
+                > WIND_KEY_USE_RADIUS_SQR) {
+            return InteractionResult.PASS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof Scp914BlockEntity machine)) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+        return machine.beginRefining()
+                ? InteractionResult.CONSUME : InteractionResult.FAIL;
     }
 
     @Nullable
@@ -85,8 +114,10 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
+            BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type,
-                Scp914Module.SCP_914_BLOCK_ENTITY.get(), Scp914BlockEntity::serverTick);
+                Scp914Module.SCP_914_BLOCK_ENTITY.get(),
+                Scp914BlockEntity::serverTick);
     }
 }

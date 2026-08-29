@@ -1,7 +1,10 @@
 package com.bl4ues.scpclassifieddirective.stealth;
 
+import com.bl4ues.scpclassifieddirective.acoustics.AcousticPerception;
+import com.bl4ues.scpclassifieddirective.acoustics.AcousticStimulusSystem;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -10,6 +13,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -18,10 +22,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Global visual-perception framework for hostile AI.
  *
  * <p>Vanilla goals still decide who a mob wants to attack. This service only
- * decides when a visual target has accumulated enough evidence to be acquired.
- * It intentionally exposes modifiers and per-player overrides so smoke,
- * lockers, anomalous invisibility and future sensory systems can participate
- * without replacing the AI layer again.</p>
+ * decides when a target has accumulated enough visual or acoustic evidence to
+ * be acquired. It intentionally exposes modifiers and per-player overrides so
+ * smoke, lockers, anomalous invisibility and future sensory systems can
+ * participate without replacing the AI layer again.</p>
  */
 public final class PerceptionFramework {
     private static final Map<Mob, Observation> OBSERVATIONS = new WeakHashMap<>();
@@ -29,6 +33,9 @@ public final class PerceptionFramework {
     private static final List<VisibilityModifier> MODIFIERS =
             new CopyOnWriteArrayList<>();
     private static final long OBSERVATION_FORGET_TICKS = 20L;
+    private static final int ACOUSTIC_LOOKBACK_TICKS = 3;
+    private static final float ACOUSTIC_MIN_INTENSITY = 0.05F;
+    private static final float ACOUSTIC_IMMEDIATE_INTENSITY = 0.48F;
 
     private PerceptionFramework() {
     }
@@ -46,15 +53,19 @@ public final class PerceptionFramework {
 
         ScpClassifiedDirectiveModulesConfig.PerceptionRule rule = ruleFor(observer);
         if (rule != null && rule.omniscient) return true;
-        if (rule != null && rule.blind) {
-            forget(observer, target);
-            return false;
-        }
 
-        // A mob that was directly attacked has no need to politely pretend it
-        // did not notice the attacker for another stealth acquisition window.
+        // Retaliation is direct knowledge, not visual acquisition. A blind mob
+        // that is struck should not fail to notice the person physically hitting it.
         LivingEntity lastAttacker = observer.getLastHurtByMob();
         if (lastAttacker == target) return true;
+
+        // Blind is a real sensory model rather than merely a visual blacklist.
+        // Generic mobs use the same global acoustic evidence emitted for SCP-939.
+        // SCP-939 itself never assigns a vanilla target, so its richer dedicated
+        // acoustic brain remains authoritative and does not get flattened here.
+        if (rule != null && rule.blind) {
+            return canAcquireAcoustically(observer, target, rule, settings);
+        }
 
         if (!observer.getSensing().hasLineOfSight(target)) {
             forget(observer, target);
@@ -99,12 +110,56 @@ public final class PerceptionFramework {
                 : rule.acquireDelayMultiplier;
         int requiredTicks = (int) Math.ceil((1.0D - visibility)
                 * settings.maxAcquireDelayTicks * delayMultiplier);
+        return accumulateEvidence(observer, target, requiredTicks,
+                observer.level().getGameTime());
+    }
+
+    private static boolean canAcquireAcoustically(Mob observer, Player target,
+            ScpClassifiedDirectiveModulesConfig.PerceptionRule rule,
+            ScpClassifiedDirectiveModulesConfig.Stealth settings) {
+        if (!(observer.level() instanceof ServerLevel serverLevel)) return false;
+        long now = serverLevel.getGameTime();
+        long lookback = Math.max(0L, now - ACOUSTIC_LOOKBACK_TICKS);
+        double hearingMultiplier = Math.max(0.0D, rule.rangeMultiplier);
+        if (hearingMultiplier <= 0.0D) {
+            forget(observer, target);
+            return false;
+        }
+
+        Optional<AcousticPerception> heard = AcousticStimulusSystem.loudest(
+                serverLevel, observer.getEyePosition(), lookback,
+                hearingMultiplier, ACOUSTIC_MIN_INTENSITY);
+        if (heard.isEmpty()
+                || heard.get().stimulus().sourceEntityId() == null
+                || !target.getUUID().equals(
+                        heard.get().stimulus().sourceEntityId())) {
+            forget(observer, target);
+            return false;
+        }
+
+        float intensity = heard.get().perceivedIntensity();
+        if (intensity >= ACOUSTIC_IMMEDIATE_INTENSITY) {
+            forget(observer, target);
+            return true;
+        }
+
+        // Quiet sounds need repeated/recent evidence. The same delay multiplier
+        // used for vision remains meaningful for custom blind entities.
+        double confidence = Math.max(0.0D, Math.min(1.0D,
+                intensity / ACOUSTIC_IMMEDIATE_INTENSITY));
+        int baseWindow = Math.min(settings.maxAcquireDelayTicks, 30);
+        int requiredTicks = Math.max(2, (int) Math.ceil((1.0D - confidence)
+                * baseWindow * rule.acquireDelayMultiplier));
+        return accumulateEvidence(observer, target, requiredTicks, now);
+    }
+
+    private static boolean accumulateEvidence(Mob observer, Player target,
+            int requiredTicks, long now) {
         if (requiredTicks <= 0) {
             forget(observer, target);
             return true;
         }
 
-        long now = observer.level().getGameTime();
         Observation observation = OBSERVATIONS.get(observer);
         UUID targetId = target.getUUID();
         if (observation == null || !targetId.equals(observation.targetId)

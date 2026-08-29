@@ -31,6 +31,7 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,13 +81,16 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return Scp914PartBlock.frontSlab(state.getValue(FACING), 6.0D);
+        // The controller is the front-center cell of the explicitly solid 3x3x3
+        // central machine core. Returning a full cube completes that core instead
+        // of leaving the origin as a thin front plate.
+        return Shapes.block();
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        return Scp914PartBlock.frontSlab(state.getValue(FACING), 6.0D);
+        return Shapes.block();
     }
 
     @Override

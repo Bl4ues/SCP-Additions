@@ -26,7 +26,8 @@ public final class Scp914InteractionClient {
 
     private static BlockPos activePos;
     private static float visualAngle;
-    private static float lastYaw;
+    private static float lockedYaw;
+    private static float lockedPitch;
     private static float lastSentDetent = Float.NaN;
     private static long lastPacketTick = Long.MIN_VALUE;
 
@@ -68,7 +69,8 @@ public final class Scp914InteractionClient {
 
         activePos = machine.getBlockPos().immutable();
         visualAngle = machine.getDialAngle();
-        lastYaw = minecraft.player.getYRot();
+        lockedYaw = minecraft.player.getYRot();
+        lockedPitch = minecraft.player.getXRot();
         lastSentDetent = quantize(visualAngle);
         lastPacketTick = minecraft.level.getGameTime();
         settlingPos = null;
@@ -78,13 +80,16 @@ public final class Scp914InteractionClient {
     private static void updateDrag(Minecraft minecraft) {
         if (!(minecraft.level.getBlockEntity(activePos)
                 instanceof Scp914BlockEntity machine) || machine.isRefining()) {
+            lockView(minecraft);
             cancelDrag(false);
             return;
         }
 
+        // The mouse still rotates the local player long enough for us to measure its
+        // horizontal delta, but the view is restored every tick. This makes the dial
+        // consume the drag instead of forcing the player to turn away from SCP-914.
         float yaw = minecraft.player.getYRot();
-        float deltaYaw = Mth.wrapDegrees(yaw - lastYaw);
-        lastYaw = yaw;
+        float deltaYaw = Mth.wrapDegrees(yaw - lockedYaw);
         visualAngle = Mth.clamp(visualAngle + deltaYaw * DRAG_SCALE,
                 Scp914BlockEntity.ROUGH_ANGLE,
                 Scp914BlockEntity.VERY_FINE_ANGLE);
@@ -106,10 +111,13 @@ public final class Scp914InteractionClient {
             lastSentDetent = detent;
             lastPacketTick = now;
         }
+
+        lockView(minecraft);
     }
 
     private static void finishDrag(Minecraft minecraft) {
         if (activePos == null) return;
+        lockView(minecraft);
         BlockPos releasedPos = activePos;
         float releasedAngle = visualAngle;
         ModNetwork.CHANNEL.sendToServer(
@@ -120,6 +128,14 @@ public final class Scp914InteractionClient {
         settlingTarget = Scp914BlockEntity.Setting.nearest(releasedAngle).angle();
         settlingTicks = SETTLE_TICKS;
         cancelDrag(true);
+    }
+
+    private static void lockView(Minecraft minecraft) {
+        if (minecraft.player == null) return;
+        minecraft.player.setYRot(lockedYaw);
+        minecraft.player.setXRot(lockedPitch);
+        minecraft.player.yRotO = lockedYaw;
+        minecraft.player.xRotO = lockedPitch;
     }
 
     private static void cancelDrag(boolean preserveSettling) {

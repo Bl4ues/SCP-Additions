@@ -339,7 +339,7 @@ public final class Scp079ModulesScreenExtension {
                     int gap = 6;
                     Button editor = Button.builder(ScpFonts.roboto(row.label()),
                             clicked -> StealthConfigCenterEnhancements.openPerceptionEditor(
-                                    this, working))
+                                    cleanReturnScreen(), working))
                             .bounds(contentX, rowY,
                                     panelWidth - 32 - stateWidth - gap, 22).build();
                     register(editor, row.label());
@@ -382,6 +382,14 @@ public final class Scp079ModulesScreenExtension {
                     button -> goBack())
                     .bounds(contentX + panelWidth - 116, bottom, 84, 20)
                     .build(), "Back");
+        }
+
+        private ExtendedToggleScreen cleanReturnScreen() {
+            ExtendedToggleScreen copy = new ExtendedToggleScreen(parent, working,
+                    title.getString(), sectionTitle, rows);
+            copy.scroll = scroll;
+            copy.saving = saving;
+            return copy;
         }
 
         private void register(Button button, String label) {

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.scp914;
 
 import com.bl4ues.scpclassifieddirective.block.Scp914Block;
+import com.bl4ues.scpclassifieddirective.block.Scp914PartBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -10,17 +11,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Physical coordinates and multiblock footprint for the rebuilt SCP-914.
- *
- * <p>Blockbench/Gecko coordinates are authored around the center of the
- * controller block on X/Z and from the controller block floor on Y. Local
- * negative Z is the front/control side of the machine. The transform below is
- * shared by processing volumes, sounds, interaction anchors and structural
- * cells so these systems cannot drift apart.</p>
- */
+/** Physical coordinates and semantic multiblock footprint for rebuilt SCP-914. */
 public final class Scp914Structure {
     private Scp914Structure() {
     }
@@ -32,20 +27,16 @@ public final class Scp914Structure {
     private static final int Y_MIN = 0;
     private static final int Y_MAX = 2;
 
-    // Centers of the usable chamber volumes, measured from the uploaded model.
     private static final double INTAKE_X = -4.80D;
     private static final double OUTPUT_X = 4.80D;
     private static final double CHAMBER_Y = 1.05D;
     private static final double CHAMBER_Z = 1.50D;
-
-    // Interior volume only. The shell/doors are deliberately outside this AABB.
     private static final double CHAMBER_HALF_X = 0.92D;
     private static final double CHAMBER_MIN_Y = 0.12D;
     private static final double CHAMBER_MAX_Y = 2.18D;
     private static final double CHAMBER_MIN_Z = 0.66D;
     private static final double CHAMBER_MAX_Z = 2.34D;
 
-    // Exact authored pivots for the two physical controls.
     public static final double DIAL_X = 0.0D;
     public static final double DIAL_Y = 20.04D / 16.0D;
     public static final double DIAL_Z = -8.25D / 16.0D;
@@ -58,7 +49,6 @@ public final class Scp914Structure {
                 ? state.getValue(Scp914Block.FACING) : Direction.NORTH;
     }
 
-    /** Converts authored model-space block units to a world-space point. */
     public static Vec3 localToWorld(BlockPos origin, Direction front,
             double localX, double localY, double localZ) {
         Direction rightFromViewer = front.getCounterClockWise();
@@ -120,15 +110,12 @@ public final class Scp914Structure {
                 Math.max(a.x, b.x), Math.max(a.y, b.y), Math.max(a.z, b.z));
     }
 
-    /** Entire volume that must be unobstructed before the machine is placed. */
+    /** Includes reservation volume plus the six floor cells below each cabin. */
     public static List<BlockPos> requiredCells(BlockPos origin, Direction front) {
         List<BlockPos> result = new ArrayList<>();
-        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
-            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
-                for (int y = Y_MIN; y <= Y_MAX; y++) {
-                    result.add(gridCell(origin, front, side, y, forward));
-                }
-            }
+        result.add(origin.immutable());
+        for (PartPlacement placement : placements(origin, front)) {
+            result.add(placement.pos());
         }
         return result;
     }
@@ -136,91 +123,168 @@ public final class Scp914Structure {
     public static List<BlockPos> collectObstructions(Level level, BlockPos origin,
             Direction front) {
         List<BlockPos> blocked = new ArrayList<>();
-        for (BlockPos target : requiredCells(origin, front)) {
-            if (target.equals(origin)) continue;
-            if (!level.getBlockState(target).canBeReplaced()) {
-                blocked.add(target.immutable());
+        for (PartPlacement placement : placements(origin, front)) {
+            if (!level.getBlockState(placement.pos()).canBeReplaced()) {
+                blocked.add(placement.pos().immutable());
             }
         }
         return blocked;
     }
 
-    /** Places hidden reservation/collision cells after the controller succeeds. */
+    /** All helpers are preverified before any cell is written. */
     public static void placeHelpers(Level level, BlockPos origin, Direction front) {
         if (level.isClientSide) return;
-        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
-            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
-                for (int y = Y_MIN; y <= Y_MAX; y++) {
-                    BlockPos target = gridCell(origin, front, side, y, forward);
-                    if (target.equals(origin)) continue;
-                    if (!level.getBlockState(target).canBeReplaced()) continue;
+        List<PartPlacement> expected = placements(origin, front);
+        for (PartPlacement placement : expected) {
+            if (!level.getBlockState(placement.pos()).canBeReplaced()) return;
+        }
 
-                    BlockState helper;
-                    if (isDoorLocal(side, y, forward)) {
-                        helper = Scp914Module.SCP_914_DOOR_COLLISION.get()
-                                .defaultBlockState();
-                    } else if (isSolidLocal(side, y, forward)) {
-                        helper = Scp914Module.SCP_914_COLLISION.get()
-                                .defaultBlockState();
-                    } else {
-                        helper = Scp914Module.SCP_914_RESERVATION.get()
-                                .defaultBlockState();
-                    }
-                    level.setBlock(target, helper, 3);
+        List<BlockPos> placed = new ArrayList<>();
+        for (PartPlacement placement : expected) {
+            BlockState helper = stateFor(placement, front);
+            if (!level.setBlock(placement.pos(), helper, 3)) {
+                for (BlockPos pos : placed) {
+                    BlockState state = level.getBlockState(pos);
+                    if (isHelper(state)) level.setBlock(pos,
+                            Blocks.AIR.defaultBlockState(), 3);
                 }
+                return;
             }
+            placed.add(placement.pos());
         }
     }
 
     public static void clearHelpers(Level level, BlockPos origin, Direction front) {
         if (level.isClientSide) return;
-        for (BlockPos target : requiredCells(origin, front)) {
-            if (target.equals(origin)) continue;
-            BlockState state = level.getBlockState(target);
-            if (state.is(Scp914Module.SCP_914_RESERVATION.get())
-                    || state.is(Scp914Module.SCP_914_COLLISION.get())
-                    || state.is(Scp914Module.SCP_914_DOOR_COLLISION.get())) {
-                level.setBlock(target, Blocks.AIR.defaultBlockState(), 3);
+        for (PartPlacement placement : placements(origin, front)) {
+            BlockState state = level.getBlockState(placement.pos());
+            if (isHelper(state)) {
+                level.setBlock(placement.pos(), Blocks.AIR.defaultBlockState(), 3);
             }
         }
     }
 
     public static boolean isDoorCell(BlockPos origin, Direction front,
             BlockPos candidate) {
-        return candidate.equals(gridCell(origin, front, -5, 0, 0))
-                || candidate.equals(gridCell(origin, front, -5, 1, 0))
-                || candidate.equals(gridCell(origin, front, 5, 0, 0))
-                || candidate.equals(gridCell(origin, front, 5, 1, 0));
+        for (PartPlacement placement : placements(origin, front)) {
+            if (placement.kind() == Scp914PartBlock.Kind.DOOR
+                    && placement.pos().equals(candidate)) return true;
+        }
+        return false;
     }
 
-    private static boolean isDoorLocal(int side, int y, int forward) {
-        return (side == -5 || side == 5)
-                && forward == 0 && y <= 1;
+    private static boolean isHelper(BlockState state) {
+        return state.is(Scp914Module.SCP_914_RESERVATION.get())
+                || state.is(Scp914Module.SCP_914_COLLISION.get())
+                || state.is(Scp914Module.SCP_914_DOOR_COLLISION.get());
     }
 
-    /**
-     * Coarse collision follows the large body and chamber shells, while the
-     * remaining footprint is reservation-only. Chamber interiors and open door
-     * paths therefore remain traversable and usable for loose items/entities.
-     */
-    private static boolean isSolidLocal(int side, int y, int forward) {
-        if (side >= -3 && side <= 3 && forward >= -2 && forward <= 0) {
-            return true;
-        }
-        if (side >= -2 && side <= 2 && forward == 1 && y <= 1) {
-            return true;
-        }
-        return chamberWall(side, y, forward, -5)
-                || chamberWall(side, y, forward, 5);
+    private static BlockState stateFor(PartPlacement placement, Direction front) {
+        BlockState state = switch (placement.kind()) {
+            case RESERVATION -> Scp914Module.SCP_914_RESERVATION.get().defaultBlockState();
+            case SOLID -> Scp914Module.SCP_914_COLLISION.get().defaultBlockState();
+            case DOOR -> Scp914Module.SCP_914_DOOR_COLLISION.get().defaultBlockState();
+        };
+        return state.setValue(Scp914PartBlock.FACING, front)
+                .setValue(Scp914PartBlock.ROLE, placement.role());
     }
 
-    private static boolean chamberWall(int side, int y, int forward, int center) {
-        if (Math.abs(side - center) == 1
-                && forward >= -3 && forward <= 0) {
-            return true;
+    private static List<PartPlacement> placements(BlockPos origin, Direction front) {
+        Map<BlockPos, PartPlacement> result = new LinkedHashMap<>();
+
+        for (int forward = FORWARD_MIN; forward <= FORWARD_MAX; forward++) {
+            for (int side = SIDE_MIN; side <= SIDE_MAX; side++) {
+                for (int y = Y_MIN; y <= Y_MAX; y++) {
+                    BlockPos pos = gridCell(origin, front, side, y, forward);
+                    if (!pos.equals(origin)) put(result, pos,
+                            Scp914PartBlock.Kind.RESERVATION,
+                            Scp914PartBlock.Role.RESERVED);
+                }
+            }
         }
-        if (side == center && forward == -3) return true;
-        return side == center && y == 2 && forward >= -2 && forward <= -1;
+
+        for (int side = -2; side <= 2; side++) {
+            for (int forward = -2; forward <= -1; forward++) {
+                for (int y = 0; y <= 2; y++) {
+                    put(result, gridCell(origin, front, side, y, forward),
+                            Scp914PartBlock.Kind.SOLID,
+                            Scp914PartBlock.Role.BODY);
+                }
+            }
+            for (int y = 0; y <= 2; y++) {
+                BlockPos pos = gridCell(origin, front, side, y, 0);
+                if (!pos.equals(origin)) put(result, pos,
+                        Scp914PartBlock.Kind.SOLID,
+                        Scp914PartBlock.Role.BODY_FRONT);
+            }
+        }
+
+        addCabin(result, origin, front, -5);
+        addCabin(result, origin, front, 5);
+        return List.copyOf(result.values());
+    }
+
+    private static void addCabin(Map<BlockPos, PartPlacement> result,
+            BlockPos origin, Direction front, int centerSide) {
+        for (int side = centerSide - 1; side <= centerSide + 1; side++) {
+            for (int forward = -2; forward <= -1; forward++) {
+                put(result, gridCell(origin, front, side, -1, forward),
+                        Scp914PartBlock.Kind.SOLID,
+                        Scp914PartBlock.Role.FLOOR);
+            }
+        }
+
+        for (int wallSide : new int[] {centerSide - 1, centerSide + 1}) {
+            for (int forward = -2; forward <= -1; forward++) {
+                for (int y = 0; y <= 1; y++) {
+                    put(result, gridCell(origin, front, wallSide, y, forward),
+                            Scp914PartBlock.Kind.SOLID,
+                            Scp914PartBlock.Role.CABIN_SIDE);
+                }
+            }
+        }
+        for (int side = centerSide - 1; side <= centerSide + 1; side++) {
+            for (int y = 0; y <= 2; y++) {
+                put(result, gridCell(origin, front, side, y, -3),
+                        Scp914PartBlock.Kind.SOLID,
+                        Scp914PartBlock.Role.CABIN_BACK);
+            }
+            for (int forward = -2; forward <= -1; forward++) {
+                put(result, gridCell(origin, front, side, 2, forward),
+                        Scp914PartBlock.Kind.SOLID,
+                        Scp914PartBlock.Role.CABIN_ROOF);
+            }
+        }
+
+        for (int side = centerSide - 1; side <= centerSide + 1; side++) {
+            put(result, gridCell(origin, front, side, 0, 0),
+                    Scp914PartBlock.Kind.DOOR, doorRole(side, 0));
+            put(result, gridCell(origin, front, side, 1, 0),
+                    Scp914PartBlock.Kind.DOOR, doorRole(side, 1));
+        }
+    }
+
+    private static Scp914PartBlock.Role doorRole(int side, int y) {
+        return switch (side) {
+            case -6 -> y == 0 ? Scp914PartBlock.Role.DOOR_N6_LOWER
+                    : Scp914PartBlock.Role.DOOR_N6_UPPER;
+            case -5 -> y == 0 ? Scp914PartBlock.Role.DOOR_N5_LOWER
+                    : Scp914PartBlock.Role.DOOR_N5_UPPER;
+            case -4 -> y == 0 ? Scp914PartBlock.Role.DOOR_N4_LOWER
+                    : Scp914PartBlock.Role.DOOR_N4_UPPER;
+            case 4 -> y == 0 ? Scp914PartBlock.Role.DOOR_P4_LOWER
+                    : Scp914PartBlock.Role.DOOR_P4_UPPER;
+            case 5 -> y == 0 ? Scp914PartBlock.Role.DOOR_P5_LOWER
+                    : Scp914PartBlock.Role.DOOR_P5_UPPER;
+            case 6 -> y == 0 ? Scp914PartBlock.Role.DOOR_P6_LOWER
+                    : Scp914PartBlock.Role.DOOR_P6_UPPER;
+            default -> throw new IllegalArgumentException("Invalid SCP-914 door side " + side);
+        };
+    }
+
+    private static void put(Map<BlockPos, PartPlacement> result, BlockPos pos,
+            Scp914PartBlock.Kind kind, Scp914PartBlock.Role role) {
+        result.put(pos.immutable(), new PartPlacement(pos.immutable(), kind, role));
     }
 
     private static BlockPos gridCell(BlockPos origin, Direction front,
@@ -229,5 +293,9 @@ public final class Scp914Structure {
         return origin.relative(front, forward)
                 .relative(localPositiveX, side)
                 .above(y);
+    }
+
+    private record PartPlacement(BlockPos pos, Scp914PartBlock.Kind kind,
+            Scp914PartBlock.Role role) {
     }
 }

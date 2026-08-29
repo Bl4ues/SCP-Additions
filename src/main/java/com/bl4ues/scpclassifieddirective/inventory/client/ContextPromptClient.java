@@ -252,7 +252,9 @@ public final class ContextPromptClient {
                     String name = rule.showName()
                             ? rule.blockName(ruleState) : "";
                     boolean showName = rule.showName() && !name.isEmpty();
-                    boolean showAction = rule.showAction() && showName;
+                    boolean showAction = rule.showAction()
+                            && rule.action() != null
+                            && !rule.action().isBlank();
                     ResourceLocation icon = ContextPromptIcons.resolve(
                             rule.icon(), rule.id());
                     best = new ContextTarget(rulePos, 0, false, anchor,
@@ -317,7 +319,9 @@ public final class ContextPromptClient {
                     String name = rule.showName()
                             ? rule.entityName(entity) : "";
                     boolean showName = rule.showName() && !name.isEmpty();
-                    boolean showAction = rule.showAction() && showName;
+                    boolean showAction = rule.showAction()
+                            && rule.action() != null
+                            && !rule.action().isBlank();
                     ResourceLocation icon = ContextPromptIcons.resolve(
                             rule.icon(), rule.id());
                     best = new ContextTarget(entity.blockPosition(),
@@ -485,10 +489,7 @@ public final class ContextPromptClient {
     private static boolean renderScp914ControlPrompt(
             GuiGraphics graphics, Minecraft minecraft, ContextTarget target,
             ScreenPoint point, int screenWidth, int screenHeight) {
-        String key = target.interactionKey();
-        boolean dial = "scp_914_dial".equals(key);
-        boolean start = "scp_914_start".equals(key);
-        if (!dial && !start) return false;
+        if (!"scp_914_dial".equals(target.interactionKey())) return false;
 
         float promptScale = target.promptScale();
         int iconSize = Math.max(24,
@@ -500,21 +501,6 @@ public final class ContextPromptClient {
         int iconX = screenX - iconSize / 2;
         int iconY = screenY - iconSize / 2;
         drawIcon(graphics, target.icon(), iconX, iconY, iconSize);
-
-        if (start) {
-            String action = target.action() == null
-                    || target.action().isBlank() ? "Start" : target.action();
-            float textScale = 1.35F * promptScale;
-            int textWidth = Math.round(minecraft.font.width(
-                    ScpFonts.roboto(action)) * textScale);
-            int textX = Mth.clamp(screenX - textWidth / 2, 6,
-                    Math.max(6, screenWidth - textWidth - 6));
-            int textY = Mth.clamp(iconY + iconSize
-                            - Math.round(8.0F * promptScale),
-                    6, screenHeight - Math.round(12.0F * textScale));
-            drawScaledString(graphics, minecraft, action, textX, textY,
-                    textScale, TEXT_WHITE);
-        }
         return true;
     }
 

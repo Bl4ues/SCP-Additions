@@ -49,18 +49,18 @@ public final class Scp914Module {
     // and crashes during registry freeze even though compileJava succeeds.
     public static final RegistryObject<SoundEvent> REFINING =
             ScpClassifiedDirectiveModSounds.SCP914REFINING;
-    public static final RegistryObject<SoundEvent> WIND = sound("scp914wind");
-    public static final RegistryObject<SoundEvent> CLOSE = sound("scp914close");
-    public static final RegistryObject<SoundEvent> OPEN = sound("scp914open");
-    public static final RegistryObject<SoundEvent> GEAR_1 = sound("scp914gear_1");
-    public static final RegistryObject<SoundEvent> GEAR_2 = sound("scp914gear_2");
-    public static final RegistryObject<SoundEvent> GEAR_3 = sound("scp914gear_3");
-    public static final RegistryObject<SoundEvent> GEAR_4 = sound("scp914gear_4");
-    public static final RegistryObject<SoundEvent> GEAR_5 = sound("scp914gear_5");
-    public static final RegistryObject<SoundEvent> GEAR_6 = sound("scp914gear_6");
-    public static final RegistryObject<SoundEvent> GEAR_7 = sound("scp914gear_7");
-    public static final RegistryObject<SoundEvent> GEAR_8 = sound("scp914gear_8");
-    public static final RegistryObject<SoundEvent> GEAR_9 = sound("scp914gear_9");
+    public static final RegistryObject<SoundEvent> WIND = ScpClassifiedDirectiveModSounds.SCP914KEY;
+    public static final RegistryObject<SoundEvent> CLOSE = ScpClassifiedDirectiveModSounds.SCP914DOORCLOSE;
+    public static final RegistryObject<SoundEvent> OPEN = ScpClassifiedDirectiveModSounds.SCP914DOOROPEN;
+    public static final RegistryObject<SoundEvent> GEAR_1 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_2 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_3 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_4 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_5 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_6 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_7 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_8 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
+    public static final RegistryObject<SoundEvent> GEAR_9 = ScpClassifiedDirectiveModSounds.SCP914DIAL;
 
     private Scp914Module() {
     }

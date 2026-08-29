@@ -50,7 +50,8 @@ public final class Scp914InteractionClient {
             return;
         }
 
-        boolean interactDown = Keybinds.CONTEXT_INTERACT.isDown();
+        boolean interactDown = Keybinds.CONTEXT_INTERACT.isDown()
+                || minecraft.options.keyUse.isDown();
         if (activePos == null) {
             if (interactDown) beginDrag(minecraft);
         } else if (!interactDown) {

@@ -44,6 +44,8 @@ public final class ContextPromptClient {
     private static final double PRECISE_AIM_RADIUS_SQR = 0.60D * 0.60D;
     private static final double ELEVATOR_BUTTON_AIM_RADIUS_SQR =
             0.20D * 0.20D;
+    private static final double SCP_914_CONTROL_AIM_RADIUS_SQR =
+            0.18D * 0.18D;
     private static final int CLICK_COOLDOWN_TICKS = 5;
 
     private static ContextTarget target;
@@ -120,6 +122,11 @@ public final class ContextPromptClient {
         ScreenPoint point = projectToScreen(minecraft, target.anchor(),
                 screenWidth, screenHeight, target.allowOffscreen());
         if (point == null) return;
+
+        if (renderScp914ControlPrompt(graphics, minecraft, target, point,
+                screenWidth, screenHeight)) {
+            return;
+        }
 
         float promptScale = target.promptScale();
         int iconSize = Math.max(24,
@@ -412,6 +419,10 @@ public final class ContextPromptClient {
     }
 
     private static double preciseAimRadiusSqr(String interactionKey) {
+        if (interactionKey != null
+                && interactionKey.startsWith("scp_914_")) {
+            return SCP_914_CONTROL_AIM_RADIUS_SQR;
+        }
         return isElevatorButton(interactionKey)
                 ? ELEVATOR_BUTTON_AIM_RADIUS_SQR
                 : PRECISE_AIM_RADIUS_SQR;
@@ -469,6 +480,42 @@ public final class ContextPromptClient {
         int y = (int) Math.round(screenHeight / 2.0D
                 - transformed.y() * scale / rawDepth);
         return new ScreenPoint(x, y);
+    }
+
+    private static boolean renderScp914ControlPrompt(
+            GuiGraphics graphics, Minecraft minecraft, ContextTarget target,
+            ScreenPoint point, int screenWidth, int screenHeight) {
+        String key = target.interactionKey();
+        boolean dial = "scp_914_dial".equals(key);
+        boolean start = "scp_914_start".equals(key);
+        if (!dial && !start) return false;
+
+        float promptScale = target.promptScale();
+        int iconSize = Math.max(24,
+                Math.round(BASE_ICON_SIZE * promptScale));
+        int screenX = Mth.clamp(point.x(), iconSize / 2 + 6,
+                screenWidth - iconSize / 2 - 6);
+        int screenY = Mth.clamp(point.y(), iconSize / 2 + 6,
+                screenHeight - iconSize / 2 - 6);
+        int iconX = screenX - iconSize / 2;
+        int iconY = screenY - iconSize / 2;
+        drawIcon(graphics, target.icon(), iconX, iconY, iconSize);
+
+        if (start) {
+            String action = target.action() == null
+                    || target.action().isBlank() ? "Start" : target.action();
+            float textScale = 1.35F * promptScale;
+            int textWidth = Math.round(minecraft.font.width(
+                    ScpFonts.roboto(action)) * textScale);
+            int textX = Mth.clamp(screenX - textWidth / 2, 6,
+                    Math.max(6, screenWidth - textWidth - 6));
+            int textY = Mth.clamp(iconY + iconSize
+                            - Math.round(8.0F * promptScale),
+                    6, screenHeight - Math.round(12.0F * textScale));
+            drawScaledString(graphics, minecraft, action, textX, textY,
+                    textScale, TEXT_WHITE);
+        }
+        return true;
     }
 
     private static void drawIcon(GuiGraphics graphics,

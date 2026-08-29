@@ -75,6 +75,39 @@ public final class DefaultContextInteractions {
               }
             }
             """;
+    private static final String SCP914_DIAL_RULE = """
+            {
+              "type": "block",
+              "id": "scp_classified_directive:scp_914",
+              "interactionId": "scp_914_dial",
+              "range": 2.25,
+              "priority": 65,
+              "useItem": "hand",
+              "icon": "hand",
+              "text": {"action": "", "nameMode": "manual", "name": "", "showAction": false, "showName": false},
+              "anchor": {"position": [0.5, 1.2525, -0.015625], "rotateWith": "auto"},
+              "input": {"allowE": false, "allowRightClick": false},
+              "click": {"face": "front"},
+              "visual": {"allowOffscreen": false, "scale": 0.72}
+            }
+            """;
+    private static final String SCP914_START_RULE = """
+            {
+              "type": "block",
+              "id": "scp_classified_directive:scp_914",
+              "interactionId": "scp_914_start",
+              "range": 2.25,
+              "priority": 70,
+              "useItem": "hand",
+              "icon": "hand",
+              "text": {"action": "Start", "nameMode": "manual", "name": "", "showAction": true, "showName": false},
+              "anchor": {"position": [0.5, 0.90625, -0.0671875], "rotateWith": "auto"},
+              "input": {"allowE": true, "allowRightClick": true},
+              "click": {"face": "front"},
+              "visual": {"allowOffscreen": false, "scale": 0.72}
+            }
+            """;
+
     private static final String SCP1576_TAKE_RULE = """
             {
               "type": "block",
@@ -153,6 +186,11 @@ public final class DefaultContextInteractions {
                     continue;
                 }
                 if ("block".equalsIgnoreCase(type)
+                        && isLegacyScp914Id(id)) {
+                    interactions.remove(i);
+                    continue;
+                }
+                if ("block".equalsIgnoreCase(type)
                         && ("scp_classified_directive:scp_902_closed".equals(id)
                         || "scp_classified_directive:scp_902_open".equals(id))) {
                     setAnchor(object, 0.418D, 0.052D, 0.5D);
@@ -167,6 +205,8 @@ public final class DefaultContextInteractions {
             boolean corpseExists = false;
             boolean scp714Exists = false;
             boolean scp1576Exists = false;
+            boolean scp914DialExists = false;
+            boolean scp914StartExists = false;
             for (JsonElement element : interactions) {
                 if (!element.isJsonObject()) continue;
                 JsonObject object = element.getAsJsonObject();
@@ -188,6 +228,14 @@ public final class DefaultContextInteractions {
                         && "take_scp_1576".equals(interactionId)) {
                     scp1576Exists = true;
                 }
+                if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_914".equals(id)) {
+                    if ("scp_914_dial".equals(interactionId)) {
+                        scp914DialExists = true;
+                    } else if ("scp_914_start".equals(interactionId)) {
+                        scp914StartExists = true;
+                    }
+                }
             }
             if (!corpseExists) {
                 interactions.add(JsonParser.parseString(CORPSE_SEARCH_RULE)
@@ -201,6 +249,14 @@ public final class DefaultContextInteractions {
                 interactions.add(JsonParser.parseString(SCP1576_TAKE_RULE)
                         .getAsJsonObject());
             }
+            if (!scp914DialExists) {
+                interactions.add(JsonParser.parseString(SCP914_DIAL_RULE)
+                        .getAsJsonObject());
+            }
+            if (!scp914StartExists) {
+                interactions.add(JsonParser.parseString(SCP914_START_RULE)
+                        .getAsJsonObject());
+            }
             return root.toString();
         } catch (Exception exception) {
             ScpInventoryMod.LOGGER.error(
@@ -208,6 +264,18 @@ public final class DefaultContextInteractions {
                     exception);
             return raw;
         }
+    }
+
+    private static boolean isLegacyScp914Id(String id) {
+        return id != null && (id.equals("scp_classified_directive:scp_914_key_wind")
+                || id.startsWith("scp_classified_directive:scp_914dial_")
+                || id.equals("scp_classified_directive:scp_914block")
+                || id.startsWith("scp_classified_directive:scp_914clockworks")
+                || id.equals("scp_classified_directive:scp_914body")
+                || id.equals("scp_classified_directive:scp_914_intake")
+                || id.equals("scp_classified_directive:scp_914_output")
+                || id.startsWith("scp_classified_directive:scp_914_intake_door")
+                || id.startsWith("scp_classified_directive:scp_914_output_door"));
     }
 
     private static void normalizeScp1176(JsonObject object) {

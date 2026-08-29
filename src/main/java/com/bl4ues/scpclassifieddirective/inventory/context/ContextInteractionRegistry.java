@@ -32,6 +32,8 @@ import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorManag
 import com.bl4ues.scpclassifieddirective.facility.elevator.ElevatorFoundation;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.bl4ues.scpclassifieddirective.integration.PlayerItemAccess;
+import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 
 import java.io.File;
 import java.io.FileReader;
@@ -825,11 +827,16 @@ public final class ContextInteractionRegistry {
         public boolean requiresPreciseAim() {
             return "close_object_containment_unit".equals(interactionKey)
                     || interactionKey.startsWith("elevator_station_")
-                    || interactionKey.startsWith("elevator_carriage_");
+                    || interactionKey.startsWith("elevator_carriage_")
+                    || interactionKey.startsWith("scp_914_");
         }
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state, Player player) {
+            if (block == Scp914Module.SCP_914.get()) {
+                return level.getBlockEntity(pos) instanceof Scp914BlockEntity machine
+                        && !machine.isRefining();
+            }
             if (ObjectContainmentUnitModule.isProtectedContent(level, pos)) {
                 return false;
             }

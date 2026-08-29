@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
 import com.bl4ues.scpclassifieddirective.scp1576.Scp1576Module;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,16 +100,7 @@ public class ScpClassifiedDirectiveModTabs {
         stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.SCP_572.get()));
         stacks.add(new ItemStack(Scp714Items.SCP_714.get()));
         stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_902_CLOSED.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.SCP_914_ASSEMBLY_KIT.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914BLOCK.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914CLOCKWORKS.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914BODY.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914DIAL_1TO_1.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914_KEY_WIND.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914_INTAKE.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914_OUTPUT.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914_INTAKE_DOOR.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_914_OUTPUT_DOOR.get()));
+        stacks.add(new ItemStack(Scp914Module.SCP_914_ITEM.get()));
         stacks.add(new ItemStack(Scp131Items.SCP_939_SPAWN_EGG.get()));
         stacks.add(new ItemStack(ScpClassifiedDirectiveModBlocks.SCP_1176.get()));
         stacks.add(new ItemStack(Scp1576Module.SCP_1576.get()));

@@ -76,7 +76,8 @@
     "client.Scp939PinCameraMixin",
     "client.Scp939PinnedPlayerRotationMixin",
     "client.Scp939ModelPolishMixin",
-    "client.PlayerSmoothCrouchMixin"
+    "client.PlayerSmoothCrouchMixin",
+    "client.Scp714ComaPromptMixin"
   ],
   "injectors": {
     "defaultRequire": 1

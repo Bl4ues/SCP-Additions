@@ -35,6 +35,8 @@ public final class FacilityClientRenderEvents {
             ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.DOOR_SIGN.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(
+                    FacilityModule.ARCHIVISTS_TABLE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(
                     FacilityModule.SCP_914_USAGE_NOTICE.get(),
                     RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(

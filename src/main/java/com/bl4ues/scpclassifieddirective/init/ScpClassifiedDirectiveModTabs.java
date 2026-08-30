@@ -66,24 +66,54 @@ public class ScpClassifiedDirectiveModTabs {
             List<ItemStack> items) {
     }
 
+    public static List<ItemStack> accessSecurityStacks() {
+        return List.of(
+                new ItemStack(ScpClassifiedDirectiveModItems.SECURITY_CREDENTIALS.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_1_KEYCARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_2_KEYCARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_3_KEYCARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_4_KEYCARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_5_KEYCARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_6_KEYCARD.get()));
+    }
+
+    public static List<ItemStack> equipmentStacks() {
+        return List.of(new ItemStack(ScpClassifiedDirectiveModItems.HAZMAT_SUIT.get()));
+    }
+
+    public static List<ItemStack> toolsUtilityStacks() {
+        return List.of(new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()));
+    }
+
+    public static List<ItemStack> consumableStacks() {
+        return List.of(
+                new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_BLUE_CANDY.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_PINK_CANDY.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_YELLOW_CANDY.get()));
+    }
+
+    public static List<ItemStack> miscellaneousStacks() {
+        return List.of(
+                new ItemStack(Scp131Items.ROOMBA_SPAWN_EGG.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.PLAYING_CARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.CREDIT_CARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.PIECES_OF_PAPER.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.COIN.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get()),
+                new ItemStack(DocumentItems.getDocument()));
+    }
+
+    public static List<CreativeSection> itemCreativeSections() {
+        return List.of(
+                section("security", accessSecurityStacks()),
+                section("equipment", equipmentStacks()),
+                section("tools", toolsUtilityStacks()),
+                section("consumable", consumableStacks()),
+                section("misc", miscellaneousStacks()));
+    }
+
     public static List<ItemStack> scpClassifiedDirectiveStacks() {
-        List<ItemStack> stacks = new ArrayList<>();
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.SECURITY_CREDENTIALS.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_1_KEYCARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_2_KEYCARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_3_KEYCARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_4_KEYCARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_5_KEYCARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_6_KEYCARD.get()));
-        stacks.add(new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()));
-        stacks.add(new ItemStack(Scp131Items.ROOMBA_SPAWN_EGG.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.HAZMAT_SUIT.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.PLAYING_CARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.CREDIT_CARD.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.PIECES_OF_PAPER.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.COIN.get()));
-        stacks.add(new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get()));
-        return stacks;
+        return tabStacks(itemCreativeSections());
     }
 
     public static List<ItemStack> scpStacks() {
@@ -123,11 +153,11 @@ public class ScpClassifiedDirectiveModTabs {
 
     /** Actual searchable items, without the visual spacer/header rows. */
     public static List<ItemStack> anomalyTabStacks() {
-        List<ItemStack> stacks = new ArrayList<>();
-        for (CreativeSection section : anomalyCreativeSections()) {
-            section.items().forEach(stack -> stacks.add(stack.copy()));
-        }
-        return List.copyOf(stacks);
+        return tabStacks(anomalyCreativeSections());
+    }
+
+    public static List<ItemStack> itemCreativeTabDisplayStacks() {
+        return creativeTabDisplayStacks(itemCreativeSections());
     }
 
     /**
@@ -135,8 +165,21 @@ public class ScpClassifiedDirectiveModTabs {
      * each graphical section header, followed by that section's real items.
      */
     public static List<ItemStack> anomalyCreativeTabDisplayStacks() {
+        return creativeTabDisplayStacks(anomalyCreativeSections());
+    }
+
+    private static List<ItemStack> tabStacks(List<CreativeSection> sections) {
+        List<ItemStack> stacks = new ArrayList<>();
+        for (CreativeSection section : sections) {
+            section.items().forEach(stack -> stacks.add(stack.copy()));
+        }
+        return List.copyOf(stacks);
+    }
+
+    private static List<ItemStack> creativeTabDisplayStacks(
+            List<CreativeSection> sections) {
         List<ItemStack> display = new ArrayList<>();
-        for (CreativeSection section : anomalyCreativeSections()) {
+        for (CreativeSection section : sections) {
             for (int index = 0; index < 9; index++) {
                 display.add(ItemStack.EMPTY);
             }
@@ -158,9 +201,6 @@ public class ScpClassifiedDirectiveModTabs {
     public static void buildTabContentsVanilla(
             BuildCreativeModeTabContentsEvent tabData) {
         if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
-            tabData.accept(ScpClassifiedDirectiveModItems.SCP_330_BLUE_CANDY.get());
-            tabData.accept(ScpClassifiedDirectiveModItems.SCP_330_PINK_CANDY.get());
-            tabData.accept(ScpClassifiedDirectiveModItems.SCP_330_YELLOW_CANDY.get());
             tabData.accept(ScpClassifiedDirectiveModItems.SCP_1176HONEY.get());
         }
     }
